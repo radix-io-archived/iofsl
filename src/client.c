@@ -4,12 +4,12 @@
 #include <stdio.h>
 #include <errno.h>
 
-int32_t bmi_client_init(void);
-int32_t bmi_client_finalize(void);
-int32_t bmi_client_handshake(BMI_addr_t, bmi_msg_tag_t, bmi_context_id);
+int bmi_client_init(void);
+int bmi_client_finalize(void);
+int bmi_client_handshake(BMI_addr_t, bmi_msg_tag_t, bmi_context_id);
 
-int32_t main(int32_t argc, char **argv) {
-    int32_t ret;
+int main(int argc, char **argv) {
+    int ret;
     BMI_addr_t peer_addr;
     bmi_msg_tag_t tag = 0;
     bmi_context_id context;
@@ -48,8 +48,8 @@ int32_t main(int32_t argc, char **argv) {
 }
 
 
-int32_t bmi_client_init(void) {
-    int32_t ret;
+int bmi_client_init(void) {
+    int ret;
 
     /* Initialize BMI */
     ret = BMI_initialize(NULL, NULL, 0);
@@ -62,8 +62,8 @@ int32_t bmi_client_init(void) {
 }
 
 
-int32_t bmi_client_finalize(void) {
-    int32_t ret;
+int bmi_client_finalize(void) {
+    int ret;
 
     /* Finalize BMI */
     ret = BMI_finalize();
@@ -76,12 +76,12 @@ int32_t bmi_client_finalize(void) {
 }
 
 
-int32_t bmi_client_handshake(BMI_addr_t peer_addr, bmi_msg_tag_t tag,
+int bmi_client_handshake(BMI_addr_t peer_addr, bmi_msg_tag_t tag,
                              bmi_context_id context) {
-    int32_t ret;
-    int32_t max_bytes = 4;
+    int ret;
+    int max_bytes = 4;
     void *sendbuf, *recvbuf;
-    int32_t zoidfs_op_id = 9;
+    int zoidfs_op_id = 9;
 
     /* Allocate memory for send and recv buf */
     sendbuf = BMI_memalloc(peer_addr, max_bytes, BMI_SEND);

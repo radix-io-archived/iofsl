@@ -1,13 +1,17 @@
+BMIDIR=$(HOME)/ioforward/install
+
 CC = gcc
 CXX = g++
 LD = g++
 CPPFLAGS = 
-CFLAGS = -fno-inline  -g -Wall
-CXXFLAGS = -fno-inline -g -Wall
-ADDLIBS = 
+CFLAGS = -fno-inline  -g -Wall -I$(BMIDIR)/include
+CXXFLAGS = -fno-inline -g -Wall 
+ADDLIBS = -lbmi -lpthread
 CXXCPP = g++ -E 
+LDFLAGS = -L$(BMIDIR)/lib
 
 SUBDIRS = src
+
 
 
 include Makefile.buildsys
