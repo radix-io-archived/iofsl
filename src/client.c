@@ -1,10 +1,3 @@
-/*
- * bmi-client.c
- * BMI echo test.
- *
- * Nawab Ali <alin@cse.ohio-state.edu>
- */
-
 #include "bmi.h"
 #include "bmi_comm.h"
 

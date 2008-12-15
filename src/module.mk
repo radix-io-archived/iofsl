@@ -1,4 +1,4 @@
-MODULE_APPS := client server
+MODULE_APPS := client 
 
 MODULE_SOURCES_client := client.c
 #ADDINTLIBS_client := fake

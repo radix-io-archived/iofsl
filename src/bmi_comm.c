@@ -9,10 +9,10 @@
 #include "bmi_comm.h"
 
 /* Synchronous call for sending messages using BMI */
-int32_t bmi_comm_send(BMI_addr_t peer_addr, void *buffer, bmi_size_t buflen,
+int bmi_comm_send(BMI_addr_t peer_addr, void *buffer, bmi_size_t buflen,
                       bmi_msg_tag_t tag, bmi_context_id context) {
     bmi_op_id_t op_id;
-    int32_t ret, outcount;
+    int ret, outcount;
     bmi_size_t actual_size;
     bmi_error_code_t error_code;
 
@@ -44,10 +44,10 @@ int32_t bmi_comm_send(BMI_addr_t peer_addr, void *buffer, bmi_size_t buflen,
 
 
 /* Synchronous call for receiving messages using BMI */
-int32_t bmi_comm_recv(BMI_addr_t peer_addr, void *buffer, bmi_size_t buflen,
+int bmi_comm_recv(BMI_addr_t peer_addr, void *buffer, bmi_size_t buflen,
                       bmi_msg_tag_t tag, bmi_context_id context) {
     bmi_op_id_t op_id;
-    int32_t ret, outcount;
+    int ret, outcount;
     bmi_size_t actual_size;
     bmi_error_code_t error_code;
 
@@ -73,10 +73,10 @@ int32_t bmi_comm_recv(BMI_addr_t peer_addr, void *buffer, bmi_size_t buflen,
 
 
 /* Synchronous call for sending unexpected messages using BMI */
-int32_t bmi_comm_sendu(BMI_addr_t peer_addr, void *buffer, bmi_size_t buflen,
+int bmi_comm_sendu(BMI_addr_t peer_addr, void *buffer, bmi_size_t buflen,
                        bmi_msg_tag_t tag, bmi_context_id context) {
     bmi_op_id_t op_id;
-    int32_t ret, outcount;
+    int ret, outcount;
     bmi_size_t actual_size;
     bmi_error_code_t error_code;
 
