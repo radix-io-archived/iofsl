@@ -1,0 +1,276 @@
+
+
+############################################################################
+##### NO MODIFICATIONS BELOW ###############################################
+############################################################################
+
+# defaults
+CC ?= gcc
+LD ?= gcc
+AR ?= ar
+RANLIB ?= ranlib
+FLEX ?= flex
+BISON ?= bison
+CTAGS ?= ctags 
+DOXYGEN ?= doxygen
+DOXYFILE ?= Doxygen
+
+
+MYDIR = $(PWD)
+
+
+# Disable built-in rules
+.SUFFIXES:
+
+CPPEXT ?= cpp
+
+############################################################################
+### Module support #########################################################
+############################################################################
+
+define process_target
+# set dir
+DIR_$(2):=$(1)
+SOURCES_$(2):=$$(patsubst %,$(1)/%,$$(MODULE_SOURCES_$(2)))
+HEADERS_$(2):=$$(patsubst %,$(1)/%,$$(MODULE_HEADERS_$(2)))
+LIBNAME_$(2):=$(1)/lib$(2).a
+endef
+
+
+define loadmodule
+
+# load file
+MODULE_ARCHIVES:=
+MODULE_APPS:=
+MODULE_CONTAINSINCLUDE:=0
+
+# check if all our goals are nodepgoals
+
+include $(1)/module.mk
+
+$$(foreach cur,$$(sort $$(strip $$(MODULE_ARCHIVES) $$(MODULE_APPS))),\
+   $$(eval $$(call process_target,$(1),$$(cur))))
+
+APPS:=$$(sort $$(MODULE_APPS) $$(APPS))
+ARCHIVES:=$$(sort $$(MODULE_ARCHIVES) $$(ARCHIVES))
+
+ifneq ($$(MODULE_CONTAINSINCLUDE),0)
+CPPFLAGS+=-I$(PWD)/$(1)
+endif
+
+ifneq ($$(MODULE_CONTAINSLIBS),1)
+LDFLAGS+=-L$(1)
+endif
+
+endef
+
+$(foreach module,$(sort $(strip $(SUBDIRS))),\
+	$(eval $(call loadmodule,$(module))))
+
+
+######################################################### 
+# default target
+.PHONY: all
+all: $(addprefix app_,$(APPS)) $(addprefix lib_,$(ARCHIVES))
+
+
+.PHONY: info
+info:
+	@echo "Applications:  $(APPS)"
+	@echo "Archives:      $(ARCHIVES)"
+	@echo "moduledirs:    $(SUBDIRS)"
+
+
+.PHONY: doc documentation
+doc: documentation
+
+documentation:
+	$(DOXYGEN) $(DOXYFILE)
+
+####################
+# Process Input   ##
+####################
+$(foreach curapp,$(APPS) $(ARCHIVES),$(eval OBJS_$(curapp):=$$(patsubst %.c,%.o, $$(patsubst %.$(CPPEXT), %.o, $$(SOURCES_$(curapp))))))
+$(foreach curapp,$(APPS) $(ARCHIVES),$(eval DEPS_$(curapp):=$$(patsubst %.o, %.d, $$(OBJS_$(curapp)))))
+
+# collect all SOURCES 
+ALLSOURCES = $(sort $(foreach var,$(APPS) $(ARCHIVES),$(SOURCES_$(var))))
+ALLDEPS = $(sort $(foreach var,$(APPS) $(ARCHIVES),$(DEPS_$(var))))
+ALLOBJS = $(sort $(foreach var,$(APPS) $(ARCHIVES),$(OBJS_$(var))))
+ALLHEADERS = $(sort $(foreach var,$(APPS) $(ARCHIVES),$(HEADERS_$(var))))
+
+# include depends [TODO: check for cases where we don't need depend info [such as clean target]
+-include $(ALLDEPS)
+ 
+
+
+#################################################################
+# silence to be overriden with "make V=1".
+ifdef V
+    QUIET_COMPILE := 0
+else
+    QUIET_COMPILE := 1
+endif
+
+ifeq ($(QUIET_COMPILE),1)
+  # say a one-line description of the action, do not echo the command
+  Q:=@echo
+  E:=@
+else
+  # do not say the short Q lines, but do echo the entire command
+  Q:=@echo >/dev/null
+  E:=
+endif
+
+# generate archive targets
+define gentarget_archive
+
+.PHONY: showignore_$(1)
+NODEPGOALS += showignore_$(1)
+showignore_$(1):
+	@echo $$(OBJS_$(1)) $$(DIR_$(1))/lib$(1).a  | tr -s ' ' '\n'
+
+.PHONY: clean_$(1)
+NODEPGOALS += clean_$(1)
+clean_$(1):
+	$(Q) "  CLEAN		$(1)"
+	$(E) -rm $$(OBJS_$(1)) $$(DIR_$(1))/lib$(1).a 2> /dev/zero || true
+
+.PHONY: $(1)
+lib_$(1): $$(DIR_$(1))/lib$(1).a
+
+$$(DIR_$(1))/lib$(1).a: $$(OBJS_$(1))
+	$(Q) "  AR		$(1)"
+	$(E) -rm $$@ 2>/dev/null || true
+	$(E) $(AR) q $$@ $$^ >/dev/null 2>&1 | ( grep -v 'ar:.*creating' || true) 
+	$(Q) "  RANLIB	$(1)"
+	$(E) $(RANLIB) $$@
+
+.PHONY: info_$(1)
+info_$(1):
+	@echo "Sources: $$(SOURCES_$(1))"
+	@echo "Headers: $$(HEADERS_$(1))"
+	@echo "Objs   : $$(OBJS_$(1))"
+	@echo "Dir    : $$(DIR_$(1))"
+	@echo "libname: $$(LIBNAME_$(1))"
+
+
+endef
+
+
+# generate app targets
+define gentarget
+
+.PHONY: showignore_$(1)
+NODEPGOALS += showignore_$(1)
+showignore_$(1):
+	@echo $$(OBJS_$(1)) $$(DIR_$(1))/$(1)| tr -s ' ' '\n' 
+
+.PHONY: clean_$(1)
+NODEPGOALS += clean_$(1)
+clean_$(1):
+	$(Q) "  CLEAN		$(1)"
+	$(E) -rm $$(OBJS_$(1)) $$(DIR_$(1))/$(1) 2>/dev/zero || true
+
+.PHONY: app_$(1)
+app_$(1): $$(DIR_$(1))/$(1)
+
+$$(DIR_$(1))/$(1): $$(OBJS_$(1)) \
+   		   $$(foreach l,$$(ADDINTLIBS_$(1)),$$(LIBNAME_$$(l)))
+	$(Q) "  LD		$(1)"
+	$(E) $(LD)  -o $$@ $$(filter %.o,$$^) $$(foreach l,$$(ADDINTLIBS_$(1)),-l$$(l))  $$(ADDLIBS_$(1))  $$(ADDLIBS) $(LDFLAGS)
+
+.PHONY: info_$(1)
+info_$(1):
+	@echo "Sources: $$(SOURCES_$(1))"
+	@echo "Headers: $$(HEADERS_$(1))"
+	@echo "Objs   : $$(OBJS_$(1))"
+	@echo "Dir    : $$(DIR_$(1))"
+
+
+endef
+
+
+define gendep
+
+$$(basename $(1)).o: $$(basename $(1)).d
+
+endef
+
+$(foreach curapp, $(APPS), $(eval $(call gentarget,$(curapp))))
+$(foreach curarchive, $(ARCHIVES), \
+	$(eval $(call gentarget_archive,$(curarchive))))
+$(foreach cursource, $(ALLSOURCES), $(eval $(call gendep,$(cursource))))
+
+
+
+########################
+# Some general targets #
+########################
+.PHONY: depend
+depend:	 $(ALLDEPS)
+
+.PHONY: depclean
+NODEPGOALS += depclean 
+depclean:
+	$(Q) "  DEPCLEAN"
+	$(E) -rm $(ALLDEPS) 
+
+
+.PHONY: clean
+NODEPGOALS += clean
+clean: $(addprefix clean_, $(APPS) $(ARCHIVES))
+
+.PHONY: tags
+NODEPGOALS += tags
+tags: $(ALLSOURCES) $(ALLHEADERS)
+	$(Q) "  CTAGS"
+	$(E) ctags $^
+
+.PHONY: showignore
+showignore: $(patsubst %, showignore_%, $(APPS) $(ARCHIVES))
+	@echo $(ALLDEPS) | tr -s ' ' '\n'
+
+.PHONY: libs
+libs: $(addprefix lib_, $(ARCHIVES))
+
+#################### BUILD RULES ######################
+
+# rule for C dependencies
+%.d: %.c
+	$(Q) "  DEPC		$@"
+	$(E) $(CPP) $(CPPFLAGS) $(CFLAGS) -M -MT"$(@)" $< | sed -e 's,\($*\)\.d[ :]*,\1.o $@ : ,g' -e 's,^ *\\,,'  > $@; [ -s $@ ] || ( $(RM) $@ && exit 1 ) 
+
+# rule for C++ dependencies
+%.d: %.$(CPPEXT)
+	$(Q) "  DEPCXX	$@"
+	$(E) $(CXXCPP) $(CPPFLAGS) $(CXXFLAGS) -M -MT"$(@)" $< | sed -e 's,\($*\)\.d[ :]*,\1.o $@ : ,g' -e 's,^ *\\,,'  > $@; [ -s $@ ] || ( $(RM) $@ && exit 1 )
+
+# default rule for building C objects
+%.o: %.c
+	$(Q) "  CC		$@"
+	$(E)  $(CC)  $(CPPFLAGS) $(CFLAGS) -c $< -o "$@" \
+	   ||  ( $(RM) $@ ; exit 1)
+
+# default rule for building C++ objects
+%.o: %.$(CPPEXT)
+	$(Q) "  CXX		$@"
+	$(E) $(CXX) $(CPPFLAGS) $(CXXFLAGS) -c $< -o "$@" \
+	   	|| ( $(RM) $@ ; exit 1 ) 
+
+
+# Flex
+%.cxx: %.l
+	$(Q) "  FLEX		$@"
+	$(E) $(FLEX) --header-file=$(patsubst %.cxx,%.hh,$@) -o $@ $<
+
+# Flex
+%.c: %.l
+	$(Q) "  FLEX		$@"
+	$(E) $(FLEX) --header-file=$(patsubst %.c,%.h,$@) -o $@ $<
+
+
+# Bison
+%.cxx: %.y
+	$(Q) "  BISON		$@"
+	$(E) $(BISON) -d -o $@ $<
