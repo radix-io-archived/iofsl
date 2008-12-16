@@ -1,10 +1,3 @@
-/*
- * iod.c
- * I/O daemon. The CNs communicate with the IONs over BMI.
- *
- * Nawab Ali <alin@cse.ohio-state.edu>
- */
-
 #include "bmi.h"
 #include "bmi_comm.h"
 
@@ -16,57 +9,51 @@
 #define MAX_IDLE_TIME 10
 
 
-int iod_check_uri(char *uri) {
-    int ret = 0; /* failure */
-    if (uri[0] == ':' && uri[1] == '/' && uri[2] == '/') ret = 1;
-    return ret;
+inline int handle_error (int ret, const char * str)
+{
+   if (ret >= 0) return ret;
+   errno = -ret; 
+   perror (str); 
+   exit (1); 
+}
+
+const char *  get_network(const char *id)
+{
+   int i; 
+   const char * names[] = 
+     { "tcp://", "bmi_tcp", "gm://", "bmi_gm", "mx://", "bmi_mx" };
+
+   for (i=0; i<(sizeof(names)/sizeof(names[0])); i+=2)
+   {
+      if (strncmp (names[i], id, strlen(names[i]))==0)
+      {
+         return names[i+1]; 
+      }
+   }
+   fprintf (stderr, "Unknown network string: %s", id); 
+   return 0; 
 }
 
 
-void iod_get_network(char *id, char **network) {
-    if (id[0] == 't' && id[1] == 'c' && id[2] == 'p' && iod_check_uri(&id[3])) {
-        *network = strdup("bmi_tcp");
-    } else if (id[0] == 'g' && id[1] == 'm' && iod_check_uri(&id[2])) {
-        *network = strdup("bmi_gm");
-    } else if (id[0] == 'm' && id[1] == 'x' && iod_check_uri(&id[2])) {
-        *network = strdup("bmi_mx");
-    } else if (id[0] == 'i' && id[1] == 'b' && iod_check_uri(&id[2])) {
-        *network = strdup("bmi_ib");
-    }
-    return;
-}
 
-
-
-int iod_bmi_init(char *hostid) {
-    int ret;
-    char *network = NULL;
-
+int init_bmi(const char *hostid) 
+{
     /* get the network from the hostid, e.g "bmi_tcp" */
-    iod_get_network(hostid, &network);
+    const char * network = get_network(hostid); 
+    if (!network)
+       exit (1); 
+    printf ("Using network type: %s, addr: %s\n", network, hostid); 
 
     /* Initialize BMI */
-    ret = BMI_initialize(network, hostid, BMI_INIT_SERVER);
-    if (ret < 0) {
-        errno = -ret;
-        perror("iod: BMI_initialize()");
-        exit(1);
-    }
+    handle_error(BMI_initialize(network, hostid , BMI_INIT_SERVER), 
+          "BMI_initialize");
     return 0;
 }
 
 
-int iod_bmi_finalize(void) {
-    int ret;
-
-    /* Finalize BMI */
-    ret = BMI_finalize();
-    if (ret < 0) {
-        errno = -ret;
-        perror("iod: BMI_finalize()");
-        exit(1);
-    }
-    return 0;
+void finalize_bmi() 
+{
+    handle_error(BMI_finalize(), "BMI_finalize");
 }
 
 
@@ -136,14 +123,9 @@ int main(int argc, char **argv) {
     }
 
     /* Initialize BMI */
-    ret = iod_bmi_init(argv[1]);
+    ret = init_bmi(argv[1]);
 
-    ret = BMI_open_context(&context);
-    if (ret < 0) {
-        errno = -ret;
-        perror("iod: BMI_open_context()");
-        exit(1);
-    }
+    handle_error(BMI_open_context(&context), "BMI_open_context"); 
 
     ret = iod_bmi_handshake(&peer_addr, tag, context);
 
@@ -165,19 +147,10 @@ int main(int argc, char **argv) {
 
     /* Finalize BMI */
     BMI_close_context(context);
-    ret = iod_bmi_finalize();
+    finalize_bmi();
 
-    return 0;
+    return EXIT_SUCCESS;
 }
 
 
 
-/*
- * Local variables:
- *  mode: c
- *  c-indent-level: 4
- *  c-basic-offset: 4
- * End:
- *
- * vim: ft=c ts=4 sts=4 sw=4 expandtab
- */
