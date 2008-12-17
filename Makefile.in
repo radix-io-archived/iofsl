@@ -1,3 +1,18 @@
+#BMIDIR=$(HOME)/ioforward/install
+
+#CC = gcc
+#CXX = g++
+#LD = g++
+CPPFLAGS = 
+CFLAGS = -fno-inline  -g -Wall -I$(BMIDIR)/include
+CXXFLAGS = -fno-inline -g -Wall 
+ADDLIBS = -lbmi -lpthread
+CXXCPP = g++ -E 
+LDFLAGS = -L$(BMIDIR)/lib
+
+SUBDIRS = src/iofwd src/frontend src/backend sandbox
+
+VPATH := @top_srcdir@
 
 
 ############################################################################
@@ -15,8 +30,8 @@ CTAGS ?= ctags
 DOXYGEN ?= doxygen
 DOXYFILE ?= Doxygen
 
-
-MYDIR = $(PWD)
+srcdir = @srcdir@
+builddir = @builddir@
 
 
 # Disable built-in rules
@@ -234,7 +249,9 @@ showignore: $(patsubst %, showignore_%, $(APPS) $(ARCHIVES))
 .PHONY: libs
 libs: $(addprefix lib_, $(ARCHIVES))
 
+#######################################################
 #################### BUILD RULES ######################
+#######################################################
 
 # rule for C dependencies
 %.d: %.c
@@ -274,3 +291,22 @@ libs: $(addprefix lib_, $(ARCHIVES))
 %.cxx: %.y
 	$(Q) "  BISON		$@"
 	$(E) $(BISON) -d -o $@ $<
+
+
+###############################################################
+############ distclean ########################################
+###############################################################
+
+.PHONY: distclean 
+distclean: clean depclean
+	$(Q) "  DISTCLEAN"
+	$(E) rm -f tags
+	$(E) rm -rf autom4te*.cache
+	$(E) rm -f config.log config.status config.cache 
+	$(E) rm -f iofwd_config.h.in~ iofwd_config.h Makefile
+
+
+.PHONY: realclean
+realclean: distclean
+	$(Q) "  REALCLEAN"
+	$(E) rm -f configure
