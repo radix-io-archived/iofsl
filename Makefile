@@ -10,7 +10,7 @@ ADDLIBS = -lbmi -lpthread
 CXXCPP = g++ -E 
 LDFLAGS = -L$(BMIDIR)/lib
 
-SUBDIRS = src
+SUBDIRS = src/iofwd src/frontend src/backend sandbox
 
 
 
