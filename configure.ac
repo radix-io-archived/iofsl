@@ -67,6 +67,7 @@ AC_CONFIG_FILES([
                  src/frontend/module.mk
                  src/iofwd/module.mk
                  src/mgmt/module.mk
+                 src/iofwdutil/module.mk
                  ])
 
 AC_OUTPUT

@@ -2,7 +2,7 @@
 
 CC = @CC@
 CXX = @CXX@ 
-LD = @CC@
+LD = @CXX@
 CPPFLAGS = -I. @CPPFLAGS@
 CFLAGS = @CFLAGS@
 CXXFLAGS = @CXXFLAGS@
@@ -10,7 +10,7 @@ ADDLIBS = @LIBS@
 CXXCPP = @CXXCPP@ 
 LDFLAGS = @LDFLAGS@
 
-SUBDIRS = src/iofwd src/frontend src/backend sandbox
+SUBDIRS = src/iofwdutil src/iofwd src/frontend src/backend src/mgmt sandbox 
 
 VPATH := @top_srcdir@
 
