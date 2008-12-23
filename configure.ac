@@ -10,13 +10,32 @@ AC_CONFIG_HEADER([iofwd_config.h])
 AC_PROG_CC
 AC_PROG_CXX
 
+
+
+# library locations
+BMI_INCLUDE=
+BMI_LIBS=
+AC_ARG_WITH([bmi],[AS_HELP_STRING([--with-bmi], 
+                        [location of BMI library])],
+                   [bmidir=$withval])
+
+if test "x$bmidir" != "x" ; then
+    CPPFLAGS="$CPPFLAGS -I${bmidir}/include"
+    LDFLAGS="$LDFLAGS -L${bmidir}/lib"
+fi
+
+
+
 # Checks for libraries.
 AC_CHECK_LIB([bmi], [BMI_initialize])
 AC_CHECK_LIB([pthread], [pthread_exit])
 
+
 # Checks for header files.
 AC_HEADER_STDC
 AC_CHECK_HEADERS([stdlib.h string.h unistd.h])
+AC_CHECK_HEADERS([bmi.h], [], [AC_MSG_ERROR([Could not find bmi header!
+                  Maybe you need to use --with-bmi=location?])])
 
 # Checks for typedefs, structures, and compiler characteristics.
 AC_C_CONST
@@ -26,6 +45,19 @@ AC_TYPE_INT32_T
 # Checks for library functions.
 AC_CHECK_FUNCS([memset])
 
+# check for hints parameter in BMI functions
+AC_MSG_CHECKING([if BMI uses hints])
+AC_COMPILE_IFELSE(
+                  [#include <bmi.h>
+                   int main(int argc, char**args)
+                   { bmi_comm_send(0, 0, 0, 0, 0, 0, 0, 0); return 0; }],
+                  [AC_DEFINE([BMI_HINTS], 1, [If BMI supports hints])
+                   AC_MSG_RESULT([yes])], [AC_MSG_RESULT([no])])
+
+
+
+
+
 # find out some basic paths
 
 AC_CONFIG_FILES([
@@ -34,6 +66,7 @@ AC_CONFIG_FILES([
                  src/backend/module.mk
                  src/frontend/module.mk
                  src/iofwd/module.mk
+                 src/mgmt/module.mk
                  ])
 
 AC_OUTPUT

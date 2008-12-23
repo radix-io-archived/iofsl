@@ -1,8 +1,9 @@
 MODULE_APPS := client server
 
 MODULE_SOURCES_client := client.c bmi_comm.c
-#ADDINTLIBS_client := fake
+ADDLIBS_client := -lbmi
 
 MODULE_SOURCES_server := server.c bmi_comm.c
+ADDLIBS_server := -lbmi
 
 

@@ -7,6 +7,13 @@
  */
 
 #include "bmi_comm.h"
+#include "iofwd_config.h"
+
+#ifdef BMI_HINTS
+#define BMI_DEFHINT ,0
+#else
+#define BMI_DEFHINT
+#endif
 
 /* Synchronous call for sending messages using BMI */
 int bmi_comm_send(BMI_addr_t peer_addr, void *buffer, bmi_size_t buflen,
@@ -17,7 +24,7 @@ int bmi_comm_send(BMI_addr_t peer_addr, void *buffer, bmi_size_t buflen,
     bmi_error_code_t error_code;
 
     ret = BMI_post_send(&op_id, peer_addr, buffer, buflen, BMI_PRE_ALLOC, tag,
-                        NULL, context);
+                        NULL, context BMI_DEFHINT);
     if (ret < 0) {
         fprintf(stderr, "bmi_comm_send: BMI_post_send() failed.\n");
         exit(1);
@@ -52,7 +59,7 @@ int bmi_comm_recv(BMI_addr_t peer_addr, void *buffer, bmi_size_t buflen,
     bmi_error_code_t error_code;
 
     ret = BMI_post_recv(&op_id, peer_addr, buffer, buflen, &actual_size,
-                        BMI_PRE_ALLOC, tag, NULL, context);
+                        BMI_PRE_ALLOC, tag, NULL, context BMI_DEFHINT);
     if (ret < 0) {
         fprintf(stderr, "bmi_comm_recv: BMI_post_recv() failed.\n");
         exit(1);
@@ -81,7 +88,8 @@ int bmi_comm_sendu(BMI_addr_t peer_addr, void *buffer, bmi_size_t buflen,
     bmi_error_code_t error_code;
 
     ret = BMI_post_sendunexpected(&op_id, peer_addr, buffer, buflen,
-                                  BMI_PRE_ALLOC, tag, NULL, context);
+                                  BMI_PRE_ALLOC, tag, NULL, 
+                                  context BMI_DEFHINT);
     if (ret < 0) {
         fprintf(stderr, "bmi_comm_sendu: BMI_post_sendunexpected() failed.\n");
         exit(1);

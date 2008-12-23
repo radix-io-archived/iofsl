@@ -1,14 +1,14 @@
 #BMIDIR=$(HOME)/ioforward/install
 
-#CC = gcc
-#CXX = g++
-#LD = g++
-CPPFLAGS = 
-CFLAGS = -fno-inline  -g -Wall -I$(BMIDIR)/include
-CXXFLAGS = -fno-inline -g -Wall 
-ADDLIBS = -lbmi -lpthread
-CXXCPP = g++ -E 
-LDFLAGS = -L$(BMIDIR)/lib
+CC = @CC@
+CXX = @CXX@ 
+LD = @CC@
+CPPFLAGS = -I. @CPPFLAGS@
+CFLAGS = @CFLAGS@
+CXXFLAGS = @CXXFLAGS@
+ADDLIBS = @LIBS@
+CXXCPP = @CXXCPP@ 
+LDFLAGS = @LDFLAGS@
 
 SUBDIRS = src/iofwd src/frontend src/backend sandbox
 
