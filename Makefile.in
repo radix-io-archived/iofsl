@@ -70,7 +70,7 @@ APPS:=$$(sort $$(MODULE_APPS) $$(APPS))
 ARCHIVES:=$$(sort $$(MODULE_ARCHIVES) $$(ARCHIVES))
 
 ifneq ($$(MODULE_CONTAINSINCLUDE),0)
-CPPFLAGS+=-I$(PWD)/$(1)
+CPPFLAGS+=-I$(srcdir)/$(1)
 endif
 
 ifneq ($$(MODULE_CONTAINSLIBS),1)
