@@ -1,0 +1,3 @@
+MODULE_ARCHIVES := metacache
+MODULE_SOURCES_metacache := $(basename $(wildcard *.c))
+MODULE_CONTAINSINCLUDE := 1 

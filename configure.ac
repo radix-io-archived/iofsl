@@ -68,6 +68,8 @@ AC_CONFIG_FILES([
                  src/iofwd/module.mk
                  src/mgmt/module.mk
                  src/iofwdutil/module.mk
+                 src/metacache/module.mk
+                 src/cache/module.mk
                  ])
 
 AC_OUTPUT

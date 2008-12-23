@@ -10,7 +10,8 @@ ADDLIBS = @LIBS@
 CXXCPP = @CXXCPP@ 
 LDFLAGS = @LDFLAGS@
 
-SUBDIRS = src/iofwdutil src/iofwd src/frontend src/backend src/mgmt sandbox 
+SUBDIRS = src/iofwdutil src/iofwd src/frontend src/backend src/mgmt \
+	  src/metacache src/cache sandbox 
 
 VPATH := @top_srcdir@
 
