@@ -6,11 +6,14 @@ AC_INIT(FULL-PACKAGE-NAME, VERSION, BUG-REPORT-ADDRESS)
 AC_CONFIG_SRCDIR([src/iofwd/iofwd.c])
 AC_CONFIG_HEADER([iofwd_config.h])
 
+AC_LANG([C++])
+
 # Checks for programs.
 AC_PROG_CC
 AC_PROG_CXX
+AC_PROG_CXXCPP
 
-
+AC_REQUIRE_CPP
 
 # library locations
 BMI_INCLUDE=
@@ -50,7 +53,7 @@ AC_MSG_CHECKING([if BMI uses hints])
 AC_COMPILE_IFELSE(
                   [#include <bmi.h>
                    int main(int argc, char**args)
-                   { bmi_comm_send(0, 0, 0, 0, 0, 0, 0, 0); return 0; }],
+                   { BMI_post_send(0,0,0,0,BMI_PRE_ALLOC,0,0,0,0); return 0; }],
                   [AC_DEFINE([BMI_HINTS], 1, [If BMI supports hints])
                    AC_MSG_RESULT([yes])], [AC_MSG_RESULT([no])])
 
