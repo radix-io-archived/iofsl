@@ -73,6 +73,7 @@ AC_CONFIG_FILES([
                  src/iofwdutil/module.mk
                  src/metacache/module.mk
                  src/cache/module.mk
+                 src/fuse-zoid/module.mk
                  ])
 
 AC_OUTPUT

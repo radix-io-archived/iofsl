@@ -1,0 +1,3 @@
+MODULE_APPS:=fuse-zoid
+MODULE_SOURCES_fuse-zoid:= fuse-zoid.c bmi_comm.c zoidfs.c zoidfs_xdr.c
+ADDLIBS_fuse-zoid := -lbmi
