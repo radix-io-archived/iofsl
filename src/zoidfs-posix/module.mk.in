@@ -1,0 +1,12 @@
+MODULE_ARCHIVES = zoidfs-posix
+MODULE_SOURCES_zoidfs-posix = zoidfs-posix.c
+
+MODULE_APPS := fuse-zoid-posix
+MODULE_SOURCES_fuse-zoid-posix:= 
+ADDINTLIBS_fuse-zoid-posix := fuse-zoid zoidfs-posix
+
+
+
+# Automatically add -I$(thismoduledir) to CPPFLAGS
+MODULE_CONTAINSINCLUDE := 1
+

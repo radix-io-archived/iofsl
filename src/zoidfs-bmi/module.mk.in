@@ -1,0 +1,10 @@
+MODULE_ARCHIVES = zoidfs-bmi
+MODULE_SOURCES_zoidfs-bmi = bmi_comm.c  zoidfs.c  zoidfs_xdr.c
+
+MODULE_APPS := fuse-zoid-bmi
+MODULE_SOURCES_fuse-zoid-bmi :=
+ADDINTLIBS_fuse-zoid-bmi := zoidfs-bmi fuse-zoid
+
+# Automatically add -I$(thismoduledir) to CPPFLAGS
+MODULE_CONTAINSINCLUDE := 0
+

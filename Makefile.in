@@ -11,7 +11,8 @@ CXXCPP = @CXXCPP@
 LDFLAGS = @LDFLAGS@
 
 SUBDIRS = src/iofwdutil src/iofwd src/frontend src/backend src/mgmt \
-	  src/metacache src/cache sandbox src/fuse-zoid
+	  src/metacache src/cache sandbox src/fuse-zoid src/zoidfs-bmi \
+	  src/zoidfs-posix
 
 VPATH := @top_srcdir@
 

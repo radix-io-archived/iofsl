@@ -48,6 +48,14 @@ AC_TYPE_INT32_T
 # Checks for library functions.
 AC_CHECK_FUNCS([memset])
 
+
+# for fuse
+AC_SYS_LARGEFILE 
+PKG_CHECK_MODULES(FUSE, [fuse],,exit)
+CFLAGS="$CFLAGS $FUSE_CFLAGS -D_FILE_OFFSET_BITS=64"
+CPPFLAGS="$CPPFLAGS $FUSE_CFLAGS"
+LDFLAGS="$LDFLAGS $FUSE_LIBS"
+
 # check for hints parameter in BMI functions
 AC_MSG_CHECKING([if BMI uses hints])
 AC_COMPILE_IFELSE(
@@ -74,6 +82,8 @@ AC_CONFIG_FILES([
                  src/metacache/module.mk
                  src/cache/module.mk
                  src/fuse-zoid/module.mk
+                 src/zoidfs-posix/module.mk
+                 src/zoidfs-bmi/module.mk
                  ])
 
 AC_OUTPUT
