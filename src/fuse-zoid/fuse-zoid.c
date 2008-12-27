@@ -1,159 +1,180 @@
-#include <stdlib.h>
+/*
+    FUSE: Filesystem in Userspace
+    Copyright (C) 2001-2007  Miklos Szeredi <miklos@szeredi.hu>
+
+    This program can be distributed under the terms of the GNU GPL.
+    See the file COPYING.
+
+    gcc -Wall `pkg-config fuse --cflags --libs` zfuse_ll.c -o zfuse_ll
+*/
+
+#define FUSE_USE_VERSION 26
+
+#include <fuse_lowlevel.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <errno.h>
 #include <fcntl.h>
-#include <stddef.h>
-#include <fuse.h>
-#include <fuse_opt.h>
+#include <unistd.h>
+#include <assert.h>
 
+static const char *zfuse_str = "Hello World!\n";
+static const char *zfuse_name = "hello";
 
-#include "zoidfs.h"
-
-static const char *hello_str = "Hello World!\n";
-static const char *hello_path = "/hello";
-
-/** options for fuse_opt.h */
-struct options {
-   char* foo;
-   char* bar;
-   int baz;
-   double quux;
-}options;
-
-/** macro to define options */
-#define HELLOFS_OPT_KEY(t, p, v) { t, offsetof(struct options, p), v }
-
-/** keys for FUSE_OPT_ options */
-enum
+static int zfuse_stat(fuse_ino_t ino, struct stat *stbuf)
 {
-   KEY_VERSION,
-   KEY_HELP,
-};
-
-static struct fuse_opt hello_opts[] =
-{
-      HELLOFS_OPT_KEY("-foo %s", foo, 0),
-      HELLOFS_OPT_KEY("bar=%s", bar, 0),
-      HELLOFS_OPT_KEY("baz", baz, 1),
-
-      // #define FUSE_OPT_KEY(templ, key) { templ, -1U, key }
-         FUSE_OPT_KEY("-V",             KEY_VERSION),
-         FUSE_OPT_KEY("--version",      KEY_VERSION),
-         FUSE_OPT_KEY("-h",             KEY_HELP),
-         FUSE_OPT_KEY("--help",         KEY_HELP),
-         FUSE_OPT_END
-};
-
-
-static int hello_getattr(const char *path, struct stat *stbuf)
-{
-    int res = 0;
-
-    memset(stbuf, 0, sizeof(struct stat));
-    if(strcmp(path, "/") == 0) {
-        stbuf->st_mode = S_IFDIR || 0755;
+    stbuf->st_ino = ino;
+    switch (ino) {
+    case 1:
+        stbuf->st_mode = S_IFDIR | 0755;
         stbuf->st_nlink = 2;
-    }
-    else if(strcmp(path, hello_path) == 0) {
-        stbuf->st_mode = S_IFREG || 0444;
+        break;
+
+    case 2:
+        stbuf->st_mode = S_IFREG | 0444;
         stbuf->st_nlink = 1;
-        stbuf->st_size = strlen(hello_str);
+        stbuf->st_size = strlen(zfuse_str);
+        break;
+
+    default:
+        return -1;
     }
+    return 0;
+}
+
+static void zfuse_ll_getattr(fuse_req_t req, fuse_ino_t ino,
+                             struct fuse_file_info *fi)
+{
+    struct stat stbuf;
+
+    (void) fi;
+
+    memset(&stbuf, 0, sizeof(stbuf));
+    if (zfuse_stat(ino, &stbuf) == -1)
+        fuse_reply_err(req, ENOENT);
     else
-        res = -ENOENT;
-
-    return res;
+        fuse_reply_attr(req, &stbuf, 1.0);
 }
 
-static int hello_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
-                         off_t offset, struct fuse_file_info *fi)
+static void zfuse_ll_lookup(fuse_req_t req, fuse_ino_t parent, const char *name)
 {
-    (void) offset;
-    (void) fi;
+    struct fuse_entry_param e;
 
-    if(strcmp(path, "/") != 0)
-        return -ENOENT;
+    if (parent != 1 || strcmp(name, zfuse_name) != 0)
+        fuse_reply_err(req, ENOENT);
+    else {
+        memset(&e, 0, sizeof(e));
+        e.ino = 2;
+        e.attr_timeout = 1.0;
+        e.entry_timeout = 1.0;
+        zfuse_stat(e.ino, &e.attr);
 
-    filler(buf, ".", NULL, 0);
-    filler(buf, "..", NULL, 0);
-    filler(buf, hello_path + 1, NULL, 0);
-
-    return 0;
+        fuse_reply_entry(req, &e);
+    }
 }
 
-static int hello_open(const char *path, struct fuse_file_info *fi)
-{
-    if(strcmp(path, hello_path) != 0)
-        return -ENOENT;
-
-    if((fi->flags & 3) != O_RDONLY)
-        return -EACCES;
-
-    return 0;
-}
-
-static int hello_read(const char *path, char *buf, size_t size, off_t offset,
-                      struct fuse_file_info *fi)
-{
-    size_t len;
-    (void) fi;
-    if(strcmp(path, hello_path) != 0)
-        return -ENOENT;
-
-    len = strlen(hello_str);
-    if (offset < len) {
-        if (offset + size > len)
-            size = len - offset;
-        if(options.foo || options.bar || options.baz){
-         printf("fooooo bar !!\n");
-         printf("foo: \"%s\" bar: \"%s\" baz: \"%d\" quux: \"%f\"\n",
-            options.foo, options.bar, options.baz, options.quux);
-        }
-        else
-
-        memcpy(buf, hello_str + offset, size);
-    } else
-        size = 0;
-
-    return size;
-}
-
-
-/** This tells FUSE how to do every operation */
-static struct fuse_operations hello_oper = {
-    .getattr   = hello_getattr,
-//    .readdir   = hello_readdir,
-    .open   = hello_open,
-    .read   = hello_read,
+struct dirbuf {
+    char *p;
+    size_t size;
 };
 
+static void dirbuf_add(fuse_req_t req, struct dirbuf *b, const char *name,
+                       fuse_ino_t ino)
+{
+    struct stat stbuf;
+    size_t oldsize = b->size;
+    b->size += fuse_add_direntry(req, NULL, 0, name, NULL, 0);
+    b->p = (char *) realloc(b->p, b->size);
+    memset(&stbuf, 0, sizeof(stbuf));
+    stbuf.st_ino = ino;
+    fuse_add_direntry(req, b->p + oldsize, b->size - oldsize, name, &stbuf,
+                      b->size);
+}
 
+#define min(x, y) ((x) < (y) ? (x) : (y))
 
+static int reply_buf_limited(fuse_req_t req, const char *buf, size_t bufsize,
+                             off_t off, size_t maxsize)
+{
+    if (off < bufsize)
+        return fuse_reply_buf(req, buf + off, min(bufsize - off, maxsize));
+    else
+        return fuse_reply_buf(req, NULL, 0);
+}
 
+static void zfuse_ll_readdir(fuse_req_t req, fuse_ino_t ino, size_t size,
+                             off_t off, struct fuse_file_info *fi)
+{
+    (void) fi;
+
+    if (ino != 1)
+        fuse_reply_err(req, ENOTDIR);
+    else {
+        struct dirbuf b;
+
+        memset(&b, 0, sizeof(b));
+        dirbuf_add(req, &b, ".", 1);
+        dirbuf_add(req, &b, "..", 1);
+        dirbuf_add(req, &b, zfuse_name, 2);
+        reply_buf_limited(req, b.p, b.size, off, size);
+        free(b.p);
+    }
+}
+
+static void zfuse_ll_open(fuse_req_t req, fuse_ino_t ino,
+                         struct fuse_file_info *fi)
+{
+    if (ino != 2)
+        fuse_reply_err(req, EISDIR);
+    else if ((fi->flags & 3) != O_RDONLY)
+        fuse_reply_err(req, EACCES);
+    else
+        fuse_reply_open(req, fi);
+}
+
+static void zfuse_ll_read(fuse_req_t req, fuse_ino_t ino, size_t size,
+                         off_t off, struct fuse_file_info *fi)
+{
+    (void) fi;
+
+    assert(ino == 2);
+    reply_buf_limited(req, zfuse_str, strlen(zfuse_str), off, size);
+}
+
+static struct fuse_lowlevel_ops zfuse_ll_oper = {
+    .lookup     = zfuse_ll_lookup,
+    .getattr	= zfuse_ll_getattr,
+    .readdir    = zfuse_ll_readdir,
+    .open       = zfuse_ll_open,
+    .read	= zfuse_ll_read,
+};
 
 int main(int argc, char *argv[])
 {
-        int ret;
-        struct fuse_args args = FUSE_ARGS_INIT(argc, argv);
+    struct fuse_args args = FUSE_ARGS_INIT(argc, argv);
+    struct fuse_chan *ch;
+    char *mountpoint;
+    int err = -1;
 
+    if (fuse_parse_cmdline(&args, &mountpoint, NULL, NULL) != -1 &&
+        (ch = fuse_mount(mountpoint, &args)) != NULL) {
+        struct fuse_session *se;
 
+        se = fuse_lowlevel_new(&args, &zfuse_ll_oper, sizeof(zfuse_ll_oper),
+                               NULL);
+        if (se != NULL) {
+            if (fuse_set_signal_handlers(se) != -1) {
+                fuse_session_add_chan(se, ch);
+                err = fuse_session_loop(se);
+                fuse_remove_signal_handlers(se);
+                fuse_session_remove_chan(ch);
+            }
+            fuse_session_destroy(se);
+        }
+        fuse_unmount(mountpoint, ch);
+    }
+    fuse_opt_free_args(&args);
 
-      /* clear structure that holds our options */
-      memset(&options, 0, sizeof(struct options));
-
-        if (fuse_opt_parse(&args, &options, hello_opts, NULL) == -1)
-         /** error parsing options */
-         return -1;
-
-
-        ret = fuse_main(args.argc, args.argv, &hello_oper);
-
-        if (ret) printf("\n");
-
-      /** free arguments */
-        fuse_opt_free_args(&args);
-
-   return ret;
+    return err ? 1 : 0;
 }
-

@@ -1,5 +1,6 @@
 #include <errno.h>
 #include "zoidfs.h"
+#include <assert.h>
 
 /*
  * zoidfs_null
