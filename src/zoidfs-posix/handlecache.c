@@ -1,105 +1,76 @@
 #include "handlecache.h"
-#include "iofwd-hash.h"
+#include "iofwdhash.h"
 #include "gen-locks.h"
 
-struct hc_node; 
+/*
+ * Implement handle cache, emulating stateless open for a POSIX filesystem 
+ *
+ * Automatically closes&reopens files if neded.
+ *
+ * Is optimized for cases where the open handle limit will not be reached.
+ *
+ */
 
-typedef struct
+
+struct hc_node
 {
    const char * filename; 
    int write; 
    int read; 
-   hc_node * next; 
    hc_value_t  handle; 
-} hc_node; 
+   unsigned int lastused; 
+};
 
 
 /*==========================================*/
-static hc_node * hc_cache = 0;  
+static unsigned int hc_counter = 0; 
 static handlecache_open_t hc_openfunc = 0; 
 static handlecache_close_t hc_closefunc = 0; 
-static qhash_table * hc_hash = 0; 
+static iofwdh_t hc_hash; 
 /*==========================================*/
 
-static int hc_hash_comparefunc (void * key, struct qhash_head * link)
+static int hc_hash_comparefunc (void * user, const void * key1, 
+      const void * key2)
 {
+   return key1 == key2; 
 }
 
-static int hc_hash_hashfunc (void * key, int table_size)
+static int hc_hash_hashfunc (void * user, int size, const void * key)
 {
-   return (*(const int*) (key)) % table_size; 
-}
-
-
-static hc_node * handlecache_newnode ()
-{
-   return calloc (1, sizeof (hc_node)); 
-}
-
-static void handlecache_freenode (const hc_node * node)
-{
-   if (!node)
-      return;
-   hc_closefunc (&node->handle); 
-   free (node->name); 
-   free (node); 
+   /* long should be same size as pointer on all architectures */
+   return (long) key % (int) size; 
 }
 
 int handlecache_init (int size, handlecache_open_t openfunc, 
       handlecache_close_t closefunc)
 {
    /* alloc hash table */
-   hc_hash = qhash_table (hc_hash_comparefunc,
-         hc_hash_hashfunc, 131); 
-
-   /* alloc first node */ 
-   hc_node = handlecache_newnode (); 
+   hc_hash = iofwdh_init (131, hc_hash_comparefunc,
+         hc_hash_hashfunc, 0); 
 }
 
 int handlecache_destroy ()
 {
-   // close all remaining handles
-   hc_node * cur = hc_cache;
-   while (cur)
-   {
-      hc_node * next = cur; 
-      handlecache_freenode(cur); 
-      cur = next; 
-   }
-   hc_cache = 0; 
 }
 
 hc_value_t  handlecache_get (const char * path, int flags)
 {
-   // walk list
-   const hc_node * cur = hc_cache;
-   const hc_node * last = 0; 
-   int count = 0; 
-   while (cur)
-   {
-      if (cur->name && !strcmp(cur->name, path))
-      {
-         /* found */
-
-
-         if ((cur->flags & flags) == flags)
-                return cur->handle; 
-         /* flags do not match */
-         hc_openfunc (path, &cur->handle, flags, true); 
-      }
-      cur = cur->next; 
-      ++count; 
-   }
-   /* not found */
-   if (count == hc_cache_size)
-   {
-      /* need to make room first */
-      
-   }
-
-   cur = handlecache_newnode ();
-   cur->name = strdup (path); 
-   cur-> 
 }
 
 
+static iofwdbool_t handlecache_makeroom_examine (void * user, 
+      const void * key, void * data)
+{
+
+   return TRUE; 
+}
+
+/*
+ * Walk the whole hash table and find the least recently used
+ * file handle (and close it)
+ */
+static void handlecache_makeroom ()
+{
+
+
+}

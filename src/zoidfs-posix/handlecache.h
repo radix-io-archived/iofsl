@@ -2,6 +2,7 @@
 #define ZOIDFS_POSIX_HANDLECACHE_H
 
 #include <stdio.h>
+#include "iofwdbool.h"
 
 /**
  * Make sure to return the same file handle 
@@ -11,10 +12,10 @@
 
 typedef void *  hc_value_t; 
 
-enum { HC_READ = 0x01, HC_WRITE = 0x02; };
+enum { HC_READ = 0x01, HC_WRITE = 0x02 };
 
 typedef int (*handlecache_open_t) (const char * path, hc_value_t * dst, int
-      flags, bool upgrade);
+      flags, iofwdbool_t upgrade);
 
 typedef int (*handlecache_close_t) (hc_value_t * dst); 
 
@@ -23,7 +24,7 @@ int handlecache_init (int size, handlecache_open_t openfunc,
 
 int handlecache_destroy (); 
 
-hc_value_t * handlecache_get (const char * path);
+hc_value_t handlecache_get (const char * path, int flags);
 
 
 #endif
