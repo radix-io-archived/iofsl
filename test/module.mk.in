@@ -1,0 +1,6 @@
+MODULE_APPS := testhash
+
+MODULE_SOURCES_testhash := testhash.c
+ADDINTLIBS_testhash := iofwdutil
+
+

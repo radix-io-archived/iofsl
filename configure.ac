@@ -84,6 +84,7 @@ AC_CONFIG_FILES([
                  src/fuse-zoid/module.mk
                  src/zoidfs-posix/module.mk
                  src/zoidfs-bmi/module.mk
+                 test/module.mk
                  ])
 
 AC_OUTPUT
