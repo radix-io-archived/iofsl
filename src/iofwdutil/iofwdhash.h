@@ -24,5 +24,10 @@ iofwdbool_t iofwdh_lookup (iofwdh_t table, void * key, void ** data);
 void iofwdh_add (iofwdh_t table, void * key, void * data);
 iofwdbool_t iofwdh_remove (iofwdh_t table, void * key, void **data); 
 
+typedef iofwdbool_t (*iofwdh_walkfunc_t) (void * user, void * funcuser, 
+      const void * key, void * data); 
+
+iofwdbool_t iofwdh_walktable (iofwdh_t table, iofwdh_walkfunc_t func, 
+      void * funcuser);
 
 #endif

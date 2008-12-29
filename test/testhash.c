@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <assert.h>
 #include "iofwdhash.h"
 
 #define TABLESIZE 131
@@ -27,6 +28,16 @@ inline void check (int cond, const char * str)
    }
 }
 
+static iofwdbool_t walkfunc (void * user, void * funcuser, 
+      const void * key, void * data)
+{
+   int * table = (int*) funcuser; 
+   int pos = (int*) key - (int*) user; 
+   assert (pos < LOOPCOUNT && pos >= 0); 
+   ++table[pos]; 
+   return TRUE; 
+}
+
 int main (int argc, char ** args)
 {
    int i; 
@@ -36,15 +47,18 @@ int main (int argc, char ** args)
 
    printf ("Checking iofwdhash..."); 
    fflush (stdout); 
-   table = iofwdh_init (131, comparefunc, hashfunc, 0);
 
-   /* fill table */
    numbers = (int *) malloc (LOOPCOUNT * sizeof(int));
+   
+   table = iofwdh_init (131, comparefunc, hashfunc, numbers);
+   
+   /* fill table */
    for (i=0; i<LOOPCOUNT; ++i)
    {
       numbers[i] = rand(); 
       iofwdh_add (table, &numbers[i], &numbers[i]);
    }
+
 
    /* check if all numbers can be found */
    for (i=0; i<LOOPCOUNT; ++i)
@@ -54,6 +68,17 @@ int main (int argc, char ** args)
             "find back previously stored item");
       check (data == &numbers[i], "if associated data value is correct");
    }
+
+   /* check walkfunc */
+   int * checktable = calloc (sizeof(int), LOOPCOUNT); 
+   check (iofwdh_walktable (table, walkfunc, checktable), "if walkfunc works");
+
+   for (i=0; i<LOOPCOUNT; ++i)
+   {
+      check (checktable[i] == 1, "if all elements were visited"); 
+   }
+   free (checktable); 
+   
 
    /* check count */
    check (iofwdh_itemcount (table)==LOOPCOUNT, "if count is correct"); 

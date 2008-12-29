@@ -121,3 +121,19 @@ iofwdbool_t iofwdh_remove (iofwdh_t table, void * key, void ** data)
    return FALSE; 
 }
 
+iofwdbool_t iofwdh_walktable (iofwdh_t table, iofwdh_walkfunc_t func,
+      void * funcuser)
+{
+   int i; 
+   for (i=0; i<table->size; ++i)
+   {
+      iofwdh_node * n = table->buckets[i];
+      while (n)
+      {
+         if (!func (table->user, funcuser, n->key, n->data))
+            return FALSE; 
+         n=n->next; 
+      }
+   }
+   return TRUE; 
+}
