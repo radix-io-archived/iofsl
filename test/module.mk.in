@@ -1,6 +1,9 @@
-MODULE_APPS := testhash
+MODULE_APPS := testhash handlecache_test
 
 MODULE_SOURCES_testhash := testhash.c
 ADDINTLIBS_testhash := iofwdutil
+
+MODULE_SOURCES_handlecache_test := handlecache-test.c
+ADDINTLIBS_handlecache_test := zoidfs-posix iofwdutil 
 
 

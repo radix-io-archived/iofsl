@@ -1,13 +1,14 @@
 #include "handlecache.h"
-#include "iofwdhash.h"
+#include "trie.h"
 #include "gen-locks.h"
 
 /*
  * Implement handle cache, emulating stateless open for a POSIX filesystem 
  *
- * Automatically closes&reopens files if neded.
+ * Automatically closes&reopens files if needed.
  *
- * Is optimized for cases where the open handle limit will not be reached.
+ * NOTE: Handles are only valid in the process that called 'lookup'
+ *
  *
  */
 
@@ -15,8 +16,7 @@
 struct hc_node
 {
    const char * filename; 
-   int write; 
-   int read; 
+   int flags; 
    hc_value_t  handle; 
    unsigned int lastused; 
 };
@@ -26,34 +26,31 @@ struct hc_node
 static unsigned int hc_counter = 0; 
 static handlecache_open_t hc_openfunc = 0; 
 static handlecache_close_t hc_closefunc = 0; 
-static iofwdh_t hc_hash; 
+static unsigned int hc_maxopen = 100; 
 /*==========================================*/
-
-static int hc_hash_comparefunc (void * user, const void * key1, 
-      const void * key2)
-{
-   return key1 == key2; 
-}
-
-static int hc_hash_hashfunc (void * user, int size, const void * key)
-{
-   /* long should be same size as pointer on all architectures */
-   return (long) key % (int) size; 
-}
 
 int handlecache_init (int size, handlecache_open_t openfunc, 
       handlecache_close_t closefunc)
 {
-   /* alloc hash table */
-   hc_hash = iofwdh_init (131, hc_hash_comparefunc,
-         hc_hash_hashfunc, 0); 
+   hc_openfunc = openfunc; 
+   hc_closefunc = closefunc; 
+
+   if (size)
+   {
+      hc_maxopen = size; 
+   }
+
+   return TRUE; 
 }
 
-int handlecache_destroy ()
+
+inline static void handlecache_usenode (struct hc_node * node)
 {
+   node->lastused = ++hc_counter; 
 }
 
-hc_value_t  handlecache_get (const char * path, int flags)
+int  handlecache_get (const char * path, int flags, hc_item_handle_t * handle,
+      hc_value_t * user)
 {
 }
 

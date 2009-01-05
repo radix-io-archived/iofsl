@@ -10,7 +10,12 @@
  * Automatically close / reopen files when needed.
  */
 
-typedef void *  hc_value_t; 
+
+/* The file handle type of the client */
+typedef FILE *  hc_value_t; 
+
+/* Our handle type */
+typedef void * hc_item_handle_t; 
 
 enum { HC_READ = 0x01, HC_WRITE = 0x02 };
 
@@ -24,7 +29,11 @@ int handlecache_init (int size, handlecache_open_t openfunc,
 
 int handlecache_destroy (); 
 
-hc_value_t handlecache_get (const char * path, int flags);
+/* Lookup a handle; store in handle; return user handle associated with file */ 
+int handlecache_get (const char * path, int flags, hc_item_handle_t * handle,
+      hc_value_t * user);
 
+/* Make sure the handle is valid; return user handle associated with file */ 
+int handlecache_validate (const hc_item_handle_t * handle, hc_value_t * user); 
 
 #endif

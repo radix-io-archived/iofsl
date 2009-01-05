@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <assert.h>
 #include "iofwdhash.h"
+#include "checks.h"
 
 #define TABLESIZE 131
 #define LOOPCOUNT 1000
@@ -18,15 +19,6 @@ int hashfunc (void * user, int size, const void * key)
    return *(const int *)key % size; 
 }
 
-
-inline void check (int cond, const char * str)
-{
-   if (!cond)
-   {
-      fprintf (stderr, "Test failed: %s!", str); 
-      exit (1); 
-   }
-}
 
 static iofwdbool_t walkfunc (void * user, void * funcuser, 
       const void * key, void * data)
@@ -64,33 +56,33 @@ int main (int argc, char ** args)
    for (i=0; i<LOOPCOUNT; ++i)
    {
       int * data; 
-      check (iofwdh_lookup (table, &numbers[i], (void**) &data), 
+      test_check (iofwdh_lookup (table, &numbers[i], (void**) &data), 
             "find back previously stored item");
-      check (data == &numbers[i], "if associated data value is correct");
+      test_check (data == &numbers[i], "if associated data value is correct");
    }
 
    /* check walkfunc */
    int * checktable = calloc (sizeof(int), LOOPCOUNT); 
-   check (iofwdh_walktable (table, walkfunc, checktable), "if walkfunc works");
+   test_check (iofwdh_walktable (table, walkfunc, checktable), "if walkfunc works");
 
    for (i=0; i<LOOPCOUNT; ++i)
    {
-      check (checktable[i] == 1, "if all elements were visited"); 
+      test_check (checktable[i] == 1, "if all elements were visited"); 
    }
    free (checktable); 
    
 
    /* check count */
-   check (iofwdh_itemcount (table)==LOOPCOUNT, "if count is correct"); 
+   test_check (iofwdh_itemcount (table)==LOOPCOUNT, "if count is correct"); 
 
    /* remove some numbers */
    for (i=0; i<(LOOPCOUNT2); ++i)
    {
-      check (iofwdh_remove (table, &numbers[i], 0), "Remove failed!");
+      test_check (iofwdh_remove (table, &numbers[i], 0), "Remove failed!");
    }
    
    /* check count */
-   check (iofwdh_itemcount (table)==(LOOPCOUNT-LOOPCOUNT2), "if count is correct"); 
+   test_check (iofwdh_itemcount (table)==(LOOPCOUNT-LOOPCOUNT2), "if count is correct"); 
 
 
    /* See if lookup still works */
@@ -107,7 +99,7 @@ int main (int argc, char ** args)
          }
       }
 
-      check (iofwdh_lookup (table, &numbers[i], 0) == exists,
+      test_check (iofwdh_lookup (table, &numbers[i], 0) == exists,
             "if remove worked"); 
    }
 
