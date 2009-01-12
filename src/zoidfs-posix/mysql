@@ -1,0 +1,9 @@
+CREATE TABLE `filemap` (
+  `handle` int(11) NOT NULL auto_increment,
+  `filename` varchar(256) NOT NULL,
+  PRIMARY KEY  (`handle`),
+  KEY `nameindex` (`filename`)
+)
+
+CREATE INDEX 'nameindex' ON TABLE filemap (filename)
+

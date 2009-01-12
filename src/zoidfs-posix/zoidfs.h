@@ -62,6 +62,8 @@ typedef struct
 /* The cookie is an opaque object of 4 bytes */
 typedef uint32_t zoidfs_dirent_cookie_t;
 
+/* first cookie value?? */ 
+
 typedef struct
 {
     char name[ZOIDFS_NAME_MAX+1];
@@ -250,6 +252,9 @@ int zoidfs_mkdir(const zoidfs_handle_t * parent_handle /* in:ptr:nullok */,
                  const zoidfs_sattr_t * attr /* in:ptr */,
                  zoidfs_cache_hint_t * parent_hint /* out:ptr:nullok */);
 
+/* question: - cookie? pointer? 
+ *           - entries: in / inout / ?
+ */
 int zoidfs_readdir(const zoidfs_handle_t * parent_handle /* in:ptr */,
                    zoidfs_dirent_cookie_t cookie /* in:obj */,
                    int * entry_count /* inout:ptr */,

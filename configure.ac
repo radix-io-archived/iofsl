@@ -32,7 +32,7 @@ fi
 # Checks for libraries.
 AC_CHECK_LIB([bmi], [BMI_initialize])
 AC_CHECK_LIB([pthread], [pthread_exit])
-
+AC_CHECK_LIB([readline], [readline])
 
 # Checks for header files.
 AC_HEADER_STDC
@@ -70,6 +70,21 @@ AC_COMPILE_IFELSE(
 dnl
 dnl configure.in helper macros
 dnl 
+
+persist_extra=
+
+
+dnl DB
+
+
+AC_CHECK_HEADERS([db.h], [DB_OK=1; AC_DEFINE([HAVE_DB],[1],[If db.h is available])],
+            [AC_MSG_ERROR([Could not find db header!])])
+if test x$DB_OK == x1
+then
+        persist_extra="$persist_extra persist-db.c"
+fi
+
+dnl MYSQL 
 AC_MSG_CHECKING(for mysql_config executable)
 
 AC_ARG_WITH(mysql, [  --with-mysql=PATH path to mysql_config binary or mysql prefix dir], [
@@ -107,11 +122,18 @@ else
  CFLAGS="$CFLAGS $ADDFLAGS"    
  CXXFLAGS="$CXXFLAGS $ADDFLAGS"    
 
- LDFLAGS="$LDFLAGS "`$MYSQL_CONFIG --libs_r`" -lndbclient -lmystrings -lmysys"
- LDFLAGS="$LDFLAGS "`$MYSQL_CONFIG --libs_r`" -lndbclient -lmystrings"
+dnl LDFLAGS="$LDFLAGS "`$MYSQL_CONFIG --libs_r`" -lndbclient -lmystrings -lmysys"
+dnl LDFLAGS="$LDFLAGS "`$MYSQL_CONFIG --libs_r`" -lndbclient -lmystrings"
+ LDFLAGS="$LDFLAGS "`$MYSQL_CONFIG --libs_r`" "
  
  AC_MSG_RESULT($MYSQL_CONFIG)
+
+ AC_DEFINE([HAVE_MYSQL], 1, [If MYSQL is enabled])
+
+ persist_extra="$persist_extra persist-mysql.c"
 fi  
+
+AC_SUBST([persist_extra])
 
 # find out some basic paths
 

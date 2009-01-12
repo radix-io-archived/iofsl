@@ -6,6 +6,12 @@
 /* Define to 1 if you have the <bmi.h> header file. */
 #undef HAVE_BMI_H
 
+/* If db.h is available */
+#undef HAVE_DB
+
+/* Define to 1 if you have the <db.h> header file. */
+#undef HAVE_DB_H
+
 /* Define to 1 if you have the <inttypes.h> header file. */
 #undef HAVE_INTTYPES_H
 
@@ -15,11 +21,17 @@
 /* Define to 1 if you have the `pthread' library (-lpthread). */
 #undef HAVE_LIBPTHREAD
 
+/* Define to 1 if you have the `readline' library (-lreadline). */
+#undef HAVE_LIBREADLINE
+
 /* Define to 1 if you have the <memory.h> header file. */
 #undef HAVE_MEMORY_H
 
 /* Define to 1 if you have the `memset' function. */
 #undef HAVE_MEMSET
+
+/* If MYSQL is enabled */
+#undef HAVE_MYSQL
 
 /* Define to 1 if you have the <stdint.h> header file. */
 #undef HAVE_STDINT_H
