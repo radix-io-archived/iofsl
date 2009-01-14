@@ -1,10 +1,12 @@
 #ifndef IOFWD_POSIX_PERSIST_H
 #define IOFWD_POSIX_PERSIST_H
 
+#include <stdint.h>
+
 
 enum { PERSIST_HANDLE_MAXNAME = 256 };
 
-typedef unsigned long persist_handle_t;
+typedef uint64_t persist_handle_t;
 enum { PERSIST_HANDLE_INVALID = 0 }; 
 
 
@@ -14,16 +16,18 @@ typedef int (*persist_filler_t) (const char * entry, const persist_handle_t *
 typedef struct
 {
    /* buf should be at least PERSIST_HANDLE_MAXNAME;
-    * return number of characters (including terminating zero)
+    * return number of characters (excluding terminating zero)
     * written, 0 if not found */
    int (*persist_handle_to_filename) (void * data, persist_handle_t handle, char * buf, unsigned
          int bufsize);
 
-   /* lookup handle for filename. Return PERSIST_HANDLE_INVALID if not found */
-   persist_handle_t (*persist_filename_to_handle) (void * data, const char * filename);  
+   /* lookup handle for filename. Return PERSIST_HANDLE_INVALID if not found
+    * unless autoadd is set in which case a new handle is assigned */
+   persist_handle_t (*persist_filename_to_handle) (void * data, const char * filename, int autoadd);  
 
-   /* Remove mapping for the file */
-   void (*persist_purge) (void * data, const char * filename); 
+   /* Remove mapping for the file; if prefix is nonzero, remove all files
+    * starting with that prefix (e.g. directory removal)  */
+   void (*persist_purge) (void * data, const char * filename, int prefix); 
    
    
    /* Return all DB entries in directory dir (and call filler to store them)
@@ -64,15 +68,16 @@ static inline int persist_handle_to_filename (persist_op_t * con, persist_handle
 }
 
 static inline persist_handle_t persist_filename_to_handle (persist_op_t * con, const
-      char * filename)
+      char * filename, int autoadd)
 {
-   return con->persist_filename_to_handle (con->data, filename); 
+   return con->persist_filename_to_handle (con->data, filename, autoadd); 
 }
 
 
-static inline void persist_purge (persist_op_t * con, const char * filename)
+static inline void persist_purge (persist_op_t * con, const char * filename,
+      int prefix)
 {
-   con->persist_purge (con->data, filename); 
+   con->persist_purge (con->data, filename, prefix); 
 }
 
 
