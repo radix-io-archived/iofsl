@@ -3,6 +3,8 @@
 #include <stdio.h>
 #include "persist.h"
 
+#include "iofwd_config.h"
+
 #ifdef HAVE_DB
 #include "persist-db.h"
 #endif
@@ -27,10 +29,16 @@ persist_op_t * persist_init (const char * initstr)
 
    persist_op_t * ret = calloc (sizeof (persist_op_t), 1);
 
+
    char * saveptr = 0; 
    const persist_module_t ** module = persist_modules; 
 
-   const int initlen = strlen (initstr); 
+   const int initlen = (initstr ? strlen (initstr) : 0); 
+   
+   if (!initstr)
+      return 0; 
+
+
    while (*module)
    {
       const int len = strlen ((*module)->name); 
@@ -47,7 +55,7 @@ persist_op_t * persist_init (const char * initstr)
    }
 
    (*module)->initcon (ret); 
-   ret->data = ret->persist_init (initstr); 
+   ret->data = ret->persist_init (initstr + strlen((*module)->name)); 
    return ret; 
 }
 

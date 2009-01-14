@@ -2,10 +2,12 @@ MODULE_ARCHIVES = zoidfs-posix zoidfs-persist
 MODULE_SOURCES_zoidfs-posix := zoidfs-posix.c handlecache.c 
 
 MODULE_SOURCES_zoidfs-persist := persist.c @persist_extra@
+ADDLIBS_zoidfs-persist := -ldb
 
 MODULE_APPS := fuse-zoid-posix
 MODULE_SOURCES_fuse-zoid-posix:= 
 ADDINTLIBS_fuse-zoid-posix := fuse-zoid zoidfs-posix zoidfs-persist
+ADDLIBS_zoidfs-posix := -ldb
 
 
 

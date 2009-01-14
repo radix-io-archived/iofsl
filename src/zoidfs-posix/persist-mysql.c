@@ -9,6 +9,9 @@
 static MYSQL  * persist_mysql; 
 /*=========================*/
 
+persist_module_t persist_mysql_module = { 
+   .name = "mysql://" }; 
+
 static void persist_mysql_purge (const char * filename)
 {
 }
