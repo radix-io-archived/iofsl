@@ -1,4 +1,5 @@
 #include <stdlib.h>
+#include <assert.h>
 #include <string.h>
 #include <stdio.h>
 #include "persist.h"
@@ -29,8 +30,6 @@ persist_op_t * persist_init (const char * initstr)
 
    persist_op_t * ret = calloc (sizeof (persist_op_t), 1);
 
-
-   char * saveptr = 0; 
    const persist_module_t ** module = persist_modules; 
 
    const int initlen = (initstr ? strlen (initstr) : 0); 
@@ -63,4 +62,20 @@ void persist_done (persist_op_t * con)
 {
    con->persist_cleanup (con->data); 
    free (con); 
+}
+
+void persist_handle_to_text (persist_handle_t handle, char * buf, int size)
+{
+   snprintf (buf, size, "%llx", (long long unsigned) handle); 
+}
+
+persist_handle_t persist_text_to_handle (const char * buf)
+{
+   persist_handle_t handle= 0;
+   unsigned long long l; 
+   if (sscanf (buf, "%llx", &l)<1)
+      return PERSIST_HANDLE_INVALID; 
+   handle =l ; 
+   assert (sizeof(handle) == sizeof(l)); 
+   return handle; 
 }

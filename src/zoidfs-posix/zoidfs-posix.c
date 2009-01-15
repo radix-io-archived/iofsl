@@ -1,3 +1,4 @@
+#define _LARGEFILE64_SOURCE
 #include <errno.h>
 #include <stdio.h>
 #include <sys/types.h>
@@ -5,6 +6,8 @@
 #include <fcntl.h>
 #include <assert.h>
 #include <string.h>
+#include <sys/types.h>
+#include <unistd.h>
 #include "zoidfs.h"
 
 #define mymin(a,b) ((a)<(b) ? (a):(b))
@@ -36,7 +39,7 @@ static inline const char * zoidfs_resolve_path (const zoidfs_handle_t * handle,
 {
    static char buf[ZOIDFS_PATH_MAX+1]; 
    int ret; 
-   zoidfs_real_handle_t rhandle; 
+   //zoidfs_real_handle_t rhandle; 
 
    if (full_path)
       return full_path; 
@@ -78,7 +81,7 @@ void zoidfs_null(void)
  */
 int zoidfs_getattr(const zoidfs_handle_t *handle, zoidfs_attr_t *attr) 
 {
-   int f = handle_to_internal (handle); 
+   //int f = handle_to_internal (handle); 
 
    zoidfs_debug ("getattr\n"); 
 
@@ -271,7 +274,7 @@ int zoidfs_readdir(const zoidfs_handle_t *parent_handle,
  */
 int zoidfs_resize(const zoidfs_handle_t *handle, uint64_t size) 
 {
-   int file = handle_to_internal (handle); 
+   //int file = handle_to_internal (handle); 
    
 
     return -ENOSYS;

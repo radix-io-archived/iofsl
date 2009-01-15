@@ -342,7 +342,7 @@ static int zfuse_open(const char *path, struct fuse_file_info *fi)
 static int zfuse_write (const char * path, const char * buf, size_t size, 
       off_t offset, struct fuse_file_info * fi)
 {
-   const zoidfs_handle_t * handle = zfuse_handle_lookup (fi->fh); 
+   //const zoidfs_handle_t * handle = zfuse_handle_lookup (fi->fh); 
    zfuse_debug ("Writing to handle %lu\n", (unsigned long) fi->fh); 
    return size; 
 }
@@ -350,7 +350,7 @@ static int zfuse_write (const char * path, const char * buf, size_t size,
 static int zfuse_read(const char *path, char *buf, size_t size, off_t offset,
                       struct fuse_file_info *fi)
 {
-   const zoidfs_handle_t * handle = zfuse_handle_lookup (fi->fh); 
+   //const zoidfs_handle_t * handle = zfuse_handle_lookup (fi->fh); 
    zfuse_debug ("Reading from handle %lu\n", (unsigned long) fi->fh); 
    return -ENOSYS;
 }
@@ -386,7 +386,7 @@ static int zfuse_listxattr (const char * file, char * data, size_t size)
 {
    const int needed = strlen (ZFUSE_XATTR_ZOIDFSHANDLE)+1; 
 
-   zfuse_debug ("zfuse_listxattr: %s, datasize=%i\n", file, size); 
+   zfuse_debug ("zfuse_listxattr: %s, datasize=%i\n", file, (int)size); 
 
    if (!size)
       return needed; 
@@ -425,6 +425,8 @@ static struct fuse_operations hello_oper = {
     .readdir	= zfuse_readdir,
     .open	= zfuse_open,
     .read	= zfuse_read,
+    .write      = zfuse_write,
+    .truncate   = zfuse_truncate, 
     .rmdir      = zfuse_rmdir,
     .mkdir      = zfuse_mkdir,
     .init       = zfuse_init,

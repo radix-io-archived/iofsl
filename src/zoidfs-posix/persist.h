@@ -27,7 +27,7 @@ typedef struct
 
    /* Remove mapping for the file; if prefix is nonzero, remove all files
     * starting with that prefix (e.g. directory removal)  */
-   void (*persist_purge) (void * data, const char * filename, int prefix); 
+   int (*persist_purge) (void * data, const char * filename, int prefix); 
    
    
    /* Return all DB entries in directory dir (and call filler to store them)
@@ -88,6 +88,10 @@ persist_op_t *  persist_init (const char * initstr);
 void persist_done (persist_op_t * con); 
 
 
+void persist_handle_to_text (persist_handle_t handle, char * buf, int
+      bufsize); 
+
+persist_handle_t persist_text_to_handle (const char * buf); 
 #endif
 
 

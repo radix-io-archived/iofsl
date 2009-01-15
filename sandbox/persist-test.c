@@ -83,8 +83,9 @@ static int command_purge ()
    for (i=0; i<param_count; ++i)
    {
       printf ("Purging %s\n", args[i]); 
-      op->persist_purge (op, args[i], 0); 
+      persist_purge (op, args[i], 0); 
    }
+   return 1; 
 }
 
 static int command_help ()
@@ -94,23 +95,28 @@ static int command_help ()
    printf ("   map    handle...          Lookup filename for handle\n"); 
    printf ("   quit                      Exit test\n"); 
    printf ("Note: filenames need to start with /\n"); 
+   return 1; 
 }
 
 static int command_quit ()
 {
    quit = 1; 
+   return 1; 
 }
 
 static int command_lookup ()
 {
    int i;
-   int ret; 
    for (i=0; i<param_count; ++i)
    {
+      char buf[255]; 
+
       persist_handle_t handle; 
-      ret = op->persist_filename_to_handle (op, args[i], 1); 
-      printf ("%s --> %lu\n", args[i], handle); 
+      handle = persist_filename_to_handle (op, args[i], 1); 
+      persist_handle_to_text (handle, buf, sizeof(buf)); 
+      printf ("%s --> %s\n", args[i], buf); 
    }
+   return 1; 
 }
 
 static int command_map ()
@@ -118,8 +124,23 @@ static int command_map ()
    int i; 
    for (i=0; i<param_count; ++i)
    {
+      int ret; 
+      persist_handle_t handle; 
+      char buf[PERSIST_HANDLE_MAXNAME]; 
+      
+      handle = persist_text_to_handle (args[i]); 
 
+      ret = persist_handle_to_filename (op, handle, buf, sizeof(buf)); 
+      if (!ret)
+      {
+         printf ("Error mapping %s!\n", args[i]); 
+      }
+      else
+      {
+         printf ("%s -> %s\n", args[i], buf); 
+      }
    }
+   return 1; 
 } 
 
 // called by the parser

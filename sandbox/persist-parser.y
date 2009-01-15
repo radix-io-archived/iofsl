@@ -8,6 +8,7 @@ int yylex(void);
 
 %union{
   const char *	filename;
+  const char *  handle; 
   unsigned long number; 
   const char * identifier; 
 }
@@ -18,6 +19,7 @@ int yylex(void);
 %token	<filename>	TOKEN_FILENAME
 %token                  TOKEN_NEWLINE
 %token  <identifier>    TOKEN_IDENTIFIER
+%token  <handle>        TOKEN_HANDLE
 
 
 %%
@@ -31,6 +33,7 @@ startcommand: TOKEN_IDENTIFIER
 ;
 
 param: TOKEN_FILENAME { if (!param_command ($1)) YYABORT; }
+     | TOKEN_HANDLE   { if (!param_command ($1)) YYABORT; }
 ;
 
 params: /* empty */

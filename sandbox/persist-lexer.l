@@ -10,8 +10,10 @@ filenamechar    [^ \t]
 identifier      [a-z,A-Z][a-z,A-Z]*
 slash           "/"
 filename        {slash}{filenamechar}*
+handlechar          [a-z,A-Z,0-9]
+handle          {handlechar}{16}
 
-%option noyywrap nounput batch 
+%option noyywrap nounput batch  
 
 
 %%
@@ -21,6 +23,8 @@ filename        {slash}{filenamechar}*
 {filename}	{ yylval.filename = strdup(yytext); return TOKEN_FILENAME; }
 
 {identifier}    { yylval.identifier = strdup(yytext); return TOKEN_IDENTIFIER; }
+
+{handle}        { yylval.filename = strdup(yytext); return TOKEN_HANDLE; }
 
 [ \t]*		{}
 

@@ -265,6 +265,13 @@ libs: $(addprefix lib_, $(ARCHIVES))
 	$(Q) "  DEPCXX	$@"
 	$(E) $(CXXCPP) $(CPPFLAGS) $(CXXFLAGS) -M -MT"$(@)" $< | sed -e 's,\($*\)\.d[ :]*,\1.o $@ : ,g' -e 's,^ *\\,,'  > $@; [ -s $@ ] || ( $(RM) $@ && exit 1 )
 
+# make preprocessed source:
+%.i: %.c
+	$(Q) "  CPP		$@"
+	$(E)  $(CC)  -E $(CPPFLAGS)  $< -o "$@" \
+	   ||  ( $(RM) $@ ; exit 1)
+
+
 # default rule for building C objects
 %.o: %.c
 	$(Q) "  CC		$@"

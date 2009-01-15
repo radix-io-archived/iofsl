@@ -12,16 +12,19 @@ static MYSQL  * persist_mysql;
 persist_module_t persist_mysql_module = { 
    .name = "mysql://" }; 
 
-static void persist_mysql_purge (const char * filename)
+static int persist_mysql_purge (const char * filename)
 {
+   return 0; 
 }
 
 static int persist_mysql_handle_to_filename (persist_handle_t handle, char * buf, unsigned int bufsize)
 {
+   return 0; 
 }
 
 static persist_handle_t persist_mysql_filename_to_handle (const char * filename)
 {
+   return PERSIST_HANDLE_INVALID; 
 }
 
 static void persist_mysql_error (MYSQL *conn, char *message)

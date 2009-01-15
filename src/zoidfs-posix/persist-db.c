@@ -43,9 +43,55 @@ static inline int persist_db_error (int ret)
    exit (1); 
 }
 
-static void persist_db_purge (void * odata, 
+static int persist_db_purge (void * odata, 
       const char * filename, int prefix)
 {
+   persist_db_data_t * d = DBD(odata); 
+   DBT key, data; 
+   DBC * cursor; 
+   int ret; 
+   persist_handle_t handle; 
+
+   memset (&key, 0, sizeof(key)); 
+
+   key.data = (void*) filename; 
+   key.size = key.ulen = strlen(filename); 
+   key.flags = DB_DBT_USERMEM; 
+
+   data.data = &handle; 
+   data.ulen = sizeof(handle); 
+   data.flags = DB_DBT_USERMEM; 
+
+   persist_db_error(d->db->cursor (d->db, NULL, &cursor, 0)); 
+
+   /* move cursor to record  */ 
+   ret = cursor->c_get (cursor, &key, &data, DB_SET); 
+
+   if (ret == DB_NOTFOUND)
+   {
+      persist_db_error(cursor->c_close (cursor)); 
+      fprintf (stderr, "persist_db_purge: %s not found\n", filename); 
+      return 0; 
+   }
+   else
+   {
+      if (ret)
+         persist_db_error (ret); 
+   } 
+
+   /* cursor now points to directory entry */
+   /* remove entry */
+   persist_db_error(cursor->c_del(cursor, 0)); 
+
+   if (prefix)
+   {
+      /* continue removing until we no longer point to entries
+       * of that directory */
+      assert (0); 
+   }
+
+   persist_db_error(cursor->c_close (cursor)); 
+   return 1; 
 
 }
 
@@ -54,7 +100,8 @@ static int persist_db_handle_to_filename (void * odata,
 {
    persist_db_data_t * d = DBD(odata); 
    int ret;
-   DBT key, data; 
+   DBT key, data, pkey; 
+   persist_handle_t dummy; 
 
    memset (&key, 0, sizeof (key)); 
    memset (&data, 0, sizeof(data)); 
@@ -63,11 +110,15 @@ static int persist_db_handle_to_filename (void * odata,
    key.ulen = key.size = sizeof(handle); 
    key.flags = DB_DBT_USERMEM; 
 
-   data.data = buf; 
-   data.ulen = bufsize; 
-   data.flags = DB_DBT_USERMEM; 
+   pkey.data = buf; 
+   pkey.ulen = bufsize; 
+   pkey.flags = DB_DBT_USERMEM; 
 
-   ret = d->dbindex->get (d->dbindex, NULL, &key, &data, 0); 
+   data.data = &dummy;
+   data.ulen = sizeof(dummy); 
+   data.flags = DB_DBT_USERMEM;
+   
+   ret = d->dbindex->pget (d->dbindex, NULL, &key, &pkey, &data, 0); 
    if (ret)
    {
       if (ret == DB_NOTFOUND)
@@ -79,8 +130,12 @@ static int persist_db_handle_to_filename (void * odata,
       persist_db_error (ret); 
    }
    assert (data.size < bufsize);
-   buf[data.size] = 0; 
-   return data.size; 
+
+   /* the following needs to be true or our index is broken */ 
+   assert (dummy == handle); 
+
+   buf[pkey.size] = 0; 
+   return pkey.size; 
 }
 
 static persist_handle_t persist_db_filename_to_handle (void * odata, 
@@ -96,12 +151,12 @@ static persist_handle_t persist_db_filename_to_handle (void * odata,
 
    do
    {
-      key.data = &filename; 
+      key.data = (void*)filename; 
       key.ulen = key.size = strlen(filename); 
       key.flags = DB_DBT_USERMEM; 
 
       data.data = &handle; 
-      data.ulen = sizeof(handle); 
+      data.ulen = data.size = sizeof(handle); 
       data.flags = DB_DBT_USERMEM; 
 
       ret = d->db->get (d->db, NULL, &key, &data, 0); 
@@ -129,13 +184,15 @@ static persist_handle_t persist_db_filename_to_handle (void * odata,
       handle = persist_db_generate_handle (); 
 
       data.data = &handle; 
-      data.ulen = sizeof(handle); 
+      data.ulen = data.size = sizeof(handle); 
       data.flags = DB_DBT_USERMEM; 
 
-      key.data = &filename; 
+      key.data = (void*)filename; 
       key.ulen = key.size = strlen(filename); 
       key.flags = DB_DBT_USERMEM; 
 
+      fprintf (stderr, "Adding name %s to %llx\n", 
+            (const char*) key.data, (long long unsigned int )handle); 
       ret = d->db->put (d->db, NULL, &key, &data, 
             DB_NOOVERWRITE);
 
@@ -146,6 +203,7 @@ static persist_handle_t persist_db_filename_to_handle (void * odata,
       {
          /* somebody else added the file in the mean time:
             retry the whole thing */ 
+         fprintf (stderr, "Key collision\n"); 
          continue; 
       }
 
@@ -173,10 +231,11 @@ static void persist_db_seed_random ()
 static int persist_db_readdir (void * odata, const char * dir, 
       persist_filler_t filler, void * fillerdata)
 {
-   persist_db_data_t * d = DBD(odata); 
+   /*persist_db_data_t * d = DBD(odata); 
    DBC * cursor; 
    DBT key, data; 
-
+  */
+   return 0; 
 }
 
 /* return the secundairy key given the data for the primary key */
@@ -191,7 +250,6 @@ static void * persist_db_mem_init (const char * initstr, int persist)
 {
    const char * filename = (persist ? initstr : 0);
    char buf[255]; 
-   int ret;
 
    persist_db_data_t * data = calloc (sizeof(persist_db_data_t), 1);
 
@@ -205,7 +263,7 @@ static void * persist_db_mem_init (const char * initstr, int persist)
       snprintf (buf, sizeof(buf)-1, "%s.idx", filename); 
 
    persist_db_error(data->dbindex->open (data->dbindex, NULL, 
-            (filename ? buf : NULL, NULL), NULL, DB_HASH, DB_CREATE,0)); 
+            (filename ? buf : NULL ), NULL, DB_HASH, DB_CREATE,0)); 
 
 
    /* associate index */
