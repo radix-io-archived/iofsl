@@ -64,18 +64,3 @@ void persist_done (persist_op_t * con)
    free (con); 
 }
 
-void persist_handle_to_text (persist_handle_t handle, char * buf, int size)
-{
-   snprintf (buf, size, "%llx", (long long unsigned) handle); 
-}
-
-persist_handle_t persist_text_to_handle (const char * buf)
-{
-   persist_handle_t handle= 0;
-   unsigned long long l; 
-   if (sscanf (buf, "%llx", &l)<1)
-      return PERSIST_HANDLE_INVALID; 
-   handle =l ; 
-   assert (sizeof(handle) == sizeof(l)); 
-   return handle; 
-}

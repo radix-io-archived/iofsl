@@ -1,0 +1,13 @@
+-> zoidfs_null should return status/information
+
+
+-> I assume create can succeed without creating the file?
+ (i.e. existed already)
+
+-> WOuld be easy if there is an 'invalid' zoidfs handle
+
+
+-> There is more to ESTALE than meets the eye: 
+    if it handle->name files while resolving the path 
+    in a (parent_handle, component) 
+    the caller needs to do a lookup on the parent_handle 

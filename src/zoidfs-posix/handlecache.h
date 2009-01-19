@@ -2,6 +2,7 @@
 #define ZOIDFS_POSIX_HANDLECACHE_H
 
 #include <stdio.h>
+#include "zoidfs.h"
 #include "iofwdbool.h"
 
 /**
@@ -11,29 +12,29 @@
  */
 
 
-/* The file handle type of the client */
-typedef FILE *  hc_value_t; 
+/* The file handle type of file access functions */ 
+typedef int  hc_item_value_t; 
 
-/* Our handle type */
-typedef void * hc_item_handle_t; 
 
-enum { HC_READ = 0x01, HC_WRITE = 0x02 };
+/* Function that is called when we remove an entry */ 
+typedef int (*handlecache_removefunc_t) (hc_item_value_t * value); 
 
-typedef int (*handlecache_open_t) (const char * path, hc_value_t * dst, int
-      flags, iofwdbool_t upgrade);
-
-typedef int (*handlecache_close_t) (hc_value_t * dst); 
-
-int handlecache_init (int size, handlecache_open_t openfunc, 
-      handlecache_close_t closefunc);
+int handlecache_init (int size, handlecache_removefunc_t remove); 
 
 int handlecache_destroy (); 
 
-/* Lookup a handle; store in handle; return user handle associated with file */ 
-int handlecache_get (const char * path, int flags, hc_item_handle_t * handle,
-      hc_value_t * user);
+/* Lookup entry in the cache:
+ *   * if not found, return 0
+ *   * if found, return 1 and move item to the end of the gc queue
+ *
+ *   (could even avoid the last step if the number of entries is << cache
+ *   limit)
+ */
+int handlecache_lookup (const zoidfs_handle_t * key, hc_item_value_t * val);
 
-/* Make sure the handle is valid; return user handle associated with file */ 
-int handlecache_validate (const hc_item_handle_t * handle, hc_value_t * user); 
+/*
+ * Add new entry, possibly removing an older entry 
+ */
+int handlecache_add (const zoidfs_handle_t * key, hc_item_value_t * val); 
 
 #endif

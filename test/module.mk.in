@@ -1,4 +1,4 @@
-MODULE_APPS := testhash handlecache_test
+#MODULE_APPS := testhash handlecache_test
 
 MODULE_SOURCES_testhash := testhash.c
 ADDINTLIBS_testhash := iofwdutil

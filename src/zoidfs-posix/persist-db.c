@@ -13,6 +13,7 @@
 #include <sys/types.h>
 #include <assert.h>
 
+#include "zoidfs-util.h"
 #include "persist.h"
 
 /* size of bulk data access buffer */ 
@@ -30,9 +31,15 @@ typedef struct
 
 #define DBD(a) ((persist_db_data_t*)(a))
 
-static inline uint64_t persist_db_generate_handle ()
+static inline void persist_db_generate_handle (zoidfs_handle_t * handle)
 {
-   return (lrand48() & 0xffffffff) | ((lrand48() & 0xffffffff) << 32);
+   assert ((sizeof (zoidfs_handle_t) % 4) == 0); 
+   const int loops = sizeof (zoidfs_handle_t) / 4;
+   uint32_t * dst = (uint32_t*) handle; 
+   int i; 
+
+   for (i=0; i<loops; ++i)
+      *dst++ = lrand48 () & 0xffffffff; 
 }
 
 static inline int persist_db_error (int ret)
@@ -50,7 +57,7 @@ static int persist_db_purge (void * odata,
    DBT key, data; 
    DBC * cursor; 
    int ret; 
-   persist_handle_t handle; 
+   zoidfs_handle_t  handle; 
 
    memset (&key, 0, sizeof(key)); 
 
@@ -59,7 +66,7 @@ static int persist_db_purge (void * odata,
    key.flags = DB_DBT_USERMEM; 
 
    data.data = &handle; 
-   data.ulen = sizeof(handle); 
+   data.ulen = sizeof(zoidfs_handle_t); 
    data.flags = DB_DBT_USERMEM; 
 
    persist_db_error(d->db->cursor (d->db, NULL, &cursor, 0)); 
@@ -96,18 +103,18 @@ static int persist_db_purge (void * odata,
 }
 
 static int persist_db_handle_to_filename (void * odata, 
-      persist_handle_t handle, char * buf, unsigned int bufsize)
+      const zoidfs_handle_t * handle, char * buf, unsigned int bufsize)
 {
    persist_db_data_t * d = DBD(odata); 
    int ret;
    DBT key, data, pkey; 
-   persist_handle_t dummy; 
+   zoidfs_handle_t dummy; 
 
    memset (&key, 0, sizeof (key)); 
    memset (&data, 0, sizeof(data)); 
 
-   key.data = &handle; 
-   key.ulen = key.size = sizeof(handle); 
+   key.data = (void*)handle; 
+   key.ulen = key.size = sizeof(zoidfs_handle_t); 
    key.flags = DB_DBT_USERMEM; 
 
    pkey.data = buf; 
@@ -132,19 +139,18 @@ static int persist_db_handle_to_filename (void * odata,
    assert (data.size < bufsize);
 
    /* the following needs to be true or our index is broken */ 
-   assert (dummy == handle); 
+   assert(zoidfs_handle_equal(&dummy, handle)); 
 
    buf[pkey.size] = 0; 
    return pkey.size; 
 }
 
-static persist_handle_t persist_db_filename_to_handle (void * odata, 
-      const char * filename, int autoadd)
+static int persist_db_filename_to_handle (void * odata, 
+      const char * filename, zoidfs_handle_t * handle, int autoadd)
 {
    persist_db_data_t * d = DBD(odata); 
    int ret;
    DBT key, data; 
-   persist_handle_t handle = PERSIST_HANDLE_INVALID; 
 
    memset (&key, 0, sizeof (key)); 
    memset (&data, 0, sizeof(data)); 
@@ -155,8 +161,8 @@ static persist_handle_t persist_db_filename_to_handle (void * odata,
       key.ulen = key.size = strlen(filename); 
       key.flags = DB_DBT_USERMEM; 
 
-      data.data = &handle; 
-      data.ulen = data.size = sizeof(handle); 
+      data.data = handle; 
+      data.ulen = data.size = sizeof(zoidfs_handle_t); 
       data.flags = DB_DBT_USERMEM; 
 
       ret = d->db->get (d->db, NULL, &key, &data, 0); 
@@ -171,28 +177,27 @@ static persist_handle_t persist_db_filename_to_handle (void * odata,
          /* no autoadd and not found, tell the user so */ 
          if (!autoadd)
          {
-            return PERSIST_HANDLE_INVALID; 
+            return 0; 
          }
       }
       else
       {
-         assert (handle != PERSIST_HANDLE_INVALID); 
-         return handle; 
+         return 1; 
       }
 
       /* prepare to autoadd */
-      handle = persist_db_generate_handle (); 
+      persist_db_generate_handle (handle); 
 
-      data.data = &handle; 
-      data.ulen = data.size = sizeof(handle); 
+      data.data = handle; 
+      data.ulen = data.size = sizeof(zoidfs_handle_t); 
       data.flags = DB_DBT_USERMEM; 
 
       key.data = (void*)filename; 
       key.ulen = key.size = strlen(filename); 
       key.flags = DB_DBT_USERMEM; 
 
-      fprintf (stderr, "Adding name %s to %llx\n", 
-            (const char*) key.data, (long long unsigned int )handle); 
+      fprintf (stderr, "Adding name %s to %s\n", 
+            (const char*) key.data, zoidfs_handle_string (handle)); 
       ret = d->db->put (d->db, NULL, &key, &data, 
             DB_NOOVERWRITE);
 
@@ -208,7 +213,7 @@ static persist_handle_t persist_db_filename_to_handle (void * odata,
       }
 
       /* add worked */ 
-      return handle; 
+      return 1; 
    } while (1); 
 }
 

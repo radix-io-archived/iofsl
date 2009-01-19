@@ -17,12 +17,12 @@ static int persist_mysql_purge (const char * filename)
    return 0; 
 }
 
-static int persist_mysql_handle_to_filename (persist_handle_t handle, char * buf, unsigned int bufsize)
+static int persist_mysql_handle_to_filename (const zoidfs_handle_t* handle, char * buf, unsigned int bufsize)
 {
    return 0; 
 }
 
-static persist_handle_t persist_mysql_filename_to_handle (const char * filename)
+static int persist_mysql_filename_to_handle (const char * filename, zoidfs_handle_t * handle)
 {
    return PERSIST_HANDLE_INVALID; 
 }

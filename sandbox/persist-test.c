@@ -10,6 +10,7 @@
 #endif
 #include "persist.h"
 #include "persist-lexer.h"
+#include "zoidfs-util.h"
 
 #define MAXARGS 128
  	
@@ -111,9 +112,9 @@ static int command_lookup ()
    {
       char buf[255]; 
 
-      persist_handle_t handle; 
-      handle = persist_filename_to_handle (op, args[i], 1); 
-      persist_handle_to_text (handle, buf, sizeof(buf)); 
+      zoidfs_handle_t handle; 
+      persist_filename_to_handle (op, args[i], &handle,  1); 
+      zoidfs_handle_to_text (&handle, buf, sizeof(buf)); 
       printf ("%s --> %s\n", args[i], buf); 
    }
    return 1; 
@@ -125,12 +126,16 @@ static int command_map ()
    for (i=0; i<param_count; ++i)
    {
       int ret; 
-      persist_handle_t handle; 
+      zoidfs_handle_t handle; 
       char buf[PERSIST_HANDLE_MAXNAME]; 
       
-      handle = persist_text_to_handle (args[i]); 
+      if (!zoidfs_text_to_handle (args[i], &handle))
+      {
+         printf ("Could not parse handle: %s\n", args[i]); 
+         return 1; 
+      }
 
-      ret = persist_handle_to_filename (op, handle, buf, sizeof(buf)); 
+      ret = persist_handle_to_filename (op, &handle, buf, sizeof(buf)); 
       if (!ret)
       {
          printf ("Error mapping %s!\n", args[i]); 
@@ -196,6 +201,7 @@ int execute_command (const char * str)
 
    yyparse (); 
    yy_delete_buffer (buf); 
+   return 1; 
 }
 
 int main (int argc, char ** args)

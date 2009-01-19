@@ -2,15 +2,14 @@
 #define IOFWD_POSIX_PERSIST_H
 
 #include <stdint.h>
-
+#include "zoidfs.h"
 
 enum { PERSIST_HANDLE_MAXNAME = 256 };
 
-typedef uint64_t persist_handle_t;
 enum { PERSIST_HANDLE_INVALID = 0 }; 
 
 
-typedef int (*persist_filler_t) (const char * entry, const persist_handle_t *
+typedef int (*persist_filler_t) (const char * entry, const zoidfs_handle_t *
       handle, void * fillerdata);
 
 typedef struct
@@ -18,12 +17,13 @@ typedef struct
    /* buf should be at least PERSIST_HANDLE_MAXNAME;
     * return number of characters (excluding terminating zero)
     * written, 0 if not found */
-   int (*persist_handle_to_filename) (void * data, persist_handle_t handle, char * buf, unsigned
+   int (*persist_handle_to_filename) (void * data, const zoidfs_handle_t * handle, char * buf, unsigned
          int bufsize);
 
    /* lookup handle for filename. Return PERSIST_HANDLE_INVALID if not found
     * unless autoadd is set in which case a new handle is assigned */
-   persist_handle_t (*persist_filename_to_handle) (void * data, const char * filename, int autoadd);  
+   int (*persist_filename_to_handle) (void * data, const char * filename, zoidfs_handle_t * handle,
+         int autoadd);  
 
    /* Remove mapping for the file; if prefix is nonzero, remove all files
     * starting with that prefix (e.g. directory removal)  */
@@ -61,37 +61,36 @@ static inline int persist_readdir (persist_op_t * con, const char * dir, persist
 }
 
 
-static inline int persist_handle_to_filename (persist_op_t * con, persist_handle_t handle,
+static inline int persist_handle_to_filename (persist_op_t * con,
+      const zoidfs_handle_t * handle,
       char * buf, unsigned int bufsize)
 {
+   /* TODO: add namecache here */ 
    return con->persist_handle_to_filename (con->data, handle, buf, bufsize); 
 }
 
-static inline persist_handle_t persist_filename_to_handle (persist_op_t * con, const
-      char * filename, int autoadd)
+static inline int persist_filename_to_handle (persist_op_t * con, const
+      char * filename, zoidfs_handle_t * handle, int autoadd)
 {
-   return con->persist_filename_to_handle (con->data, filename, autoadd); 
+   /* TODO: add namecache here */ 
+   return con->persist_filename_to_handle (con->data, filename, handle, autoadd); 
 }
 
 
-static inline void persist_purge (persist_op_t * con, const char * filename,
+static inline int persist_purge (persist_op_t * con, const char * filename,
       int prefix)
 {
-   con->persist_purge (con->data, filename, prefix); 
+   return con->persist_purge (con->data, filename, prefix); 
 }
 
 
 /* Open connection */ 
 persist_op_t *  persist_init (const char * initstr); 
 
+
 /* free connection */ 
 void persist_done (persist_op_t * con); 
 
-
-void persist_handle_to_text (persist_handle_t handle, char * buf, int
-      bufsize); 
-
-persist_handle_t persist_text_to_handle (const char * buf); 
 #endif
 
 

@@ -1,6 +1,6 @@
 MODULE_ARCHIVES = iofwdutil 
 MODULE_SOURCES_iofwdutil = id-generator.c gen-locks.c pint-util.c iofwdhash.c\
-			   trie.c set.c
+			   trie.c set.c hash-table.c
 
 # Automatically add -I$(thismoduledir) to CPPFLAGS
 MODULE_CONTAINSINCLUDE := 1

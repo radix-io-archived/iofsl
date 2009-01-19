@@ -8,29 +8,34 @@
 #include <string.h>
 #include <sys/types.h>
 #include <unistd.h>
+#include <stdlib.h>
 #include "zoidfs.h"
+#include "handlecache.h"
+#include "persist.h"
 
 #define mymin(a,b) ((a)<(b) ? (a):(b))
 
 #ifndef NDEBUG
-#define zoidfs_debug(format, ...) fprintf (stderr, "zoidfs_posix: " format, ##__VA_ARGS__)
+#define zoidfs_debug(format, ...) fprintf (stderr, "zoidfs_posix: debug: " format, ##__VA_ARGS__)
 #else
 #define zoidfs_debug(format, ...) {}
 #endif
 
-typedef uint64_t zoidfs_real_handle_t ; 
+#define zoidfs_error(format, ...) fprintf (stderr, "zoidfs_posix: error: " format, ##__VA_ARGS__)
 
-/* Convert zoidfs handle to FILE * */
-static inline zoidfs_real_handle_t handle_to_internal (const zoidfs_handle_t * handle)
-{
-   return *(zoidfs_real_handle_t *) handle; 
-}
 
-/* Convert FILE * to zoidfs handle */
-static inline void internal_to_handle (zoidfs_real_handle_t file, zoidfs_handle_t * handle)
-{
-   *(zoidfs_real_handle_t *) handle = file; 
-}
+/*
+ * REMINDER:
+ *  
+ *     Components:
+ *        handlecache  -> manages list of zoidfshandle -> open file desc
+ *        persist      -> manages mapping names to zoidfs handles and
+ *                        vice-versa
+ */
+
+
+static persist_op_t  *  persist; 
+
 
 
 /* Convert this to thread local storage later on */
@@ -39,18 +44,21 @@ static inline const char * zoidfs_resolve_path (const zoidfs_handle_t * handle,
 {
    static char buf[ZOIDFS_PATH_MAX+1]; 
    int ret; 
-   //zoidfs_real_handle_t rhandle; 
 
    if (full_path)
       return full_path; 
 
-   //rhandle = handle_to_internal (handle); 
-   //ret = persist_handle_to_filename (rhandle, buf, sizeof(buf)); 
+   ret = persist_handle_to_filename (persist, handle, buf, sizeof(buf)); 
    
    if (!ret)
    {
-      zoidfs_debug ("Error: zoidfs_resolve_path unknown handle!\n"); 
-      assert (0); 
+#ifdef USE_ESTALE
+      zoidfs_debug ("zoidfs_resolve_path unknown handle!\n"); 
+      return 0; 
+#else
+      zoidfs_error ("zoidfs_resolve_path: unable to lookup handle->path!\n"); 
+      exit (1);
+#endif
    }
 
 #ifndef NDEBUG
@@ -81,7 +89,7 @@ void zoidfs_null(void)
  */
 int zoidfs_getattr(const zoidfs_handle_t *handle, zoidfs_attr_t *attr) 
 {
-   //int f = handle_to_internal (handle); 
+   //persist_handle_t rhandle = handle_to_internal (handle); 
 
    zoidfs_debug ("getattr\n"); 
 
@@ -115,6 +123,123 @@ static inline int errno2zfs (int val)
       return ZFS_OK; 
    return -ZFSERR_MISC; 
 }
+
+/* Try to open a file: be careful about directories and 
+ * file permissions */ 
+static int our_open (const char * filename, int *err)
+{
+   int fd; 
+
+   *err = 0; 
+
+   /* simple case: try to open in rdwr, no create */ 
+   fd = open (filename, O_RDWR); 
+
+   if (fd>=0)
+      return fd; 
+
+
+   /* ok that didn't work: try to figure out why */
+   *err = errno; 
+
+   if (*err == ENOENT)
+   {
+      /* file doesn't exist */ 
+      return fd; 
+   }
+
+   if (*err == EACCES)
+   {
+      /* try in rdonly mode */
+      /* No other possibilities here: the file exist, is not a directory
+       * (otherwise we would get EISDIR on the previous try)
+       * If we cannot open in rdonly mode we cannot open...
+       */
+      fd = open (filename, O_RDONLY);
+      *err = errno; 
+      return fd; 
+   }
+
+   /* At this point, the chance we can still open is if the file is a
+    * directory (and the open fails because we tried O_RDWR) */
+   if (*err != EISDIR)
+      return fd; 
+
+   /* ok so the file is a directory: we can only try to open in readonly mode
+    * and hope for the best */ 
+   fd = open (filename, O_RDONLY); 
+   *err = errno; 
+   return fd; 
+}
+
+
+static int our_create (const char * filename, int * err, int * created)
+{
+   int dummy; 
+   int fd; 
+
+   /* allow NULL for created */ 
+   if (!created)
+      created = &dummy; 
+
+
+   while (1)
+   {
+
+      fd = open (filename, O_CREAT|O_EXCL|O_RDWR); 
+      *err = errno; 
+      if (*err == EEXIST)
+      {
+         fd = our_open (filename, err); 
+         if (fd < 0 && *err == ENOENT)
+         {
+            /* strange: somebody removed in the mean time? */
+            zoidfs_debug ("File %s disappeared before we could open?? Retrying to create\n",
+                  filename); 
+            continue; 
+         }
+         /* the file existed, so whatever reason our_open had for failing is
+          * good enough for us */ 
+         return fd; 
+      }
+
+      /* failed, but not because the file already existed: give up */
+      return fd; 
+   }
+}
+
+/* Open a file descriptor for the specified zoidfs handle; File must exist */ 
+static int getfd_handle (const zoidfs_handle_t * handle)
+{
+   int fd; 
+   char buf[ZOIDFS_PATH_MAX]; 
+
+   /* first lookup in the cache */
+   if (handlecache_lookup (handle, &fd))
+      return fd; 
+
+   /* Handle is not there: try to map to a filename and reopen */ 
+   if (!persist_handle_to_filename (persist, handle, buf, sizeof(buf)))
+   {
+#ifdef USE_ESTALE
+      zoidfs_debug ("Returned -ESTALE\n"); 
+      return -ESTALE; 
+#else
+      zoidfs_error ("Unable to map zoidfs handle to path! Invalid handle?\n"); 
+      exit (1); 
+#endif
+   }
+
+   fd = open (buf, O_RDWR); 
+   if (fd < 0)
+      return fd;
+
+   /* add entry to cache */ 
+   handlecache_add (handle, &fd); 
+
+   return fd; 
+}
+
 /*
  * zoidfs_lookup
  * This function returns the file handle associated with the given file or
@@ -126,14 +251,24 @@ int zoidfs_lookup(const zoidfs_handle_t *parent_handle,
 {
    const char * path = zoidfs_resolve_path (parent_handle, component_name, 
          full_path); 
-   zoidfs_debug ("lookup: %s\n", path); 
-   
-   // ignore component_name
-   int file = open (full_path, O_RDWR); 
-   if (file < 0)
-      return errno2zfs (errno);
+   if (!path)
+      return ZFSERR_STALE; 
 
-   internal_to_handle (file, handle); 
+   zoidfs_debug ("lookup: %s\n", path); 
+
+   // ignore component_name
+   int err; 
+   int file = our_open (path, &err); 
+
+   if (file < 0)
+      return errno2zfs (err); 
+
+   /* Lookup the persist handle for the file, creating if needed */ 
+   persist_filename_to_handle (persist, full_path, handle, 1); 
+
+   /* file openened ok, add to cache */
+   handlecache_add (handle, &file); 
+
    return ZFS_OK; 
 }
 
@@ -146,9 +281,19 @@ int zoidfs_remove(const zoidfs_handle_t *parent_handle,
                   const char *component_name, const char *full_path,
                   zoidfs_cache_hint_t *parent_hint) 
 {
+   const char * path = zoidfs_resolve_path (parent_handle, component_name, 
+         full_path); 
    // ignore component_name
-   if (unlink (full_path)< 0) 
+   if (unlink (path)< 0) 
       return errno2zfs (errno); 
+
+   /* remove from database */
+   persist_purge (persist, path, 0); 
+
+   /* NOTE: whoever still has the file open will still be able to access the
+    * file */ 
+
+
    return ZFS_OK; 
 }
 
@@ -173,18 +318,32 @@ int zoidfs_create(const zoidfs_handle_t *parent_handle,
                   const zoidfs_sattr_t *sattr, zoidfs_handle_t *handle,
                   int *created) 
 {
-   int file = open (full_path, O_RDWR|O_CREAT|O_EXCL); 
-   *created = 1; 
-   if (file < 0)
+   const char * path = zoidfs_resolve_path (parent_handle, component_name, 
+         full_path); 
+   int err; 
+   int file;
+   
+   *created = 0; 
+
+   /* first lookup the handle, creating one if needed  */ 
+   persist_filename_to_handle (persist, path, handle, 1); 
+
+   /* try to lookup the handle in the cache: maybe it is already open */
+   if (handlecache_lookup (handle, &file))
    {
-      // try again but try to create the file
-      file = open (full_path, O_RDWR);
-      if (file < 0)
-         return errno2zfs(errno);
-      *created = 0;
+      /* handle was already in the cache: probably already openened/created */ 
+      return ZFS_OK; 
    }
 
-   internal_to_handle (file, handle); 
+   /* OK: handle is not currently open, try to create */ 
+   
+   file = our_create (path, &err, created); 
+   if (file < 0)
+      return errno2zfs (err); 
+
+   
+   /* add to the open file cache */ 
+   handlecache_add (handle, &file); 
 
    return ZFS_OK; 
 }
@@ -203,6 +362,9 @@ int zoidfs_rename(const zoidfs_handle_t *from_parent_handle,
                   zoidfs_cache_hint_t *from_parent_hint,
                   zoidfs_cache_hint_t *to_parent_hint) 
 {
+   /* TODO: update path in database */ 
+   return errno2zfs (-ENOSYS); 
+
    int ret = rename (from_full_path, to_full_path); 
    if (ret < 0)
       return errno2zfs(errno); 
@@ -301,8 +463,7 @@ static inline int zoidfs_generic_access (const zoidfs_handle_t *handle, int mem_
    size_t memofs = 0 ; 
    int curfile = 0; 
    size_t fileofs = 0; 
-
-   int file = handle_to_internal (handle); 
+   int file; 
 
    while (curmem < mem_count || curfile < file_count)
    {
