@@ -46,7 +46,7 @@ int hex2digit (char d)
 int zoidfs_text_to_handle (const char * buf, zoidfs_handle_t * handle)
 {
    unsigned char * dst = (unsigned char*) handle; 
-   int remaining = sizeof(handle); 
+   int remaining = sizeof(zoidfs_handle_t); 
 
    while (remaining && *buf)
    {

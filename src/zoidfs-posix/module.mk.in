@@ -1,5 +1,5 @@
 MODULE_ARCHIVES = zoidfs-posix zoidfs-persist
-MODULE_SOURCES_zoidfs-posix := zoidfs-posix.c handlecache.c namecache.c zoidfs-util.c
+MODULE_SOURCES_zoidfs-posix := zoidfs-posix.c handlecache.c namecache.c 
 
 MODULE_SOURCES_zoidfs-persist := persist.c @persist_extra@
 ADDLIBS_zoidfs-persist := -ldb

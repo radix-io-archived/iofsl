@@ -7,5 +7,5 @@ MODULE_SOURCES_server := server.c bmi_comm.c
 ADDLIBS_server := -lbmi
 
 MODULE_SOURCES_persist-test := persist-test.c persist-parser.c persist-lexer.c
-ADDINTLIBS_persist-test := zoidfs-persist
+ADDINTLIBS_persist-test := zoidfs-persist iofwdutil
 ADDLIBS_persist-test := -ldb

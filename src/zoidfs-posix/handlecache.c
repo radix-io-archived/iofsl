@@ -100,7 +100,7 @@ int handlecache_destroy ()
 int handlecache_add (const zoidfs_handle_t * k, hc_item_value_t * val)
 {
    /* first try lookup */
-   assert (!hash_table_lookup (hc_hash, k));
+   assert (!hash_table_lookup (hc_hash, (void*)k));
    
    hc_entry_t * n = malloc (sizeof (hc_entry_t)); 
    zoidfs_handle_t * key = (zoidfs_handle_t*) malloc (sizeof(zoidfs_handle_t)); 
@@ -152,7 +152,7 @@ int handlecache_add (const zoidfs_handle_t * k, hc_item_value_t * val)
 
 int handlecache_lookup (const zoidfs_handle_t * key, hc_item_value_t * dst)
 {
-   HashTableValue  val = hash_table_lookup (hc_hash, key);
+   HashTableValue  val = hash_table_lookup (hc_hash, (HashTableKey) key);
    if (!val)
       return 0; 
    

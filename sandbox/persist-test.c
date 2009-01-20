@@ -138,7 +138,8 @@ static int command_map ()
       ret = persist_handle_to_filename (op, &handle, buf, sizeof(buf)); 
       if (!ret)
       {
-         printf ("Error mapping %s!\n", args[i]); 
+         printf ("Error mapping %s (%s)!\n", args[i],
+               zoidfs_handle_string (&handle)); 
       }
       else
       {

@@ -11,7 +11,7 @@ identifier      [a-z,A-Z][a-z,A-Z]*
 slash           "/"
 filename        {slash}{filenamechar}*
 handlechar          [a-z,A-Z,0-9]
-handle          {handlechar}{16}
+handle          {handlechar}{16,128}
 
 %option noyywrap nounput batch  
 
