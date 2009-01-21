@@ -5,9 +5,18 @@
  (i.e. existed already)
 
 -> WOuld be easy if there is an 'invalid' zoidfs handle
+--> is there a ZOIDFS root handle?
 
 
 -> There is more to ESTALE than meets the eye: 
     if it handle->name files while resolving the path 
     in a (parent_handle, component) 
     the caller needs to do a lookup on the parent_handle 
+
+
+-> Define error values: is it ESTALE or -ESTALE?
+
+-> mode bits?
+
+-> does readdir return . and .. ?
+-> dirent cookie too small!

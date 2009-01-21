@@ -7,7 +7,7 @@ ADDLIBS_zoidfs-persist := -ldb
 MODULE_APPS := fuse-zoid-posix
 MODULE_SOURCES_fuse-zoid-posix:= 
 ADDINTLIBS_fuse-zoid-posix := fuse-zoid zoidfs-posix zoidfs-persist iofwdutil
-ADDLIBS_zoidfs-posix := -ldb
+ADDLIBS_fuse-zoid-posix := -ldb
 
 
 

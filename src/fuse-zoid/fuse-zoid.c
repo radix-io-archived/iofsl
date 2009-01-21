@@ -11,11 +11,12 @@
 #include <string.h>
 
 #include "zoidfs.h"
+#include "zoidfs-util.h"
 
 #define ZFUSE_DIRENTRY_COUNT 128
 #define ZFUSE_INITIAL_HANDLES 16
 
-#define ZFUSE_XATTR_ZOIDFSHANDLE "zoidfs_handle"
+#define ZFUSE_XATTR_ZOIDFSHANDLE "user.zoidfs_handle"
 
 /* the following is C99 safe */ 
 #ifndef NDEBUG
@@ -24,11 +25,15 @@
 #define zfuse_debug(format, ...) {}
 #endif
 
+#define zfuse_error(format, ...) fprintf (stderr, format,##__VA_ARGS__)
 
 /* ======================================================================= */
 /* ======================================================================= */
 /* ======================================================================= */
 
+/* The handle tracking is used because fuse only allows us to store
+ * an int (in principle could store a pointer there).
+ */
 typedef struct 
 {
    zoidfs_handle_t handle; 
@@ -97,11 +102,14 @@ static int zfuse_handle_add (const zoidfs_handle_t * handle)
    zfuse_handle_free = *((int*) &zfuse_handles[zfuse_handle_free]); 
    ++zfuse_handle_used; 
    zfuse_handles[newpos].handle = *handle; 
+
+   zfuse_debug ("handle %i added (in use %i)\n", newpos, zfuse_handle_used); 
    return newpos; 
 }
 
 static void zfuse_handle_remove (int pos)
 {
+   zfuse_debug ("removing handle %i (in use %i)\n", pos, zfuse_handle_used); 
    assert (pos >= 0 && pos < zfuse_handle_capacity); 
    assert (zfuse_handle_used); 
 
@@ -165,10 +173,26 @@ static int zoidfserr_to_posix (int ret)
          return -EACCES;
       case ZFSERR_EXIST:
          return -EEXIST;
+      case ZFSERR_NODEV:
+         return -ENODEV;
       case ZFSERR_NOTDIR:
          return -ENOTDIR;
       case ZFSERR_ISDIR:
          return -EISDIR; 
+      case ZFSERR_FBIG:
+         return -EFBIG;
+      case ZFSERR_NOSPC:
+         return -ENOSPC;
+      case ZFSERR_ROFS:
+         return -EROFS;
+      case ZFSERR_NAMETOOLONG:
+         return -ENAMETOOLONG;
+      case ZFSERR_NOTEMPTY:
+         return -ENOTEMPTY;
+      case ZFSERR_DQUOT:
+         return -EDQUOT;
+      case ZFSERR_STALE:
+         return -ESTALE;
    }
    return -ENOSYS; 
 }
@@ -181,33 +205,25 @@ static int zfuse_getattr(const char * path,
    zfuse_debug ("zfuse_getattr: %s\n", path); 
 
    memset(stbuf, 0, sizeof(struct stat));
-   if(strcmp(path, "/") == 0) 
-   {
-      stbuf->st_mode = S_IFDIR | 0755;
-      stbuf->st_nlink = 2;
-   }
-   else
-   {
-      zoidfs_handle_t handle; 
-      zoidfs_attr_t attr; 
-      int ret = zoidfs_lookup (NULL, NULL, path, &handle);
-      if (ret)
-         return zoidfserr_to_posix (ret); 
-      ret = zoidfs_getattr (&handle, &attr); 
+   zoidfs_handle_t handle; 
+   zoidfs_attr_t attr; 
+   int ret = zoidfs_lookup (NULL, NULL, path, &handle);
+   if (ret)
+      return zoidfserr_to_posix (ret); 
+   ret = zoidfs_getattr (&handle, &attr); 
 
-      if (ret)
-         return zoidfserr_to_posix (ret); 
+   if (ret)
+      return zoidfserr_to_posix (ret); 
 
-      stbuf->st_mode = attr.mode; 
-      stbuf->st_nlink = attr.nlink; 
-      stbuf->st_uid = attr.uid; 
-      stbuf->st_gid = attr.gid; 
-      stbuf->st_size = attr.size;
-      stbuf->st_blocks = attr.blocksize; 
-      zoidfstime_to_posix (&attr.atime, &stbuf->st_atime);
-      zoidfstime_to_posix (&attr.ctime, &stbuf->st_ctime);
-      zoidfstime_to_posix (&attr.mtime, &stbuf->st_mtime);
-   }
+   stbuf->st_mode = attr.mode; 
+   stbuf->st_nlink = attr.nlink; 
+   stbuf->st_uid = attr.uid; 
+   stbuf->st_gid = attr.gid; 
+   stbuf->st_size = attr.size;
+   stbuf->st_blocks = attr.blocksize; 
+   zoidfstime_to_posix (&attr.atime, &stbuf->st_atime);
+   zoidfstime_to_posix (&attr.ctime, &stbuf->st_ctime);
+   zoidfstime_to_posix (&attr.mtime, &stbuf->st_mtime);
    return res;
 }
 
@@ -245,7 +261,7 @@ static int zfuse_opendir(const char * path, struct fuse_file_info * fi)
    int ret; 
    zoidfs_handle_t dirhandle; 
 
-   zfuse_debug ("zfuse_opendir: fi->fh = %lu\n", fi->fh); 
+   zfuse_debug ("zfuse_opendir: %s\n", path); 
    ret =zoidfs_lookup(NULL, NULL, path, &dirhandle);
    if (ret)
    {
@@ -254,6 +270,20 @@ static int zfuse_opendir(const char * path, struct fuse_file_info * fi)
       return zoidfserr_to_posix (ret); 
    }
 
+   /* fuse/posix assumes that if the open succeeds we have enough rights to
+    * read the directory. So we need to check here if we can actually read
+    * from the directory */ 
+   /* seems the following is not true: fuse does not try to opendir on chdir;
+    * just does getattr.
+    */
+ /*  zoidfs_dirent_t entry; 
+   int entry_count = 1; 
+   ret=zoidfs_readdir(&dirhandle, ZOIDFS_DIRENT_COOKIE_NULL,
+         &entry_count, &entry, NULL);
+   if (ret != ZFS_OK)
+      return zoidfserr_to_posix (ret); 
+*/
+   // track the handle
    fi->fh = zfuse_handle_add (&dirhandle); 
 
    return 0; 
@@ -279,9 +309,6 @@ static int zfuse_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
    
    dirhandle = zfuse_handle_lookup (fi->fh); 
    
-   filler(buf, ".", NULL, 0);
-   filler(buf, "..", NULL, 0);
-
    entries = malloc (ZFUSE_DIRENTRY_COUNT * sizeof(zoidfs_dirent_t)); 
    do
    {
@@ -311,6 +338,33 @@ static int zfuse_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
    } while (1); 
 
     return 0;
+}
+
+static int zfuse_create (const char * path, mode_t mode, struct fuse_file_info * fi)
+{
+   zoidfs_handle_t handle; 
+   zoidfs_sattr_t sattr; 
+   int ret; 
+   int created; 
+
+   zfuse_debug ("zfuse_create %s\n", path); 
+
+   sattr.mask = ZOIDFS_ATTR_MODE; 
+   posixmode_to_sattr(mode, &sattr); 
+   ret = zoidfs_create (NULL, NULL, path, 
+         &sattr, &handle, &created); 
+
+   if (ret != ZFS_OK)
+      return zoidfserr_to_posix (ret); 
+
+
+   fi->direct_io = 0; 
+   fi->keep_cache = 0; 
+   
+   fi->fh = zfuse_handle_add (&handle); 
+
+
+   return 0; 
 }
 
 static int zfuse_open(const char *path, struct fuse_file_info *fi)
@@ -358,6 +412,13 @@ static int zfuse_read(const char *path, char *buf, size_t size, off_t offset,
 static void * zfuse_init (struct fuse_conn_info *conn)
 {
    zfuse_debug("ZFuse Init\n");
+   int err = zoidfs_init (); 
+   if (err !=ZFS_OK)
+   {
+      zfuse_error ("Failed to initialize zoidfs! (error %i)\n",
+            err); 
+      exit (1); 
+   } 
    return 0; 
 }
 
@@ -365,6 +426,7 @@ static void * zfuse_init (struct fuse_conn_info *conn)
 static void zfuse_destroy (void * d)
 {
    zfuse_debug ("ZFuse debug\n"); 
+   zoidfs_finalize (); 
 }
 
 static int zfuse_unlink (const char * path)
@@ -401,29 +463,36 @@ static int zfuse_listxattr (const char * file, char * data, size_t size)
 static int zfuse_getxattr (const char * path, const char * name,
       char * value, size_t size)
 {
-   const int needed = sizeof (zoidfs_handle_t); 
+   char buf[256]; 
+   zoidfs_handle_t handle; 
    int ret; 
-
-   if (!size)
-      return needed;
-
-   if (size < needed)
-      return -ERANGE; 
-
-   ret = zoidfs_lookup (NULL, NULL, path, (zoidfs_handle_t*) value); 
+   
+   ret = zoidfs_lookup (NULL, NULL, path, &handle); 
    if (ret != ZFS_OK)
    {
       zfuse_debug ("zfuse_getxattr: lookup failed on %s\n", path); 
       return zoidfserr_to_posix (ret); 
    }
    
-   return sizeof (zoidfs_handle_t); 
+   zoidfs_handle_to_text (&handle, buf, sizeof(buf));
+   
+   const int needed = strlen(buf); 
+ 
+   if (!size)
+      return needed;
+
+   if (size < needed)
+      return -ERANGE; 
+
+   memcpy (value, buf, needed); 
+   return needed; 
 }
 
 static struct fuse_operations hello_oper = {
     .getattr	= zfuse_getattr,
     .readdir	= zfuse_readdir,
     .open	= zfuse_open,
+    .create     = zfuse_create, 
     .read	= zfuse_read,
     .write      = zfuse_write,
     .truncate   = zfuse_truncate, 

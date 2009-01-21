@@ -60,7 +60,9 @@ typedef struct
 } zoidfs_handle_t;
 
 /* The cookie is an opaque object of 4 bytes */
-typedef uint32_t zoidfs_dirent_cookie_t;
+typedef uint64_t zoidfs_dirent_cookie_t;
+
+#define ZOIDFS_DIRENT_COOKIE_NULL 0 
 
 /* first cookie value?? */ 
 

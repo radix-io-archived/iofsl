@@ -9,9 +9,11 @@
 #include <sys/types.h>
 #include <unistd.h>
 #include <stdlib.h>
+#include <dirent.h>
 #include "zoidfs.h"
 #include "handlecache.h"
 #include "persist.h"
+#include "zoidfs-util.h"
 
 #define mymin(a,b) ((a)<(b) ? (a):(b))
 
@@ -35,6 +37,83 @@
 
 
 static persist_op_t  *  persist; 
+
+static void path_add (const char * dir, const char * comp, char * buf, int bufsize)
+{
+   /* NOTE: does not handle . or .. */ 
+   /* remove slash from comp if it starts with it */ 
+   if (*comp == '/')
+      ++comp; 
+
+   int dirlen = strlen(dir); 
+   assert (dirlen); 
+   if (dir[dirlen-1]=='/')
+      snprintf (buf, bufsize, "%s%s", dir, comp); 
+   else
+      snprintf (buf, bufsize, "%s/%s", dir, comp); 
+}
+
+static inline int errno2zfs (int val)
+{
+   if (val == 0)
+      return ZFS_OK; 
+   switch(val)
+   {
+      case EPERM:
+         return ZFSERR_PERM;
+      case ENOENT:
+         return ZFSERR_NOENT;
+      case EIO: 
+         return ZFSERR_IO;
+      case ENXIO: 
+         return ZFSERR_NXIO;
+      case EACCES:
+         return ZFSERR_ACCES;
+      case EEXIST:
+         return ZFSERR_EXIST;
+      case ENODEV:
+         return ZFSERR_NODEV;
+      case ENOTDIR:
+         return ZFSERR_NOTDIR;
+      case EISDIR: 
+         return ZFSERR_ISDIR;
+      case EFBIG:
+         return ZFSERR_FBIG;
+      case ENOSPC:
+         return ZFSERR_NOSPC;
+      case EROFS:
+         return ZFSERR_ROFS;
+      case ENAMETOOLONG:
+         return ZFSERR_NAMETOOLONG;
+      case ENOTEMPTY:
+         return ZFSERR_NOTEMPTY;
+      case EDQUOT:
+         return ZFSERR_DQUOT;
+      case ESTALE:
+         return ZFSERR_STALE;
+      default:
+         return ZFSERR_MISC; 
+   }
+}
+
+inline static void posixmode_to_zoidfs (const mode_t * m, uint16_t * mode)
+{
+   *mode = *m; 
+}
+
+/* convert posix time to zoidfs time */ 
+inline static void posixtime_to_zoidfs (const time_t * t1, zoidfs_time_t * t2)
+{
+   t2->seconds = *t1; 
+   t2->useconds = 0; 
+}
+
+inline static void zoidfstime_to_posix (const zoidfs_time_t * t1, time_t * t2)
+{
+   /* ignore microseconds from zoidfs */
+   *t2 = t1->seconds; 
+}
+
 
 
 
@@ -89,11 +168,34 @@ void zoidfs_null(void)
  */
 int zoidfs_getattr(const zoidfs_handle_t *handle, zoidfs_attr_t *attr) 
 {
-   //persist_handle_t rhandle = handle_to_internal (handle); 
+   /* we could go for the fstat instead but that would open lots of files
+    * without need */ 
+   char buf[ZOIDFS_PATH_MAX]; 
 
-   zoidfs_debug ("getattr\n"); 
+   if (!persist_handle_to_filename (persist, handle, buf, sizeof(buf)))
+   {
+      zoidfs_error ("stale handle in getattr: %s\n", zoidfs_handle_string(handle)); 
+       return -ZFSERR_STALE; 
+   }
+   zoidfs_debug ("getattr %s\n",buf ); 
 
-    return -ENOSYS;
+   struct stat s; 
+   int ret = stat (buf, &s); 
+   if (ret < 0)
+      return errno2zfs (errno); 
+
+   attr->mask = ZOIDFS_ATTR_MODE | ZOIDFS_ATTR_NLINK | 
+      ZOIDFS_ATTR_UID  |ZOIDFS_ATTR_GID | ZOIDFS_ATTR_SIZE |
+      ZOIDFS_ATTR_ATIME | ZOIDFS_ATTR_CTIME | ZOIDFS_ATTR_MTIME;
+   posixtime_to_zoidfs (&s.st_ctime,  &attr->ctime); 
+   posixtime_to_zoidfs (&s.st_atime,  &attr->atime); 
+   posixtime_to_zoidfs (&s.st_mtime,  &attr->mtime); 
+   posixmode_to_zoidfs (&s.st_mode, &attr->mode); 
+   attr->nlink = s.st_nlink;
+   attr->uid = s.st_uid; 
+   attr->gid = s.st_gid; 
+   attr->size = s.st_size; 
+    return ZFS_OK;
 }
 
 
@@ -115,13 +217,6 @@ int zoidfs_setattr(const zoidfs_handle_t *handle, const zoidfs_sattr_t *sattr,
 int zoidfs_readlink(const zoidfs_handle_t *handle, char *buffer,
                     size_t buffer_length) {
     return -ENOSYS;
-}
-
-static inline int errno2zfs (int val)
-{
-   if (val > 0)
-      return ZFS_OK; 
-   return -ZFSERR_MISC; 
 }
 
 /* Try to open a file: be careful about directories and 
@@ -169,6 +264,7 @@ static int our_open (const char * filename, int *err)
     * and hope for the best */ 
    fd = open (filename, O_RDONLY); 
    *err = errno; 
+
    return fd; 
 }
 
@@ -256,12 +352,32 @@ int zoidfs_lookup(const zoidfs_handle_t *parent_handle,
 
    zoidfs_debug ("lookup: %s\n", path); 
 
+   struct stat s; 
+   if (stat (path, &s) < 0)
+      return errno2zfs (errno); 
+
+   /* Lookup the persist handle for the file, creating if needed */ 
+   persist_filename_to_handle (persist, path, handle, 1); 
+
+   return ZFS_OK; 
+ 
+   
    // ignore component_name
    int err; 
    int file = our_open (path, &err); 
 
    if (file < 0)
+   {
+      /* it could be that we fail because we don't have read permission. (i.e.
+       * directory)
+       * That does not mean we should not return a valid handle for it.
+       *
+       * Try stat and if that works
+       */
+
+
       return errno2zfs (err); 
+   }
 
    /* Lookup the persist handle for the file, creating if needed */ 
    persist_filename_to_handle (persist, full_path, handle, 1); 
@@ -285,15 +401,21 @@ int zoidfs_remove(const zoidfs_handle_t *parent_handle,
          full_path); 
    // ignore component_name
    if (unlink (path)< 0) 
-      return errno2zfs (errno); 
+   {
+      int ret = errno; 
+      if (ret != EISDIR)
+         return errno2zfs (ret); 
+
+      /* is directory */
+      if (rmdir (path)<0)
+         return errno2zfs (errno); 
+   }
 
    /* remove from database */
    persist_purge (persist, path, 0); 
 
    /* NOTE: whoever still has the file open will still be able to access the
     * file */ 
-
-
    return ZFS_OK; 
 }
 
@@ -338,6 +460,9 @@ int zoidfs_create(const zoidfs_handle_t *parent_handle,
    /* OK: handle is not currently open, try to create */ 
    
    file = our_create (path, &err, created); 
+
+   /* TODO: do sattr stuff */ 
+
    if (file < 0)
       return errno2zfs (err); 
 
@@ -409,7 +534,7 @@ int zoidfs_mkdir(const zoidfs_handle_t *parent_handle,
    const char * path = zoidfs_resolve_path (parent_handle, component_name, 
          full_path); 
    zoidfs_debug ("creating dir %s\n", path); 
-   return posixcheck (mkdir (full_path, 0777) < 0); 
+   return posixcheck (mkdir (path, 0777)); 
 }
 
 
@@ -424,9 +549,57 @@ int zoidfs_readdir(const zoidfs_handle_t *parent_handle,
                    zoidfs_dirent_t *entries,
                    zoidfs_cache_hint_t *parent_hint) 
 {
+   char buf[ZOIDFS_PATH_MAX]; 
+   char fullbuf[ZOIDFS_PATH_MAX]; 
+   int returncode = 0; 
+   int i; 
 
-    return -ENOSYS;
+   if (!persist_handle_to_filename (persist, parent_handle, buf, sizeof(buf)))
+      return -ZFSERR_STALE; 
 
+   assert (sizeof(zoidfs_dirent_cookie_t) >= sizeof(off_t)); 
+
+   zoidfs_debug ("readdir: %s\n", buf); 
+
+   DIR * d = opendir (buf); 
+   if (!d)
+      return errno2zfs (errno); 
+
+   if (cookie)
+      seekdir (d, (off_t) cookie); 
+
+   size_t len = offsetof(struct dirent, d_name) +
+                     pathconf(buf, _PC_NAME_MAX) + 1; 
+   struct dirent * e = malloc(len);
+
+   const int bufsize =*entry_count;
+   int ok = 0; 
+   for (i=0; i<bufsize; ++i)
+   {
+      struct dirent * res =0; 
+      int ret = readdir_r (d, e, &res);
+      if (ret < 0)
+      {
+         zoidfs_debug ("readdir_r failed\n"); 
+         returncode = errno; 
+         break; 
+      }
+
+      if (!res)
+         break; 
+
+      strncpy (entries[ok].name, res->d_name, sizeof(entries[ok].name)); 
+      path_add (buf, entries[ok].name, fullbuf, sizeof(fullbuf)); 
+      persist_filename_to_handle (persist, fullbuf, &entries[ok].handle, 1);
+      entries[ok].cookie = telldir (d); 
+
+      ++ok; 
+   }
+
+   *entry_count = ok; 
+   closedir (d); 
+   free (e); 
+   return errno2zfs(returncode); 
 }
 
 
@@ -532,12 +705,39 @@ int zoidfs_read(const zoidfs_handle_t *handle, int mem_count,
 }
 
 
+static int zoidfs_hc_removefunc (hc_item_value_t * value)
+{
+   /* value is pointer to file descriptor that is being removed */
+   close (*(int*)value); 
+   return 1; 
+}
+
 /*
  * zoidfs_init
  * Initialize the client subsystems.
  */
 int zoidfs_init(void) 
 {
+   const char * dbstr = getenv ("ZOIDFS_PERSIST"); 
+   if (!dbstr)
+   {
+      zoidfs_error ("ZOIDFS_PERSIST environment variable not set!\n"); 
+      return ZFSERR_NOENT; 
+   }
+   persist = persist_init (dbstr); 
+   if (!persist)
+   {
+      zoidfs_error ("Error initializing persistance layer (%s)\n", 
+            dbstr); 
+      return ZFSERR_MISC; 
+   }
+
+   int size = 128;
+   if (getenv ("ZOIDFS_HANDLECACHE_SIZE"))
+      size = atoi (getenv("ZOIDFS_HANDLECACHE_SIZE")); 
+   handlecache_init (size, zoidfs_hc_removefunc); 
+
+   zoidfs_debug ("zoidfs_init called...\n"); 
     return ZFS_OK;
 }
 
@@ -548,6 +748,10 @@ int zoidfs_init(void)
  */
 int zoidfs_finalize(void) 
 {
+   handlecache_destroy (); 
+   persist_done (persist); 
+   zoidfs_debug ("zoidfs_finalize called...\n"); 
     return ZFS_OK;
+
 }
 
