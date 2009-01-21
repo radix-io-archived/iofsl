@@ -9,6 +9,9 @@
 #include <unistd.h>
 #include <assert.h>
 #include <string.h>
+#include <time.h>
+#include <sys/stat.h>
+#include <utime.h>
 
 #include "zoidfs.h"
 #include "zoidfs-util.h"
@@ -130,9 +133,17 @@ static const zoidfs_handle_t * zfuse_handle_lookup (int pos)
 /* ======================================================================= */
 /* ======================================================================= */
 
+inline static uint16_t posixmode_to_zoidfs (mode_t mode)
+{
+   /* cleanup because fuse seems to pass in something like 0100755...
+    * What is the first 1 ??? */ 
+   return mode & (S_ISUID|S_ISGID|S_ISVTX|S_IRUSR|S_IWUSR|S_IXUSR|S_IRGRP
+         |S_IWGRP|S_IXGRP|S_IROTH|S_IWOTH|S_IXOTH); 
+}
+
 inline static void posixmode_to_sattr (mode_t mode, zoidfs_sattr_t * a)
 {
-   a->mode = mode;
+   a->mode=posixmode_to_zoidfs (mode); 
 }
 
 inline static void posixtime_to_zoidfs (const time_t * t1, zoidfs_time_t * t2)
@@ -147,6 +158,12 @@ inline static void zoidfstime_to_posix (const zoidfs_time_t * t1, time_t * t2)
    *t2 = t1->seconds; 
 }
 
+inline static void timespec_to_zoidfstime (const struct timespec * i, 
+      zoidfs_time_t * o)
+{
+   o->seconds = i->tv_sec; 
+   o->useconds = i->tv_nsec; 
+}
 
 inline static void zoidfstime_current (zoidfs_time_t * t)
 {
@@ -197,23 +214,15 @@ static int zoidfserr_to_posix (int ret)
    return -ENOSYS; 
 }
 
-static int zfuse_getattr(const char * path, 
+int zfuse_getattr_helper (const char * file, const zoidfs_handle_t * handle, 
       struct stat * stbuf)
 {
-   int res = 0; 
-
-   zfuse_debug ("zfuse_getattr: %s\n", path); 
-
-   memset(stbuf, 0, sizeof(struct stat));
-   zoidfs_handle_t handle; 
    zoidfs_attr_t attr; 
-   int ret = zoidfs_lookup (NULL, NULL, path, &handle);
+   int ret = zoidfs_getattr (handle, &attr); 
    if (ret)
       return zoidfserr_to_posix (ret); 
-   ret = zoidfs_getattr (&handle, &attr); 
-
-   if (ret)
-      return zoidfserr_to_posix (ret); 
+   
+   memset(stbuf, 0, sizeof(struct stat));
 
    stbuf->st_mode = attr.mode; 
    stbuf->st_nlink = attr.nlink; 
@@ -224,7 +233,28 @@ static int zfuse_getattr(const char * path,
    zoidfstime_to_posix (&attr.atime, &stbuf->st_atime);
    zoidfstime_to_posix (&attr.ctime, &stbuf->st_ctime);
    zoidfstime_to_posix (&attr.mtime, &stbuf->st_mtime);
-   return res;
+   return 0;
+}
+
+static int zfuse_fgetattr (const char * filename, struct stat * s, 
+      struct fuse_file_info * info)
+{
+   const zoidfs_handle_t * handle = zfuse_handle_lookup (info->fh); 
+   return zfuse_getattr_helper (filename, handle, s); 
+}
+
+
+static int zfuse_getattr(const char * path, 
+      struct stat * stbuf)
+{
+   zfuse_debug ("zfuse_getattr: %s\n", path); 
+
+   zoidfs_handle_t handle; 
+   int ret = zoidfs_lookup (NULL, NULL, path, &handle);
+   if (ret)
+      return zoidfserr_to_posix (ret); 
+
+   return zfuse_getattr_helper (path, &handle, stbuf); 
 }
 
 static int zfuse_truncate (const char * path, off_t size)
@@ -488,14 +518,171 @@ static int zfuse_getxattr (const char * path, const char * name,
    return needed; 
 }
 
+static int zfuse_flush (const char * filename, struct fuse_file_info * info)
+{
+   /* we don't buffer so nothing todo */
+   return 0; 
+}
+
+static int zfuse_removexattr (const char * filename, const char * attr)
+{
+   /* we do not allow removing the zoidfs handle */ 
+   return -EACCES; 
+}
+
+static int zfuse_readlink (const char * file, char * buf, size_t bufsize)
+{
+   zoidfs_handle_t handle; 
+   int ret;
+
+   ret = zoidfs_lookup (NULL, NULL, file, &handle); 
+   if (ret != ZFS_OK)
+      return zoidfserr_to_posix (ret); 
+   ret = zoidfs_readlink (&handle, buf, bufsize); 
+   return zoidfserr_to_posix (ret); 
+}
+
+static int zfuse_symlink (const char * file, const char * dest)
+{
+   zoidfs_sattr_t attr;
+   int ret; 
+
+   attr.mask = 0; 
+   ret = zoidfs_symlink (NULL, NULL, file, NULL, NULL, dest, &attr, 
+         NULL, NULL); 
+   return zoidfserr_to_posix (ret); 
+}
+
+static int zfuse_rename (const char * file, const char * dest)
+{
+   return zoidfserr_to_posix (zoidfs_rename(NULL, NULL, 
+            file, NULL, NULL, dest, NULL, NULL)); 
+}
+
+static int zfuse_link (const char * source, const char * dest)
+{
+   return -ENOSYS; 
+}
+
+static int zfuse_chmod (const char * file, mode_t mode)
+{
+   zoidfs_handle_t handle;
+   int ret; 
+
+   ret = zoidfs_lookup (NULL, NULL, file, &handle); 
+   if (ret != ZFS_OK)
+      return zoidfserr_to_posix (ret); 
+   
+   zoidfs_sattr_t attr;
+   zoidfs_attr_t out; 
+
+   attr.mask = ZOIDFS_ATTR_MODE; 
+   attr.mode = posixmode_to_zoidfs (mode); 
+   return zoidfserr_to_posix(zoidfs_setattr (&handle, &attr, &out)); 
+}
+
+static int zfuse_chown (const char * file, uid_t uid, gid_t gid)
+{
+   zoidfs_handle_t handle;
+   int ret; 
+
+   ret = zoidfs_lookup (NULL, NULL, file, &handle); 
+   if (ret != ZFS_OK)
+      return zoidfserr_to_posix (ret); 
+   
+   zoidfs_sattr_t attr;
+   zoidfs_attr_t out; 
+
+   attr.mask = ZOIDFS_ATTR_UID|ZOIDFS_ATTR_GID; 
+   attr.uid = uid;
+   attr.gid = gid; 
+   return zoidfserr_to_posix(zoidfs_setattr (&handle, &attr, &out)); 
+}
+
+/* no need to go through the DEFINE mess of using utimens 
+ * since zoidfs only does microsecond time */
+static int zfuse_utimens (const char * file, const struct timespec tv[2])
+{
+   zoidfs_handle_t handle;
+   int ret; 
+
+   ret = zoidfs_lookup (NULL, NULL, file, &handle); 
+   if (ret != ZFS_OK)
+      return zoidfserr_to_posix (ret); 
+   
+   zoidfs_sattr_t attr;
+   zoidfs_attr_t out; 
+
+   attr.mask = ZOIDFS_ATTR_ATIME | ZOIDFS_ATTR_MTIME; 
+   timespec_to_zoidfstime (&tv[0], &attr.atime); 
+   timespec_to_zoidfstime (&tv[1], &attr.mtime); 
+   return zoidfserr_to_posix(zoidfs_setattr (&handle, &attr, &out)); 
+
+}
+
+
+static int zfuse_fsync (const char * file, int p, struct fuse_file_info * info)
+{
+   /* we don't buffer */ 
+   return 0; 
+}
+
+static int zfuse_fsyncdir (const char * dir, int nometa, 
+      struct fuse_file_info * info)
+{
+   /* no need */ 
+   return 0; 
+}
+
+
+static int zfuse_access (const char * file, int p)
+{
+/*   zoidfs_handle_t handle; 
+   int ret; 
+
+   ret=zoidfs_lookup (NULL, NULL, file, &handle); 
+   if (ret != ZFS_OK)
+      return zoidfserr_to_posix (ret); 
+
+   zoidfs_attr_t attr;
+   ret = zoidfs_getattr (&handle, &attr); 
+   if (ret != ZFS_OK)
+      return zoidfserr_to_posix (ret); 
+
+     */
+   
+   return -ENOSYS; 
+
+}
+
+static int zfuse_ftruncate (const char * file, off_t off, 
+      struct fuse_file_info * info)
+{
+   const zoidfs_handle_t * handle = zfuse_handle_lookup (info->fh); 
+   int ret = zoidfs_resize (handle, off); 
+   return zoidfserr_to_posix (ret); 
+}
+
 static struct fuse_operations hello_oper = {
+    .access     = zfuse_access, 
+    .fsyncdir   = zfuse_fsyncdir, 
+    .fsync      = zfuse_fsync, 
+    .symlink    = zfuse_symlink,
+    .rename     = zfuse_rename,
+    .link       = zfuse_link,
+    .chown      = zfuse_chown, 
+    .utimens    = zfuse_utimens,
+    .chmod      = zfuse_chmod, 
+    .readlink   = zfuse_readlink, 
     .getattr	= zfuse_getattr,
+    .fgetattr	= zfuse_fgetattr,
     .readdir	= zfuse_readdir,
     .open	= zfuse_open,
     .create     = zfuse_create, 
     .read	= zfuse_read,
     .write      = zfuse_write,
     .truncate   = zfuse_truncate, 
+    .ftruncate  = zfuse_ftruncate, 
     .rmdir      = zfuse_rmdir,
     .mkdir      = zfuse_mkdir,
     .init       = zfuse_init,
@@ -504,8 +691,10 @@ static struct fuse_operations hello_oper = {
     .release    = zfuse_release,
     .getxattr   = zfuse_getxattr,
     .listxattr  = zfuse_listxattr,
+    .removexattr= zfuse_removexattr, 
     .opendir    = zfuse_opendir, 
-    .releasedir = zfuse_releasedir
+    .releasedir = zfuse_releasedir,
+    .flush      = zfuse_flush
 };
 
 int main(int argc, char *argv[])

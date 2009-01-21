@@ -7,6 +7,18 @@
 -> WOuld be easy if there is an 'invalid' zoidfs handle
 --> is there a ZOIDFS root handle?
 
+-> hardlink support?
+
+
+-> zoidfs_attr_type_t ???
+
+
+-> zoidfs time_t: posix has nanosecond now
+
+-> statfs missing
+-> sync missing
+
+-> zoidfs_setattr: out attr_t?
 
 -> There is more to ESTALE than meets the eye: 
     if it handle->name files while resolving the path 
@@ -20,3 +32,12 @@
 
 -> does readdir return . and .. ?
 -> dirent cookie too small!
+
+-> what to do with symlinks and lookup?
+  (->return handle of destination or return handle of symlink file?
+  (currently option 1 since getattr returns symlink attr))
+
+/* for permissions */
+-> add zoidfs call to obtain uid/gid of connection
+
+

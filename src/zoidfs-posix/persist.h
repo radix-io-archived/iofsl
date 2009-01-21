@@ -29,6 +29,10 @@ typedef struct
     * starting with that prefix (e.g. directory removal)  */
    int (*persist_purge) (void * data, const char * filename, int prefix); 
    
+
+   /* Rename file */
+   int (*persist_rename) (void * data, const char * file1, const char *
+         file2);
    
    /* Return all DB entries in directory dir (and call filler to store them)
     * Returns 1 if all done, 0 if filler aborted */ 
@@ -53,6 +57,12 @@ typedef struct
     const char * name; 
 } persist_module_t; 
 
+
+static inline int persist_rename (persist_op_t * con, const char * f1, const
+      char * f2)
+{
+   return con->persist_rename (con->data, f1, f2); 
+}
 
 static inline int persist_readdir (persist_op_t * con, const char * dir, persist_filler_t filler, 
       void * fillerdata)
