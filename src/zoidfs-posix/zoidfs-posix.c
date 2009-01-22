@@ -477,8 +477,12 @@ int zoidfs_lookup(const zoidfs_handle_t *parent_handle,
    /* Lookup the persist handle for the file, creating if needed */ 
    persist_filename_to_handle (persist, full_path, handle, 1); 
 
+   /* Instead of keeping the file open, we close it again and
+    * wait and see if somebody actually reads from it */ 
+   close (file); 
+
    /* file openened ok, add to cache */
-   handlecache_add (handle, &file); 
+   /* handlecache_add (handle, &file); */
 
    return ZFS_OK; 
 }
@@ -747,12 +751,39 @@ static inline int zoidfs_generic_access (const zoidfs_handle_t *handle, int mem_
                  int file_count, const uint64_t file_starts[],
                  uint64_t file_sizes[], int write) 
 {
+   int file; 
+
+   /* first obtain fd */
+   if (!handlecache_lookup (handle, &file))
+   {
+      /* do not have handle open: try to obtain file name and open handle */
+      char buf[ZOIDFS_PATH_MAX];
+      if (!persist_handle_to_filename (persist, handle, buf, sizeof(buf)))
+      {
+         zoidfs_error ("zoidfs_generic_access: returned -ESTALE\n"); 
+         return ZFSERR_STALE; 
+      }
+
+      int err; 
+      file = our_open (buf, &err); 
+
+      if (file < 0)
+      {
+         /* failed to open file */ 
+         return errno2zfs (err); 
+      }
+
+      /* add file to cache for later */ 
+      handlecache_add (handle, &file); 
+   }
+
+   /* file handle is in fd */ 
+
    /* note need lock here */
    int curmem = 0; 
    size_t memofs = 0 ; 
    int curfile = 0; 
    size_t fileofs = 0; 
-   int file; 
 
    while (curmem < mem_count || curfile < file_count)
    {
@@ -823,6 +854,7 @@ int zoidfs_read(const zoidfs_handle_t *handle, int mem_count,
 
 static int zoidfs_hc_removefunc (hc_item_value_t * value)
 {
+   zoidfs_debug ("zoidfs_hc_removefunc: closing fd %i\n", *(int*)value); 
    /* value is pointer to file descriptor that is being removed */
    close (*(int*)value); 
    return 1; 

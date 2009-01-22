@@ -5,6 +5,15 @@
 #include "trie.h"
 #include "gen-locks.h"
 #include "hash-table.h"
+#include "zoidfs-util.h"
+#include <stdio.h>
+
+#ifndef NDEBUG
+#define hc_debug(format, ...) fprintf (stderr, "handlecache: debug: " format, ##__VA_ARGS__)
+#else
+#define hc_debug(format, ...) {}
+#endif
+
 
 struct hc_entry; 
 
@@ -26,7 +35,11 @@ static hc_entry_t * hc_last;
 static int          hc_count; 
 static int          hc_capacity; 
 static handlecache_removefunc_t hc_removefunc; 
+static unsigned long hc_miss;
+static unsigned long hc_hit; 
 /* ================================= */ 
+
+
 
 inline static unsigned long hc_gen_hash (HashTableKey val)
 {
@@ -101,6 +114,7 @@ int handlecache_add (const zoidfs_handle_t * k, hc_item_value_t * val)
 {
    /* first try lookup */
    assert (!hash_table_lookup (hc_hash, (void*)k));
+
    
    hc_entry_t * n = malloc (sizeof (hc_entry_t)); 
    zoidfs_handle_t * key = (zoidfs_handle_t*) malloc (sizeof(zoidfs_handle_t)); 
@@ -112,6 +126,8 @@ int handlecache_add (const zoidfs_handle_t * k, hc_item_value_t * val)
    n->key = key; 
 
    ++hc_count; 
+   
+   hc_debug ("Adding %s [size=%u]\n", zoidfs_handle_string(k),hc_count); 
 
    /* add to front of the list */ 
    n->prev = 0; 
@@ -154,7 +170,17 @@ int handlecache_lookup (const zoidfs_handle_t * key, hc_item_value_t * dst)
 {
    HashTableValue  val = hash_table_lookup (hc_hash, (HashTableKey) key);
    if (!val)
+   {
+      ++hc_miss; 
+      hc_debug ("miss for %s  [%lu/%lu]\n", 
+            zoidfs_handle_string(key), hc_hit, hc_hit+hc_miss); 
       return 0; 
+   }
+
+   ++hc_hit; 
+      
+   hc_debug ("hit for %s  [%lu/%lu]\n", 
+            zoidfs_handle_string(key), hc_hit, hc_hit+hc_miss); 
    
    hc_entry_t * e = (hc_entry_t *) val; 
    *dst = e->file; 

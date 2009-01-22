@@ -35,6 +35,11 @@
 
 -> what to do with symlinks and lookup?
   (->return handle of destination or return handle of symlink file?
+
+-> uint64_t instead of off_t ? 
+   Only need to be defined on the wire?
+
+   Also: size_t for memsize but uint64_t for fileregion size? (in read call)
   (currently option 1 since getattr returns symlink attr))
 
 /* for permissions */

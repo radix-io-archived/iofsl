@@ -426,17 +426,37 @@ static int zfuse_open(const char *path, struct fuse_file_info *fi)
 static int zfuse_write (const char * path, const char * buf, size_t size, 
       off_t offset, struct fuse_file_info * fi)
 {
-   //const zoidfs_handle_t * handle = zfuse_handle_lookup (fi->fh); 
-   zfuse_debug ("Writing to handle %lu\n", (unsigned long) fi->fh); 
-   return size; 
+   const zoidfs_handle_t * handle = zfuse_handle_lookup (fi->fh); 
+   zfuse_debug ("Writing to handle %lu (zoidfs handle %s)\n", (unsigned long) fi->fh,
+         zoidfs_handle_string(handle)); 
+
+   assert (sizeof (offset) <= sizeof(uint64_t)); 
+   assert (sizeof (size) <= sizeof(uint64_t)); 
+   uint64_t ofs = offset; 
+   uint64_t fsize = size; 
+   const void * memstart = buf; 
+   int ret = zoidfs_write (handle, 1, &memstart, &size, 1, &ofs, &fsize);
+   if (ret != ZFS_OK)
+      return zoidfserr_to_posix (ret); 
+   return size;
 }
 
 static int zfuse_read(const char *path, char *buf, size_t size, off_t offset,
                       struct fuse_file_info *fi)
 {
-   //const zoidfs_handle_t * handle = zfuse_handle_lookup (fi->fh); 
-   zfuse_debug ("Reading from handle %lu\n", (unsigned long) fi->fh); 
-   return -ENOSYS;
+   const zoidfs_handle_t * handle = zfuse_handle_lookup (fi->fh); 
+   zfuse_debug ("Reading from handle %lu (zoidfs handle %s)\n", (unsigned long) fi->fh,
+         zoidfs_handle_string(handle)); 
+
+   assert (sizeof (offset) <= sizeof(uint64_t)); 
+   assert (sizeof (size) <= sizeof(uint64_t)); 
+   uint64_t ofs = offset; 
+   uint64_t fsize = size; 
+   void * memstart = buf; 
+   int ret = zoidfs_read (handle, 1, &memstart, &size, 1, &ofs, &fsize);
+   if (ret != ZFS_OK)
+      return zoidfserr_to_posix (ret); 
+   return size;
 }
 
 static void * zfuse_init (struct fuse_conn_info *conn)
