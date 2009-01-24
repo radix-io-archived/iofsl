@@ -1,42 +1,51 @@
--> zoidfs_null should return status/information
+OK -> zoidfs_null should return status/information
 
 
--> I assume create can succeed without creating the file?
+OK -> I assume create can succeed without creating the file?
  (i.e. existed already)
 
--> WOuld be easy if there is an 'invalid' zoidfs handle
---> is there a ZOIDFS root handle?
-
--> hardlink support?
+OK -> WOuld be easy if there is an 'invalid' zoidfs handle
+OK -> is there a ZOIDFS root handle?
 
 
--> zoidfs_attr_type_t ???
+TBDL statfs ??
+
+OK -> hardlink support?
 
 
--> zoidfs time_t: posix has nanosecond now
+OK -> zoidfs_attr_type_t ???
 
--> statfs missing
--> sync missing
 
--> zoidfs_setattr: out attr_t?
+OK -> zoidfs time_t: posix has nanosecond now
 
--> There is more to ESTALE than meets the eye: 
+don't care -> statfs missing
+
+
+don't care -> sync missing
+
+OK -> zoidfs_setattr: out attr_t?
+
+OK (ignored) -> There is more to ESTALE than meets the eye: 
     if it handle->name files while resolving the path 
     in a (parent_handle, component) 
     the caller needs to do a lookup on the parent_handle 
+--> NOTE: affects calls with two input handles (symlink, link, rename)
+    on ESTALE, both handles need a lookup
 
+OK -> Define error values: is it ZFSERR_STALE or -ZFSERR_STALE 
+that is returned by a ZOIDFS implementation
+       -> return normal value 
 
--> Define error values: is it ESTALE or -ESTALE?
+OK -> mode bits?
 
--> mode bits?
+OK -> does readdir return . and .. ?
 
--> does readdir return . and .. ?
--> dirent cookie too small!
+OK -> dirent cookie too small!
 
--> what to do with symlinks and lookup?
+DONE -> what to do with symlinks and lookup?
   (->return handle of destination or return handle of symlink file?
 
--> uint64_t instead of off_t ? 
+IGNORE -> uint64_t instead of off_t ? 
    Only need to be defined on the wire?
 
    Also: size_t for memsize but uint64_t for fileregion size? (in read call)

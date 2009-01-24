@@ -12,7 +12,7 @@ LDFLAGS = @LDFLAGS@
 
 SUBDIRS = src/iofwdutil src/iofwd src/frontend src/backend src/mgmt \
 	  src/metacache src/cache sandbox src/fuse-zoid \
-	  src/zoidfs-posix src/zoidfs-bmi test 
+	  src/zoidfs-posix test 
 
 VPATH := @top_srcdir@
 

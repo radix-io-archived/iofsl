@@ -29,10 +29,15 @@ typedef struct
     * starting with that prefix (e.g. directory removal)  */
    int (*persist_purge) (void * data, const char * filename, int prefix); 
    
+   /* Add mapping: fails if it exists 
+    * (used when a file /must/ have a certain handle (e.g. hardlinks)
+    */
+   int (*persist_add) (void * data, const char * filename, const
+            zoidfs_handle_t * handle); 
 
    /* Rename file */
    int (*persist_rename) (void * data, const char * file1, const char *
-         file2);
+         file2, int dir);
    
    /* Return all DB entries in directory dir (and call filler to store them)
     * Returns 1 if all done, 0 if filler aborted */ 
@@ -58,10 +63,16 @@ typedef struct
 } persist_module_t; 
 
 
-static inline int persist_rename (persist_op_t * con, const char * f1, const
-      char * f2)
+static inline int persist_add (persist_op_t * con, const char * name,
+      const zoidfs_handle_t * handle)
 {
-   return con->persist_rename (con->data, f1, f2); 
+   return con->persist_add (con->data, name, handle); 
+}
+
+static inline int persist_rename (persist_op_t * con, const char * f1, const
+      char * f2, int dir)
+{
+   return con->persist_rename (con->data, f1, f2, dir); 
 }
 
 static inline int persist_readdir (persist_op_t * con, const char * dir, persist_filler_t filler, 

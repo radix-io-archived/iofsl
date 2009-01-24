@@ -39,6 +39,56 @@
 
 static persist_op_t  *  persist; 
 
+
+static inline zoidfs_attr_type_t posixmode_to_zoidfsattrtype (mode_t mode)
+{
+   switch (mode & S_IFMT)
+   {
+      case S_IFSOCK:
+         return ZOIDFS_SOCK;
+      case S_IFLNK:
+         return ZOIDFS_LNK;
+      case S_IFREG:
+         return ZOIDFS_REG;
+      case S_IFBLK:
+         return ZOIDFS_BLK;
+      case S_IFDIR:
+         return ZOIDFS_DIR; 
+      case S_IFCHR:
+         return ZOIDFS_CHR; 
+      case S_IFIFO:
+         return ZOIDFS_FIFO;
+      default:
+         zoidfs_debug ("invalid mode mask in posixmode_to_zoidfsattrtype!"); 
+         return ZOIDFS_INVAL; 
+   }
+}
+
+static inline mode_t zoidfsattrtype_to_posixmode (zoidfs_attr_type_t t)
+{
+   switch (t)
+   {
+      case ZOIDFS_REG:
+         return S_IFREG;
+      case ZOIDFS_DIR:
+         return S_IFDIR; 
+      case ZOIDFS_LNK:
+         return S_IFLNK; 
+      case ZOIDFS_CHR:
+         return S_IFCHR; 
+      case ZOIDFS_BLK:
+         return S_IFBLK;
+      case ZOIDFS_FIFO:
+         return S_IFIFO; 
+      case ZOIDFS_SOCK:
+         return S_IFSOCK;
+      case ZOIDFS_INVAL:
+      default:
+         zoidfs_error("Invalid file type in zoidfsattrtype_to_posixmode!\n"); 
+         return 0; 
+   }
+}
+
 static void path_add (const char * dir, const char * comp, char * buf, int bufsize)
 {
    /* NOTE: does not handle . or .. */ 
@@ -93,7 +143,7 @@ static inline int errno2zfs (int val)
       case ESTALE:
          return ZFSERR_STALE;
       default:
-         return ZFSERR_MISC; 
+         return ZFSERR_OTHER; 
    }
 }
 
@@ -108,18 +158,23 @@ static inline int posixcheck (int ret)
 
 inline static void posixmode_to_zoidfs (const mode_t * m, uint16_t * mode)
 {
-   *mode = *m; 
+   /* only return true file mode bits: zoidfs keeps file type bits in
+    * attr.type */ 
+   *mode = *m & (S_ISUID| S_ISGID| S_ISVTX| S_IRWXU| S_IRUSR| S_IWUSR|\
+         S_IXUSR| S_IRWXG| S_IRGRP| S_IWGRP| S_IXGRP| S_IRWXO| S_IROTH| S_IWOTH| S_IXOTH); 
 }
 
 inline static mode_t zoidfsmode_to_posix (uint16_t mode)
 {
+   /* zoidfs mode is a subset of the posix mode so we just
+    * return the value */ 
    return mode; 
 }
 /* convert posix time to zoidfs time */ 
 inline static void posixtime_to_zoidfs (const time_t * t1, zoidfs_time_t * t2)
 {
    t2->seconds = *t1; 
-   t2->useconds = 0; 
+   t2->nseconds = 0; 
 }
 
 inline static void zoidfstime_to_posix (const zoidfs_time_t * t1, time_t * t2)
@@ -132,7 +187,7 @@ inline static void zoidfstime_to_posix (const zoidfs_time_t * t1, time_t * t2)
 void zoidfstime_to_timeval (const zoidfs_time_t * t1, struct timeval * t2)
 {
    t2->tv_sec = t1->seconds;
-   t2->tv_usec = t1->useconds; 
+   t2->tv_usec = t1->nseconds / 1000; 
 }
 static void zoidfs_resolve_path_mem (const zoidfs_handle_t * handle,
       const char * component, const char * full_path, char * buf, int bufsize)
@@ -188,8 +243,9 @@ static inline const char * zoidfs_resolve_path (const zoidfs_handle_t * handle,
  * This function implements a noop operation. The IOD returns a 1-byte message
  * to the CN.
  */
-void zoidfs_null(void) 
+int zoidfs_null(void) 
 {
+   return ZFS_OK; 
 }
 
 
@@ -216,13 +272,24 @@ int zoidfs_getattr(const zoidfs_handle_t *handle, zoidfs_attr_t *attr)
    if (ret < 0)
       return errno2zfs (errno); 
 
+   if (attr->mask & (ZOIDFS_ATTR_FILEID|ZOIDFS_ATTR_FSID|ZOIDFS_ATTR_BSIZE))
+   {
+      zoidfs_debug ("zoidfs_posix: unable to return fileid,fsid or bsize!\n"); 
+      attr->fsid=0; 
+      attr->blocksize=512; 
+      attr->fileid=0; 
+   }
+
+   /* always retrieve everything */ 
    attr->mask = ZOIDFS_ATTR_MODE | ZOIDFS_ATTR_NLINK | 
       ZOIDFS_ATTR_UID  |ZOIDFS_ATTR_GID | ZOIDFS_ATTR_SIZE |
       ZOIDFS_ATTR_ATIME | ZOIDFS_ATTR_CTIME | ZOIDFS_ATTR_MTIME;
+
    posixtime_to_zoidfs (&s.st_ctime,  &attr->ctime); 
    posixtime_to_zoidfs (&s.st_atime,  &attr->atime); 
    posixtime_to_zoidfs (&s.st_mtime,  &attr->mtime); 
    posixmode_to_zoidfs (&s.st_mode, &attr->mode); 
+   attr->type = posixmode_to_zoidfsattrtype (s.st_mode); 
    attr->nlink = s.st_nlink;
    attr->uid = s.st_uid; 
    attr->gid = s.st_gid; 
@@ -236,7 +303,7 @@ int zoidfs_getattr(const zoidfs_handle_t *handle, zoidfs_attr_t *attr)
  * This function sets the attributes associated with the file handle.
  */
 int zoidfs_setattr(const zoidfs_handle_t *handle, const zoidfs_sattr_t *sattr,
-                   zoidfs_attr_t *attr_what_for) 
+                   zoidfs_attr_t * rattr) 
 {
    char buf[ZOIDFS_PATH_MAX];
    if (!persist_handle_to_filename (persist, handle, buf, sizeof (buf)))
@@ -272,6 +339,13 @@ int zoidfs_setattr(const zoidfs_handle_t *handle, const zoidfs_sattr_t *sattr,
          gid = sattr->gid; 
       if (chown (buf, uid, gid)<0)
          return errno2zfs (errno); 
+   }
+
+   if (rattr->mask & ZOIDFS_ATTR_ALL)
+   {
+      int ret = zoidfs_getattr (handle, rattr); 
+      if (ret != ZFS_OK)
+         return ret; 
    }
 
    return ZFS_OK; 
@@ -400,7 +474,7 @@ static int our_create (const char * filename, int * err, int * created,
 }
 
 /* Open a file descriptor for the specified zoidfs handle; File must exist */ 
-static int getfd_handle (const zoidfs_handle_t * handle)
+static int getfd_handle (const zoidfs_handle_t * handle, int * err)
 {
    int fd; 
    char buf[ZOIDFS_PATH_MAX]; 
@@ -421,9 +495,9 @@ static int getfd_handle (const zoidfs_handle_t * handle)
 #endif
    }
 
-   fd = open (buf, O_RDWR); 
+   fd = our_open (buf, err); 
    if (fd < 0)
-      return fd;
+      return -1;
 
    /* add entry to cache */ 
    handlecache_add (handle, &fd); 
@@ -632,6 +706,54 @@ int zoidfs_symlink(const zoidfs_handle_t *from_parent_handle,
    return posixcheck (symlink(p1, p2)); 
 }
 
+
+/**
+ * Create hard link 
+ */
+int zoidfs_link(const zoidfs_handle_t * from_parent_handle /* in:ptr:nullok */,
+                   const char * from_component_name /* in:str:nullok */,
+                   const char * from_full_path /* in:str:nullok */,
+                   const zoidfs_handle_t * to_parent_handle /* in:ptr:nullok */,
+                   const char * to_component_name /* in:str:nullok */,
+                   const char * to_full_path /* in:str:nullok */,
+                   zoidfs_cache_hint_t * from_parent_hint /* out:ptr:nullok */,
+                   zoidfs_cache_hint_t * to_parent_hint /* out:ptr:nullok */)
+{
+   char p1[ZOIDFS_PATH_MAX]; 
+   char p2[ZOIDFS_PATH_MAX]; 
+
+   zoidfs_resolve_path_mem (from_parent_handle, 
+         from_component_name, from_full_path, p1, sizeof(p1)); 
+   zoidfs_resolve_path_mem (to_parent_handle,
+         to_component_name, to_full_path, p2, sizeof(p2)); 
+
+   zoidfs_handle_t oldhandle; 
+   
+
+   int ret = link (p1, p2); 
+   if (ret < 0)
+      return errno2zfs (errno); 
+
+   if (ret >= 0)
+   {
+      /* Need to ensure that both filenames have the same zoidfs handle */
+      persist_filename_to_handle (persist, p1, &oldhandle, 1); 
+      if (!persist_add (persist, p2, &oldhandle))
+      {
+         zoidfs_error ("Unable to add handle for %s file in hardlinking %s to %s??\n",
+               p2, p1, p2); 
+
+         /* assume it failed because entry existed. Try to fix */ 
+         persist_purge (persist, p2, 0); 
+         persist_add (persist, p2, &oldhandle); 
+      }
+   }
+
+   return ZFS_OK; 
+}
+
+
+
 /*
  * zoidfs_mkdir
  * This function creates a new directory.
@@ -655,14 +777,20 @@ int zoidfs_mkdir(const zoidfs_handle_t *parent_handle,
  * fetching the dirents from.
  */
 int zoidfs_readdir(const zoidfs_handle_t *parent_handle,
-                   zoidfs_dirent_cookie_t cookie, int *entry_count,
+                   zoidfs_dirent_cookie_t cookie, size_t *entry_count,
                    zoidfs_dirent_t *entries,
+                   uint32_t flags, 
                    zoidfs_cache_hint_t *parent_hint) 
 {
    char buf[ZOIDFS_PATH_MAX]; 
    char fullbuf[ZOIDFS_PATH_MAX]; 
    int returncode = 0; 
    int i; 
+
+   /* if attributes are requested, enable the handle retrieval:
+    * we need the handle anyway to get to the attributes */ 
+   if (flags & ZOIDFS_ATTR_ALL)
+      flags |= ZOIDFS_RETR_HANDLE; 
 
    if (!persist_handle_to_filename (persist, parent_handle, buf, sizeof(buf)))
       return -ZFSERR_STALE; 
@@ -699,8 +827,23 @@ int zoidfs_readdir(const zoidfs_handle_t *parent_handle,
          break; 
 
       strncpy (entries[ok].name, res->d_name, sizeof(entries[ok].name)); 
-      path_add (buf, entries[ok].name, fullbuf, sizeof(fullbuf)); 
-      persist_filename_to_handle (persist, fullbuf, &entries[ok].handle, 1);
+
+      if (flags & ZOIDFS_RETR_HANDLE)
+      {
+         /* we need to retrieve handles for the dir entries */ 
+         path_add (buf, entries[ok].name, fullbuf, sizeof(fullbuf)); 
+         persist_filename_to_handle (persist, fullbuf, &entries[ok].handle, 1);
+      }
+
+      if (flags & ZOIDFS_ATTR_ALL)
+      {
+         int ret = zoidfs_getattr (&entries[ok].handle, &entries[ok].attr);
+         if (ret != ZFS_OK)
+         {
+            free (e); 
+            return errno2zfs(ret); 
+         }
+      }
       entries[ok].cookie = telldir (d); 
 
       ++ok; 
@@ -751,33 +894,14 @@ static inline int zoidfs_generic_access (const zoidfs_handle_t *handle, int mem_
                  int file_count, const uint64_t file_starts[],
                  uint64_t file_sizes[], int write) 
 {
+   int err; 
    int file; 
-
-   /* first obtain fd */
-   if (!handlecache_lookup (handle, &file))
-   {
-      /* do not have handle open: try to obtain file name and open handle */
-      char buf[ZOIDFS_PATH_MAX];
-      if (!persist_handle_to_filename (persist, handle, buf, sizeof(buf)))
-      {
-         zoidfs_error ("zoidfs_generic_access: returned -ESTALE\n"); 
-         return ZFSERR_STALE; 
-      }
-
-      int err; 
-      file = our_open (buf, &err); 
-
-      if (file < 0)
-      {
-         /* failed to open file */ 
-         return errno2zfs (err); 
-      }
-
-      /* add file to cache for later */ 
-      handlecache_add (handle, &file); 
-   }
-
-   /* file handle is in fd */ 
+   
+   /* obtain file handle */ 
+   file = getfd_handle (handle, &err); 
+   if (file < 0)
+      return errno2zfs (err); 
+  
 
    /* note need lock here */
    int curmem = 0; 
@@ -829,9 +953,9 @@ static inline int zoidfs_generic_access (const zoidfs_handle_t *handle, int mem_
  * zoidfs_write
  * This function implements the zoidfs write call.
  */
-int zoidfs_write(const zoidfs_handle_t *handle, int mem_count,
+int zoidfs_write(const zoidfs_handle_t *handle, size_t mem_count,
                  const void *mem_starts[], const size_t mem_sizes[],
-                 int file_count, const uint64_t file_starts[],
+                 size_t file_count, const uint64_t file_starts[],
                  uint64_t file_sizes[]) 
 {
     return zoidfs_generic_access (handle, mem_count, 
@@ -843,8 +967,8 @@ int zoidfs_write(const zoidfs_handle_t *handle, int mem_count,
  * zoidfs_read
  * This function implements the zoidfs read call.
  */
-int zoidfs_read(const zoidfs_handle_t *handle, int mem_count,
-                void *mem_starts[], const size_t mem_sizes[], int file_count,
+int zoidfs_read(const zoidfs_handle_t *handle, size_t mem_count,
+                void *mem_starts[], const size_t mem_sizes[], size_t file_count,
                 const uint64_t file_starts[], uint64_t file_sizes[]) 
 {
     return zoidfs_generic_access (handle, mem_count, 
@@ -877,7 +1001,7 @@ int zoidfs_init(void)
    {
       zoidfs_error ("Error initializing persistance layer (%s)\n", 
             dbstr); 
-      return ZFSERR_MISC; 
+      return ZFSERR_OTHER; 
    }
 
    int size = 128;

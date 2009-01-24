@@ -133,10 +133,36 @@ static const zoidfs_handle_t * zfuse_handle_lookup (int pos)
 /* ======================================================================= */
 /* ======================================================================= */
 
+static inline mode_t zoidfsattrtype_to_posixmode (zoidfs_attr_type_t t)
+{
+   switch (t)
+   {
+      case ZOIDFS_REG:
+         return S_IFREG;
+      case ZOIDFS_DIR:
+         return S_IFDIR; 
+      case ZOIDFS_LNK:
+         return S_IFLNK; 
+      case ZOIDFS_CHR:
+         return S_IFCHR; 
+      case ZOIDFS_BLK:
+         return S_IFBLK;
+      case ZOIDFS_FIFO:
+         return S_IFIFO; 
+      case ZOIDFS_SOCK:
+         return S_IFSOCK;
+      case ZOIDFS_INVAL:
+      default:
+         zfuse_error("Invalid file type in zoidfsattrtype_to_posixmode!\n"); 
+         return 0; 
+   }
+}
+
+
 inline static uint16_t posixmode_to_zoidfs (mode_t mode)
 {
    /* cleanup because fuse seems to pass in something like 0100755...
-    * What is the first 1 ??? */ 
+    * What is the first 1 -> 'regular file: see manpage' ??? */ 
    return mode & (S_ISUID|S_ISGID|S_ISVTX|S_IRUSR|S_IWUSR|S_IXUSR|S_IRGRP
          |S_IWGRP|S_IXGRP|S_IROTH|S_IWOTH|S_IXOTH); 
 }
@@ -149,12 +175,12 @@ inline static void posixmode_to_sattr (mode_t mode, zoidfs_sattr_t * a)
 inline static void posixtime_to_zoidfs (const time_t * t1, zoidfs_time_t * t2)
 {
    t2->seconds = *t1; 
-   t2->useconds = 0; 
+   t2->nseconds = 0; 
 }
 
 inline static void zoidfstime_to_posix (const zoidfs_time_t * t1, time_t * t2)
 {
-   /* ignore microseconds from zoidfs */
+   /* ignore nanoseconds from zoidfs */
    *t2 = t1->seconds; 
 }
 
@@ -162,7 +188,7 @@ inline static void timespec_to_zoidfstime (const struct timespec * i,
       zoidfs_time_t * o)
 {
    o->seconds = i->tv_sec; 
-   o->useconds = i->tv_nsec; 
+   o->nseconds = i->tv_nsec; 
 }
 
 inline static void zoidfstime_current (zoidfs_time_t * t)
@@ -218,13 +244,15 @@ int zfuse_getattr_helper (const char * file, const zoidfs_handle_t * handle,
       struct stat * stbuf)
 {
    zoidfs_attr_t attr; 
+   attr.mask = ZOIDFS_ATTR_ALL; 
    int ret = zoidfs_getattr (handle, &attr); 
    if (ret)
       return zoidfserr_to_posix (ret); 
    
    memset(stbuf, 0, sizeof(struct stat));
 
-   stbuf->st_mode = attr.mode; 
+   // TODO: FIX MASK
+   stbuf->st_mode = attr.mode | zoidfsattrtype_to_posixmode(attr.type) ; 
    stbuf->st_nlink = attr.nlink; 
    stbuf->st_uid = attr.uid; 
    stbuf->st_gid = attr.gid; 
@@ -334,7 +362,7 @@ static int zfuse_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
    const zoidfs_handle_t * dirhandle; 
    int ret; 
    zoidfs_dirent_t * entries; 
-   int entrycount; 
+   size_t entrycount; 
    zoidfs_dirent_cookie_t cookie = 0;  
    
    dirhandle = zfuse_handle_lookup (fi->fh); 
@@ -345,6 +373,7 @@ static int zfuse_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
       int i; 
       entrycount = ZFUSE_DIRENTRY_COUNT; 
       ret = zoidfs_readdir (dirhandle, cookie, &entrycount, entries, 
+            0, /* don't need attributes or filehandles */  
             NULL); 
       if (ret)
       {
@@ -581,7 +610,9 @@ static int zfuse_rename (const char * file, const char * dest)
 
 static int zfuse_link (const char * source, const char * dest)
 {
-   return -ENOSYS; 
+   int ret = zoidfs_link (NULL, NULL, source, NULL, NULL, dest, 
+         NULL, NULL); 
+   return zoidfserr_to_posix (ret); 
 }
 
 static int zfuse_chmod (const char * file, mode_t mode)

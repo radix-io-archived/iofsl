@@ -145,6 +145,46 @@ static int persist_db_handle_to_filename (void * odata,
    return pkey.size; 
 }
 
+static inline int persist_db_add_helper (persist_db_data_t * d,
+      const char * filename,
+      const zoidfs_handle_t * handle)
+{
+   DBT key, data; 
+   memset (&key, 0, sizeof(key)); 
+   memset (&data, 0, sizeof(data)); 
+
+   data.data = (void*)handle; 
+   data.ulen = data.size = sizeof(zoidfs_handle_t); 
+   data.flags = DB_DBT_USERMEM; 
+
+   key.data = (void*)filename; 
+   key.ulen = key.size = strlen(filename); 
+   key.flags = DB_DBT_USERMEM; 
+
+   fprintf (stderr, "Adding name %s to %s\n", 
+         (const char*) key.data, zoidfs_handle_string (handle)); 
+   return d->db->put (d->db, NULL, &key, &data, 
+         DB_NOOVERWRITE);
+}
+
+
+static int persist_db_add  (void * odata, const char * buf, 
+      const zoidfs_handle_t * handle)
+{
+   persist_db_data_t * d = DBD(odata); 
+
+   int ret = persist_db_add_helper (d, buf, handle); 
+   if (ret == 0)
+      return 1; 
+
+   if (ret == DB_KEYEXIST)
+      return 0; 
+         
+   persist_db_error (ret); 
+   return 0; 
+}
+
+
 static int persist_db_filename_to_handle (void * odata, 
       const char * filename, zoidfs_handle_t * handle, int autoadd)
 {
@@ -188,18 +228,7 @@ static int persist_db_filename_to_handle (void * odata,
       /* prepare to autoadd */
       persist_db_generate_handle (handle); 
 
-      data.data = handle; 
-      data.ulen = data.size = sizeof(zoidfs_handle_t); 
-      data.flags = DB_DBT_USERMEM; 
-
-      key.data = (void*)filename; 
-      key.ulen = key.size = strlen(filename); 
-      key.flags = DB_DBT_USERMEM; 
-
-      fprintf (stderr, "Adding name %s to %s\n", 
-            (const char*) key.data, zoidfs_handle_string (handle)); 
-      ret = d->db->put (d->db, NULL, &key, &data, 
-            DB_NOOVERWRITE);
+      ret =  persist_db_add_helper (d , filename, handle); 
 
       if (ret != DB_KEYEXIST)
          persist_db_error (ret); 
@@ -263,6 +292,9 @@ static void * persist_db_mem_init (const char * initstr, int persist)
 
    persist_db_error(data->db->open (data->db, NULL, filename, NULL, DB_BTREE,
             DB_CREATE,0)); 
+   
+   /* hard links prevent the mapping of handle to filename being unique*/ 
+   persist_db_error(data->dbindex->set_flags(data->dbindex, DB_DUP)); 
 
    if (filename)
       snprintf (buf, sizeof(buf)-1, "%s.idx", filename); 
@@ -284,6 +316,14 @@ static void * persist_db_mem_init (const char * initstr, int persist)
 static void * persist_db_init (const char * initstr)
 {
    return persist_db_mem_init (initstr, 1); 
+}
+
+
+static int persist_db_rename (void * odata, const char * f1, 
+      const char * f2, int dir)
+{
+   assert (0); 
+   return 0; 
 }
 
 static void persist_db_init_con (persist_op_t * op)
@@ -310,6 +350,8 @@ static void persist_mem_init_con (persist_op_t * op)
    op->persist_readdir = persist_db_readdir;
    op->persist_cleanup = persist_db_cleanup; 
    op->persist_init = persist_mem_init; 
+   op->persist_add = persist_db_add; 
+   op->persist_rename = persist_db_rename; 
 }
 
 persist_module_t persist_db_module = {
