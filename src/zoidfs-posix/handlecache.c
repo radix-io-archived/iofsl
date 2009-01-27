@@ -127,7 +127,10 @@ int handlecache_add (const zoidfs_handle_t * k, hc_item_value_t * val)
 
    ++hc_count; 
    
-   hc_debug ("Adding %s [size=%u]\n", zoidfs_handle_string(k),hc_count); 
+   hc_debug ("Adding %s [size=%u/capacity=%u]\n", zoidfs_handle_string(k),hc_count,
+         (unsigned) hc_capacity); 
+
+   hash_table_insert (hc_hash, key, n); 
 
    /* add to front of the list */ 
    n->prev = 0; 
@@ -138,8 +141,12 @@ int handlecache_add (const zoidfs_handle_t * k, hc_item_value_t * val)
    
    if (!hc_last)
    {
+      /* if there was no hc_last or hc_first this is the first one we add */ 
       assert (hc_count == 1); 
       hc_last = n;
+      assert(hc_last->next == 0); 
+      assert(hc_last->prev == 0); 
+      assert(hc_last == hc_first); 
    }
 
    /* See if we need to remove one */
@@ -151,6 +158,7 @@ int handlecache_add (const zoidfs_handle_t * k, hc_item_value_t * val)
       assert (hc_last); 
       hc_removefunc (&hc_last->file); 
       hc_last = hc_last->prev; 
+      assert (hc_last); 
       hc_last->next = 0; 
 
       ret = hash_table_remove (hc_hash, old->key); 
@@ -172,36 +180,49 @@ int handlecache_lookup (const zoidfs_handle_t * key, hc_item_value_t * dst)
    if (!val)
    {
       ++hc_miss; 
-      hc_debug ("miss for %s  [%lu/%lu]\n", 
-            zoidfs_handle_string(key), hc_hit, hc_hit+hc_miss); 
+      hc_debug ("miss for %s  [misses %lu/total %lu | size=%u capacity=%u]\n", 
+            zoidfs_handle_string(key), hc_hit, hc_hit+hc_miss,
+            (unsigned)hc_count, (unsigned)hc_capacity); 
       return 0; 
    }
 
    ++hc_hit; 
       
-   hc_debug ("hit for %s  [%lu/%lu]\n", 
-            zoidfs_handle_string(key), hc_hit, hc_hit+hc_miss); 
+   hc_debug ("hit for %s  [hit %lu/ total %lu, size=%lu, capacity=%lu]\n", 
+            zoidfs_handle_string(key), hc_hit, hc_hit+hc_miss,
+            (long unsigned int) hc_count, (long unsigned int) hc_capacity); 
    
    hc_entry_t * e = (hc_entry_t *) val; 
    *dst = e->file; 
    
-   /* disconnect from current position */ 
-   if (e->prev)
-      e->prev->next = e->next; 
-   if (e->next)
-      e->next->prev = e->prev; 
-
-   e->next = e->prev = 0; 
-
-   /* reattach at the front of the list */ 
-   e->next = hc_first; 
-   if (hc_first)
+   /* only move when the element is not 
+    * already at the head of the list
+    * (note that when there is only one element it is automatically the head
+    * of the list)
+    */
+   if (hc_first != e)
    {
-      assert (hc_first->prev == 0); 
-      hc_first->prev = e; 
-   }
-   else
-      hc_first = e; 
+      /* disconnect from current position */ 
+      if (e->prev)
+         e->prev->next = e->next; 
+      if (e->next)
+         e->next->prev = e->prev; 
 
+      /* if the element is the last element update hc_last */
+      if (hc_last == e)
+         hc_last = e->prev; 
+
+      e->next = e->prev = 0; 
+
+      /* reattach at the front of the list */ 
+      e->next = hc_first; 
+      if (hc_first)
+      {
+         assert (hc_first->prev == 0); 
+         hc_first->prev = e; 
+      }
+      else
+         hc_first = e; 
+   }
    return 1; 
 }

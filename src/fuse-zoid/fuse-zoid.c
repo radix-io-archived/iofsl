@@ -576,7 +576,9 @@ static int zfuse_flush (const char * filename, struct fuse_file_info * info)
 static int zfuse_removexattr (const char * filename, const char * attr)
 {
    /* we do not allow removing the zoidfs handle */ 
-   return -EACCES; 
+   /* However, we cannot return EACCESS or otherwise
+    * fuse fails to write to the file */
+   return 0; 
 }
 
 static int zfuse_readlink (const char * file, char * buf, size_t bufsize)

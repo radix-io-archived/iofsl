@@ -522,7 +522,10 @@ int zoidfs_lookup(const zoidfs_handle_t *parent_handle,
    zoidfs_debug ("lookup: %s\n", path); 
 
    struct stat s; 
-   if (stat (path, &s) < 0)
+
+   /* needs to be lstat here: otherwise we fail to do a lookup on a broken
+    * link... */ 
+   if (lstat (path, &s) < 0)
       return errno2zfs (errno); 
 
    /* Lookup the persist handle for the file, creating if needed */ 
@@ -841,6 +844,7 @@ int zoidfs_readdir(const zoidfs_handle_t *parent_handle,
          if (ret != ZFS_OK)
          {
             free (e); 
+            closedir (d); 
             return errno2zfs(ret); 
          }
       }
