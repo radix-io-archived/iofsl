@@ -1,2 +1,0 @@
-Implementation of the zoidfs client-side API that directly calls the POSIX functions.
-

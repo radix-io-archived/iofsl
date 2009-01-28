@@ -3,7 +3,7 @@
 
 AC_PREREQ(2.61)
 AC_INIT(FULL-PACKAGE-NAME, VERSION, BUG-REPORT-ADDRESS)
-AC_CONFIG_SRCDIR([src/iofwd/iofwd.c])
+AC_CONFIG_SRCDIR([src/iofwd/iofwd.cpp])
 AC_CONFIG_HEADER([iofwd_config.h])
 
 AC_LANG([C++])
@@ -15,30 +15,10 @@ AC_PROG_CXXCPP
 
 AC_REQUIRE_CPP
 
-# library locations
-BMI_INCLUDE=
-BMI_LIBS=
-AC_ARG_WITH([bmi],[AS_HELP_STRING([--with-bmi], 
-                        [location of BMI library])],
-                   [bmidir=$withval])
-
-if test "x$bmidir" != "x" ; then
-    CPPFLAGS="$CPPFLAGS -I${bmidir}/include"
-    LDFLAGS="$LDFLAGS -L${bmidir}/lib"
-fi
-
-
-
-# Checks for libraries.
-AC_CHECK_LIB([bmi], [BMI_initialize])
-AC_CHECK_LIB([pthread], [pthread_exit])
-AC_CHECK_LIB([readline], [readline])
 
 # Checks for header files.
 AC_HEADER_STDC
 AC_CHECK_HEADERS([stdlib.h string.h unistd.h])
-AC_CHECK_HEADERS([bmi.h], [], [AC_MSG_ERROR([Could not find bmi header!
-                  Maybe you need to use --with-bmi=location?])])
 
 # Checks for typedefs, structures, and compiler characteristics.
 AC_C_CONST
@@ -50,92 +30,12 @@ AC_CHECK_FUNCS([memset])
 
 
 # for fuse
-AC_SYS_LARGEFILE 
-PKG_CHECK_MODULES(FUSE, [fuse],,exit)
-CFLAGS="$CFLAGS $FUSE_CFLAGS"
-CPPFLAGS="$CPPFLAGS $FUSE_CFLAGS"
-LDFLAGS="$LDFLAGS $FUSE_LIBS"
+dnl AC_SYS_LARGEFILE 
+dnl PKG_CHECK_MODULES(FUSE, [fuse],,exit)
+dnl CFLAGS="$CFLAGS $FUSE_CFLAGS"
+dnl CPPFLAGS="$CPPFLAGS $FUSE_CFLAGS"
+dnl LDFLAGS="$LDFLAGS $FUSE_LIBS"
 
-# check for hints parameter in BMI functions
-AC_MSG_CHECKING([if BMI uses hints])
-AC_COMPILE_IFELSE(
-                  [#include <bmi.h>
-                   int main(int argc, char**args)
-                   { BMI_post_send(0,0,0,0,BMI_PRE_ALLOC,0,0,0,0); return 0; }],
-                  [AC_DEFINE([BMI_HINTS], 1, [If BMI supports hints])
-                   AC_MSG_RESULT([yes])], [AC_MSG_RESULT([no])])
-
-
-
-dnl
-dnl configure.in helper macros
-dnl 
-
-persist_extra=
-
-
-dnl DB
-
-
-AC_CHECK_HEADERS([db.h], [DB_OK=1; AC_DEFINE([HAVE_DB],[1],[If db.h is available])],
-            [AC_MSG_ERROR([Could not find db header!])])
-if test x$DB_OK == x1
-then
-        persist_extra="$persist_extra persist-db.c"
-fi
-
-dnl MYSQL 
-AC_MSG_CHECKING(for mysql_config executable)
-
-AC_ARG_WITH(mysql, [  --with-mysql=PATH path to mysql_config binary or mysql prefix dir], [
-if test -x $withval -a -f $withval
- then
-   MYSQL_CONFIG=$withval
- elif test -x $withval/bin/mysql_config -a -f $withval/bin/mysql_config
- then 
-  MYSQL_CONFIG=$withval/bin/mysql_config
- fi
-], [
-if test -x /usr/local/mysql/bin/mysql_config -a -f /usr/local/mysql/bin/mysql_config
- then
-   MYSQL_CONFIG=/usr/local/mysql/bin/mysql_config
- elif test -x /usr/bin/mysql_config -a -f /usr/bin/mysql_config
- then
-   MYSQL_CONFIG=/usr/bin/mysql_config
- fi
-])
-
-if test "x$MYSQL_CONFIG" = "x" 
-then
- AC_MSG_RESULT(not found)
- exit 3
-else
- # add regular MySQL C flags
- ADDFLAGS=`$MYSQL_CONFIG --cflags` 
-
- # add NDB API specific C flags
- IBASE=`$MYSQL_CONFIG --include`
- ADDFLAGS="$ADDFLAGS $IBASE/storage/ndb"
- ADDFLAGS="$ADDFLAGS $IBASE/storage/ndb/ndbapi"
- ADDFLAGS="$ADDFLAGS $IBASE/storage/ndb/mgmapi"
-
- CFLAGS="$CFLAGS $ADDFLAGS"    
- CXXFLAGS="$CXXFLAGS $ADDFLAGS"    
-
-dnl LDFLAGS="$LDFLAGS "`$MYSQL_CONFIG --libs_r`" -lndbclient -lmystrings -lmysys"
-dnl LDFLAGS="$LDFLAGS "`$MYSQL_CONFIG --libs_r`" -lndbclient -lmystrings"
- LDFLAGS="$LDFLAGS "`$MYSQL_CONFIG --libs_r`" "
- 
- AC_MSG_RESULT($MYSQL_CONFIG)
-
- AC_DEFINE([HAVE_MYSQL], 1, [If MYSQL is enabled])
-
- persist_extra="$persist_extra persist-mysql.c"
-fi  
-
-AC_SUBST([persist_extra])
-
-# find out some basic paths
 
 AC_CONFIG_FILES([
                  Makefile
@@ -143,14 +43,9 @@ AC_CONFIG_FILES([
                  src/backend/module.mk
                  src/frontend/module.mk
                  src/iofwd/module.mk
-                 src/mgmt/module.mk
                  src/iofwdutil/module.mk
                  src/metacache/module.mk
                  src/cache/module.mk
-                 src/fuse-zoid/module.mk
-                 src/zoidfs-posix/module.mk
-                 src/zoidfs-bmi/module.mk
-                 src/llfuse-zoid/module.mk
                  test/module.mk
                  ])
 

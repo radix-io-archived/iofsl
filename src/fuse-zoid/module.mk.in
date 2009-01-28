@@ -1,4 +1,0 @@
-MODULE_ARCHIVES:=fuse-zoid
-MODULE_SOURCES_fuse-zoid:= fuse-zoid.c 
-MODULE_CONTAINSINCLUDE := 
-

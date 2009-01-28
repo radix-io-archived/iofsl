@@ -3,16 +3,15 @@
 CC = @CC@
 CXX = @CXX@ 
 LD = @CXX@
-CPPFLAGS = -I. @CPPFLAGS@
+CPPFLAGS = -I. -Isrc @CPPFLAGS@
 CFLAGS = @CFLAGS@
 CXXFLAGS = @CXXFLAGS@
 ADDLIBS = @LIBS@
 CXXCPP = @CXXCPP@ 
 LDFLAGS = @LDFLAGS@
 
-SUBDIRS = src/iofwdutil src/iofwd src/frontend src/backend src/mgmt \
-	  src/metacache src/cache sandbox src/fuse-zoid \
-	  src/zoidfs-posix  test 
+SUBDIRS = src/iofwdutil src/iofwd src/frontend src/backend \
+	  src/metacache src/cache sandbox test
 
 VPATH := @top_srcdir@
 

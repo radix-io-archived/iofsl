@@ -1,37 +1,13 @@
 /* iofwd_config.h.in.  Generated from configure.ac by autoheader.  */
 
-/* If BMI supports hints */
-#undef BMI_HINTS
-
-/* Define to 1 if you have the <bmi.h> header file. */
-#undef HAVE_BMI_H
-
-/* If db.h is available */
-#undef HAVE_DB
-
-/* Define to 1 if you have the <db.h> header file. */
-#undef HAVE_DB_H
-
 /* Define to 1 if you have the <inttypes.h> header file. */
 #undef HAVE_INTTYPES_H
-
-/* Define to 1 if you have the `bmi' library (-lbmi). */
-#undef HAVE_LIBBMI
-
-/* Define to 1 if you have the `pthread' library (-lpthread). */
-#undef HAVE_LIBPTHREAD
-
-/* Define to 1 if you have the `readline' library (-lreadline). */
-#undef HAVE_LIBREADLINE
 
 /* Define to 1 if you have the <memory.h> header file. */
 #undef HAVE_MEMORY_H
 
 /* Define to 1 if you have the `memset' function. */
 #undef HAVE_MEMSET
-
-/* If MYSQL is enabled */
-#undef HAVE_MYSQL
 
 /* Define to 1 if you have the <stdint.h> header file. */
 #undef HAVE_STDINT_H
@@ -71,12 +47,6 @@
 
 /* Define to 1 if you have the ANSI C header files. */
 #undef STDC_HEADERS
-
-/* Number of bits in a file offset, on hosts where this is settable. */
-#undef _FILE_OFFSET_BITS
-
-/* Define for large files, on AIX-style hosts. */
-#undef _LARGE_FILES
 
 /* Define to empty if `const' does not conform to ANSI C. */
 #undef const
