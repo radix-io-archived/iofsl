@@ -19,6 +19,8 @@
 /* size of bulk data access buffer */ 
 #define BULK_SIZE 1*1024*1024
 
+
+
 /*=========================================================================*/
 
 typedef struct
@@ -46,7 +48,7 @@ static inline int persist_db_error (int ret)
 {
    if (!ret)
       return ret; 
-   fprintf (stderr, "persist_db_error: %s\n", db_strerror(ret)); 
+   persist_debug ("persist_db_error: %s\n", db_strerror(ret)); 
    exit (1); 
 }
 
@@ -77,7 +79,7 @@ static int persist_db_purge (void * odata,
    if (ret == DB_NOTFOUND)
    {
       persist_db_error(cursor->c_close (cursor)); 
-      fprintf (stderr, "persist_db_purge: %s not found\n", filename); 
+      persist_debug ("persist_db_purge: %s not found\n", filename); 
       return 0; 
    }
    else
@@ -130,7 +132,7 @@ static int persist_db_handle_to_filename (void * odata,
    {
       if (ret == DB_NOTFOUND)
       {
-         fprintf (stderr, "persist_db_handle_to_filename: invalid handle!\n"); 
+         persist_debug ("persist_db_handle_to_filename: invalid handle!\n"); 
          return 0; 
       }
       assert (ret != DB_BUFFER_SMALL); 
@@ -161,7 +163,7 @@ static inline int persist_db_add_helper (persist_db_data_t * d,
    key.ulen = key.size = strlen(filename); 
    key.flags = DB_DBT_USERMEM; 
 
-   fprintf (stderr, "Adding name %s to %s\n", 
+   persist_debug ("Adding name %s to %s\n", 
          (const char*) key.data, zoidfs_handle_string (handle)); 
    return d->db->put (d->db, NULL, &key, &data, 
          DB_NOOVERWRITE);
@@ -237,7 +239,7 @@ static int persist_db_filename_to_handle (void * odata,
       {
          /* somebody else added the file in the mean time:
             retry the whole thing */ 
-         fprintf (stderr, "Key collision\n"); 
+         persist_debug ("Key collision\n"); 
          continue; 
       }
 

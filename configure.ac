@@ -150,6 +150,7 @@ AC_CONFIG_FILES([
                  src/fuse-zoid/module.mk
                  src/zoidfs-posix/module.mk
                  src/zoidfs-bmi/module.mk
+                 src/llfuse-zoid/module.mk
                  test/module.mk
                  ])
 

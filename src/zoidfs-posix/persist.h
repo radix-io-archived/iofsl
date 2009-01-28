@@ -1,6 +1,7 @@
 #ifndef IOFWD_POSIX_PERSIST_H
 #define IOFWD_POSIX_PERSIST_H
 
+#include <stdio.h>
 #include <stdint.h>
 #include "zoidfs.h"
 
@@ -111,6 +112,13 @@ persist_op_t *  persist_init (const char * initstr);
 
 /* free connection */ 
 void persist_done (persist_op_t * con); 
+
+
+#ifndef NDEBUG
+#define persist_debug(format, ...) fprintf (stderr, "persist: debug: " format, ##__VA_ARGS__)
+#else
+#define persist_debug(format, ...) {}
+#endif
 
 #endif
 
