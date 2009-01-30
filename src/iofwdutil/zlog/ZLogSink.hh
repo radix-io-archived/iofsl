@@ -8,10 +8,15 @@ namespace iofwdutil
    namespace zlog
    {
 
+// forward
+class ZLogSource; 
+
 class ZLogSink
 {
 public:
-   virtual void acceptData (int level, const std::string & str) = 0; 
+   virtual void acceptData (int level, const ZLogSource & source, const std::string & str) = 0; 
+
+
 
    virtual ~ZLogSink (); 
 }; 

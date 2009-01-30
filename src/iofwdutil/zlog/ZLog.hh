@@ -1,6 +1,9 @@
 #ifndef IOFWDUTIL_ZLOG_HH
 #define IOFWDUTIL_ZLOG_HH
 
+#include <boost/assert.hpp>
+#include <boost/array.hpp>
+
 namespace iofwdutil
 {
    namespace zlog
@@ -11,22 +14,6 @@ namespace iofwdutil
 class ZLogSource;
 class ZLogSink; 
 
-class ZLog
-{
-   public:
-
-      static ZLog & get ()
-      {
-         static ZLog singleton; 
-         return singleton; 
-      }
-
-      void doConfig (ZLogSource & source); 
-
-   private:
-      friend class ZLogSource;
-
-};
 
 enum 
 { 
@@ -42,6 +29,35 @@ enum
    MAX_LEVEL
 }; 
 
+
+class ZLog
+{
+   public:
+
+      ZLog (); 
+      
+      static ZLog & get ()
+      {
+         static ZLog singleton; 
+         return singleton; 
+      }
+
+      void doConfig (ZLogSource & source); 
+
+      const char * getLevelName (int level) const
+      {
+         BOOST_ASSERT (level >= 0 && level < _levelNames.size()); 
+         return _levelNames[level]; 
+      }
+
+   protected:
+      ZLogSink * getSinkByName (const char * s); 
+
+   private:
+      friend class ZLogSource;
+
+      static boost::array<const char *, MAX_LEVEL> _levelNames; 
+};
 //===========================================================================
 
 #ifdef ZLOG_ENABLE_ERROR

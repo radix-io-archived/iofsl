@@ -16,11 +16,18 @@ class ZLogSource
 public:
    ZLogSource (const std::string & classname); 
 
+   const std::string & getSourceName () const
+   { 
+      return class_; 
+   }
+
    void doLog (int level, const std::string & str)
    {
       if (sink_[level] != 0)
-         sink_[level]->acceptData (level, str); 
+         sink_[level]->acceptData (level,*this, str); 
    }
+
+   void setSink (int level, ZLogSink * sink);
 
 private:
    const std::string class_; 
