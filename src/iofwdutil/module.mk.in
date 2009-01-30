@@ -1,5 +1,6 @@
 MODULE_ARCHIVES = iofwdutil 
-MODULE_SOURCES_iofwdutil = 
+MODULE_SOURCES_iofwdutil = \
+		zlog/ZLogSource.cpp zlog/ZLogSink.cpp zlog/ZLog.cpp
 			  
 # Automatically add -I$(thismoduledir) to CPPFLAGS
 MODULE_CONTAINSINCLUDE := 1

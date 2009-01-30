@@ -1,5 +1,5 @@
 #include <iostream>
-#include "iofwdutil/ZLog.hh"
+#include "zlog/ZLog.hh"
 
 int main (int argc, char ** args)
 {
