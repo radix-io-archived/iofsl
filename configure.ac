@@ -27,13 +27,36 @@ AC_TYPE_INT32_T
 
 # Checks for library functions.
 AC_CHECK_FUNCS([memset])
+AC_CHECK_LIB([rt],[clock_getres],,[AC_MSG_ERROR([Could not find clock_getres!])])
 
+
+# BMI
+AC_LANG_PUSH([C])
+BMI_INCLUDE=
+BMI_LIBS=
+AC_ARG_WITH([bmi],[AS_HELP_STRING([--with-bmi], 
+                        [location of BMI library])],
+                   [bmidir=$withval])
+if test "x$bmidir" != "x" ; then
+    CPPFLAGS="$CPPFLAGS -I${bmidir}/include"
+    LDFLAGS="$LDFLAGS -L${bmidir}/lib"
+fi
+AC_CHECK_LIB([bmi], [BMI_initialize],,
+             [AC_MSG_ERROR([Could not find usable bmi library!])])
+AC_LANG_POP
+
+# check boost version
+BOOST_REQUIRE([1.34.1])
+
+m4_pattern_allow(BOOST_THREAD_LDFLAGS)
+CPPFLAGS="${CPPFLAGS} ${BOOST_CPPFLAGS}"
+LDFLAGS="${LDFLAGS} ${BOOST_THREAD_LDFLAGS}"
 
 # for fuse
 dnl AC_SYS_LARGEFILE 
 dnl PKG_CHECK_MODULES(FUSE, [fuse],,exit)
 dnl CFLAGS="$CFLAGS $FUSE_CFLAGS"
-dnl CPPFLAGS="$CPPFLAGS $FUSE_CFLAGS"
+dnlCPPFLAGS="$CPPFLAGS $FUSE_CFLAGS"
 dnl LDFLAGS="$LDFLAGS $FUSE_LIBS"
 
 

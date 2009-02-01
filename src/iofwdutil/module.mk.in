@@ -1,6 +1,30 @@
 MODULE_ARCHIVES = iofwdutil 
+
+ZLOGSOURCES := $(addprefix zlog/, \
+   ZLogSource.cpp \
+   ZLogSink.cpp \
+   ZLog.cpp \
+   ZLogSinkFile.cpp\
+  )
+
+XDRSOURCES := $(addprefix xdr/, \
+   XDRException.cpp \
+   XDRReader.cpp \
+   XDRWriter.cpp \
+   )
+
+BMISOURCES := $(addprefix bmi/, \
+   BMI.cpp \
+   BMIContext.cpp \
+   BMIException.cpp \
+   )
+
 MODULE_SOURCES_iofwdutil = \
-		zlog/ZLogSource.cpp zlog/ZLogSink.cpp zlog/ZLog.cpp zlog/ZLogSinkFile.cpp
+		$(ZLOGSOURCES) \
+		$(XDRSOURCES) \
+		$(BMISOURCES) \
+		Timer.cpp TimeVal.cpp always_assert.cpp
+
 			  
 # Automatically add -I$(thismoduledir) to CPPFLAGS
 MODULE_CONTAINSINCLUDE := 1

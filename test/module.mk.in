@@ -1,1 +1,8 @@
+MODULE_APPS:= xdrspeed bmitest
+
+MODULE_SOURCES_xdrspeed := $(addprefix xdr/, xdrspeed.cpp)
+ADDINTLIBS_xdrspeed := iofwdutil
+
+MODULE_SOURCES_bmitest := $(addprefix bmi/, bmi.cpp)
+ADDINTLIBS_bmitest := iofwdutil
 
