@@ -58,6 +58,7 @@ namespace iofwdutil
    Timer::Timer ()
    {
       clockid_ = clkid.getClockID (); 
+      reset (); 
    }
 
    void Timer::dumpInfo (std::ostream & out)

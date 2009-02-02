@@ -20,12 +20,20 @@ public:
   template <typename T>
    XDRReader & operator >> (T & val)
    {
-      this->transfer<T> (val); 
+      *this  |=  (val); 
       return *this; 
    }
 
+  template <typename T, int N>
+  XDRReader & operator >> (T (&val)[N])
+  {
+     *this |=  (val); 
+     return *this; 
+  }
+
    
 }; 
+
 
 //===========================================================================
    }

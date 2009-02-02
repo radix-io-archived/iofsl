@@ -44,7 +44,7 @@ namespace iofwdutil
 
    protected:
       friend class BMIContext;
-
+      friend class BMIAddr; 
 
       inline 
       static bool check (int retcode)

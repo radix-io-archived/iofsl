@@ -17,6 +17,7 @@ BMISOURCES := $(addprefix bmi/, \
    BMI.cpp \
    BMIContext.cpp \
    BMIException.cpp \
+   BMIAddr.cpp \
    )
 
 MODULE_SOURCES_iofwdutil = \
