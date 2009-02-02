@@ -42,6 +42,10 @@ namespace iofwdutil
 
       BMIContext openContext (); 
 
+      void * alloc (BMIAddr addr, size_t memsize, alloc );
+      
+      void free (BMIAddr addr, void * buffer, size_t memsize, AllocType type); 
+
    protected:
       friend class BMIContext;
       friend class BMIAddr; 
@@ -52,6 +56,7 @@ namespace iofwdutil
          if (!retcode)
             return true; 
          handleBMIError (retcode); 
+         /* might not get here (exception above?) */ 
          return false; 
       }
 

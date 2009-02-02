@@ -46,11 +46,25 @@ AC_CHECK_LIB([bmi], [BMI_initialize],,
 AC_LANG_POP
 
 # check boost version
+
+AC_CANONICAL_SYSTEM
+AC_CANONICAL_HOST
+test -z "$host" && AC_MSG_ERROR([host variable is empty??])
+host_os=`echo "$host" | sed 's/^\([^-]*\)-\([^-]*\)-\(.*\)$/\3/'`
+libext=a
+case "$host_os" in
+  cygwin* | mingw* | pw32* | cegcc*)
+    libext=lib
+    ;;
+esac
+
+
 BOOST_REQUIRE([1.34.1])
+BOOST_THREADS
 
 m4_pattern_allow(BOOST_THREAD_LDFLAGS)
 CPPFLAGS="${CPPFLAGS} ${BOOST_CPPFLAGS}"
-LDFLAGS="${LDFLAGS} ${BOOST_THREAD_LDFLAGS}"
+LIBS="${LIBS} ${BOOST_THREAD_LIBS}"
 
 # for fuse
 dnl AC_SYS_LARGEFILE 

@@ -1,0 +1,8 @@
+* Why bmi_size_t * actual size in expected receive??
+  (shouldn't this be on test or so?)
+
+* Is it possible to find out if it is needed to provide 
+  a valid address in BMI_alloc ?
+
+
+

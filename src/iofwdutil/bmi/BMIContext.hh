@@ -17,10 +17,23 @@ class BMIContext
 protected:
    BMIContext (); 
 
+   // Not meant to be used
    bmi_context_id getID () const
    { 
       return context_; 
    }
+
+   BMIOp postSend (BMIAddr dest, 
+         const void * buffer, size_t size, 
+         bmi_msg_tag_t tag, bmi_buffer_type type);
+
+   BMIOp postSendUnexpected (BMIAddr dest, 
+         const void * buffer, size_t size, 
+         bmi_msg_tag_t tag, bmi_buffer_type type);
+
+   BMIOp postReceive (BMIAddr source, 
+         void * buffer, size_t maxsize, size_t * receivedsize
+
 public:
    ~BMIContext (); 
 

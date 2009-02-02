@@ -1,5 +1,8 @@
 /* iofwd_config.h.in.  Generated from configure.ac by autoheader.  */
 
+/* Define to 1 if you have <boost/thread.hpp> */
+#undef HAVE_BOOST_THREAD_HPP
+
 /* Define to 1 if you have the <inttypes.h> header file. */
 #undef HAVE_INTTYPES_H
 

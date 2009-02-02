@@ -1,5 +1,6 @@
 #include "BMI.hh"
 #include "BMIContext.hh"
+#include "BMIException.hh"
 
 extern "C" 
 {
@@ -34,16 +35,20 @@ void BMI::setInitParams (const char * methodlist,
       const char * listen, int flags)
 {
    BOOST_ASSERT (!initparams_); 
-   methodlist_ = methodlist;
-   listen_ = listen; 
+   if (methodlist != 0)
+      methodlist_ = methodlist;
+   if (listen != 0)
+      listen_ = listen; 
    flags_ = flags;
    initparams_ = true; 
 }
 
 void BMI::handleBMIError (int retcode)
 {
-   
+   // Should handle BMI_NON_ERROR_BIT differently here
+   throw BMIException (retcode); 
 }
+
 
 //===========================================================================
    }
