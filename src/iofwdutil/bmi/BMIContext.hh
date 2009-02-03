@@ -12,6 +12,8 @@ namespace iofwdutil
    {
 //===========================================================================
 
+class BMIOp; 
+
 class BMIContext
 {
 protected:
@@ -32,7 +34,7 @@ protected:
          bmi_msg_tag_t tag, bmi_buffer_type type);
 
    BMIOp postReceive (BMIAddr source, 
-         void * buffer, size_t maxsize, size_t * receivedsize
+         void * buffer, size_t maxsize, size_t * receivedsize); 
 
 public:
    ~BMIContext (); 

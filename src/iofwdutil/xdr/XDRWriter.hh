@@ -20,14 +20,9 @@ public:
    template <typename T>
    XDRWriter & operator << (const T & val)
    {
-      *this |= const_cast<T&>(val);
-      return *this; 
-   }
-
-   template <typename T, int N>
-   XDRWriter & operator << (const T (& val)[N])
-   {
-      *this |= const_cast<T(&)[N]>(val);
+      process (*this, const_cast<T&>(val)); 
+      //Processor<XDRWriter> w(*this);
+      //w |= const_cast<T&>(val);
       return *this; 
    }
 

@@ -14,78 +14,85 @@ namespace iofwdutil
   {
 //===========================================================================
 
-
+template <typename T>
 inline
-XDR & operator |= (XDR & f, zoidfs_handle_t & h)
+T & process (T & f, zoidfs_handle_t & h)
 {
-   f.processFixedSizeOpaque (&h.data, sizeof(h.data)); 
+   processFixedSizeOpaque (f, &h.data, sizeof(h.data)); 
    return f; 
 }
 
-inline
-XDR & operator |= (XDR & f, zoidfs_time_t & t)
+template <typename T>
+inline T & process (T & f, zoidfs_time_t & t)
 {
-   f|=t.seconds;
-   f|=t.nseconds;
+   process (f,t.seconds); 
+   process (f,t.nseconds);
    return f; 
 }
 
 // C++ treats enum's as different types
 // call special enum method
-inline 
-XDR & operator |= (XDR & f, zoidfs_attr_type_t & type)
+template <typename T>
+   inline 
+T & process (T & f, zoidfs_attr_type_t & type)
 {
-   return f.processEnum(type); 
-}
-
-inline
-XDR & operator |= (XDR & f, zoidfs_attr_t & t)
-{
-   f|=t.type; 
-   f|=t.mask; 
-   f|=t.mode; 
-   f|=t.nlink;
-   f|=t.uid; 
-   f|=t.gid;
-   f|=t.size;
-   f|=t.blocksize;
-   f|=t.fsid;
-   f|=t.fileid;
-   f|=t.atime;
-   f|=t.mtime;
-   f|=t.ctime;
+   processEnum(f, type); 
    return f; 
 }
 
-inline 
-XDR & operator |= (XDR & f, zoidfs_cache_hint_t & t)
+template <typename T>
+inline
+T & process (T & f, zoidfs_attr_t & t)
 {
-   f|=t.size;
-   f|=t.atime;
-   f|=t.mtime;
-   f|=t.ctime;
+   process(f,t.type); 
+   process(f,t.mask); 
+   process(f,t.mode); 
+   process(f,t.nlink);
+   process(f,t.uid); 
+   process(f,t.gid);
+   process(f,t.size);
+   process(f,t.blocksize);
+   process(f,t.fsid);
+   process(f,t.fileid);
+   process(f,t.atime);
+   process(f,t.mtime);
+   process(f,t.ctime);
    return f; 
 }
 
-inline
-XDR & operator |= (XDR & f, zoidfs_sattr_t & t)
+template <typename T>
+inline 
+T & process (T & f, zoidfs_cache_hint_t & t)
 {
-   f|=t.mask;
-   f|=t.mode;
-   f|=t.uid;
-   f|=t.gid;
-   f|=t.size;
-   f|=t.atime;
-   f|=t.mtime;
+   process(f,t.size);
+   process(f,t.atime);
+   process(f,t.mtime);
+   process(f,t.ctime);
+   return f; 
 }
 
-inline 
-XDR & operator |= (XDR & f, zoidfs_dirent_t & t)
+template <typename T>
+inline
+T & process (T & f, zoidfs_sattr_t & t)
 {
-   f.processString(t.name, sizeof(t.name));
-   f|=t.handle;
-   f|=t.attr;
-   f|=t.cookie;
+   process(f,t.mask);
+   process(f,t.mode);
+   process(f,t.uid);
+   process(f,t.gid);
+   process(f,t.size);
+   process(f,t.atime);
+   process(f,t.mtime);
+   return f; 
+}
+
+template <typename T>
+inline 
+T & process (T & f, zoidfs_dirent_t & t)
+{
+   processString(f, t.name, sizeof(t.name));
+   process(f,t.handle);
+   process(f,t.attr);
+   process(f,t.cookie);
    return f; 
 }
 

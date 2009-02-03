@@ -11,6 +11,7 @@ XDRSOURCES := $(addprefix xdr/, \
    XDRException.cpp \
    XDRReader.cpp \
    XDRWriter.cpp \
+   XDRSizeProcessor.cpp \
    )
 
 BMISOURCES := $(addprefix bmi/, \

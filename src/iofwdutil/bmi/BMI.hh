@@ -4,6 +4,10 @@
 #include <string>
 #include <boost/assert.hpp>
 
+extern "C"
+{
+#include <bmi.h>
+}
 
 namespace iofwdutil
 {
@@ -14,12 +18,15 @@ namespace iofwdutil
 
    // Forward
    class BMIContext; 
+   class BMIAddr; 
 
    /**
     * OO Interface to BMI library
     */
    class BMI
    {
+   public:
+      enum AllocType { ALLOC_SEND = ::BMI_SEND, ALLOC_RECEIVE = ::BMI_RECV }; 
    public:
       /** 
        * Needs to be called before get() to make sure that we can provide
@@ -42,7 +49,7 @@ namespace iofwdutil
 
       BMIContext openContext (); 
 
-      void * alloc (BMIAddr addr, size_t memsize, alloc );
+      void * alloc (BMIAddr addr, size_t memsize, AllocType type );
       
       void free (BMIAddr addr, void * buffer, size_t memsize, AllocType type); 
 
