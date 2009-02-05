@@ -82,6 +82,7 @@ AC_CONFIG_FILES([
                  src/iofwd/module.mk
                  src/iofwdutil/module.mk
                  src/metacache/module.mk
+                 src/client/module.mk
                  src/cache/module.mk
                  test/module.mk
                  ])

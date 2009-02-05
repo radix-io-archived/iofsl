@@ -12,6 +12,10 @@ namespace iofwdutil
 class XDRReader : public XDR
 {
 public:
+   XDRReader ()
+   {
+   }
+
   XDRReader (const char * mem, size_t memsize) :
       XDR (mem, memsize, true)
    {

@@ -12,6 +12,10 @@ namespace iofwdutil
 class XDRWriter : public XDR
 {
 public:
+   XDRWriter ()
+   {
+   }
+
    XDRWriter (char * mem, size_t memsize)
       : XDR (mem, memsize, false)
    {

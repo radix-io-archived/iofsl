@@ -20,13 +20,15 @@ BMISOURCES := $(addprefix bmi/, \
    BMIException.cpp \
    BMIAddr.cpp \
    BMIError.cpp \
+   BMIBuffer.cpp \
    )
 
 MODULE_SOURCES_iofwdutil = \
 		$(ZLOGSOURCES) \
 		$(XDRSOURCES) \
 		$(BMISOURCES) \
-		Timer.cpp TimeVal.cpp always_assert.cpp
+		Timer.cpp TimeVal.cpp always_assert.cpp \
+		ZoidFSAPI.cpp
 
 			  
 # Automatically add -I$(thismoduledir) to CPPFLAGS

@@ -10,8 +10,9 @@ ADDLIBS = @LIBS@
 CXXCPP = @CXXCPP@ 
 LDFLAGS = @LDFLAGS@
 
+# Could replace this with autoscanning for module.mk
 SUBDIRS = src/iofwdutil src/iofwd src/frontend src/backend \
-	  src/metacache src/cache sandbox test
+	  src/metacache src/cache src/client sandbox test
 
 VPATH := @top_srcdir@
 

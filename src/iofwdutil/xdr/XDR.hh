@@ -22,6 +22,19 @@ public:
       init (); 
    }
 
+   XDR () 
+      : mem_(0), size_(0), read_(true)
+   {
+      init (); 
+   }
+
+   void reset (const char * mem, size_t size, bool read)
+   {
+      destroy (); 
+      mem_ = mem; size_ = size; read_ = read; 
+      init (); 
+   }
+
    void rewind ()
    {
       if (xdr_setpos (&xdr_, initpos_))
@@ -47,11 +60,17 @@ public:
 protected:
    void destroy ()
    {
-      xdr_destroy (&xdr_); 
+      if (mem_)
+         xdr_destroy (&xdr_); 
+      mem_ = 0; 
+      size_ = 0; 
    }
 
    void init ()
    {
+      if (!mem_)
+         return ; 
+
       xdrmem_create (&xdr_, const_cast<char*>(mem_),
             size_, (read_ ? XDR_DECODE : XDR_ENCODE)); 
       initpos_ = xdr_getpos(&xdr_);

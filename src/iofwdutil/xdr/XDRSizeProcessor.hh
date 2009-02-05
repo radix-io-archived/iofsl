@@ -27,6 +27,12 @@ public:
    {
    }
 
+   template <typename T>
+   XDRSizeProcessor & operator << (const T & t)
+   {
+      process (*this, const_cast<T&>(t)); 
+      return *this; 
+   }
 
 public:
    class XDRSize
