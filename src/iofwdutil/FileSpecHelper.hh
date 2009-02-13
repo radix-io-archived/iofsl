@@ -1,11 +1,7 @@
 #ifndef IOFWDUTIL_FILESPECHELPER_HH
 #define IOFWDUTIL_FILESPECHELPER_HH
 
-extern "C"
-{
-#include "common/zoidfs.h"
-}
-
+#include "common/zoidfs-wrapped.hh"
 #include "iofwdutil/xdr/XDRWrappers.hh"
 
 namespace iofwdutil

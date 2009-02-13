@@ -2,10 +2,7 @@
 #define IOFWDUTIL_ZOIDFS_INT_HH
 
 
-extern "C" 
-{ 
-#include "common/zoidfs.h" 
-}
+#include "common/zoidfs-wrapped.hh" 
 
 namespace iofwdutil
 {

@@ -22,6 +22,11 @@ class BMIAddr
 public:
    BMIAddr (const char * str);
 
+   BMIAddr (BMI_addr_t addr)
+      : addr_ (addr)
+   {
+   }
+
    operator BMI_addr_t () const
    { return addr_; }
 

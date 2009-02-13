@@ -1,10 +1,20 @@
-#include "IOFWDFrontend.hh"
 #include <boost/thread.hpp>
 #include <boost/bind.hpp>
+#include <boost/array.hpp>
 #include <iostream> 
 #include <unistd.h>
-#include "iofwdutil/bmi/BMI.hh"
 #include <csignal>
+#include "iofwdutil/assert.hh"
+#include "iofwdutil/bmi/BMI.hh"
+#include "IOFWDFrontend.hh"
+#include "iofwdutil/xdr/XDRReader.hh"
+#include "iofwdutil/bmi/BMIUnexpectedBuffer.hh"
+#include "iofwdutil/xdr/XDRSizeProcessor.hh"
+#include "common/zoidfs-wrapped.hh"
+
+#include "IOFWDLookupRequest.hh"
+
+using namespace iofwdutil::bmi; 
 
 namespace iofwd
 {
@@ -47,7 +57,15 @@ private:
    BMI_unexpected_info info_[BATCH_SIZE]; 
 
    volatile sig_atomic_t stop_; 
+
+   typedef Request * (*opidfunc_t) (int opid, const BMI_unexpected_info &
+         info); 
 };
+
+template <class T> 
+inline Request * newrequestfunc (int opid, const BMI_unexpected_info & info)
+{ return new  T (opid, info); }
+
 
 
 IOFW::IOFW (IOFWDFrontend & fe)
@@ -60,13 +78,52 @@ IOFW::~IOFW ()
 {
 }
 
-void IOFW::handleIncoming (int count, const BMI_unexpected_info  * )
+void IOFW::handleIncoming (int count, const BMI_unexpected_info  * info )
 {
+   ASSERT (count <= BATCH_SIZE); 
+
+   Request *  reqs[BATCH_SIZE]; 
+   int ok = 0; 
+   iofwdutil::xdr::XDRReader reader; 
+
+   int32_t opid; 
+   const unsigned int minsize = iofwdutil::xdr::getXDRSize (opid).actual; 
+
+   // Try to do as little as possible, ship everything else to the request
+   // queue where it can be handled by a thread
+   for (int i=0; i<count; ++i)
+   {
+
+      // decode opid and queue the request
+
+      // Request should be at least contain 
+      if (info[i].size < minsize)
+      {
+         // TODO log and throw
+         ALWAYS_ASSERT(false); 
+         continue; 
+      }
+      reader.reset (info[i].buffer, info[i].size); 
+      reader >> opid; 
+      
+      opidfunc_t createfunc = 0; 
+      switch (opid)
+      {
+         case ZOIDFS_PROTO_LOOKUP:
+            createfunc = &newrequestfunc<IOFWDLookupRequest>; 
+            break;
+      default:
+         // TODO log and throw
+         ALWAYS_ASSERT(false); 
+      }
+
+      reqs[ok++] = createfunc (opid, info[i]); 
+   }
 }
 
 void IOFW::run ()
 {
-
+   // TODO: make sure we don't leak memory for invalid requests
    std::cout << "IOFW thread running" << std::endl; 
 
    // Wait 

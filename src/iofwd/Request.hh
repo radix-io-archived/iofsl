@@ -1,9 +1,6 @@
 #ifndef IOFWD_REQUEST_HH
 #define IOFWD_REQUEST_HH
 
-#include "iofwdutil/bmi/BMI.hh"
-#include "iofwdutil/bmi/BMIAddr.hh"
-#include "iofwdutil/bmi/BMITag.hh"
 
 namespace iofwd
 {
@@ -19,7 +16,7 @@ class Request
 {
 public:
 
-   Request (int opid, iofwdutil::bmi::BMIAddr addr, iofwdutil::bmi::BMITag tag); 
+   Request (int opid); 
 
    // Return the ZoidFS operation associated with this request 
    int getOpID () const
@@ -27,16 +24,19 @@ public:
       return opid_; 
    }; 
 
+   virtual void setStatus (int status)
+   {
+      status_ = status; 
+   }
+
    virtual ~Request (); 
  
 protected:
    // Operation
    int opid_; 
 
-   // Where our client is located
-   iofwdutil::bmi::BMIAddr addr_;
-   iofwdutil::bmi::BMITag  tag_; 
-
+   // Return code
+   int status_; 
 }; 
 
 //===========================================================================

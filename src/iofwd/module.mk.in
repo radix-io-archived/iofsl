@@ -10,11 +10,14 @@ MODULE_ARCHIVES := iofwdlib
 iofwd_frontend := $(addprefix frontend/, \
 	Frontend.cpp \
 	IOFWDFrontend.cpp \
+	IOFWDRequest.cpp \
+	IOFWDLookupRequest.cpp \
 	)
 
 MODULE_SOURCES_iofwdlib := \
    RequestHandler.cpp \
    Request.cpp \
+   LookupRequest.cpp \
    $(iofwd_frontend)
 
       

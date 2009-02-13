@@ -1,13 +1,13 @@
 #include "Request.hh"
+#include "common/zoidfs-wrapped.hh"
 
-using namespace iofwdutil::bmi;
 
 namespace iofwd
 {
 //===========================================================================
 
-Request::Request (int opid, BMIAddr addr, BMITag tag)
-   : opid_(opid), addr_(addr), tag_(tag)
+Request::Request (int opid)
+   : opid_(opid), status_(ZFS_OK)
 {
 }
 

@@ -31,11 +31,11 @@ BMIOp BMIContext::postReceive (BMIAddr source,
    if (actual_size)
    {
       /* already completed */ 
-      return BMIOp (shared_from_this(), op, actual_size); 
+      return BMIOp (BMIContextPtr(this), op, actual_size); 
    }
    else
    {
-      return BMIOp (shared_from_this(), op); 
+      return BMIOp (BMIContextPtr(this), op); 
    }
 }
 

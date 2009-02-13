@@ -6,11 +6,10 @@ extern "C"
 #include <bmi.h>
 }
 
-#include <boost/shared_ptr.hpp>
-#include <boost/enable_shared_from_this.hpp>
-
 #include "BMIAddr.hh"
 #include "BMITag.hh"
+#include "iofwdutil/IntrusiveHelper.hh"
+#include <boost/smart_ptr.hpp>
 
 namespace iofwdutil
 {
@@ -23,7 +22,7 @@ class BMI;
 class BMIContext; 
 
 
-class BMIContext : public boost::enable_shared_from_this<BMIContext>
+class BMIContext : public IntrusiveHelper
 {
 protected:
    friend class BMIOp; 
@@ -60,7 +59,9 @@ protected:
    bmi_context_id context_; 
 }; 
 
-typedef boost::shared_ptr<BMIContext> BMIContextPtr; 
+typedef boost::intrusive_ptr<BMIContext> BMIContextPtr; 
+
+INTRUSIVE_PTR_HELPER(BMIContext)
 
 //===========================================================================
    }
