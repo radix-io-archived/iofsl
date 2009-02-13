@@ -16,6 +16,11 @@ IOFWDRequest::~IOFWDRequest ()
 {
 }
 
+void IOFWDRequest::freeRawRequest ()
+{
+   raw_request_.free (); 
+}
+
 //===========================================================================
    }
 }

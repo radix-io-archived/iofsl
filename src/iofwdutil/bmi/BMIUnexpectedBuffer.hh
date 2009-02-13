@@ -47,10 +47,16 @@ public:
    BMITag getTag () const
    { return BMITag (info_.tag); }
 
-   ~BMIUnexpectedBuffer ()
+   void free ()
    {
       if (info_.buffer)
          BMI_unexpected_free (info_.addr, info_.buffer); 
+      info_.buffer = 0; info_.size = 0; 
+   }
+
+   ~BMIUnexpectedBuffer ()
+   {
+      free (); 
    }
 
 private:

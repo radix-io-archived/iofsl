@@ -16,6 +16,10 @@ class IOFWDRequest
 public:
    IOFWDRequest (const BMI_unexpected_info & info); 
 
+
+   /// Release the memory of the incoming request
+   void freeRawRequest (); 
+
    virtual ~IOFWDRequest (); 
 
 protected:

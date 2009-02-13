@@ -29,6 +29,7 @@ public:
       status_ = status; 
    }
 
+
    virtual ~Request (); 
  
 protected:

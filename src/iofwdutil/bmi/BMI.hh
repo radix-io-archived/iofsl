@@ -24,7 +24,7 @@ namespace iofwdutil
    /**
     * OO Interface to BMI library
     */
-   class BMI
+   class BMI 
    {
    public:
       enum AllocType { ALLOC_SEND = ::BMI_SEND, ALLOC_RECEIVE = ::BMI_RECV }; 
@@ -44,6 +44,7 @@ namespace iofwdutil
 
       static BMI & get ()
       {
+         // NOTE: not thread safe
          static BMI singleton; 
          BOOST_ASSERT (initparams_); 
          return singleton; 

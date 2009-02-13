@@ -43,7 +43,7 @@ public:
 protected:
    enum { 
       BATCH_SIZE = 64, // The number of unexpected requests we accept
-      MAX_IDLE   = 10000 // How long to wait for a request
+      MAX_IDLE   = 1000 // How long to wait for a request (ms)
    }; 
 
    void handleIncoming (int count, const BMI_unexpected_info * info); 

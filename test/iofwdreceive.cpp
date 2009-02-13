@@ -40,16 +40,26 @@ try
       return 1; 
    }
 
+   sigset_t sigset; 
+   sigfillset (&sigset); 
+   sigprocmask (SIG_BLOCK, &sigset, 0); 
+
    IOFWDFrontend f;
 
 
    // Init BMI
    BMI::setInitServer (args[1]); 
 
+   // Make sure we have a context open
+   BMIContextPtr ctx = BMI::get().openContext (); 
+
    cout << "Initializing frontend..." << endl; 
    f.init (); 
   
-   sleep (6); 
+   int sig; 
+   sigfillset (&sigset); 
+   sigaddset (&sigset, SIGTERM); 
+   sigwait (&sigset, &sig); 
    cout << "Shutting down frontend..." << endl; 
    f.destroy (); 
    cout << "Frontend shut down..." << endl; 
