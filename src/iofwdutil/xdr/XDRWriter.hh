@@ -12,6 +12,8 @@ namespace iofwdutil
 class XDRWriter : public XDR
 {
 public:
+   enum { XDRTYPE = WRITER } ; 
+
    XDRWriter ()
    {
    }
@@ -30,6 +32,12 @@ public:
       return *this; 
    }
 
+   template <typename T>
+   XDRWriter & operator () (const T & val)
+   {
+      process (*this, const_cast<T&>(val)); 
+      return *this; 
+   }
 
 };
 

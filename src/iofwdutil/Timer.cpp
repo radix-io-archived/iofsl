@@ -16,7 +16,7 @@ namespace
          iofwdutil::TimeVal t; 
          struct timespec ts; 
 
-         for (int i=0; i<sizeof(clocks)/sizeof(clocks[0]); ++i)
+         for (unsigned int i=0; i<sizeof(clocks)/sizeof(clocks[0]); ++i)
          {
             if (clock_getres (clocks[i], &ts)<0)
                continue; 

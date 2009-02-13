@@ -12,6 +12,9 @@ namespace iofwdutil
 class XDRReader : public XDR
 {
 public:
+
+   enum { XDRTYPE = READER }; 
+
    XDRReader ()
    {
    }
@@ -30,6 +33,12 @@ public:
       return *this; 
    }
 
+   template <typename T>
+   XDRReader & operator () (T & val)
+   {
+      process (*this, val); 
+      return *this; 
+   }
    
 }; 
 

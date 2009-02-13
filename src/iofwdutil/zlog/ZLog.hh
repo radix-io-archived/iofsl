@@ -46,7 +46,7 @@ class ZLog
 
       const char * getLevelName (int level) const
       {
-         BOOST_ASSERT (level >= 0 && level < _levelNames.size()); 
+         BOOST_ASSERT (level >= 0 && level < (int)_levelNames.size()); 
          return _levelNames[level]; 
       }
 

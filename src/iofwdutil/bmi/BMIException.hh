@@ -11,6 +11,7 @@ class BMIException : public ZException
 {
 public:
    BMIException (int error);
+   BMIException (const char * msg); 
 
    std::string getBMIErrorString () const; 
 

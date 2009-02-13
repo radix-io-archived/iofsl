@@ -11,9 +11,6 @@ extern "C"
 #include <iostream>
 
 
-#include "BMI.hh"
-
-
 namespace iofwdutil
 {
    namespace bmi
@@ -23,10 +20,7 @@ namespace iofwdutil
 class BMIAddr 
 {
 public:
-   BMIAddr (const char * str)
-   {
-      BMI::check (BMI_addr_lookup (&addr_, str));
-   }
+   BMIAddr (const char * str);
 
    operator BMI_addr_t () const
    { return addr_; }

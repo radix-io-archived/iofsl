@@ -1,3 +1,0 @@
-scan "src/iofwdutil/zoidfs.h";
-template "zoidfs-gen.tmpl";
-

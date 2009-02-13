@@ -3,6 +3,7 @@
 
 #include <string>
 #include <boost/assert.hpp>
+#include "BMIContext.hh"
 
 extern "C"
 {
@@ -36,6 +37,11 @@ namespace iofwdutil
             const char * listen, int flags); 
 
 
+      /**
+       * Start a listening socket on the specified address 
+       */
+      static void setInitServer (const char * listen);
+
       static BMI & get ()
       {
          static BMI singleton; 
@@ -47,15 +53,19 @@ namespace iofwdutil
 
       ~BMI (); 
 
-      BMIContext openContext (); 
+      BMIContextPtr openContext (); 
 
       void * alloc (BMIAddr addr, size_t memsize, AllocType type );
       
       void free (BMIAddr addr, void * buffer, size_t memsize, AllocType type); 
 
+      int testUnexpected (int in, struct BMI_unexpected_info * info,
+            int max_idle);
+
    protected:
       friend class BMIContext;
       friend class BMIAddr; 
+      friend class BMIOp; 
 
       inline 
       static bool check (int retcode)

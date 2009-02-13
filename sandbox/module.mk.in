@@ -1,0 +1,4 @@
+MODULE_APPS := recordparam
+
+MODULE_SOURCES_recordparam := recordparam.cpp
+

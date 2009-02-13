@@ -1,11 +1,11 @@
 #ifndef IOFWDUTIL_ZOIDFS_XDR_HH
 #define IOFWDUTIL_ZOIDFS_XDR_HH
 
-#include "xdr/XDR.hh"
+// #include "xdr/XDR.hh"
 
 extern "C" 
 {
-#include "zoidfs.h"
+#include "common/zoidfs.h"
 }
 
 namespace iofwdutil
@@ -18,7 +18,7 @@ template <typename T>
 inline
 T & process (T & f, zoidfs_handle_t & h)
 {
-   processFixedSizeOpaque (f, &h.data, sizeof(h.data)); 
+   process (f, XDROpaque(&h.data, sizeof(h.data))); 
    return f; 
 }
 
@@ -36,7 +36,7 @@ template <typename T>
    inline 
 T & process (T & f, zoidfs_attr_type_t & type)
 {
-   processEnum(f, type); 
+   process (f, XDREnum(type)); 
    return f; 
 }
 
@@ -89,10 +89,11 @@ template <typename T>
 inline 
 T & process (T & f, zoidfs_dirent_t & t)
 {
-   processString(f, t.name, sizeof(t.name));
-   process(f,t.handle);
-   process(f,t.attr);
-   process(f,t.cookie);
+   // could also use sizeof(t.name) here but ZOIDFS_NAME_MAX is more accurate
+   process(f, XDRString(t.name, ZOIDFS_NAME_MAX)); 
+   process(f, t.handle);
+   process(f, t.attr);
+   process(f, t.cookie);
    return f; 
 }
 

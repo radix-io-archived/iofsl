@@ -1,5 +1,0 @@
-MODULE_ARCHIVES:=iofwd_backend
-MODULE_SOURCES_iofwd_backend:=backend.cpp
-MODULE_CONTAINSINCLUDE:=1
-
-

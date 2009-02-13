@@ -1,5 +1,0 @@
-MODULE_ARCHIVES := iofwd_frontend
-MODULE_SOURCES_iofwd_frontend := frontend.cpp
-
-MODULE_CONTAINSINCLUDE:=1 
-

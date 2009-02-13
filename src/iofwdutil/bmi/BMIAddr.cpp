@@ -1,10 +1,15 @@
 #include "BMIAddr.hh"
-
+#include "BMI.hh"
 
 namespace iofwdutil
 {
    namespace bmi
    {
+
+      BMIAddr::BMIAddr (const char * str)
+      {
+         BMI::check (BMI_addr_lookup (&addr_, str));
+      }
 
 
       std::ostream & operator << (std::ostream & out, const BMIAddr & a)

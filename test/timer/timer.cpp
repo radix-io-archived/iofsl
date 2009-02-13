@@ -2,6 +2,7 @@
 #include "Timer.hh"
 #include <unistd.h>
 #include "iofwdutil/always_assert.hh"
+#include "iofwdutil/tools.hh"
 
 using namespace std; 
 using namespace iofwdutil; 
@@ -14,7 +15,7 @@ void testTimeVal ()
    ALWAYS_ASSERT(t.getNanoSeconds()==0); 
 }
 
-int main (int argc, char ** args)
+int main (int UNUSED(argc), char ** UNUSED(args))
 {
    Timer t;
    int failed = 0; 

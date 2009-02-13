@@ -1,6 +1,7 @@
 #include "zlog/ZLog.hh"
 #include "zlog/ZLogSinkFile.hh"
 #include "zlog/ZLogSource.hh"
+#include "iofwdutil/tools.hh"
 
 namespace iofwdutil
 {
@@ -22,7 +23,7 @@ namespace iofwdutil
 
       }
 
-      ZLogSink * ZLog::getSinkByName (const char * name)
+      ZLogSink * ZLog::getSinkByName (const char * UNUSED(name))
       {
          static ZLogSinkFile sink_stderr; 
          return &sink_stderr; 
@@ -30,7 +31,7 @@ namespace iofwdutil
 
       void ZLog::doConfig (ZLogSource & source)
       {
-         const std::string & name (source.getSourceName()); 
+         const std::string & UNUSED(name) (source.getSourceName()); 
 
          /* no specific config for now: set all levels to stderr */ 
          for (int i=0; i<MAX_LEVEL; ++i)

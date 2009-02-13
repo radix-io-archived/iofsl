@@ -1,7 +1,5 @@
-#ifndef IOFWD_FRONTEND_HH
-#define IOFWD_FRONTEND_HH
-
-#include "iofwdutil/zoidfs-int.hh"
+#include "Frontend.hh"
+#include "iofwdutil/assert.hh"
 
 namespace iofwd
 {
@@ -9,15 +7,17 @@ namespace iofwd
    {
 //===========================================================================
 
-class Frontend : public iofwdutil::ZoidFS
+void Frontend::setHandler (RequestHandler * handler)
 {
-   public:
+   ALWAYS_ASSERT (handler); 
+   handler_ = handler; 
+}
 
-      virtual ~Frontend ();
-};
+Frontend::~Frontend ()
+{
+}
 
+        
 //===========================================================================
    }
 }
-
-#endif

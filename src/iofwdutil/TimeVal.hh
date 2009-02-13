@@ -4,6 +4,7 @@
 #include <cmath>
 #include <iostream>
 #include <boost/assert.hpp>
+#include <stdint.h>
 
 namespace iofwdutil
 {
@@ -31,9 +32,9 @@ public:
        BOOST_ASSERT (seconds_ >= 0); 
    }
 
-   long long getTotalNanoSeconds () const
+   int64_t getTotalNanoSeconds () const
    {
-      return static_cast<long long>(seconds_)*NS_PER_SECOND + nanoseconds_; 
+      return static_cast<int64_t>(seconds_)*NS_PER_SECOND + nanoseconds_; 
    }
 
    bool isZero () const
