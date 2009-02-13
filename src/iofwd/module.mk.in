@@ -18,6 +18,8 @@ MODULE_SOURCES_iofwdlib := \
    RequestHandler.cpp \
    Request.cpp \
    LookupRequest.cpp \
+   ReadRequest.cpp \
+   WriteRequest.cpp \
    $(iofwd_frontend)
 
       
