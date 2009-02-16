@@ -8,6 +8,7 @@ namespace iofwd
 {
    namespace frontend
    {
+//===========================================================================
 
 class IOFWDLookupRequest 
    : public IOFWDRequest, 
@@ -24,6 +25,7 @@ public:
    virtual ~IOFWDLookupRequest (); 
 }; 
 
+//===========================================================================
    }
 }
 

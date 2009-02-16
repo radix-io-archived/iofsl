@@ -1,0 +1,4 @@
+MODULE_ARCHIVES := sm
+
+MODULE_SOURCES_sm := SM.cpp
+

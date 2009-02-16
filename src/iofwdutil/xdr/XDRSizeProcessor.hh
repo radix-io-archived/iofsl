@@ -100,7 +100,7 @@ inline XDRSizeProcessor::XDRSize getXDRSize (const T & val)
 
 
 // FixedSizeOpaque always has same size 
-void process (XDRSizeProcessor & f, const XDROpaque & o)
+inline void process (XDRSizeProcessor & f, const XDROpaque & o)
 {
       f.size_ += o.size_; 
       f.maxsize_ += o.size_; 
@@ -112,7 +112,7 @@ inline size_t xdrsize_roundup4 (size_t s)
 }
 
 
-void process (XDRSizeProcessor & f, const XDRString & s)
+inline void process (XDRSizeProcessor & f, const XDRString & s)
 {
       f.size_ += xdrsize_roundup4(f.onlyMax_ ? s.maxsize_ : strlen (s.ptr_));
       f.maxsize_ += xdrsize_roundup4(s.maxsize_); 

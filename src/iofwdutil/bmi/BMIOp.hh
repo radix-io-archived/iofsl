@@ -48,6 +48,8 @@ public:
       BMI::check(BMI_test (op_, &outcount, &error, &actual_size, 
             &user, WAIT_IDLE_TIME, con_->getID()));
 
+      BMI::check(error); 
+
       return actual_size; 
    }
 

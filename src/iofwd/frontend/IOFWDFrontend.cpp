@@ -13,6 +13,8 @@
 #include "common/zoidfs-wrapped.hh"
 
 #include "IOFWDLookupRequest.hh"
+#include "IOFWDNullRequest.hh"
+
 
 using namespace iofwdutil::bmi; 
 
@@ -112,6 +114,9 @@ void IOFW::handleIncoming (int count, const BMI_unexpected_info  * info )
          case ZOIDFS_PROTO_LOOKUP:
             createfunc = &newrequestfunc<IOFWDLookupRequest>; 
             break;
+         case ZOIDFS_PROTO_NULL:
+            createfunc = &newrequestfunc<IOFWDNullRequest>; 
+            break; 
       default:
          // TODO log and throw
          ALWAYS_ASSERT(false); 

@@ -12,6 +12,7 @@ iofwd_frontend := $(addprefix frontend/, \
 	IOFWDFrontend.cpp \
 	IOFWDRequest.cpp \
 	IOFWDLookupRequest.cpp \
+	IOFWDNullRequest.cpp \
 	)
 
 MODULE_SOURCES_iofwdlib := \
@@ -20,6 +21,7 @@ MODULE_SOURCES_iofwdlib := \
    LookupRequest.cpp \
    ReadRequest.cpp \
    WriteRequest.cpp \
+   NullRequest.cpp \
    $(iofwd_frontend)
 
       

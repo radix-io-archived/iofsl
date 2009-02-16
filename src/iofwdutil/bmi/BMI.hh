@@ -1,9 +1,11 @@
 #ifndef IOFWDUTIL_BMI_HH
 #define IOFWDUTIL_BMI_HH
 
+#include <iostream>
 #include <string>
 #include <boost/assert.hpp>
 #include "BMIContext.hh"
+#include "iofwdutil/assert.hh"
 
 extern "C"
 {
@@ -42,6 +44,12 @@ namespace iofwdutil
        */
       static void setInitServer (const char * listen);
 
+      /**
+       * Determine method from address and initialize BMI as a client
+       * using that method.
+       */
+      static void setInitClient (); 
+
       static BMI & get ()
       {
          // NOTE: not thread safe
@@ -56,9 +64,17 @@ namespace iofwdutil
 
       BMIContextPtr openContext (); 
 
-      void * alloc (BMIAddr addr, size_t memsize, AllocType type );
+      void * alloc (BMIAddr addr, size_t memsize, AllocType type )
+      {
+         void * ret = BMI_memalloc (addr, memsize, static_cast<bmi_op_type>(type)); 
+         ASSERT(ret); 
+         return ret; 
+      }
       
-      void free (BMIAddr addr, void * buffer, size_t memsize, AllocType type); 
+      void free (BMIAddr addr, void * buffer, size_t memsize, AllocType type)
+      {
+         check(BMI_memfree(addr, buffer, memsize, static_cast<bmi_op_type>(type))); 
+      }
 
       int testUnexpected (int in, struct BMI_unexpected_info * info,
             int max_idle);
@@ -69,16 +85,17 @@ namespace iofwdutil
       friend class BMIOp; 
 
       inline 
-      static bool check (int retcode)
+      static int check (int retcode)
       {
-         if (!retcode)
-            return true; 
-         handleBMIError (retcode); 
-         /* might not get here (exception above?) */ 
-         return false; 
+         if (retcode>=0)
+            return retcode; 
+         
+         return handleBMIError (retcode); 
       }
 
-      static void handleBMIError (int retcode);
+      static int handleBMIError (int retcode);
+
+      static std::string addressToMethod (const char * addr); 
 
    protected:
       static std::string methodlist_; 

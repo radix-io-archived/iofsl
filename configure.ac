@@ -88,6 +88,7 @@ dnl LDFLAGS="$LDFLAGS $FUSE_LIBS"
 
 AC_CONFIG_FILES([
                  Makefile
+                 src/sm/module.mk
                  src/iofwd/module.mk
                  src/iofwdutil/module.mk
                  src/metacache/module.mk

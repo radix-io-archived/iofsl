@@ -117,18 +117,18 @@ XDRHELPER2(int64_t)
 
 
 // Processor functions 
-void process (XDR & f, const XDROpaque & o)
+inline void process (XDR & f, const XDROpaque & o)
 {
    f.check(xdr_opaque(&f.xdr_, (char*) o.ptr_, o.size_)); 
 }
 
-void process (XDR & f, const XDRString & s)
+inline void process (XDR & f, const XDRString & s)
 {
    f.check(xdr_string(&f.xdr_, &s.ptr_, s.maxsize_)); 
 }
 
 template <typename T, typename C> 
-void process (XDR & f, const XDRVarArrayHelper<T,C> & a)
+inline void process (XDR & f, const XDRVarArrayHelper<T,C> & a)
 {
    // send/receive array count
    uint32_t count = a.count_; 
@@ -143,7 +143,7 @@ void process (XDR & f, const XDRVarArrayHelper<T,C> & a)
 }
 
 template <typename T>
-void process (XDR & f, const XDREnumHelper<T> & e)
+inline void process (XDR & f, const XDREnumHelper<T> & e)
 {
    BOOST_STATIC_ASSERT (sizeof (T) <= sizeof (enum_t));
    // might be faster here to skip the read/write test all together

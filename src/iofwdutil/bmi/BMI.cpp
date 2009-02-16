@@ -23,10 +23,17 @@ std::string     BMI::listen_;
 int             BMI::flags_; 
 
 
+static const char * string2ptr (const std::string & s)
+{
+   if (s.length())
+      return s.c_str(); 
+   return 0; 
+}
+
 BMI::BMI()
 {
-   BMI_initialize (methodlist_.c_str(), 
-         listen_.c_str(), flags_); 
+   check(BMI_initialize (string2ptr(methodlist_), 
+         string2ptr(listen_), flags_)); 
 }
 
 BMI::~BMI()
@@ -40,30 +47,36 @@ BMIContextPtr BMI::openContext ()
    return BMIContextPtr(new BMIContext (ctx)); 
 }
 
+std::string BMI::addressToMethod (const char * addr)
+{
+   const std::string s (addr); 
+   string::size_type p= s.find ("://"); 
+   if (p == string::npos)
+      throw BMIException ("invalid listen address!"); 
+
+   return std::string("bmi_") + 
+      s.substr (0, p); 
+}
+
+void BMI::setInitClient ()
+{
+   setInitParams (0,0,0); 
+}
+
 void BMI::setInitServer (const char * listen)
 {
    if (!listen)
       throw BMIException ("no listen address specified in"
             " BMI::setInitServer"); 
 
-   const std::string s (listen); 
-   string::size_type p= s.find ("://"); 
-   if (p == string::npos)
-   {
-      throw BMIException ("invalid server listen address in"
-            " BMI::setInitServer"); 
-   }
-
-   const std::string method = std::string("bmi_") + 
-      s.substr (0, p); 
-
-   setInitParams (method.c_str(), listen, BMI_INIT_SERVER); 
+   setInitParams (addressToMethod(listen).c_str(), 
+         listen, BMI_INIT_SERVER); 
 }
 
 void BMI::setInitParams (const char * methodlist, 
       const char * listen, int flags)
 {
-   BOOST_ASSERT (!initparams_); 
+   ASSERT (!initparams_); 
    if (methodlist != 0)
       methodlist_ = methodlist;
    if (listen != 0)
@@ -72,9 +85,13 @@ void BMI::setInitParams (const char * methodlist,
    initparams_ = true; 
 }
 
-void BMI::handleBMIError (int retcode)
+int BMI::handleBMIError (int retcode)
 {
-   // Should handle BMI_NON_ERROR_BIT differently here
+   if ((retcode & BMI_NON_ERROR_BIT)==BMI_NON_ERROR_BIT)
+   {
+      std::cerr << "Warning: BMI_NON_ERROR_BIT\n"; 
+      return retcode; 
+   }
    throw BMIException (retcode); 
 }
 
