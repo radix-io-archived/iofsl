@@ -1,4 +1,8 @@
-MODULE_APPS:= xdrspeed bmitest timertest forwarding iofwdreceive iofwdsend
+MODULE_APPS:= xdrspeed bmitest timertest forwarding iofwdreceive iofwdsend \
+   smtest
+
+MODULE_SOURCES_smtest := smtest.cpp
+ADDINTLIBS_smtest := sm iofwdutil
 
 MODULE_SOURCES_iofwdsend := iofwdsend.cpp
 ADDINTLIBS_iofwdsend := iofwdclient iofwdlib iofwdutil

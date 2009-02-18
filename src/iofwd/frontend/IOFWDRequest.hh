@@ -22,6 +22,11 @@ public:
 
    virtual ~IOFWDRequest (); 
 
+   virtual bool run ()
+   {
+      return false; 
+   }
+
 protected:
    // Memory holding the request
    iofwdutil::bmi::BMIUnexpectedBuffer raw_request_; 

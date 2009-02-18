@@ -2,6 +2,7 @@
 #define IOFWD_NULLREQUEST_HH
 
 #include "Request.hh"
+// #include "NullRequestSM.hh"
 
 namespace iofwd
 {
@@ -15,6 +16,9 @@ public:
    }
 
    virtual ~NullRequest (); 
+
+protected:
+   //sm::StateMachine<nullsm::NullRequestSM> sm_; 
 }; 
 
 }

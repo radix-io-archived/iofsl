@@ -19,6 +19,9 @@ public:
    {
    }
 
+   virtual bool run ()
+   { return IOFWDRequest::run (); }
+
    virtual ~IOFWDNullRequest (); 
 };
 

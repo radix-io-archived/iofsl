@@ -29,6 +29,10 @@ public:
       status_ = status; 
    }
 
+   // Called in the worker thread when the request gets some cputime
+   // Needs to return false if all work is done and the request can be
+   // destroyed
+   virtual bool run () = 0; 
 
    virtual ~Request (); 
  
