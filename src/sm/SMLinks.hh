@@ -44,6 +44,10 @@ struct StateChildList { typedef boost::mpl::list<>::type children; };
 #define SM_STATE_CHILDREN_END \
       > children; }; 
 
+// ISO C does not support variadic macro's
+//#define SM_STATE_CHILDREN(P,C...) 
+//   SM_STATE_CHILDREN_BEGIN(P) C SM_STATE_CHILDREN_END
+
 //===========================================================================
 //===========================================================================
 //===========================================================================
