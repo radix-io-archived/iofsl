@@ -62,7 +62,17 @@ void dumpinfo ()
    cout << "States in machine: " <<
       sm::MachineStates<M>::state_count << endl; 
    cout << "States in machine: " <<
-      size<typename sm::MachineStates<M>::states>::value << endl; }
+      size<typename sm::MachineStates<M>::states>::value << endl; 
+}
+
+
+template <typename SM, typename S>
+void validateID ()
+{
+   enum { lookup_id = sm::StateID<SM,S>::value }; 
+   typedef typename sm::StateType<SM, lookup_id>::type lookup_type; 
+   STATIC_ASSERT((boost::is_same<lookup_type, S>::value)); 
+}
 
 int main (int UNUSED(argc), char ** UNUSED(args))
 {
@@ -78,6 +88,14 @@ int main (int UNUSED(argc), char ** UNUSED(args))
    cout << "States in S4,S5: " << size<childlist_S4_S5>::value << endl; 
    cout << "States in S3: " << size<childlist_S3>::value << endl; 
    cout << "States in S1: " << size<childlist_S1>::value << endl; 
+
+   // validate state id mapping in MyMachine
+   validateID<ExampleMachine,S1> (); 
+   validateID<ExampleMachine,S2> (); 
+   validateID<ExampleMachine,S3> (); 
+   validateID<ExampleMachine,S4> (); 
+   validateID<ExampleMachine,S5> (); 
+   validateID<ExampleMachine,S6> (); 
 
 
    cout << endl;

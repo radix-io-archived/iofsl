@@ -1,7 +1,8 @@
 #include <iostream>
-#include "sm/SM.hh"
 #include "iofwdutil/tools.hh"
 #include "iofwdutil/assert.hh"
+#include <boost/type_traits/is_same.hpp>
+#include "sm/SMLinks.hh"
 
 using namespace std;
 
@@ -86,6 +87,10 @@ int main (int UNUSED(argc), char ** UNUSED(args))
 
    STATIC_ASSERT(sizeof(TP_IF<char[10],char[20],(2>3)>::value)==20);
    STATIC_ASSERT(sizeof(TP_IF<char[10],char[20],(2<3)>::value)==10);
+   STATIC_ASSERT(sizeof(TP_IF<char[10],char[20],((int)testsm::test3::DEPTH > 
+               (int) testsm::test4::DEPTH)>::value) == 20); 
+   STATIC_ASSERT(sizeof(TP_IF<char[10],char[20],((int)testsm::test3::DEPTH < 
+               (int) testsm::test4::DEPTH)>::value) == 20); 
 
 
    STATIC_ASSERT((int)testsm::test3::DEPTH == (int)testsm::test4::DEPTH); 
@@ -94,10 +99,6 @@ int main (int UNUSED(argc), char ** UNUSED(args))
    STATIC_ASSERT((int)testsm::test::DEPTH < (int)testsm::test4::DEPTH); 
    STATIC_ASSERT((int)testsm::test2::DEPTH < (int)testsm::test3::DEPTH); 
 
-   STATIC_ASSERT(sizeof(TP_IF<char[10],char[20],((int)testsm::test3::DEPTH > 
-               (int) testsm::test4::DEPTH)>::value) == 20); 
-   STATIC_ASSERT(sizeof(TP_IF<char[10],char[20],((int)testsm::test3::DEPTH < 
-               (int) testsm::test4::DEPTH)>::value) == 20); 
 
    NEED_SHARED_DEPTH(testsm::test, testsm::test, 1); 
    NEED_SHARED_DEPTH(testsm::test, testsm::test2, 1); 
@@ -128,7 +129,7 @@ int main (int UNUSED(argc), char ** UNUSED(args))
 
    cout << "Number of states in state machine: " << MyMachine::getStateCount ()
       << endl; 
-  
+ 
    cout << endl; 
    {
       //const int initparam = 3; 

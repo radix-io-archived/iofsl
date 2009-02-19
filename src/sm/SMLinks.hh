@@ -10,6 +10,7 @@
 #include <boost/mpl/push_front.hpp>
 #include <boost/mpl/order.hpp>
 #include <boost/type_traits/is_same.hpp>
+#include <boost/mpl/at.hpp>
 
 namespace sm
 {
@@ -167,6 +168,20 @@ struct findpos<ENDITR,E,P>
    enum { value = -1 }; 
 };
 
+/*// Return the type of the state with given ID in state machine SM
+template <typename SM, int P, typename L = MachineStates<SM>::children>
+struct findpos
+{
+   typedef typename boost::mpl::pop_front<L>::type list_remainder;
+   typedef typename findpos<SM, P-1, list_remainder>::type type; 
+};
+
+template <typename SM, typename L>
+struct findpos<SM, 0, L>
+{
+   typedef typename boost::mpl::front<L>::type type; 
+}; */
+
 //===========================================================================  
 //====== State Numbering ====================================================  
 //===========================================================================  
@@ -175,6 +190,23 @@ struct StateID
 {
    // The state ID is the position of the state in the statemachine list
     enum { value = findpos< typename MachineStates<SM>::states, S>::value }; 
+}; 
+
+//===========================================================================  
+//====== State Type =========================================================  
+//===========================================================================  
+
+/**
+ * For a given state machine and ID, return the associated state type
+ */
+
+template <typename SM, int P>
+struct StateType
+{
+   typedef typename boost::mpl::at<
+              typename MachineStates<SM>::states,
+              boost::mpl::int_<P> 
+             >::type type; 
 }; 
 
 
