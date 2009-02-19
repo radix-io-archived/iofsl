@@ -86,13 +86,13 @@ public:
 protected:
 
    // Called when the machine enters the state
-   virtual void enter () = 0;
+   void enter () {}
 
    // Called before the machine leaves the state
-   virtual void leave () = 0; 
+   void leave () {}
 
    // Called the first time a state is going to be entered
-   virtual void init ()  = 0; 
+   void init ()  {}
 
    virtual ~InitBase () {} ;
 
@@ -152,11 +152,11 @@ protected:
    friend class StateMachine<INITSTATE>; 
 
    // Make sure we don't inherit from parent
-   virtual void enter ()  {}
+   void enter ()  {}
 
-   virtual void init ()   {} 
+   void init ()   {} 
 
-   virtual void leave ()   {} 
+   void leave ()   {} 
 
    template <typename S>
    void setState ()
@@ -324,7 +324,7 @@ protected:
    { 
       /*cerr << "M::enterState ID " << S::ID() << endl; */
       currentState_ = S::ID(); 
-      states_[S::ID()]->enter (); 
+      static_cast<S &>(*states_[S::ID()]).enter (); 
    }
 
    template <typename S>
@@ -337,7 +337,7 @@ protected:
       // currentState while going up to the parent
       // ASSERT(currentState_ == S::ID()); 
 
-      states_[S::ID()]->leave (); 
+      static_cast<S&>(*states_[S::ID()]).leave (); 
    }
 
    template <typename S>
@@ -367,7 +367,9 @@ protected:
    {
       ensureStateExists<S> ();
       currentState_ = S::ID(); 
-      getCurrentState()->enter (); 
+
+      // We can avoid a virtual function call here
+      static_cast<S&>(*getCurrentState()).enter (); 
 
       process (); 
    }
