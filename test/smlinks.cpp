@@ -17,6 +17,19 @@ struct S4 {};
 struct S5 {}; 
 struct S6 {}; 
 
+SM_ALIAS_STATE(ErrorState); 
+
+struct ExampleMachine
+{
+   typedef S1 INITSTATE; 
+}; 
+
+struct EM2
+{
+   typedef S3 INITSTATE; 
+};
+
+
 /*
  *       S1
  *    /  |  \
@@ -37,17 +50,12 @@ SM_STATE_CHILDREN_BEGIN(S3)
    S4,
    S5
 SM_STATE_CHILDREN_END
+
+
+SM_MAKE_ALIAS(ExampleMachine,ErrorState,S3);
+SM_MAKE_ALIAS(EM2,ErrorState,S5);
+
 }
-
-struct ExampleMachine
-{
-   typedef S1 INITSTATE; 
-}; 
-
-struct EM2
-{
-   typedef S3 INITSTATE; 
-};
 
 template <typename M>
 void dumpinfo ()
@@ -74,6 +82,16 @@ void validateID ()
    STATIC_ASSERT((boost::is_same<lookup_type, S>::value)); 
 }
 
+/**
+ * Make sure alias A in machine SM points to state S
+ */
+template <typename SM, typename A, typename S>
+void validateAlias ()
+{
+   typedef typename ::sm::StateAlias<SM,A>::type aliastype; 
+   STATIC_ASSERT((boost::is_same<aliastype, S>::value)); 
+}
+
 int main (int UNUSED(argc), char ** UNUSED(args))
 {
    typedef sm::AllChildren<ExampleMachine,list<S4,S5> >::children childlist_S4_S5; 
@@ -96,6 +114,10 @@ int main (int UNUSED(argc), char ** UNUSED(args))
    validateID<ExampleMachine,S4> (); 
    validateID<ExampleMachine,S5> (); 
    validateID<ExampleMachine,S6> (); 
+
+   // Testing alias
+   validateAlias<ExampleMachine, ErrorState, S3>(); 
+   validateAlias<EM2, ErrorState, S5>(); 
 
 
    cout << endl;

@@ -225,10 +225,12 @@ struct StateAlias
 
 // Make AN point to N in state machine SM
 #define SM_MAKE_ALIAS(SM,AN,N) \
-  template <> struct ::sm::StateAlias<SM,AN> \
-  { typedef N alias; }
+  template <> struct StateAlias<SM,AN> \
+  { typedef N type; }
 
-  
+#define SM_ALIAS_STATE(a) \
+   struct a {}
+
 //===========================================================================  
 }
 
