@@ -1,0 +1,9 @@
+-> allow for testing range versus block-based
+-> allow for cache to be blocking
+        -> needed in case use static file decomposition
+           and need to contact another cache
+        -> needed to perform sync on other caches
+        -> can be used to make another cache layer that 
+           stores data on a local disk
+        -> makes cache look no different from a backend filesystem
+
