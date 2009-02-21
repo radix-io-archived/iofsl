@@ -131,12 +131,18 @@ SM_MAKE_ALIAS(EM2,ErrorState,S5);
 template <typename M>
 void dumpinfo ()
 {
-   cout << "StateID of S1 " << sm::StateID<M,S1>::value << endl ;
-   cout << "StateID of S2 " << sm::StateID<M,S2>::value << endl ;
-   cout << "StateID of S3 " << sm::StateID<M,S3>::value << endl ;
-   cout << "StateID of S4 " << sm::StateID<M,S4>::value << endl ;
-   cout << "StateID of S5 " << sm::StateID<M,S5>::value << endl ;
-   cout << "StateID of S6 " << sm::StateID<M,S6>::value << endl ;
+   cout << "StateID of S1 " << sm::StateID<S1<M> >::value << endl ;
+   cout << "StateID of S2 " << sm::StateID<S2<M> >::value << endl ;
+   cout << "StateID of S3 " << sm::StateID<S3<M> >::value << endl ;
+   cout << "StateID of S4 " << sm::StateID<S4<M> >::value << endl ;
+   cout << "StateID of S5 " << sm::StateID<S5<M> >::value << endl ;
+   cout << "StateID of S6 " << sm::StateID<S6<M> >::value << endl ;
+
+   cout << "Depth of S1 " << sm::StateDepth<S1<M> >::value << endl; 
+   cout << "Depth of S2 " << sm::StateDepth<S2<M> >::value << endl; 
+   cout << "Depth of S3 " << sm::StateDepth<S3<M> >::value << endl; 
+   cout << "Depth of S4 " << sm::StateDepth<S4<M> >::value << endl; 
+   cout << "Depth of S5 " << sm::StateDepth<S5<M> >::value << endl; 
 
    cout << "States in machine: " <<
       sm::MachineStates<M>::state_count << endl; 
@@ -148,7 +154,7 @@ void dumpinfo ()
 template <typename SM, template <typename> class S>
 void validateID ()
 {
-   enum { lookup_id = sm::StateID<SM,S>::value }; 
+   enum { lookup_id = sm::StateID<S<SM> >::value }; 
    typedef typename sm::StateType<SM, lookup_id>::type lookup_type; 
    STATIC_ASSERT((boost::is_same<lookup_type, S<SM> >::value)); 
 }
@@ -179,6 +185,16 @@ void validateDirectParent ()
             >::value));  
 }
 
+template <typename SMDEF, template <typename> class S, int DEPTH>
+void validateDepth ()
+{
+   cout << "Depth of " << S<SMDEF>::getStateName() 
+      << " in machine " << SMDEF::getMachineName () <<
+      ": " << sm::StateDepth< S<SMDEF> >::value << endl; 
+   STATIC_ASSERT((sm::StateDepth< S<SMDEF> >::value == DEPTH)); 
+}
+
+
 int main (int UNUSED(argc), char ** UNUSED(args))
 {
    typedef sm::AllChildren<ExampleMachine,list<S4<ExampleMachine>,S5<ExampleMachine> > >::children childlist_S4_S5; 
@@ -189,10 +205,16 @@ int main (int UNUSED(argc), char ** UNUSED(args))
    STATIC_ASSERT(size<childlist_S3>::value == 3); 
    STATIC_ASSERT(size<childlist_S1>::value == 6); 
 
+   cout << "\n\
+       S1\n\
+    /  |  \\\n\
+   S2  S3  S6\n\
+      /  \\\n\
+     S4  S5\n";
 
-   cout << "States in S4,S5: " << size<childlist_S4_S5>::value << endl; 
-   cout << "States in S3: " << size<childlist_S3>::value << endl; 
-   cout << "States in S1: " << size<childlist_S1>::value << endl; 
+   cout << "States in submachine S4,S5: " << size<childlist_S4_S5>::value << endl; 
+   cout << "States in submacihne S3: " << size<childlist_S3>::value << endl; 
+   cout << "States in submachine S1: " << size<childlist_S1>::value << endl; 
 
 
    // validate state id mapping in MyMachine
@@ -208,11 +230,27 @@ int main (int UNUSED(argc), char ** UNUSED(args))
    validateAlias<EM2, ErrorState, S5>(); 
    
    // Validate parent links
+   // Check if SMDEF is parent of INITSTATE
+   STATIC_ASSERT((boost::is_same<
+             sm::StateDirectParent<ExampleMachine, S1>::type,
+             ExampleMachine
+            >::value));  
    validateDirectParent<ExampleMachine, S1, S2>(); 
    validateDirectParent<ExampleMachine, S1, S3>(); 
    validateDirectParent<ExampleMachine, S1, S6>(); 
    validateDirectParent<ExampleMachine, S3, S4>(); 
    validateDirectParent<ExampleMachine, S3, S5>(); 
+
+
+   validateDepth<ExampleMachine, S1, 0>(); 
+   validateDepth<ExampleMachine, S2, 1>(); 
+   validateDepth<ExampleMachine, S3, 1>(); 
+   validateDepth<ExampleMachine, S4, 2>(); 
+   validateDepth<ExampleMachine, S5, 2>(); 
+   
+   validateDepth<EM2, S3, 0>(); 
+   validateDepth<EM2, S4, 1>(); 
+   validateDepth<EM2, S5, 1>(); 
 
    cout << endl;
    cout << " For machine1:" << endl;

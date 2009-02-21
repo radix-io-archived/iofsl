@@ -17,9 +17,11 @@
 #include <boost/mpl/quote.hpp>
 #include <boost/mpl/count.hpp>
 #include <boost/mpl/deref.hpp>
+#include <boost/mpl/size.hpp>
 
 #include <boost/array.hpp>
 
+#include "iofwdutil/demangle.hh"
 
 // for debugging
 #include <iostream>
@@ -53,6 +55,8 @@ class StateMachine;
      template <typename T> \
      struct INITSTATE_TYPE { typedef initstate<T> type; }; \
      typedef initstate<machinename> INITSTATE; \
+     typedef machinename SMDEF; \
+     static const char * getMachineName () { return #machinename; }\
   }
 
 //===========================================================================
@@ -78,6 +82,15 @@ struct StateChildList { typedef boost::mpl::list<>::type children; };
 //#define SM_STATE_CHILDREN(P,C...) 
 //   SM_STATE_CHILDREN_BEGIN(P) C SM_STATE_CHILDREN_END
 
+
+// Get children of state without specifying SMDEF
+template <typename S>
+struct IStateChildList
+{
+   typedef typename StateChildList<typename S::SMDEF, S>::children 
+       children; 
+};
+
 //===========================================================================  
 //===========================================================================  
 //===========================================================================  
@@ -86,9 +99,11 @@ struct StateChildList { typedef boost::mpl::list<>::type children; };
    struct a : public ::sm::StateFunc<SMDEF,a>
 
 #define SM_STATEDEF \
+protected:\
    typedef ::sm::StateMachine<SMDEF> STATEMACHINE; \
    typedef typename SMDEF::INITSTATE INITSTATE; \
    typedef SMDEF                     STATEMACHINE_DEF
+
 
 
 //===========================================================================
@@ -192,23 +207,6 @@ struct MachineStates
 //===========================================================================
 //===========================================================================
 
-/**
- * Predicate that checks if a state is a child of another state
- */
-/*template <typename SMDEF, typename PARENT, typename CHILD>
-struct IsStateDirectChild
-{
-   typedef typename StateChildList<SMDEF,PARENT>::children childlist; 
-   enum { value = boost::is_same<
-             CHILD, 
-             typename boost::mpl::find<childlist,CHILD>::type
-           >::value }; 
-   typedef typename  boost::is_same<
-             CHILD, 
-             typename boost::mpl::find<childlist,CHILD>::type
-           > type; 
-};  */
-
 
 /**
  * Checks if C is a direct child of the state passed to apply
@@ -216,15 +214,15 @@ struct IsStateDirectChild
  *
  * NOTE: This does not check if SMDEF::INITSTATE equals C<SMDEF>
  */
-template <typename SMDEF, template <typename> class C>
+template <typename S>
 struct IsDirectParentPred
 {
    
    template <typename P>
    struct apply 
    {
-      typedef typename StateChildList<SMDEF,P>::children searchlist; 
-      typedef C<SMDEF> searchitem; 
+      typedef typename IStateChildList<P>::children searchlist; 
+      typedef S searchitem; 
       enum { value = boost::mpl::count<searchlist,searchitem>::value  }; 
       typedef typename boost::mpl::bool_<value>::type type; 
    }; 
@@ -236,19 +234,50 @@ struct IsDirectParentPred
  * If S<SMDEF> == SMDEF::INITSTATE returns SMDEF
  */
 
+// Helper to make sure we don't try to deref end()
+template <typename T>
+struct tryderef
+{
+   typedef typename boost::mpl::deref<T>::type type; 
+}; 
+
+template <>
+struct tryderef<boost::mpl::end<boost::mpl::list<> >::type>
+{
+   typedef void type; 
+};
+
 template <typename SMDEF, template <typename> class S>
 struct StateDirectParent
 {
    typedef typename MachineStates<SMDEF>::states searchlist; 
    typedef typename boost::mpl::find_if<
                searchlist,
-               IsDirectParentPred<SMDEF,S>
+               IsDirectParentPred<S<SMDEF> > 
               >::type parentiter; 
-   typedef typename boost::mpl::deref<parentiter>::type realparent;
+   typedef typename tryderef<parentiter>::type realparent;
 
    typedef typename boost::mpl::if_<
                 boost::is_same< S<SMDEF>, typename SMDEF::INITSTATE>,
                 SMDEF,
+                realparent
+               >::type type; 
+
+}; 
+
+template <typename S>
+struct IStateDirectParent
+{
+   typedef typename MachineStates<typename S::SMDEF>::states searchlist; 
+   typedef typename boost::mpl::find_if<
+               searchlist,
+               IsDirectParentPred<S> 
+              >::type parentiter; 
+   typedef typename tryderef<parentiter>::type realparent;
+
+   typedef typename boost::mpl::if_<
+                boost::is_same< S, typename S::SMDEF::INITSTATE>,
+                typename S::SMDEF,
                 realparent
                >::type type; 
 
@@ -311,16 +340,13 @@ struct findpos<SM, 0, L>
 //===========================================================================  
 //====== State Numbering ====================================================  
 //===========================================================================  
-template <typename SM, template <typename SMI> class S>
-struct StateID
-{
-   // The state ID is the position of the state in the statemachine list
-    enum { value = findpos< typename MachineStates<SM>::states, S<SM> >::value }; 
-}; 
+
+// Note: a state does only have an ID in relation to a specific SMDef
+// structure
 
 // Same but for an instantiated state SI
 template <typename SI>
-struct IStateID
+struct StateID
 {
    typedef typename SI::SMDEF SMDEF; 
    enum { value = findpos<typename MachineStates<SMDEF>::states, SI >::value }; 
@@ -392,8 +418,8 @@ public:
  */
 
 
-template <typename SMDEF, template <typename> class S>
-class StateFunc : public StateBase<SMDEF>
+template <typename SMDEF_, template <typename> class S>
+class StateFunc : public StateBase<SMDEF_>
 {
 protected:
    template <typename F>
@@ -401,19 +427,40 @@ protected:
 
    // We need our own type to be able to pass the static type information 
    // to the StateMachine.
-   typedef S<SMDEF>   SELF; 
+   typedef S<SMDEF_>   SELF; 
+
+
+public:
+   typedef SMDEF_ SMDEF; 
 
 protected:
-   StateFunc (StateMachine<SMDEF> & sm)
+   StateFunc (StateMachine<SMDEF_> & sm)
       : sm_(sm)
    {
-      cout << "Constructing state " << typeid(SELF).name() << endl; 
+      cout << "Constructing state " << S<SMDEF>::getStateName() << endl; 
    }
 
    virtual ~StateFunc ()
    {
-      cout << "Destructing state " << typeid(SELF).name() << endl; 
+      cout << "Destructing state " << S<SMDEF>::getStateName() << endl; 
    }
+
+public:
+   static const char * getStateName () 
+   { return iofwdutil::demangle(typeid(S<SMDEF>).name ()); }
+
+protected:
+
+   static int ID () 
+   { return StateID<S<SMDEF> >::value; }
+
+   template <template <typename> class ST>
+   void setState ()
+   {   }
+
+   template <typename ST>
+   void setStateAlias ()
+   {  } 
 
 protected:
 
@@ -426,8 +473,90 @@ protected:
 protected:
 
    /// Reference to the state machine this state is a part of
-   StateMachine<SMDEF> & sm_; 
+   StateMachine<SMDEF_> & sm_; 
 }; 
+
+
+//===========================================================================  
+//===========================================================================  
+//===========================================================================  
+
+template <typename S>
+struct StateDepth;
+
+/**
+ * Determine depth of a state
+ */
+template <typename INITSTATE, typename S, int P>
+struct StateDepth_Helper
+{
+   typedef typename IStateDirectParent<S>::type parent;
+   enum { initstate = boost::is_same<
+                         typename S::SMDEF::INITSTATE,
+                         S
+                       >::value }; 
+
+   enum { value = StateDepth<parent>::value + 1 }; 
+}; 
+
+
+// The initstate has depth 0 
+template <typename S, int P>
+struct StateDepth_Helper<S,S, P>
+{
+   enum { value = 0 }; 
+};
+
+// Depth of a state not in the machine is -1
+template <typename S1, typename S2>
+struct StateDepth_Helper<S1, S2, -1>
+{
+   enum { value = -1 }; 
+}; 
+
+// This template makes it possible to filter out trying to get the depth 
+// of the initstate or to get the depth of a state that is not in the machine
+template <typename S>
+struct StateDepth
+{
+   enum { id = StateID<S>::value }; 
+   enum { value = StateDepth_Helper<typename S::SMDEF::INITSTATE, S, id>::value };
+};
+
+//===========================================================================  
+//===========================================================================  
+//===========================================================================  
+
+//
+// given two instantiated states, find their first shared parent state
+//
+/* template <typename S1, typename S2>
+struct SharedParent
+{
+   enum { S1_DEPTH = StateDepth<S1>::value,
+          S2_DEPTH = StateDepth<S2>:;value }; 
+   enum { same_depth = (S1_DEPTH == S2_DEPTH) };
+   enum { s1_deeper = (S1_DEPTH > S2_DEPTH) }; 
+
+   typedef typename boost::mpl::if_c<
+               same_depth, // sharedparent of two different states at same
+                          // depth is sharedparent of parents
+               typename SharedParent<typename S1::PARENT,typename S2::PARENT>::type,
+               typename boost::mpl::if_c<
+                   s1_deeper,
+                   typename SharedParent<typename S1::PARENT,S2>::type,
+                   typename SharedParent<S1, typename S2::PARENT>::type
+                  >::type
+              >::type; 
+}; 
+
+// SharedParent of two equal states is the state itself
+template <typename S>
+struct SharedParent<S,S> 
+{
+   typedef S type;
+};  
+*/
 
 //===========================================================================  
 //====== State Machine ======================================================  
@@ -449,8 +578,10 @@ class StateMachine
 
       ~StateMachine ();
 
-      int getStateCount () const 
+      static int getStateCount ()
       { return state_count; } 
+      
+      void run (); 
 
    protected:
 
@@ -467,7 +598,7 @@ class StateMachine
       template <typename S>
       void ensureStateExists ()
       {
-         enum { id = IStateID<S>::value }; 
+         enum { id = StateID<S>::value }; 
          STATIC_ASSERT(id >= 0); // Check that the state is in our machine
          if (states_[id])
             return;
@@ -478,13 +609,16 @@ class StateMachine
       template <typename S>
       S & getState ()
       { 
-         enum { id = IStateID<S>::value }; 
+         enum { id = StateID<S>::value }; 
          STATIC_ASSERT(id >= 0); // Check that the state is in our machine
          // Make sure the state already exists
          ASSERT(states_[id] && "getState for a non-existant state");
          return static_cast<S &>(states_[id]); 
       }
 
+   protected:
+
+      
    protected:
       
       /// Pointers to the states (ordered by StateID).
@@ -510,6 +644,9 @@ StateMachine<SMDEF>::StateMachine ()
 
    // Just to make sure boost::array initializes data
    ASSERT(states_[0] == 0); 
+
+   // The first transition we make is to the initstate
+   nextState_ = StateID<typename SMDEF::INITSTATE>::value; 
 }
 
 template <typename SMDEF>
@@ -518,6 +655,11 @@ StateMachine<SMDEF>::~StateMachine ()
    // Free all used states
    for (unsigned int i=0; i<state_count; ++i)
       delete (states_[i]); 
+}
+
+template <typename SMDEF>
+void StateMachine<SMDEF>::run ()
+{
 }
 
 //===========================================================================  

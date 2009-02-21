@@ -28,7 +28,8 @@ MODULE_SOURCES_iofwdutil = \
 		$(XDRSOURCES) \
 		$(BMISOURCES) \
 		Timer.cpp TimeVal.cpp always_assert.cpp \
-		ZoidFSAPI.cpp ZException.cpp
+		ZoidFSAPI.cpp ZException.cpp \
+		demangle.cpp
 
 			  
 # Automatically add -I$(thismoduledir) to CPPFLAGS
