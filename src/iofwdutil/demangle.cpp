@@ -1,24 +1,28 @@
-#include "demangle.hh"
 #include <cxxabi.h>
+#include <string>
+#include "demangle.hh"
+#include "iofwdutil/assert.hh"
 
 namespace iofwdutil
 {
 #if (__GNUC__ && __cplusplus && __GNUC__ >= 3)
-const char* demangle(const char* name)
+std::string demangle(const char* name)
 {
-   char buf[1024];
-    size_t size=1024;
+    size_t size;
     int status;
     char* res = abi::__cxa_demangle (name,
-                                 buf,
+                                 0,
                                  &size,
                                  &status);
-    return res;
+    ALWAYS_ASSERT(res); 
+    std::string ret (res); 
+    std::free(res); 
+    return ret; 
   }
 #else
-const char* demangle(const char* name)
+std::string demangle(const char* name)
 {
-  return name;
+  return std::string(name);
 }
 #endif
 

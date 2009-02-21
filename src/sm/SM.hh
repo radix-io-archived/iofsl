@@ -21,6 +21,8 @@
 
 #include <boost/array.hpp>
 
+#include <string>
+
 #include "iofwdutil/demangle.hh"
 
 // for debugging
@@ -446,7 +448,7 @@ protected:
    }
 
 public:
-   static const char * getStateName () 
+   static std::string getStateName () 
    { return iofwdutil::demangle(typeid(S<SMDEF>).name ()); }
 
 protected:
@@ -527,36 +529,73 @@ struct StateDepth
 //===========================================================================  
 //===========================================================================  
 
+// forward
+template <typename S1, typename S2>
+struct SharedParent;
+
 //
 // given two instantiated states, find their first shared parent state
 //
-/* template <typename S1, typename S2>
-struct SharedParent
+template <typename INITSTATE, typename S1, typename S2>
+struct SharedParent_Helper
 {
    enum { S1_DEPTH = StateDepth<S1>::value,
-          S2_DEPTH = StateDepth<S2>:;value }; 
+          S2_DEPTH = StateDepth<S2>::value }; 
    enum { same_depth = (S1_DEPTH == S2_DEPTH) };
    enum { s1_deeper = (S1_DEPTH > S2_DEPTH) }; 
+
+   typedef typename IStateDirectParent<S1>::type S1PARENT;
+   typedef typename IStateDirectParent<S2>::type S2PARENT;
+
 
    typedef typename boost::mpl::if_c<
                same_depth, // sharedparent of two different states at same
                           // depth is sharedparent of parents
-               typename SharedParent<typename S1::PARENT,typename S2::PARENT>::type,
+               typename SharedParent<S1PARENT,S2PARENT>::type,
                typename boost::mpl::if_c<
                    s1_deeper,
-                   typename SharedParent<typename S1::PARENT,S2>::type,
-                   typename SharedParent<S1, typename S2::PARENT>::type
+                   typename SharedParent<S1PARENT,S2>::type,
+                   typename SharedParent<S1, S2PARENT>::type
                   >::type
-              >::type; 
+              >::type type; 
 }; 
 
 // SharedParent of two equal states is the state itself
-template <typename S>
-struct SharedParent<S,S> 
+template <typename I, typename S>
+struct SharedParent_Helper<I, S,S> 
 {
    typedef S type;
 };  
-*/
+
+// Prevent trying to go outside of the tree
+template <typename I, typename S>
+struct SharedParent_Helper<I, I, S>
+{
+   typedef typename SharedParent<I, typename
+      IStateDirectParent<S>::type>::type type; 
+};
+
+// Prevent trying to go outside of the tree
+template <typename I, typename S>
+struct SharedParent_Helper<I, S, I>
+{
+   typedef typename SharedParent<I, typename
+      IStateDirectParent<S>::type>::type type; 
+};
+
+
+template <typename S1, typename S2>
+struct SharedParent
+{
+   typedef typename SharedParent_Helper<typename S1::SMDEF::INITSTATE,
+           S1, S2>::type type; 
+}; 
+
+template <typename S>
+struct SharedParent<S,S>
+{
+   typedef S type; 
+}; 
 
 //===========================================================================  
 //====== State Machine ======================================================  

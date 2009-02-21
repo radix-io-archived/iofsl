@@ -195,6 +195,21 @@ void validateDepth ()
 }
 
 
+template <typename EM, template <typename> class S1, 
+         template <typename> class S2, 
+         template <typename> class P>
+void validateSharedParent ()
+{
+   typedef typename sm::SharedParent< S1<EM>, S2<EM> >::type SP; 
+
+   STATIC_ASSERT((boost::is_same <SP, P<EM> >::value)); 
+
+   cout << "Shared parent of " << S1<EM>::getStateName () 
+      << " and " << S2<EM>::getStateName () 
+      << " is " << SP::getStateName () << endl; 
+}
+
+
 int main (int UNUSED(argc), char ** UNUSED(args))
 {
    typedef sm::AllChildren<ExampleMachine,list<S4<ExampleMachine>,S5<ExampleMachine> > >::children childlist_S4_S5; 
@@ -251,6 +266,44 @@ int main (int UNUSED(argc), char ** UNUSED(args))
    validateDepth<EM2, S3, 0>(); 
    validateDepth<EM2, S4, 1>(); 
    validateDepth<EM2, S5, 1>(); 
+
+   validateSharedParent<ExampleMachine, S1, S1, S1>(); 
+   validateSharedParent<ExampleMachine, S1, S2, S1>(); 
+   validateSharedParent<ExampleMachine, S1, S3, S1>(); 
+   validateSharedParent<ExampleMachine, S1, S4, S1>(); 
+   validateSharedParent<ExampleMachine, S1, S5, S1>(); 
+
+   validateSharedParent<ExampleMachine, S2, S1, S1>(); 
+   validateSharedParent<ExampleMachine, S3, S1, S1>(); 
+   validateSharedParent<ExampleMachine, S4, S1, S1>(); 
+   validateSharedParent<ExampleMachine, S5, S1, S1>(); 
+   validateSharedParent<ExampleMachine, S6, S1, S1>(); 
+
+   validateSharedParent<ExampleMachine, S2, S3, S1>(); 
+   validateSharedParent<ExampleMachine, S2, S4, S1>(); 
+   validateSharedParent<ExampleMachine, S2, S5, S1>(); 
+   validateSharedParent<ExampleMachine, S2, S6, S1>(); 
+
+   validateSharedParent<ExampleMachine, S3, S3, S3>(); 
+   validateSharedParent<ExampleMachine, S3, S4, S3>(); 
+   validateSharedParent<ExampleMachine, S3, S5, S3>(); 
+   validateSharedParent<ExampleMachine, S3, S6, S1>(); 
+   
+   validateSharedParent<ExampleMachine, S4, S4, S4>(); 
+   validateSharedParent<ExampleMachine, S4, S5, S3>(); 
+   validateSharedParent<ExampleMachine, S4, S6, S1>(); 
+   
+   validateSharedParent<ExampleMachine, S5, S5, S5>(); 
+   validateSharedParent<ExampleMachine, S5, S6, S1>(); 
+
+   validateSharedParent<EM2, S3, S3, S3>(); 
+   validateSharedParent<EM2, S3, S4, S3>(); 
+   validateSharedParent<EM2, S3, S5, S3>(); 
+   
+   validateSharedParent<EM2, S4, S4, S4>(); 
+   validateSharedParent<EM2, S4, S5, S3>(); 
+   
+   validateSharedParent<EM2, S5, S5, S5>(); 
 
    cout << endl;
    cout << " For machine1:" << endl;

@@ -1,10 +1,12 @@
 #ifndef IOFWDUTIL_DEMANGLE_HH
 #define IOFWDUTIL_DEMANGLE_HH
 
+#include <string>
+
 namespace iofwdutil
 {
 
-const char * demangle (const char * name); 
+   std::string demangle (const char * name); 
 
 
 }
