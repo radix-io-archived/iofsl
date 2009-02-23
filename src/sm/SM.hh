@@ -629,6 +629,53 @@ struct SharedParent<S,S>
 }; 
 
 //===========================================================================  
+//====== Tree Walking =======================================================  
+//===========================================================================  
+
+// Do nothing functor
+struct WalkTreeVoid 
+{
+   template <typename S>
+   void operator () () const
+   {
+   }
+};
+
+/**
+ * Walk up from state S1 to state S2, calling func before and after
+ * going to the next node
+ *
+ * Call on endnode is not included 
+ *
+ * FUN{BEFORE|AFTER} should have an operator () taking one template argument
+ * (the state type)
+ */
+template <typename S1, typename S2>
+struct WalkTree 
+{
+   typedef typename IStateDirectParent<S1>::type parent; 
+
+   template <typename FUNBEFORE, typename FUNAFTER>
+   static void apply (FUNBEFORE & fb, FUNAFTER & fa)
+   {
+      fb.template operator ()<S1> ();
+      WalkTree<parent, S2>::apply (fb, fa); 
+      fa.template operator ()<S1> ();
+   }
+
+}; 
+
+template <typename S>
+struct WalkTree<S,S>
+{
+   template <typename FUNBEFORE, typename FUNAFTER>
+   static void apply (FUNBEFORE & , FUNAFTER & )
+   {
+      // nothing todo, reached destination
+   }
+};
+
+//===========================================================================  
 //====== State Machine ======================================================  
 //===========================================================================  
 
@@ -743,8 +790,46 @@ class StateMachine
       friend class StateFunc; 
       
    protected:
-     
 
+      struct EnterFunctor 
+      {
+         EnterFunctor (StateMachine & sm, int id)
+            : sm_ (sm), dest_(id)
+         {
+         }
+
+         template <typename S>
+         void operator () () 
+         { 
+            if (S::ID() == dest_)
+            {
+               // We are about to enter the state we transition to.
+               // Clear nextState_ to enable the enter method to select 
+               // a new destination
+               sm_.nextState_ = -1; 
+            }
+            sm_.template enterState<S> (); 
+         }
+
+         StateMachine & sm_; 
+         int dest_; 
+      }; 
+
+      struct LeaveFunctor 
+      {
+         LeaveFunctor (StateMachine & sm)
+            : sm_ (sm)
+         { }
+
+         template <typename S>
+         void operator () () 
+         { sm_.template leaveState<S> (); }
+
+         StateMachine & sm_; 
+      }; 
+
+
+   protected:
 
       /// Pointers to the states (ordered by StateID).
       /// Note: states are created on demand
@@ -769,21 +854,35 @@ class StateMachine
 
 template <typename SMDEF>
 StateMachine<SMDEF>::StateMachine ()
-   : currentState_(-1), nextState_(-1)
+   : currentState_(-1), nextState_(-1), transitionFunc_(0)
 {
    for (unsigned int i=0; i<state_count; ++i)
       states_[i] = 0;
 
    // Just to make sure boost::array initializes data
    ASSERT(states_[0] == 0); 
-
-   // The first transition we make is to the initstate
-   nextState_ = StateID<typename SMDEF::INITSTATE>::value; 
 }
 
 template <typename SMDEF>
 void StateMachine<SMDEF>::gotoNextState ()
 {
+   // Nothing todo if there is no next state
+   // ALWAYS_ASSERT(nextState_ > 0);  // just here to see if this ever happens
+   if (nextState_ < 0)
+      return; 
+
+   // If there is a nextState_, the transitionFunc_ should have been set
+   ASSERT(transitionFunc_); 
+
+   TransitionFuncType tempFunc_ = transitionFunc_; 
+
+   // NOTE: need to check case where the enter func of a parent state tries to
+   // make us go somewhere else
+   nextState_ = -1; 
+   transitionFunc_ = 0; 
+   
+   // Call generated state transition func
+   (this->*tempFunc_) (); 
 }
 
 template <typename SMDEF>
@@ -831,7 +930,8 @@ inline void StateMachine<SMDEF>::setState ()
    // Check nobody changed their mind
    ASSERT(nextState_ < 0); 
 
-
+   transitionFunc_ = &StateMachine<SMDEF>::template doStateTransition<FROM,TO>; 
+   nextState_ = TO::ID(); 
 }
 
 template <typename SMDEF>
@@ -843,16 +943,30 @@ inline void StateMachine<SMDEF>::doStateTransition ()
    if (boost::is_same<FROM,TO>::value)
    {
       // Reentering state
-      // NOTE: Need to handle case where data needs to be destroyed
+      // NOTE: May need to handle case where data needs to be destroyed
+      // We handle this case separate because setState<INITSTATE,INITSTATE>()
+      // would not work, even if we pretend
+      // IStateDirectParent<INITSTATE,INITSTATE>::type == SMDEF
       this->template leaveState<FROM>(); 
       this->template enterState<TO>(); 
    }
    else
    {
+      typedef typename SharedParent<FROM,TO>::type SharedParent; 
       // Going to another state:
       // call leave up to the first shared parent, then call enter 
       // down to the new state
-      ASSERT(false); 
+      EnterFunctor enter (*this, StateID<TO>::value); 
+      LeaveFunctor leave (*this); 
+      sm::WalkTreeVoid v; 
+
+      // Same here: it must be illegal to change the state we transition to 
+      // from a 'leave' method
+      // However, we do allow the enter method of the state we transition to 
+      // to call setState.
+
+      WalkTree<FROM,SharedParent>::apply (leave,v); 
+      WalkTree<TO,SharedParent>::apply (v,enter); 
    }
 }
 
@@ -874,14 +988,15 @@ void StateMachine<SMDEF>::run ()
 {
    if (currentState_ < 0)
    {
+      ASSERT(nextState_ < 0); 
+
       // First time the machine runs
-      
-      // Make sure we go to the initstate
-      ASSERT(nextState_ ==  StateID<typename SMDEF::INITSTATE>::value);
+      // We need to go to the initstate
 
-      // Need to clear nextState before entering the new state
-      nextState_ = -1; 
-
+      // We cannot use the normal setState from here because we don't have 
+      // a current state.
+      // Note that enterState could trigger a call to setState,
+      // so we have to run the transition logic after this
       this->template enterState<typename SMDEF::INITSTATE>(); 
    }
 
