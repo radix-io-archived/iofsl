@@ -13,7 +13,7 @@ namespace testsm
 
 SM_STATE(test1)
 {
-   SM_STATEDEF;
+   SM_STATEDEF(test1);
 
    public: 
     void enter ();
@@ -22,7 +22,7 @@ SM_STATE(test1)
 
 SM_STATE(test2)
 {
-   SM_STATEDEF;
+   SM_STATEDEF(test2);
 
    public: 
     void enter ();
@@ -31,7 +31,7 @@ SM_STATE(test2)
 
 SM_STATE(test3)
 {
-   SM_STATEDEF;
+   SM_STATEDEF(test3);
 
    public: 
     void enter ();
@@ -40,7 +40,7 @@ SM_STATE(test3)
 
 SM_STATE(test4)
 {
-   SM_STATEDEF;
+   SM_STATEDEF(test4);
    public: 
     void enter ();
     void leave ();
@@ -66,7 +66,7 @@ void test2<SMDEF>::enter()
 template <typename SMDEF>
 void test3<SMDEF>::enter() 
 { 
-   cout << "Entering " << *this.getStateName() << " (stateid " <<
+   cout << "Entering " << this->getStateName() << " (stateid " <<
       this->ID() << ") " << endl; 
    this->template setState<test4>(); 
 }
@@ -74,7 +74,7 @@ void test3<SMDEF>::enter()
 template <typename SMDEF>
 void test4<SMDEF>::enter() 
 { 
-   cout << "Entering " << *this.getStateName() << " (stateid " <<
+   cout << "Entering " << this->getStateName() << " (stateid " <<
       this->ID() << ") " << endl; 
 }
 
@@ -94,6 +94,7 @@ void test4<SMDEF>::leave() { cout << "Leaving " << this->getStateName() << endl;
 // Machinetype can go anywhere
 SM_MACHINETYPE(test,test1);
 
+SM_MACHINETYPE(subtest,test3);
 }
 
 
@@ -115,6 +116,7 @@ SM_STATE_CHILDREN_END
 int main (int UNUSED(argc), char ** UNUSED(args))
 {
    typedef sm::StateMachine<testsm::test> MyMachine; 
+   typedef sm::StateMachine<testsm::subtest> SubMachine; 
 
    cout << "Number of states in state machine: " << MyMachine::getStateCount ()
       << endl; 
@@ -124,6 +126,14 @@ int main (int UNUSED(argc), char ** UNUSED(args))
    {
       MyMachine machine;
 
+      cout << "Calling run...\n"; 
+      machine.run (); 
+   }
+
+   cout << "Running submachine\n";
+   {
+      SubMachine machine;
+      machine.run (); 
    }
 
    return EXIT_SUCCESS; 

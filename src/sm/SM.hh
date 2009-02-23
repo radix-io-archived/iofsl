@@ -24,6 +24,7 @@
 #include <string>
 
 #include "iofwdutil/demangle.hh"
+#include "iofwdutil/assert.hh"
 
 // for debugging
 #include <iostream>
@@ -96,15 +97,19 @@ struct IStateChildList
 //===========================================================================  
 //===========================================================================  
 //===========================================================================  
-#define SM_STATE(a) \
-   template <typename SMDEF> \
-   struct a : public ::sm::StateFunc<SMDEF,a>
+#define SM_STATE(statename) \
+   template <typename SMDEF_> \
+   struct statename : public ::sm::StateFunc<SMDEF_, statename<SMDEF_> >
 
-#define SM_STATEDEF \
+#define SM_STATEDEF(statename) \
 protected:\
-   typedef ::sm::StateMachine<SMDEF> STATEMACHINE; \
-   typedef typename SMDEF::INITSTATE INITSTATE; \
-   typedef SMDEF                     STATEMACHINE_DEF
+   friend class ::sm::StateMachine<SMDEF_>; \
+   statename (::sm::StateMachine<SMDEF_> & sm) :\
+      ::sm::StateFunc<SMDEF_,statename<SMDEF_> >(sm) {} \
+   typedef ::sm::StateMachine<SMDEF_> STATEMACHINE; \
+   typedef typename SMDEF_::INITSTATE INITSTATE; \
+ public:\
+   typedef SMDEF_                     SMDEF
 
 
 
@@ -405,7 +410,16 @@ struct StateAlias
 template <typename SMDEF>
 class StateBase
 {
-public:
+protected:
+   friend class StateMachine<SMDEF>;
+
+
+   /// We cannot force a state to go to another state without the static type
+   /// of the state we come from and the state we go to.
+   /// gotoInitState is called by the state machine in response to the
+   /// destruction of the state machine object itself.
+   virtual void gotoInitState () = 0; 
+
    virtual ~StateBase () {}; 
 }; 
 
@@ -420,45 +434,62 @@ public:
  */
 
 
-template <typename SMDEF_, template <typename> class S>
+template <typename SMDEF_, typename S>
 class StateFunc : public StateBase<SMDEF_>
 {
 protected:
+   typedef SMDEF_ SMDEF; 
+
    template <typename F>
    friend class StateMachine; 
 
    // We need our own type to be able to pass the static type information 
    // to the StateMachine.
-   typedef S<SMDEF_>   SELF; 
+   typedef S   SELF; 
 
-
-public:
-   typedef SMDEF_ SMDEF; 
 
 protected:
-   StateFunc (StateMachine<SMDEF_> & sm)
+   StateFunc (StateMachine<SMDEF> & sm)
       : sm_(sm)
    {
-      cout << "Constructing state " << S<SMDEF>::getStateName() << endl; 
+      cout << "Constructing state " << S::getStateName() << endl; 
    }
 
    virtual ~StateFunc ()
    {
-      cout << "Destructing state " << S<SMDEF>::getStateName() << endl; 
+      cout << "Destructing state " << S::getStateName() << endl; 
+   }
+
+
+   virtual void gotoInitState () 
+   {
+      this->template setState<typename SMDEF::INITSTATE>(); 
    }
 
 public:
    static std::string getStateName () 
-   { return iofwdutil::demangle(typeid(S<SMDEF>).name ()); }
+   { return iofwdutil::demangle(typeid(S).name ()); }
 
 protected:
 
    static int ID () 
-   { return StateID<S<SMDEF> >::value; }
+   { return StateID<S>::value; }
 
+   
+   /// setState for instantiated states
+   template <typename NEXT>
+   void setState () 
+   {
+      // call back to the statemachine which will instantiate 
+      // code for going from this state to NEXT
+      this->sm_.template setState<SELF,NEXT> (); 
+   }
+
+
+   /// makes it simpler for the user: can specify non-instantiated state
    template <template <typename> class ST>
    void setState ()
-   {   }
+   {  this->template setState<ST <SMDEF> >(); }
 
    template <typename ST>
    void setStateAlias ()
@@ -475,7 +506,7 @@ protected:
 protected:
 
    /// Reference to the state machine this state is a part of
-   StateMachine<SMDEF_> & sm_; 
+   StateMachine<SMDEF> & sm_; 
 }; 
 
 
@@ -641,7 +672,7 @@ class StateMachine
          STATIC_ASSERT(id >= 0); // Check that the state is in our machine
          if (states_[id])
             return;
-         states_[id] = new typename SType<id>::type ();  
+         states_[id] = new typename SType<id>::type (*this);  
       }
 
       /// Return a reference to the state; Does not check if the state exists
@@ -652,31 +683,93 @@ class StateMachine
          STATIC_ASSERT(id >= 0); // Check that the state is in our machine
          // Make sure the state already exists
          ASSERT(states_[id] && "getState for a non-existant state");
-         return static_cast<S &>(states_[id]); 
+         return static_cast<S &>(*states_[id]); 
       }
 
+
+      /// Return pointer to current state (note: no static type info, 
+      /// so need virtual function 
+      VStatePtr getCurrentState ()
+      {
+         ASSERT(currentState_ >= 0); 
+         ASSERT(states_[currentState_]); 
+         return states_[currentState_]; 
+      }
+
+
+      /// Called to actually enter a state;
+      /// Make sure state exists, calls enter and initializes state data
+      /// Adjusts currentState_
+      template <typename S>
+      void enterState ()
+      {
+         ensureStateExists<S>(); 
+         this->template getState<S>().enter (); 
+         currentState_ = StateID<S>::value; 
+      }
+
+      /// Called when leaving a state
+      /// Sets currentState_ to the parent state
+      template <typename S>
+      void leaveState ()
+      {
+         this->template getState<S>().leave (); 
+         currentState_ = StateID<typename IStateDirectParent<S>::type>::value; 
+      }
+
+
+      /// Called when the machine object is destroyed 
+      void leaveMachine ();
+
+      /// Called to make the state transition 
+      /// Needs valid transitionFunc_ pointer and nextState_
+      void gotoNextState (); 
+
+
+      /// Called by the states enter/leave method to trigger
+      /// a state machine transition
+      template <typename FROM,typename TO>
+      inline void setState ();
+
+      /// The next method actually instantiates the code 
+      /// that performs the actual state change
+      template <typename FROM, typename TO>
+      inline void doStateTransition (); 
+
    protected:
 
+      // Provide StateFunc access to our setState template method
+      template <typename SM, typename T> 
+      friend class StateFunc; 
       
    protected:
-      
+     
+
+
       /// Pointers to the states (ordered by StateID).
       /// Note: states are created on demand
       /// Note2: we can avoid the allocation by constructing the
       /// states in place 
       boost::array<VStatePtr,state_count> states_;
 
+      /// The state ID of the current state (-1 means no state)
+      int currentState_; 
+
       /// The state ID of the state we need to transition to (-1 indicates no
       /// change)
       int nextState_; 
 
-      /// The state ID of the current state (-1 means no state)
-      int currentState_; 
+
+      /// Function prototype of a state transition method
+      typedef void (StateMachine<SMDEF>::*TransitionFuncType) (); 
+
+      TransitionFuncType transitionFunc_; 
 }; 
 //===========================================================================  
 
 template <typename SMDEF>
 StateMachine<SMDEF>::StateMachine ()
+   : currentState_(-1), nextState_(-1)
 {
    for (unsigned int i=0; i<state_count; ++i)
       states_[i] = 0;
@@ -689,8 +782,88 @@ StateMachine<SMDEF>::StateMachine ()
 }
 
 template <typename SMDEF>
+void StateMachine<SMDEF>::gotoNextState ()
+{
+}
+
+template <typename SMDEF>
+void StateMachine<SMDEF>::leaveMachine ()
+{
+   typedef typename SMDEF::INITSTATE INIT; 
+   // Think about what we want here:
+   // in principle, destroying the state machine if it isn't in an exit/done
+   // state should be considered an error...
+   // For now, go just go to the initstate and leave that one too.
+
+   // Check if the machine was already started.
+   // If not, nothing todo
+   if (currentState_ < 0)
+      return; 
+
+   if (currentState_ != StateID<INIT>::value)
+   {
+      // force a transition from the current state to the initstate
+      // NOTE: we cannot force a state change from outside of the states 
+      // without support from StateBase because we need both static types... 
+      getCurrentState()->gotoInitState (); 
+
+      // TODO: think about what happens if we call leave (because of
+      // exception) from within a enter/leave method (and thus run loop)
+      gotoNextState (); 
+   }
+
+   ASSERT (currentState_ == StateID<INIT>::value); 
+   ASSERT (nextState_ < 0); 
+
+   this->template leaveState<INIT>(); 
+   ASSERT (currentState_ < 0); 
+}
+
+/**
+ * Called by the state to indicate a desired state change.
+ * Just stores a pointer to a method that will actually perform the state
+ * change.
+ */
+template <typename SMDEF>
+template <typename FROM, typename TO>
+inline void StateMachine<SMDEF>::setState ()
+{
+   // Check nobody changed their mind
+   ASSERT(nextState_ < 0); 
+
+
+}
+
+template <typename SMDEF>
+template <typename FROM, typename TO>
+inline void StateMachine<SMDEF>::doStateTransition ()
+{
+   // The following is a compile time check 
+   // which will cause dead branches to be removed
+   if (boost::is_same<FROM,TO>::value)
+   {
+      // Reentering state
+      // NOTE: Need to handle case where data needs to be destroyed
+      this->template leaveState<FROM>(); 
+      this->template enterState<TO>(); 
+   }
+   else
+   {
+      // Going to another state:
+      // call leave up to the first shared parent, then call enter 
+      // down to the new state
+      ASSERT(false); 
+   }
+}
+
+template <typename SMDEF>
 StateMachine<SMDEF>::~StateMachine ()
 {
+   leaveMachine (); 
+
+   ASSERT(currentState_ < 0); 
+   ASSERT(nextState_ < 0); 
+
    // Free all used states
    for (unsigned int i=0; i<state_count; ++i)
       delete (states_[i]); 
@@ -699,6 +872,28 @@ StateMachine<SMDEF>::~StateMachine ()
 template <typename SMDEF>
 void StateMachine<SMDEF>::run ()
 {
+   if (currentState_ < 0)
+   {
+      // First time the machine runs
+      
+      // Make sure we go to the initstate
+      ASSERT(nextState_ ==  StateID<typename SMDEF::INITSTATE>::value);
+
+      // Need to clear nextState before entering the new state
+      nextState_ = -1; 
+
+      this->template enterState<typename SMDEF::INITSTATE>(); 
+   }
+
+
+   ASSERT(currentState_ >= 0); 
+
+   // Run until no next state requested
+   while (nextState_ >= 0)
+   {
+      gotoNextState (); 
+   }
+
 }
 
 //===========================================================================  

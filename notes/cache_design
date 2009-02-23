@@ -7,3 +7,6 @@
            stores data on a local disk
         -> makes cache look no different from a backend filesystem
 
+If the cache is treated as a filesystem, there needs to be some way to intercept data and cache it. (Same for tracking usage data)
+
+  -> 

@@ -9,7 +9,7 @@ using namespace boost::mpl;
 
 SM_STATE(S1) 
 {
-   SM_STATEDEF;
+   SM_STATEDEF(S1);
 
    void enter ()
    {
@@ -25,7 +25,7 @@ SM_STATE(S1)
 
 SM_STATE(S2) 
 {
-   SM_STATEDEF;
+   SM_STATEDEF(S2);
    void enter ()
    {
       cout << "Entering S2\n"; 
@@ -39,7 +39,7 @@ SM_STATE(S2)
 
 SM_STATE(S3) 
 {
-   SM_STATEDEF;
+   SM_STATEDEF(S3);
    void enter ()
    {
       cout << "Entering S3\n"; 
@@ -53,7 +53,7 @@ SM_STATE(S3)
 
 SM_STATE(S4) 
 {
-   SM_STATEDEF;
+   SM_STATEDEF(S4);
    void enter ()
    {
       cout << "Entering S4\n"; 
@@ -67,7 +67,7 @@ SM_STATE(S4)
 
 SM_STATE(S5) 
 {
-   SM_STATEDEF;
+   SM_STATEDEF(S5);
    void enter ()
    {
       cout << "Entering S5\n"; 
@@ -82,7 +82,7 @@ SM_STATE(S5)
 
 SM_STATE(S6) 
 {
-   SM_STATEDEF;
+   SM_STATEDEF(S6);
    void enter ()
    {
       cout << "Entering S6\n"; 
