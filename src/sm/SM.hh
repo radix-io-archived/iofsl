@@ -434,8 +434,28 @@ protected:
  */
 
 
+// This is used whenever the state does not declare persistent or normal state
+// data. 
+struct EmptyDataType
+{
+}; 
+
+/** 
+ * This class is used to inject default definitions of the 
+ *   PersistentStateData and StateData structures.
+ * We cannot put it into StateFunc because that would require State
+ * implementors to specify the qualified name of the structures or to use a
+ * 'using' clause / redefinition.
+ */
+class StateDataInjector
+{
+public:
+   typedef EmptyDataType PersistentStateData;
+   typedef EmptyDataType StateData; 
+}; 
+
 template <typename SMDEF_, typename S>
-class StateFunc : public StateBase<SMDEF_>
+class StateFunc : public StateBase<SMDEF_>, protected StateDataInjector
 {
 protected:
    typedef SMDEF_ SMDEF; 
@@ -447,6 +467,8 @@ protected:
    // to the StateMachine.
    typedef S   SELF; 
 
+   typedef int  StateData; /* non-peristent default data */ 
+   typedef int      PersistentData; /* persistent data */  
 
 protected:
    StateFunc (StateMachine<SMDEF> & sm)
@@ -485,12 +507,42 @@ protected:
       this->sm_.template setState<SELF,NEXT> (); 
    }
 
+   /// setState for instantiated states (1 param)
+   template <typename NEXT, typename P1>
+   void setState (P1 & p1) 
+   { this->sm_.template setState<SELF,NEXT> (p1); }
+
+   /// setState for instantiated states (2 param)
+   template <typename NEXT, typename P1, typename P2>
+   void setState (P1 & p1, P2 & p2) 
+   { this->sm_.template setState<SELF,NEXT> (p1,p2); }
+
+   /// setState for instantiated states (3 param)
+   template <typename NEXT, typename P1, typename P2, typename P3>
+   void setState (P1 & p1, P2 & p2,P3 & p3) 
+   { this->sm_.template setState<SELF,NEXT> (p1,p2,p3); }
+
 
    /// makes it simpler for the user: can specify non-instantiated state
    template <template <typename> class ST>
    void setState ()
    {  this->template setState<ST <SMDEF> >(); }
 
+   template <template <typename> class ST, typename P1>
+   void setState (P1 & p1)
+   {  this->template setState<ST <SMDEF> >(p1); }
+
+   template <template <typename> class ST, typename P1, typename P2>
+   void setState (P1 & p1, P2 & p2)
+   {  this->template setState<ST <SMDEF> >(p1,p2); }
+
+   template <template <typename> class ST, typename P1, typename P2, 
+            typename P3>
+   void setState (P1 & p1, P2 & p2, P3 & p3)
+   {  this->template setState<ST <SMDEF> >(p1,p2,p3); }
+
+
+   // Same as setState, but takes state alias name
    template <typename ST>
    void setStateAlias ()
    {  } 
@@ -679,6 +731,11 @@ struct WalkTree<S,S>
 //====== State Machine ======================================================  
 //===========================================================================  
 
+// TODO:
+//   - Currently there is no stateful data within a state instance; 
+//     Could reuse state instances when running multiple instances of the 
+//     same state machine.
+
 template <typename SMDEF>
 class StateMachine 
 {
@@ -743,6 +800,7 @@ class StateMachine
          return states_[currentState_]; 
       }
 
+      /// Make sure tempStateStorageRaw points to enough memory for this state
 
       /// Called to actually enter a state;
       /// Make sure state exists, calls enter and initializes state data
@@ -751,6 +809,7 @@ class StateMachine
       void enterState ()
       {
          ensureStateExists<S>(); 
+         //reserveTempStateStorage<S>(); 
          this->template getState<S>().enter (); 
          currentState_ = StateID<S>::value; 
       }
@@ -762,6 +821,10 @@ class StateMachine
       {
          this->template getState<S>().leave (); 
          currentState_ = StateID<typename IStateDirectParent<S>::type>::value; 
+         typedef typename S::StateData SD; 
+         // In place destruct non-persistent state data
+         //static_cast<SD *>(tempStateStorage)->~SD (); 
+         //tempStateStorage=0; 
       }
 
 
@@ -849,12 +912,20 @@ class StateMachine
       typedef void (StateMachine<SMDEF>::*TransitionFuncType) (); 
 
       TransitionFuncType transitionFunc_; 
+
+      ///
+      /// Storage for non-persistent state storage
+      /// Currently persistent state data is stored within the state class
+      //
+      void * tempStateStorage_; 
+
 }; 
 //===========================================================================  
 
 template <typename SMDEF>
 StateMachine<SMDEF>::StateMachine ()
-   : currentState_(-1), nextState_(-1), transitionFunc_(0)
+   : currentState_(-1), nextState_(-1), transitionFunc_(0),
+   tempStateStorage_(0)
 {
    for (unsigned int i=0; i<state_count; ++i)
       states_[i] = 0;

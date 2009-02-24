@@ -13,6 +13,14 @@ namespace testsm
 
 SM_STATE(test1)
 {
+   struct PersistentStateData
+   {
+   }; 
+
+   struct StateData
+   {
+   }; 
+
    SM_STATEDEF(test1);
 
    public: 
@@ -50,6 +58,7 @@ SM_STATE(test4)
 template <typename SMDEF>
 void test1<SMDEF>::enter() 
 { 
+   const int UNUSED(i) = sizeof (PersistentStateData); 
    cout << "Entering " << this->getStateName() << " (stateid " <<
       this->ID() << ") " << endl; 
    this->template setState<test2>(); 
@@ -113,6 +122,12 @@ SM_STATE_CHILDREN_END
 }
 
 
+template <typename S>
+void stateSize ()
+{
+   cout << "Size of " << S::getStateName() << "=" << sizeof(S) << endl; 
+}
+
 int main (int UNUSED(argc), char ** UNUSED(args))
 {
    typedef sm::StateMachine<testsm::test> MyMachine; 
@@ -120,6 +135,13 @@ int main (int UNUSED(argc), char ** UNUSED(args))
 
    cout << "Number of states in state machine: " << MyMachine::getStateCount ()
       << endl; 
+
+   cout << "State sizes: " << endl; 
+   stateSize<testsm::test1<testsm::test> >(); 
+   stateSize<testsm::test2<testsm::test> >(); 
+   stateSize<testsm::test3<testsm::test> >(); 
+   stateSize<testsm::test3<testsm::subtest> >(); 
+   stateSize<testsm::test4<testsm::test> >(); 
  
    cout << endl; 
 
