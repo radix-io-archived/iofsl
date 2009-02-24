@@ -1,0 +1,3 @@
+MODULE_ARCHIVES := iofwdevent
+MODULE_SOURCES_iofwdevent := 
+

@@ -11,7 +11,7 @@ CXXCPP = @CXXCPP@
 LDFLAGS = @LDFLAGS@
 
 # Could replace this with autoscanning for module.mk
-SUBDIRS = src/sm src/iofwdutil src/iofwd  \
+SUBDIRS = src/iofwdevent src/sm src/iofwdutil src/iofwd  \
 	  src/metacache src/cache src/client sandbox test
 
 VPATH := @top_srcdir@
