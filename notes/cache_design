@@ -7,6 +7,26 @@
            stores data on a local disk
         -> makes cache look no different from a backend filesystem
 
-If the cache is treated as a filesystem, there needs to be some way to intercept data and cache it. (Same for tracking usage data)
+* If the cache is treated as a filesystem, there needs to be some way to intercept data and cache it. (Same for tracking usage data)
 
   -> 
+
+
+* Also, how to handle multiple requests waiting for the same data?
+    => Provide 'subscription' on file ranges: 
+         -> if data becomes available trigger a previously provided
+           event/callback (advantage 
+         -> allow updating/changing subscriptions based on 
+            data that became available or is no longer needed
+
+    Probably useful to keep filerange indicating data being waited for
+    (note: does not need to be rtree since no overlap and no data associated
+    with ranges)
+      -> when data becomes available, remove from range and go over each
+      subscription and activate the subscription if it overlaps
+
+
+
+
+
+

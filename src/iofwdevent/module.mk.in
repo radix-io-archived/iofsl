@@ -1,3 +1,4 @@
 MODULE_ARCHIVES := iofwdevent
-MODULE_SOURCES_iofwdevent := 
+MODULE_SOURCES_iofwdevent := Event.cpp EventManager.cpp EventSource.cpp
+
 
