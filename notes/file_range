@@ -1,0 +1,9 @@
+file_range class encapsulating ranges of interest in a file:
+
+--> remove_range 
+--> add_range
+
+Provide FileBuffer which contains data from the file
+Given FileRange and FileBuffer, provide iterator for efficiently
+copying/reading from the FileBuffer
+

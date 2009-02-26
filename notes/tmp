@@ -1,0 +1,11 @@
+Without caching: 
+
+
+-> incoming read request into frontent
+    -> creates request structure and gets passed to main thread
+    -> added to workqueue; will get serviced by some thread
+           -> will trigger subscription in filerange
+                 -> will trigger I/O thread starting to read request 
+                 -> will trigger event to request/SM that data became
+                 available
+
