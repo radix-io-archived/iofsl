@@ -1,0 +1,3 @@
+MODULE_ARCHIVES := spatial
+MODULE_SOURCES_spatial := Range.cpp
+

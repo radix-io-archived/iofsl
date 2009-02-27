@@ -88,6 +88,7 @@ dnl LDFLAGS="$LDFLAGS $FUSE_LIBS"
 
 AC_CONFIG_FILES([
                  Makefile
+                 src/spatial/module.mk
                  src/sm/module.mk
                  src/iofwdevent/module.mk
                  src/iofwd/module.mk
