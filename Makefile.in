@@ -35,6 +35,9 @@ DOXYFILE ?= Doxygen
 srcdir = @srcdir@
 builddir = @builddir@
 
+# Import variables from configure
+@MAKE_VARS@
+
 
 # Disable built-in rules
 .SUFFIXES:
@@ -195,7 +198,10 @@ app_$(1): $$(DIR_$(1))/$(1)
 $$(DIR_$(1))/$(1): $$(OBJS_$(1)) \
    		   $$(foreach l,$$(ADDINTLIBS_$(1)),$$(LIBNAME_$$(l)))
 	$(Q) "  LD		$(1)"
-	$(E) $(LD)  -o $$@ $$(filter %.o,$$^) $$(foreach l,$$(ADDINTLIBS_$(1)),-l$$(l))  $$(ADDLIBS_$(1))  $$(ADDLIBS) $(LDFLAGS)
+	$(E) $(LD)  -o $$@ $$(filter %.o,$$^) $$(foreach l,$$(ADDINTLIBS_$(1)),-l$$(l)) \
+	   $$(ADDLIBS_$(1))  $$(ADDLIBS) $$(foreach l,$$(ADDINTLIBS_$(1)),$$(MODULE_LDFLAGS_$$(l))) \
+	   $$(foreach l,$$(ADDINTLIBS_$(1)),$$(MODULE_LIBS_$$(l))) $(LDFLAGS) \
+	   $$(LDFLAGS_$(1)) $$(LIBS_$(1))
 
 .PHONY: info_$(1)
 info_$(1):

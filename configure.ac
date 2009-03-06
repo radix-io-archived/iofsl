@@ -18,7 +18,7 @@ AC_LANG([C++])
 
 # Checks for header files.
 AC_HEADER_STDC
-AC_CHECK_HEADERS([stdlib.h string.h unistd.h])
+AC_CHECK_HEADERS([stdlib.h string.h unistd.h execinfo.h])
 
 # Checks for typedefs, structures, and compiler characteristics.
 AC_C_CONST
@@ -73,10 +73,15 @@ dnl esac
 
 BOOST_REQUIRE([1.34.1])
 BOOST_THREADS
+BOOST_PROGRAM_OPTIONS
+AX_MAKE_VAR([BOOST_PROGRAM_OPTIONS_LIBS])
+AX_MAKE_VAR([BOOST_PROGRAM_OPTIONS_LDFLAGS])
+AX_MAKE_VAR([BOOST_THREAD_LIBS])
+AX_MAKE_VAR([BOOST_THREAD_LDFLAGS])
 
-m4_pattern_allow(BOOST_THREAD_LDFLAGS)
+#m4_pattern_allow(BOOST_THREAD_LDFLAGS)
 CPPFLAGS="${CPPFLAGS} ${BOOST_CPPFLAGS}"
-LIBS="${LIBS} ${BOOST_THREAD_LIBS}"
+#LIBS="${LIBS} ${BOOST_THREAD_LIBS}"
 
 # for fuse
 dnl AC_SYS_LARGEFILE 
@@ -85,6 +90,7 @@ dnl CFLAGS="$CFLAGS $FUSE_CFLAGS"
 dnlCPPFLAGS="$CPPFLAGS $FUSE_CFLAGS"
 dnl LDFLAGS="$LDFLAGS $FUSE_LIBS"
 
+AX_OUTPUT_MAKE_VARS
 
 AC_CONFIG_FILES([
                  Makefile
