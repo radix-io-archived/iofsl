@@ -34,6 +34,12 @@ public:
    // destroyed
    virtual bool run () = 0; 
 
+
+   const char * opid2Name (int opid) const; 
+
+   const char * opid2Name () const
+   { return opid2Name (opid_); }
+
    virtual ~Request (); 
  
 protected:

@@ -19,6 +19,7 @@ public:
 
    enum { NS_PER_SECOND = 1000000000 }; 
    enum { US_PER_SECOND = 1000000 }; 
+   enum { MS_PER_SECOND = 1000 }; 
 
    TimeVal ()
       : seconds_(0), nanoseconds_(0)

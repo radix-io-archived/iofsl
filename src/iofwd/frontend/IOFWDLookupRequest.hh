@@ -15,8 +15,8 @@ class IOFWDLookupRequest
      public LookupRequest
 {
 public:
-   IOFWDLookupRequest (int opid, const BMI_unexpected_info & info)
-      : IOFWDRequest (info), LookupRequest (opid)
+   IOFWDLookupRequest (iofwdutil::bmi::BMIContext & bmi, int opid, const BMI_unexpected_info & info)
+      : IOFWDRequest (bmi, info), LookupRequest (opid)
    {
    }
 

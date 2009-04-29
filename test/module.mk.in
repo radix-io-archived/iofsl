@@ -24,6 +24,8 @@ ADDINTLIBS_xdrspeed := iofwdutil
 
 MODULE_SOURCES_bmitest := $(addprefix bmi/, bmi.cpp)
 ADDINTLIBS_bmitest := iofwdutil
+LDFLAGS_bmitest := $(BOOST_THREAD_LDFLAGS)
+LIBS_bmitest := $(BOOST_THREAD_LIBS)
 
 MODULE_SOURCES_timertest := $(addprefix timer/, timer.cpp)
 ADDINTLIBS_timertest := iofwdutil

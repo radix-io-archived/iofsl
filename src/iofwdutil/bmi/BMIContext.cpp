@@ -39,6 +39,19 @@ BMIOp BMIContext::postReceive (BMIAddr source,
    }
 }
 
+BMIOp BMIContext::postSend (BMIAddr dest, 
+         const void * buffer, size_t size, 
+         bmi_buffer_type type, BMITag tag)
+{
+   bmi_op_id_t op; 
+   int ret = BMI::check (BMI_post_send (&op, dest, buffer, size, type, 
+            tag, 0, getID(), 0)); 
+   if (ret == 0)
+      return BMIOp(BMIContextPtr(this), op); 
+   else
+      return BMIOp(BMIContextPtr(this), op, size); 
+}
+
 BMIOp BMIContext::postSendUnexpected (BMIAddr dest,
       const void * buffer, size_t size, bmi_buffer_type type, 
       BMITag tag)

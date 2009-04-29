@@ -23,15 +23,22 @@ BMISOURCES := $(addprefix bmi/, \
    BMIBuffer.cpp \
    )
 
+ZCONFIGSOURCES := $(addprefix zconfig/, \
+   ConfigParser.cpp \
+   )
+
 MODULE_SOURCES_iofwdutil = \
 		$(ZLOGSOURCES) \
 		$(XDRSOURCES) \
 		$(BMISOURCES) \
+		$(ZCONFIGSOURCES) \
 		Timer.cpp TimeVal.cpp always_assert.cpp \
 		ZoidFSAPI.cpp ZException.cpp \
 		demangle.cpp
 
-			  
+MODULE_LDFLAGS_iofwdutil =  $(BOOST_PROGRAM_OPTIONS_LDFLAGS)
+MODULE_LIBS_iofwdutil = $(BOOST_PROGRAM_OPTIONS_LIBS)
+
 # Automatically add -I$(thismoduledir) to CPPFLAGS
 MODULE_CONTAINSINCLUDE := 1
 

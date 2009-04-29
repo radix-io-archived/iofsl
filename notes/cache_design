@@ -24,6 +24,10 @@
     with ranges)
       -> when data becomes available, remove from range and go over each
       subscription and activate the subscription if it overlaps
+      (Might prove useful to store ranges (or overview ranges) of 
+       each state machine into an rtree to speed up determining 
+       which state machines need to be notified)
+
 
 
 

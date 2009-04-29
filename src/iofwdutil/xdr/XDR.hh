@@ -18,7 +18,7 @@ namespace iofwdutil
 class XDR  : public XDRProcessor 
 {
 public:
-   XDR (const char * mem, size_t size, bool read) :
+   XDR (const void * mem, size_t size, bool read) :
       mem_(mem), size_(size), read_(read)
    {
       init (); 
@@ -33,7 +33,7 @@ public:
    void reset (const void * mem, size_t size)
    {
       destroy (); 
-      mem_ = static_cast<const char*>(mem); size_ = size; 
+      mem_ = static_cast<const void*>(mem); size_ = size; 
       init (); 
    }
 
@@ -79,13 +79,13 @@ protected:
       if (!mem_)
          return ; 
 
-      xdrmem_create (&xdr_, const_cast<char*>(mem_),
+      xdrmem_create (&xdr_, const_cast<char *> (static_cast<const char *> (mem_)),
             size_, (read_ ? XDR_DECODE : XDR_ENCODE)); 
       initpos_ = xdr_getpos(&xdr_);
    }
 
 public:
-   const char * mem_;
+   const void * mem_;
    size_t size_; 
    bool read_; 
    unsigned int initpos_; 

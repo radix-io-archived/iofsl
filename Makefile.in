@@ -1,5 +1,3 @@
-#BMIDIR=$(HOME)/ioforward/install
-
 CC = @CC@
 CXX = @CXX@ 
 LD = @CXX@

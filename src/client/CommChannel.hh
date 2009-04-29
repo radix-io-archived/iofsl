@@ -86,10 +86,10 @@ namespace client
             // post receive
             iofwdutil::bmi::BMIOp receive = bmi_->postReceive (iofwdhost_, 
                   buffer_receive_.get(), buffer_receive_.size (), 
-                  buffer_receive_.bmiType(), ZOIDFS_REQUEST_TAG); 
+                  buffer_receive_.bmiType(), ZOIDFS_REPLY_TAG); 
             bmi_->postSendUnexpected (iofwdhost_, 
                   buffer_send_.get(), buffer_send_.size(), 
-                  buffer_send_.bmiType(), ZOIDFS_REPLY_TAG); 
+                  buffer_send_.bmiType(), ZOIDFS_REQUEST_TAG); 
             
             // Wait until 
             size_t UNUSED(received) = receive.wait (); 
@@ -136,8 +136,6 @@ namespace client
          }
 
     protected:
-         enum { REQ_TAG = 0, 
-                REPLY_TAG = 1 }; 
          // Op we are handling
          int op_; 
 

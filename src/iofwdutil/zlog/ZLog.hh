@@ -60,6 +60,7 @@ class ZLog
 };
 //===========================================================================
 
+
 #ifdef ZLOG_ENABLE_ERROR
 #define ZLOG_ERROR(cl,txt) cl.doLog<iofwdutil::zlog::ERROR>(txt)
 #else

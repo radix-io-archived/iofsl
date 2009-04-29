@@ -114,11 +114,12 @@ inline size_t xdrsize_roundup4 (size_t s)
 
 inline void process (XDRSizeProcessor & f, const XDRString & s)
 {
-      f.size_ += xdrsize_roundup4(f.onlyMax_ ? s.maxsize_ : strlen (s.ptr_));
-      f.maxsize_ += xdrsize_roundup4(s.maxsize_); 
-      // length of string is added in front of string
-      f.size_ += 4; 
-      f.maxsize_ += 4; 
+   f.size_ += xdrsize_roundup4(f.onlyMax_ ? s.maxsize_ : 
+         (s.ptr_ ?  strlen (s.ptr_) : 0 ));
+   f.maxsize_ += xdrsize_roundup4(s.maxsize_); 
+   // length of string is added in front of string
+   f.size_ += 4; 
+   f.maxsize_ += 4; 
 }
 
 template <typename T, typename C>

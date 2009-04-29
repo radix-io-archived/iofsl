@@ -14,13 +14,24 @@ class XDRWriter : public XDR
 public:
    enum { XDRTYPE = WRITER } ; 
 
-   XDRWriter ()
+   XDRWriter () 
+      : XDR (0, 0, false)
    {
    }
 
-   XDRWriter (char * mem, size_t memsize)
+   XDRWriter (void * mem, size_t memsize)
       : XDR (mem, memsize, false)
    {
+   }
+
+   const void * getBuf () const
+   { 
+      return mem_; 
+   }
+
+   size_t size () const
+   {
+      return getPos (); 
    }
 
    template <typename T>

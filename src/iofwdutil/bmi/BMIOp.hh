@@ -9,6 +9,8 @@ extern "C"
 #include <boost/assert.hpp>
 #include "BMIContext.hh"
 #include "iofwdutil/tools.hh"
+#include "BMIException.hh"
+#include "iofwdutil/Timer.hh"
 
 namespace iofwdutil
 {
@@ -33,9 +35,19 @@ protected:
 
 
 protected:
-   enum { WAIT_IDLE_TIME = 1000000 }; 
+
+   // Maximum time we want to wait
+   enum { WAIT_IDLE_TIME = 10 }; 
+
 public:
-   size_t wait ()
+
+   // If hasCompleted returns true it is not needed to wait/test to op any
+   // longer
+   bool hasCompleted () const 
+   { return completed_; } 
+
+   // Maximum time to wait (in seconds)
+   size_t wait (unsigned int maxwait = WAIT_IDLE_TIME)
    {
       if (completed_)
          return actual_; 
@@ -45,10 +57,30 @@ public:
       bmi_size_t actual_size;
       void * user; 
       bmi_error_code_t error; 
-      BMI::check(BMI_test (op_, &outcount, &error, &actual_size, 
-            &user, WAIT_IDLE_TIME, con_->getID()));
 
-      BMI::check(error); 
+      iofwdutil::Timer elapsed; 
+      iofwdutil::TimeVal remaining; 
+      elapsed.start (); 
+
+      do
+      {
+         double remaining = double(maxwait) - (elapsed.current ().getFraction()); 
+         if (remaining < 0) 
+            break; 
+
+         BMI::check(BMI_test (op_, &outcount, &error, &actual_size, 
+                  &user, remaining * iofwdutil::TimeVal::MS_PER_SECOND,
+                  con_->getID()));
+
+         BMI::check(error); 
+
+      } while (!outcount); 
+
+      if (!outcount)
+      {
+         // Timeout was triggered: throw exception
+         throw BMIException ("timeout in BMIOp.wait()!"); 
+      }
 
       return actual_size; 
    }

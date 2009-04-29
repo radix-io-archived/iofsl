@@ -1,2 +1,7 @@
 -> if multiple applications consider fairness between applications
 
+
+->see CLIC (fast09 paper): automatic assigning of priority/policy to hints
+ without hardcoding knowledge about what hints mean.
+
+

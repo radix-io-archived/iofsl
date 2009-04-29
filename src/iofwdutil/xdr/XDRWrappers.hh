@@ -19,7 +19,7 @@ public:
    XDRString (const char * ptr, size_t maxsize)
       : ptr_(const_cast<char*>(ptr)), maxsize_(maxsize)
    {
-      BOOST_ASSERT (ptr); 
+      //BOOST_ASSERT (ptr); 
    }
 
    mutable char * ptr_; 
@@ -32,7 +32,7 @@ public:
    XDROpaque (const void * ptr, size_t size)
       : ptr_(const_cast<void*>(ptr)), size_(size)
    {
-      BOOST_ASSERT(ptr); 
+      // BOOST_ASSERT(ptr); 
    }
 
    void * ptr_; 

@@ -13,16 +13,27 @@ using namespace iofwd;
 using namespace iofwd::frontend;
 using namespace iofwdutil::bmi; 
 
+
+/**
+ * Print out request info and run request sequentially
+ */
 class TextHandler : public RequestHandler
 {
 public:
 
    // NOTE: this is called from a different thread...
-   virtual void handleRequest (int count, Request * reqs)
+   virtual void handleRequest (int count, Request ** reqs)
    {
       for (int i=0; i<count; ++i)
       {
-         cout << "opid " << reqs[i].getOpID() << endl;  
+         cout << "opid " << reqs[i]->getOpID() <<
+            " (" << reqs[i]->opid2Name() << ")" << endl;  
+         while (reqs[i]->run())
+         {
+         cout << "Running op..." ;
+         cout.flush (); 
+         }
+         delete (reqs[i]); 
       }
    }
 
@@ -34,7 +45,7 @@ public:
 int main (int argc, char ** args)
 try
 {
-   if (argc != 2)
+   if (argc < 2)
    {
       cerr << "Need one argument: listen address...\n"; 
       return 1; 
@@ -44,8 +55,10 @@ try
    sigfillset (&sigset); 
    sigprocmask (SIG_BLOCK, &sigset, 0); 
 
+   TextHandler handler; 
    IOFWDFrontend f;
 
+   f.setHandler (&handler); 
 
    // Init BMI
    BMI::setInitServer (args[1]); 

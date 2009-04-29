@@ -1,3 +1,4 @@
+#include <typeinfo>
 #include <iostream>
 #include "iofwdutil/tools.hh"
 #include "iofwdutil/typestorage.hh"

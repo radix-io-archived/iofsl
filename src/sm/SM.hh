@@ -1,5 +1,11 @@
+// NOTE: data storage: see in place construction boost library (in place
+// factories)
+
+
 #ifndef SM_SMLINKS_HH
 #define SM_SMLINKS_HH
+
+#include <typeinfo>
 
 #include <boost/mpl/list.hpp>
 #include <boost/mpl/joint_view.hpp>

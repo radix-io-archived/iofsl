@@ -19,7 +19,7 @@ public:
    {
    }
 
-  XDRReader (const char * mem, size_t memsize) :
+  XDRReader (const void * mem, size_t memsize) :
       XDR (mem, memsize, true)
    {
    }

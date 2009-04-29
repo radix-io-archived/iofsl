@@ -14,13 +14,22 @@ class IOFWDNullRequest : public NullRequest,
                          public IOFWDRequest
 {
 public:
-   IOFWDNullRequest (int opid, const BMI_unexpected_info & info)
-      : NullRequest(opid), IOFWDRequest (info)
+   IOFWDNullRequest (iofwdutil::bmi::BMIContext & bmi, int opid, const BMI_unexpected_info & info)
+      : NullRequest(opid), IOFWDRequest (bmi, info)
    {
    }
 
    virtual bool run ()
-   { return IOFWDRequest::run (); }
+   { 
+      bool r = IOFWDRequest::run (); 
+      beginReply (128); 
+      static int i = 0; 
+      ++i; 
+      setStatus (i); 
+      reply_writer_ << status_; 
+      sendReply ().wait(); 
+      return r; 
+   }
 
    virtual ~IOFWDNullRequest (); 
 };
