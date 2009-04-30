@@ -10,7 +10,7 @@ LDFLAGS = @LDFLAGS@
 
 # Could replace this with autoscanning for module.mk
 SUBDIRS = src/spatial src/iofwdevent src/sm src/iofwdutil src/iofwd  \
-	  src/metacache src/cache src/client sandbox test
+	  src/metacache src/cache src/client src/taskmon sandbox test
 
 VPATH := @top_srcdir@
 

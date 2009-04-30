@@ -102,6 +102,7 @@ AC_CONFIG_FILES([
                  src/metacache/module.mk
                  src/client/module.mk
                  src/cache/module.mk
+                 src/taskmon/module.mk
                  test/module.mk
                  sandbox/module.mk
                  ])

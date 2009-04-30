@@ -1,6 +1,6 @@
 MODULE_APPS := iofwd
 
-MODULE_SOURCES_iofwd := iofwd.cpp 
+MODULE_SOURCES_iofwd := iofwd.cpp IOFWDMain.cpp
 ADDINTLIBS_iofwd := iofwdutil iofwdlib
 
 MODULE_ARCHIVES := iofwdlib
