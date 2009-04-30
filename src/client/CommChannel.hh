@@ -83,10 +83,11 @@ namespace client
          {
             // Make sure the receive buffer is large enough for the reply
             const size_t needed = receiveSizeProcessor_.getSize().actual; 
+            buffer_receive_.resize (needed); 
             // post receive
             iofwdutil::bmi::BMIOp receive = bmi_->postReceive (iofwdhost_, 
                   buffer_receive_.get(), buffer_receive_.size (), 
-                  buffer_receive_.bmiType(), ZOIDFS_REPLY_TAG); 
+                  buffer_receive_.bmiType(), ZOIDFS_REQUEST_TAG); 
             bmi_->postSendUnexpected (iofwdhost_, 
                   buffer_send_.get(), buffer_send_.size(), 
                   buffer_send_.bmiType(), ZOIDFS_REQUEST_TAG); 

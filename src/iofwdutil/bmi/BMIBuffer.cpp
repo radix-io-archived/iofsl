@@ -20,6 +20,9 @@ namespace iofwdutil
 
    void BMIBuffer::resize (size_t newsize)
    {
+      if (size_ == newsize)
+         return; 
+
       if (size_ != 0)
       {
          BMI::get().free (addr_, ptr_, size_, alloc_); 

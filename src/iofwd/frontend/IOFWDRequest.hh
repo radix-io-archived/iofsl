@@ -31,6 +31,14 @@ public:
    }
 
 protected:
+
+   /// Needs to be implemented 
+   /// virtual void decodeRequest () = 0; 
+
+
+   /// Actually runs the state machine
+
+protected:
    void beginReply (size_t maxsize);
 
    iofwdutil::bmi::BMIOp sendReply (); 

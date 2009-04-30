@@ -39,6 +39,7 @@ void IOFWDRequest::freeRawRequest ()
 inline iofwdutil::bmi::BMIOp IOFWDRequest::ll_sendReply (const void * buf, size_t bufsize,
       bmi_buffer_type type)
 {
+   // Server replies with same tag
    return bmi_.postSend (addr_, buf, bufsize, type, tag_); 
 }
 

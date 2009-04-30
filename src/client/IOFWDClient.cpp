@@ -12,16 +12,6 @@ namespace client
 {
 //===========================================================================
 
-// Helper macro until rewritten with templates
-#define S_C(c,op) \
-   c.prepareParam () << op; \
-   c.sendParam () << op; 
-
-//===========================================================================
- 
-
-
-//===========================================================================
 
 IOFWDClient::IOFWDClient (const char * iofwdhost)
    : comm_(BMI::get().openContext(), BMIAddr (iofwdhost))

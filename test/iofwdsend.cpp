@@ -39,7 +39,7 @@ try
 
    zoidfs_handle_t handle; 
 
-   for (unsigned int i=0; i<10; ++i)
+   for (unsigned int i=0; i<1000; ++i)
    {
    cout << "Calling zoidfs_null" << endl; 
    checkcall (client.zoidfs_null ());

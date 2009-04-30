@@ -48,7 +48,6 @@ namespace iofwdutil
 
          ~BMIBuffer (); 
 
-      protected:
          void resize (size_t newsize); 
 
       protected:

@@ -34,6 +34,12 @@ public:
    // destroyed
    virtual bool run () = 0; 
 
+   // Fast requests can possibly take a shortcut and be serviced in the main
+   // receiving thread; Note that a request that needs significat time to
+   // determine if it is fast or not cannot be fast.
+   virtual bool isFast () 
+   { return false; }
+
 
    const char * opid2Name (int opid) const; 
 
