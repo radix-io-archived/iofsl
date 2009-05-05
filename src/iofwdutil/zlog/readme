@@ -1,0 +1,23 @@
+=== ZLog ====
+
+ZLog allows filtering/redirecting log messages based on 
+
+
+In addition, for performance reasons loglevels can be compiled out.
+
+
+Logging tutorial:
+
+* get a source: 
+    ZLogSource & log = ZLog::get().getSource ("sourcename")
+
+* Use the source:
+    ZLOG_ERROR(log, msg) 
+    ZLOG_NOTICE(log, msg)
+
+    ZLOG_NOTICE(log, boost::format("This is a %s day!") % "nice")
+
+    msg needs to be std::string, const char * or boost::format 
+
+
+

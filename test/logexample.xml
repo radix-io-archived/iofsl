@@ -1,0 +1,19 @@
+<?xml version="1.0"?>
+<log>
+   <!-- default sink --> 
+   <sink name="default" type="stderr">
+
+   </sink>
+
+   <sink name="special" type="file">
+      <option name="filename">/tmp/testspecial</option>
+   </sink>
+
+   <filter>
+   </filter>
+
+   <match source="sm.*" level="*">
+      <sink> </sink>
+      <filter> </filter>
+   </match>
+</log>

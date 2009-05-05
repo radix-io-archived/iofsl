@@ -3,6 +3,8 @@ MODULE_ARCHIVES = iofwdutil
 ZLOGSOURCES := $(addprefix zlog/, \
    ZLogSource.cpp \
    ZLogSink.cpp \
+   ZLogFilter.cpp \
+   ZLogConfigurator.cpp \
    ZLog.cpp \
    ZLogSinkFile.cpp\
   )
@@ -27,14 +29,21 @@ ZCONFIGSOURCES := $(addprefix zconfig/, \
    ConfigParser.cpp \
    )
 
+WORKQUEUESOURCES := $(addprefix workqueue/, \
+   SynchronousWorkQueue.cpp \
+   WorkItem.cpp \
+   WorkQueue.cpp \
+   )
+
 MODULE_SOURCES_iofwdutil = \
+	        $(WORKQUEUESOURCES) \
 		$(ZLOGSOURCES) \
 		$(XDRSOURCES) \
 		$(BMISOURCES) \
 		$(ZCONFIGSOURCES) \
 		Timer.cpp TimeVal.cpp always_assert.cpp \
 		ZoidFSAPI.cpp ZException.cpp \
-		demangle.cpp
+		demangle.cpp IOFWDLog.cpp
 
 MODULE_LDFLAGS_iofwdutil =  $(BOOST_PROGRAM_OPTIONS_LDFLAGS)
 MODULE_LIBS_iofwdutil = $(BOOST_PROGRAM_OPTIONS_LIBS)

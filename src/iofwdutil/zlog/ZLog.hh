@@ -3,6 +3,7 @@
 
 #include <boost/assert.hpp>
 #include <boost/array.hpp>
+#include <map>
 
 namespace iofwdutil
 {
@@ -17,13 +18,13 @@ class ZLogSink;
 
 enum 
 { 
-   DEBUG_EXTREME = 0,
-   DEBUG_MORE,
-   DEBUG,
-   INFO,
-   WARN,
+   ERROR = 0,   // cannot be disabled
    CRITICAL,
-   ERROR,
+   WARN,
+   INFO,
+   DEBUG,
+   DEBUG_MORE,
+   DEBUG_EXTREME,
 
    // MAX LEVEL needs to be the number of levels in the structure
    MAX_LEVEL
@@ -36,27 +37,19 @@ class ZLog
 
       ZLog (); 
       
-      static ZLog & get ()
+      ~ZLog (); 
+
+
+      static const char * getLevelName (int level) 
       {
-         static ZLog singleton; 
-         return singleton; 
+         BOOST_ASSERT (level >= 0 && level < (int)levelNames_.size()); 
+         return levelNames_[level]; 
       }
-
-      void doConfig (ZLogSource & source); 
-
-      const char * getLevelName (int level) const
-      {
-         BOOST_ASSERT (level >= 0 && level < (int)_levelNames.size()); 
-         return _levelNames[level]; 
-      }
-
-   protected:
-      ZLogSink * getSinkByName (const char * s); 
 
    private:
       friend class ZLogSource;
 
-      static boost::array<const char *, MAX_LEVEL> _levelNames; 
+      static boost::array<const char *, MAX_LEVEL> levelNames_;
 };
 //===========================================================================
 

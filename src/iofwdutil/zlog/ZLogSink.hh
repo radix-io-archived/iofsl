@@ -7,6 +7,7 @@ namespace iofwdutil
 {
    namespace zlog
    {
+//===========================================================================
 
 // forward
 class ZLogSource; 
@@ -14,14 +15,21 @@ class ZLogSource;
 class ZLogSink
 {
 public:
-   virtual void acceptData (int level, const ZLogSource & source, const std::string & str) = 0; 
 
+   virtual void acceptData (int level, const ZLogSource & source, 
+         const std::string & str) = 0; 
 
+   virtual void setOption (const std::string & name, 
+         const std::string & val) = 0; 
+
+   /// Called before the actual logging starts
+   virtual void initialize () = 0; 
 
    virtual ~ZLogSink (); 
 }; 
 
 
+//===========================================================================
    }
 }
 

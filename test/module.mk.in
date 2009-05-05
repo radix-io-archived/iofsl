@@ -1,5 +1,11 @@
 MODULE_APPS:= xdrspeed bmitest timertest forwarding iofwdreceive iofwdsend \
-    smlinks smtest
+    smlinks smtest workqueue levelmatch
+
+MODULE_SOURCES_levelmatch := levelmatch.cpp
+ADDINTLIBS_levelmatch := iofwdutil
+
+MODULE_SOURCES_workqueue := workqueue.cpp
+ADDINTLIBS_workqueue := iofwdutil
 
 MODULE_SOURCES_smlinks := smlinks.cpp
 ADDINTLIBS_smlinks := sm iofwdutil
