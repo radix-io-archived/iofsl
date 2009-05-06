@@ -187,8 +187,8 @@ LevelMatch::LevelMatch (const char * stri)
    if (!info.full)
    {
       throw ZLogException (str(boost::format 
-               ("Could not parse '%s': error after char %u!\n") 
-               % stri % info.length)); 
+               ("Could not parse '%s': error at: '%s'!\n") 
+               % stri % info.stop)); 
    }
 }
 
