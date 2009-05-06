@@ -1,8 +1,9 @@
 #ifndef IOFWDUTIL_ZLOG_LEVELMATCH_HH
-#define IOFWDUITL_ZLOG_LEVELMATCH_HH
+#define IOFWDUTIL_ZLOG_LEVELMATCH_HH
 
 #include <boost/array.hpp>
 #include "ZLog.hh"
+#include "iofwdutil/assert.hh"
 
 namespace iofwdutil
 {
@@ -19,10 +20,15 @@ public:
    LevelMatch (const char * str); 
 
    bool operator () (int level) const
-   { return levelMask_[level]; }
+   { 
+      ALWAYS_ASSERT(level < static_cast<int>(levelMask_.size())); 
+      return levelMask_[level]; 
+   }
 
+public:
+   typedef boost::array<bool,MAX_LEVEL> MaskType;
 protected:
-   boost::array<bool,ZLog::MAX_LEVEL> levelMask_; 
+   MaskType levelMask_; 
 }; 
 
 //===========================================================================
