@@ -2,6 +2,7 @@
 #include <boost/date_time/gregorian/gregorian.hpp>
 #include <boost/date_time/posix_time/posix_time.hpp>
 
+#include "ZLogSource.hh"
 #include "ZLogDefaultFilter.hh"
 
 using namespace boost; 
@@ -16,7 +17,7 @@ namespace iofwdutil
 
 
 ZLogDefaultFilter::ZLogDefaultFilter ()      
-   : fmt_("[%s/%u] %s\n")
+   : fmt_("[%s/%u] (%s) %s\n")
 {
 }
 
@@ -36,15 +37,13 @@ void ZLogDefaultFilter::setOption (const std::string & name,
 
 std::string ZLogDefaultFilter::getTime () const
 {
-
-
    return to_iso_string(microsec_clock::local_time());
 }
 
 void ZLogDefaultFilter::filterMsg (const ZLogSource & source,
       int level, std::string & msg)
 {
-   msg = str(fmt_ % getTime() % level % msg); 
+   msg = str(fmt_ % getTime() % level % source.getSourceName () % msg); 
 }
 
 
