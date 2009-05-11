@@ -1,6 +1,7 @@
 #ifndef IOFWDUTIL_ZLOG_HH
 #define IOFWDUTIL_ZLOG_HH
 
+#include <string>
 #include <boost/assert.hpp>
 #include <boost/array.hpp>
 #include <map>
@@ -45,6 +46,19 @@ class ZLog
          BOOST_ASSERT (level >= 0 && level < (int)levelNames_.size()); 
          return levelNames_[level]; 
       }
+
+
+      /// Convert level string to level value. return -1 if invalid level name
+      static int name2Level (const std::string & levelname); 
+
+
+      /// Return true if simplified regex matches sourcename
+      static bool matchSourceName (const std::string & regex, const std::string
+            & sourcename); 
+
+      /// Convert simplified regex into regex
+      static std::string filterRegEx (const std::string & reg);
+
 
    private:
       friend class ZLogSource;

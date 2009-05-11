@@ -1,4 +1,9 @@
+#include <boost/format.hpp>
+#include "iofwdutil/tools.hh"
+#include "ZLogException.hh"
 #include "ZLogFilter.hh"
+
+using namespace boost; 
 
 namespace iofwdutil
 {
@@ -10,6 +15,11 @@ ZLogFilter::~ZLogFilter ()
 {
 }
 
+void ZLogFilter::setOption (const std::string & name, const std::string &
+      UNUSED(value))
+{
+   throw ZLogException (str(format("Unknown option ('%s')!") % name)); 
+}
 //===========================================================================
    }
 }

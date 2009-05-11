@@ -1,6 +1,7 @@
 MODULE_ARCHIVES = iofwdutil 
 
 ZLOGSOURCES := $(addprefix zlog/, \
+   LevelParser.cpp \
    ZLogSource.cpp \
    ZLogSink.cpp \
    ZLogFilter.cpp \
@@ -8,6 +9,10 @@ ZLOGSOURCES := $(addprefix zlog/, \
    ZLog.cpp \
    ZLogSinkFile.cpp\
    LevelMatch.cpp \
+   ZLogSinkStd.cpp \
+   ZLogSinkStdErr.cpp \
+   ZLogSinkStdOut.cpp \
+   ZLogDefaultFilter.cpp \
   )
 
 XDRSOURCES := $(addprefix xdr/, \
@@ -46,8 +51,17 @@ MODULE_SOURCES_iofwdutil = \
 		ZoidFSAPI.cpp ZException.cpp \
 		demangle.cpp IOFWDLog.cpp
 
-MODULE_LDFLAGS_iofwdutil =  $(BOOST_PROGRAM_OPTIONS_LDFLAGS)
-MODULE_LIBS_iofwdutil = $(BOOST_PROGRAM_OPTIONS_LIBS)
+MODULE_LDFLAGS_iofwdutil =  \
+	   $(BOOST_PROGRAM_OPTIONS_LDFLAGS) \
+	   $(BOOST_DATE_TIME_LDFLAGS) \
+	   $(BOOST_REGEX_LDFLAGS) \
+	   $(BOOST_THREAD_LDFLAGS) 
+
+MODULE_LIBS_iofwdutil = \
+	   $(BOOST_REGEX_LIBS) \
+	   $(BOOST_PROGRAM_OPTIONS_LIBS) \
+	   $(BOOST_DATE_TIME_LIBS) \
+	   $(BOOST_THREAD_LIBS) 
 
 # Automatically add -I$(thismoduledir) to CPPFLAGS
 MODULE_CONTAINSINCLUDE := 1

@@ -16,6 +16,7 @@
 #include "iofwdutil/assert.hh"
 
 #include "LevelMatch.hh"
+#include "LevelParser.hh"
 
 using namespace iofwdutil::zlog;
 
@@ -49,19 +50,17 @@ struct OpParser : boost ::spirit::symbols<int>
    }
 };
 
+/*
 struct LevelParser : boost::spirit::symbols<unsigned int>
 {
    LevelParser()
    {
-      add ("error", iofwdutil::zlog::ERROR)
-          ("critical", iofwdutil::zlog::CRITICAL)
-          ("warn", iofwdutil::zlog::WARN)
-          ("info", iofwdutil::zlog::INFO)
-          ("debug_more", iofwdutil::zlog::DEBUG_MORE)
-          ("debug_extreme", iofwdutil::zlog::DEBUG_EXTREME)
-          ("debug", iofwdutil::zlog::DEBUG);
+      for (unsigned int i=0; i<MAX_LEVEL; ++i)
+      {
+         add (ZLog::getLevelName (i), i); 
+      }
    }
-};
+}; */
 
 
 class LevelGrammar : public grammar<LevelGrammar>
@@ -130,14 +129,14 @@ public:
          : self_(self)
       { 
          /* define grammar rules here */ 
-         level = uint_p[level.value = arg1] | as_lower_d[level_p[level.value = arg1]];
+         //level = uint_p[level.value = arg1] | as_lower_d[level_p[level.value = arg1]];
          compentry = (compop_p[compentry.comptype=arg1]
-               >> level[compentry.limit=arg1])
+               >> level_p[compentry.limit=arg1])
                [bind(&LevelGrammar::handleCompEntry)(self,compentry.comptype,compentry.limit)];
          /*levellist = level[bind(&LevelGrammar::enableLevel)(self,arg1)] 
             >> *( ',' >> level[bind(&LevelGrammar::enableLevel)(self,arg1)]);
             */
-         entry = compentry | level[bind(&LevelGrammar::enableLevel)(self,arg1)];
+         entry = compentry | level_p[bind(&LevelGrammar::enableLevel)(self,arg1)];
          entrylist = entry >> *( ',' >> entry ); 
 
       }
@@ -148,25 +147,41 @@ public:
          return entrylist; 
       }
 
-      rule<ScannerT,level_closure::context_t> level; 
+      //rule<ScannerT,level_closure::context_t> level; 
       rule<ScannerT,compentry_closure::context_t> compentry; 
       rule<ScannerT> levellist,entry,entrylist; 
       const LevelGrammar & self_; 
-      const LevelParser level_p;
+      //const LevelParser level_p;
       const OpParser compop_p; 
+      const LevelParser level_p; 
 
    };
 
 protected:
    MaskType & levels_; 
-
 }; 
 
 
 }
 
 
-LevelMatch::LevelMatch (const char * stri)
+LevelMatch::LevelMatch (const char * stri) 
+   : ready_(false)
+{
+   setup (stri); 
+}
+
+LevelMatch::LevelMatch ()
+   : ready_(false)
+{
+}
+
+void LevelMatch::allowAll ()
+{
+   std::fill(levelMask_.begin(), levelMask_.end(), true); 
+}
+
+void LevelMatch::setup (const char * stri)
 {
    std::fill(levelMask_.begin(), levelMask_.end(),false); 
 
@@ -190,6 +205,8 @@ LevelMatch::LevelMatch (const char * stri)
                ("Could not parse '%s': error at: '%s'!\n") 
                % stri % info.stop)); 
    }
+
+   ready_ = true; 
 }
 
 //===========================================================================

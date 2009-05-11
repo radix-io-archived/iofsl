@@ -18,6 +18,11 @@ class LevelMatch
 {
 public:
    LevelMatch (const char * str); 
+   LevelMatch (); 
+
+   void setup (const char * str); 
+
+   void allowAll (); 
 
    bool operator () (int level) const
    { 
@@ -29,6 +34,7 @@ public:
    typedef boost::array<bool,MAX_LEVEL> MaskType;
 protected:
    MaskType levelMask_; 
+   bool ready_; 
 }; 
 
 //===========================================================================

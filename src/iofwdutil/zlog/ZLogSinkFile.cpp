@@ -1,5 +1,6 @@
 #include <iostream>
 #include <boost/format.hpp>
+#include "iofwdutil/tools.hh"
 #include "ZLogSinkFile.hh"
 #include "ZLogSource.hh"
 #include "ZLogException.hh"
@@ -10,8 +11,8 @@ namespace iofwdutil
    {
 //===========================================================================
 
-ZLogSinkFile::ZLogSinkFile (ZLog & log)
-   : zlog_(log), output_(0)
+ZLogSinkFile::ZLogSinkFile ()
+   : output_(0)
 {
 }
 
@@ -19,12 +20,17 @@ ZLogSinkFile::~ZLogSinkFile ()
 {
 }
 
-void ZLogSinkFile::initialize ()
+void ZLogSinkFile::openFile ()
 {
    if (filename_.empty())
       throw ZLogException ("ZLogSinkFile needs a configured filename! "
             "(option filename)\n"); 
    output_.open (filename_.c_str()); 
+}
+
+void ZLogSinkFile::initialize ()
+{
+   openFile (); 
    if (!output_)
    {
       throw ZLogException (str(boost::format("ZLogSinkFile: error opening"
@@ -43,11 +49,10 @@ void ZLogSinkFile::setOption (const std::string & name, const
 }
 
 
-void ZLogSinkFile::acceptData (int level, const ZLogSource & source,
+void ZLogSinkFile::acceptData (int UNUSED(level), const ZLogSource & UNUSED(source),
       const std::string & msg)
 {
-   output_ << source.getSourceName () << "|" << zlog_.getLevelName (level)
-      << "|" << msg << "\n"; 
+   output_ << msg; 
 }
 
 //===========================================================================

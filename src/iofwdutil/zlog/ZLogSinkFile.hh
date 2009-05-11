@@ -15,19 +15,21 @@ class ZLog;
 class ZLogSinkFile : public ZLogSink
 {
 public:
-   ZLogSinkFile (ZLog & log); 
+   ZLogSinkFile (); 
 
    virtual void acceptData (int level, const ZLogSource & source, const
          std::string & msg); 
 
-   virtual void setOption (const std::string & name, const std::string & val);
-
    virtual void initialize (); 
+
+   virtual void setOption (const std::string & name, const std::string & val);
 
    virtual ~ZLogSinkFile ();
 
 protected:
-   ZLog & zlog_; 
+   virtual void openFile (); 
+
+protected:
 
    std::ofstream output_; 
    std::string filename_; 
