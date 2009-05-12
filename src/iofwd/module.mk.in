@@ -1,9 +1,10 @@
 MODULE_APPS := iofwd
 
 MODULE_SOURCES_iofwd := iofwd.cpp IOFWDMain.cpp
-ADDINTLIBS_iofwd := iofwdutil iofwdlib
+ADDINTLIBS_iofwd := iofwdlib iofwdutil
 
 MODULE_ARCHIVES := iofwdlib
+ADDINTLIBS_iofwdlib := iofwdutil
 MODULE_LDFLAGS_iofwdlib := $(BOOST_THREAD_LDFLAGS)
 MODULE_LIBS_iofwdlib := $(BOOST_THREAD_LIBS)
 

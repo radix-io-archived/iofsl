@@ -5,6 +5,7 @@
 #include "zlog/ZLog.hh"
 #include "iofwdutil/tools.hh"
 #include "iofwd/IOFWDMain.hh"
+#include "iofwdutil/IOFWDLog.hh"
 
 namespace po = boost::program_options;
 
@@ -53,6 +54,9 @@ static void trapSignals (iofwd::IOFWDMain & main)
    iofwd_main = &main; 
 
    struct sigaction act; 
+#ifdef VALGRIND_SAFE
+   memset (&act, 0, sizeof(act)); 
+#endif
    act.sa_flags = SA_SIGINFO | SA_NODEFER ;
    sigemptyset (&act.sa_mask); 
    if (sigaction (SIGINT, &act, NULL) < 0)
@@ -111,24 +115,34 @@ int main (int argc, char ** args)
    if (vm.count("verbose"))
       opt_verbose = vm["verbose"].as<bool> (); 
 
-      
+   
+   // ---- enable logging ---
+   iofwdutil::zlog::ZLogSource & mainlog = iofwdutil::IOFWDLog::getSource (); 
+   ZLOG_INFO(mainlog, "iofwd main started..."); 
+   
    
    iofwd::IOFWDMain main; 
 
    try
    {
+      ZLOG_INFO (mainlog, "Booting IOFWDMain..."); 
       main.boot (); 
 
       trapSignals (main); 
 
+      ZLOG_INFO (mainlog, "About to run IOFWDMain..."); 
       main.run (); 
+      ZLOG_INFO (mainlog, "Shutting down IOFWDMain..."); 
       main.shutdown (); 
    }
    catch  (...)
    {
+      ZLOG_ERROR (mainlog, "Unhandled exception propagated to main!");
       cerr << "Exception occured!\n";
       throw; 
    }
+   
+   ZLOG_INFO(mainlog, "iofwd main started..."); 
 
    return EXIT_SUCCESS; 
 }

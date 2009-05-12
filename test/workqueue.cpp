@@ -5,6 +5,7 @@
 #include "iofwdutil/workqueue/WorkQueue.hh"
 #include "iofwdutil/workqueue/WorkItem.hh"
 #include "iofwdutil/workqueue/SynchronousWorkQueue.hh"
+#include "taskmon/TaskMonitor.hh"
 
 using namespace std; 
 

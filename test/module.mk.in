@@ -12,7 +12,7 @@ MODULE_SOURCES_levelmatch := levelmatch.cpp
 ADDINTLIBS_levelmatch := iofwdutil
 
 MODULE_SOURCES_workqueue := workqueue.cpp
-ADDINTLIBS_workqueue := iofwdutil
+ADDINTLIBS_workqueue := taskmon iofwdutil 
 
 MODULE_SOURCES_smlinks := smlinks.cpp
 ADDINTLIBS_smlinks := sm iofwdutil
