@@ -35,11 +35,12 @@ void ZLogSinkStd::openFile ()
 {
    filename_ = (stderr_ ? "/dev/stderr" : "/dev/stdout"); 
 
-   // disable buffering for stderr 
-   if (stderr_)
-      output_.rdbuf()->pubsetbuf(0, 0);
 
    ZLogSinkFile::openFile (); 
+   
+   // disable buffering for stderr 
+   if (stderr_)
+      output_->rdbuf()->pubsetbuf(0, 0);
 }
 //===========================================================================
    }

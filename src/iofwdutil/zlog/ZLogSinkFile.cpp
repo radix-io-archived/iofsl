@@ -25,13 +25,13 @@ void ZLogSinkFile::openFile ()
    if (filename_.empty())
       throw ZLogException ("ZLogSinkFile needs a configured filename! "
             "(option filename)\n"); 
-   output_.open (filename_.c_str()); 
+   output_.reset (new std::ofstream (filename_.c_str())); 
 }
 
 void ZLogSinkFile::initialize ()
 {
    openFile (); 
-   if (!output_)
+   if (! *output_)
    {
       throw ZLogException (str(boost::format("ZLogSinkFile: error opening"
                   " file '%s'\n") % filename_)); 
@@ -52,7 +52,7 @@ void ZLogSinkFile::setOption (const std::string & name, const
 void ZLogSinkFile::acceptData (int UNUSED(level), const ZLogSource & UNUSED(source),
       const std::string & msg)
 {
-   output_ << msg; 
+   *output_ << msg; 
 }
 
 //===========================================================================

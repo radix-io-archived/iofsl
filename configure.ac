@@ -96,6 +96,18 @@ dnl CFLAGS="$CFLAGS $FUSE_CFLAGS"
 dnlCPPFLAGS="$CPPFLAGS $FUSE_CFLAGS"
 dnl LDFLAGS="$LDFLAGS $FUSE_LIBS"
 
+AC_DEFUN([AX_ADD_DEFINE],
+[
+CPPFLAGS="$CPPFLAGS -D$1"
+])
+
+dnl 
+dnl  OPTIONS
+dnl
+AC_ARG_ENABLE([valgrind], AS_HELP_STRING([--enable-valgrind], 
+                                         [Try harder to be valgrind-clean]),
+                                   [AX_ADD_DEFINE([VALGRIND_SAFE])])
+
 AX_OUTPUT_MAKE_VARS
 
 AC_CONFIG_FILES([

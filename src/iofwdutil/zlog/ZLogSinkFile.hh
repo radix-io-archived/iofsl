@@ -2,6 +2,7 @@
 #define IOFWDUTIL_ZLOG_ZLOGSINKFILE_HH
 
 #include <fstream>
+#include <memory>
 #include "ZLogSink.hh"
 
 namespace iofwdutil
@@ -31,7 +32,7 @@ protected:
 
 protected:
 
-   std::ofstream output_; 
+   std::auto_ptr<std::ofstream> output_; 
    std::string filename_; 
 }; 
 
