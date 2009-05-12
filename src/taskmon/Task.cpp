@@ -1,17 +1,14 @@
-#include "TaskMonitor.hh"
+#include "Task.hh"
 
 namespace taskmon
 {
 //===========================================================================
 
+Task::~Task ()
+{
+}
 
-   TaskMonitor::TaskMonitor ()
-   {
-   }
-
-   TaskMonitor::~TaskMonitor ()
-   {
-   }
 
 //===========================================================================
 }
+
