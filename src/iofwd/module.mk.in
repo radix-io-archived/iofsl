@@ -25,6 +25,7 @@ MODULE_SOURCES_iofwdlib := \
    WriteRequest.cpp \
    NullRequest.cpp \
    NotImplementedRequest.cpp \
+   DefRequestHandler.cpp \
    $(iofwd_frontend)
 
       

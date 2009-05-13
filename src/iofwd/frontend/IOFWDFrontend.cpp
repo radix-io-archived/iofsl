@@ -178,6 +178,7 @@ IOFWDFrontend::~IOFWDFrontend ()
 
 void IOFWDFrontend::init ()
 {
+   ALWAYS_ASSERT(handler_); 
    IOFW * o = new IOFW (*this, handler_); 
    implthread_.reset (new boost::thread(boost::bind (&IOFW::run , o))); 
    impl_ = o; 

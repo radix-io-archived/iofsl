@@ -38,8 +38,6 @@ void ZLogSinkStd::openFile ()
 
    ZLogSinkFile::openFile (); 
    
-   // disable buffering for stderr 
-   if (stderr_)
       output_->rdbuf()->pubsetbuf(0, 0);
 }
 //===========================================================================

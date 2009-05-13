@@ -128,7 +128,7 @@ int main (int argc, char ** args)
       ZLOG_INFO (mainlog, "Booting IOFWDMain..."); 
       main.boot (); 
 
-      trapSignals (main); 
+      //trapSignals (main); 
 
       ZLOG_INFO (mainlog, "About to run IOFWDMain..."); 
       main.run (); 
@@ -142,7 +142,7 @@ int main (int argc, char ** args)
       throw; 
    }
    
-   ZLOG_INFO(mainlog, "iofwd main started..."); 
+   ZLOG_INFO(mainlog, "IOFWD exiting..."); 
 
    return EXIT_SUCCESS; 
 }

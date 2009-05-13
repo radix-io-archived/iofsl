@@ -52,7 +52,8 @@ void ZLogSinkFile::setOption (const std::string & name, const
 void ZLogSinkFile::acceptData (int UNUSED(level), const ZLogSource & UNUSED(source),
       const std::string & msg)
 {
-   *output_ << msg; 
+   *output_ << msg;
+   output_->flush (); 
 }
 
 //===========================================================================

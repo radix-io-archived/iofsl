@@ -1,5 +1,9 @@
 #ifndef IOFWDUTIL_IOFWDLOG_HH
-#define IOWFDUTIL_IOFWDLOG_HH
+#define IOFWDUTIL_IOFWDLOG_HH
+
+
+// Bring in boost::format because almost everybody uses it
+#include <boost/format.hpp>
 
 #include <memory>
 #include "iofwdutil/zlog/ZLogSource.hh"
@@ -21,6 +25,10 @@ namespace iofwdutil
 namespace iofwdutil
 {
 //===========================================================================
+
+using boost::format; 
+
+typedef zlog::ZLogSource IOFWDLogSource; 
 
 class IOFWDLog : public Singleton<IOFWDLog>
 { 

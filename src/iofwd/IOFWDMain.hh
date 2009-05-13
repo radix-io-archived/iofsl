@@ -10,6 +10,8 @@ namespace iofwd
 {
 //===========================================================================
 
+// Forwards
+class RequestHandler; 
 
 /**
  * Main object; Represents the whole I/O forwarding server
@@ -31,6 +33,7 @@ public:
 
 protected:
    std::auto_ptr<frontend::Frontend> frontend_;  
+   std::auto_ptr<RequestHandler> requesthandler_; 
 
    iofwdutil::zlog::ZLogSource & mainlog_; 
 }; 

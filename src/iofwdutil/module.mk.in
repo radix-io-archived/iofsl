@@ -49,7 +49,8 @@ MODULE_SOURCES_iofwdutil = \
 		$(ZCONFIGSOURCES) \
 		Timer.cpp TimeVal.cpp always_assert.cpp \
 		ZoidFSAPI.cpp ZException.cpp \
-		demangle.cpp IOFWDLog.cpp
+		demangle.cpp IOFWDLog.cpp \
+		signals.cpp
 
 MODULE_LDFLAGS_iofwdutil =  \
 	   $(BOOST_PROGRAM_OPTIONS_LDFLAGS) \
