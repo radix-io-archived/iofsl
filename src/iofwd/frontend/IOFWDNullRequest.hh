@@ -19,9 +19,9 @@ public:
    {
    }
 
-   virtual bool run ()
+   virtual reqstatus run ()
    { 
-      bool r = IOFWDRequest::run (); 
+      reqstatus r = IOFWDRequest::run (); 
       beginReply (128); 
       static int i = 0; 
       ++i; 

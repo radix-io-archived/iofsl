@@ -9,6 +9,7 @@
 #include "iofwdutil/bmi/BMIUnexpectedBuffer.hh"
 #include "iofwdutil/xdr/XDRReader.hh"
 #include "iofwdutil/xdr/XDRWriter.hh"
+#include "iofwd/Request.hh"
 
 namespace iofwd
 {
@@ -25,10 +26,10 @@ public:
 
    virtual ~IOFWDRequest (); 
 
-   virtual bool run ()
+   virtual Request::reqstatus run ()
    {
-      return false; 
-   }
+      return Request::STATUS_DONE;
+   } 
 
 protected:
 

@@ -20,7 +20,7 @@ public:
    {
    }
 
-   virtual bool run ()
+   virtual reqstatus run ()
    { return IOFWDRequest::run(); }
    
    virtual void reply (const zoidfs_handle_t * handle); 

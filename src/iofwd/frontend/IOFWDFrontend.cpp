@@ -11,6 +11,7 @@
 #include "iofwdutil/bmi/BMIUnexpectedBuffer.hh"
 #include "iofwdutil/xdr/XDRSizeProcessor.hh"
 #include "common/zoidfs-wrapped.hh"
+#include "iofwdutil/IOFWDLog.hh"
 
 #include "IOFWDLookupRequest.hh"
 #include "IOFWDNullRequest.hh"
@@ -18,6 +19,7 @@
 
 
 using namespace iofwdutil::bmi; 
+using namespace iofwdutil;
 
 namespace iofwd
 {
@@ -71,9 +73,12 @@ private:
    static opidfunc_t requestmap [];
 
    RequestHandler * handler_; 
+
    
 protected:
    size_t req_minsize_;         // minimum size of valid incoming request
+   
+   IOFWDLogSource & log_; 
 };
 
 template <class T> 
@@ -92,7 +97,8 @@ IOFW::IOFW (IOFWDFrontend & fe, RequestHandler * h)
    : fe_ (fe), bmi_ (iofwdutil::bmi::BMI::get()),
    stop_ (false),
    handler_(h),
-   req_minsize_(iofwdutil::xdr::getXDRSize (uint32_t ()).actual)
+   req_minsize_(iofwdutil::xdr::getXDRSize (uint32_t ()).actual),
+   log_ (IOFWDLog::getSource ("iofwdfrontend"))
 {
    bmictx_ = bmi_.openContext (); 
 }
@@ -120,8 +126,14 @@ void IOFW::handleIncoming (int count, const BMI_unexpected_info  * info )
       // Request should be at least contain 
       if (info[i].size < static_cast<int>( req_minsize_))
       {
-         // TODO log and throw
-         ALWAYS_ASSERT(false); 
+         ZLOG_ERROR (log_, format("Received invalid request: "
+                  "request size too small (%u < %u). Ignoring")
+               % info[i].size % req_minsize_);
+   
+         // Create a unexpected buffer and let that one care about freeing
+         // that
+         bmi::BMIUnexpectedBuffer cleanup (info[i]); 
+
          continue; 
       }
       reader.reset (info[i].buffer, info[i].size); 
@@ -142,9 +154,7 @@ void IOFW::handleIncoming (int count, const BMI_unexpected_info  * info )
 
 void IOFW::run ()
 {
-   // TODO: make sure we don't leak memory for invalid requests
-   // when errors occur
-   std::cout << "IOFW thread running" << std::endl; 
+   ZLOG_INFO(log_, "IOFW thread running"); 
 
    // Wait 
    while (!stop_)

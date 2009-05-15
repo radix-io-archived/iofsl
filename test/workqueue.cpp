@@ -1,3 +1,5 @@
+#include <boost/lambda/bind.hpp>
+#include <boost/lambda/construct.hpp>
 #include <iostream>
 #include <vector>
 #include "iofwdutil/tools.hh"
@@ -8,6 +10,8 @@
 #include "taskmon/TaskMonitor.hh"
 
 using namespace std; 
+using namespace boost::lambda; 
+using namespace iofwdutil::workqueue; 
 
 class Work : public iofwdutil::workqueue::WorkItem 
 {
@@ -29,7 +33,9 @@ protected:
 
 void testWork (iofwdutil::workqueue::WorkQueue * q)
 {
-   std::vector<unsigned int> v (1024); 
+   const unsigned int COUNT = 1024; 
+   std::vector<unsigned int> v (COUNT); 
+   std::vector<WorkItem *> items; 
 
    for (unsigned int i=0; i<v.size(); ++i)
    {
@@ -37,7 +43,11 @@ void testWork (iofwdutil::workqueue::WorkQueue * q)
       q->queueWork (new Work (&v[i])); 
    }
 
-   q->waitAll (); 
+   q->waitAll (items); 
+
+   std::for_each (items.begin(), items.end(), bind(delete_ptr(), _1)); 
+
+   ASSERT(items.size() == COUNT); 
 
    for (unsigned int i=0; i<v.size(); ++i)
    {

@@ -18,7 +18,7 @@ public:
    {
    }
 
- virtual bool run ()
+ virtual reqstatus run ()
    { return IOFWDRequest::run (); }
 
    virtual ~IOFWDNotImplementedRequest (); 

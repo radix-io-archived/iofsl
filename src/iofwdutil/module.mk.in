@@ -36,9 +36,11 @@ ZCONFIGSOURCES := $(addprefix zconfig/, \
    )
 
 WORKQUEUESOURCES := $(addprefix workqueue/, \
+   WorkQueueBase.cpp \
    SynchronousWorkQueue.cpp \
    WorkItem.cpp \
    WorkQueue.cpp \
+   CompletionTracker.cpp \
    )
 
 MODULE_SOURCES_iofwdutil = \

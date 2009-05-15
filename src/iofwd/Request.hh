@@ -1,6 +1,7 @@
 #ifndef IOFWD_REQUEST_HH
 #define IOFWD_REQUEST_HH
 
+#include <boost/function.hpp>
 
 namespace iofwd
 {
@@ -15,6 +16,13 @@ namespace iofwd
 class Request 
 {
 public:
+
+   /// Return codes for the run method. 
+   typedef enum { 
+      STATUS_DONE = 0, // Request is done, can be destroyed
+      STATUS_WAITING,  // Request waiting, will be manually rescheduled
+      STATUS_RERUN     // Request can rerun immediately
+   } reqstatus;  
 
    Request (int opid); 
 
@@ -32,10 +40,10 @@ public:
    // Called in the worker thread when the request gets some cputime
    // Needs to return false if all work is done and the request can be
    // destroyed
-   virtual bool run () = 0; 
+   virtual reqstatus run () = 0; 
 
    // Fast requests can possibly take a shortcut and be serviced in the main
-   // receiving thread; Note that a request that needs significat time to
+   // receiving thread; Note that a request that needs significant time to
    // determine if it is fast or not cannot be fast.
    virtual bool isFast () 
    { return false; }
@@ -47,6 +55,18 @@ public:
    { return opid2Name (opid_); }
 
    virtual ~Request (); 
+
+   /// Can be called to resume the request
+   void resume ()
+   {
+      reschedule_ (); 
+   }
+
+   /// Sets the function to reschedule the requests
+   void setResume (const boost::function< void () > & func)
+   {
+      reschedule_ = func; 
+   }
  
 protected:
    // Operation
@@ -54,6 +74,9 @@ protected:
 
    // Return code
    int status_; 
+
+   // Callback to reschedule request
+   boost::function<void ()> reschedule_; 
 }; 
 
 //===========================================================================
