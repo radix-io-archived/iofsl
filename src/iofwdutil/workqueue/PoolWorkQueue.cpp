@@ -31,6 +31,8 @@ PoolWorkQueue::~PoolWorkQueue ()
       // Wake all worker thread sleeping on the lock
       workready_.notify_all (); 
       boost::mutex::scoped_lock l (worklock_); 
+      if (!worklist_.empty())
+         ZLOG_ERROR(log_,"workqueue destroyed with active tasks!"); 
 
       if (thread_current_)
       {
