@@ -1,6 +1,7 @@
 #ifndef IOFWDUTIL_ZLOG_ZLOGDEFAULTFILTER_HH
 #define IOFWDUTIL_ZLOG_ZLOGDEFAULTFILTER_HH
 
+#include <boost/thread.hpp>
 #include <boost/format.hpp>
 #include "ZLogFilter.hh"
 
@@ -29,6 +30,8 @@ protected:
 
 protected:
    boost::format fmt_; 
+
+   boost::mutex lock_; 
 }; 
 
 //===========================================================================

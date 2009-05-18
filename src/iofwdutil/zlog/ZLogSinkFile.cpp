@@ -52,6 +52,7 @@ void ZLogSinkFile::setOption (const std::string & name, const
 void ZLogSinkFile::acceptData (int UNUSED(level), const ZLogSource & UNUSED(source),
       const std::string & msg)
 {
+   boost::mutex::scoped_lock l (outputlock_); 
    *output_ << msg;
    output_->flush (); 
 }

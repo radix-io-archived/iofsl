@@ -2,11 +2,13 @@
 #include <boost/lambda/construct.hpp>
 #include <iostream>
 #include <vector>
+#include <unistd.h>
 #include "iofwdutil/tools.hh"
 #include "iofwdutil/assert.hh"
 #include "iofwdutil/workqueue/WorkQueue.hh"
 #include "iofwdutil/workqueue/WorkItem.hh"
 #include "iofwdutil/workqueue/SynchronousWorkQueue.hh"
+#include "iofwdutil/workqueue/PoolWorkQueue.hh"
 #include "taskmon/TaskMonitor.hh"
 
 using namespace std; 
@@ -23,6 +25,7 @@ public:
 
    virtual void doWork ()
    {
+      sleep(1); 
       cerr << "Completed " << *seq_ << endl; 
       *seq_ = 0; 
    }
@@ -33,7 +36,7 @@ protected:
 
 void testWork (iofwdutil::workqueue::WorkQueue * q)
 {
-   const unsigned int COUNT = 1024; 
+   const unsigned int COUNT = 32; 
    std::vector<unsigned int> v (COUNT); 
    std::vector<WorkItem *> items; 
 
@@ -62,5 +65,7 @@ int main (int UNUSED(argc), char ** UNUSED(args))
 {
    cout << "Testing synchronous work queue..." << endl; 
    iofwdutil::workqueue::SynchronousWorkQueue sq; 
+   iofwdutil::workqueue::PoolWorkQueue pq (2, 10); 
+   testWork (&pq); 
    testWork (&sq); 
 }

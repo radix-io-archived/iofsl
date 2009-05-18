@@ -2,6 +2,7 @@
 #define IOFWDUTIL_ZLOG_ZLOGSINKFILE_HH
 
 #include <fstream>
+#include <boost/thread.hpp>
 #include <memory>
 #include "ZLogSink.hh"
 
@@ -34,6 +35,8 @@ protected:
 
    std::auto_ptr<std::ofstream> output_; 
    std::string filename_; 
+
+   boost::mutex outputlock_; 
 }; 
 
 

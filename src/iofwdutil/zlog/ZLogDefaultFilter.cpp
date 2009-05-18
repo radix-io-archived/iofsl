@@ -43,6 +43,8 @@ std::string ZLogDefaultFilter::getTime () const
 void ZLogDefaultFilter::filterMsg (const ZLogSource & source,
       int level, std::string & msg)
 {
+   // fmt is shared: need to lock
+   boost::mutex::scoped_lock l (lock_); 
    msg = str(fmt_ % getTime() % level % source.getSourceName () % msg); 
 }
 

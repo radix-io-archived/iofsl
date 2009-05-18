@@ -37,6 +37,7 @@ ZCONFIGSOURCES := $(addprefix zconfig/, \
 
 WORKQUEUESOURCES := $(addprefix workqueue/, \
    WorkQueueBase.cpp \
+   PoolWorkQueue.cpp \
    SynchronousWorkQueue.cpp \
    WorkItem.cpp \
    WorkQueue.cpp \
