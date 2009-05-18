@@ -1,5 +1,5 @@
 #include "Request.hh"
-#include "common/zoidfs-wrapped.hh"
+#include "zoidfs/zoidfs-wrapped.hh"
 
 
 namespace iofwd

@@ -9,7 +9,7 @@
 #include "iofwdutil/xdr/XDRSizeProcessor.hh"
 #include "iofwdutil/zoidfs-xdr.hh"
 
-#include "common/zoidfs-wrapped.hh"
+#include "zoidfs/zoidfs-wrapped.hh"
 
 #define MEMSIZE 32*1024*1024
 

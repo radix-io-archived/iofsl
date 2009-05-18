@@ -121,6 +121,7 @@ AC_CONFIG_FILES([
                  src/client/module.mk
                  src/cache/module.mk
                  src/taskmon/module.mk
+                 src/zoidfs/module.mk
                  test/module.mk
                  sandbox/module.mk
                  ])

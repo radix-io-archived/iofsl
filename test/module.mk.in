@@ -24,7 +24,7 @@ MODULE_SOURCES_smtest := smtest.cpp
 ADDINTLIBS_smtest := sm iofwdutil
 
 MODULE_SOURCES_iofwdsend := iofwdsend.cpp
-ADDINTLIBS_iofwdsend := iofwdclient iofwdlib iofwdutil
+ADDINTLIBS_iofwdsend := iofwdclient iofwdlib zoidfs iofwdutil
 
 MODULE_SOURCES_iofwdreceive := iofwdreceive.cpp
 ADDINTLIBS_iofwdreceive := iofwdlib iofwdutil

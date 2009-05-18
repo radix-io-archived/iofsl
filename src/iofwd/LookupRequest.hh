@@ -2,7 +2,7 @@
 #define IOFWD_LOOKUPREQUEST_HH
 
 #include "Request.hh"
-#include "common/zoidfs-wrapped.hh"
+#include "zoidfs/zoidfs-wrapped.hh"
 
 namespace iofwd
 {

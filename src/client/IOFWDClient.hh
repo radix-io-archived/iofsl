@@ -1,7 +1,7 @@
 #ifndef CLIENT_IOFWDCLIENT_HH
 #define CLIENT_IOFWDCLIENT_HH
 
-#include "iofwdutil/ZoidFSAPI.hh"
+#include "zoidfs/ZoidFSAPI.hh"
 #include "CommChannel.hh"
 
 namespace client

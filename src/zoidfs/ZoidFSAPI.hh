@@ -1,7 +1,7 @@
 #ifndef IOFWDUTIL_ZOIDFSAPI_HH
 #define IOFWDUTIL_ZOIDFSAPI_HH
 
-#include "common/zoidfs-wrapped.hh"
+#include "zoidfs-wrapped.hh"
 
 namespace iofwdutil
 {

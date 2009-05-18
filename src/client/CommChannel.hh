@@ -9,7 +9,7 @@
 #include "iofwdutil/bmi/BMIOp.hh"
 #include "iofwdutil/bmi/BMIContext.hh"
 #include "iofwdutil/typestorage.hh"
-#include "common/zoidfs-comm.h"
+#include "zoidfs/zoidfs-comm.h"
 
 namespace client
 {

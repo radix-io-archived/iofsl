@@ -10,7 +10,7 @@
 #include "iofwdutil/xdr/XDRReader.hh"
 #include "iofwdutil/bmi/BMIUnexpectedBuffer.hh"
 #include "iofwdutil/xdr/XDRSizeProcessor.hh"
-#include "common/zoidfs-wrapped.hh"
+#include "zoidfs/zoidfs-wrapped.hh"
 #include "iofwdutil/IOFWDLog.hh"
 
 #include "IOFWDLookupRequest.hh"

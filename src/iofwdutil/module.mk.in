@@ -51,7 +51,7 @@ MODULE_SOURCES_iofwdutil = \
 		$(BMISOURCES) \
 		$(ZCONFIGSOURCES) \
 		Timer.cpp TimeVal.cpp always_assert.cpp \
-		ZoidFSAPI.cpp ZException.cpp \
+		 ZException.cpp \
 		demangle.cpp IOFWDLog.cpp \
 		signals.cpp
 

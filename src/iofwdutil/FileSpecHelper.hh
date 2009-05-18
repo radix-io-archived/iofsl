@@ -1,7 +1,7 @@
 #ifndef IOFWDUTIL_FILESPECHELPER_HH
 #define IOFWDUTIL_FILESPECHELPER_HH
 
-#include "common/zoidfs-wrapped.hh"
+#include "zoidfs/zoidfs-wrapped.hh"
 #include "iofwdutil/xdr/XDRWrappers.hh"
 
 namespace iofwdutil
