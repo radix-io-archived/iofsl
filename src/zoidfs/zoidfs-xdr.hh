@@ -13,14 +13,14 @@ namespace iofwdutil
 
 template <typename T>
 inline
-T & process (T & f, zoidfs_handle_t & h)
+T & process (T & f, zoidfs::zoidfs_handle_t & h)
 {
    process (f, XDROpaque(&h.data, sizeof(h.data))); 
    return f; 
 }
 
 template <typename T>
-inline T & process (T & f, zoidfs_time_t & t)
+inline T & process (T & f, zoidfs::zoidfs_time_t & t)
 {
    process (f,t.seconds); 
    process (f,t.nseconds);
@@ -31,7 +31,7 @@ inline T & process (T & f, zoidfs_time_t & t)
 // call special enum method
 template <typename T>
    inline 
-T & process (T & f, zoidfs_attr_type_t & type)
+T & process (T & f, zoidfs::zoidfs_attr_type_t & type)
 {
    process (f, XDREnum(type)); 
    return f; 
@@ -39,7 +39,7 @@ T & process (T & f, zoidfs_attr_type_t & type)
 
 template <typename T>
 inline
-T & process (T & f, zoidfs_attr_t & t)
+T & process (T & f, zoidfs::zoidfs_attr_t & t)
 {
    process(f,t.type); 
    process(f,t.mask); 
@@ -59,7 +59,7 @@ T & process (T & f, zoidfs_attr_t & t)
 
 template <typename T>
 inline 
-T & process (T & f, zoidfs_cache_hint_t & t)
+T & process (T & f, zoidfs::zoidfs_cache_hint_t & t)
 {
    process(f,t.size);
    process(f,t.atime);
@@ -70,7 +70,7 @@ T & process (T & f, zoidfs_cache_hint_t & t)
 
 template <typename T>
 inline
-T & process (T & f, zoidfs_sattr_t & t)
+T & process (T & f, zoidfs::zoidfs_sattr_t & t)
 {
    process(f,t.mask);
    process(f,t.mode);
@@ -84,7 +84,7 @@ T & process (T & f, zoidfs_sattr_t & t)
 
 template <typename T>
 inline 
-T & process (T & f, zoidfs_dirent_t & t)
+T & process (T & f, zoidfs::zoidfs_dirent_t & t)
 {
    // could also use sizeof(t.name) here but ZOIDFS_NAME_MAX is more accurate
    process(f, XDRString(t.name, ZOIDFS_NAME_MAX)); 

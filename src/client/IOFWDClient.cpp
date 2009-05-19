@@ -1,11 +1,12 @@
 #include "IOFWDClient.hh"
-#include "zoidfs-xdr.hh"
+#include "zoidfs/zoidfs-xdr.hh"
+#include "zoidfs/FileSpecHelper.hh"
 #include "iofwdutil/xdr/XDRWrappers.hh"
-#include "iofwdutil/FileSpecHelper.hh"
 #include "iofwdutil/typestorage.hh"
 
 using namespace iofwdutil::bmi; 
 using namespace iofwdutil::xdr; 
+using namespace zoidfs; 
 
 
 namespace client
@@ -37,8 +38,8 @@ int IOFWDClient::zoidfs_null ()
          TSSTART); 
 }
 
-int IOFWDClient::zoidfs_lookup (const zoidfs_handle_t * handle,
-      const char * component, const char * full, zoidfs_handle_t * dhandle)
+int IOFWDClient::zoidfs_lookup (const zoidfs::zoidfs_handle_t * handle,
+      const char * component, const char * full, zoidfs::zoidfs_handle_t * dhandle)
 {
    return comm_.genericOp (ZOIDFS_PROTO_LOOKUP, 
          TSSTART << FileSpecHelper(handle, component, full), 
@@ -52,8 +53,8 @@ int IOFWDClient::zoidfs_lookup (const zoidfs_handle_t * handle,
  *   - attr.mask indicates which values need to be retrieved.
  *     Other fields are ignored on input.
  */
-int IOFWDClient::zoidfs_getattr(const zoidfs_handle_t * handle /* in:ptr */,
-                   zoidfs_attr_t * attr /* inout:ptr */)
+int IOFWDClient::zoidfs_getattr(const zoidfs::zoidfs_handle_t * handle /* in:ptr */,
+                   zoidfs::zoidfs_attr_t * attr /* inout:ptr */)
 {
    return comm_.genericOp (ZOIDFS_PROTO_GET_ATTR, 
          TSSTART << *handle << *attr, 
@@ -66,7 +67,7 @@ int IOFWDClient::zoidfs_getattr(const zoidfs_handle_t * handle /* in:ptr */,
  *   - if sattr.mode and attr.mode contain shared bits,
  *     attr will retrieve the modified values.
  */
-int IOFWDClient::zoidfs_setattr(const zoidfs_handle_t * handle /* in:ptr */,
+int IOFWDClient::zoidfs_setattr(const zoidfs::zoidfs_handle_t * handle /* in:ptr */,
                    const zoidfs_sattr_t * sattr /* in:ptr */,
                    zoidfs_attr_t * attr /* inout:ptr:nullok */)
 {

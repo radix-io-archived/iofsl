@@ -7,6 +7,7 @@
 using namespace std;
 using namespace client;
 using namespace iofwdutil::bmi; 
+using namespace zoidfs;
 
 inline int checkcall (int ret)
 {

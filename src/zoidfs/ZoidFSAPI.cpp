@@ -1,6 +1,6 @@
 #include "ZoidFSAPI.hh"
 
-namespace iofwdutil
+namespace zoidfs
 {
 
    ZoidFSAPI::~ZoidFSAPI ()

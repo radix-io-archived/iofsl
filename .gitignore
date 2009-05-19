@@ -1,3 +1,12 @@
+iofwd_config.h.in
+Makefile
+config.log
+*.swp
+autom4te.cache
+config.status
+configure
+iofwd_config.h
+tags
 aclocal.m4
 doeconfig.sh
 *.d

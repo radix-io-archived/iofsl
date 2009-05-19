@@ -37,7 +37,7 @@ const char * Request::opid2Name (int opid) const
 }
 
 Request::Request (int opid)
-   : opid_(opid), status_(ZFS_OK)
+   : opid_(opid), status_(zoidfs::ZFS_OK)
 {
 }
 

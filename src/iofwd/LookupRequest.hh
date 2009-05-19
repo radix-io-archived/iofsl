@@ -16,7 +16,7 @@ public:
    {
    }
 
-   virtual void reply (const zoidfs_handle_t * handle) = 0; 
+   virtual void reply (const zoidfs::zoidfs_handle_t * handle) = 0; 
 
    virtual ~LookupRequest (); 
 }; 

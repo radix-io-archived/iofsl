@@ -19,16 +19,16 @@ namespace iofwdutil
    class FileSpecHelper
    {
    public:
-      FileSpecHelper (const zoidfs_handle_t * handle, 
+      FileSpecHelper (const zoidfs::zoidfs_handle_t * handle, 
             const char * component, const char * full)
-         : handle_(const_cast<zoidfs_handle_t*>(handle)), 
+         : handle_(const_cast<zoidfs::zoidfs_handle_t*>(handle)), 
            component_(const_cast<char*>(component)), 
            full_(const_cast<char*>(full))
       {
       }
 
    public:
-      zoidfs_handle_t * handle_; 
+      zoidfs::zoidfs_handle_t * handle_; 
       char            * component_; 
       char            * full_; 
    }; 

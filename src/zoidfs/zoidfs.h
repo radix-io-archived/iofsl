@@ -8,6 +8,17 @@
 #include <stdint.h>
 #include <stddef.h>
 
+#ifdef __cplusplus
+/*
+ * We put all the zoidfs stuff in the zoidfs namespace
+ */
+namespace zoidfs
+{
+   extern "C" 
+   {
+#endif
+
+
 /**
  * Handle is an opaque 32 byte value
  *
@@ -285,6 +296,13 @@ int zoidfs_readdir(const zoidfs_handle_t * parent_handle /* in:ptr */,
 
 int zoidfs_resize(const zoidfs_handle_t * handle /* in:ptr */,
                   uint64_t size /* in:obj */);
+
+
+#ifdef __cplusplus
+        } // extern C
+} // namespace
+#endif
+
 
 #endif /* ZOIDFS_H */
 

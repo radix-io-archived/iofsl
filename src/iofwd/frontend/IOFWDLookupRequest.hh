@@ -4,6 +4,7 @@
 #include "IOFWDRequest.hh"
 #include "iofwd/LookupRequest.hh"
 
+
 namespace iofwd
 {
    namespace frontend
@@ -23,7 +24,7 @@ public:
    virtual reqstatus run ()
    { return IOFWDRequest::run(); }
    
-   virtual void reply (const zoidfs_handle_t * handle); 
+   virtual void reply (const zoidfs::zoidfs_handle_t * handle); 
 
    virtual ~IOFWDLookupRequest (); 
 }; 

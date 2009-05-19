@@ -7,8 +7,8 @@
 #include "iofwdutil/xdr/XDRWriter.hh"
 #include "iofwdutil/Timer.hh"
 #include "iofwdutil/xdr/XDRSizeProcessor.hh"
-#include "iofwdutil/zoidfs-xdr.hh"
 
+#include "zoidfs/zoidfs-xdr.hh"
 #include "zoidfs/zoidfs-wrapped.hh"
 
 #define MEMSIZE 32*1024*1024
@@ -21,6 +21,7 @@
 
 using namespace iofwdutil::xdr; 
 using namespace std;
+using namespace zoidfs; 
 
 
 enum test_enum {
