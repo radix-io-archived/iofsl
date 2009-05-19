@@ -21,24 +21,24 @@ IOFWDClient::IOFWDClient (const char * iofwdhost)
 }
 //===========================================================================
 
-int IOFWDClient::zoidfs_init ()
+int IOFWDClient::init ()
 {
    return 0; 
 }
 
-int IOFWDClient::zoidfs_finalize ()
+int IOFWDClient::finalize ()
 {
    return 0; 
 }
 
-int IOFWDClient::zoidfs_null ()
+int IOFWDClient::null ()
 {
    return comm_.genericOp (ZOIDFS_PROTO_NULL, 
          TSSTART,
          TSSTART); 
 }
 
-int IOFWDClient::zoidfs_lookup (const zoidfs::zoidfs_handle_t * handle,
+int IOFWDClient::lookup (const zoidfs::zoidfs_handle_t * handle,
       const char * component, const char * full, zoidfs::zoidfs_handle_t * dhandle)
 {
    return comm_.genericOp (ZOIDFS_PROTO_LOOKUP, 
@@ -53,7 +53,7 @@ int IOFWDClient::zoidfs_lookup (const zoidfs::zoidfs_handle_t * handle,
  *   - attr.mask indicates which values need to be retrieved.
  *     Other fields are ignored on input.
  */
-int IOFWDClient::zoidfs_getattr(const zoidfs::zoidfs_handle_t * handle /* in:ptr */,
+int IOFWDClient::getattr(const zoidfs::zoidfs_handle_t * handle /* in:ptr */,
                    zoidfs::zoidfs_attr_t * attr /* inout:ptr */)
 {
    return comm_.genericOp (ZOIDFS_PROTO_GET_ATTR, 
@@ -67,7 +67,7 @@ int IOFWDClient::zoidfs_getattr(const zoidfs::zoidfs_handle_t * handle /* in:ptr
  *   - if sattr.mode and attr.mode contain shared bits,
  *     attr will retrieve the modified values.
  */
-int IOFWDClient::zoidfs_setattr(const zoidfs::zoidfs_handle_t * handle /* in:ptr */,
+int IOFWDClient::setattr(const zoidfs::zoidfs_handle_t * handle /* in:ptr */,
                    const zoidfs_sattr_t * sattr /* in:ptr */,
                    zoidfs_attr_t * attr /* inout:ptr:nullok */)
 {
@@ -76,7 +76,7 @@ int IOFWDClient::zoidfs_setattr(const zoidfs::zoidfs_handle_t * handle /* in:ptr
          TSSTART << *attr); 
 }
 
-int IOFWDClient::zoidfs_readlink(const zoidfs_handle_t * handle /* in:ptr */,
+int IOFWDClient::readlink(const zoidfs_handle_t * handle /* in:ptr */,
                     char * buffer /* out:arr:size=+1 */,
                     size_t buffer_length /* in:obj */)
 {
@@ -85,7 +85,7 @@ int IOFWDClient::zoidfs_readlink(const zoidfs_handle_t * handle /* in:ptr */,
          TSSTART << XDRString (buffer, buffer_length)); 
 }
 
-int IOFWDClient::zoidfs_read(const zoidfs_handle_t * UNUSED(handle) /* in:ptr */,
+int IOFWDClient::read(const zoidfs_handle_t * UNUSED(handle) /* in:ptr */,
                 size_t UNUSED(mem_count) /* in:obj */,
                 void * UNUSED(mem_starts[]) /* out:arr2d:size=+1:zerocopy */,
                 const size_t UNUSED(mem_sizes[]) /* in:arr:size=-2 */,
@@ -97,7 +97,7 @@ int IOFWDClient::zoidfs_read(const zoidfs_handle_t * UNUSED(handle) /* in:ptr */
    return 0; 
 }
 
-int IOFWDClient::zoidfs_write(const zoidfs_handle_t * UNUSED(handle) /* in:ptr */,
+int IOFWDClient::write(const zoidfs_handle_t * UNUSED(handle) /* in:ptr */,
                  size_t UNUSED(mem_count) /* in:obj */,
                  const void * UNUSED(mem_starts[]) /* in:arr2d:size=+1:zerocopy */,
                  const size_t UNUSED(mem_sizes[]) /* in:arr:size=-2 */,
@@ -109,7 +109,7 @@ int IOFWDClient::zoidfs_write(const zoidfs_handle_t * UNUSED(handle) /* in:ptr *
    return 0; 
 }
 
-int IOFWDClient::zoidfs_commit(const zoidfs_handle_t * handle /* in:ptr */)
+int IOFWDClient::commit(const zoidfs_handle_t * handle /* in:ptr */)
 {
    return comm_.genericOp (ZOIDFS_PROTO_COMMIT, 
          TSSTART << *handle, 
@@ -120,7 +120,7 @@ int IOFWDClient::zoidfs_commit(const zoidfs_handle_t * handle /* in:ptr */)
  * NOTE: if the file already exists zoidfs_create will lookup the handle 
  * and return success but set created to 0
  */
-int IOFWDClient::zoidfs_create(const zoidfs_handle_t * parent_handle /* in:ptr:nullok */,
+int IOFWDClient::create(const zoidfs_handle_t * parent_handle /* in:ptr:nullok */,
                   const char * component_name /* in:str:nullok */,
                   const char * full_path /* in:str:nullok */,
                   const zoidfs_sattr_t * attr /* in:ptr */,
@@ -133,7 +133,7 @@ int IOFWDClient::zoidfs_create(const zoidfs_handle_t * parent_handle /* in:ptr:n
          TSSTART << *handle << *created); 
 }
 
-int IOFWDClient::zoidfs_remove(const zoidfs_handle_t * parent_handle /* in:ptr:nullok */,
+int IOFWDClient::remove(const zoidfs_handle_t * parent_handle /* in:ptr:nullok */,
                   const char * component_name /* in:str:nullok */,
                   const char * full_path /* in:str:nullok */,
                   zoidfs_cache_hint_t * parent_hint /* out:ptr:nullok */)
@@ -143,7 +143,7 @@ int IOFWDClient::zoidfs_remove(const zoidfs_handle_t * parent_handle /* in:ptr:n
          TSSTART << *parent_hint); 
 }
 
-int IOFWDClient::zoidfs_rename(const zoidfs_handle_t * from_parent_handle /* in:ptr:nullok */,
+int IOFWDClient::rename(const zoidfs_handle_t * from_parent_handle /* in:ptr:nullok */,
                   const char * from_component_name /* in:str:nullok */,
                   const char * from_full_path /* in:str:nullok */,
                   const zoidfs_handle_t * to_parent_handle /* in:ptr:nullok */,
@@ -160,7 +160,7 @@ int IOFWDClient::zoidfs_rename(const zoidfs_handle_t * from_parent_handle /* in:
           TSSTART << *from_parent_hint << *to_parent_hint); 
 }
 
-int IOFWDClient::zoidfs_link(const zoidfs_handle_t * from_parent_handle /* in:ptr:nullok */,
+int IOFWDClient::link(const zoidfs_handle_t * from_parent_handle /* in:ptr:nullok */,
                 const char * from_component_name /* in:str:nullok */,
                 const char * from_full_path /* in:str:nullok */,
                 const zoidfs_handle_t * to_parent_handle /* in:ptr:nullok */,
@@ -178,7 +178,7 @@ int IOFWDClient::zoidfs_link(const zoidfs_handle_t * from_parent_handle /* in:pt
 }
 
 
-int IOFWDClient::zoidfs_symlink(const zoidfs_handle_t * from_parent_handle /* in:ptr:nullok */,
+int IOFWDClient::symlink(const zoidfs_handle_t * from_parent_handle /* in:ptr:nullok */,
                    const char * from_component_name /* in:str:nullok */,
                    const char * from_full_path /* in:str:nullok */,
                    const zoidfs_handle_t * to_parent_handle /* in:ptr:nullok */,
@@ -196,7 +196,7 @@ int IOFWDClient::zoidfs_symlink(const zoidfs_handle_t * from_parent_handle /* in
                  << *attr, 
          TSSTART << *from_parent_hint << *to_parent_hint); }
 
-int IOFWDClient::zoidfs_mkdir(const zoidfs_handle_t * parent_handle /* in:ptr:nullok */,
+int IOFWDClient::mkdir(const zoidfs_handle_t * parent_handle /* in:ptr:nullok */,
                  const char * component_name /* in:str:nullok */,
                  const char * full_path /* in:str:nullok */,
                  const zoidfs_sattr_t * attr /* in:ptr */,
@@ -208,7 +208,7 @@ int IOFWDClient::zoidfs_mkdir(const zoidfs_handle_t * parent_handle /* in:ptr:nu
          TSSTART << *parent_hint); 
 }
 
-int IOFWDClient::zoidfs_readdir(const zoidfs_handle_t * parent_handle /* in:ptr */,
+int IOFWDClient::readdir(const zoidfs_handle_t * parent_handle /* in:ptr */,
                    zoidfs_dirent_cookie_t cookie /* in:obj */,
                    size_t * entry_count /* inout:ptr */,
                    zoidfs_dirent_t * entries /* out:arr:size=-1 */,
@@ -223,7 +223,7 @@ int IOFWDClient::zoidfs_readdir(const zoidfs_handle_t * parent_handle /* in:ptr 
                  << XDRVarArray(entries,*entry_count) <<  *parent_hint); 
 }
 
-int IOFWDClient::zoidfs_resize(const zoidfs_handle_t * handle /* in:ptr */,
+int IOFWDClient::resize(const zoidfs_handle_t * handle /* in:ptr */,
                   uint64_t size /* in:obj */)
 {
    return comm_.genericOp (ZOIDFS_PROTO_RESIZE, 

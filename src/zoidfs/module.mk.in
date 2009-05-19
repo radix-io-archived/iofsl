@@ -1,7 +1,8 @@
 MODULE_ARCHIVES = zoidfs
 
 MODULE_SOURCES_zoidfs = \
-	ZoidFSAPI.cpp 
+	ZoidFSAPI.cpp \
+	ZoidFSSync.cpp
 
 # Automatically add -I$(thismoduledir) to CPPFLAGS
 MODULE_CONTAINSINCLUDE := 0

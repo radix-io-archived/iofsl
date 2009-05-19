@@ -1,14 +1,13 @@
-#include "ZoidFSAPI.hh"
+#include "ZoidFSSync.hh"
 
 namespace zoidfs
 {
 //===========================================================================
 
-   ZoidFSAPI::~ZoidFSAPI ()
-   {
-   }
 
-
+ZoidFSSync::~ZoidFSSync ()
+{
+}
 
 //===========================================================================
 }

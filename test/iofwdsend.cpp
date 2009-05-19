@@ -36,20 +36,20 @@ try
    // client opens its own context
    IOFWDClient client (args[1]); 
   
-   client.zoidfs_init (); 
+   client.init (); 
 
    zoidfs_handle_t handle; 
 
    for (unsigned int i=0; i<1000; ++i)
    {
    cout << "Calling zoidfs_null" << endl; 
-   checkcall (client.zoidfs_null ());
+   checkcall (client.null ());
    }
    cout << "Calling zoidfs_lookup" << endl; 
-   checkcall (client.zoidfs_lookup (0, 0, "/", &handle)); 
+   checkcall (client.lookup (0, 0, "/", &handle)); 
    cout << "Calling zoidfs_commit" << endl; 
-   checkcall (client.zoidfs_commit (&handle)); 
-   client.zoidfs_finalize (); 
+   checkcall (client.commit (&handle)); 
+   client.finalize (); 
 
    return 0; 
 }
