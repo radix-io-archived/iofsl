@@ -16,9 +16,6 @@ public:
    }
 
    virtual ~NullRequest (); 
-
-protected:
-   //sm::StateMachine<nullsm::NullRequestSM> sm_; 
 }; 
 
 }

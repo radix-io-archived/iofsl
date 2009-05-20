@@ -69,7 +69,7 @@ public:
             break; 
 
          BMI::check(BMI_test (op_, &outcount, &error, &actual_size, 
-                  &user, remaining * iofwdutil::TimeVal::MS_PER_SECOND,
+                  &user, static_cast<int>(remaining * iofwdutil::TimeVal::MS_PER_SECOND),
                   con_->getID()));
 
          BMI::check(error); 

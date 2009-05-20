@@ -72,7 +72,7 @@ void type_init (T & t)
 {
    char * ptr = (char*) &t; 
    for (unsigned int i=0; i<sizeof(T); ++i)
-      *ptr++ = random();
+      *ptr++ = static_cast<char>(random());
 }
 
 template <typename T>
@@ -93,8 +93,8 @@ void testSpeed (char * mem, size_t size)
 
    // Round size of basic type up to multiple of 4
    // (see XDR specs)
-   const unsigned int xdrsize = getXDRSize (test).actual; 
-   const unsigned int loopcount = size / xdrsize; 
+   const size_t xdrsize = getXDRSize (test).actual; 
+   const size_t loopcount = size / xdrsize; 
 
    cout << "Testing speed of " << getName<T>() << " encode (type size "
       << xdrsize << ")... ";
@@ -156,7 +156,8 @@ void testCreate ()
       elapsed += t.elapsed().toDouble (); 
    } while (elapsed < MEASURETIME); 
 
-   cout << ((elapsed*iofwdutil::TimeVal::US_PER_SECOND) / (count*LOOP_COUNT))  << "us overhead" << endl; 
+   cout << ((elapsed*static_cast<double>(iofwdutil::TimeVal::US_PER_SECOND))
+         / static_cast<double>(count*LOOP_COUNT))  << "us overhead" << endl; 
 }
 
 template <typename T>
@@ -222,10 +223,10 @@ void validateString ()
       memset (buf1, 0, sizeof(buf1)); 
       memset (buf2, 0, sizeof(buf2)); 
 
-      const unsigned int len = random () % (sizeof (buf1)-1); 
+      const unsigned int len = static_cast<unsigned int>(random () % (sizeof (buf1)-1)); 
       char * ptr = buf1; 
       for (unsigned int j=0; j<len; ++j)
-         *ptr++ =(random() % 254) + 1;
+         *ptr++ = static_cast<char>((random() % 254) + 1);
       *ptr++=0; 
 
       reader.rewind (); 

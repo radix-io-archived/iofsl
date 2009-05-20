@@ -80,7 +80,7 @@ protected:
          return ; 
 
       xdrmem_create (&xdr_, const_cast<char *> (static_cast<const char *> (mem_)),
-            size_, (read_ ? XDR_DECODE : XDR_ENCODE)); 
+            (unsigned int) size_, (read_ ? XDR_DECODE : XDR_ENCODE)); 
       initpos_ = xdr_getpos(&xdr_);
    }
 
@@ -119,19 +119,19 @@ XDRHELPER2(int64_t)
 // Processor functions 
 inline void process (XDR & f, const XDROpaque & o)
 {
-   f.check(xdr_opaque(&f.xdr_, (char*) o.ptr_, o.size_)); 
+   f.check(xdr_opaque(&f.xdr_, (char*) o.ptr_, (unsigned int) o.size_)); 
 }
 
 inline void process (XDR & f, const XDRString & s)
 {
-   f.check(xdr_string(&f.xdr_, &s.ptr_, s.maxsize_)); 
+   f.check(xdr_string(&f.xdr_, &s.ptr_, (unsigned int) s.maxsize_)); 
 }
 
 template <typename T, typename C> 
 inline void process (XDR & f, const XDRVarArrayHelper<T,C> & a)
 {
    // send/receive array count
-   uint32_t count = a.count_; 
+   uint32_t count = static_cast<uint32_t>(a.count_); 
    process (f, count); 
    a.count_ = count; 
 

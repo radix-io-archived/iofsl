@@ -11,12 +11,12 @@
 #include "iofwdutil/bmi/BMIUnexpectedBuffer.hh"
 #include "iofwdutil/xdr/XDRSizeProcessor.hh"
 #include "zoidfs/zoidfs-wrapped.hh"
+#include "zoidfs/zoidfs-proto.h"
 #include "iofwdutil/IOFWDLog.hh"
 
-#include "IOFWDLookupRequest.hh"
-#include "IOFWDNullRequest.hh"
 #include "IOFWDNotImplementedRequest.hh"
-
+#include "IOFWDNullRequest.hh"
+#include "IOFWDLookupRequest.hh"
 
 using namespace iofwdutil::bmi; 
 using namespace iofwdutil;
@@ -67,11 +67,6 @@ private:
 
    volatile sig_atomic_t stop_; 
 
-   typedef Request * (*opidfunc_t) (iofwdutil::bmi::BMIContext & , int opid, const BMI_unexpected_info &
-         info); 
-
-   static opidfunc_t requestmap [];
-
    RequestHandler * handler_; 
 
    
@@ -79,19 +74,43 @@ protected:
    size_t req_minsize_;         // minimum size of valid incoming request
    
    IOFWDLogSource & log_; 
+   
 };
 
-template <class T> 
-inline Request * newrequestfunc (iofwdutil::bmi::BMIContext & bmi, int opid, const BMI_unexpected_info & info)
-{ return new  T (bmi, opid, info); }
+// ==========================================================================
+// map op id to IOFWDRequest
 
-IOFW::opidfunc_t IOFW::requestmap [] = 
-{
-   &newrequestfunc<IOFWDNullRequest>,
-   &newrequestfunc<IOFWDNotImplementedRequest>,
-   &newrequestfunc<IOFWDNotImplementedRequest>,
-   &newrequestfunc<IOFWDLookupRequest>
+typedef Request * (*mapfunc_t) ( iofwdutil::bmi::BMIContext & bmi,
+      int i, const BMI_unexpected_info & info);
+
+template <typename T>
+static inline Request * newreq (iofwdutil::bmi::BMIContext & bmi,
+      int i, const BMI_unexpected_info & info)
+{ return new T (bmi, i, info ) ; }
+
+static boost::array<mapfunc_t, ZOIDFS_PROTO_MAX> map_ = {
+   {
+      &newreq<IOFWDNotImplementedRequest>,
+      &newreq<IOFWDNotImplementedRequest>,
+      &newreq<IOFWDNotImplementedRequest>,
+      &newreq<IOFWDNotImplementedRequest>,
+      &newreq<IOFWDNotImplementedRequest>,
+      &newreq<IOFWDNotImplementedRequest>,
+      &newreq<IOFWDNotImplementedRequest>,
+      &newreq<IOFWDNotImplementedRequest>,
+      &newreq<IOFWDNotImplementedRequest>,
+      &newreq<IOFWDNotImplementedRequest>,
+      &newreq<IOFWDNotImplementedRequest>,
+      &newreq<IOFWDNotImplementedRequest>,
+      &newreq<IOFWDNotImplementedRequest>,
+      &newreq<IOFWDNotImplementedRequest>,
+      &newreq<IOFWDNotImplementedRequest>,
+      &newreq<IOFWDNotImplementedRequest>
+   }
 };
+
+
+// ==========================================================================
 
 IOFW::IOFW (IOFWDFrontend & fe, RequestHandler * h)
    : fe_ (fe), bmi_ (iofwdutil::bmi::BMI::get()),
@@ -139,15 +158,20 @@ void IOFW::handleIncoming (int count, const BMI_unexpected_info  * info )
       reader.reset (info[i].buffer, info[i].size); 
       reader >> opid; 
 
-      opidfunc_t createfunc = 0; 
+      if (opid < 0 || (opid > static_cast<int>(map_.size())))
+      {
+         ZLOG_ERROR(log_, format("Invalid request op id (%i) received") % opid); 
 
-      if (opid < 0 || (opid > static_cast<int>(sizeof(requestmap)/sizeof(requestmap[0]))))
-         createfunc = &newrequestfunc<IOFWDNotImplementedRequest>; 
+         // Free buffer and continue
+         bmi::BMIUnexpectedBuffer cleanup (info[i]); 
+         continue; 
+      }
       else
-         createfunc = requestmap[opid]; 
-      
-      // Request now owns the BMI buffer
-      reqs[ok++] = createfunc (*bmictx_.get(), opid, info[i]); 
+      {
+         // Request now owns the BMI buffer
+         ALWAYS_ASSERT(map_[opid]); 
+         reqs[ok++] = map_[opid] (*bmictx_.get(), opid, info[i]); 
+      }
    }
    handler_->handleRequest (ok, &reqs[0]); 
 }

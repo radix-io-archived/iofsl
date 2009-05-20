@@ -1,4 +1,5 @@
 #include "Request.hh"
+#include "iofwdutil/assert.hh"
 #include "zoidfs/zoidfs-wrapped.hh"
 
 
@@ -37,13 +38,14 @@ const char * Request::opid2Name (int opid) const
 }
 
 Request::Request (int opid)
-   : opid_(opid), status_(zoidfs::ZFS_OK)
+   : opid_(opid)
 {
+   ALWAYS_ASSERT (opid >= 0 && static_cast<size_t>(opid) <
+         ((sizeof(opidnames)/sizeof(opidnames[0])))); 
 }
 
 Request::~Request ()
 {
-   // maybe log here 
 }
 
 //===========================================================================

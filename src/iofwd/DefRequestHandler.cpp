@@ -3,8 +3,11 @@
 #include <boost/lambda/construct.hpp>
 #include "DefRequestHandler.hh"
 #include "Request.hh"
+#include "RequestTask.hh"
 #include "iofwdutil/workqueue/SynchronousWorkQueue.hh"
-#include "DefRequestItem.hh"
+#include "iofwdutil/workqueue/PoolWorkQueue.hh"
+#include "ThreadTasks.hh"
+#include "iofwdutil/workqueue/WorkItem.hh"
 
 using namespace iofwdutil; 
 using namespace iofwdutil::workqueue;
@@ -17,8 +20,16 @@ namespace iofwd
 DefRequestHandler::DefRequestHandler ()
    : log_ (IOFWDLog::getSource ("defreqhandler"))
 {
-   workqueue_normal_.reset (new SynchronousWorkQueue ()); 
+   workqueue_normal_.reset (new PoolWorkQueue (0, 100)); 
    workqueue_fast_.reset (new SynchronousWorkQueue ()); 
+   boost::function<void (RequestTask *)> f = boost::lambda::bind
+      (&DefRequestHandler::reschedule, this, boost::lambda::_1); 
+   taskfactory_.reset (new ThreadTasks (f)); 
+}
+
+void DefRequestHandler::reschedule (RequestTask * t)
+{
+   workqueue_normal_->queueWork (t); 
 }
 
 DefRequestHandler::~DefRequestHandler ()
@@ -38,22 +49,27 @@ void DefRequestHandler::handleRequest (int count, Request ** reqs)
    ZLOG_DEBUG(log_, str(format("handleRequest: %u requests") % count)); 
    for (int i=0; i<count; ++i)
    {
+      RequestTask * task = (*taskfactory_) (reqs[i]); 
+
       // TODO: workqueues are supposed to return some handle so that we can
       // test which requests completed. That way that requesthandler can
       // reschedule requests and free completed requests
-      if (reqs[i]->isFast())
-         workqueue_fast_->queueWork (new DefRequestItem (workqueue_fast_.get(), 
-                  reqs[i]));
+      if (task->isFast())
+         workqueue_fast_->queueWork (task);
       else
-         workqueue_normal_->queueWork (new DefRequestItem
-               (workqueue_normal_.get(), reqs[i])); 
+         workqueue_normal_->queueWork (task); 
    }
 
    // Cleanup completed requests
    workqueue_normal_->testAll (completed_); 
    workqueue_fast_->testAll (completed_); 
-   std::for_each(completed_.begin(), completed_.end(), bind(delete_ptr(),
-            _1)); 
+   for (unsigned int i=0; i<completed_.size(); ++i)
+   {
+      // we know only requesttasks can be put on the workqueues
+      if (static_cast<RequestTask*>(completed_[i])->getStatus() ==
+            RequestTask::STATUS_DONE)
+         delete (completed_[i]); 
+   }
    completed_.clear (); 
 }
 

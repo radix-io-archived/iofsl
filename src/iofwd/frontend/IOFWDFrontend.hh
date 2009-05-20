@@ -14,6 +14,7 @@ namespace iofwd
 class IOFWDFrontend : public Frontend
 {
 public:
+public:
    IOFWDFrontend (); 
 
    virtual ~IOFWDFrontend ();

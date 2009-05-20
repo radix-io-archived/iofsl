@@ -8,6 +8,11 @@
 #ifndef _ZOIDFS_PROTO_H_
 #define _ZOIDFS_PROTO_H_
 
+#ifdef __cplusplus
+namespace zoidfs
+{
+#endif
+
 #define ZOIDFS_BUFFER_MAX (8 * 1024 * 1024)
 
 /* Op id describes the various zoidfs operations (setattr, getattr etc.) */
@@ -43,12 +48,19 @@ typedef int32_t zoidfs_op_status_t;
 #define ZOIDFS_PROTO_READ         14
 #define ZOIDFS_PROTO_LINK         15
 
+// First invalid operation id
+#define ZOIDFS_PROTO_MAX          16
 
 /* ZOIDFS Protocol error codes */
 enum {
     ZFSERR_XDR=100,
     ZFSERR_MISC=101
 };
+
+
+#ifdef __cplusplus
+        }  // namespace
+#endif
 
 #endif /* _ZOIDFS_PROTO_H_ */
 

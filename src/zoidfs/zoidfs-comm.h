@@ -1,7 +1,7 @@
 #ifndef ZOIDFS_COMM_H
 #define ZOIDFS_COMM_H
 
-#include "zoidfs_proto.h"
+#include "zoidfs-proto.h"
 
 /* BMI tags */ 
 #define ZOIDFS_REQUEST_TAG 0 

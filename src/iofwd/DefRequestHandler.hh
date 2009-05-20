@@ -5,9 +5,11 @@
 #include <vector>
 #include "iofwdutil/IOFWDLog.hh"
 #include "RequestHandler.hh"
+#include "ThreadTasks.hh"
 
 namespace iofwdutil
 {
+
    namespace workqueue
    {
       // forward
@@ -38,6 +40,9 @@ public:
    virtual ~DefRequestHandler (); 
 
 protected:
+   void reschedule (RequestTask * t); 
+
+protected:
    iofwdutil::IOFWDLogSource & log_; 
 
    std::auto_ptr<iofwdutil::workqueue::WorkQueue> workqueue_normal_; 
@@ -45,6 +50,9 @@ protected:
 
    /// Holds completed requests until they are freed
    std::vector<iofwdutil::workqueue::WorkItem *> completed_; 
+
+   /// Associates request with a task
+   std::auto_ptr<ThreadTasks> taskfactory_; 
 };
 
 

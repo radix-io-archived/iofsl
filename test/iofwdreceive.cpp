@@ -28,11 +28,11 @@ public:
       {
          cout << "opid " << reqs[i]->getOpID() <<
             " (" << reqs[i]->opid2Name() << ")" << endl;  
-         while (reqs[i]->run())
+         /*while (reqs[i]->run())
          {
          cout << "Running op..." ;
          cout.flush (); 
-         }
+         }*/
          delete (reqs[i]); 
       }
    }
@@ -56,7 +56,7 @@ try
    sigprocmask (SIG_BLOCK, &sigset, 0); 
 
    TextHandler handler; 
-   IOFWDFrontend f;
+   IOFWDFrontend f ; 
 
    f.setHandler (&handler); 
 

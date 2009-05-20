@@ -15,8 +15,8 @@ namespace iofwd
          Request * request)
       : queue_ (queue), request_(request)
    {
-      request_->setResume (boost::bind (&WorkQueue::queueWork, queue_,
-               this)); 
+      /*request_->setResume (boost::bind (&WorkQueue::queueWork, queue_,
+               this));  */
  /*     request_->setReschedule
          (std::bind1st(std::mem_fun(&DefReqyestItem::reschedule), this)); */
    }
@@ -24,7 +24,7 @@ namespace iofwd
 
    void DefRequestItem::doWork ()
    {
-      switch (request_->run ())
+      /*switch (request_->run ())
       {
       case Request::STATUS_DONE:
          // Request is completely done. Have the workqueue free it
@@ -38,7 +38,7 @@ namespace iofwd
          break; 
       default:
          ALWAYS_ASSERT(false && "Invalid return code from Request::run()"); 
-      }
+      }*/
    }
 
    DefRequestItem::~DefRequestItem ()

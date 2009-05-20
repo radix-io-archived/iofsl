@@ -18,8 +18,8 @@ public:
    {
    }
 
- virtual reqstatus run ()
-   { return IOFWDRequest::run (); }
+
+   virtual void reply (); 
 
    virtual ~IOFWDNotImplementedRequest (); 
 

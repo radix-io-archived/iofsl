@@ -15,6 +15,8 @@ public:
    {
    }
 
+   virtual void reply () = 0; 
+
    virtual ~NotImplementedRequest (); 
 };
 

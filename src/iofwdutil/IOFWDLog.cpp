@@ -170,7 +170,7 @@ void IOFWDLog::setLogLevelOverride (const std::string & source)
       return; 
 
    /* remove global entries from list */
-   for (int i=loglevel_override_.size()-1; i>=0; --i)
+   for (int i=static_cast<int>(loglevel_override_.size())-1; i>=0; --i)
    {
       if (loglevel_override_[i].first.size()== 0)
       {

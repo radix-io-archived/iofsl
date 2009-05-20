@@ -19,7 +19,7 @@ public:
    {
    }
 
-   virtual reqstatus run ()
+/*   virtual  run ()
    { 
       reqstatus r = IOFWDRequest::run (); 
       beginReply (128); 
@@ -29,7 +29,7 @@ public:
       reply_writer_ << status_; 
       sendReply ().wait(); 
       return r; 
-   }
+   } */
 
    virtual ~IOFWDNullRequest (); 
 };
