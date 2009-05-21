@@ -121,10 +121,10 @@ int main (int argc, char ** args)
    ZLOG_INFO(mainlog, "iofwd main started..."); 
    
    
-   iofwd::IOFWDMain main; 
 
    try
    {
+      iofwd::IOFWDMain main; 
       ZLOG_INFO (mainlog, "Booting IOFWDMain..."); 
       main.boot (); 
 

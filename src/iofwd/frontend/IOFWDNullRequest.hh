@@ -19,6 +19,9 @@ public:
    {
    }
 
+   virtual void reply ();
+
+
 /*   virtual  run ()
    { 
       reqstatus r = IOFWDRequest::run (); 

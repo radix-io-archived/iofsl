@@ -38,6 +38,7 @@ BMI::BMI()
 
 BMI::~BMI()
 {
+   BMI_finalize ();
 }
 
 BMIContextPtr BMI::openContext ()

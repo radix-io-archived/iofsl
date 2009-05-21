@@ -34,6 +34,9 @@ public:
       returncode_ = ret; 
    }
 
+   int getReturnCode () const
+   { return returncode_; }
+
    virtual ~Request (); 
 
   protected:

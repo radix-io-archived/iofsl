@@ -27,8 +27,14 @@ public:
    virtual ~IOFWDRequest (); 
 
 protected:
+
+   // Convenience functions for simple requests (lookup, mkdir, ... )
+
+
+   /// Start reply of at most maxsize data 
    void beginReply (size_t maxsize);
 
+   /// Send the buffer in reply writer
    iofwdutil::bmi::BMIOp sendReply (); 
 
 protected:

@@ -12,7 +12,7 @@ namespace iofwdutil
 
       BMIContext::~BMIContext ()
       {
-
+         BMI_close_context (getID()); 
       }
 
 //===========================================================================

@@ -91,6 +91,15 @@ public:
 
 
 template <typename T>
+inline XDRSizeProcessor::XDRSize getXDRSize ()
+{
+   T dummy;
+   XDRSizeProcessor s;
+   process (s, dummy); 
+   return s.getSize(); 
+}
+
+template <typename T>
 inline XDRSizeProcessor::XDRSize getXDRSize (const T & val)
 {
    XDRSizeProcessor s; 

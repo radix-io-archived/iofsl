@@ -90,7 +90,7 @@ static inline Request * newreq (iofwdutil::bmi::BMIContext & bmi,
 
 static boost::array<mapfunc_t, ZOIDFS_PROTO_MAX> map_ = {
    {
-      &newreq<IOFWDNotImplementedRequest>,
+      &newreq<IOFWDNullRequest>,
       &newreq<IOFWDNotImplementedRequest>,
       &newreq<IOFWDNotImplementedRequest>,
       &newreq<IOFWDNotImplementedRequest>,
@@ -191,6 +191,7 @@ void IOFW::run ()
 
 void IOFW::destroy ()
 {
+   ZLOG_DEBUG(log_, "Notifying listening thread to shut down"); 
    stop_ = true; 
 }
 
@@ -221,6 +222,9 @@ void IOFWDFrontend::init ()
 void IOFWDFrontend::destroy ()
 {
    static_cast<IOFW *> (impl_)->destroy (); 
+   
+   IOFWDLogSource & log = IOFWDLog::getSource ("iofwdfrontend");
+   ZLOG_INFO (log, "Waiting for IOFWD frontend to shut down..."); 
    implthread_->join (); 
    implthread_.reset (); 
    delete (static_cast<IOFW*> (impl_)); 

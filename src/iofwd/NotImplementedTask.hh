@@ -4,21 +4,21 @@
 #include <boost/function.hpp>
 #include "RequestTask.hh"
 #include "NotImplementedRequest.hh"
+#include "TaskHelper.hh"
 
 namespace iofwd
 {
 //===========================================================================
 
 
-class NotImplementedTask : public RequestTask
+class NotImplementedTask : public RequestTask, 
+   public TaskHelper<NotImplementedRequest> 
 {
 public:
    NotImplementedTask (Request * req, boost::function<void (RequestTask*)>
          & resched) 
-      : RequestTask (resched)
+      : RequestTask (resched), TaskHelper<NotImplementedRequest>(req)
    {
-      setRequest (req); 
-      //request_ = dynamic_cast<NotImplementedRequest*> (req); 
    }
 
    /// Not implemented is a fast request. No need to schedule it 
@@ -26,9 +26,8 @@ public:
 
    void run ()
    {
+      request_.reply (); 
    }
-protected:
-   NotImplementedRequest * request_; 
 }; 
 
 //===========================================================================
