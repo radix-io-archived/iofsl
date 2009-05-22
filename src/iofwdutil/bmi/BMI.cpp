@@ -34,11 +34,21 @@ BMI::BMI()
 {
    check(BMI_initialize (string2ptr(methodlist_), 
          string2ptr(listen_), flags_)); 
+   active_ = true; 
+}
+
+void BMI::finalize ()
+{
+
+   if (!active_)
+      return;
+   BMI_finalize ();
+   active_ = false; 
 }
 
 BMI::~BMI()
 {
-   BMI_finalize ();
+   finalize (); 
 }
 
 BMIContextPtr BMI::openContext ()

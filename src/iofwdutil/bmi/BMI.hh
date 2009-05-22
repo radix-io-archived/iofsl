@@ -78,6 +78,10 @@ namespace iofwdutil
 
       int testUnexpected (int in, struct BMI_unexpected_info * info,
             int max_idle);
+      
+      
+      // Shut down BMI
+      void finalize (); 
 
    protected:
       friend class BMIContext;
@@ -97,11 +101,14 @@ namespace iofwdutil
 
       static std::string addressToMethod (const char * addr); 
 
+
    protected:
       static std::string methodlist_; 
       static std::string listen_; 
       static int         flags_; 
       static bool        initparams_; 
+
+      bool active_; 
 
    }; 
 
