@@ -119,7 +119,9 @@ IOFW::IOFW (IOFWDFrontend & fe, RequestHandler * h)
    req_minsize_(iofwdutil::xdr::getXDRSize (uint32_t ()).actual),
    log_ (IOFWDLog::getSource ("iofwdfrontend"))
 {
-   bmictx_ = bmi_.openContext (); 
+  
+   // Make sure we have a context open
+    bmictx_ = bmi_.openContext (); 
 }
 
 IOFW::~IOFW ()
@@ -204,15 +206,26 @@ void IOFW::destroy ()
 //===========================================================================
 
 IOFWDFrontend::IOFWDFrontend ()
+   : log_(IOFWDLog::getSource ("iofwdfrontend"))
 {
 }
 
 IOFWDFrontend::~IOFWDFrontend ()
 {
+   ZLOG_INFO (log_, "Shutting down BMI..."); 
+   BMI::get().finalize (); 
 }
 
 void IOFWDFrontend::init ()
 {
+   ZLOG_DEBUG (log_, "Initializing BMI"); 
+   // init BMI
+
+
+   // IOFW uses bmi, so we need to supply init params here
+   ZLOG_INFO (log_, "Server listening on port 1234"); 
+   BMI::setInitServer ("tcp://127.0.0.1:1234"); 
+
    ALWAYS_ASSERT(handler_); 
    IOFW * o = new IOFW (*this, handler_); 
    implthread_.reset (new boost::thread(boost::bind (&IOFW::run , o))); 
@@ -223,12 +236,10 @@ void IOFWDFrontend::destroy ()
 {
    static_cast<IOFW *> (impl_)->destroy (); 
    
-   IOFWDLogSource & log = IOFWDLog::getSource ("iofwdfrontend");
-   ZLOG_INFO (log, "Waiting for IOFWD frontend to shut down..."); 
+   ZLOG_INFO (log_, "Waiting for IOFWD frontend to shut down..."); 
    implthread_->join (); 
    implthread_.reset (); 
    delete (static_cast<IOFW*> (impl_)); 
-
 }
 
 //===========================================================================
