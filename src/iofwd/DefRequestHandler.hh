@@ -6,6 +6,7 @@
 #include "iofwdutil/IOFWDLog.hh"
 #include "RequestHandler.hh"
 #include "ThreadTasks.hh"
+#include "zoidfs/util/LogAPI.hh"
 
 namespace iofwdutil
 {
@@ -40,7 +41,7 @@ public:
    virtual ~DefRequestHandler (); 
 
 protected:
-   void reschedule (RequestTask * t); 
+   void reschedule (Task * t); 
 
 protected:
    iofwdutil::IOFWDLogSource & log_; 
@@ -53,6 +54,9 @@ protected:
 
    /// Associates request with a task
    std::auto_ptr<ThreadTasks> taskfactory_; 
+
+   /// API
+   zoidfs::LogAPI api_; 
 };
 
 

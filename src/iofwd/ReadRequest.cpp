@@ -3,8 +3,8 @@
 namespace iofwd
 {
 
-void ReadRequest::dummy ()
-{
-}
+   ReadRequest::~ReadRequest ()
+   {
+   }
 
 }

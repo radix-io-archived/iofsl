@@ -20,6 +20,12 @@ AC_LANG([C++])
 AC_HEADER_STDC
 AC_CHECK_HEADERS([stdlib.h string.h unistd.h execinfo.h])
 
+
+dnl For fuse
+dnl Add this before checking the size of size_t / ssize_t
+AX_ADD_DEFINE([_FILE_OFFSET_BITS=64])
+
+
 # Checks for typedefs, structures, and compiler characteristics.
 AC_C_CONST
 AC_C_INLINE
@@ -53,7 +59,65 @@ if test "x$bmidir" != "x" ; then
 fi
 AC_CHECK_LIB([bmi], [BMI_initialize],,
              [AC_MSG_ERROR([Could not find usable bmi library!])])
+# check that is is recent enough to have BMI_TCP_CHECK_UNEXPECTED
+AC_CHECK_HEADER_DEFINE([<bmi.h>],[BMI_TCP_CHECK_UNEXPECTED],[],
+        AC_MSG_ERROR([BMI does not have BMI_TCP_CHECK_UNEXPECTED]))
 AC_LANG_POP
+
+# Search for PVFS
+AX_LIB_PVFS2
+if test "A$PVFS2_OK" == "A1" ; 
+then
+        DISPATCH_PVFS=1
+        AX_MAKE_VAR([DISPATCH_PVFS])
+fi
+
+AC_ARG_WITH(db,
+           [AC_HELP_STRING([--with-db=<dir>],
+                  [Location of installed DB package (default= /usr)])],
+           [AX_LIB_DB(${withval})],
+           [AX_LIB_DB("")])
+dnl AM_CONDITIONAL(HAVE_DB, test x${BDB_OK} == x1)
+AX_MAKE_VAR([HAVE_DB])
+AC_SUBST([BDB_CFLAGS])
+AC_SUBST([BDB_CPPFLAGS])
+AC_SUBST([BDB_LDFLAGS])
+
+dnl # for fuse
+use_fuse=1
+AX_FUSE([AC_DEFINE([HAVE_FUSE],[1],[Is fuse available])],
+  [use_fuse=0])
+dnl AM_CONDITIONAL([BUILD_FUSE], [test "x${use_fuse}" == "x1"])
+AX_MAKE_VAR([FUSE_LIBS])
+AX_MAKE_VAR([FUSE_LDFLAGS])
+AX_MAKE_VAR([FUSE_CPPFLAGS])
+AX_MAKE_VAR([FUSE_CFLAGS])
+
+dnl # mysql
+AX_LIB_MYSQL([MYSQL_OK=1])
+dnl AM_CONDITIONAL(HAVE_MYSQL,test x${MYSQL_OK} == x1)
+AC_SUBST([MYSQL_CFLAGS])
+AC_SUBST([MYSQL_CPPFLAGS])
+AC_SUBST([MYSQL_LDFLAGS_R])
+
+dnl
+dnl Control behaviour of the zoidfs posix mapping
+dnl
+AC_ARG_ENABLE([stale],
+      [AC_HELP_STRING([--enable-stale],
+                [Allow the POSIX layer to return ESTALE])],
+      [case "${enableval}" in 
+         yes) use_stale=true;;
+         no)  use_stale=false;;
+         *)  AC_MSG_ERROR([bad value ${enableval} for --enable-stale]) ;;
+     esac],
+     [use_stale=false])
+if test x${use_stale} == xtrue ; then
+   AC_DEFINE([USE_ESTALE],[1],[If the API can use ESTALE])
+fi
+
+
+
 
 # check boost version
 
@@ -96,11 +160,6 @@ dnl CFLAGS="$CFLAGS $FUSE_CFLAGS"
 dnlCPPFLAGS="$CPPFLAGS $FUSE_CFLAGS"
 dnl LDFLAGS="$LDFLAGS $FUSE_LIBS"
 
-AC_DEFUN([AX_ADD_DEFINE],
-[
-CPPFLAGS="$CPPFLAGS -D$1"
-])
-
 dnl 
 dnl  OPTIONS
 dnl
@@ -118,10 +177,12 @@ AC_CONFIG_FILES([
                  src/iofwd/module.mk
                  src/iofwdutil/module.mk
                  src/metacache/module.mk
-                 src/client/module.mk
                  src/cache/module.mk
                  src/taskmon/module.mk
                  src/zoidfs/module.mk
+                 src/fuse/module.mk
+                 src/client/module.mk
+                 src/c-util/module.mk
                  test/module.mk
                  sandbox/module.mk
                  ])

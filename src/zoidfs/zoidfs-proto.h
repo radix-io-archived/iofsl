@@ -13,7 +13,7 @@ namespace zoidfs
 {
 #endif
 
-#define ZOIDFS_BUFFER_MAX (8 * 1024 * 1024)
+enum { ZOIDFS_BUFFER_MAX = (8 * 1024 * 1024) }; 
 
 /* Op id describes the various zoidfs operations (setattr, getattr etc.) */
 typedef uint32_t zoidfs_op_id_t;
@@ -31,25 +31,28 @@ typedef int32_t zoidfs_null_param_t;
 typedef int32_t zoidfs_op_status_t;
 
 /* Define the ZOIDFS operations */
-#define ZOIDFS_PROTO_NULL         0
-#define ZOIDFS_PROTO_GET_ATTR     1
-#define ZOIDFS_PROTO_SET_ATTR     2
-#define ZOIDFS_PROTO_LOOKUP       3
-#define ZOIDFS_PROTO_READLINK     4
-#define ZOIDFS_PROTO_COMMIT       5
-#define ZOIDFS_PROTO_CREATE       6
-#define ZOIDFS_PROTO_REMOVE       7
-#define ZOIDFS_PROTO_RENAME       8
-#define ZOIDFS_PROTO_SYMLINK      9
-#define ZOIDFS_PROTO_MKDIR        10
-#define ZOIDFS_PROTO_READDIR      11
-#define ZOIDFS_PROTO_RESIZE       12
-#define ZOIDFS_PROTO_WRITE        13
-#define ZOIDFS_PROTO_READ         14
-#define ZOIDFS_PROTO_LINK         15
+enum
+{
+ZOIDFS_PROTO_NULL      = 0,
+ZOIDFS_PROTO_GET_ATTR,
+ZOIDFS_PROTO_SET_ATTR,
+ZOIDFS_PROTO_LOOKUP,
+ZOIDFS_PROTO_READLINK,
+ZOIDFS_PROTO_COMMIT,
+ZOIDFS_PROTO_CREATE,
+ZOIDFS_PROTO_REMOVE,
+ZOIDFS_PROTO_RENAME,
+ZOIDFS_PROTO_SYMLINK,
+ZOIDFS_PROTO_MKDIR,
+ZOIDFS_PROTO_READDIR,
+ZOIDFS_PROTO_RESIZE,
+ZOIDFS_PROTO_WRITE,
+ZOIDFS_PROTO_READ,
+ZOIDFS_PROTO_LINK,
 
-// First invalid operation id
-#define ZOIDFS_PROTO_MAX          16
+/* First invalid operation id */
+ZOIDFS_PROTO_MAX
+};
 
 /* ZOIDFS Protocol error codes */
 enum {

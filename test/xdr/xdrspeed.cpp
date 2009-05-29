@@ -8,8 +8,8 @@
 #include "iofwdutil/Timer.hh"
 #include "iofwdutil/xdr/XDRSizeProcessor.hh"
 
-#include "zoidfs/zoidfs-xdr.hh"
-#include "zoidfs/zoidfs-wrapped.hh"
+#include "zoidfs/util/zoidfs-xdr.hh"
+#include "zoidfs/util/zoidfs-wrapped.hh"
 
 #define MEMSIZE 32*1024*1024
 
@@ -248,7 +248,7 @@ void validateString ()
 template <typename T>
 void validateSizeProcessor ()
 {
-   T dummy; 
+   T dummy = T(); 
    static char buf[4096]; 
    XDRReader reader (buf, sizeof(buf)); 
    XDRWriter writer (buf, sizeof(buf)); 

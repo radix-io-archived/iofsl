@@ -21,19 +21,6 @@ public:
 
    virtual void reply ();
 
-
-/*   virtual  run ()
-   { 
-      reqstatus r = IOFWDRequest::run (); 
-      beginReply (128); 
-      static int i = 0; 
-      ++i; 
-      setStatus (i); 
-      reply_writer_ << status_; 
-      sendReply ().wait(); 
-      return r; 
-   } */
-
    virtual ~IOFWDNullRequest (); 
 };
 

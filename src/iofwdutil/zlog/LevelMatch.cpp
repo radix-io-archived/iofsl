@@ -103,7 +103,7 @@ public:
       if (limit >= levels_.size ())
          throw ZLogException (str(boost::format ("Invalid level (%u)!") % limit)); 
 
-      bool (*func) (unsigned int, unsigned int);
+      bool (*func) (unsigned int, unsigned int) = 0;
       switch (comptype)
       {
          case LT: func = &ltfunc; break;

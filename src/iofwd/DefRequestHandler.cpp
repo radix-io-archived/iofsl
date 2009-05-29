@@ -3,7 +3,7 @@
 #include <boost/lambda/construct.hpp>
 #include "DefRequestHandler.hh"
 #include "Request.hh"
-#include "RequestTask.hh"
+#include "Task.hh"
 #include "iofwdutil/workqueue/SynchronousWorkQueue.hh"
 #include "iofwdutil/workqueue/PoolWorkQueue.hh"
 #include "ThreadTasks.hh"
@@ -22,12 +22,13 @@ DefRequestHandler::DefRequestHandler ()
 {
    workqueue_normal_.reset (new PoolWorkQueue (0, 100)); 
    workqueue_fast_.reset (new SynchronousWorkQueue ()); 
-   boost::function<void (RequestTask *)> f = boost::lambda::bind
+   boost::function<void (Task *)> f = boost::lambda::bind
       (&DefRequestHandler::reschedule, this, boost::lambda::_1); 
-   taskfactory_.reset (new ThreadTasks (f)); 
+
+   taskfactory_.reset (new ThreadTasks (f, &api_)); 
 }
 
-void DefRequestHandler::reschedule (RequestTask * t)
+void DefRequestHandler::reschedule (Task * t)
 {
    workqueue_normal_->queueWork (t); 
 }
@@ -49,7 +50,7 @@ void DefRequestHandler::handleRequest (int count, Request ** reqs)
    ZLOG_DEBUG(log_, str(format("handleRequest: %u requests") % count)); 
    for (int i=0; i<count; ++i)
    {
-      RequestTask * task = (*taskfactory_) (reqs[i]); 
+      Task * task = (*taskfactory_) (reqs[i]); 
 
       // TODO: workqueues are supposed to return some handle so that we can
       // test which requests completed. That way that requesthandler can
@@ -66,8 +67,8 @@ void DefRequestHandler::handleRequest (int count, Request ** reqs)
    for (unsigned int i=0; i<completed_.size(); ++i)
    {
       // we know only requesttasks can be put on the workqueues
-      if (static_cast<RequestTask*>(completed_[i])->getStatus() ==
-            RequestTask::STATUS_DONE)
+      if (static_cast<Task*>(completed_[i])->getStatus() ==
+            Task::STATUS_DONE)
          delete (completed_[i]); 
    }
    completed_.clear (); 

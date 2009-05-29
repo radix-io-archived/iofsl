@@ -1,0 +1,8 @@
+Implementation of the zoidfs client-side API that directly calls the POSIX functions.
+
+
+NOTE: need to define -DHAVE_DB 
+NOTE: set ZOIDFS_PERSIST to memdb://   (export .... )
+
+
+

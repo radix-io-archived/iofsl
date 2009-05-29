@@ -7,9 +7,16 @@
 #include "iofwdutil/bmi/BMIOp.hh"
 #include "iofwdutil/bmi/BMITag.hh"
 #include "iofwdutil/bmi/BMIUnexpectedBuffer.hh"
+
 #include "iofwdutil/xdr/XDRReader.hh"
 #include "iofwdutil/xdr/XDRWriter.hh"
+#include "iofwdutil/xdr/XDRSizeProcessor.hh"
+#include "zoidfs/util/FileSpecHelper.hh"
+
+#include "zoidfs/util/zoidfs-wrapped.hh"
+
 #include "iofwd/Request.hh"
+#include "iofwdutil/typestorage.hh"
 
 namespace iofwd
 {
@@ -28,8 +35,35 @@ public:
 
 protected:
 
-   // Convenience functions for simple requests (lookup, mkdir, ... )
+   typedef struct
+   { 
+      zoidfs::zoidfs_handle_t parent_handle; 
+      char full_path[ZOIDFS_PATH_MAX]; 
+      char component_name[ZOIDFS_NAME_MAX]; 
+   } FileInfo; 
 
+   // ----------------- decoding/encoding helpers -------------------
+
+   void decodeFileSpec (FileInfo & info)
+   {
+      process(req_reader_,iofwdutil::xdr::FileSpecHelper (&info.parent_handle, 
+            info.component_name, info.full_path)); 
+   }
+
+
+
+protected:
+
+   // Convenience functions for simple requests (lookup, mkdir, ... )
+   template <typename SENDOP> 
+   iofwdutil::bmi::BMIOp simpleReply (const SENDOP & op)
+   {
+      iofwdutil::xdr::XDRSizeProcessor s; 
+      applyTypes (s, op); 
+      beginReply (s.getSize().actual); 
+      applyTypes (reply_writer_, op); 
+      return sendReply (); 
+   }
 
    /// Start reply of at most maxsize data 
    void beginReply (size_t maxsize);

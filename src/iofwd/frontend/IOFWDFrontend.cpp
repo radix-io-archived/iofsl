@@ -10,16 +10,18 @@
 #include "iofwdutil/xdr/XDRReader.hh"
 #include "iofwdutil/bmi/BMIUnexpectedBuffer.hh"
 #include "iofwdutil/xdr/XDRSizeProcessor.hh"
-#include "zoidfs/zoidfs-wrapped.hh"
+#include "zoidfs/util/zoidfs-wrapped.hh"
 #include "zoidfs/zoidfs-proto.h"
 #include "iofwdutil/IOFWDLog.hh"
 
 #include "IOFWDNotImplementedRequest.hh"
 #include "IOFWDNullRequest.hh"
 #include "IOFWDLookupRequest.hh"
+#include "IOFWDReadRequest.hh"
 
 using namespace iofwdutil::bmi; 
 using namespace iofwdutil;
+using namespace zoidfs; 
 
 namespace iofwd
 {
@@ -93,6 +95,7 @@ static boost::array<mapfunc_t, ZOIDFS_PROTO_MAX> map_ = {
       &newreq<IOFWDNullRequest>,
       &newreq<IOFWDNotImplementedRequest>,
       &newreq<IOFWDNotImplementedRequest>,
+      &newreq<IOFWDLookupRequest>,
       &newreq<IOFWDNotImplementedRequest>,
       &newreq<IOFWDNotImplementedRequest>,
       &newreq<IOFWDNotImplementedRequest>,
@@ -103,8 +106,7 @@ static boost::array<mapfunc_t, ZOIDFS_PROTO_MAX> map_ = {
       &newreq<IOFWDNotImplementedRequest>,
       &newreq<IOFWDNotImplementedRequest>,
       &newreq<IOFWDNotImplementedRequest>,
-      &newreq<IOFWDNotImplementedRequest>,
-      &newreq<IOFWDNotImplementedRequest>,
+      &newreq<IOFWDReadRequest>,
       &newreq<IOFWDNotImplementedRequest>
    }
 };

@@ -1,6 +1,6 @@
 #include "IOFWDClient.hh"
-#include "zoidfs/zoidfs-xdr.hh"
-#include "zoidfs/FileSpecHelper.hh"
+#include "zoidfs/util/zoidfs-xdr.hh"
+#include "zoidfs/util/FileSpecHelper.hh"
 #include "iofwdutil/xdr/XDRWrappers.hh"
 #include "iofwdutil/typestorage.hh"
 

@@ -9,8 +9,9 @@ CXXCPP = @CXXCPP@
 LDFLAGS = @LDFLAGS@
 
 # Could replace this with autoscanning for module.mk
-SUBDIRS = src/zoidfs src/spatial src/iofwdevent src/sm src/iofwdutil src/iofwd  \
-	  src/metacache src/cache src/client src/taskmon sandbox test
+SUBDIRS = src/zoidfs src/spatial src/iofwdevent src/sm src/iofwdutil \
+	  src/iofwd src/metacache src/cache src/client src/taskmon \
+	  src/fuse src/client sandbox test src/c-util
 
 VPATH := @top_srcdir@
 

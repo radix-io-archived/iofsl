@@ -1,5 +1,5 @@
 #include "CommChannel.hh"
-#include "zoidfs/zoidfs-xdr.hh"
+#include "zoidfs/util/zoidfs-xdr.hh"
 
 using namespace iofwdutil::bmi;
 using namespace iofwdutil::xdr; 

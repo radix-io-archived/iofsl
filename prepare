@@ -1,2 +1,2 @@
-aclocal -Im4 && autoreconf -fi 
+aclocal -Im4 && autoreconf -fi -Im4
 

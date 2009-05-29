@@ -4,6 +4,7 @@
 #include "Frontend.hh"
 #include <boost/thread.hpp>
 #include <boost/smart_ptr.hpp>
+#include "iofwdutil/IOFWDLog.hh"
 
 namespace iofwd
 {
@@ -26,6 +27,7 @@ public:
 protected:
    void * impl_; 
    boost::scoped_ptr<boost::thread> implthread_; 
+   iofwdutil::IOFWDLogSource & log_; 
 };
 
 //===========================================================================

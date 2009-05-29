@@ -2,12 +2,13 @@
 #define IOFWD_THREADTASKS_HH
 
 #include <boost/function.hpp>
+#include "zoidfs/util/ZoidFSAPI.hh"
 
 namespace iofwd
 {
 //===========================================================================
 
-class RequestTask;
+class Task;
 class Request; 
 
 /**
@@ -17,15 +18,18 @@ class ThreadTasks
 {
 public:
 
-   ThreadTasks (boost::function<void (RequestTask *)> & resched)
-      : reschedule_(resched)
+   ThreadTasks (boost::function<void (Task *)> & resched,
+         zoidfs::ZoidFSAPI * api)
+      : reschedule_(resched), api_(api)
    {
    }
 
-   RequestTask * operator () (Request * req); 
+   Task * operator () (Request * req); 
 
 protected:
-   boost::function<void (RequestTask *)> reschedule_; 
+   boost::function<void (Task *)> reschedule_; 
+
+   zoidfs::ZoidFSAPI * api_; 
 }; 
 
 

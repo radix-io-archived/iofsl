@@ -299,8 +299,8 @@ int zoidfs_resize(const zoidfs_handle_t * handle /* in:ptr */,
 
 
 #ifdef __cplusplus
-        } // extern C
-} // namespace
+        } /* extern C */
+} /* namespace */
 #endif
 
 

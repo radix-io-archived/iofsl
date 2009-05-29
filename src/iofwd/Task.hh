@@ -1,5 +1,5 @@
-#ifndef IOFWD_REQUESTTASK_HH
-#define IOFWD_REQUESTTASK_HH
+#ifndef IOFWD_TASK_HH
+#define IOFWD_TASK_HH
 
 #include <boost/function.hpp>
 #include "iofwdutil/workqueue/WorkItem.hh"
@@ -14,7 +14,7 @@ class Request;
  * This class encodes the set of actions that need to be done to complete a
  * request from a client.
  */
-class RequestTask : public iofwdutil::workqueue::WorkItem
+class Task : public iofwdutil::workqueue::WorkItem
 {
 public:
 
@@ -42,12 +42,12 @@ public:
    /// Called when the task gets the CPU
    virtual void run () = 0; 
 
-   RequestTask (boost::function<void (RequestTask *)> & resched)
+   Task (boost::function<void (Task *)> & resched)
       : status_ (0), reschedule_(resched)
    {
    }
 
-   virtual ~RequestTask (); 
+   virtual ~Task (); 
    
    
    /// Called if the task can be rescheduled for work
@@ -62,7 +62,7 @@ protected:
 protected:
    int status_; 
 
-   boost::function<void (RequestTask *)> reschedule_; 
+   boost::function<void (Task *)> reschedule_; 
 }; 
 
 //===========================================================================

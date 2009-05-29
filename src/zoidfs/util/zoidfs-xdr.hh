@@ -3,7 +3,7 @@
 
 // #include "xdr/XDR.hh"
 
-#include "zoidfs/zoidfs-wrapped.hh"
+#include "zoidfs/util/zoidfs-wrapped.hh"
 
 namespace iofwdutil
 {

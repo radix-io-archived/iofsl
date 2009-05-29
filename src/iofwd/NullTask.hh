@@ -2,23 +2,24 @@
 #define IOFWD_NULLTASK_HH
 
 #include <boost/function.hpp>
-#include "RequestTask.hh"
+#include "Task.hh"
 #include "NullRequest.hh"
 #include "TaskHelper.hh"
+#include "zoidfs/util/ZoidFSAPI.hh"
 
 namespace iofwd
 {
 
-class NullTask : public RequestTask, public TaskHelper<NullRequest>
+class NullTask : public Task, public TaskHelper<NullRequest>
 {
 public:
-   NullTask (Request * req, boost::function<void (RequestTask*)>
-         & resched) 
-      : RequestTask (resched), TaskHelper<NullRequest>(req)
+   NullTask (Request * req, boost::function<void (Task*)>
+         & resched, zoidfs::ZoidFSAPI * api) 
+      : Task (resched), TaskHelper<NullRequest>(req, api)
    {
    }
 
-   /// Not implemented is a fast request. No need to schedule it 
+   /// zoidfs_null is a fast request. No need to schedule it 
    bool isFast () const
    {
       return true; 
@@ -26,8 +27,11 @@ public:
 
    void run ()
    {
+      request_.setReturnCode (api_->null ()); 
       request_.reply (); 
    }
+
+   virtual ~NullTask (); 
 
 }; 
 

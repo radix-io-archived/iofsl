@@ -1,7 +1,8 @@
 #ifndef IOFWDUTIL_FILESPECHELPER_HH
 #define IOFWDUTIL_FILESPECHELPER_HH
 
-#include "zoidfs/zoidfs-wrapped.hh"
+#include "zoidfs-wrapped.hh"
+#include "zoidfs-xdr.hh"
 #include "iofwdutil/xdr/XDRWrappers.hh"
 
 namespace iofwdutil
@@ -38,7 +39,7 @@ namespace iofwdutil
     * Otherwise, store 0 and store the full path
     */
    template <typename T>
-   inline void process (T & p, FileSpecHelper & f)
+   inline void process (T & p, const FileSpecHelper & f)
    {
       uint8_t haveHandle = (f.handle_ != 0);
       if (static_cast<int>( T::XDRTYPE)== static_cast<int>(T::WRITER))

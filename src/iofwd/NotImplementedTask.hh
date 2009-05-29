@@ -2,7 +2,7 @@
 #define IOFWD_NOTIMPLEMENTEDTASK_HH
 
 #include <boost/function.hpp>
-#include "RequestTask.hh"
+#include "Task.hh"
 #include "NotImplementedRequest.hh"
 #include "TaskHelper.hh"
 
@@ -11,13 +11,13 @@ namespace iofwd
 //===========================================================================
 
 
-class NotImplementedTask : public RequestTask, 
+class NotImplementedTask : public Task, 
    public TaskHelper<NotImplementedRequest> 
 {
 public:
-   NotImplementedTask (Request * req, boost::function<void (RequestTask*)>
-         & resched) 
-      : RequestTask (resched), TaskHelper<NotImplementedRequest>(req)
+   NotImplementedTask (Request * req, boost::function<void (Task*)>
+         & resched, zoidfs::ZoidFSAPI * api) 
+      : Task (resched), TaskHelper<NotImplementedRequest>(req, api)
    {
    }
 

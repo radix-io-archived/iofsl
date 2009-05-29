@@ -1,6 +1,7 @@
 #ifndef IOFWD_FRONTEND_IOFWDLOOKUPREQUEST_HH
 #define IOFWD_FRONTEND_IOFWDLOOKUPREQUEST_HH
 
+#include "zoidfs/util/zoidfs-wrapped.hh"
 #include "IOFWDRequest.hh"
 #include "iofwd/LookupRequest.hh"
 
@@ -21,9 +22,16 @@ public:
    {
    }
 
+   virtual const ReqParam & decodeParam () ; 
+
    virtual void reply (const zoidfs::zoidfs_handle_t * handle); 
 
    virtual ~IOFWDLookupRequest (); 
+
+   
+protected:
+   ReqParam param_; 
+   FileInfo info_; 
 }; 
 
 //===========================================================================

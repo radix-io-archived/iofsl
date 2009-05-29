@@ -1,10 +1,10 @@
 MODULE_APPS := iofwd
 
 MODULE_SOURCES_iofwd := iofwd.cpp IOFWDMain.cpp
-ADDINTLIBS_iofwd := iofwdlib iofwdutil
+ADDINTLIBS_iofwd := iofwdlib zoidfsutil iofwdutil
 
 MODULE_ARCHIVES := iofwdlib
-ADDINTLIBS_iofwdlib := iofwdutil
+ADDINTLIBS_iofwdlib := zoidfsutil iofwdutil
 MODULE_LDFLAGS_iofwdlib := $(BOOST_THREAD_LDFLAGS)
 MODULE_LIBS_iofwdlib := $(BOOST_THREAD_LIBS)
 
@@ -15,17 +15,26 @@ iofwd_frontend := $(addprefix frontend/, \
 	IOFWDLookupRequest.cpp \
 	IOFWDNullRequest.cpp \
 	IOFWDNotImplementedRequest.cpp \
+	IOFWDReadRequest.cpp \
+	IOFWDCommitRequest.cpp \
 	)
 
 MODULE_SOURCES_iofwdlib := \
    RequestHandler.cpp \
-   Request.cpp \
-   RequestTask.cpp \
+   \
+   Task.cpp \
    NotImplementedTask.cpp \
+   ReadTask.cpp \
+   LookupTask.cpp \
+   NullTask.cpp \
+   CommitTask.cpp \
+   \
+   Request.cpp \
    LookupRequest.cpp \
    ReadRequest.cpp \
    WriteRequest.cpp \
    NullRequest.cpp \
+   CommitRequest.cpp \
    NotImplementedRequest.cpp \
    DefRequestHandler.cpp \
    DefRequestItem.cpp \

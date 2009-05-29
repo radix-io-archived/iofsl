@@ -1,8 +1,53 @@
-MODULE_ARCHIVES = zoidfs
 
-MODULE_SOURCES_zoidfs = \
+#
+#  C++ wrapper around the zoidfs API
+#
+MODULE_ARCHIVES := zoidfsutil
+MODULE_SOURCES_zoidfsutil := $(addprefix util/, \
 	ZoidFSAPI.cpp \
-	ZoidFSSync.cpp
+	ZoidFSSync.cpp \
+	LogAPI.cpp \
+	zoidfs-util.cpp \
+	NullAPI.cpp \
+    )
+ADDINTLIBS_zoidfsutil := iofwdutil
+
+#
+# ZoidFS API: dispatcher implementation
+#
+MODULE_ARCHIVES += zoidfsdispatch
+MODULE_SOURCES_zoidfsdispatch := $(addprefix dispatcher/, \
+   	zoidfs.c \
+	zoidfs-local.c \
+	zint-handler.c \
+   )
+
+# If posix dispatcher plugin should be built
+ifdef DISPATCH_POSIX
+   MODULE_SOURCES_zoidfsdispatch += $(addprefix dispatcher/posix/, )
+endif
+
+# If PVFS dispatcher plugin shoudl be built
+ifdef DISPATCH_PVFS
+   MODULE_SOURCES_zoidfsdispatch += $(addprefix dispatcher/pvfs/,\
+   		zoidfs-pvfs2.c           \
+        )
+   MODULE_LDFLAGS_zoidfsdispatch += @PVFS2_LDFLAGS@
+   MODULE_CPPFLAGS_zoidfsdispatch += @PVFS2_CPPFLAGS@
+   MODULE_CFLAGS_zoidfsdispatch += @PVFS2_CFLAGS@
+endif
+
+
+#
+# ZoidFS API: forwarding implementation
+#
+MODULE_ARCHIVES += zoidfsclient 
+MODULE_SOURCES_zoidfsclient := $(addprefix client/, \
+   	zoidfsclient.c \
+	bmi_comm.c \
+	zoidfs_xdr.c \
+   )
+
 
 # Automatically add -I$(thismoduledir) to CPPFLAGS
 MODULE_CONTAINSINCLUDE := 0

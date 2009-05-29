@@ -1,15 +1,15 @@
-#include "RequestTask.hh"
+#include "Task.hh"
 #include "iofwdutil/assert.hh"
 
 namespace iofwd
 {
 //===========================================================================
 
-   RequestTask::~RequestTask ()
+   Task::~Task ()
    {
    }
 
-   void RequestTask::doWork ()
+   void Task::doWork ()
    {
       run (); 
       switch (getStatus())

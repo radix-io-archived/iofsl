@@ -1,6 +1,6 @@
 #include "Request.hh"
 #include "iofwdutil/assert.hh"
-#include "zoidfs/zoidfs-wrapped.hh"
+#include "zoidfs/util/zoidfs-wrapped.hh"
 
 
 namespace iofwd
