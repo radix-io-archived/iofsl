@@ -1,5 +1,12 @@
 MODULE_ARCHIVES = iofwdutil 
 
+COMPLETIONSOURCES := $(addprefix completion/, \
+   CompletionID.cpp \
+   TimerResource.cpp \
+   BMIResource.cpp \
+   Resource.cpp \
+   Tracker.cpp)
+
 ZLOGSOURCES := $(addprefix zlog/, \
    LevelParser.cpp \
    ZLogSource.cpp \
@@ -50,6 +57,7 @@ MODULE_SOURCES_iofwdutil = \
 		$(XDRSOURCES) \
 		$(BMISOURCES) \
 		$(ZCONFIGSOURCES) \
+		$(COMPLETIONSOURCES) \
 		Timer.cpp TimeVal.cpp always_assert.cpp \
 		 ZException.cpp \
 		demangle.cpp IOFWDLog.cpp \

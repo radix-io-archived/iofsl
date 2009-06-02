@@ -1,0 +1,9 @@
+MODULE_ARCHIVES = c-util
+
+
+MODULE_SOURCES_iofwdutil = \
+	c-util.c
+
+# Automatically add -I$(thismoduledir) to CPPFLAGS
+MODULE_CONTAINSINCLUDE := 0
+

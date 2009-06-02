@@ -1,0 +1,11 @@
+
+LDFLAGS must at least contain -L<path to libpvfs2.a>
+
+make
+
+----
+
+The test-zoidfs <pvfs2 mountpoint> just tests some of the zoidfs
+calls locally with a pvfs2 server(s) in place.  The PVFS2TAB_FILE
+env must be set as usual.
+

@@ -1,6 +1,8 @@
 MODULE_APPS:= xdrspeed bmitest timertest forwarding iofwdreceive iofwdsend \
-    smlinks smtest workqueue levelmatch iofwdlog regexfilter
+    smlinks smtest workqueue levelmatch iofwdlog regexfilter completion
 
+MODULE_SOURCES_completion := completion.cpp
+ADDINTLIBS_completion := iofwdutil
 
 MODULE_SOURCES_regexfilter := regexfilter.cpp
 ADDINTLIBS_regexfilter := iofwdutil
