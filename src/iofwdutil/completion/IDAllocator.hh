@@ -23,7 +23,7 @@ class IDAllocator
 {
 public:
    IDAllocator (unsigned int reserve = 0) 
-      : storage_(reserve), nextfree_(-1)
+      : storage_(reserve), nextfree_(-1), size_(0)
    {
    }
 
@@ -76,6 +76,9 @@ protected:
 
    /// Next free element
    int nextfree_; 
+
+   /// Number of entries in allocator
+   unsigned int size_; 
 }; 
 
 //===========================================================================

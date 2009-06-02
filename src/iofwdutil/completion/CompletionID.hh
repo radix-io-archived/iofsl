@@ -30,11 +30,13 @@ class CompletionID
       // Provide public default constructor for container support
       CompletionID ()
          : context_(0), privateid_(0),
-               resourceid_(INVALID); 
+               resourceid_(INVALID)
+   {
+   }
 protected:
    friend class ContextBase; 
 
-   CompletionID (ContextBase & base, unsigned char res, uint32_t priv)
+   CompletionID (ContextBase * base, unsigned char res, uint32_t priv)
       : context_(base), privateid_(priv), resourceid_(res)
    {
    }
@@ -48,7 +50,7 @@ public:
    bool operator == (const CompletionID & other) const
    { 
       return 
-         boost::addressof(other.context_) == context_ && 
+         *boost::addressof(other.context_) == context_ && 
          other.privateid_ == privateid_ && 
          other.resourceid_ == resourceid_ ; 
    } 

@@ -4,6 +4,7 @@
 #include "Resource.hh"
 #include "ContextBase.hh"
 #include "IDAllocator.hh"
+#include "iofwdutil/assert.hh"
 #include <bmi.h>
 
 namespace iofwdutil
@@ -27,13 +28,13 @@ public:
          bmi_msg_tag_t tag, bmi_hint hints); 
 
    CompletionID postSendUnexpected (BMI_addr_t dest, const void * buffer, 
-         bmi_size_t size, bmi_buffer_type buffertype, bmi_msg_tag tag, 
-         bmi_hints hints); 
+         bmi_size_t size, bmi_buffer_type buffertype, bmi_msg_tag_t tag, 
+         bmi_hint hints); 
 
    CompletionID postSendList (BMI_addr_t dest, const void * const *
          buffer_list, const bmi_size_t * size_list, int list_count, 
          bmi_size_t total_size, bmi_buffer_type buffer_type, bmi_msg_tag_t
-         tag, bmi_hints hints); 
+         tag, bmi_hint hints); 
 
    CompletionID postReceiveList (BMI_addr_t dest, const void * const * 
          buffer_list, const bmi_size_t * size_list, int list_count, bmi_size_t
@@ -43,14 +44,16 @@ public:
    CompletionID postSendUnexpectedList (BMI_addr_t dest, const void * const *
          buffer_list, const bmi_size_t * size_list, int list_count, 
          bmi_size_t total_size, bmi_buffer_type buffer_type, bmi_msg_tag_t
-         tag, bmi_hints hints);
+         tag, bmi_hint hints);
 
    virtual ~BMIResource (); 
 
 protected:
 
+   int handleBMIError (int ret) const; 
+
    /// Do a quick check for BMI failure
-   inline int checkBMI (int ret)
+   inline int checkBMI (int ret) const
    {
       if (ret >= 0) return ret; 
       return handleBMIError (ret); 

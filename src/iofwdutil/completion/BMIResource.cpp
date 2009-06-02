@@ -6,7 +6,7 @@ namespace iofwdutil
    {
 //===========================================================================
 
-      BMIRersource::BMIResource (ContextBase & ctx)
+      BMIResource::BMIResource (ContextBase & ctx)
          : ctx_(ctx)
       {
          checkBMI (BMI_open_context (&bmictx_)); 
@@ -14,7 +14,13 @@ namespace iofwdutil
 
       BMIResource::~BMIResource ()
       {
-         checkBMI (BMI_close_context(&bmictx_)); 
+         BMI_close_context(bmictx_); 
+      }
+
+      int BMIResource::handleBMIError (int ret) const
+      {
+         ASSERT(ret >=0 && "bmi error"); 
+         return ret; 
       }
 
 //===========================================================================

@@ -27,11 +27,10 @@ protected:
 
    // --- For resources --
    CompletionID createID (unsigned char resourceid, uint32_t privateid)
-   { return CompletionID (*this, resourceid, privateid); }
+   { return CompletionID (this, resourceid, privateid); }
 
 public:
 
-   virtual ~ContextBase (); 
 }; 
 
 //===========================================================================
