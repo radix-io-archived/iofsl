@@ -10,9 +10,9 @@ namespace iofwd
       {
       }
 
-      void IOFWDCommitRequest::reply ()
+      iofwdutil::completion::CompletionID * IOFWDCommitRequest::reply ()
       {
-         simpleReply (TSSTART << (int32_t) getReturnCode ()); 
+         return simpleReply (TSSTART << (int32_t) getReturnCode ()); 
       }
 
 //===========================================================================

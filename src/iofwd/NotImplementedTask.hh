@@ -11,13 +11,12 @@ namespace iofwd
 //===========================================================================
 
 
-class NotImplementedTask : public Task, 
+class NotImplementedTask : 
    public TaskHelper<NotImplementedRequest> 
 {
 public:
-   NotImplementedTask (Request * req, boost::function<void (Task*)>
-         & resched, zoidfs::ZoidFSAPI * api) 
-      : Task (resched), TaskHelper<NotImplementedRequest>(req, api)
+   NotImplementedTask (ThreadTaskParam & p)
+      : TaskHelper<NotImplementedRequest>(p)
    {
    }
 

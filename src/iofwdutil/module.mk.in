@@ -2,10 +2,13 @@ MODULE_ARCHIVES = iofwdutil
 
 COMPLETIONSOURCES := $(addprefix completion/, \
    CompletionID.cpp \
+   BMICompletionID.cpp \
    TimerResource.cpp \
    BMIResource.cpp \
    Resource.cpp \
-   Tracker.cpp)
+   Tracker.cpp \
+   ContextBase.cpp \
+   )
 
 ZLOGSOURCES := $(addprefix zlog/, \
    LevelParser.cpp \

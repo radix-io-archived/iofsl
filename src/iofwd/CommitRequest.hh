@@ -2,6 +2,7 @@
 #define IOFWD_COMMITREQUEST_HH
 
 #include "Request.hh"
+#include "iofwdutil/completion/CompletionID.hh"
 
 namespace iofwd
 {
@@ -13,7 +14,7 @@ namespace iofwd
          {
          }; 
 
-         virtual void reply () = 0; 
+         virtual iofwdutil::completion::CompletionID * reply () = 0; 
 
          virtual ~CommitRequest (); 
    };

@@ -25,18 +25,18 @@ const IOFWDLookupRequest::ReqParam & IOFWDLookupRequest::decodeParam ()
    return param_; 
 }
 
-void IOFWDLookupRequest::reply (const zoidfs::zoidfs_handle_t * handle)
+iofwdutil::completion::CompletionID * IOFWDLookupRequest::reply (const zoidfs::zoidfs_handle_t * handle)
 {
    // If success, send the return code followed by the handle;
    // Otherwise send the return code.
    if (getReturnCode() == zoidfs::ZFS_OK)
    {
       ASSERT (handle); 
-      simpleReply (TSSTART << (int32_t) getReturnCode() << *handle); 
+      return simpleReply (TSSTART << (int32_t) getReturnCode() << *handle); 
    }
    else
    {
-      simpleReply (TSSTART << (int32_t) getReturnCode()); 
+      return simpleReply (TSSTART << (int32_t) getReturnCode()); 
    }
 }
 

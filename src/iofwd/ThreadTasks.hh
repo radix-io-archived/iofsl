@@ -3,6 +3,7 @@
 
 #include <boost/function.hpp>
 #include "zoidfs/util/ZoidFSAPI.hh"
+#include "iofwdutil/completion/BMIResource.hh"
 
 namespace iofwd
 {
@@ -12,7 +13,7 @@ class Task;
 class Request; 
 
 /**
- * Task factory that allocates a dedicated thread for each request
+ * Task factory that generates task which block until complete.
  */
 class ThreadTasks
 {
@@ -30,6 +31,9 @@ protected:
    boost::function<void (Task *)> reschedule_; 
 
    zoidfs::ZoidFSAPI * api_; 
+
+   iofwdutil::completion::ContextBase ctx_; 
+   iofwdutil::completion::BMIResource bmi_; 
 }; 
 
 

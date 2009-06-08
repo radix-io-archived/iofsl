@@ -38,7 +38,8 @@ namespace
 class IOFW
 {
 public:
-   IOFW (IOFWDFrontend & fe, RequestHandler * h);
+   IOFW (IOFWDFrontend & fe, RequestHandler * h,
+         iofwdutil::completion::BMIResource & bmires);
 
    void run ();
 
@@ -77,18 +78,22 @@ protected:
    
    IOFWDLogSource & log_; 
    
+   iofwdutil::completion::BMIResource & bmires_; 
+   
 };
 
 // ==========================================================================
 // map op id to IOFWDRequest
 
 typedef Request * (*mapfunc_t) ( iofwdutil::bmi::BMIContext & bmi,
-      int i, const BMI_unexpected_info & info);
+      int i, const BMI_unexpected_info & info,
+      iofwdutil::completion::BMIResource & res);
 
 template <typename T>
 static inline Request * newreq (iofwdutil::bmi::BMIContext & bmi,
-      int i, const BMI_unexpected_info & info)
-{ return new T (bmi, i, info ) ; }
+      int i, const BMI_unexpected_info & info,
+      iofwdutil::completion::BMIResource & res)
+{ return new T (bmi, i, info, res ) ; }
 
 static boost::array<mapfunc_t, ZOIDFS_PROTO_MAX> map_ = {
    {
@@ -114,12 +119,14 @@ static boost::array<mapfunc_t, ZOIDFS_PROTO_MAX> map_ = {
 
 // ==========================================================================
 
-IOFW::IOFW (IOFWDFrontend & fe, RequestHandler * h)
+IOFW::IOFW (IOFWDFrontend & fe, RequestHandler * h,
+      iofwdutil::completion::BMIResource & res)
    : fe_ (fe), bmi_ (iofwdutil::bmi::BMI::get()),
    stop_ (false),
    handler_(h),
    req_minsize_(iofwdutil::xdr::getXDRSize (uint32_t ()).actual),
-   log_ (IOFWDLog::getSource ("iofwdfrontend"))
+   log_ (IOFWDLog::getSource ("iofwdfrontend")),
+   bmires_ (res)
 {
   
    // Make sure we have a context open
@@ -174,7 +181,7 @@ void IOFW::handleIncoming (int count, const BMI_unexpected_info  * info )
       {
          // Request now owns the BMI buffer
          ALWAYS_ASSERT(map_[opid]); 
-         reqs[ok++] = map_[opid] (*bmictx_.get(), opid, info[i]); 
+         reqs[ok++] = map_[opid] (*bmictx_.get(), opid, info[i], bmires_); 
       }
    }
    handler_->handleRequest (ok, &reqs[0]); 
@@ -207,8 +214,9 @@ void IOFW::destroy ()
 //===========================================================================
 //===========================================================================
 
-IOFWDFrontend::IOFWDFrontend ()
-   : log_(IOFWDLog::getSource ("iofwdfrontend"))
+IOFWDFrontend::IOFWDFrontend (iofwdutil::completion::BMIResource & res)
+   : log_(IOFWDLog::getSource ("iofwdfrontend")),
+   bmires_ (res)
 {
 }
 
@@ -229,7 +237,7 @@ void IOFWDFrontend::init ()
    BMI::setInitServer ("tcp://127.0.0.1:1234"); 
 
    ALWAYS_ASSERT(handler_); 
-   IOFW * o = new IOFW (*this, handler_); 
+   IOFW * o = new IOFW (*this, handler_, bmires_); 
    implthread_.reset (new boost::thread(boost::bind (&IOFW::run , o))); 
    impl_ = o; 
 }

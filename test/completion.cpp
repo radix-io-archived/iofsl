@@ -3,12 +3,13 @@
 #include <boost/lambda/lambda.hpp>
 #include "iofwdutil/completion/CompletionID.hh"
 #include "iofwdutil/completion/TimerResource.hh"
+#include "iofwdutil/tools.hh"
 
 using namespace std;
 using namespace iofwdutil::completion; 
 using namespace boost; 
 
-int main (int argc, char ** args)
+int main (int UNUSED(argc), char ** UNUSED(args))
 {
    ContextBase ctx; 
 //   TimerResource timer (ctx); 

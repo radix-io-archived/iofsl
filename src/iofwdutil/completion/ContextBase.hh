@@ -2,6 +2,7 @@
 #define IOFWDUTIL_COMPLETION_CONTEXTBASE_HH
 
 
+#include <boost/thread.hpp>
 #include "CompletionID.hh"
 
 namespace iofwdutil
@@ -10,27 +11,37 @@ namespace iofwdutil
    {
 //===========================================================================
 
+class Resource; 
+
 class ContextBase
 {
-protected:
-   friend class CompletionID; 
-
-   void wait (const CompletionID & id); 
-
-   void test (const CompletionID & id, unsigned int mstimeout);
-
-/*   template <typename OUT> 
-   unsigned int waitAny (OUT & out);
-
-   template <typename OUT>
-   unsigned int testAny (OUT & out); */
-
-   // --- For resources --
-   CompletionID createID (unsigned char resourceid, uint32_t privateid)
-   { return CompletionID (this, resourceid, privateid); }
-
 public:
+   void wait (const CompletionID & id, void ** user); 
 
+   bool test (const CompletionID & id, void ** user, unsigned int mstimeout);
+
+   void waitAny (std::vector<CompletionID *> & ret); 
+
+   void testAny (std::vector<CompletionID *> & ret,  unsigned int maxms); 
+
+   bool isActive () const; 
+
+   ~ContextBase (); 
+
+protected:
+   unsigned int getActiveCount () const; 
+
+protected:
+   friend class Resource; 
+
+   /// Register a new resource with the context
+   unsigned char registerResource (Resource * res); 
+
+
+protected:
+   std::vector<Resource *> resources_; 
+
+   mutable boost::mutex lock_; 
 }; 
 
 //===========================================================================

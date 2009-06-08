@@ -5,6 +5,7 @@
 #include <boost/thread.hpp>
 #include <boost/smart_ptr.hpp>
 #include "iofwdutil/IOFWDLog.hh"
+#include "iofwdutil/completion/BMIResource.hh"
 
 namespace iofwd
 {
@@ -15,8 +16,9 @@ namespace iofwd
 class IOFWDFrontend : public Frontend
 {
 public:
-public:
-   IOFWDFrontend (); 
+
+   /// res = the BMI resource to use
+   IOFWDFrontend (iofwdutil::completion::BMIResource & res); 
 
    virtual ~IOFWDFrontend ();
 
@@ -28,6 +30,8 @@ protected:
    void * impl_; 
    boost::scoped_ptr<boost::thread> implthread_; 
    iofwdutil::IOFWDLogSource & log_; 
+
+   iofwdutil::completion::BMIResource & bmires_; 
 };
 
 //===========================================================================

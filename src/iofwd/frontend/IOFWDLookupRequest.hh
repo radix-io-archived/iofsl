@@ -17,14 +17,15 @@ class IOFWDLookupRequest
      public LookupRequest
 {
 public:
-   IOFWDLookupRequest (iofwdutil::bmi::BMIContext & bmi, int opid, const BMI_unexpected_info & info)
-      : IOFWDRequest (bmi, info), LookupRequest (opid)
+   IOFWDLookupRequest (iofwdutil::bmi::BMIContext & bmi, int opid, const BMI_unexpected_info & info,
+         iofwdutil::completion::BMIResource & res)
+      : IOFWDRequest (bmi, info,res), LookupRequest (opid)
    {
    }
 
    virtual const ReqParam & decodeParam () ; 
 
-   virtual void reply (const zoidfs::zoidfs_handle_t * handle); 
+   virtual iofwdutil::completion::CompletionID * reply (const zoidfs::zoidfs_handle_t * handle); 
 
    virtual ~IOFWDLookupRequest (); 
 

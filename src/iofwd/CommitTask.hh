@@ -10,12 +10,11 @@
 namespace iofwd
 {
 
-class CommitTask : public Task, public TaskHelper<CommitRequest>
+class CommitTask : public TaskHelper<CommitRequest>
 {
 public:
-   CommitTask (Request * req, boost::function<void (Task*)>
-         & resched, zoidfs::ZoidFSAPI * api) 
-      : Task (resched), TaskHelper<CommitRequest>(req, api)
+   CommitTask (ThreadTaskParam & p)
+      : TaskHelper<CommitRequest>(p)
    {
    }
 

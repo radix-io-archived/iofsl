@@ -10,12 +10,11 @@
 namespace iofwd
 {
 
-class NullTask : public Task, public TaskHelper<NullRequest>
+class NullTask : public TaskHelper<NullRequest>
 {
 public:
-   NullTask (Request * req, boost::function<void (Task*)>
-         & resched, zoidfs::ZoidFSAPI * api) 
-      : Task (resched), TaskHelper<NullRequest>(req, api)
+   NullTask (ThreadTaskParam & p)
+      : TaskHelper<NullRequest>(p)
    {
    }
 

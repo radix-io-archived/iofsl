@@ -17,6 +17,11 @@
 
 #include "iofwd/Request.hh"
 #include "iofwdutil/typestorage.hh"
+#include "iofwdutil/completion/CompletionID.hh"
+
+#include "iofwdutil/completion/BMIResource.hh"
+
+using iofwdutil::completion::CompletionID; 
 
 namespace iofwd
 {
@@ -26,7 +31,8 @@ namespace iofwd
 class IOFWDRequest 
 {
 public:
-   IOFWDRequest (iofwdutil::bmi::BMIContext & bmi, const BMI_unexpected_info & info); 
+   IOFWDRequest (iofwdutil::bmi::BMIContext & bmi, const BMI_unexpected_info & info,
+         iofwdutil::completion::BMIResource & bmires); 
 
    /// Release the memory of the incoming request
    void freeRawRequest (); 
@@ -56,7 +62,7 @@ protected:
 
    // Convenience functions for simple requests (lookup, mkdir, ... )
    template <typename SENDOP> 
-   iofwdutil::bmi::BMIOp simpleReply (const SENDOP & op)
+   CompletionID * simpleReply (const SENDOP & op)
    {
       iofwdutil::xdr::XDRSizeProcessor s; 
       applyTypes (s, op); 
@@ -69,11 +75,11 @@ protected:
    void beginReply (size_t maxsize);
 
    /// Send the buffer in reply writer
-   iofwdutil::bmi::BMIOp sendReply (); 
+   CompletionID * sendReply (); 
 
 protected:
    /// Send a reply back to the client; low-level function
-   iofwdutil::bmi::BMIOp ll_sendReply (const void * buf, size_t bufsize,
+   CompletionID * ll_sendReply (const void * buf, size_t bufsize,
          bmi_buffer_type); 
 
 protected:
@@ -95,6 +101,8 @@ protected:
    iofwdutil::xdr::XDRWriter reply_writer_; 
          
    iofwdutil::bmi::BMIBuffer buffer_send_; 
+
+   iofwdutil::completion::BMIResource & bmires_; 
 }; 
 
 

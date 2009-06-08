@@ -11,9 +11,9 @@ namespace iofwd
    {
 //===========================================================================
 
-void IOFWDNullRequest::reply ()
+iofwdutil::completion::CompletionID * IOFWDNullRequest::reply ()
 {
-   simpleReply (TSSTART << (int32_t) getReturnCode ()); 
+   return simpleReply (TSSTART << (int32_t) getReturnCode ()); 
 }
 
 IOFWDNullRequest::~IOFWDNullRequest ()

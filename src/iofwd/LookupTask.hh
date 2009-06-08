@@ -10,12 +10,11 @@
 namespace iofwd
 {
 
-class LookupTask : public Task, public TaskHelper<LookupRequest>
+class LookupTask : public TaskHelper<LookupRequest>
 {
 public:
-   LookupTask (Request * req, boost::function<void (Task*)>
-         & resched, zoidfs::ZoidFSAPI * api) 
-      : Task (resched), TaskHelper<LookupRequest>(req, api)
+   LookupTask (ThreadTaskParam & p)
+      : TaskHelper<LookupRequest>(p)
    {
    }
 

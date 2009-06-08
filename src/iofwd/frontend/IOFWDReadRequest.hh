@@ -14,12 +14,13 @@ class  IOFWDReadRequest
      public ReadRequest
 {
 public:
-   IOFWDReadRequest (iofwdutil::bmi::BMIContext & bmi, int opid, const BMI_unexpected_info & info)
-      : IOFWDRequest (bmi, info), ReadRequest (opid)
+   IOFWDReadRequest (iofwdutil::bmi::BMIContext & bmi, int opid, const BMI_unexpected_info & info,
+         iofwdutil::completion::BMIResource & res)
+      : IOFWDRequest (bmi, info,res), ReadRequest (opid)
    {
    }
        
-   virtual void returnData (const void * buf[], const size_t size[],
+   virtual iofwdutil::completion::CompletionID * returnData (const void * buf[], const size_t size[],
              int count) ; 
 
    virtual ~IOFWDReadRequest (); 

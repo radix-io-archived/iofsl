@@ -14,12 +14,13 @@ class IOFWDNullRequest : public NullRequest,
                          public IOFWDRequest
 {
 public:
-   IOFWDNullRequest (iofwdutil::bmi::BMIContext & bmi, int opid, const BMI_unexpected_info & info)
-      : NullRequest(opid), IOFWDRequest (bmi, info)
+   IOFWDNullRequest (iofwdutil::bmi::BMIContext & bmi, int opid, const BMI_unexpected_info & info,
+         iofwdutil::completion::BMIResource & res)
+      : NullRequest(opid), IOFWDRequest (bmi, info, res)
    {
    }
 
-   virtual void reply ();
+   virtual iofwdutil::completion::CompletionID * reply ();
 
    virtual ~IOFWDNullRequest (); 
 };

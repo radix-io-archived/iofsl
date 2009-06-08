@@ -54,14 +54,16 @@ try
    sigset_t sigset; 
    sigfillset (&sigset); 
    sigprocmask (SIG_BLOCK, &sigset, 0); 
+   
+   // Init BMI
+   BMI::setInitServer (args[1]); 
 
-   TextHandler handler; 
-   IOFWDFrontend f ; 
+   TextHandler handler;
+   iofwdutil::completion::BMIResource res; 
+   IOFWDFrontend f (res); 
 
    f.setHandler (&handler); 
 
-   // Init BMI
-   BMI::setInitServer (args[1]); 
 
    // Make sure we have a context open
    BMIContextPtr ctx = BMI::get().openContext (); 

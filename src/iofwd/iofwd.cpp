@@ -18,23 +18,23 @@ static bool             opt_verbose             = 0;
 // ==========================================================================
 
 // ============= Global Static Variables ====================================
-static iofwd::IOFWDMain *      iofwd_main; 
-static bool                    trap_received = 0; 
+//static iofwd::IOFWDMain *      iofwd_main; 
+//static bool                    trap_received = 0; 
 // ==========================================================================
 
 /**
  * Called when another ctrl-c is detected before the server could shut down
  */
-static void forceKill ()
+/*static void forceKill ()
 {
    exit (3); 
-}
+}*/
 
 
 /**
  * Called when on SIGINT
  */
-static void signalHandler (int , siginfo_t * , void * )
+/*static void signalHandler (int , siginfo_t * , void * )
 {
    if (trap_received)
    {
@@ -46,10 +46,10 @@ static void signalHandler (int , siginfo_t * , void * )
 
    ASSERT (iofwd_main); 
    iofwd_main->shutdown (); 
-}
+}*/
 
 
-static void trapSignals (iofwd::IOFWDMain & main)
+/*static void trapSignals (iofwd::IOFWDMain & main)
 {
    iofwd_main = &main; 
 
@@ -63,7 +63,7 @@ static void trapSignals (iofwd::IOFWDMain & main)
    {
       //  TODO
    }
-}
+} */
 
 
 int main (int argc, char ** args)

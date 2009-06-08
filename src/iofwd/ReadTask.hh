@@ -8,12 +8,11 @@
 namespace iofwd
 {
 
-class ReadTask : public Task, public TaskHelper<ReadRequest>
+class ReadTask : public TaskHelper<ReadRequest>
 {
 public:
-   ReadTask (Request * req, boost::function<void (Task*)>
-         & resched, zoidfs::ZoidFSAPI * api) 
-      : Task (resched), TaskHelper<ReadRequest>(req, api)
+   ReadTask (ThreadTaskParam & p)
+      : TaskHelper<ReadRequest>(p)
    {
    }
 

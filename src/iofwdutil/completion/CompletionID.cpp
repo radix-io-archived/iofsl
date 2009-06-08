@@ -7,22 +7,10 @@ namespace iofwdutil
    {
 //===========================================================================
 
-      unsigned char CompletionID::INVALID = 
-         std::numeric_limits<unsigned char>::max();
 
-      void CompletionID::wait ()
+      CompletionID::~CompletionID ()
       {
-         context_->wait (*this); 
       }
-
-      void CompletionID::test (unsigned int mstimeout)
-      {
-         context_->test (*this, mstimeout); 
-      }
-
-void CompletionID::dummy ()
-{
-}
 
 //===========================================================================
    }

@@ -4,6 +4,7 @@
 #include <memory>
 #include "frontend/IOFWDFrontend.hh"
 #include "iofwdutil/zlog/ZLogSource.hh"
+#include "iofwdutil/completion/BMIResource.hh"
 
 
 namespace iofwd
@@ -36,6 +37,8 @@ protected:
    std::auto_ptr<RequestHandler> requesthandler_; 
 
    iofwdutil::zlog::ZLogSource & mainlog_; 
+
+   iofwdutil::completion::BMIResource bmires_; 
 }; 
 
 //===========================================================================

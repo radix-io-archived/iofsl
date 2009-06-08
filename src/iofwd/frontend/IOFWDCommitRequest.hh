@@ -15,12 +15,13 @@ class IOFWDCommitRequest : public CommitRequest,
                          public IOFWDRequest
 {
 public:
-   IOFWDCommitRequest (iofwdutil::bmi::BMIContext & bmi, int opid, const BMI_unexpected_info & info)
-      : CommitRequest(opid), IOFWDRequest (bmi, info)
+   IOFWDCommitRequest (iofwdutil::bmi::BMIContext & bmi, int opid, const BMI_unexpected_info & info,
+         iofwdutil::completion::BMIResource & res)
+      : CommitRequest(opid), IOFWDRequest (bmi, info, res)
    {
    }
 
-   virtual void reply ();
+   virtual CompletionID * reply ();
 
    virtual ~IOFWDCommitRequest (); 
 };

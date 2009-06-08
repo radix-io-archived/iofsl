@@ -1,8 +1,9 @@
 #ifndef IOFWD_READREQUEST_HH
 #define IOFWD_READREQUEST_HH
 
-#include "Request.hh"
 #include <cstring>
+#include "Request.hh"
+#include "iofwdutil/completion/CompletionID.hh"
 
 namespace iofwd
 {
@@ -15,7 +16,7 @@ namespace iofwd
        {
        }
 
-       virtual void returnData (const void * buf[], const size_t size[],
+       virtual iofwdutil::completion::CompletionID * returnData (const void * buf[], const size_t size[],
              int count) = 0; 
 
        virtual ~ReadRequest (); 

@@ -3,6 +3,8 @@
 
 #include <boost/cstdint.hpp>
 #include <boost/utility.hpp>
+#include <stdint.h>
+#include <algorithm>
 #include <limits>
 
 namespace iofwdutil
@@ -11,57 +13,38 @@ namespace iofwdutil
    {
 //=====================================================================
 
-
-using boost::uint16_t; 
-
-class ContextBase; 
-
 /**
  * This class is supposed to be value copyable. Keep it small.
  * Cannot have virtual functions.
  */
 class CompletionID 
 {
-   protected:
-      static unsigned char INVALID;
-
    public:
 
-      // Provide public default constructor for container support
+      /// Wait until this request completes
+      virtual void wait () = 0; 
+
+      /// Test if the request is complete
+      virtual bool test (unsigned int mstimeout) = 0; 
+      
+
+      void * getUser () const
+      { return user_; } 
+      
+      void setUser (void * user) 
+      { user_ = user; }
+      
+      
+      //
+      virtual ~CompletionID (); 
+
+protected:
+
       CompletionID ()
-         : context_(0), privateid_(0),
-               resourceid_(INVALID)
-   {
-   }
+      { }
+
 protected:
-   friend class ContextBase; 
-
-   CompletionID (ContextBase * base, unsigned char res, uint32_t priv)
-      : context_(base), privateid_(priv), resourceid_(res)
-   {
-   }
-
-public:
-   void wait ();
-
-   void test (unsigned int mstimout);
-
-
-   bool operator == (const CompletionID & other) const
-   { 
-      return 
-         *boost::addressof(other.context_) == context_ && 
-         other.privateid_ == privateid_ && 
-         other.resourceid_ == resourceid_ ; 
-   } 
-
-private:
-   // give the compiler a place to store defs
-   void dummy (); 
-protected:
-   ContextBase * context_; 
-   uint32_t      privateid_; 
-   unsigned char resourceid_;
+      void * user_; 
 }; 
 
 //=====================================================================
