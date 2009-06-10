@@ -135,6 +135,11 @@ void BMIResource::postSend (BMICompletionID * id, BMI_addr_t dest, const void * 
       // operation already completed
       quickComplete (id); 
    }
+   else
+   {
+      boost::mutex::scoped_lock l (lock_);
+      ++outstanding_;
+   }
 }
 
 void BMIResource::postReceive (BMICompletionID * id, BMI_addr_t src, void * buffer, 
