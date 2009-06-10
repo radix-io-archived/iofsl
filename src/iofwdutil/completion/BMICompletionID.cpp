@@ -9,14 +9,13 @@ namespace iofwdutil
 
 void BMICompletionID::wait ()
 {
-   ASSERT (!completed_); 
-   resource_->wait (this); 
+   if (!completed_)
+      resource_->wait (this); 
 }
 
 bool BMICompletionID::test (unsigned int maxms)
 {
-   ASSERT(!completed_); 
-   return resource_->test (this, maxms); 
+   return completed_ ? true : resource_->test (this, maxms);
 }
 
 
