@@ -8,7 +8,7 @@ namespace zoidfs
 {
 //===========================================================================
 
-class ZoidFSSync
+class ZoidFSSync : public ZoidFSAPI
 {
 
 public:
