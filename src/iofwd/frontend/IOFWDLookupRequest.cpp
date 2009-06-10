@@ -27,6 +27,7 @@ const IOFWDLookupRequest::ReqParam & IOFWDLookupRequest::decodeParam ()
 
 iofwdutil::completion::CompletionID * IOFWDLookupRequest::reply (const zoidfs::zoidfs_handle_t * handle)
 {
+   ALWAYS_ASSERT(handle); 
    // If success, send the return code followed by the handle;
    // Otherwise send the return code.
    if (getReturnCode() == zoidfs::ZFS_OK)

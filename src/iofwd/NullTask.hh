@@ -2,6 +2,7 @@
 #define IOFWD_NULLTASK_HH
 
 #include <boost/function.hpp>
+#include <memory>
 #include "Task.hh"
 #include "NullRequest.hh"
 #include "TaskHelper.hh"
@@ -27,7 +28,8 @@ public:
    void run ()
    {
       request_.setReturnCode (api_->null ()); 
-      request_.reply (); 
+      std::auto_ptr<iofwdutil::completion::CompletionID>  id (request_.reply ()); 
+      id->wait (); 
    }
 
    virtual ~NullTask (); 
