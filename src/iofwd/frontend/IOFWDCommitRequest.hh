@@ -11,8 +11,9 @@ namespace iofwd
    {
 //===========================================================================
 
-class IOFWDCommitRequest : public CommitRequest,
-                         public IOFWDRequest
+class IOFWDCommitRequest
+  : public CommitRequest,
+    public IOFWDRequest
 {
 public:
    IOFWDCommitRequest (iofwdutil::bmi::BMIContext & bmi, int opid, const BMI_unexpected_info & info,
@@ -21,9 +22,14 @@ public:
    {
    }
 
-   virtual CompletionID * reply ();
+   virtual const ReqParam & decodeParam ();
 
-   virtual ~IOFWDCommitRequest (); 
+   virtual iofwdutil::completion::CompletionID * reply ();
+
+   virtual ~IOFWDCommitRequest ();
+
+protected:
+   ReqParam param_;
 };
 
 

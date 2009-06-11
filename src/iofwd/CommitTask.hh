@@ -20,7 +20,9 @@ public:
 
    void run ()
    {
-      //request_.setReturnCode (api_->commit (handle)); 
+      const CommitRequest::ReqParam & p = request_.decodeParam ();
+      int ret = api_->commit (p.handle);
+      request_.setReturnCode (ret);
       request_.reply (); 
    }
 

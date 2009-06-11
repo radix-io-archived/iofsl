@@ -2,22 +2,31 @@
 #define IOFWD_COMMITREQUEST_HH
 
 #include "Request.hh"
+#include "zoidfs/util/zoidfs-wrapped.hh"
 #include "iofwdutil/completion/CompletionID.hh"
 
 namespace iofwd
 {
 
-   class CommitRequest : public Request
+class CommitRequest : public Request
+{
+public:
+
+   typedef struct
    {
-      public:
-         CommitRequest (int opid) : Request (opid)
-         {
-         }; 
+      zoidfs::zoidfs_handle_t * handle;
+   } ReqParam;
 
-         virtual iofwdutil::completion::CompletionID * reply () = 0; 
-
-         virtual ~CommitRequest (); 
+   CommitRequest (int opid) : Request (opid)
+   {
    };
+
+   virtual const ReqParam & decodeParam () = 0;
+
+   virtual iofwdutil::completion::CompletionID * reply () = 0; 
+
+   virtual ~CommitRequest (); 
+};
 
 }
 

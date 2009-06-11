@@ -18,6 +18,7 @@
 #include "IOFWDNullRequest.hh"
 #include "IOFWDLookupRequest.hh"
 #include "IOFWDReadRequest.hh"
+#include "IOFWDCommitRequest.hh"
 
 using namespace iofwdutil::bmi; 
 using namespace iofwdutil;
@@ -102,7 +103,7 @@ static boost::array<mapfunc_t, ZOIDFS_PROTO_MAX> map_ = {
       &newreq<IOFWDNotImplementedRequest>,
       &newreq<IOFWDLookupRequest>,
       &newreq<IOFWDNotImplementedRequest>,
-      &newreq<IOFWDNotImplementedRequest>,
+      &newreq<IOFWDCommitRequest>,
       &newreq<IOFWDNotImplementedRequest>,
       &newreq<IOFWDNotImplementedRequest>,
       &newreq<IOFWDNotImplementedRequest>,
