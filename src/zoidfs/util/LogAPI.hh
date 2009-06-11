@@ -2,6 +2,7 @@
 #define ZOIDFS_LOGAPI_HH
 
 #include "ZoidFSAPI.hh"
+#include "ZoidFSSync.hh"
 #include "NullAPI.hh"
 #include "iofwdutil/IOFWDLog.hh"
 
@@ -122,7 +123,7 @@ class LogAPI : public ZoidFSAPI
             uint64_t size); 
 
    protected:
-      NullAPI fallback_; 
+      ZoidFSSync fallback_; 
       ZoidFSAPI * api_; 
 }; 
 
