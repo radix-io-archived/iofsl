@@ -100,6 +100,12 @@ AC_SUBST([MYSQL_CFLAGS])
 AC_SUBST([MYSQL_CPPFLAGS])
 AC_SUBST([MYSQL_LDFLAGS_R])
 
+DISPATCH_POSIX=0
+if test "x${BDB_OK}${MYSQL_OK}"; then
+   DISPATCH_POSIX=1
+fi
+AX_MAKE_VAR([DISPATCH_POSIX])
+
 dnl
 dnl Control behaviour of the zoidfs posix mapping
 dnl

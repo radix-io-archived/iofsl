@@ -10,7 +10,22 @@ MODULE_SOURCES_zoidfsdispatch := $(addprefix dispatcher/, \
 
 # If posix dispatcher plugin should be built
 ifdef DISPATCH_POSIX
-   MODULE_SOURCES_zoidfsdispatch += $(addprefix dispatcher/posix/, )
+   MODULE_SOURCES_zoidfsdispatch += $(addprefix dispatcher/posix/, \
+        env-parse.c \
+        handlecache.c \
+        hash-table.c \
+        namecache.c \
+        persist-db.c \
+        persist-mysql.c \
+        persist.c \
+        set.c \
+        trie.c \
+        zoidfs-posix.c \
+        zoidfs-util.c \
+   )
+   MODULE_LDFLAGS_zoidfsdispatch += @MYSQL_LDFLAGS@ @BDB_LDFLAGS@
+   MODULE_CPPFLAGS_zoidfsdispatch += @MYSQL_CPPFLAGS@ @BDB_CPPFLAGS@
+   MODULE_CFLAGS_zoidfsdispatch += @MYSQL_CFLAGS@ @BDB_CFLAGS@
 endif
 
 # If PVFS dispatcher plugin shoudl be built
@@ -49,4 +64,4 @@ MODULE_SOURCES_zoidfsclient := $(addprefix client/, \
 
 
 # Automatically add -I$(thismoduledir) to CPPFLAGS
-MODULE_CONTAINSINCLUDE := 0
+MODULE_CONTAINSINCLUDE := 1
