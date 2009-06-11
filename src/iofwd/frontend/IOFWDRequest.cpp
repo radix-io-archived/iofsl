@@ -15,6 +15,9 @@ IOFWDRequest::IOFWDRequest (iofwdutil::bmi::BMIContext & bmi, const BMI_unexpect
    buffer_send_ (addr_, iofwdutil::bmi::BMI::ALLOC_SEND),
    bmires_ (res)
 {
+   // opid may not be used
+   int32_t opid;
+   process(req_reader_, opid);
 }
 
 IOFWDRequest::~IOFWDRequest ()
