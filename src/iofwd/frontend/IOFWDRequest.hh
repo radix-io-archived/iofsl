@@ -52,8 +52,8 @@ protected:
 
    void decodeFileSpec (FileInfo & info)
    {
-      process(req_reader_,iofwdutil::xdr::FileSpecHelper (&info.parent_handle, 
-            info.component_name, info.full_path)); 
+      process(req_reader_, iofwdutil::xdr::FileSpecHelper (&info.parent_handle, 
+              info.component_name, info.full_path));
    }
 
 

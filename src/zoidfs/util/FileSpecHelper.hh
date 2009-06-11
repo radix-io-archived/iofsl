@@ -41,47 +41,51 @@ namespace iofwdutil
    template <typename T>
    inline void process (T & p, const FileSpecHelper & f)
    {
-      uint8_t haveHandle = (f.handle_ != 0);
+      uint8_t haveFullPath;
       if (static_cast<int>( T::XDRTYPE)== static_cast<int>(T::WRITER))
       {
-         process (p, haveHandle); 
-         if (haveHandle)
+         haveFullPath = (f.full_ != NULL) ? 1 : 0;
+         process (p, haveFullPath);
+         if (haveFullPath)
          {
-            process (p, *f.handle_); 
-            process (p, XDRString (f.component_, ZOIDFS_NAME_MAX));
+            process (p, XDRString (f.full_, ZOIDFS_PATH_MAX)); 
          }
          else
          {
-            process (p, XDRString (f.full_, ZOIDFS_PATH_MAX)); 
+            process (p, *f.handle_); 
+            process (p, XDRString (f.component_, ZOIDFS_NAME_MAX));
          }
       }
       else if (static_cast<int>( T::XDRTYPE) == 
             static_cast<int>(T::READER))
       {
-         process (p, haveHandle); 
-         if (haveHandle)
+         process (p, haveFullPath);
+         if (haveFullPath)
          {
             BOOST_ASSERT (f.handle_); 
-            process (p, *f.handle_); 
-            process (p, XDRString (f.component_, ZOIDFS_NAME_MAX)); 
+            process (p, XDRString (f.full_, ZOIDFS_PATH_MAX));
          }
          else
          {
-            process (p, XDRString (f.full_, ZOIDFS_PATH_MAX)); 
+            process (p, *f.handle_); 
+            process (p, XDRString (f.component_, ZOIDFS_NAME_MAX)); 
          }
-
       }
       else if (static_cast<int>(T::XDRTYPE) == 
             static_cast<int>(T::SIZE))
       {
          // As far the size calculation is concerned: we should really have
          // know if the size calculation is for reads or writes...
-
          // for now, just factor in both path components
-         process (p, haveHandle); 
-         process (p, *f.handle_); 
-         process (p, XDRString (f.component_, ZOIDFS_NAME_MAX));
-         process (p, XDRString (f.full_, ZOIDFS_PATH_MAX)); 
+         process (p, haveFullPath);
+         if (haveFullPath) {
+            process (p, XDRString (f.full_, ZOIDFS_PATH_MAX));
+         }
+         else
+         {
+            process (p, *f.handle_); 
+            process (p, XDRString (f.component_, ZOIDFS_NAME_MAX));
+         }
       }
    }
    
