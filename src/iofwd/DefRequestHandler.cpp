@@ -20,6 +20,9 @@ namespace iofwd
 DefRequestHandler::DefRequestHandler ()
    : log_ (IOFWDLog::getSource ("defreqhandler"))
 {
+   if (api_.init() != zoidfs::ZFS_OK)
+      throw "ZoidFSAPI::init() failed";
+  
    workqueue_normal_.reset (new PoolWorkQueue (0, 100)); 
    workqueue_fast_.reset (new SynchronousWorkQueue ()); 
    boost::function<void (Task *)> f = boost::lambda::bind
@@ -42,7 +45,9 @@ DefRequestHandler::~DefRequestHandler ()
 
    ZLOG_INFO (log_, "Waiting for fast workqueue to complete all work..."); 
    workqueue_fast_->waitAll (items); 
-   for_each (items.begin(), items.end(), bind(delete_ptr(), _1)); 
+   for_each (items.begin(), items.end(), bind(delete_ptr(), _1));
+
+   api_.finalize();
 }
 
 void DefRequestHandler::handleRequest (int count, Request ** reqs)
