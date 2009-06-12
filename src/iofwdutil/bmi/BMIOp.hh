@@ -49,6 +49,7 @@ public:
    // Maximum time to wait (in seconds)
    size_t wait (unsigned int maxwait = WAIT_IDLE_TIME)
    {
+      int ret;
       if (completed_)
          return actual_; 
 
@@ -68,14 +69,16 @@ public:
          if (remaining < 0) 
             break; 
 
-         BMI::check(BMI_test (op_, &outcount, &error, &actual_size, 
+         ret = BMI_test (op_, &outcount, &error, &actual_size, 
                   &user, static_cast<int>(remaining * iofwdutil::TimeVal::MS_PER_SECOND),
-                  con_->getID()));
+                  con_->getID());
+      } while (ret == 0 && outcount == 0); 
 
-         BMI::check(error); 
-
-      } while (!outcount); 
-
+      if (ret < 0 || error != 0)
+      {
+         BMI::check(ret);
+         BMI::check(error);
+      }
       if (!outcount)
       {
          // Timeout was triggered: throw exception
