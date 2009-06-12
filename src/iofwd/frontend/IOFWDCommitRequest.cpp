@@ -12,9 +12,8 @@ IOFWDCommitRequest::~IOFWDCommitRequest ()
 
 const IOFWDCommitRequest::ReqParam & IOFWDCommitRequest::decodeParam ()
 {
-   zoidfs::zoidfs_handle_t handle;
-   process (req_reader_, handle);
-   param_.handle = &handle;
+   process (req_reader_, handle_);
+   param_.handle = &handle_;
    return param_;
 }
 

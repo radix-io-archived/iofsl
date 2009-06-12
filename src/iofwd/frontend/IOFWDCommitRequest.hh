@@ -30,6 +30,7 @@ public:
 
 protected:
    ReqParam param_;
+   zoidfs::zoidfs_handle_t handle_;
 };
 
 
