@@ -113,13 +113,16 @@ void BMIResource::wait (CompletionID * id)
 {
    checkCompletionType (id); 
 
+   int outcount = 0;
+   do {
+     outcount = testInternal (id, std::numeric_limits<unsigned int>::max());
+   } while (outcount == 0);
+
    {
       boost::mutex::scoped_lock l (lock_); 
-      ALWAYS_ASSERT(outstanding_); 
+      ALWAYS_ASSERT(outstanding_ > 0); 
       --outstanding_; 
    }
-
-   ALWAYS_ASSERT(testInternal (id, std::numeric_limits<unsigned int>::max())); 
 }
 
 
