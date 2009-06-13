@@ -15,7 +15,8 @@ void LookupTask::run()
    int ret = api_->lookup (p.parent_handle, p.component_name, 
          p.full_path, &handle); 
    request_.setReturnCode (ret); 
-   request_.reply ( (ret  == ZFS_OK ? &handle : 0)); 
+   std::auto_ptr<iofwdutil::completion::CompletionID> id (request_.reply ( (ret  == ZFS_OK ? &handle : 0)));
+   id->wait ();
 }
 
 

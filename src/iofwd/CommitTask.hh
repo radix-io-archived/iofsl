@@ -23,7 +23,8 @@ public:
       const CommitRequest::ReqParam & p = request_.decodeParam ();
       int ret = api_->commit (p.handle);
       request_.setReturnCode (ret);
-      request_.reply (); 
+      std::auto_ptr<iofwdutil::completion::CompletionID> id (request_.reply ());
+      id->wait ();
    }
 
    virtual ~CommitTask (); 
