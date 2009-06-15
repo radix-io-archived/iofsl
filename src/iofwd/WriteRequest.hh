@@ -6,12 +6,18 @@
 namespace iofwd
 {
    
-   class WriteRequest : public Request 
-   {
+class WriteRequest : public Request 
+{
+public:
 
-   private:
-      void dummy (); 
-   }; 
+  WriteRequest (int opid)
+     : Request (opid)
+  {
+  }
+  virtual ~WriteRequest ()
+  {
+  }
+}; 
 
 }
 

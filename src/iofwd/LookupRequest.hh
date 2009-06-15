@@ -24,6 +24,9 @@ public:
       Request (opid)
    {
    }
+   virtual ~LookupRequest ()
+   {
+   }
 
    /**
     * Retrieve the request input parameters 
@@ -35,8 +38,6 @@ public:
     * need to be transmitted
     */
    virtual iofwdutil::completion::CompletionID * reply (const zoidfs::zoidfs_handle_t * handle) = 0; 
-
-   virtual ~LookupRequest (); 
 }; 
 
 

@@ -16,10 +16,12 @@ public:
       : Request (opid)
    {
    }
+   virtual ~NullRequest ()
+   {
+   }
 
    virtual iofwdutil::completion::CompletionID * reply () = 0; 
 
-   virtual ~NullRequest (); 
 }; 
 
 }

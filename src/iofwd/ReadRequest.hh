@@ -8,20 +8,21 @@
 namespace iofwd
 {
    
-   class ReadRequest : public Request 
+class ReadRequest : public Request 
+{
+public:
+
+   ReadRequest (int opid)
+      : Request (opid)
    {
-      public:
-       ReadRequest (int opid)
-          : Request (opid)
-       {
-       }
+   }
+   virtual ~ReadRequest ()
+   {
+   }
 
-       virtual iofwdutil::completion::CompletionID * returnData (const void * buf[], const size_t size[],
-             int count) = 0; 
-
-       virtual ~ReadRequest (); 
-
-   }; 
+   virtual iofwdutil::completion::CompletionID * returnData (const void * buf[], const size_t size[],
+                                                             int count) = 0; 
+};
 
 }
 

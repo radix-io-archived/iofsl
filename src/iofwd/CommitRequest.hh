@@ -20,12 +20,14 @@ public:
    CommitRequest (int opid) : Request (opid)
    {
    };
+   virtual ~CommitRequest ()
+   {
+   }
 
    virtual const ReqParam & decodeParam () = 0;
 
    virtual iofwdutil::completion::CompletionID * reply () = 0; 
 
-   virtual ~CommitRequest (); 
 };
 
 }
