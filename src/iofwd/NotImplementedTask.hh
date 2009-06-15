@@ -21,7 +21,10 @@ public:
    }
 
    /// Not implemented is a fast request. No need to schedule it 
-   bool isFast () const; 
+   bool isFast () const
+   {
+      return true;
+   }
 
    void run ()
    {

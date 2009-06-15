@@ -23,11 +23,6 @@ MODULE_SOURCES_iofwdlib := \
    RequestHandler.cpp \
    \
    Task.cpp \
-   NotImplementedTask.cpp \
-   ReadTask.cpp \
-   LookupTask.cpp \
-   NullTask.cpp \
-   CommitTask.cpp \
    \
    Request.cpp \
    DefRequestHandler.cpp \

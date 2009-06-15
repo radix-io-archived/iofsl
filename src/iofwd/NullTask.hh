@@ -18,6 +18,9 @@ public:
       : TaskHelper<NullRequest>(p)
    {
    }
+   virtual NullTask::~NullTask ()
+   {
+   }
 
    /// zoidfs_null is a fast request. No need to schedule it 
    bool isFast () const
@@ -31,8 +34,6 @@ public:
       std::auto_ptr<iofwdutil::completion::CompletionID>  id (request_.reply ()); 
       id->wait (); 
    }
-
-   virtual ~NullTask (); 
 
 }; 
 

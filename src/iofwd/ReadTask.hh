@@ -15,8 +15,13 @@ public:
       : TaskHelper<ReadRequest>(p)
    {
    }
+   virtual ~ReadTask()
+   {
+   }
 
-   void run (); 
+   void run ()
+   {
+   }
 
 }; 
 

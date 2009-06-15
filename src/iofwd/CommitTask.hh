@@ -17,6 +17,9 @@ public:
       : TaskHelper<CommitRequest>(p)
    {
    }
+   virtual ~CommitTask ()
+   {
+   }
 
    void run ()
    {
@@ -26,8 +29,6 @@ public:
       std::auto_ptr<iofwdutil::completion::CompletionID> id (request_.reply ());
       id->wait ();
    }
-
-   virtual ~CommitTask (); 
 }; 
 
 }
