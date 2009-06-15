@@ -1,4 +1,3 @@
-
 #ifndef IOFWD_LOOKUPTASK_HH
 #define IOFWD_LOOKUPTASK_HH
 
@@ -36,6 +35,5 @@ public:
 }; 
 
 }
-
 
 #endif

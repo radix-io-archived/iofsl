@@ -7,6 +7,7 @@
 #include "NullTask.hh"
 #include "LookupTask.hh"
 #include "CommitTask.hh"
+#include "RemoveTask.hh"
 #include "ReadTask.hh"
 #include "NotImplementedTask.hh"
 
@@ -27,8 +28,10 @@ Task * ThreadTasks::operator () (Request * req)
          return new LookupTask (p);
       case ZOIDFS_PROTO_COMMIT:
          return new CommitTask (p);
+      case ZOIDFS_PROTO_REMOVE:
+         return new RemoveTask (p);
       case ZOIDFS_PROTO_READ:
-         return new ReadTask (p); 
+         return new ReadTask (p);
       default:
          return new NotImplementedTask (p); 
    }; 

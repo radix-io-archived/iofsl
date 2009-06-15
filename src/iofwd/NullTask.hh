@@ -18,7 +18,7 @@ public:
       : TaskHelper<NullRequest>(p)
    {
    }
-   virtual NullTask::~NullTask ()
+   virtual ~NullTask ()
    {
    }
 

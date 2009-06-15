@@ -12,11 +12,12 @@ iofwd_frontend := $(addprefix frontend/, \
 	Frontend.cpp \
 	IOFWDFrontend.cpp \
 	IOFWDRequest.cpp \
-	IOFWDLookupRequest.cpp \
 	IOFWDNullRequest.cpp \
+	IOFWDLookupRequest.cpp \
+	IOFWDCommitRequest.cpp \
+	IOFWDRemoveRequest.cpp \
 	IOFWDNotImplementedRequest.cpp \
 	IOFWDReadRequest.cpp \
-	IOFWDCommitRequest.cpp \
 	)
 
 MODULE_SOURCES_iofwdlib := \
@@ -29,7 +30,3 @@ MODULE_SOURCES_iofwdlib := \
    DefRequestItem.cpp \
    ThreadTasks.cpp \
    $(iofwd_frontend)
-
-      
-
-
