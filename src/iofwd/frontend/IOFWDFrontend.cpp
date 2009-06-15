@@ -19,6 +19,7 @@
 #include "IOFWDLookupRequest.hh"
 #include "IOFWDCommitRequest.hh"
 #include "IOFWDRemoveRequest.hh"
+#include "IOFWDMkdirRequest.hh"
 #include "IOFWDReadRequest.hh"
 
 using namespace iofwdutil::bmi; 
@@ -109,7 +110,7 @@ static boost::array<mapfunc_t, ZOIDFS_PROTO_MAX> map_ = {
       &newreq<IOFWDRemoveRequest>,
       &newreq<IOFWDNotImplementedRequest>,
       &newreq<IOFWDNotImplementedRequest>,
-      &newreq<IOFWDNotImplementedRequest>,
+      &newreq<IOFWDMkdirRequest>,
       &newreq<IOFWDNotImplementedRequest>,
       &newreq<IOFWDNotImplementedRequest>,
       &newreq<IOFWDNotImplementedRequest>,

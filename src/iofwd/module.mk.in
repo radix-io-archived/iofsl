@@ -15,6 +15,7 @@ iofwd_frontend := $(addprefix frontend/, \
 	IOFWDNullRequest.cpp \
 	IOFWDLookupRequest.cpp \
 	IOFWDCommitRequest.cpp \
+	IOFWDMkdirRequest.cpp \
 	IOFWDRemoveRequest.cpp \
 	IOFWDNotImplementedRequest.cpp \
 	IOFWDReadRequest.cpp \

@@ -8,6 +8,7 @@
 #include "LookupTask.hh"
 #include "CommitTask.hh"
 #include "RemoveTask.hh"
+#include "MkdirTask.hh"
 #include "ReadTask.hh"
 #include "NotImplementedTask.hh"
 
@@ -30,6 +31,8 @@ Task * ThreadTasks::operator () (Request * req)
          return new CommitTask (p);
       case ZOIDFS_PROTO_REMOVE:
          return new RemoveTask (p);
+      case ZOIDFS_PROTO_MKDIR:
+         return new MkdirTask (p);
       case ZOIDFS_PROTO_READ:
          return new ReadTask (p);
       default:
