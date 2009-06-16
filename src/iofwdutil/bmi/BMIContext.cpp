@@ -62,6 +62,21 @@ BMIOp BMIContext::postSendUnexpected (BMIAddr dest,
             tag, 0, getID(), 0)); 
    return BMIOp (BMIContextPtr(this), op); 
 }
+
+BMIOp BMIContext::postSendList (BMIAddr dest,
+      const void ** buffer_list, const size_t * size_list, size_t list_count,
+      size_t total_size, bmi_buffer_type type, BMITag tag)
+{
+    bmi_op_id_t op;
+    int ret = BMI::check (BMI_post_send_list(&op,
+            dest, buffer_list, (const bmi_size_t*)size_list, list_count, total_size,
+            BMI_PRE_ALLOC, tag, NULL, getID(), NULL));
+    if (ret == 0)
+      return BMIOp(BMIContextPtr(this), op);
+    else
+      return BMIOp(BMIContextPtr(this), op, total_size);
+}
+
 //===========================================================================
    }
 }

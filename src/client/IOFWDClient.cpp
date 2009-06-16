@@ -97,16 +97,20 @@ int IOFWDClient::read(const zoidfs_handle_t * UNUSED(handle) /* in:ptr */,
    return 0; 
 }
 
-int IOFWDClient::write(const zoidfs_handle_t * UNUSED(handle) /* in:ptr */,
-                 size_t UNUSED(mem_count) /* in:obj */,
-                 const void * UNUSED(mem_starts[]) /* in:arr2d:size=+1:zerocopy */,
-                 const size_t UNUSED(mem_sizes[]) /* in:arr:size=-2 */,
-                 size_t UNUSED(file_count) /* in:obj */,
-                 const uint64_t UNUSED(file_starts[]) /* in:arr:size=-1 */,
-                 uint64_t UNUSED(file_sizes[]) /* inout:arr:size=-2 */)
+int IOFWDClient::write(const zoidfs_handle_t * handle /* in:ptr */,
+                 size_t mem_count /* in:obj */,
+                 const void * mem_starts[] /* in:arr2d:size=+1:zerocopy */,
+                 const size_t mem_sizes[] /* in:arr:size=-2 */,
+                 size_t file_count /* in:obj */,
+                 const uint64_t file_starts[] /* in:arr:size=-1 */,
+                 uint64_t file_sizes[] /* inout:arr:size=-2 */)
 {
-   /* TODO */ 
-   return 0; 
+  const int64_t * mem_sizes_ = NULL;//(const int64_t*)mem_sizes;
+  int64_t mem_count_ = 0;//(int64_t)mem_count;
+   return comm_.writeOp (ZOIDFS_PROTO_WRITE,
+                         TSSTART << *handle << XDRVarArray(mem_sizes_, mem_count_),
+                         TSSTART,
+                         mem_starts, mem_sizes, mem_count);
 }
 
 int IOFWDClient::commit(const zoidfs_handle_t * handle /* in:ptr */)
