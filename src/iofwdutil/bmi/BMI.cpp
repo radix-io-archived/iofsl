@@ -80,8 +80,15 @@ void BMI::setInitServer (const char * listen)
       throw BMIException ("no listen address specified in"
             " BMI::setInitServer"); 
 
+   int bmi_flags = BMI_INIT_SERVER;
+   // bmi automatically increment reference ount on addresses any
+   // time a new unexpected message appears. The server will decrement
+   // it once by calling BMI_set_info(addr, BMI_DEC_ADDR_REF, NULL),
+   // when it has completed processing the request.
+   bmi_flags |= BMI_AUTO_REF_COUNT;
+
    setInitParams (addressToMethod(listen).c_str(), 
-         listen, BMI_INIT_SERVER); 
+         listen, BMI_INIT_SERVER | BMI_AUTO_REF_COUNT);
 }
 
 void BMI::setInitParams (const char * methodlist, 

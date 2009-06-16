@@ -22,6 +22,13 @@ IOFWDRequest::IOFWDRequest (iofwdutil::bmi::BMIContext & bmi, const BMI_unexpect
 
 IOFWDRequest::~IOFWDRequest ()
 {
+  raw_request_.free();
+  buffer_send_.resize(0);
+
+  // The unexpected/send buffer is already freeed.
+  // Then, decrement the reference count in the BMI layer, associate with
+  // the address.
+  BMI_set_info(addr_, BMI_DEC_ADDR_REF, NULL);
 }
 
 void IOFWDRequest::beginReply (size_t maxsize)
