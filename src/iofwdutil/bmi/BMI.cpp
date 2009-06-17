@@ -88,7 +88,7 @@ void BMI::setInitServer (const char * listen)
    bmi_flags |= BMI_AUTO_REF_COUNT;
 
    setInitParams (addressToMethod(listen).c_str(), 
-         listen, BMI_INIT_SERVER | BMI_AUTO_REF_COUNT);
+         listen, bmi_flags);
 }
 
 void BMI::setInitParams (const char * methodlist, 
