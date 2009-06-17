@@ -46,6 +46,23 @@ CPPEXT ?= cpp
 ############################################################################
 ### Module support #########################################################
 ############################################################################
+define fixname 
+$$(patsubst $(1),/,_)
+endef
+
+
+define getcppflags 
+  $$(eval FILE_CPPFLAGS_$(call fixname $(1)))
+endef
+
+define getcflags 
+  $$(eval FILE_CFLAGS_$(call fixname $(1)))
+endef
+
+define getcxxflags 
+  $$(eval FILE_CXXFLAGS_$(call fixname $(1)))
+endef
+
 
 define process_target
 # set dir
@@ -225,7 +242,6 @@ $(foreach curarchive, $(ARCHIVES), \
 $(foreach cursource, $(ALLSOURCES), $(eval $(call gendep,$(cursource))))
 
 
-
 ########################
 # Some general targets #
 ########################
@@ -263,30 +279,32 @@ libs: $(addprefix lib_, $(ARCHIVES))
 # rule for C dependencies
 %.d: %.c
 	$(Q) "  DEPC		$@"
-	$(E) $(CPP) $(CPPFLAGS) $(CFLAGS) -M -MT"$(@)" $< | sed -e 's,\($*\)\.d[ :]*,\1.o $@ : ,g' -e 's,^ *\\,,'  > $@; [ -s $@ ] || ( $(RM) $@ && exit 1 ) 
+	$(E) $(CPP) $(CPPFLAGS) $(CFLAGS) $(getcppflags $<) -M -MT"$(@)" $< | sed -e 's,\($*\)\.d[ :]*,\1.o $@ : ,g' -e 's,^ *\\,,'  > $@; [ -s $@ ] || ( $(RM) $@ && exit 1 ) 
 
 # rule for C++ dependencies
 %.d: %.$(CPPEXT)
 	$(Q) "  DEPCXX	$@"
-	$(E) $(CXXCPP) $(CPPFLAGS) $(CXXFLAGS) -M -MT"$(@)" $< | sed -e 's,\($*\)\.d[ :]*,\1.o $@ : ,g' -e 's,^ *\\,,'  > $@; [ -s $@ ] || ( $(RM) $@ && exit 1 )
+	$(E) $(CXXCPP) $(getcppflags $<) $(CPPFLAGS) $(CXXFLAGS) -M -MT"$(@)" $< | sed -e 's,\($*\)\.d[ :]*,\1.o $@ : ,g' -e 's,^ *\\,,'  > $@; [ -s $@ ] || ( $(RM) $@ && exit 1 )
 
 # make preprocessed source:
 %.i: %.c
 	$(Q) "  CPP		$@"
-	$(E)  $(CC)  -E $(CPPFLAGS)  $< -o "$@" \
+	$(E)  $(CC)  -E $(getcppflags $<) $(CPPFLAGS)  $< -o "$@" \
 	   ||  ( $(RM) $@ ; exit 1)
 
 
 # default rule for building C objects
 %.o: %.c
 	$(Q) "  CC		$@"
-	$(E)  $(CC)  $(CPPFLAGS) $(CFLAGS) -c $< -o "$@" \
+	$(E)  $(CC) $(getcppflags $<) $(getcflags $<) \
+	   $(CPPFLAGS) $(CFLAGS) -c $< -o "$@" \
 	   ||  ( $(RM) $@ ; exit 1)
 
 # default rule for building C++ objects
 %.o: %.$(CPPEXT)
 	$(Q) "  CXX		$@"
-	$(E) $(CXX) $(CPPFLAGS) $(CXXFLAGS) -c $< -o "$@" \
+	$(E) $(CXX) $(getcppflags $<) $(getcxxflags $<) \
+	   $(CPPFLAGS) $(CXXFLAGS) -c $< -o "$@" \
 	   	|| ( $(RM) $@ ; exit 1 ) 
 
 

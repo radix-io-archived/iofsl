@@ -77,8 +77,15 @@ AC_ARG_WITH(db,
                   [Location of installed DB package (default= /usr)])],
            [AX_LIB_DB(${withval})],
            [AX_LIB_DB("")])
-dnl AM_CONDITIONAL(HAVE_DB, test x${BDB_OK} == x1)
+
+if test x${BDB_OK} == "x1" ; then
+   HAVE_DB=1
+else
+   HAVE_DB=
+fi
+
 AX_MAKE_VAR([HAVE_DB])
+AC_SUBST([HAVE_DB])
 AC_SUBST([BDB_CFLAGS])
 AC_SUBST([BDB_CPPFLAGS])
 AC_SUBST([BDB_LDFLAGS])
@@ -99,6 +106,10 @@ dnl AM_CONDITIONAL(HAVE_MYSQL,test x${MYSQL_OK} == x1)
 AC_SUBST([MYSQL_CFLAGS])
 AC_SUBST([MYSQL_CPPFLAGS])
 AC_SUBST([MYSQL_LDFLAGS_R])
+AX_MAKE_VAR([MYSQL_CFLAGS])
+AX_MAKE_VAR([MYSQL_CPPFLAGS])
+AX_MAKE_VAR([MYSQL_LDFLAGS_R])
+AX_MAKE_VAR([MYSQL_OK])
 
 DISPATCH_POSIX=0
 if test "x${BDB_OK}${MYSQL_OK}"; then
