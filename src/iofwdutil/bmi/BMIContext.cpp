@@ -10,10 +10,10 @@ namespace iofwdutil
 //===========================================================================
 
 
-      BMIContext::~BMIContext ()
-      {
-         BMI_close_context (getID()); 
-      }
+BMIContext::~BMIContext ()
+{
+   BMI_close_context (getID()); 
+}
 
 //===========================================================================
 
@@ -24,11 +24,11 @@ BMIOp BMIContext::postReceive (BMIAddr source,
    bmi_op_id_t op; 
    bmi_size_t actual_size; 
 
-   BMI::check (BMI_post_recv (&op, 
+   int ret = BMI::check (BMI_post_recv (&op, 
             source, buffer, maxsize, &actual_size, 
             buftype, tag, 0 /* userptr */, 
             getID(), 0 /* bmi hints */)); 
-   if (actual_size)
+   if (ret == 1)
    {
       /* already completed */ 
       return BMIOp (BMIContextPtr(this), op, actual_size); 
@@ -46,10 +46,10 @@ BMIOp BMIContext::postSend (BMIAddr dest,
    bmi_op_id_t op; 
    int ret = BMI::check (BMI_post_send (&op, dest, buffer, size, type, 
             tag, 0, getID(), 0)); 
-   if (ret == 0)
-      return BMIOp(BMIContextPtr(this), op); 
-   else
+   if (ret == 1)
       return BMIOp(BMIContextPtr(this), op, size); 
+   else
+      return BMIOp(BMIContextPtr(this), op); 
 }
 
 BMIOp BMIContext::postSendUnexpected (BMIAddr dest,
@@ -57,10 +57,13 @@ BMIOp BMIContext::postSendUnexpected (BMIAddr dest,
       BMITag tag)
 {
    bmi_op_id_t op; 
-   BMI::check (BMI_post_sendunexpected(&op, 
+   int ret = BMI::check (BMI_post_sendunexpected(&op, 
             dest, buffer, size, type, 
             tag, 0, getID(), 0)); 
-   return BMIOp (BMIContextPtr(this), op); 
+   if (ret == 1)
+     return BMIOp (BMIContextPtr(this), op, size);
+   else
+     return BMIOp (BMIContextPtr(this), op);
 }
 
 BMIOp BMIContext::postSendList (BMIAddr dest,
@@ -70,11 +73,11 @@ BMIOp BMIContext::postSendList (BMIAddr dest,
     bmi_op_id_t op;
     int ret = BMI::check (BMI_post_send_list(&op,
             dest, buffer_list, (const bmi_size_t*)size_list, list_count, total_size,
-            BMI_PRE_ALLOC, tag, NULL, getID(), NULL));
-    if (ret == 0)
-      return BMIOp(BMIContextPtr(this), op);
-    else
+            type, tag, NULL, getID(), NULL));
+    if (ret == 1)
       return BMIOp(BMIContextPtr(this), op, total_size);
+    else
+      return BMIOp(BMIContextPtr(this), op);
 }
 
 //===========================================================================
