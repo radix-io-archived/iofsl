@@ -21,6 +21,16 @@ public:
 
    void run ()
    {
+      // parameter decode
+      const ReadRequest::ReqParam & p = request_.decodeParam ();
+
+      int ret = api_->read (p.handle,
+                            (size_t)p.mem_count, (void**)p.mem_starts, (const size_t*)p.mem_sizes,
+                            (size_t)p.file_count, p.file_starts, p.file_sizes);
+      request_.setReturnCode (ret);
+
+      std::auto_ptr<iofwdutil::completion::CompletionID> reply_id (request_.replyBuffers ());
+      reply_id->wait ();
    }
 
 }; 

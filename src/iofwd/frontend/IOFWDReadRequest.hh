@@ -8,6 +8,7 @@ namespace iofwd
 {
    namespace frontend
    {
+//===========================================================================
 
 class  IOFWDReadRequest 
    : public IOFWDRequest, 
@@ -19,15 +20,26 @@ public:
       : IOFWDRequest (bmi, info,res), ReadRequest (opid)
    {
    }
-       
-   virtual iofwdutil::completion::CompletionID * returnData (const void * buf[], const size_t size[],
-             int count) ; 
+   virtual ~IOFWDReadRequest ();
 
-   virtual ~IOFWDReadRequest (); 
+   virtual const ReqParam & decodeParam ();
+
+   virtual iofwdutil::completion::CompletionID * replyBuffers ();
+
+private:
+   ReqParam param_;
+
+   zoidfs::zoidfs_handle_t handle_;
+   uint32_t mem_count_;
+   char ** mem_starts_;
+   uint32_t * mem_sizes_;
+   uint32_t file_count_;
+   uint64_t * file_starts_;
+   uint64_t * file_sizes_;
+
 }; 
 
-
-
+//===========================================================================
    }
 }
 

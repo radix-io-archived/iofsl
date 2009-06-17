@@ -11,6 +11,16 @@ namespace iofwd
 class ReadRequest : public Request 
 {
 public:
+   typedef struct
+   {
+      zoidfs::zoidfs_handle_t * handle;
+      uint32_t mem_count;
+      char ** mem_starts;
+      uint32_t * mem_sizes;
+      uint32_t file_count;
+      uint64_t * file_starts;
+      uint64_t * file_sizes;
+   } ReqParam;
 
    ReadRequest (int opid)
       : Request (opid)
@@ -20,8 +30,8 @@ public:
    {
    }
 
-   virtual iofwdutil::completion::CompletionID * returnData (const void * buf[], const size_t size[],
-                                                             int count) = 0; 
+   virtual const ReqParam & decodeParam () = 0;
+   virtual iofwdutil::completion::CompletionID * replyBuffers () = 0;
 };
 
 }
