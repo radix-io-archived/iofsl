@@ -151,7 +151,6 @@ namespace client
          /// Execute the request
          void executeWriteOp (const void ** buf_list, const size_t * size_list, size_t list_count)
          {
-           /*
             // Make sure the receive buffer is large enough for the reply
             const size_t needed = receiveSizeProcessor_.getSize().actual; 
             buffer_receive_.resize (needed); 
@@ -174,7 +173,6 @@ namespace client
             size_t UNUSED(received) = receive.wait (); 
             // Reset XDR deserialization
             request_reader_.reset (buffer_receive_.get (needed), needed);
-           */
          }
 
          // Write operation
@@ -182,11 +180,9 @@ namespace client
          int writeOp (int opid, const SENDREQ & send, const RECEIVEREQ & recv,
                       const void ** buf_list, const size_t * size_list, size_t list_count)
          {
-            int ret;
             beforeExecuteOp (opid, send, recv);
-            executeWriteOp (buf_list, size_list, list_count);
-            ret = afterExecuteOp (opid, send, recv);
-            return ret;
+            executeWriteOp(buf_list, size_list, list_count);
+            return afterExecuteOp (opid, send, recv);
          }
 
     protected:
