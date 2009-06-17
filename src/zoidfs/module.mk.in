@@ -15,17 +15,29 @@ ifdef DISPATCH_POSIX
         handlecache.c \
         hash-table.c \
         namecache.c \
-        persist-db.c \
-        persist-mysql.c \
         persist.c \
         set.c \
         trie.c \
         zoidfs-posix.c \
         zoidfs-util.c \
    )
-   MODULE_LDFLAGS_zoidfsdispatch += @MYSQL_LDFLAGS@ @BDB_LDFLAGS@
-   MODULE_CPPFLAGS_zoidfsdispatch += @MYSQL_CPPFLAGS@ @BDB_CPPFLAGS@
-   MODULE_CFLAGS_zoidfsdispatch += @MYSQL_CFLAGS@ @BDB_CFLAGS@
+   ifeq ($(MYSQL_OK),1)
+        #MODULE_SOURCES_zoidfsdispatch += dispatcher/posix/persist-mysql.c 
+        #MODULE_LDFLAGS_zoidfsdispatch += @MYSQL_LDFLAGS@
+        #MODULE_CPPFLAGS_zoidfsdispatch += @MYSQL_CPPFLAGS@
+        #MODULE_CFLAGS_zoidfsdispatch += @MYSQL_CFLAGS@
+	# Add to general cflags until makefile.in is fixed
+        MODULE_SOURCES_zoidfsdispatch += dispatcher/posix/persist-mysql.c 
+        MODULE_LDFLAGS_zoidfsdispatch += @MYSQL_LDFLAGS@
+        CPPFLAGS += @MYSQL_CPPFLAGS@
+        CFLAGS += @MYSQL_CFLAGS@
+   endif
+   ifeq ($(HAVE_DB),1)
+       MODULE_SOURCES_zoidfsdispatch += dispatcher/posix/persist-db.c
+       MODULE_LDFLAGS_zoidfsdispatch += @BDB_LDFLAGS@
+       CPPFLAGS += @BDB_CPPFLAGS@
+       CFLAGS += @BDB_CFLAGS@
+   endif
 endif
 
 # If PVFS dispatcher plugin shoudl be built
