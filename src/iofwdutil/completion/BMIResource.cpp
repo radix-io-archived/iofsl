@@ -30,7 +30,7 @@ bool BMIResource::isActive () const
 }
 
 bool BMIResource::testAnyInternal (std::vector<CompletionID *> & completed,
-      unsigned int maxms)
+      int maxms)
 {
    // BMI doesn't do concurrent testcontext
    boost::mutex::scoped_lock l (lock_); 
@@ -75,12 +75,11 @@ bool BMIResource::testAnyInternal (std::vector<CompletionID *> & completed,
    return outcount;  
 }
 
-bool BMIResource::testInternal (CompletionID * iid, unsigned int
-      maxms)
+bool BMIResource::testInternal (CompletionID * iid, int maxms)
 {
    BMICompletionID * id = castCheck (iid); 
    void * user; 
-   int out; 
+   int out;
    checkBMI (BMI_test(id->opid_, &out,
             &id->bmierror_, &id->actual_size_, &user, maxms, bmictx_)); 
 
@@ -92,17 +91,17 @@ bool BMIResource::testInternal (CompletionID * iid, unsigned int
 /// Returns vector of completed operations ; will append
 void BMIResource::waitAny (std::vector<CompletionID * > & completed)
 {
-   ALWAYS_ASSERT(testAnyInternal (completed, std::numeric_limits<unsigned int>::max())); 
+   ALWAYS_ASSERT(testAnyInternal (completed, std::numeric_limits<int>::max())); 
 }
 
 /// Test for completion
-void BMIResource::testAny (std::vector<CompletionID *> & completed, unsigned int maxms)
+void BMIResource::testAny (std::vector<CompletionID *> & completed, int maxms)
 {
    testAnyInternal (completed, maxms); 
 }
 
 /// Test for single item completion
-bool BMIResource::test (CompletionID * id,  unsigned int maxms)
+bool BMIResource::test (CompletionID * id,  int maxms)
 {
    checkCompletionType (id); 
    return testInternal (id, maxms); 
@@ -115,7 +114,7 @@ void BMIResource::wait (CompletionID * id)
 
    int outcount = 0;
    do {
-     outcount = testInternal (id, std::numeric_limits<unsigned int>::max());
+     outcount = testInternal (id, std::numeric_limits<int>::max());
    } while (outcount == 0);
 
    {
@@ -227,9 +226,7 @@ void BMIResource::postReceiveList (BMICompletionID * id, BMI_addr_t dest, void *
    {
       boost::mutex::scoped_lock l (lock_); 
       ++outstanding_; 
-
    }
- 
 }
 
 void BMIResource::postSendUnexpectedList (BMICompletionID * id, 

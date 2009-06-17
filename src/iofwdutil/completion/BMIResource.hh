@@ -61,22 +61,19 @@ public:
    virtual void waitAny (std::vector<CompletionID *> & completed) ; 
 
    /// Test for completion
-   virtual void testAny (std::vector<CompletionID *> & completed, unsigned int
-         maxms) ; 
+   virtual void testAny (std::vector<CompletionID *> & completed, int maxms) ;
 
    /// Test for single item completion
-   virtual bool test (CompletionID * id, unsigned int maxms) ; 
+   virtual bool test (CompletionID * id, int maxms) ;
 
    /// Wait for single item
    virtual void wait (CompletionID * id) ; 
 
    virtual ~BMIResource (); 
 protected:
-   bool testInternal (CompletionID * id, unsigned int
-         maxms);
+   bool testInternal (CompletionID * id, int maxms);
 
-   bool testAnyInternal (std::vector<CompletionID *> & c, unsigned int
-         maxms);
+   bool testAnyInternal (std::vector<CompletionID *> & c, int maxms);
 
 
 protected:
@@ -105,7 +102,7 @@ protected:
    /// Do a quick check for BMI failure
    inline int checkBMI (int ret) const
    {
-      if (ret >= 0) return ret; 
+      if (ret >= 0) return ret;
       return handleBMIError (ret); 
    }
 
