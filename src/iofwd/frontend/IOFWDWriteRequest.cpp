@@ -39,6 +39,8 @@ const IOFWDWriteRequest::ReqParam & IOFWDWriteRequest::decodeParam ()
    process (req_reader_, iofwdutil::xdr::XDRVarArray(file_starts_, file_count_));
    file_sizes_ = new uint64_t[file_count_];
    process (req_reader_, iofwdutil::xdr::XDRVarArray(file_sizes_, file_count_));
+
+   process (req_reader_, pipeline_size_);
   
    param_.handle = &handle_;
    param_.mem_count = mem_count_;
@@ -47,6 +49,7 @@ const IOFWDWriteRequest::ReqParam & IOFWDWriteRequest::decodeParam ()
    param_.file_count = file_count_;
    param_.file_starts = file_starts_;
    param_.file_sizes = file_sizes_;
+   param_.pipeline_size = pipeline_size_;
    return param_;
 }
 
@@ -58,6 +61,13 @@ iofwdutil::completion::CompletionID * IOFWDWriteRequest::recvBuffers ()
    iofwdutil::completion::BMICompletionID * id = new iofwdutil::completion::BMICompletionID ();
    bmires_.postReceiveList (id, addr_, (void* const*)mem_starts_, (const bmi_size_t*)mem_sizes_,
                             mem_count_, total_size, BMI_PRE_ALLOC, tag_, 0);
+   return id;
+}
+
+iofwdutil::completion::CompletionID * IOFWDWriteRequest::recvPipelineBuffer(char *buf, size_t size)
+{
+   iofwdutil::completion::BMICompletionID * id = new iofwdutil::completion::BMICompletionID ();
+   bmires_.postReceive (id, addr_, buf, size, BMI_PRE_ALLOC, tag_, 0);
    return id;
 }
 

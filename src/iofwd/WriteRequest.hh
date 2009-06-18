@@ -2,6 +2,8 @@
 #define IOFWD_WRITEREQUEST_HH
 
 #include "Request.hh"
+#include "zoidfs/zoidfs.h"
+#include "iofwdutil/completion/CompletionID.hh"
 
 namespace iofwd
 {
@@ -18,6 +20,7 @@ public:
      uint32_t file_count;
      uint64_t * file_starts;
      uint64_t * file_sizes;
+     uint64_t pipeline_size;
   } ReqParam;
 
   WriteRequest (int opid)
@@ -30,8 +33,13 @@ public:
 
   virtual const ReqParam & decodeParam () = 0;
 
-  virtual iofwdutil::completion::CompletionID * recvBuffers() = 0;
   virtual iofwdutil::completion::CompletionID * reply () = 0;
+
+  // for normal mode
+  virtual iofwdutil::completion::CompletionID * recvBuffers() = 0;
+
+  // for pipeline mode
+  virtual iofwdutil::completion::CompletionID * recvPipelineBuffer(char *buf, size_t size) = 0;
 }; 
 
 }

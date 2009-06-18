@@ -82,9 +82,8 @@ bool BMIResource::testInternal (CompletionID * iid, int maxms)
    int out;
    checkBMI (BMI_test(id->opid_, &out,
             &id->bmierror_, &id->actual_size_, &user, maxms, bmictx_)); 
-
-   ALWAYS_ASSERT((user == (void*) id)); 
-   
+   if (out > 0)
+      ALWAYS_ASSERT((user == (void*) id)); 
    return out; 
 }
 

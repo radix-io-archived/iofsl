@@ -26,8 +26,13 @@ public:
 
    virtual const ReqParam & decodeParam ();
 
-   virtual iofwdutil::completion::CompletionID * recvBuffers();
    virtual iofwdutil::completion::CompletionID * reply();
+
+   // for normal mode
+   virtual iofwdutil::completion::CompletionID * recvBuffers();
+
+   // for pipeline mode
+   virtual iofwdutil::completion::CompletionID * recvPipelineBuffer(char *buf, size_t size);
 
 private:
    ReqParam param_;
@@ -39,6 +44,7 @@ private:
    uint32_t file_count_;
    uint64_t * file_starts_;
    uint64_t * file_sizes_;
+   uint64_t pipeline_size_;
 }; 
 
 //===========================================================================
