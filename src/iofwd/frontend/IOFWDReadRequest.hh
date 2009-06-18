@@ -24,7 +24,8 @@ public:
 
    virtual const ReqParam & decodeParam ();
 
-   virtual iofwdutil::completion::CompletionID * replyBuffers ();
+   virtual iofwdutil::completion::CompletionID * sendBuffers ();
+   virtual iofwdutil::completion::CompletionID * reply();
 
 private:
    ReqParam param_;

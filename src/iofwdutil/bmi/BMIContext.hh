@@ -56,6 +56,10 @@ public:
          const void ** buffer_list, const size_t * size_list, size_t list_count,
          size_t total_size, bmi_buffer_type type, BMITag tag);
 
+   BMIOp postRecvList (BMIAddr dest,
+         void ** buffer_list, const size_t * size_list, size_t list_count,
+         size_t total_size, bmi_buffer_type type, BMITag tag);
+
 public:
    ~BMIContext (); 
 

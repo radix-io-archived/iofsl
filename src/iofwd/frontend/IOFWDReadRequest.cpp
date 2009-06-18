@@ -50,7 +50,7 @@ const IOFWDReadRequest::ReqParam & IOFWDReadRequest::decodeParam ()
    return param_;
 }
 
-iofwdutil::completion::CompletionID * IOFWDReadRequest::replyBuffers ()
+iofwdutil::completion::CompletionID * IOFWDReadRequest::sendBuffers ()
 {
    size_t total_size = 0;
    for (size_t i = 0; i < mem_count_; i++)
@@ -59,6 +59,12 @@ iofwdutil::completion::CompletionID * IOFWDReadRequest::replyBuffers ()
    bmires_.postSendList (id, addr_, (const void**)mem_starts_, (const bmi_size_t*)mem_sizes_,
                          mem_count_, total_size, BMI_PRE_ALLOC, tag_, 0);
    return id;
+}
+
+iofwdutil::completion::CompletionID * IOFWDReadRequest::reply()
+{
+  return simpleReply (TSSTART << (int32_t) getReturnCode ()
+            << iofwdutil::xdr::XDRVarArray(file_sizes_, file_count_));
 }
 
 //===========================================================================

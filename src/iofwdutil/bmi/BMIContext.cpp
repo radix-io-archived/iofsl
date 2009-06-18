@@ -80,6 +80,21 @@ BMIOp BMIContext::postSendList (BMIAddr dest,
       return BMIOp(BMIContextPtr(this), op);
 }
 
+BMIOp BMIContext::postRecvList (BMIAddr dest,
+      void ** buffer_list, const size_t * size_list, size_t list_count,
+      size_t total_size, bmi_buffer_type type, BMITag tag)
+{
+   bmi_op_id_t op;
+   bmi_size_t actual_size;
+   int ret = BMI::check (BMI_post_recv_list(&op,
+           dest, buffer_list, (const bmi_size_t*)size_list, list_count, total_size,
+           &actual_size, type, tag, NULL, getID(), NULL));
+   if (ret == 1)
+      return BMIOp(BMIContextPtr(this), op, total_size);
+   else
+      return BMIOp(BMIContextPtr(this), op);
+}
+
 //===========================================================================
    }
 }

@@ -149,7 +149,7 @@ namespace client
             return ret; 
          }
 
-         /// Execute the request
+         /// Execute the write request
          void executeWriteOp (const void ** buf_list, const size_t * size_list, size_t list_count)
          {
             // Make sure the receive buffer is large enough for the reply
@@ -182,6 +182,42 @@ namespace client
          {
             beforeExecuteOp (opid, send, recv);
             executeWriteOp(buf_list, size_list, list_count);
+            return afterExecuteOp (opid, send, recv);
+         }
+
+         /// Execute the read request
+         void executeReadOp (void ** buf_list, const size_t * size_list, size_t list_count)
+         {
+            // Make sure the receive buffer is large enough for the reply
+            const size_t needed = receiveSizeProcessor_.getSize().actual; 
+            buffer_receive_.resize (needed); 
+            // send unexpected
+            iofwdutil::bmi::BMIOp sendu = bmi_->postSendUnexpected (iofwdhost_, 
+                  buffer_send_.get(), buffer_send_.size(), 
+                  buffer_send_.bmiType(), ZOIDFS_REQUEST_TAG);
+            size_t UNUSED(sendubytes) = sendu.wait ();
+            // recv data
+            size_t total_size = 0;
+            for (size_t i = 0; i < list_count; i++) total_size += size_list[i];
+            iofwdutil::bmi::BMIOp recvlist = bmi_->postRecvList(iofwdhost_, buf_list, size_list, list_count,
+                  total_size, BMI_PRE_ALLOC, ZOIDFS_REQUEST_TAG);
+            size_t UNUSED(recvbytes) = recvlist.wait ();
+            // post receive
+            iofwdutil::bmi::BMIOp receive = bmi_->postReceive (iofwdhost_, 
+                  buffer_receive_.get(), buffer_receive_.size (), 
+                  buffer_receive_.bmiType(), ZOIDFS_REQUEST_TAG);
+            size_t UNUSED(received) = receive.wait (); 
+            // Reset XDR deserialization
+            request_reader_.reset (buffer_receive_.get (needed), needed);
+         }
+
+         // Read operation
+         template <typename SENDREQ, typename RECEIVEREQ>
+         int readOp (int opid, const SENDREQ & send, const RECEIVEREQ & recv,
+                     void ** buf_list, const size_t * size_list, size_t list_count)
+         {
+            beforeExecuteOp (opid, send, recv);
+            executeReadOp(buf_list, size_list, list_count);
             return afterExecuteOp (opid, send, recv);
          }
 

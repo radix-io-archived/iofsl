@@ -29,13 +29,15 @@ public:
                             (size_t)p.file_count, p.file_starts, p.file_sizes);
       request_.setReturnCode (ret);
 
-      std::auto_ptr<iofwdutil::completion::CompletionID> reply_id (request_.replyBuffers ());
+      std::auto_ptr<iofwdutil::completion::CompletionID> send_id (request_.sendBuffers ());
+      send_id->wait ();
+
+      std::auto_ptr<iofwdutil::completion::CompletionID> reply_id (request_.reply ());
       reply_id->wait ();
    }
 
 }; 
 
 }
-
 
 #endif

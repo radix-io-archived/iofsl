@@ -31,7 +31,8 @@ public:
    }
 
    virtual const ReqParam & decodeParam () = 0;
-   virtual iofwdutil::completion::CompletionID * replyBuffers () = 0;
+   virtual iofwdutil::completion::CompletionID * sendBuffers () = 0;
+   virtual iofwdutil::completion::CompletionID * reply () = 0;
 };
 
 }

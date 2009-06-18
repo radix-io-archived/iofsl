@@ -85,15 +85,23 @@ int IOFWDClient::readlink(const zoidfs_handle_t * handle /* in:ptr */,
          TSSTART << XDRString (buffer, buffer_length)); 
 }
 
-int IOFWDClient::read(const zoidfs_handle_t * UNUSED(handle) /* in:ptr */,
-                size_t UNUSED(mem_count) /* in:obj */,
-                void * UNUSED(mem_starts[]) /* out:arr2d:size=+1:zerocopy */,
-                const size_t UNUSED(mem_sizes[]) /* in:arr:size=-2 */,
-                size_t UNUSED(file_count) /* in:obj */,
-                const uint64_t UNUSED(file_starts[]) /* in:arr:size=-1 */,
-                uint64_t UNUSED(file_sizes[]) /* inout:arr:size=-2 */)
+int IOFWDClient::read(const zoidfs_handle_t * handle /* in:ptr */,
+                size_t mem_count /* in:obj */,
+                void * mem_starts[] /* out:arr2d:size=+1:zerocopy */,
+                const size_t mem_sizes[] /* in:arr:size=-2 */,
+                size_t file_count /* in:obj */,
+                const uint64_t file_starts[] /* in:arr:size=-1 */,
+                uint64_t file_sizes[] /* inout:arr:size=-2 */)
 {
-   /* TODO */ 
+   uint32_t mem_count_ = mem_count;
+   uint32_t * mem_sizes_ =  const_cast<uint32_t*>((const uint32_t*)mem_sizes);
+   uint32_t file_count_ = file_count;
+   uint64_t * file_starts_ = const_cast<uint64_t*>((const uint64_t*)file_starts);
+   return comm_.readOp (ZOIDFS_PROTO_READ,
+         TSSTART << *handle << mem_count_ << XDRVarArray(mem_sizes_, mem_count_)
+                 << file_count_ << XDRVarArray(file_starts_, file_count_) << XDRVarArray(file_sizes, file_count_),
+         TSSTART << XDRVarArray(file_sizes, file_count_),
+         mem_starts, mem_sizes, mem_count);
    return 0; 
 }
 
