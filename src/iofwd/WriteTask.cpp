@@ -60,12 +60,12 @@ void WriteTask::runNormalMode(const WriteRequest::ReqParam & p)
    std::auto_ptr<iofwdutil::completion::CompletionID> recv_id (request_.recvBuffers ());
    recv_id->wait ();
 
-   // p.mem_sizes is uint32_t array, but ZoidFSAPI::write() takes size_t array
-   // for its arguments. Therefore, in (sizeof(size_t) != sizeof(uint32_t))
-   // environment (64bit), p.mem_sizes is not valid for size_t array.
+   // p.mem_sizes is uint64_t array, but ZoidFSAPI::write() takes size_t array
+   // for its arguments. Therefore, in (sizeof(size_t) != sizeof(uint64_t))
+   // environment (32bit), p.mem_sizes is not valid for size_t array.
    // We allocate temporary buffer to fix this problem.
    size_t * tmp_mem_sizes = (size_t*)p.mem_sizes;
-   bool need_size_t_workaround = (sizeof(size_t) != sizeof(uint32_t));
+   bool need_size_t_workaround = (sizeof(size_t) != sizeof(uint64_t));
    if (need_size_t_workaround) {
       tmp_mem_sizes = new size_t[p.mem_count];
       for (uint32_t i = 0; i < p.mem_count; i++)

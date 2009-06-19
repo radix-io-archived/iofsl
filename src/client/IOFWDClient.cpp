@@ -94,7 +94,8 @@ int IOFWDClient::read(const zoidfs_handle_t * handle /* in:ptr */,
                 uint64_t file_sizes[] /* inout:arr:size=-2 */)
 {
    uint32_t mem_count_ = mem_count;
-   uint32_t * mem_sizes_ =  const_cast<uint32_t*>((const uint32_t*)mem_sizes);
+   uint64_t * mem_sizes_ =  const_cast<uint64_t*>((const uint64_t*)mem_sizes);
+   assert(sizeof(uint64_t) == sizeof(size_t));
    uint32_t file_count_ = file_count;
    uint64_t * file_starts_ = const_cast<uint64_t*>((const uint64_t*)file_starts);
    uint32_t pipeline_size = (1024ULL * 1024 * 16);
@@ -122,7 +123,8 @@ int IOFWDClient::write(const zoidfs_handle_t * handle /* in:ptr */,
                  uint64_t file_sizes[] /* inout:arr:size=-2 */)
 {
    uint32_t mem_count_ = mem_count;
-   uint32_t * mem_sizes_ = const_cast<uint32_t*>((const uint32_t*)mem_sizes);
+   uint64_t * mem_sizes_ = const_cast<uint64_t*>((const uint64_t*)mem_sizes);
+   assert(sizeof(uint64_t) == sizeof(size_t));
    uint32_t file_count_ = file_count;
    uint64_t * file_starts_ = const_cast<uint64_t*>((const uint64_t*)file_starts);
    uint32_t pipeline_size = (1024ULL * 1024 * 16);

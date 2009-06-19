@@ -31,7 +31,7 @@ const IOFWDReadRequest::ReqParam & IOFWDReadRequest::decodeParam ()
    mem_starts_ = new char*[mem_count_];
    for (uint32_t i = 0; i < mem_count_; i++)
       mem_starts_[i] = new char[zoidfs::ZOIDFS_BUFFER_MAX];
-   mem_sizes_ = new uint32_t[mem_count_];
+   mem_sizes_ = new uint64_t[mem_count_];
    process (req_reader_, iofwdutil::xdr::XDRVarArray(mem_sizes_, mem_count_));
 
    process (req_reader_, file_count_);

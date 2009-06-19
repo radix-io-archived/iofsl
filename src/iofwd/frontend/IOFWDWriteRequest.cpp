@@ -31,7 +31,7 @@ const IOFWDWriteRequest::ReqParam & IOFWDWriteRequest::decodeParam ()
    mem_starts_ = new char*[mem_count_];
    for (uint32_t i = 0; i < mem_count_; i++)
       mem_starts_[i] = new char[zoidfs::ZOIDFS_BUFFER_MAX];
-   mem_sizes_ = new uint32_t[mem_count_];
+   mem_sizes_ = new uint64_t[mem_count_];
    process (req_reader_, iofwdutil::xdr::XDRVarArray(mem_sizes_, mem_count_));
 
    process (req_reader_, file_count_);
@@ -58,6 +58,7 @@ iofwdutil::completion::CompletionID * IOFWDWriteRequest::recvBuffers ()
    size_t total_size = 0;
    for (size_t i = 0; i < mem_count_; i++)
       total_size += mem_sizes_[i];
+
    iofwdutil::completion::BMICompletionID * id = new iofwdutil::completion::BMICompletionID ();
    bmires_.postReceiveList (id, addr_, (void* const*)mem_starts_, (const bmi_size_t*)mem_sizes_,
                             mem_count_, total_size, BMI_PRE_ALLOC, tag_, 0);
