@@ -97,12 +97,20 @@ int IOFWDClient::read(const zoidfs_handle_t * handle /* in:ptr */,
    uint32_t * mem_sizes_ =  const_cast<uint32_t*>((const uint32_t*)mem_sizes);
    uint32_t file_count_ = file_count;
    uint64_t * file_starts_ = const_cast<uint64_t*>((const uint64_t*)file_starts);
+   uint32_t pipeline_size = (1024ULL * 1024 * 16);
+
+   uint64_t total_size = 0;
+   for (size_t i = 0; i < mem_count; i++)
+      total_size += mem_sizes_[i];
+   if (total_size < (1024ULL * 1024 * 16))
+      pipeline_size = 0; // disable pipelining
+
    return comm_.readOp (ZOIDFS_PROTO_READ,
          TSSTART << *handle << mem_count_ << XDRVarArray(mem_sizes_, mem_count_)
-                 << file_count_ << XDRVarArray(file_starts_, file_count_) << XDRVarArray(file_sizes, file_count_),
+                 << file_count_ << XDRVarArray(file_starts_, file_count_) << XDRVarArray(file_sizes, file_count_)
+                 << pipeline_size,
          TSSTART << XDRVarArray(file_sizes, file_count_),
-         mem_starts, mem_sizes, mem_count);
-   return 0; 
+         mem_starts, mem_sizes, mem_count, pipeline_size);
 }
 
 int IOFWDClient::write(const zoidfs_handle_t * handle /* in:ptr */,
@@ -181,7 +189,7 @@ int IOFWDClient::rename(const zoidfs_handle_t * from_parent_handle /* in:ptr:nul
                        from_full_path)
                  << FileSpecHelper (to_parent_handle, to_component_name,
                        to_full_path),
-          TSSTART << *from_parent_hint << *to_parent_hint); 
+         TSSTART << *from_parent_hint << *to_parent_hint); 
 }
 
 int IOFWDClient::link(const zoidfs_handle_t * from_parent_handle /* in:ptr:nullok */,

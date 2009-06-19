@@ -40,6 +40,8 @@ const IOFWDReadRequest::ReqParam & IOFWDReadRequest::decodeParam ()
    file_sizes_ = new uint64_t[file_count_];
    process (req_reader_, iofwdutil::xdr::XDRVarArray(file_sizes_, file_count_));
 
+   process (req_reader_, pipeline_size_);
+
    param_.handle = &handle_;
    param_.mem_count = mem_count_;
    param_.mem_starts = mem_starts_;
@@ -47,6 +49,7 @@ const IOFWDReadRequest::ReqParam & IOFWDReadRequest::decodeParam ()
    param_.file_count = file_count_;
    param_.file_starts = file_starts_;
    param_.file_sizes = file_sizes_;
+   param_.pipeline_size = pipeline_size_;
    return param_;
 }
 
@@ -61,10 +64,18 @@ iofwdutil::completion::CompletionID * IOFWDReadRequest::sendBuffers ()
    return id;
 }
 
+iofwdutil::completion::CompletionID * IOFWDReadRequest::sendPipelineBuffer(char *buf, size_t size)
+{
+   iofwdutil::completion::BMICompletionID * id = new iofwdutil::completion::BMICompletionID ();
+   bmires_.postSend (id, addr_, buf, size, BMI_PRE_ALLOC, tag_, 0);
+   return id;
+}
+
+
 iofwdutil::completion::CompletionID * IOFWDReadRequest::reply()
 {
-  return simpleReply (TSSTART << (int32_t) getReturnCode ()
-            << iofwdutil::xdr::XDRVarArray(file_sizes_, file_count_));
+   return simpleReply (TSSTART << (int32_t) getReturnCode ()
+             << iofwdutil::xdr::XDRVarArray(file_sizes_, file_count_));
 }
 
 //===========================================================================

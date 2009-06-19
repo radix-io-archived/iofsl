@@ -28,6 +28,7 @@ MODULE_SOURCES_iofwdlib := \
    \
    Task.cpp \
    WriteTask.cpp \
+   ReadTask.cpp \
    \
    Request.cpp \
    DefRequestHandler.cpp \

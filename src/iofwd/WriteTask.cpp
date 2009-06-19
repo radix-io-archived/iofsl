@@ -56,7 +56,7 @@ struct RetrievedBuffer
 }
 
 void WriteTask::runNormalMode(const WriteRequest::ReqParam & p)
-a{
+{
    std::auto_ptr<iofwdutil::completion::CompletionID> recv_id (request_.recvBuffers ());
    recv_id->wait ();
 
