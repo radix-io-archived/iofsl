@@ -31,7 +31,10 @@ public:
 
 private:
    void runNormalMode(const ReadRequest::ReqParam & p);
+
    void runPipelineMode(const ReadRequest::ReqParam & p);
+   iofwdutil::completion::CompletionID * execPipelineIO(const ReadRequest::ReqParam & p,
+      char * p_buf, uint64_t p_offset, uint64_t p_size);
 }; 
 
 }

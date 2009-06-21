@@ -84,6 +84,75 @@ void ReadTask::runNormalMode(const ReadRequest::ReqParam & p)
    reply_id->wait ();
 }
 
+iofwdutil::completion::CompletionID * ReadTask::execPipelineIO(const ReadRequest::ReqParam & p,
+   char * p_buf, uint64_t p_offset, uint64_t p_size)
+{
+   const uint64_t * file_starts = p.file_starts;
+   const uint64_t * file_sizes = p.file_sizes;
+
+   uint32_t st_file, en_file;
+   uint64_t st_fileofs, en_fileofs;
+   {
+     bool st_ok = false;
+     bool en_ok = false;
+     uint32_t cur_file = 0;
+     uint64_t cur_ofs = 0;
+     while (!st_ok && !en_ok) {
+       const uint64_t st = p_offset;
+       const uint64_t en = p_offset + p_size;
+       assert(cur_file < p.file_count);
+       if (st < cur_ofs + file_sizes[cur_file]) {
+         st_file = cur_file;
+         st_fileofs = st - cur_ofs;
+         st_ok = true;
+       }
+       if (en <= cur_ofs + file_sizes[cur_file]) {
+         en_file = cur_file;
+         en_fileofs = en - cur_ofs;
+         en_ok = true;
+       }
+       cur_ofs += file_sizes[cur_file];
+       cur_file++;
+     }
+   }
+
+   size_t p_file_count = en_file + 1 - st_file;
+   uint64_t * p_file_starts = new uint64_t[p_file_count];
+   uint64_t * p_file_sizes = new uint64_t[p_file_count];
+   if (st_file == en_file) {
+      p_file_starts[0] = file_starts[0] + st_fileofs;
+      assert(en_fileofs > st_fileofs);
+      p_file_sizes[0] = en_fileofs - st_fileofs;
+   } else {
+      for (uint32_t i = st_file; i <= en_file; i++) {
+         if (i == st_file) {
+            p_file_starts[i] = file_starts[i] + st_fileofs;
+            p_file_sizes[i] = file_sizes[i] - st_fileofs;
+         } else if (i == en_file) {
+            p_file_starts[i] = file_starts[i];
+            p_file_sizes[i] = en_fileofs;
+         } else {
+            p_file_starts[i] = file_starts[i];
+            p_file_sizes[i] = file_sizes[i];
+         }
+      }
+   }
+
+   // TODO: issue async I/O
+   void * mem_starts[1];
+   size_t mem_sizes[1];
+   mem_starts[0] = p_buf;
+   mem_sizes[0] = p_size;
+   int ret = api_->read (p.handle,
+                         1, mem_starts, mem_sizes,
+                         p_file_count, p_file_starts, p_file_sizes);
+   request_.setReturnCode (ret);
+
+   delete[] p_file_starts;
+   delete[] p_file_sizes;
+   return (iofwdutil::completion::CompletionID*)1; // TODO fixme
+}
+
 void ReadTask::runPipelineMode(const ReadRequest::ReqParam & p)
 {
    // TODO: aware of system-wide memory consumption
@@ -121,7 +190,7 @@ void ReadTask::runPipelineMode(const ReadRequest::ReqParam & p)
       if (alloc.hasFreeBuf()) {
          p_siz = std::min(pipeline_bytes, total_bytes - cur_read_bytes);
          p_buf = alloc.getBuf();
-         io_id = (iofwdutil::completion::CompletionID *)1; // TODO issue read
+         io_id = execPipelineIO(p, p_buf, cur_read_bytes, p_siz);
       }
 
       // check send requests completion in tx_q
