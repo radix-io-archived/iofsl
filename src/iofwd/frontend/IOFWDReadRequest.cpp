@@ -60,14 +60,14 @@ iofwdutil::completion::CompletionID * IOFWDReadRequest::sendBuffers ()
       total_size += mem_sizes_[i];
    iofwdutil::completion::BMICompletionID * id = new iofwdutil::completion::BMICompletionID ();
    bmires_.postSendList (id, addr_, (const void**)mem_starts_, (const bmi_size_t*)mem_sizes_,
-                         mem_count_, total_size, BMI_PRE_ALLOC, tag_, 0);
+                         mem_count_, total_size, BMI_EXT_ALLOC, tag_, 0);
    return id;
 }
 
 iofwdutil::completion::CompletionID * IOFWDReadRequest::sendPipelineBuffer(char *buf, size_t size)
 {
    iofwdutil::completion::BMICompletionID * id = new iofwdutil::completion::BMICompletionID ();
-   bmires_.postSend (id, addr_, buf, size, BMI_PRE_ALLOC, tag_, 0);
+   bmires_.postSend (id, addr_, buf, size, BMI_EXT_ALLOC, tag_, 0);
    return id;
 }
 

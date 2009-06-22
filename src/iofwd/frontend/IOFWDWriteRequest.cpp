@@ -61,14 +61,14 @@ iofwdutil::completion::CompletionID * IOFWDWriteRequest::recvBuffers ()
 
    iofwdutil::completion::BMICompletionID * id = new iofwdutil::completion::BMICompletionID ();
    bmires_.postReceiveList (id, addr_, (void* const*)mem_starts_, (const bmi_size_t*)mem_sizes_,
-                            mem_count_, total_size, BMI_PRE_ALLOC, tag_, 0);
+                            mem_count_, total_size, BMI_EXT_ALLOC, tag_, 0);
    return id;
 }
 
 iofwdutil::completion::CompletionID * IOFWDWriteRequest::recvPipelineBuffer(char *buf, size_t size)
 {
    iofwdutil::completion::BMICompletionID * id = new iofwdutil::completion::BMICompletionID ();
-   bmires_.postReceive (id, addr_, buf, size, BMI_PRE_ALLOC, tag_, 0);
+   bmires_.postReceive (id, addr_, buf, size, BMI_EXT_ALLOC, tag_, 0);
    return id;
 }
 
