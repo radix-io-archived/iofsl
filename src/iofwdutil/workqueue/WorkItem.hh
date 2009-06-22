@@ -54,7 +54,7 @@ private:
    void waitCompleted ()
    {
       boost::mutex::scoped_lock l (lock_);
-      while (!hasCompleted())
+      while (!workitem_completed_)
          ready_.wait(l);
    }
 
