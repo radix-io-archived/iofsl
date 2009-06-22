@@ -15,7 +15,7 @@ class SynchronousWorkQueue : public WorkQueueBase
 {
 public:
 
-   virtual void queueWork (WorkItem * work); 
+   virtual iofwdutil::completion::CompletionID * queueWork (WorkItem * work); 
 
    virtual ~SynchronousWorkQueue (); 
 };

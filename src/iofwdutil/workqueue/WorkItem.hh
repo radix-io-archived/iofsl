@@ -27,7 +27,7 @@ public:
    virtual ~WorkItem (); 
 
 protected:
-   friend class WorkQueueBase; 
+   friend class WorkQueueBase;
 
    CompletionTracker::ID getID () const
    { return id_; }
@@ -36,13 +36,33 @@ protected:
    { id_ = id; }
 
 private:
+   friend class CompletionTracker;
+
+   void setCompleted ()
+   {
+      boost::mutex::scoped_lock l (lock_);
+      workitem_completed_ = true;
+      ready_.notify_one();
+   }
 
    bool hasCompleted () const
-   { return workitem_completed_; }
+   {
+      boost::mutex::scoped_lock l (lock_);
+      return workitem_completed_;
+   }
+
+   void waitCompleted ()
+   {
+      boost::mutex::scoped_lock l (lock_);
+      while (!hasCompleted())
+         ready_.wait(l);
+   }
 
 private:
    
-   bool workitem_completed_; 
+   bool workitem_completed_;
+   boost::condition_variable ready_;
+   mutable boost::mutex lock_;
 
    CompletionTracker::ID id_; 
 

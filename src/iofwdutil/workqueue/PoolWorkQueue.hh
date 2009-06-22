@@ -17,7 +17,7 @@ class PoolWorkQueue : public WorkQueueBase
 public:
    PoolWorkQueue (unsigned int min = 0, unsigned int max = 6);
 
-   virtual void queueWork (WorkItem * item); 
+   virtual iofwdutil::completion::CompletionID * queueWork (WorkItem * item); 
 
    virtual ~PoolWorkQueue (); 
 

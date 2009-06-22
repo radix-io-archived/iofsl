@@ -1,5 +1,6 @@
 #include "CompletionTracker.hh"
 #include "iofwdutil/assert.hh"
+#include "iofwdutil/workqueue/WorkItem.hh"
 
 namespace iofwdutil
 {
@@ -23,14 +24,15 @@ CompletionTracker::ID CompletionTracker::createID (value_type val)
 }
 
 
-/*bool CompletionTracker::test (ID id, value & val)
+bool CompletionTracker::test (ID id)
 {
-
+   return id->hasCompleted();
 }
 
-void CompletionTracker::wait (ID id, value & val)
+void CompletionTracker::wait (ID id)
 {
-}*/
+   id->waitCompleted ();
+}
 
 bool CompletionTracker::isBusy () const
 {
@@ -45,8 +47,9 @@ void CompletionTracker::completed (ID id)
    ALWAYS_ASSERT(pending_); 
    --pending_; 
 
-   ASSERT(active_.count (id)); 
+   ASSERT(active_.count (id));
    completed_.push_back (id); 
+   id->setCompleted ();
    active_.erase (id); 
 
    // notify threads waiting on completion

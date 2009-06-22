@@ -2,6 +2,7 @@
 #include <boost/bind.hpp>
 #include "PoolWorkQueue.hh"
 #include "WorkItem.hh"
+#include "iofwdutil/completion/WorkQueueCompletionID.hh"
 
 using namespace boost; 
 using namespace boost::lambda; 
@@ -127,11 +128,15 @@ void PoolWorkQueue::createThread ()
    t.detach (); 
 }
 
-void PoolWorkQueue::queueWork (WorkItem * item)
+iofwdutil::completion::CompletionID * PoolWorkQueue::queueWork (WorkItem * item)
 {
-         ZLOG_INFO(log_,format ("Adding work to queue (item %p)") % item); 
+   ZLOG_INFO(log_,format ("Adding work to queue (item %p)") % item); 
    newItem (item); 
-   
+  
+   iofwdutil::completion::WorkQueueCompletionID * id = new iofwdutil::completion::WorkQueueCompletionID ();
+   id->tracker_ = &tracker_;
+   id->tracker_id_ = item;
+ 
    boost::mutex::scoped_lock l (worklock_); 
 
    worklist_.push_back (item); 
@@ -148,6 +153,7 @@ void PoolWorkQueue::queueWork (WorkItem * item)
       l.unlock (); 
       workready_.notify_one (); 
    }
+   return id;
 }
 
 //===========================================================================

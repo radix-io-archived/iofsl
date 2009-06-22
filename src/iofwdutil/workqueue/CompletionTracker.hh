@@ -6,6 +6,11 @@
 
 namespace iofwdutil
 {
+   namespace completion
+   {
+      class WorkQueueCompletionID;
+   }
+
    namespace workqueue
    {
 //=======================================================================
@@ -25,7 +30,8 @@ protected:
    typedef value_type ID;
 
    friend class WorkItem; 
-   friend class WorkQueueBase; 
+   friend class WorkQueueBase;
+   friend class iofwdutil::completion::WorkQueueCompletionID;
 
 public:
    CompletionTracker (); 
@@ -33,13 +39,13 @@ public:
    ID createID (value_type val);
 
 
-   /*/// Test if the given ID has completed
+   /// Test if the given ID has completed
    /// If it completed, set val to the operation value
-   bool test (ID id, value & val); 
+   bool test (ID id); 
 
    /// Wait until the given operation has completed
    /// Return value
-   void wait (ID id, value & val);  */
+   void wait (ID id);
 
 
    /// Called when the operation completed
