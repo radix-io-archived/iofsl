@@ -34,5 +34,4 @@ MODULE_SOURCES_iofwdlib := \
    DefRequestHandler.cpp \
    DefRequestItem.cpp \
    ThreadTasks.cpp \
-   RequestScheduler.cpp \
    $(iofwd_frontend)
