@@ -43,6 +43,7 @@ DefRequestHandler::~DefRequestHandler ()
    workqueue_normal_->waitAll (items); 
    for_each (items.begin(), items.end(), bind(delete_ptr(), _1)); 
 
+   items.clear();
    ZLOG_INFO (log_, "Waiting for fast workqueue to complete all work..."); 
    workqueue_fast_->waitAll (items); 
    for_each (items.begin(), items.end(), bind(delete_ptr(), _1));
