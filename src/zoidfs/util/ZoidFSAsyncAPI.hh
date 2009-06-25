@@ -31,9 +31,9 @@ public:
       if (api_ == NULL)
          api_ = &fallback_;
       if (q_ == NULL)
-         q_ = new iofwdutil::workqueue::PoolWorkQueue(0, 100);
+         q_ = new iofwdutil::workqueue::PoolWorkQueue (0, 100);
    }
-   ~ZoidFSAsyncAPI() {}
+   ~ZoidFSAsyncAPI();
 
    iofwdutil::completion::CompletionID * async_write(
       const zoidfs_handle_t * handle,

@@ -20,7 +20,7 @@ struct ReadBuffer
   iofwdutil::completion::CompletionID * tx_id;
 
   // for async request
-  void ** mem_starts;
+  char ** mem_starts;
   size_t * mem_sizes;
   uint64_t * file_starts;
   uint64_t * file_sizes;
@@ -157,7 +157,7 @@ iofwdutil::completion::CompletionID * ReadTask::execPipelineIO(const ReadRequest
    }
 
    // issue async I/O
-   void ** mem_starts = new void*[1];
+   char ** mem_starts = new char*[1];
    size_t * mem_sizes = new size_t[1];
    mem_starts[0] = p_buf;
    mem_sizes[0] = p_size;
@@ -219,7 +219,7 @@ void ReadTask::runPipelineMode(const ReadRequest::ReqParam & p)
          iofwdutil::completion::CompletionID * tx_id = b.tx_id;
          if (tx_id->test(1)) {
             assert(tx_id != NULL);
-            delete tx_id;
+            releaseReadBuffer(b);
             alloc.putBuf(b.buf);
             it = tx_q.erase(it);
          } else {
@@ -246,8 +246,7 @@ void ReadTask::runPipelineMode(const ReadRequest::ReqParam & p)
       assert(b.buf != NULL);
       io_q.pop_front();
 
-      iofwdutil::completion::CompletionID * tx_id = request_.sendPipelineBuffer(b.buf, b.siz);
-      b.tx_id = tx_id;
+      b.tx_id = request_.sendPipelineBuffer(b.buf, b.siz);
       tx_q.push_back(b);
    }
 
@@ -259,6 +258,7 @@ void ReadTask::runPipelineMode(const ReadRequest::ReqParam & p)
       iofwdutil::completion::CompletionID * tx_id = b.tx_id;
       assert(tx_id != NULL);
       tx_id->wait();
+      releaseReadBuffer(b);
       alloc.putBuf(b.buf);
    }
 

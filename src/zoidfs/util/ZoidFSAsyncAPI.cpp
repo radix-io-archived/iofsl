@@ -1,6 +1,8 @@
 #include "ZoidFSAsyncAPI.hh"
 
 #include <boost/format.hpp>
+#include <boost/lambda/bind.hpp>
+#include <boost/lambda/construct.hpp>
 
 #include "zoidfs-util.hh"
 #include "ZoidFSAPI.hh"
@@ -9,7 +11,8 @@
 #include "iofwdutil/workqueue/WorkQueue.hh"
 #include "iofwdutil/tools.hh"
 
-using namespace boost; 
+using namespace boost;
+using namespace boost::lambda;
 
 namespace zoidfs
 {
@@ -79,6 +82,16 @@ private:
    uint64_t * file_sizes_;   
 };
 
+}
+
+ZoidFSAsyncAPI::~ZoidFSAsyncAPI()
+{
+   if (q_ != NULL) {
+      std::vector<iofwdutil::workqueue::WorkItem *> items; 
+      q_->waitAll (items);
+      for_each (items.begin(), items.end(), bind(delete_ptr(), _1)); 
+      delete q_;
+   }
 }
 
 iofwdutil::completion::CompletionID * ZoidFSAsyncAPI::async_write(

@@ -20,7 +20,7 @@ struct RetrievedBuffer
   iofwdutil::completion::CompletionID * io_id;
 
   // for async request
-  const void ** mem_starts;
+  const char ** mem_starts;
   size_t * mem_sizes;
   uint64_t * file_starts;
   uint64_t * file_sizes;
@@ -156,7 +156,7 @@ iofwdutil::completion::CompletionID * WriteTask::execPipelineIO(const WriteReque
    }
 
    // issue async I/O
-   const void ** mem_starts = new const void*[1];
+   const char ** mem_starts = new const char*[1];
    size_t * mem_sizes = new size_t[1];
    mem_starts[0] = p_buf;
    mem_sizes[0] = p_size;

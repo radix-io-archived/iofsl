@@ -63,10 +63,12 @@ void DefRequestHandler::handleRequest (int count, Request ** reqs)
       // TODO: workqueues are supposed to return some handle so that we can
       // test which requests completed. That way that requesthandler can
       // reschedule requests and free completed requests
+      iofwdutil::completion::CompletionID * id;
       if (task->isFast())
-         workqueue_fast_->queueWork (task);
+         id = workqueue_fast_->queueWork (task);
       else
-         workqueue_normal_->queueWork (task); 
+         id = workqueue_normal_->queueWork (task);
+      delete id;
    }
 
    // Cleanup completed requests

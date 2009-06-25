@@ -25,6 +25,7 @@ public:
       : tracker_(NULL)
    {
    }
+   virtual ~WorkQueueCompletionID() {}
    
    virtual void wait ();
 
