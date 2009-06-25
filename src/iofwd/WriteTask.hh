@@ -8,6 +8,8 @@
 namespace iofwd
 {
 
+struct RetrievedBuffer;
+
 class WriteTask : public TaskHelper<WriteRequest>
 {
 public:
@@ -34,7 +36,7 @@ private:
 
    void runPipelineMode(const WriteRequest::ReqParam & p);
    iofwdutil::completion::CompletionID * execPipelineIO(const WriteRequest::ReqParam & p,
-      const char * p_buf, uint64_t p_offset, uint64_t p_size);
+      RetrievedBuffer * b);
 };
 
 }

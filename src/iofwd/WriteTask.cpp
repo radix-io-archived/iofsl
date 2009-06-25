@@ -1,5 +1,6 @@
 #include "WriteTask.hh"
 #include "zoidfs/util/ZoidFSAPI.hh"
+#include "zoidfs/util/ZoidFSAsyncAPI.hh"
 #include "zoidfs/zoidfs-proto.h"
 
 #include <vector>
@@ -11,7 +12,29 @@ namespace iofwd
 {
 //===========================================================================
 
+struct RetrievedBuffer
+{
+  char *buf;
+  uint64_t siz;
+  uint64_t off;
+  iofwdutil::completion::CompletionID * io_id;
+
+  // for async request
+  const void ** mem_starts;
+  size_t * mem_sizes;
+  uint64_t * file_starts;
+  uint64_t * file_sizes;
+};
+
 namespace {
+void releaseRetrievedBuffer(RetrievedBuffer& b)
+{
+   delete b.io_id;
+   delete[] b.mem_starts;
+   delete[] b.mem_sizes;
+   delete[] b.file_starts;
+   delete[] b.file_sizes;
+}
 
 class BufferPool
 {
@@ -44,15 +67,6 @@ private:
   size_t num_;
   vector<char*> free_bufs_;
 };
-
-struct RetrievedBuffer
-{
-  char *buf;
-  uint64_t siz;
-  uint64_t off;
-  iofwdutil::completion::CompletionID * io_id;
-};
-
 }
 
 void WriteTask::runNormalMode(const WriteRequest::ReqParam & p)
@@ -85,8 +99,11 @@ void WriteTask::runNormalMode(const WriteRequest::ReqParam & p)
 }
 
 iofwdutil::completion::CompletionID * WriteTask::execPipelineIO(const WriteRequest::ReqParam & p,
-   const char * p_buf, uint64_t p_offset, uint64_t p_size)
+   RetrievedBuffer * b)
 {
+   const char * p_buf = b->buf;
+   const uint64_t p_offset = b->off;
+   const uint64_t p_size = b->siz;
    const uint64_t * file_starts = p.file_starts;
    const uint64_t * file_sizes = p.file_sizes;
 
@@ -138,18 +155,21 @@ iofwdutil::completion::CompletionID * WriteTask::execPipelineIO(const WriteReque
       }
    }
 
-   // TODO: issue async I/O
-   const void * mem_starts[1];
-   size_t mem_sizes[1];
+   // issue async I/O
+   const void ** mem_starts = new const void*[1];
+   size_t * mem_sizes = new size_t[1];
    mem_starts[0] = p_buf;
    mem_sizes[0] = p_size;
-   int ret = api_->write (p.handle,
-                          1, mem_starts, mem_sizes,
-                          p_file_count, p_file_starts, p_file_sizes);
+   iofwdutil::completion::CompletionID * id = async_api_->async_write (
+      p.handle, 1, (const void**)mem_starts, mem_sizes,
+      p_file_count, p_file_starts, p_file_sizes);
 
-   delete[] p_file_starts;
-   delete[] p_file_sizes;
-   return NULL;
+   b->mem_starts = mem_starts;
+   b->mem_sizes = mem_sizes;
+   b->file_starts = p_file_starts;
+   b->file_sizes = p_file_sizes;
+
+   return id;
 }
 
 void WriteTask::runPipelineMode(const WriteRequest::ReqParam & p)
@@ -180,7 +200,7 @@ void WriteTask::runPipelineMode(const WriteRequest::ReqParam & p)
        assert(b.buf != NULL);
        rx_q.pop_front();
 
-       b.io_id = execPipelineIO(p, b.buf, b.off, b.siz);
+       b.io_id = execPipelineIO(p, &b);
        io_q.push_back(b);
      }
 
@@ -194,9 +214,9 @@ void WriteTask::runPipelineMode(const WriteRequest::ReqParam & p)
      for (deque<RetrievedBuffer>::iterator it = io_q.begin(); it != io_q.end();) {
        RetrievedBuffer& b = *it;
        iofwdutil::completion::CompletionID * io_id = b.io_id;
-       int done = 1; // TODO: io_id->test();
-       if (done) {
-         if (io_id) delete io_id; // TODO: no null check
+       if (io_id->test(1)) {
+         assert(io_id != NULL);
+         releaseRetrievedBuffer(b);
          alloc.putBuf(b.buf);
          it = io_q.erase(it);
        } else {
@@ -207,13 +227,14 @@ void WriteTask::runPipelineMode(const WriteRequest::ReqParam & p)
      // wait for retrieving buffer
      if (rx_id != NULL) {
        rx_id->wait();
+       delete rx_id;
+
        RetrievedBuffer b;
        b.buf = p_buf;
        b.siz = p_siz;
        b.off = cur_recv_bytes;
        b.io_id = NULL;
        rx_q.push_back(b);
-       delete rx_id;
 
        // advance to retrieve the next pipeline
        cur_recv_bytes += p_siz;
@@ -226,18 +247,19 @@ void WriteTask::runPipelineMode(const WriteRequest::ReqParam & p)
      assert(b.buf != NULL);
      rx_q.pop_front();
      
-     b.io_id = execPipelineIO(p, b.buf, b.off, b.siz);
+     b.io_id = execPipelineIO(p, &b);
      io_q.push_back(b);
    }
 
    // wait remaining I/O requests
    while (!io_q.empty()) {
-     RetrievedBuffer& b = io_q.front();
+     RetrievedBuffer b = io_q.front();
      io_q.pop_front();
 
      iofwdutil::completion::CompletionID * io_id = b.io_id;
-     if (io_id) // TODO: no null check
-       io_id->wait();
+     assert(io_id != NULL);
+     io_id->wait();
+     releaseRetrievedBuffer(b);
      alloc.putBuf(b.buf);
    }
 

@@ -56,7 +56,8 @@ protected:
    std::auto_ptr<ThreadTasks> taskfactory_; 
 
    /// API
-   zoidfs::LogAPI api_; 
+   zoidfs::LogAPI api_;
+   zoidfs::ZoidFSAsyncAPI * async_api_;
 };
 
 

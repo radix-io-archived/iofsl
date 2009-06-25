@@ -61,6 +61,7 @@ MODULE_SOURCES_zoidfsutil := $(addprefix util/, \
 	LogAPI.cpp \
 	zoidfs-util.cpp \
 	NullAPI.cpp \
+        ZoidFSAsyncAPI.cpp \
     )
 ADDINTLIBS_zoidfsutil := iofwdutil zoidfsdispatch
 

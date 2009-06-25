@@ -1,5 +1,6 @@
 #include "ReadTask.hh"
 #include "zoidfs/util/ZoidFSAPI.hh"
+#include "zoidfs/util/ZoidFSAsyncAPI.hh"
 #include "zoidfs/zoidfs-proto.h"
 
 #include <vector>
@@ -11,7 +12,29 @@ namespace iofwd
 {
 //===========================================================================
 
+struct ReadBuffer
+{
+  char *buf;
+  uint64_t siz;
+  uint64_t off;
+  iofwdutil::completion::CompletionID * tx_id;
+
+  // for async request
+  void ** mem_starts;
+  size_t * mem_sizes;
+  uint64_t * file_starts;
+  uint64_t * file_sizes;
+};
+
 namespace {
+void releaseReadBuffer(ReadBuffer& b)
+{
+  delete b.tx_id;
+  delete[] b.mem_starts;
+  delete[] b.mem_sizes;
+  delete[] b.file_starts;
+  delete[] b.file_sizes;
+}
 
 class BufferPool
 {
@@ -43,14 +66,6 @@ private:
   size_t size_;
   size_t num_;
   vector<char*> free_bufs_;
-};
-
-struct ReadBuffer
-{
-  char *buf;
-  uint64_t siz;
-  uint64_t off;
-  iofwdutil::completion::CompletionID * tx_id;
 };
 
 }
@@ -85,8 +100,11 @@ void ReadTask::runNormalMode(const ReadRequest::ReqParam & p)
 }
 
 iofwdutil::completion::CompletionID * ReadTask::execPipelineIO(const ReadRequest::ReqParam & p,
-   char * p_buf, uint64_t p_offset, uint64_t p_size)
+   ReadBuffer * b)
 {
+   char * p_buf = b->buf;
+   const uint64_t p_offset = b->off;
+   const uint64_t p_size = b->siz;
    const uint64_t * file_starts = p.file_starts;
    const uint64_t * file_sizes = p.file_sizes;
 
@@ -138,19 +156,21 @@ iofwdutil::completion::CompletionID * ReadTask::execPipelineIO(const ReadRequest
       }
    }
 
-   // TODO: issue async I/O
-   void * mem_starts[1];
-   size_t mem_sizes[1];
+   // issue async I/O
+   void ** mem_starts = new void*[1];
+   size_t * mem_sizes = new size_t[1];
    mem_starts[0] = p_buf;
    mem_sizes[0] = p_size;
-   int ret = api_->read (p.handle,
-                         1, mem_starts, mem_sizes,
-                         p_file_count, p_file_starts, p_file_sizes);
-   request_.setReturnCode (ret);
+   iofwdutil::completion::CompletionID * id = async_api_->async_read (
+      p.handle, 1, (void**)mem_starts, mem_sizes,
+      p_file_count, p_file_starts, p_file_sizes);
 
-   delete[] p_file_starts;
-   delete[] p_file_sizes;
-   return (iofwdutil::completion::CompletionID*)1; // TODO fixme
+   b->mem_starts = mem_starts;
+   b->mem_sizes = mem_sizes;
+   b->file_starts = p_file_starts;
+   b->file_sizes = p_file_sizes;
+
+   return id;
 }
 
 void ReadTask::runPipelineMode(const ReadRequest::ReqParam & p)
@@ -171,8 +191,9 @@ void ReadTask::runPipelineMode(const ReadRequest::ReqParam & p)
 
    // iterate until read all regions
    while (cur_read_bytes < total_bytes) {
-      uint64_t p_siz = 0;
-      char * p_buf = NULL;
+      ReadBuffer p_b;
+      p_b.off = cur_read_bytes;
+      p_b.siz = std::min(pipeline_bytes, total_bytes - cur_read_bytes);;
       iofwdutil::completion::CompletionID * io_id = NULL;
      
       // issue send requests for already read buffers in tx_q
@@ -188,16 +209,15 @@ void ReadTask::runPipelineMode(const ReadRequest::ReqParam & p)
 
       // issue I/O requests for next pipeline buffer
       if (alloc.hasFreeBuf()) {
-         p_siz = std::min(pipeline_bytes, total_bytes - cur_read_bytes);
-         p_buf = alloc.getBuf();
-         io_id = execPipelineIO(p, p_buf, cur_read_bytes, p_siz);
+         p_b.buf = alloc.getBuf();
+         io_id = execPipelineIO(p, &p_b);
       }
 
       // check send requests completion in tx_q
       for (deque<ReadBuffer>::iterator it = tx_q.begin(); it != tx_q.end();) {
          ReadBuffer& b = *it;
          iofwdutil::completion::CompletionID * tx_id = b.tx_id;
-         if (tx_id->test(10)) { // TODO: 10 is ok?
+         if (tx_id->test(1)) {
             assert(tx_id != NULL);
             delete tx_id;
             alloc.putBuf(b.buf);
@@ -209,17 +229,15 @@ void ReadTask::runPipelineMode(const ReadRequest::ReqParam & p)
 
       // wait for read buffer
       if (io_id != NULL) {
-         // TODO: io_id->wait();
-         ReadBuffer b;
-         b.buf = p_buf;
-         b.siz = p_siz;
-         b.off = cur_read_bytes;
-         b.tx_id = NULL;
-         io_q.push_back(b);
-      }
+         io_id->wait();
+         delete io_id;
 
-      // advance to read the next pipeline
-      cur_read_bytes += p_siz;
+         p_b.tx_id = NULL;
+         io_q.push_back(p_b);
+
+         // advance to read the next pipeline
+         cur_read_bytes += p_b.siz;
+      }
    }
 
    // issue reamining I/O requests
@@ -235,10 +253,11 @@ void ReadTask::runPipelineMode(const ReadRequest::ReqParam & p)
 
    // wait remaining send requests
    while (!tx_q.empty()) {
-      ReadBuffer& b = tx_q.front();
+      ReadBuffer b = tx_q.front();
       tx_q.pop_front();
 
       iofwdutil::completion::CompletionID * tx_id = b.tx_id;
+      assert(tx_id != NULL);
       tx_id->wait();
       alloc.putBuf(b.buf);
    }
