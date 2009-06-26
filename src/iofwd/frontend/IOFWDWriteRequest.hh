@@ -18,8 +18,9 @@ public:
    IOFWDWriteRequest (iofwdutil::bmi::BMIContext & bmi, int opid, const BMI_unexpected_info & info,
          iofwdutil::completion::BMIResource & res)
      : IOFWDRequest (bmi, info,res), WriteRequest (opid),
-       mem_starts_(NULL), mem_sizes_(NULL),
-       file_starts_(NULL), file_sizes_(NULL)
+       mem_count_ (0), mem_ (NULL), mem_starts_(NULL), mem_sizes_(NULL),
+       file_count_ (0), file_starts_(NULL), file_sizes_(NULL),
+       pipeline_size_ (0)
    {
    }
    virtual ~IOFWDWriteRequest ();
@@ -39,6 +40,7 @@ private:
 
    zoidfs::zoidfs_handle_t handle_;
    uint32_t mem_count_;
+   char * mem_;
    char ** mem_starts_;
    uint64_t * mem_sizes_;
    uint32_t file_count_;

@@ -157,10 +157,14 @@ iofwdutil::completion::CompletionID * ReadTask::execPipelineIO(const ReadRequest
    }
 
    // issue async I/O
-   char ** mem_starts = new char*[1];
-   size_t * mem_sizes = new size_t[1];
-   mem_starts[0] = p_buf;
-   mem_sizes[0] = p_size;
+   uint64_t cur = 0;
+   char ** mem_starts = new char*[p_file_count];
+   size_t * mem_sizes = new size_t[p_file_count];
+   for (size_t i = 0; i < p_file_count; i++) {
+     mem_starts[i] = p_buf + cur;
+     mem_sizes[i] = p_file_sizes[i];
+     cur += p_file_sizes[i];
+   }
    iofwdutil::completion::CompletionID * id = async_api_->async_read (
       p.handle, 1, (void**)mem_starts, mem_sizes,
       p_file_count, p_file_starts, p_file_sizes);
