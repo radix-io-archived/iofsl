@@ -9,6 +9,7 @@ namespace iofwdutil
 //===========================================================================
 
 BMIResource::BMIResource ()
+   : outstanding_ (0)
 {
    checkBMI (BMI_open_context (&bmictx_)); 
 }
