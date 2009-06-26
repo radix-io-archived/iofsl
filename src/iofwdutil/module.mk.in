@@ -2,6 +2,7 @@ MODULE_ARCHIVES = iofwdutil
 
 COMPLETIONSOURCES := $(addprefix completion/, \
    CompletionID.cpp \
+   CompositeCompletionID.cpp \
    BMICompletionID.cpp \
    WorkQueueCompletionID.cpp \
    TimerResource.cpp \
