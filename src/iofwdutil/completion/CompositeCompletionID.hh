@@ -13,16 +13,17 @@ namespace iofwdutil
    {
 //===========================================================================
 
-class CompositeCompletionID : public CompletionID 
+class CompositeCompletionID : public CompletionID
 {
 public:
 
-   CompositeCompletionID (unsigned int num_ids = 0)
+   CompositeCompletionID (unsigned int num_ids)
       : num_ids_(num_ids)
    {
+      assert(num_ids_ > 0);
    }
-   virtual ~CompositeCompletionID() {}
-   
+   virtual ~CompositeCompletionID();
+
    virtual void wait ();
 
    virtual bool test (unsigned int maxms);
@@ -34,7 +35,7 @@ protected:
 
    std::deque<CompletionID*> ids_;
    std::deque<CompletionID*> completed_ids_;
-  
+
    mutable boost::mutex lock_;
    boost::condition_variable ready_;
 };

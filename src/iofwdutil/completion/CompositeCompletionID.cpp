@@ -8,40 +8,37 @@ namespace iofwdutil
    namespace completion
    {
 
+CompositeCompletionID::~CompositeCompletionID()
+{
+   
+}
+
 void CompositeCompletionID::wait ()
 {
    boost::mutex::scoped_lock lock(lock_);
-   if (num_ids_ != 0) {
-      while (completed_ids_.size() < num_ids_) {
-         while (ids_.empty())
-            ready_.wait(lock);
-         CompletionID * id = ids_.front();
-         ids_.pop_front();
-         id->wait();
-         completed_ids_.push_back(id);
-      }
-   } else {
-      for (deque<CompletionID*>::iterator it = ids_.begin(); it != ids_.end(); ++it) {
-         CompletionID * id = *it;
-         id->wait();
-      }
+   while (completed_ids_.size() < num_ids_) {
+      while (ids_.empty())
+         ready_.wait(lock);
+      CompletionID * id = ids_.front();
+      ids_.pop_front();
+      id->wait();
+      completed_ids_.push_back(id);
    }
 }
 
 bool CompositeCompletionID::test (unsigned int maxms)
 {
    boost::mutex::scoped_lock lock(lock_);
-   if (num_ids_ != 0 && num_ids_ == completed_ids_.size())
-      return true;
-   for (deque<CompletionID*>::iterator it = ids_.begin(); it != ids_.end(); ++it) {
+   for (deque<CompletionID*>::iterator it = ids_.begin(); it != ids_.end();) {
       CompletionID * id = *it;
       if (id->test (maxms)) {
-         ids_.erase(it);
+         it = ids_.erase(it);
          completed_ids_.push_back(id);
-         return true;
+      } else {
+         ++ it;
       }
    }
-   return false;
+   return completed_ids_.size() == num_ids_;
 }
 
 void CompositeCompletionID::addCompletionID (CompletionID * id)

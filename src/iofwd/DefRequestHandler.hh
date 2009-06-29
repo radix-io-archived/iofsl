@@ -10,14 +10,22 @@
 
 namespace iofwdutil
 {
-
    namespace workqueue
    {
       // forward
       class WorkQueue; 
-
       class WorkItem;
    }
+}
+
+namespace zoidfs
+{
+   class ZoidFSAsyncAPI;
+}
+
+namespace iofwd
+{
+   class RequestScheduler;
 }
 
 namespace iofwd
@@ -58,8 +66,10 @@ protected:
    /// API
    zoidfs::LogAPI api_;
    zoidfs::ZoidFSAsyncAPI * async_api_;
-};
 
+   /// Scheduler
+   RequestScheduler * sched_;
+};
 
 }
 

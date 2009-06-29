@@ -2,6 +2,7 @@
 #include "zoidfs/util/ZoidFSAPI.hh"
 #include "zoidfs/util/ZoidFSAsyncAPI.hh"
 #include "zoidfs/zoidfs-proto.h"
+#include "RequestScheduler.hh"
 
 #include <vector>
 #include <deque>
@@ -165,9 +166,14 @@ iofwdutil::completion::CompletionID * ReadTask::execPipelineIO(const ReadRequest
      mem_sizes[i] = p_file_sizes[i];
      cur += p_file_sizes[i];
    }
+   iofwdutil::completion::CompletionID * id = sched_->enqueueRead (
+      p.handle, p_file_count, (void**)mem_starts, mem_sizes,
+      p_file_starts, p_file_sizes);
+   /*
    iofwdutil::completion::CompletionID * id = async_api_->async_read (
-      p.handle, 1, (void**)mem_starts, mem_sizes,
+      p.handle, p_file_count, (void**)mem_starts, mem_sizes,
       p_file_count, p_file_starts, p_file_sizes);
+   */
 
    b->mem_starts = mem_starts;
    b->mem_sizes = mem_sizes;
