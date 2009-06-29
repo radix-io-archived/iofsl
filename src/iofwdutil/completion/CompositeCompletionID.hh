@@ -4,7 +4,6 @@
 #include <boost/thread.hpp>
 #include <deque>
 #include "CompletionID.hh"
-#include "SharedProxyCompletionID.hh"
 
 namespace iofwdutil
 {
