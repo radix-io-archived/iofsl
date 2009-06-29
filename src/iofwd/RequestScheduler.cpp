@@ -48,6 +48,39 @@ bool operator<(const Range& r1, const Range& r2)
   return r1.st < r2.st;
 };
 
+// The class to hold request information
+class IOCompletionID : public CompletionID
+{
+public:
+  IOCompletionID(CompletionID * id,
+     char ** mem_starts, size_t * mem_sizes,
+     uint64_t * file_starts, uint64_t * file_sizes)
+    : id_(id), mem_starts_(mem_starts), mem_sizes_(mem_sizes),
+      file_starts_(file_starts), file_sizes_(file_sizes)
+  {
+  }
+  virtual ~IOCompletionID() {
+    delete id_;
+    delete[] mem_starts_;
+    delete[] mem_sizes_;
+    delete[] file_starts_;
+    delete[] file_sizes_;
+  }
+
+  virtual void wait() {
+    id_->wait();
+  }
+  virtual bool test(unsigned int maxms) {
+    return id_->test(maxms);
+  }
+private:
+  CompletionID * id_;
+  char ** mem_starts_;
+  size_t * mem_sizes_;
+  uint64_t * file_starts_;
+  uint64_t * file_sizes_;
+};
+
 // The class to share one CompletionID from multiple user
 class SharedCompletionID : public CompletionID
 {
@@ -75,7 +108,7 @@ class RangeScheduler
 public:
   RangeScheduler(RequestScheduler * sched_)
     : sched_(sched_) {}
-  ~RangeScheduler() {}
+  virtual ~RangeScheduler() {}
   virtual void enqueue(const Range& r) = 0;
   virtual bool isEmpty() = 0;
   virtual void dequeue(Range& r) = 0;
@@ -89,7 +122,7 @@ class FIFORangeScheduler : public RangeScheduler
 public:
   FIFORangeScheduler(RequestScheduler * sched_)
     : RangeScheduler(sched_) {}
-  ~FIFORangeScheduler() {}
+  virtual ~FIFORangeScheduler() { q_.clear(); }
   virtual void enqueue(const Range& r);
   virtual bool isEmpty();
   virtual void dequeue(Range& r);
@@ -174,8 +207,11 @@ void RequestScheduler::run()
     {
       // deque fron scheduler queue
       boost::mutex::scoped_lock l(lock_);
-      while (range_sched_->isEmpty() && !exiting)
+      while (range_sched_->isEmpty() && !exiting) {
+        // ready_.timed_wait(l, boost::get_system_time()
+        //                      + boost::posix_time::milliseconds(50));
         ready_.wait(l);
+      }
       if (exiting)
         break;
 
@@ -183,7 +219,6 @@ void RequestScheduler::run()
       range_sched_->dequeue(r);
     }
     {
-      // TODO: plug leak
       char ** mem_starts = new char*[1];
       size_t * mem_sizes = new size_t[1];
       mem_starts[0] = r.buf;
@@ -195,25 +230,29 @@ void RequestScheduler::run()
       assert(r.en > r.st);
       
       // issue asynchronous I/O using ZoidFSAsyncAPI
-      boost::shared_ptr<CompletionID> backend_id;
+      CompletionID *async_id;
       if (r.type == Range::RANGE_WRITE) {
-        backend_id.reset(async_api_->async_write(
+        async_id = async_api_->async_write(
           r.handle, 1, (const void**)mem_starts, mem_sizes,
-          1, file_starts, file_sizes));
+          1, file_starts, file_sizes);
       } else if (r.type == Range::RANGE_READ) {
-        backend_id.reset(async_api_->async_read(
+        async_id = async_api_->async_read(
           r.handle, 1, (void**)mem_starts, mem_sizes,
-          1, file_starts, file_sizes));
+          1, file_starts, file_sizes);
       }
 
-      // add backend_id to associated CompositeCompletionID
+      // properly release resources, we wrap async_id by IOCompletionID
+      boost::shared_ptr<CompletionID> io_id;
+      io_id.reset(new IOCompletionID(async_id, mem_starts, mem_sizes, file_starts, file_sizes));
+
+      // add io_id to associated CompositeCompletionID
       vector<CompositeCompletionID*>& v = r.cids;
       for (unsigned int i = 0; i < v.size(); i++) {
         CompositeCompletionID * ccid = v[i];
-        // Because backend_id is shared among multiple CompositeCompletionIDs,
+        // Because io_id is shared among multiple CompositeCompletionIDs,
         // we use SharedCompletionID to properly release the resource by using
         // boost::shared_ptr (e.g. reference counting).
-        ccid->addCompletionID(new SharedCompletionID(backend_id));
+        ccid->addCompletionID(new SharedCompletionID(io_id));
       }
     }
   }

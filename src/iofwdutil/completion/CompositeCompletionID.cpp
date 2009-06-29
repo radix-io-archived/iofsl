@@ -10,7 +10,9 @@ namespace iofwdutil
 
 CompositeCompletionID::~CompositeCompletionID()
 {
-   
+   wait();
+   for(unsigned int i = 0; i < completed_ids_.size(); i++)
+      delete completed_ids_[i];
 }
 
 void CompositeCompletionID::wait ()
