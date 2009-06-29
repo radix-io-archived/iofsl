@@ -174,7 +174,6 @@ iofwdutil::completion::CompletionID * ReadTask::execPipelineIO(const ReadRequest
       p.handle, p_file_count, (void**)mem_starts, mem_sizes,
       p_file_count, p_file_starts, p_file_sizes);
    */
-
    b->mem_starts = mem_starts;
    b->mem_sizes = mem_sizes;
    b->file_starts = p_file_starts;
@@ -200,12 +199,11 @@ void ReadTask::runPipelineMode(const ReadRequest::ReqParam & p)
       total_bytes += p.mem_sizes[i];
 
    // iterate until read all regions
+   deque<pair<iofwdutil::completion::CompletionID *, ReadBuffer> > ios;
    while (cur_read_bytes < total_bytes) {
-      ReadBuffer p_b;
-      p_b.off = cur_read_bytes;
-      p_b.siz = std::min(pipeline_bytes, total_bytes - cur_read_bytes);;
-      iofwdutil::completion::CompletionID * io_id = NULL;
-     
+      bool is_issue_read = false;
+      size_t cur_pipeline_bytes = std::min(pipeline_bytes, total_bytes - cur_read_bytes);
+
       // issue send requests for already read buffers in tx_q
       while (!io_q.empty()) {
          ReadBuffer b = io_q.front();
@@ -219,8 +217,12 @@ void ReadTask::runPipelineMode(const ReadRequest::ReqParam & p)
 
       // issue I/O requests for next pipeline buffer
       if (alloc.hasFreeBuf()) {
-         p_b.buf = alloc.getBuf();
-         io_id = execPipelineIO(p, &p_b);
+         ReadBuffer b;
+         b.off = cur_read_bytes;
+         b.siz = cur_pipeline_bytes;
+         b.buf = alloc.getBuf();
+         ios.push_back(make_pair(execPipelineIO(p, &b), b));
+         is_issue_read = true;
       }
 
       // check send requests completion in tx_q
@@ -237,20 +239,33 @@ void ReadTask::runPipelineMode(const ReadRequest::ReqParam & p)
          }
       }
 
-      // wait for read buffer
-      if (io_id != NULL) {
-         io_id->wait();
-         delete io_id;
-
-         p_b.tx_id = NULL;
-         io_q.push_back(p_b);
-
-         // advance to read the next pipeline
-         cur_read_bytes += p_b.siz;
+      // test for first read buffer
+      // TODO: support for out-of-order read
+      if (!ios.empty()) {
+         iofwdutil::completion::CompletionID * io_id = ios.front().first;
+         if (io_id->test(1)) {
+            delete io_id;
+            ReadBuffer b = ios.front().second;
+            io_q.push_back(b);
+            ios.pop_front();
+         }        
       }
+      
+      // advance to read the next pipeline
+      if (is_issue_read)
+         cur_read_bytes += cur_pipeline_bytes;
    }
 
-   // issue reamining I/O requests
+   // issue remaining I/O requests
+   while (!ios.empty()) {
+      iofwdutil::completion::CompletionID * io_id = ios.back().first;
+      io_id->wait();
+      delete io_id;
+      io_q.push_back(ios.back().second);
+      ios.pop_back();
+   }
+
+   // send remaining I/O requests
    while (!io_q.empty()) {
       ReadBuffer b = io_q.front();
       assert(b.buf != NULL);
