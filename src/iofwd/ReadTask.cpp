@@ -139,7 +139,7 @@ iofwdutil::completion::CompletionID * ReadTask::execPipelineIO(const ReadRequest
    uint64_t * p_file_starts = new uint64_t[p_file_count];
    uint64_t * p_file_sizes = new uint64_t[p_file_count];
    if (st_file == en_file) {
-      p_file_starts[0] = file_starts[0] + st_fileofs;
+      p_file_starts[0] = file_starts[st_file] + st_fileofs;
       assert(en_fileofs > st_fileofs);
       p_file_sizes[0] = en_fileofs - st_fileofs;
    } else {

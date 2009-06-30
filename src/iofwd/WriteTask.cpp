@@ -138,7 +138,7 @@ iofwdutil::completion::CompletionID * WriteTask::execPipelineIO(const WriteReque
    uint64_t * p_file_starts = new uint64_t[p_file_count];
    uint64_t * p_file_sizes = new uint64_t[p_file_count];
    if (st_file == en_file) {
-      p_file_starts[0] = file_starts[0] + st_fileofs;
+      p_file_starts[0] = file_starts[st_file] + st_fileofs;
       assert(en_fileofs > st_fileofs);
       p_file_sizes[0] = en_fileofs - st_fileofs;
    } else {
@@ -173,7 +173,6 @@ iofwdutil::completion::CompletionID * WriteTask::execPipelineIO(const WriteReque
       p.handle, p_file_count, (const void**)mem_starts, mem_sizes,
       p_file_count, p_file_starts, p_file_sizes);
    */
-
    b->mem_starts = mem_starts;
    b->mem_sizes = mem_sizes;
    b->file_starts = p_file_starts;

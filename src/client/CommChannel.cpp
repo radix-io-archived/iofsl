@@ -87,7 +87,7 @@ void CommChannel::executePipelineWriteOp (const void ** buf_list,
         const char ** p_buf_list = new const char*[p_list_count];
         size_t * p_size_list = new size_t[p_list_count];
         if (st_mem == en_mem) {
-           p_buf_list[0] = ((const char*)buf_list[0]) + st_memofs;
+           p_buf_list[0] = ((const char*)buf_list[st_mem]) + st_memofs;
            assert(en_memofs > st_memofs);
            p_size_list[0] = en_memofs - st_memofs;
         } else {
@@ -202,7 +202,7 @@ void CommChannel::executePipelineReadOp(void ** buf_list,
         char ** p_buf_list = new char*[p_list_count];
         size_t * p_size_list = new size_t[p_list_count];
         if (st_mem == en_mem) {
-           p_buf_list[0] = ((char*)buf_list[0]) + st_memofs;
+           p_buf_list[0] = ((char*)buf_list[st_mem]) + st_memofs;
            assert(en_memofs > st_memofs);
            p_size_list[0] = en_memofs - st_memofs;
         } else {
