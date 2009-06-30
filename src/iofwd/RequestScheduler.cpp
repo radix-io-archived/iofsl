@@ -2,51 +2,29 @@
 
 #include <boost/shared_ptr.hpp>
 #include <boost/bind.hpp>
+#include <tr1/unordered_map>
 
+#include "zoidfs/zoidfs.h"
 #include "zoidfs/util/ZoidFSAsyncAPI.hh"
+
 #include "iofwdutil/completion/CompletionID.hh"
 #include "iofwdutil/completion/CompositeCompletionID.hh"
 #include "iofwdutil/completion/WorkQueueCompletionID.hh"
 #include "iofwd/WriteRequest.hh"
 #include "iofwd/ReadRequest.hh"
+#include "iofwd/RangeScheduler.hh"
+
+#include "spatial/Range.hh"
+#include "spatial/RangeSet.hh"
 
 using namespace std;
 using namespace iofwdutil;
 using namespace iofwdutil::completion;
+using namespace spatial;
 
 namespace iofwd
 {
-
-class Range
-{
-public:
-  Range() : buf(NULL), st(0), en(0) {}
-
-  enum RangeType {
-    RANGE_WRITE = 0,
-    RANGE_READ
-  };
-
-  RangeType type;
-  zoidfs::zoidfs_handle_t * handle;
-  char * buf;
-  uint64_t st;
-  uint64_t en;
-
-  // CompositeCompletionIDs which tests/waits for this range
-  vector<CompositeCompletionID*> cids;
-
-  // If this is Range is merged results, this variable
-  // holds the child ranges
-  vector<Range> child_ranges;
-};
-
-bool operator<(const Range& r1, const Range& r2)
-{
-  if (r1.st == r2.st)
-    return r1.en < r2.en;
-  return r1.st < r2.st;
-};
+//===========================================================================
 
 // The class to hold request information
 class IOCompletionID : public CompletionID
@@ -101,36 +79,6 @@ public:
 private:
   boost::shared_ptr<CompletionID> ptr_;
 };
-
-// Abstract class to reorder/merge incoming ranges
-class RangeScheduler
-{
-public:
-  RangeScheduler(RequestScheduler * sched_)
-    : sched_(sched_) {}
-  virtual ~RangeScheduler() {}
-  virtual void enqueue(const Range& r) = 0;
-  virtual bool isEmpty() = 0;
-  virtual void dequeue(Range& r) = 0;
-protected:
-  RequestScheduler * sched_;
-};
-
-// Simple First-In-First-Out range scheduler
-class FIFORangeScheduler : public RangeScheduler
-{
-public:
-  FIFORangeScheduler(RequestScheduler * sched_)
-    : RangeScheduler(sched_) {}
-  virtual ~FIFORangeScheduler() { q_.clear(); }
-  virtual void enqueue(const Range& r);
-  virtual bool isEmpty();
-  virtual void dequeue(Range& r);
-protected:
-  deque<Range> q_;
-};
-
-//===========================================================================
 
 RequestScheduler::RequestScheduler(zoidfs::ZoidFSAsyncAPI * async_api)
   : async_api_(async_api), exiting(false)
@@ -207,7 +155,7 @@ void RequestScheduler::run()
     {
       // deque fron scheduler queue
       boost::mutex::scoped_lock l(lock_);
-      while (range_sched_->isEmpty() && !exiting) {
+      while (range_sched_->empty() && !exiting) {
         // ready_.timed_wait(l, boost::get_system_time()
         //                      + boost::posix_time::milliseconds(50));
         ready_.wait(l);
@@ -228,7 +176,7 @@ void RequestScheduler::run()
       file_starts[0] = r.st;
       file_sizes[0] = r.en - r.st;
       assert(r.en > r.st);
-      
+
       // issue asynchronous I/O using ZoidFSAsyncAPI
       CompletionID *async_id;
       if (r.type == Range::RANGE_WRITE) {
@@ -264,25 +212,4 @@ void RequestScheduler::notifyConsumer()
 }
 
 //===========================================================================
-
-void FIFORangeScheduler::enqueue(const Range& r)
-{
-  q_.push_back(r);
-  sched_->notifyConsumer();
-}
-
-bool FIFORangeScheduler::isEmpty()
-{
-  return q_.empty();
-}
-
-void FIFORangeScheduler::dequeue(Range& r)
-{
-  assert(!q_.empty());
-  r = q_.front();
-  q_.pop_front();
-}
-
-//===========================================================================
-
 }

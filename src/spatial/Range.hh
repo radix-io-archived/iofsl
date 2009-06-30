@@ -1,37 +1,61 @@
 #ifndef SPATIAL_RANGE_HH
 #define SPATIAL_RANGE_HH
 
-#include "Point.hh"
+#include <stdlib.h>
+#include <vector>
+
+#include "zoidfs/zoidfs.h"
+
+namespace iofwdutil
+{
+   namespace completion
+   {
+      class CompositeCompletionID;
+   }
+}
 
 namespace spatial
 {
 //===========================================================================
 
-template <int DIM> 
 class Range
 {
 public:
-   typedef Point<DIM> PointType; 
+  Range() : buf(NULL), st(0), en(0) {}
+  Range(uint64_t st, uint64_t en) : st(st), en(en) {}
 
-   Range (const PointType & p1, PointType & p2);
+  enum RangeType {
+    RANGE_WRITE = 0,
+    RANGE_READ
+  };
 
-protected:
-   PointType points_[2]; 
-}; 
+  RangeType type;
+  zoidfs::zoidfs_handle_t * handle;
+  char * buf;
+  uint64_t st;
+  uint64_t en;
 
+  // If this Range is composed of some ranges, this variable
+  // holds child ranges.
+  std::vector<Range> child_ranges;
 
-template <int N>
-void intersect (const Range<N> & r1, const Range<N> & r2, Range<N> dest)
+  // CompositeCompletionIDs which tests/waits for this range
+  // TODO:
+  //   need parameterized by templates or something
+  std::vector<iofwdutil::completion::CompositeCompletionID*> cids;
+};
+
+inline bool operator==(const Range& r1, const Range& r2)
 {
+  return (r1.st == r2.st) && (r1.en == r2.en);
 }
 
-
-template <int N>
-bool checkOverlap (const Range<N> & r1, const Range<N> & r2)
+inline bool operator<(const Range& r1, const Range& r2)
 {
-   return false;
-}
-
+  if (r1.st == r2.st)
+    return r1.en < r2.en;
+  return r1.st < r2.st;
+};
 
 //===========================================================================
 }
