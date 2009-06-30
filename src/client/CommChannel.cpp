@@ -119,6 +119,10 @@ void CommChannel::executePipelineWriteOp (const void ** buf_list,
         st = en;
         st_mem = en_mem;
         st_memofs = en_memofs;
+        if (st_mem < list_count && size_list[st_mem] == st_memofs) {
+          st_mem++;
+          st_memofs = 0;
+        }
         np++;
      }
      // post receive
@@ -230,6 +234,10 @@ void CommChannel::executePipelineReadOp(void ** buf_list,
         st = en;
         st_mem = en_mem;
         st_memofs = en_memofs;
+        if (st_mem < list_count && size_list[st_mem] == st_memofs) {
+          st_mem++;
+          st_memofs = 0;
+        }
         np++;
      }
    }
