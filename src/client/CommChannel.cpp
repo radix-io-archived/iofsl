@@ -109,7 +109,7 @@ void CommChannel::executePipelineWriteOp (const void ** buf_list,
         {
            size_t p_total_size = 0;
            for (size_t i = 0; i < p_list_count; i++) p_total_size += p_size_list[i];
-           assert(p_total_size <= pipeline_size);
+           assert(p_total_size == std::min(pipeline_size, total_size -st));
            iofwdutil::bmi::BMIOp sendlist = bmi_->postSendList(iofwdhost_,
               (const void**)p_buf_list, p_size_list, p_list_count,
               p_total_size, BMI_PRE_ALLOC, ZOIDFS_REQUEST_TAG);
@@ -224,7 +224,7 @@ void CommChannel::executePipelineReadOp(void ** buf_list,
         {
            size_t p_total_size = 0;
            for (size_t i = 0; i < p_list_count; i++) p_total_size += p_size_list[i];
-           assert(p_total_size == std::min(pipeline_size, st - total_size));
+           assert(p_total_size == std::min(pipeline_size, total_size -st));
            iofwdutil::bmi::BMIOp recvlist = bmi_->postRecvList(iofwdhost_,
               (void**)p_buf_list, p_size_list, p_list_count,
               p_total_size, BMI_PRE_ALLOC, ZOIDFS_REQUEST_TAG);

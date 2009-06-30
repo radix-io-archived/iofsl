@@ -116,23 +116,26 @@ iofwdutil::completion::CompletionID * ReadTask::execPipelineIO(const ReadRequest
      bool en_ok = false;
      uint32_t cur_file = 0;
      uint64_t cur_ofs = 0;
-     while (!st_ok && !en_ok) {
+     while (!(st_ok && en_ok)) {
        const uint64_t st = p_offset;
        const uint64_t en = p_offset + p_size;
        assert(cur_file < p.file_count);
-       if (st < cur_ofs + file_sizes[cur_file]) {
+       if (cur_ofs <= st && st < cur_ofs + file_sizes[cur_file]) {
          st_file = cur_file;
          st_fileofs = st - cur_ofs;
          st_ok = true;
        }
-       if (en <= cur_ofs + file_sizes[cur_file]) {
+       if (cur_ofs < en && en <= cur_ofs + file_sizes[cur_file]) {
          en_file = cur_file;
          en_fileofs = en - cur_ofs;
          en_ok = true;
+         assert(st_ok);
+         break;
        }
        cur_ofs += file_sizes[cur_file];
        cur_file++;
      }
+     assert(st_file <= en_file);
    }
 
    size_t p_file_count = en_file + 1 - st_file;
