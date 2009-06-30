@@ -207,8 +207,9 @@ void ReadTask::runPipelineMode(const ReadRequest::ReqParam & p)
       bool is_issue_read = false;
       size_t cur_pipeline_bytes = std::min(pipeline_bytes, total_bytes - cur_read_bytes);
 
-      // issue send requests for already read buffers in tx_q
-      while (!io_q.empty()) {
+      // issue send requests one-by-one for already read buffers in tx_q
+      // TODO: support out-of-order transfer (identify message using tag)
+      if (!io_q.empty() && tx_q.empty()) {
          ReadBuffer b = io_q.front();
          assert(b.buf != NULL);
          io_q.pop_front();
@@ -229,6 +230,7 @@ void ReadTask::runPipelineMode(const ReadRequest::ReqParam & p)
       }
 
       // check send requests completion in tx_q
+      assert(tx_q.size() <= 1);
       for (deque<ReadBuffer>::iterator it = tx_q.begin(); it != tx_q.end();) {
          ReadBuffer& b = *it;
          iofwdutil::completion::CompletionID * tx_id = b.tx_id;
@@ -237,6 +239,7 @@ void ReadTask::runPipelineMode(const ReadRequest::ReqParam & p)
             releaseReadBuffer(b);
             alloc.putBuf(b.buf);
             it = tx_q.erase(it);
+            break;
          } else {
             ++it;
          }
@@ -259,23 +262,13 @@ void ReadTask::runPipelineMode(const ReadRequest::ReqParam & p)
          cur_read_bytes += cur_pipeline_bytes;
    }
 
-   // issue remaining I/O requests
+   // wait remaining I/O requests
    while (!ios.empty()) {
-      iofwdutil::completion::CompletionID * io_id = ios.back().first;
+      iofwdutil::completion::CompletionID * io_id = ios.front().first;
       io_id->wait();
       delete io_id;
-      io_q.push_back(ios.back().second);
-      ios.pop_back();
-   }
-
-   // send remaining I/O requests
-   while (!io_q.empty()) {
-      ReadBuffer b = io_q.front();
-      assert(b.buf != NULL);
-      io_q.pop_front();
-
-      b.tx_id = request_.sendPipelineBuffer(b.buf, b.siz);
-      tx_q.push_back(b);
+      io_q.push_back(ios.front().second);
+      ios.pop_front();
    }
 
    // wait remaining send requests
@@ -286,6 +279,22 @@ void ReadTask::runPipelineMode(const ReadRequest::ReqParam & p)
       iofwdutil::completion::CompletionID * tx_id = b.tx_id;
       assert(tx_id != NULL);
       tx_id->wait();
+      releaseReadBuffer(b);
+      alloc.putBuf(b.buf);
+   }
+
+   // send remaining I/O requests
+   while (!io_q.empty()) {
+      ReadBuffer b = io_q.front();
+      assert(b.buf != NULL);
+      io_q.pop_front();
+
+      iofwdutil::completion::CompletionID * tx_id;
+      tx_id = request_.sendPipelineBuffer(b.buf, b.siz);
+      assert(tx_id != NULL);
+      b.tx_id = tx_id;
+      tx_id->wait();
+
       releaseReadBuffer(b);
       alloc.putBuf(b.buf);
    }
