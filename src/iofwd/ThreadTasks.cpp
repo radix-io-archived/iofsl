@@ -9,6 +9,7 @@
 #include "CommitTask.hh"
 #include "RemoveTask.hh"
 #include "MkdirTask.hh"
+#include "ResizeTask.hh"
 #include "WriteTask.hh"
 #include "ReadTask.hh"
 #include "NotImplementedTask.hh"
@@ -34,6 +35,8 @@ Task * ThreadTasks::operator () (Request * req)
          return new RemoveTask (p);
       case ZOIDFS_PROTO_MKDIR:
          return new MkdirTask (p);
+      case ZOIDFS_PROTO_RESIZE:
+         return new ResizeTask (p);
       case ZOIDFS_PROTO_WRITE:
          return new WriteTask (p);
       case ZOIDFS_PROTO_READ:
