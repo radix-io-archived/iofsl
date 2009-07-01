@@ -7,6 +7,7 @@
 #include "NullTask.hh"
 #include "LookupTask.hh"
 #include "CommitTask.hh"
+#include "CreateTask.hh"
 #include "RemoveTask.hh"
 #include "MkdirTask.hh"
 #include "ResizeTask.hh"
@@ -31,6 +32,8 @@ Task * ThreadTasks::operator () (Request * req)
          return new LookupTask (p);
       case ZOIDFS_PROTO_COMMIT:
          return new CommitTask (p);
+      case ZOIDFS_PROTO_CREATE:
+         return new CreateTask (p);
       case ZOIDFS_PROTO_REMOVE:
          return new RemoveTask (p);
       case ZOIDFS_PROTO_MKDIR:
