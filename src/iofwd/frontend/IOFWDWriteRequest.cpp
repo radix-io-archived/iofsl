@@ -90,7 +90,8 @@ iofwdutil::completion::CompletionID * IOFWDWriteRequest::recvPipelineBuffer(char
 
 iofwdutil::completion::CompletionID * IOFWDWriteRequest::reply ()
 {
-   return simpleReply (TSSTART << (int32_t) getReturnCode ());
+   return simpleReply (TSSTART << (int32_t) getReturnCode ()
+             << iofwdutil::xdr::XDRVarArray(file_sizes_, file_count_));
 }
 
 //===========================================================================
