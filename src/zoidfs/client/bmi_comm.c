@@ -160,6 +160,91 @@ int bmi_comm_recvu(BMI_addr_t *peer_addr, void **recvbuf,
     return 0;
 }
 
+
+/*
+ * bmi_comm_send
+ * Synchronous call for sending multiple messages using BMI.
+ */
+int bmi_comm_send_list(BMI_addr_t peer_addr, size_t list_count,
+                       const void **buffers, const bmi_size_t *buflens,
+                       bmi_msg_tag_t tag, bmi_context_id context) {
+    bmi_op_id_t op_id;
+    int ret, i, outcount;
+    bmi_size_t total_size, actual_size;
+    bmi_error_code_t error_code;
+
+    total_size = 0;
+    for (i = 0; i < list_count; i++)
+        total_size += buflens[i];
+
+    /* Post the BMI send requests and wait for its completion */
+    ret = BMI_post_send_list(&op_id, peer_addr, buffers, buflens,
+                             list_count, total_size, BMI_PRE_ALLOC,
+                             tag, NULL, context, NULL);
+    if (ret < 0) {
+        fprintf(stderr, "bmi_comm_send_list: BMI_post_send() failed.\n");
+        exit(1);
+    } else if (ret == 0) {
+        do {
+            ret = BMI_test(op_id, &outcount, &error_code, &actual_size, NULL,
+                           MAX_IDLE_TIME, context);
+        } while (ret == 0 && outcount == 0);
+
+        if (ret < 0 || error_code != 0) {
+            fprintf(stderr, "bmi_comm_send_list: Data send failed. %d\n", error_code);
+            exit(1);
+        }
+
+        if (actual_size != total_size) {
+            fprintf(stderr, "bmi_comm_send_list: Expected %ld but received %lu\n",
+                    total_size, actual_size);
+            exit(1);
+        }
+    }
+
+    return 0;
+}
+
+
+/*
+ * bmi_comm_recv_list
+ * Synchronous call for receiving multiple messages using BMI.
+ */
+int bmi_comm_recv_list(BMI_addr_t peer_addr, size_t list_count,
+                       void ** buffers, const bmi_size_t *buflens,
+                       bmi_msg_tag_t tag, bmi_context_id context)
+{
+    bmi_op_id_t op_id;
+    int ret, i, outcount;
+    bmi_size_t total_size, actual_size;
+    bmi_error_code_t error_code;
+
+    total_size = 0;
+    for (i = 0; i < list_count; i++)
+        total_size += buflens[i];
+
+    /* Post the BMI recv request and wait for its completion */
+    ret = BMI_post_recv_list(&op_id, peer_addr, buffers, buflens, list_count,
+                             total_size, &actual_size, BMI_PRE_ALLOC,
+                             tag, NULL, context, NULL);
+    if (ret < 0) {
+        fprintf(stderr, "bmi_comm_recv_list: BMI_post_recv_list() failed.\n");
+        exit(1);
+    } else if (ret == 0) {
+        do {
+            ret = BMI_test(op_id, &outcount, &error_code, &actual_size, NULL,
+                           MAX_IDLE_TIME, context);
+        } while (ret == 0 && outcount == 0);
+
+        if (ret < 0 || error_code != 0) {
+            fprintf(stderr, "bmi_comm_recv_list: Data receive failed.\n");
+            exit(1);
+        }
+    }
+
+    return 0;
+}
+
 /*
  * Local variables:
  *  mode: c
