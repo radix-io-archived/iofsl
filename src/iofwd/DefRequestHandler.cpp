@@ -45,12 +45,12 @@ DefRequestHandler::~DefRequestHandler ()
    std::vector<WorkItem *> items; 
    ZLOG_INFO (log_, "Waiting for normal workqueue to complete all work..."); 
    workqueue_normal_->waitAll (items); 
-   for_each (items.begin(), items.end(), bind(delete_ptr(), _1)); 
+   for_each (items.begin(), items.end(), boost::lambda::bind(delete_ptr(), boost::lambda::_1)); 
 
    items.clear();
    ZLOG_INFO (log_, "Waiting for fast workqueue to complete all work..."); 
    workqueue_fast_->waitAll (items); 
-   for_each (items.begin(), items.end(), bind(delete_ptr(), _1));
+   for_each (items.begin(), items.end(), boost::lambda::bind(delete_ptr(), boost::lambda::_1));
 
    delete sched_;
 

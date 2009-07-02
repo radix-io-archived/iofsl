@@ -89,7 +89,7 @@ ZoidFSAsyncAPI::~ZoidFSAsyncAPI()
    if (q_ != NULL) {
       std::vector<iofwdutil::workqueue::WorkItem *> items; 
       q_->waitAll (items);
-      for_each (items.begin(), items.end(), bind(delete_ptr(), _1)); 
+      for_each (items.begin(), items.end(), boost::lambda::bind(delete_ptr(), boost::lambda::_1)); 
       delete q_;
    }
 }

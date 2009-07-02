@@ -48,7 +48,7 @@ void testWork (iofwdutil::workqueue::WorkQueue * q)
 
    q->waitAll (items); 
 
-   std::for_each (items.begin(), items.end(), bind(delete_ptr(), _1)); 
+   std::for_each (items.begin(), items.end(), boost::lambda::bind(delete_ptr(), boost::lambda::_1)); 
 
    ASSERT(items.size() == COUNT); 
 
