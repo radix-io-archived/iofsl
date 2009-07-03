@@ -1658,6 +1658,7 @@ int zoidfs_write(const zoidfs_handle_t *handle, size_t mem_count_,
                  size_t file_count_, const uint64_t file_starts[],
                  uint64_t file_sizes[]) {
     int ret;
+    size_t i;
     XDR xdrs;
     void *sendbuf, *recvbuf;
     bmi_size_t sendbuflen, recvbuflen;
@@ -1669,6 +1670,16 @@ int zoidfs_write(const zoidfs_handle_t *handle, size_t mem_count_,
     const uint64_t * mem_sizes = mem_sizes_;
     uint32_t file_count = file_count_;
     uint64_t pipeline_size = 0;
+
+#define PIPELINE_SIZE (1024UL * 1024 * 16)
+    size_t total_size = 0;
+    for (i = 0; i < mem_count_; i++) {
+        total_size += mem_sizes_[i];
+        if (mem_sizes_[i] > ZOIDFS_BUFFER_MAX)
+            pipeline_size = PIPELINE_SIZE;
+    }
+    if (total_size >= PIPELINE_SIZE)
+        pipeline_size = PIPELINE_SIZE;
 
     assert(sizeof(size_t) == sizeof(uint64_t));
     recvbuflen = xdr_sizeof((xdrproc_t)xdr_zoidfs_op_status_t, &op_status) +
@@ -1738,15 +1749,23 @@ int zoidfs_write(const zoidfs_handle_t *handle, size_t mem_count_,
     BMI_memfree(peer_addr, sendbuf, sendbuflen, BMI_SEND);
 
     /* Send the data using an expected BMI message */
-    if (mem_count == 1) {
-        /* Contiguous write */
-        ret = bmi_comm_send(peer_addr, (void *)mem_starts[0], mem_sizes[0],
-                            tag, context);
+    if (pipeline_size == 0) {
+        /* No Pipelining */
+        if (mem_count == 1) {
+            /* Contiguous write */
+            ret = bmi_comm_send(peer_addr, (void *)mem_starts[0], mem_sizes[0],
+                                tag, context);
+        } else {
+            /* Strided writes */
+            ret = bmi_comm_send_list(peer_addr,
+                                     mem_count, mem_starts, mem_sizes, tag,
+                                     context);
+        }
     } else {
-        /* Strided writes */
-        ret = bmi_comm_send_list(peer_addr,
-                                 mem_count, mem_starts, mem_sizes, tag,
-                                 context);
+        /* Pipelining */
+        ret = zoidfs_write_pipeline(peer_addr, pipeline_size,
+                                    mem_count, mem_starts, mem_sizes,
+                                    tag, context);
     }
 
     /* Wait for the response from the ION */
@@ -1777,6 +1796,82 @@ int zoidfs_write(const zoidfs_handle_t *handle, size_t mem_count_,
     return op_status;
 }
 
+int zoidfs_write_pipeline(BMI_addr_t peer_addr, uint64_t pipeline_size,
+                          size_t list_count, const void ** buf_list, const size_t size_list[],
+                          bmi_msg_tag_t tag, bmi_context_id context)
+{
+    int np = 0;
+    int ret;
+    size_t i;
+    uint64_t st = 0;
+    uint64_t st_mem = 0;
+    uint64_t st_memofs = 0;
+    uint64_t total_size = 0;
+    for (i = 0; i < list_count; i++)
+        total_size += size_list[i];
+
+    while (st < total_size) {
+        uint64_t en = 0;
+        uint64_t en_mem = 0;
+        uint64_t en_memofs = 0;
+        for (i = 0; i < list_count; i++) {
+            if (st + pipeline_size <= en + size_list[i]) {
+                en_mem = i;
+                en_memofs = st + pipeline_size - en;
+                en += en_memofs;
+                break;
+            }
+            en += size_list[i];
+            if (i == list_count -1) {
+                en_mem = i;
+                en_memofs = size_list[i];
+            }
+        }
+        // create next request
+        size_t p_list_count = en_mem + 1 - st_mem;
+        const char ** p_buf_list = (const char**)malloc(sizeof(char*) * p_list_count);
+        bmi_size_t * p_size_list = (bmi_size_t*)malloc(sizeof(size_t) * p_list_count);
+        if (st_mem == en_mem) {
+            p_buf_list[0] = ((const char*)buf_list[st_mem]) + st_memofs;
+            assert(en_memofs > st_memofs);
+            p_size_list[0] = en_memofs - st_memofs;
+        } else {
+            for (i = st_mem; i <= en_mem; i++) {
+                if (i == st_mem) {
+                    p_buf_list[i] = ((const char*)buf_list[i]) + st_memofs;
+                    p_size_list[i] = size_list[i] - st_memofs;
+                } else if (i == en_mem) {
+                    p_buf_list[i] = (const char*)buf_list[i];
+                    p_size_list[i] = en_memofs;
+                } else {
+                    p_buf_list[i] = (const char*)buf_list[i];
+                    p_size_list[i] = size_list[i];
+                }
+                assert(p_size_list[i] > 0);
+            }
+        }
+        // send it
+        {
+            size_t p_total_size = 0;
+            for (i = 0; i < p_list_count; i++) p_total_size += p_size_list[i];
+            // assert(p_total_size == min(pipeline_size, total_size -st));
+            ret = bmi_comm_send_list(peer_addr, p_list_count, (const void**)p_buf_list,
+                                     p_size_list, tag, context);
+        }
+        // next
+        st = en;
+        st_mem = en_mem;
+        st_memofs = en_memofs;
+        if (st_mem < list_count && size_list[st_mem] == st_memofs) {
+            st_mem++;
+            st_memofs = 0;
+        }
+        free(p_buf_list);
+        free(p_size_list);
+        np++;
+    }
+    return 0;
+}
 
 /*
  * zoidfs_read
@@ -1787,6 +1882,7 @@ int zoidfs_read(const zoidfs_handle_t *handle, size_t mem_count_,
                 size_t file_count_, const uint64_t file_starts[],
                 uint64_t file_sizes[]) {
     int ret;
+    size_t i;
     XDR xdrs;
     void *sendbuf, *recvbuf;
     bmi_size_t sendbuflen, recvbuflen;
@@ -1798,6 +1894,15 @@ int zoidfs_read(const zoidfs_handle_t *handle, size_t mem_count_,
     const uint64_t * mem_sizes = mem_sizes_;
     uint32_t file_count = file_count_;
     uint64_t pipeline_size = 0;
+
+    size_t total_size = 0;
+    for (i = 0; i < mem_count_; i++) {
+        total_size += mem_sizes_[i];
+        if (mem_sizes_[i] > ZOIDFS_BUFFER_MAX)
+            pipeline_size = PIPELINE_SIZE;
+    }
+    if (total_size >= PIPELINE_SIZE)
+        pipeline_size = PIPELINE_SIZE;
 
     assert(sizeof(size_t) == sizeof(uint64_t));
     recvbuflen = xdr_sizeof((xdrproc_t)xdr_zoidfs_op_status_t, &op_status) +
@@ -1866,15 +1971,23 @@ int zoidfs_read(const zoidfs_handle_t *handle, size_t mem_count_,
     ret = bmi_comm_sendu(peer_addr, sendbuf, sendbuflen, tag, context);
 
     /* Receive the data from the IOD */
-    if (mem_count == 1) {
-        /* Contiguous read */
-        ret = bmi_comm_recv(peer_addr, mem_starts[0], ZOIDFS_BUFFER_MAX, tag,
-                            context);
+    if (pipeline_size == 0) {
+        /* No Pipelining */
+        if (mem_count == 1) {
+            /* Contiguous read */
+            ret = bmi_comm_recv(peer_addr, mem_starts[0], ZOIDFS_BUFFER_MAX, tag,
+                                context);
+        } else {
+            /* Strided reads */
+            ret = bmi_comm_recv_list(peer_addr, mem_count,
+                                     mem_starts, mem_sizes,
+                                     tag, context);
+        }
     } else {
-        /* Strided reads */
-        ret = bmi_comm_recv_list(peer_addr, mem_count,
-                                 mem_starts, mem_sizes,
-                                 tag, context);
+        /* Pipelining */
+        ret = zoidfs_read_pipeline(peer_addr, pipeline_size,
+                                   mem_count, mem_starts, mem_sizes,
+                                   tag, context);
     }
 
     /* Wait for the response from the ION */
@@ -1906,6 +2019,80 @@ int zoidfs_read(const zoidfs_handle_t *handle, size_t mem_count_,
     return op_status;
 }
 
+int zoidfs_read_pipeline(BMI_addr_t peer_addr, uint64_t pipeline_size,
+                         size_t list_count, void ** buf_list, const size_t size_list[],
+                         bmi_msg_tag_t tag, bmi_context_id context) {
+    int np = 0;
+    int ret;
+    size_t i;
+    uint64_t st = 0;
+    uint64_t st_mem = 0;
+    uint64_t st_memofs = 0;
+    uint64_t total_size = 0;
+    for (i = 0; i < list_count; i++)
+        total_size += size_list[i];
+    while (st < total_size) {
+        uint64_t en = 0;
+        uint64_t en_mem = 0;
+        uint64_t en_memofs = 0;
+        for (i = 0; i < list_count; i++) {
+            if (st + pipeline_size <= en + size_list[i]) {
+                en_mem = i;
+                en_memofs = st + pipeline_size - en;
+                en += en_memofs;
+                break;
+            }
+            en += size_list[i];
+            if (i == list_count -1) {
+                en_mem = i;
+                en_memofs = size_list[i];
+            }
+        }
+        // create next request
+        size_t p_list_count = en_mem + 1 - st_mem;
+        char ** p_buf_list = (char**)malloc(sizeof(char*) * p_list_count);
+        bmi_size_t * p_size_list = (bmi_size_t*)malloc(sizeof(size_t) * p_list_count);
+        if (st_mem == en_mem) {
+            p_buf_list[0] = ((char*)buf_list[st_mem]) + st_memofs;
+            assert(en_memofs > st_memofs);
+            p_size_list[0] = en_memofs - st_memofs;
+        } else {
+            for (i = st_mem; i <= en_mem; i++) {
+                if (i == st_mem) {
+                    p_buf_list[i] = ((char*)buf_list[i]) + st_memofs;
+                    p_size_list[i] = size_list[i] - st_memofs;
+                } else if (i == en_mem) {
+                    p_buf_list[i] = (char*)buf_list[i];
+                    p_size_list[i] = en_memofs;
+                } else {
+                    p_buf_list[i] = (char*)buf_list[i];
+                    p_size_list[i] = size_list[i];
+                }
+                assert(p_size_list[i] > 0);
+            }
+        }
+        // recv
+        {
+            size_t p_total_size = 0;
+            for (i = 0; i < p_list_count; i++) p_total_size += p_size_list[i];
+            // assert(p_total_size == std::min(pipeline_size, total_size -st));
+            ret = bmi_comm_recv_list(peer_addr, p_list_count, (void**)p_buf_list,
+                                     p_size_list, tag, context);
+        }
+        // next
+        st = en;
+        st_mem = en_mem;
+        st_memofs = en_memofs;
+        if (st_mem < list_count && size_list[st_mem] == st_memofs) {
+            st_mem++;
+            st_memofs = 0;
+        }
+        free(p_buf_list);
+        free(p_size_list);
+        np++;
+    }
+    return 0;
+}
 
 /*
  * zoidfs_init
