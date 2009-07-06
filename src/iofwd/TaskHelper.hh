@@ -31,7 +31,7 @@ public:
       zoidfs::ZoidFSAsyncAPI * a2,
       RequestScheduler * s,
       iofwdutil::completion::BMIResource & b)
-      : req(r), bmi(b), api(a1), async_api(a2), sched(s), resched(r2)
+      : req(r), resched(r2), api(a1), async_api(a2), sched(s), bmi(b)
    {
    }
 
