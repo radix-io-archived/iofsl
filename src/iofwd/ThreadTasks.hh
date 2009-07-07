@@ -17,6 +17,7 @@ namespace iofwd
 class Task;
 class Request; 
 class RequestScheduler;
+class BufferPool;
 
 /**
  * Task factory that generates task which block until complete.
@@ -28,8 +29,10 @@ public:
    ThreadTasks (boost::function<void (Task *)> & resched,
          zoidfs::ZoidFSAPI * api,
          zoidfs::ZoidFSAsyncAPI * async_api,
-         RequestScheduler * sched_)
-      : reschedule_(resched), api_(api), async_api_(async_api), sched_(sched_)
+         RequestScheduler * sched,
+         BufferPool * pool)
+      : reschedule_(resched), api_(api), async_api_(async_api), sched_(sched),
+        pool_(pool)
    {
    }
 
@@ -41,6 +44,7 @@ protected:
    zoidfs::ZoidFSAPI * api_;
    zoidfs::ZoidFSAsyncAPI * async_api_;
    RequestScheduler * sched_;
+   BufferPool * pool_;
 
    iofwdutil::completion::ContextBase ctx_; 
    iofwdutil::completion::BMIResource bmi_; 

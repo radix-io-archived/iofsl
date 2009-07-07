@@ -5,6 +5,7 @@
 #include <vector>
 #include "iofwdutil/IOFWDLog.hh"
 #include "RequestHandler.hh"
+#include "BufferPool.hh"
 #include "ThreadTasks.hh"
 #include "zoidfs/util/LogAPI.hh"
 
@@ -69,6 +70,9 @@ protected:
 
    /// Scheduler
    RequestScheduler * sched_;
+
+   /// BufferPool
+   BufferPool * pool_;
 };
 
 }

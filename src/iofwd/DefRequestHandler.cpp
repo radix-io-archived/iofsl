@@ -8,6 +8,7 @@
 #include "iofwdutil/workqueue/PoolWorkQueue.hh"
 #include "ThreadTasks.hh"
 #include "iofwdutil/workqueue/WorkItem.hh"
+#include "zoidfs/zoidfs-proto.h"
 #include "zoidfs/util/ZoidFSAsyncAPI.hh"
 #include "RequestScheduler.hh"
 
@@ -26,13 +27,14 @@ DefRequestHandler::DefRequestHandler ()
       throw "ZoidFSAPI::init() failed";
    async_api_ = new zoidfs::ZoidFSAsyncAPI(&api_);
    sched_ = new RequestScheduler(async_api_);
+   pool_ = new BufferPool(zoidfs::ZOIDFS_BUFFER_MAX * 2, 100);
   
    workqueue_normal_.reset (new PoolWorkQueue (0, 100)); 
    workqueue_fast_.reset (new SynchronousWorkQueue ()); 
    boost::function<void (Task *)> f = boost::lambda::bind
       (&DefRequestHandler::reschedule, this, boost::lambda::_1); 
 
-   taskfactory_.reset (new ThreadTasks (f, &api_, async_api_, sched_)); 
+   taskfactory_.reset (new ThreadTasks (f, &api_, async_api_, sched_, pool_));
 }
 
 void DefRequestHandler::reschedule (Task * t)
@@ -53,6 +55,7 @@ DefRequestHandler::~DefRequestHandler ()
    for_each (items.begin(), items.end(), boost::lambda::bind(delete_ptr(), boost::lambda::_1));
 
    delete sched_;
+   delete pool_;
 
    api_.finalize();
    delete async_api_;

@@ -3,6 +3,7 @@
 #include "zoidfs/util/ZoidFSAsyncAPI.hh"
 #include "zoidfs/zoidfs-proto.h"
 #include "RequestScheduler.hh"
+#include "BufferPool.hh"
 
 #include <vector>
 #include <deque>
@@ -15,7 +16,7 @@ namespace iofwd
 
 struct RetrievedBuffer
 {
-  char *buf;
+  BufferAllocCompletionID * alloc_id;
   uint64_t siz;
   uint64_t off;
   iofwdutil::completion::CompletionID * io_id;
@@ -30,44 +31,13 @@ struct RetrievedBuffer
 namespace {
 void releaseRetrievedBuffer(RetrievedBuffer& b)
 {
+   delete b.alloc_id;
    delete b.io_id;
    delete[] b.mem_starts;
    delete[] b.mem_sizes;
    delete[] b.file_starts;
    delete[] b.file_sizes;
 }
-
-class BufferPool
-{
-public:
-  BufferPool(size_t size, size_t num)
-    : size_(size), num_(num)
-  {
-    for (size_t i = 0; i < num_; i++)
-      free_bufs_.push_back(new char[size_]);
-  }
-  ~BufferPool() {
-    assert(free_bufs_.size() == num_);
-    for (size_t i = 0; i < free_bufs_.size(); i++)
-      delete[] free_bufs_[i];
-  }
-  bool hasFreeBuf() const {
-    return !free_bufs_.empty();
-  }
-  char* getBuf() {
-    if (free_bufs_.empty()) return NULL;
-    char * ret = free_bufs_[free_bufs_.size()-1];
-    free_bufs_.pop_back();
-    return ret;
-  }
-  void putBuf(char *b) {
-    free_bufs_.push_back(b);
-  }
-private:
-  size_t size_;
-  size_t num_;
-  vector<char*> free_bufs_;
-};
 }
 
 void WriteTask::runNormalMode(const WriteRequest::ReqParam & p)
@@ -102,7 +72,7 @@ void WriteTask::runNormalMode(const WriteRequest::ReqParam & p)
 iofwdutil::completion::CompletionID * WriteTask::execPipelineIO(const WriteRequest::ReqParam & p,
    RetrievedBuffer * b)
 {
-   const char * p_buf = b->buf;
+   const char * p_buf = b->alloc_id->get_buf();
    const uint64_t p_offset = b->off;
    const uint64_t p_size = b->siz;
    const uint64_t * file_starts = p.file_starts;
@@ -187,8 +157,8 @@ iofwdutil::completion::CompletionID * WriteTask::execPipelineIO(const WriteReque
 void WriteTask::runPipelineMode(const WriteRequest::ReqParam & p)
 {
    // TODO: aware of system-wide memory consumption
-   uint64_t pipeline_bytes = zoidfs::ZOIDFS_BUFFER_MAX * 2;
-   BufferPool alloc(pipeline_bytes, 8);
+   uint64_t pipeline_bytes = pool_->pipeline_size();
+   BufferAllocCompletionID * alloc_id = NULL;
 
    // The life cycle of buffers is like follows:
    // from alloc -> NetworkRecv -> rx_q -> ZoidI/O -> io_q -> back to alloc
@@ -203,22 +173,24 @@ void WriteTask::runPipelineMode(const WriteRequest::ReqParam & p)
    // iterate until retrieving all buffers
    while (cur_recv_bytes < total_bytes) {
      uint64_t p_siz = std::min(pipeline_bytes, total_bytes - cur_recv_bytes);
-     char * p_buf = NULL;
      iofwdutil::completion::CompletionID * rx_id = NULL;
 
      // issue I/O requests for already retrieved buffers in rx_q
      while (!rx_q.empty()) {
        RetrievedBuffer b = rx_q.front();
-       assert(b.buf != NULL);
+       assert(b.alloc_id != NULL);
        rx_q.pop_front();
 
        b.io_id = execPipelineIO(p, &b);
        io_q.push_back(b);
      }
 
+     // try to alloc buffer
+     if (alloc_id == NULL)
+       alloc_id = pool_->alloc();
      // issue recv requests for next pipeline buffer
-     if (alloc.hasFreeBuf()) {
-       p_buf = alloc.getBuf();
+     if (alloc_id != NULL && alloc_id->test(1)) {
+       char * p_buf = alloc_id->get_buf();
        rx_id = request_.recvPipelineBuffer(p_buf, p_siz);
      }
 
@@ -229,7 +201,6 @@ void WriteTask::runPipelineMode(const WriteRequest::ReqParam & p)
        if (io_id->test(1)) {
          assert(io_id != NULL);
          releaseRetrievedBuffer(b);
-         alloc.putBuf(b.buf);
          it = io_q.erase(it);
        } else {
          ++it;
@@ -242,7 +213,7 @@ void WriteTask::runPipelineMode(const WriteRequest::ReqParam & p)
        delete rx_id;
 
        RetrievedBuffer b;
-       b.buf = p_buf;
+       b.alloc_id = alloc_id;
        b.siz = p_siz;
        b.off = cur_recv_bytes;
        b.io_id = NULL;
@@ -250,13 +221,14 @@ void WriteTask::runPipelineMode(const WriteRequest::ReqParam & p)
 
        // advance to retrieve the next pipeline
        cur_recv_bytes += p_siz;
+       alloc_id = NULL;
      }
    }
 
    // issue remaining I/O requests
    while (!rx_q.empty()) {
      RetrievedBuffer b = rx_q.front();
-     assert(b.buf != NULL);
+     assert(b.alloc_id != NULL);
      rx_q.pop_front();
      
      b.io_id = execPipelineIO(p, &b);
@@ -272,7 +244,6 @@ void WriteTask::runPipelineMode(const WriteRequest::ReqParam & p)
      assert(io_id != NULL);
      io_id->wait();
      releaseRetrievedBuffer(b);
-     alloc.putBuf(b.buf);
    }
 
    // reply status

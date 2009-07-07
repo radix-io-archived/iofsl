@@ -32,6 +32,7 @@ MODULE_SOURCES_iofwdlib := \
    ReadTask.cpp \
    \
    Request.cpp \
+   BufferPool.cpp \
    RequestScheduler.cpp \
    RangeScheduler.cpp \
    DefRequestHandler.cpp \

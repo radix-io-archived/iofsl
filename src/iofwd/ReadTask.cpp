@@ -3,6 +3,7 @@
 #include "zoidfs/util/ZoidFSAsyncAPI.hh"
 #include "zoidfs/zoidfs-proto.h"
 #include "RequestScheduler.hh"
+#include "BufferPool.hh"
 
 #include <vector>
 #include <deque>
@@ -15,7 +16,7 @@ namespace iofwd
 
 struct ReadBuffer
 {
-  char *buf;
+  BufferAllocCompletionID * alloc_id;
   uint64_t siz;
   uint64_t off;
   iofwdutil::completion::CompletionID * tx_id;
@@ -30,45 +31,13 @@ struct ReadBuffer
 namespace {
 void releaseReadBuffer(ReadBuffer& b)
 {
+  delete b.alloc_id;
   delete b.tx_id;
   delete[] b.mem_starts;
   delete[] b.mem_sizes;
   delete[] b.file_starts;
   delete[] b.file_sizes;
 }
-
-class BufferPool
-{
-public:
-  BufferPool(size_t size, size_t num)
-    : size_(size), num_(num)
-  {
-    for (size_t i = 0; i < num_; i++)
-      free_bufs_.push_back(new char[size_]);
-  }
-  ~BufferPool() {
-    assert(free_bufs_.size() == num_);
-    for (size_t i = 0; i < free_bufs_.size(); i++)
-      delete[] free_bufs_[i];
-  }
-  bool hasFreeBuf() const {
-    return !free_bufs_.empty();
-  }
-  char* getBuf() {
-    if (free_bufs_.empty()) return NULL;
-    char * ret = free_bufs_[free_bufs_.size()-1];
-    free_bufs_.pop_back();
-    return ret;
-  }
-  void putBuf(char *b) {
-    free_bufs_.push_back(b);
-  }
-private:
-  size_t size_;
-  size_t num_;
-  vector<char*> free_bufs_;
-};
-
 }
 
 void ReadTask::runNormalMode(const ReadRequest::ReqParam & p)
@@ -103,7 +72,7 @@ void ReadTask::runNormalMode(const ReadRequest::ReqParam & p)
 iofwdutil::completion::CompletionID * ReadTask::execPipelineIO(const ReadRequest::ReqParam & p,
    ReadBuffer * b)
 {
-   char * p_buf = b->buf;
+   char * p_buf = b->alloc_id->get_buf();
    const uint64_t p_offset = b->off;
    const uint64_t p_size = b->siz;
    const uint64_t * file_starts = p.file_starts;
@@ -188,8 +157,8 @@ iofwdutil::completion::CompletionID * ReadTask::execPipelineIO(const ReadRequest
 void ReadTask::runPipelineMode(const ReadRequest::ReqParam & p)
 {
    // TODO: aware of system-wide memory consumption
-   uint64_t pipeline_bytes = zoidfs::ZOIDFS_BUFFER_MAX * 2;
-   BufferPool alloc(pipeline_bytes, 8);
+   uint64_t pipeline_bytes = pool_->pipeline_size();
+   BufferAllocCompletionID * alloc_id = NULL;
 
    // The life cycle of buffers is like follows:
    // from alloc -> ZoidI/O -> io_q -> NetworkSend -> tx_q -> back to alloc
@@ -208,23 +177,26 @@ void ReadTask::runPipelineMode(const ReadRequest::ReqParam & p)
       size_t cur_pipeline_bytes = std::min(pipeline_bytes, total_bytes - cur_read_bytes);
 
       // issue send requests one-by-one for already read buffers in tx_q
-      // TODO: support out-of-order transfer (identify message using tag)
+      // to ensure the message order, tx_q must be empty here
+      // TODO: support out-of-order transfer
       if (!io_q.empty() && tx_q.empty()) {
          ReadBuffer b = io_q.front();
-         assert(b.buf != NULL);
+         assert(b.alloc_id != NULL);
          io_q.pop_front();
 
-         iofwdutil::completion::CompletionID * tx_id = request_.sendPipelineBuffer(b.buf, b.siz);
-         b.tx_id = tx_id;
+         b.tx_id = request_.sendPipelineBuffer(b.alloc_id->get_buf(), b.siz);
          tx_q.push_back(b);
       }
 
+      // try to alloc buffer
+      if (alloc_id == NULL)
+         alloc_id = pool_->alloc();
       // issue I/O requests for next pipeline buffer
-      if (alloc.hasFreeBuf()) {
+      if (alloc_id != NULL && alloc_id->test(1)) {
          ReadBuffer b;
+         b.alloc_id = alloc_id;
          b.off = cur_read_bytes;
          b.siz = cur_pipeline_bytes;
-         b.buf = alloc.getBuf();
          ios.push_back(make_pair(execPipelineIO(p, &b), b));
          is_issue_read = true;
       }
@@ -237,7 +209,6 @@ void ReadTask::runPipelineMode(const ReadRequest::ReqParam & p)
          if (tx_id->test(1)) {
             assert(tx_id != NULL);
             releaseReadBuffer(b);
-            alloc.putBuf(b.buf);
             it = tx_q.erase(it);
             break;
          } else {
@@ -258,8 +229,10 @@ void ReadTask::runPipelineMode(const ReadRequest::ReqParam & p)
       }
       
       // advance to read the next pipeline
-      if (is_issue_read)
+      if (is_issue_read) {
          cur_read_bytes += cur_pipeline_bytes;
+         alloc_id = NULL;
+      }
    }
 
    // wait remaining I/O requests
@@ -280,23 +253,21 @@ void ReadTask::runPipelineMode(const ReadRequest::ReqParam & p)
       assert(tx_id != NULL);
       tx_id->wait();
       releaseReadBuffer(b);
-      alloc.putBuf(b.buf);
    }
 
    // send remaining I/O requests
    while (!io_q.empty()) {
       ReadBuffer b = io_q.front();
-      assert(b.buf != NULL);
+      assert(b.alloc_id != NULL);
       io_q.pop_front();
 
       iofwdutil::completion::CompletionID * tx_id;
-      tx_id = request_.sendPipelineBuffer(b.buf, b.siz);
+      tx_id = request_.sendPipelineBuffer(b.alloc_id->get_buf(), b.siz);
       assert(tx_id != NULL);
       b.tx_id = tx_id;
       tx_id->wait();
 
       releaseReadBuffer(b);
-      alloc.putBuf(b.buf);
    }
 
    // reply status
