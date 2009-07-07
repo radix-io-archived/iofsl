@@ -32,8 +32,10 @@ static const char * string2ptr (const std::string & s)
 
 BMI::BMI()
 {
+   int c;
    check(BMI_initialize (string2ptr(methodlist_), 
-         string2ptr(listen_), flags_)); 
+         string2ptr(listen_), flags_));
+   BMI_set_info(0, BMI_TCP_CHECK_UNEXPECTED, &c);
    active_ = true; 
 }
 
