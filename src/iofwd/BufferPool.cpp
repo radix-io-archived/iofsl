@@ -51,12 +51,12 @@ BufferAllocCompletionID::test(unsigned int mstimeout)
   bool ret = false;
   WaitingBuffer * b = buf_;
   boost::unique_lock<boost::mutex> lk(b->mutex);
-  while (b->buf == NULL)
+  if (b->buf == NULL)
     b->cond.timed_wait(lk, boost::get_system_time()
                        + boost::posix_time::milliseconds(mstimeout));
   ret = (b->buf != NULL);
   lk.unlock();
-  return true;
+  return ret;
 }
 
 char*
@@ -69,7 +69,7 @@ BufferAllocCompletionID::get_buf()
 //===========================================================================
 
 BufferPool::BufferPool(uint64_t size, uint64_t max_num)
-  : size_(size), cur_size_(0), max_num_(max_num_)
+  : size_(size), cur_size_(0), max_num_(max_num)
 {
 }
 
@@ -83,7 +83,7 @@ BufferPool::alloc()
   WaitingBuffer * b = new WaitingBuffer();
 
   m_.lock();
-  bool need_wait = cur_size_ < max_num_;
+  bool need_wait = cur_size_ >= max_num_;
   if (need_wait) {
     b->buf = NULL;
     wait_q_.push_back(b);
