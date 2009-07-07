@@ -26,7 +26,6 @@ BufferAllocCompletionID::~BufferAllocCompletionID()
 {
   if (buf_ != NULL) {
     pool_->free(buf_);
-    delete buf_;
   }
   buf_ = NULL;
 }
@@ -114,9 +113,13 @@ BufferPool::free(WaitingBuffer * b)
     wait_b->mutex.unlock();
   } else {
     delete[] b->buf;
+    b->buf = NULL;
+    
     cur_size_--;
     m_.unlock();
   }
+
+  delete b;
 }
 
 //===========================================================================
