@@ -79,7 +79,7 @@ namespace client
          }
 
          template<typename SENDREQ, typename RECEIVEREQ>
-         int beforeExecuteOp(int opid, const SENDREQ & send, const RECEIVEREQ & recv)
+         void beforeExecuteOp(int opid, const SENDREQ & send, const RECEIVEREQ & recv)
          {
             int ret;
             // Reset XDR streams and indicate operation code

@@ -81,7 +81,7 @@ private:
 };
 
 RequestScheduler::RequestScheduler(zoidfs::ZoidFSAsyncAPI * async_api)
-  : async_api_(async_api), exiting(false)
+  : exiting(false), async_api_(async_api)
 {
   range_sched_.reset(new FIFORangeScheduler(this));
   consumethread_.reset(new boost::thread(boost::bind(&RequestScheduler::run, this)));
