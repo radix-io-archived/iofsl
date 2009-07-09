@@ -217,6 +217,10 @@ void WriteTask::runPipelineMode(const WriteRequest::ReqParam & p)
        b.siz = p_siz;
        b.off = cur_recv_bytes;
        b.io_id = NULL;
+       b.mem_starts = NULL;
+       b.mem_sizes = NULL;
+       b.file_starts = NULL;
+       b.file_sizes = NULL;
        rx_q.push_back(b);
 
        // advance to retrieve the next pipeline

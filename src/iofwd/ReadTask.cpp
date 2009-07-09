@@ -197,6 +197,11 @@ void ReadTask::runPipelineMode(const ReadRequest::ReqParam & p)
          b.alloc_id = alloc_id;
          b.off = cur_read_bytes;
          b.siz = cur_pipeline_bytes;
+         b.tx_id = NULL;
+         b.mem_starts = NULL;
+         b.mem_sizes = NULL;
+         b.file_starts = NULL;
+         b.file_sizes = NULL;
          ios.push_back(make_pair(execPipelineIO(p, &b), b));
          is_issue_read = true;
       }
