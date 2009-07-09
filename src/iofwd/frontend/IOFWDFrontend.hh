@@ -22,7 +22,9 @@ public:
 
    virtual ~IOFWDFrontend ();
 
-   virtual void init (); 
+   virtual void init ();
+
+   virtual void run ();
 
    virtual void destroy (); 
 

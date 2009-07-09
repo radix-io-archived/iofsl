@@ -21,9 +21,12 @@ class Frontend
 
       void setHandler (RequestHandler * handler); 
 
-      /// Called when the frontend can start generating requests
+      /// Called just after frontend instance is created
       /// If initialization fails, an exception should be thrown.
-      virtual void init () = 0; 
+      virtual void init () = 0;
+
+      /// Called when the frontend can start generating requests
+      virtual void run () = 0;
 
       /// Called when shutting down. Should shut down internal threads
       /// and block until all threads are done.

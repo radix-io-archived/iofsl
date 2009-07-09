@@ -44,10 +44,11 @@ namespace
 class IOFW
 {
 public:
-   IOFW (IOFWDFrontend & fe, RequestHandler * h,
-         iofwdutil::completion::BMIResource & bmires);
+   IOFW (IOFWDFrontend & fe, iofwdutil::completion::BMIResource & bmires);
 
    void run ();
+
+   void setHandler (RequestHandler * h) { handler_ = h; }
 
    // Called when we should stop...
    void destroy ();
@@ -125,11 +126,10 @@ static boost::array<mapfunc_t, ZOIDFS_PROTO_MAX> map_ = {
 
 // ==========================================================================
 
-IOFW::IOFW (IOFWDFrontend & fe, RequestHandler * h,
-      iofwdutil::completion::BMIResource & res)
+IOFW::IOFW (IOFWDFrontend & fe, iofwdutil::completion::BMIResource & res)
    : fe_ (fe), bmi_ (iofwdutil::bmi::BMI::get()),
    stop_ (false),
-   handler_(h),
+   handler_(NULL),
    req_minsize_(iofwdutil::xdr::getXDRSize (uint32_t ()).actual),
    log_ (IOFWDLog::getSource ("iofwdfrontend")),
    bmires_ (res)
@@ -235,17 +235,31 @@ IOFWDFrontend::~IOFWDFrontend ()
 void IOFWDFrontend::init ()
 {
    ZLOG_DEBUG (log_, "Initializing BMI"); 
-   // init BMI
 
+   char * ion_name = getenv("ZOIDFS_ION_NAME");
+   if (ion_name == NULL) {
+     ZLOG_ERROR (log_, format("ZOIDFS_ION_NAME is empty"));
+     exit(-1);
+   }
 
    // IOFW uses bmi, so we need to supply init params here
-   ZLOG_INFO (log_, "Server listening on port 1234"); 
-   BMI::setInitServer ("tcp://127.0.0.1:1234"); 
+   ZLOG_INFO (log_, format("Server listening on %s") % ion_name); 
+   //BMI::setInitServer ("tcp://127.0.0.1:1234");
+   BMI::setInitServer (ion_name);
+   free (ion_name);
 
-   ALWAYS_ASSERT(handler_); 
-   IOFW * o = new IOFW (*this, handler_, bmires_); 
-   implthread_.reset (new boost::thread(boost::bind (&IOFW::run , o))); 
-   impl_ = o; 
+   // initialize BMI
+   IOFW * o = new IOFW (*this, bmires_);
+   impl_ = o;
+}
+
+void IOFWDFrontend::run()
+{
+   ALWAYS_ASSERT (impl_);
+   IOFW * o = (IOFW *) impl_;
+   ALWAYS_ASSERT (handler_);
+   o->setHandler (handler_);
+   implthread_.reset (new boost::thread(boost::bind (&IOFW::run , o)));
 }
 
 void IOFWDFrontend::destroy ()
