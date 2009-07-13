@@ -8,6 +8,7 @@
 #include <boost/smart_ptr.hpp>
 
 #include "zoidfs/zoidfs.h"
+#include "iofwdutil/zlog/ZLogSource.hh"
 
 namespace iofwdutil {
   namespace completion {
@@ -42,12 +43,13 @@ public:
      void ** mem_starts, size_t * mem_sizes,
      uint64_t * file_starts, uint64_t * file_sizes);
 
-  void notifyConsumer();
-
 protected:
   void run();
+  void notifyConsumer();
   
 private:
+  iofwdutil::zlog::ZLogSource & log_;
+  
   boost::scoped_ptr<boost::thread> consumethread_;
   boost::mutex lock_;
   boost::condition_variable ready_;

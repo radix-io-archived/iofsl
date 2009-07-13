@@ -1,8 +1,10 @@
 #include "RangeScheduler.hh"
 #include "RequestScheduler.hh"
 
+#include <iostream>
 #include <cassert>
 
+using namespace std;
 using namespace spatial;
 using namespace iofwd;
 
@@ -13,7 +15,6 @@ namespace iofwd
 void FIFORangeScheduler::enqueue(const Range& r)
 {
   q_.push_back(r);
-  sched_->notifyConsumer();
 }
 
 bool FIFORangeScheduler::empty()
@@ -21,29 +22,101 @@ bool FIFORangeScheduler::empty()
   return q_.empty();
 }
 
-void FIFORangeScheduler::dequeue(Range& r)
+bool FIFORangeScheduler::dequeue(Range& r)
 {
-  assert(!q_.empty());
+  if (q_.empty()) return false;
   r = q_.front();
   q_.pop_front();
+  return true;
 }
 
 //===========================================================================
 
-void MergeRangeScheduler::enqueue(const Range& r)
+#define DEFAULT_QUANTUM 8
+
+struct HandleQueue
 {
+  spatial::Range::RangeType type;
+  const zoidfs::zoidfs_handle_t * handle;
+  RangeSet * rs;
+  int quantum;
+};
+
+void MergeRangeScheduler::io_enqueue(const Range &r)
+{
+  tr1::unordered_map<const zoidfs::zoidfs_handle_t*, HandleQueue*>& m_ = (r.type == Range::RANGE_READ) ? rm_ : wm_;
   if (m_.find(r.handle) == m_.end()) {
+    // if no HandleQueue exists for r.handle, create new one
+    HandleQueue * hq = new HandleQueue();
+    hq->type = r.type;
+    hq->handle = r.handle;
+    hq->quantum = DEFAULT_QUANTUM;
+
     RangeSet * rs = new RangeSet();
     rs->add(r);
+    hq->rs = rs;
 
-    q_.push_back(r.handle);
-    m_[r.handle] = rs;
+    q_.push_back(hq);
+    m_[hq->handle] = hq;
   } else {
-    RangeSet * rs = m_.find(r.handle)->second;
+    // if corresponding HandleQueue exists for r.handle,
+    // add to its RangeSet.
+    HandleQueue * hq = m_.find(r.handle)->second;
+    RangeSet * rs = hq->rs;
     rs->add(r);
   }
+}
 
-  sched_->notifyConsumer();
+bool MergeRangeScheduler::io_dequeue(Range &r)
+{
+  if (q_.empty()) return false;
+
+  HandleQueue * hq = q_.front();
+  tr1::unordered_map<const zoidfs::zoidfs_handle_t*, HandleQueue*>& m_ = (hq->type == Range::RANGE_READ) ? rm_ : wm_;
+  assert(m_.find(hq->handle) != m_.end());
+
+  RangeSet * rs = hq->rs;
+  assert(!rs->empty());
+  rs->pop_front(r);
+
+  hq->quantum--;
+  if (hq->quantum > 0 && !rs->empty()) {
+    // do nothing
+  } else if (hq->quantum == 0 && !rs->empty()) {
+    // turn to another queue
+    hq->quantum = DEFAULT_QUANTUM;
+    q_.pop_front();
+    q_.push_back(hq);
+  } else {
+    // delete queue
+    q_.pop_front();
+    m_.erase(hq->handle);
+    delete hq->rs;
+    delete hq;    
+  }
+
+  return true;
+}
+
+void MergeRangeScheduler::deadline_enqueue(const Range& r)
+{
+  // TODO: implement
+  return;
+}
+
+bool MergeRangeScheduler::deadline_dequeue(Range &r)
+{
+  // TODO: implement
+  return false;
+}
+
+void MergeRangeScheduler::enqueue(const Range& r)
+{
+  deadline_enqueue(r);
+  io_enqueue(r);
+
+  // update statistics
+  bytes_queued += r.en - r.st;
 }
 
 bool MergeRangeScheduler::empty()
@@ -51,21 +124,23 @@ bool MergeRangeScheduler::empty()
   return q_.empty();
 }
 
-void MergeRangeScheduler::dequeue(Range& r)
+bool MergeRangeScheduler::dequeue(Range& r)
 {
-  assert(!q_.empty());
+  bool is_dequeued = false;
 
-  const zoidfs::zoidfs_handle_t * handle = q_.front();
-  assert(m_.find(handle) != m_.end());
-  RangeSet * s = m_[handle];
-  s->pop_front(r);
-  if (s->empty()) {
-    m_.erase(handle);
-    delete s;
-  }
+  // from deadline queue
+  if (!is_dequeued)
+    is_dequeued = deadline_dequeue(r);
 
-  q_.pop_front();
-  q_.push_back(handle);
+  // from I/O queue
+  if (!is_dequeued)
+    is_dequeued = io_dequeue(r);
+
+  // update statistics
+  if (is_dequeued)
+    bytes_queued -= (r.en - r.st);
+  
+  return is_dequeued;
 }
 
 //===========================================================================

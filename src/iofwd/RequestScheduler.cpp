@@ -63,11 +63,8 @@ private:
 class SharedCompletionID : public CompletionID
 {
 public:
-  SharedCompletionID(boost::shared_ptr<CompletionID> ptr)
-    : ptr_(ptr)
-  {
-    assert(ptr != NULL);
-  }
+  SharedCompletionID(const boost::shared_ptr<CompletionID>& ptr)
+    : ptr_(ptr) {}
   virtual ~SharedCompletionID() {}
 
   virtual void wait() {
@@ -81,9 +78,18 @@ private:
 };
 
 RequestScheduler::RequestScheduler(zoidfs::ZoidFSAsyncAPI * async_api)
-  : exiting(false), async_api_(async_api)
+  : log_(IOFWDLog::getSource()), exiting(false), async_api_(async_api)
 {
-  range_sched_.reset(new FIFORangeScheduler(this));
+  RangeScheduler * rsched;
+  const char * sched_algo = getenv("ZOIDFS_SCHED_ALGO");
+  if (sched_algo == NULL || strcmp(sched_algo, "fifo") == 0) {
+    rsched = new FIFORangeScheduler();
+  } else if (strcmp(sched_algo, "merge") == 0) {
+    rsched = new MergeRangeScheduler();
+  } else {
+    assert(false);
+  }
+  range_sched_.reset(rsched);
   consumethread_.reset(new boost::thread(boost::bind(&RequestScheduler::run, this)));
 }
 
@@ -100,7 +106,6 @@ CompletionID * RequestScheduler::enqueueWrite(
   uint64_t * file_starts, uint64_t * file_sizes)
 {
   CompositeCompletionID * ccid = new CompositeCompletionID(count);
-
   for (uint32_t i = 0; i < count; i++) {
     assert(mem_sizes[i] == file_sizes[i]);
 
@@ -115,9 +120,7 @@ CompletionID * RequestScheduler::enqueueWrite(
     boost::mutex::scoped_lock l(lock_);
     range_sched_->enqueue(r);
   }
-
   notifyConsumer();
-
   return ccid;
 }
 
@@ -127,7 +130,6 @@ CompletionID * RequestScheduler::enqueueRead(
   uint64_t * file_starts, uint64_t * file_sizes)
 {
   CompositeCompletionID * ccid = new CompositeCompletionID(count);
-
   for (uint32_t i = 0; i < count; i++) {
     assert(mem_sizes[i] == file_sizes[i]);
 
@@ -142,9 +144,7 @@ CompletionID * RequestScheduler::enqueueRead(
     boost::mutex::scoped_lock l(lock_);
     range_sched_->enqueue(r);
   }
-
   notifyConsumer();
-
   return ccid;
 }
 
@@ -164,29 +164,45 @@ void RequestScheduler::run()
         break;
 
       // TODO: dequeue multiple requests
-      range_sched_->dequeue(r);
+      bool is_dequeued = range_sched_->dequeue(r);
+      if (!is_dequeued)
+        continue;
     }
     {
-      char ** mem_starts = new char*[1];
-      size_t * mem_sizes = new size_t[1];
-      mem_starts[0] = r.buf;
-      mem_sizes[0] = r.en - r.st;
-      uint64_t * file_starts = new uint64_t[1];
-      uint64_t * file_sizes = new uint64_t[1];
-      file_starts[0] = r.st;
-      file_sizes[0] = r.en - r.st;
+      bool is_merged = !r.child_ranges.empty();
+      unsigned int narrays =  is_merged ? r.child_ranges.size() : 1;
+      char ** mem_starts = new char*[narrays];
+      size_t * mem_sizes = new size_t[narrays];
+      uint64_t * file_starts = new uint64_t[narrays];
+      uint64_t * file_sizes = new uint64_t[narrays];
+      if (is_merged) {
+        for (unsigned int i = 0; i < narrays; i++) {
+          const Range& child_r = r.child_ranges[i];
+          mem_starts[i] = child_r.buf;
+          mem_sizes[i] = child_r.en - child_r.st;
+          file_starts[i] = child_r.st;
+          file_sizes[i] = child_r.en - child_r.st;
+        }
+      } else {
+        mem_starts[0] = r.buf;
+        mem_sizes[0] = r.en - r.st;
+        file_starts[0] = r.st;
+        file_sizes[0] = r.en - r.st;
+      }
       assert(r.en > r.st);
 
       // issue asynchronous I/O using ZoidFSAsyncAPI
       CompletionID *async_id;
       if (r.type == Range::RANGE_WRITE) {
         async_id = async_api_->async_write(
-          r.handle, 1, (const void**)mem_starts, mem_sizes,
-          1, file_starts, file_sizes);
+          r.handle, narrays, (const void**)mem_starts, mem_sizes,
+          narrays, file_starts, file_sizes);
       } else if (r.type == Range::RANGE_READ) {
         async_id = async_api_->async_read(
-          r.handle, 1, (void**)mem_starts, mem_sizes,
-          1, file_starts, file_sizes);
+          r.handle, narrays, (void**)mem_starts, mem_sizes,
+          narrays, file_starts, file_sizes);
+      } else {
+        assert(false);
       }
 
       // properly release resources, we wrap async_id by IOCompletionID
@@ -195,8 +211,10 @@ void RequestScheduler::run()
 
       // add io_id to associated CompositeCompletionID
       vector<CompositeCompletionID*>& v = r.cids;
-      for (unsigned int i = 0; i < v.size(); i++) {
-        CompositeCompletionID * ccid = v[i];
+      assert(v.size() > 0);
+      for (vector<CompositeCompletionID*>::iterator it = v.begin();
+           it != v.end(); ++it) {
+        CompositeCompletionID * ccid = *it;
         // Because io_id is shared among multiple CompositeCompletionIDs,
         // we use SharedCompletionID to properly release the resource by using
         // boost::shared_ptr (e.g. reference counting).

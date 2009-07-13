@@ -192,7 +192,7 @@ void ReadTask::runPipelineMode(const ReadRequest::ReqParam & p)
       if (alloc_id == NULL)
          alloc_id = pool_->alloc();
       // issue I/O requests for next pipeline buffer
-      if (alloc_id != NULL && alloc_id->test(1)) {
+      if (alloc_id != NULL && alloc_id->test(10)) {
          ReadBuffer b;
          b.alloc_id = alloc_id;
          b.off = cur_read_bytes;
@@ -211,7 +211,7 @@ void ReadTask::runPipelineMode(const ReadRequest::ReqParam & p)
       for (deque<ReadBuffer>::iterator it = tx_q.begin(); it != tx_q.end();) {
          ReadBuffer& b = *it;
          iofwdutil::completion::CompletionID * tx_id = b.tx_id;
-         if (tx_id->test(1)) {
+         if (tx_id->test(10)) {
             assert(tx_id != NULL);
             releaseReadBuffer(b);
             it = tx_q.erase(it);
@@ -225,7 +225,7 @@ void ReadTask::runPipelineMode(const ReadRequest::ReqParam & p)
       // TODO: support for out-of-order read
       if (!ios.empty()) {
          iofwdutil::completion::CompletionID * io_id = ios.front().first;
-         if (io_id->test(1)) {
+         if (io_id->test(10)) {
             delete io_id;
             ReadBuffer b = ios.front().second;
             io_q.push_back(b);

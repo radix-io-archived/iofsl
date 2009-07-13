@@ -1,6 +1,8 @@
 #ifndef SPATIAL_RANGESET_HH
 #define SPATIAL_RANGESET_HH
 
+#include <stdio.h>
+#include <cassert>
 #include <set>
 #include <map>
 
@@ -25,6 +27,7 @@ public:
 
   void pop_front(Range& r)
   {
+    assert(!ranges.empty());
     r = *ranges.begin();
     st_map.erase(r.st);
     en_map.erase(r.en);
@@ -74,16 +77,37 @@ public:
     }
 
     Range new_r(st, en);
+    new_r.type = r.type;
+    new_r.handle = r.handle;
+    if (!s.empty()) {
+      new_r.child_ranges.push_back(r);
+      new_r.cids.insert(new_r.cids.begin(), r.cids.begin(), r.cids.end());
+    } else {
+      new_r.buf = r.buf;
+      new_r.child_ranges = r.child_ranges;
+      new_r.cids = r.cids;
+    }
     for (std::set<Range>::iterator it = s.begin(); it != s.end(); ++it) {
       const Range& rr = *it;
       if (!rr.child_ranges.empty()) {
         new_r.child_ranges.insert(new_r.child_ranges.begin(),
                                   rr.child_ranges.begin(), rr.child_ranges.end());
+        for (unsigned int i = 0; i < rr.child_ranges.size(); i++)
+          new_r.cids.insert(new_r.cids.begin(),
+                            rr.child_ranges[i].cids.begin(),
+                            rr.child_ranges[i].cids.end());
+
       } else {
         new_r.child_ranges.insert(new_r.child_ranges.begin(),
                                   rr);
+        new_r.cids.insert(new_r.cids.begin(), rr.cids.begin(), rr.cids.end());
       }
     }
+
+    if (!new_r.child_ranges.empty())
+      assert(new_r.cids.size() == new_r.child_ranges.size());
+    assert(new_r.cids.size() > 0);
+    
     ranges.insert(new_r);
     st_map[st] = new_r;
     en_map[en] = new_r;

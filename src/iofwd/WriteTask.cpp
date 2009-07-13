@@ -189,7 +189,7 @@ void WriteTask::runPipelineMode(const WriteRequest::ReqParam & p)
      if (alloc_id == NULL)
        alloc_id = pool_->alloc();
      // issue recv requests for next pipeline buffer
-     if (alloc_id != NULL && alloc_id->test(1)) {
+     if (alloc_id != NULL && alloc_id->test(10)) {
        char * p_buf = alloc_id->get_buf();
        rx_id = request_.recvPipelineBuffer(p_buf, p_siz);
      }
@@ -198,7 +198,7 @@ void WriteTask::runPipelineMode(const WriteRequest::ReqParam & p)
      for (deque<RetrievedBuffer>::iterator it = io_q.begin(); it != io_q.end();) {
        RetrievedBuffer& b = *it;
        iofwdutil::completion::CompletionID * io_id = b.io_id;
-       if (io_id->test(1)) {
+       if (io_id->test(10)) {
          assert(io_id != NULL);
          releaseRetrievedBuffer(b);
          it = io_q.erase(it);
