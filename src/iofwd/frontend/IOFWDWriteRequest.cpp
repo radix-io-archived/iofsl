@@ -10,11 +10,10 @@ namespace iofwd
 
 IOFWDWriteRequest::~IOFWDWriteRequest ()
 {
-   if (mem_starts_) {
-      for (uint32_t i = 0; i < mem_count_; i++)
-         delete[] mem_starts_[i];
+   if (mem_)
+      delete[] mem_;
+   if (mem_starts_)
       delete[] mem_starts_;
-   }
    if (mem_sizes_)
       delete[] mem_sizes_;
    if (file_starts_)
