@@ -246,7 +246,6 @@ void IOFWDFrontend::init ()
    ZLOG_INFO (log_, format("Server listening on %s") % ion_name); 
    //BMI::setInitServer ("tcp://127.0.0.1:1234");
    BMI::setInitServer (ion_name);
-   free (ion_name);
 
    // initialize BMI
    IOFW * o = new IOFW (*this, bmires_);
