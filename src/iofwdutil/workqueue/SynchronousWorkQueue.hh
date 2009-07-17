@@ -1,3 +1,6 @@
+#ifndef IOFWDUTIL_WORKQUEUE_SYNCHRONOUSWORKQUEUE_HH
+#define IOFWDUTIL_WORKQUEUE_SYNCHRONOUSWORKQUEUE_HH
+
 #include "WorkQueueBase.hh"
 
 namespace iofwdutil
@@ -23,3 +26,5 @@ public:
 //===========================================================================
    }
 }
+
+#endif
