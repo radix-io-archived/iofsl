@@ -664,6 +664,7 @@ static int zint_pvfs2_io(const zoidfs_handle_t * handle,
     PVFS_Request file_req;
     PVFS_size * displacements;
     PVFS_credentials creds;
+    const void * buffer;
 
     PVFS_util_gen_credentials(&creds);
 
@@ -675,6 +676,8 @@ static int zint_pvfs2_io(const zoidfs_handle_t * handle,
         {
             return zint_pvfs2_output_error(ret);
         }
+
+        buffer = mem_starts[0];
     }
     else
     {
@@ -686,7 +689,7 @@ static int zint_pvfs2_io(const zoidfs_handle_t * handle,
 
         for(i = 0; i < mem_count; ++i)
         {
-            displacements[i] = (mem_starts[i] - mem_starts[0]);
+            displacements[i] = (intptr_t)mem_starts[i];
         }
 
         ret = PVFS_Request_indexed(mem_count, (int32_t *)mem_sizes,
@@ -698,6 +701,8 @@ static int zint_pvfs2_io(const zoidfs_handle_t * handle,
         {
             return zint_pvfs2_output_error(ret);
         }
+
+        buffer = PVFS_BOTTOM;
     }
 
     if(file_count == 1)
@@ -723,7 +728,7 @@ static int zint_pvfs2_io(const zoidfs_handle_t * handle,
 
     zint_pvfs2_input_handle(handle, ref);
 
-    ret = PVFS_sys_io(ref, file_req, offset, (void *) mem_starts[0], mem_req,
+    ret = PVFS_sys_io(ref, file_req, offset, (void *) buffer, mem_req,
                       &creds, io_resp, type, NULL);
     if(ret < 0)
     {
