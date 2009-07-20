@@ -1,0 +1,55 @@
+==============================================================================
+ IOFSL: I/O Forwarding Scalability Layer
+ http://www.mcs.anl.gov/research/projects/iofsl/
+==============================================================================
+
+* BUILD
+
+To build IOFSL, these libraries are required.
+
+- boost (>= 1.35.0)
+- PVFS (>= 2.8.1)
+- FUSE
+
+If you don't have boost in your system, please install manually by the
+following commands.
+
+$ ./bootstrap.sh --with-libraries=date_time,program_options,regex,thread
+$ ./bjam
+$ ./bjam --layout=system --prefix=/usr/local/include/boost \
+  --libdir=/usr/local/lib/ install
+
+* BUILD ROMIO CLIENT
+
+If you use IOFSL by MPI programs, using ROMIO client is the most efficient
+way. Currently, ROMIO client is available only in the MPICH2 subversion
+repository. Please install like this.
+
+$ svn checkout https://svn.mcs.anl.gov/repos/mpi/mpich2/trunk/ mpich2
+$ cd mpich2
+$ ./maint/updatefiles
+$ ./configure --enable-romio --with-file-system=ufs+zoidfs
+$ make
+$ make install
+
+* LAUNCH SERVER
+
+The environment variable "ZOIDFS_ION_NAME" must be specified to indicate the
+address in which the server waits the connnetion.
+
+$ export ZOIDFS_ION_NAME=tcp://hostname:12345
+$ ./src/iofwd/iofwd --config a
+
+If you use Myrinet or Infiniband, please specify ZOIDFS_ION_NAME like this.
+
+$ export ZOIDFS_ION_NAME=mx://hostname:0:0   (HostName:Card:EndPoint)
+$ export ZOIDFS_ION_NAME=ib://hostname:12345 (HostName:Port)
+
+* LAUNCH ROMIO CLIENT
+
+The environment variable "ZOIDFS_ION_NAME" must be specified to indicate the
+address of the server. And also, you need to add "zoidfs:" prefix to the
+filepath, which is passed to MPI_File_open().
+
+$ export ZOIDFS_ION_NAME=tcp://hostname:12345
+$ mpiexec -n 4 path_to_binary -f "zoidfs://path/to/file"
