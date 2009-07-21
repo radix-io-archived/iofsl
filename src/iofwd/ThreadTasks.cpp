@@ -12,6 +12,7 @@
 #include "CreateTask.hh"
 #include "RemoveTask.hh"
 #include "RenameTask.hh"
+#include "SymLinkTask.hh"
 #include "MkdirTask.hh"
 #include "ResizeTask.hh"
 #include "WriteTask.hh"
@@ -45,6 +46,8 @@ Task * ThreadTasks::operator () (Request * req)
          return new RemoveTask (p);
       case ZOIDFS_PROTO_RENAME:
          return new RenameTask (p);
+      case ZOIDFS_PROTO_SYMLINK:
+         return new SymLinkTask (p);
       case ZOIDFS_PROTO_MKDIR:
          return new MkdirTask (p);
       case ZOIDFS_PROTO_RESIZE:
