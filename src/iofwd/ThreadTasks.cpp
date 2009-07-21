@@ -5,6 +5,7 @@
 #include "TaskHelper.hh"
 
 #include "NullTask.hh"
+#include "GetAttrTask.hh"
 #include "LookupTask.hh"
 #include "CommitTask.hh"
 #include "CreateTask.hh"
@@ -27,7 +28,9 @@ Task * ThreadTasks::operator () (Request * req)
    switch (req->getOpID ())
    {
       case ZOIDFS_PROTO_NULL:
-         return new NullTask (p); 
+         return new NullTask (p);
+      case ZOIDFS_PROTO_GET_ATTR:
+         return new GetAttrTask (p);
       case ZOIDFS_PROTO_LOOKUP:
          return new LookupTask (p);
       case ZOIDFS_PROTO_COMMIT:

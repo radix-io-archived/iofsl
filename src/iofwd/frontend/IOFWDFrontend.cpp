@@ -16,6 +16,7 @@
 
 #include "IOFWDNotImplementedRequest.hh"
 #include "IOFWDNullRequest.hh"
+#include "IOFWDGetAttrRequest.hh"
 #include "IOFWDLookupRequest.hh"
 #include "IOFWDCommitRequest.hh"
 #include "IOFWDCreateRequest.hh"
@@ -105,7 +106,7 @@ static inline Request * newreq (iofwdutil::bmi::BMIContext & bmi,
 static boost::array<mapfunc_t, ZOIDFS_PROTO_MAX> map_ = {
    {
       &newreq<IOFWDNullRequest>,
-      &newreq<IOFWDNotImplementedRequest>,
+      &newreq<IOFWDGetAttrRequest>,
       &newreq<IOFWDNotImplementedRequest>,
       &newreq<IOFWDLookupRequest>,
       &newreq<IOFWDNotImplementedRequest>,
