@@ -8,6 +8,7 @@
 #include "GetAttrTask.hh"
 #include "SetAttrTask.hh"
 #include "LookupTask.hh"
+#include "ReadLinkTask.hh"
 #include "CommitTask.hh"
 #include "CreateTask.hh"
 #include "RemoveTask.hh"
@@ -39,6 +40,8 @@ Task * ThreadTasks::operator () (Request * req)
          return new SetAttrTask (p);
       case ZOIDFS_PROTO_LOOKUP:
          return new LookupTask (p);
+      case ZOIDFS_PROTO_READLINK:
+         return new ReadLinkTask (p);
       case ZOIDFS_PROTO_COMMIT:
          return new CommitTask (p);
       case ZOIDFS_PROTO_CREATE:
@@ -66,7 +69,6 @@ Task * ThreadTasks::operator () (Request * req)
    ALWAYS_ASSERT(false && "Should not get here!"); 
    return 0; 
 }
-
 
 //===========================================================================
 }

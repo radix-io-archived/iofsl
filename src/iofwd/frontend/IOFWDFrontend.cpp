@@ -19,6 +19,7 @@
 #include "IOFWDGetAttrRequest.hh"
 #include "IOFWDSetAttrRequest.hh"
 #include "IOFWDLookupRequest.hh"
+#include "IOFWDReadLinkRequest.hh"
 #include "IOFWDCommitRequest.hh"
 #include "IOFWDCreateRequest.hh"
 #include "IOFWDRemoveRequest.hh"
@@ -113,7 +114,7 @@ static boost::array<mapfunc_t, ZOIDFS_PROTO_MAX> map_ = {
       &newreq<IOFWDGetAttrRequest>,
       &newreq<IOFWDSetAttrRequest>,
       &newreq<IOFWDLookupRequest>,
-      &newreq<IOFWDNotImplementedRequest>,
+      &newreq<IOFWDReadLinkRequest>,
       &newreq<IOFWDCommitRequest>,
       &newreq<IOFWDCreateRequest>,
       &newreq<IOFWDRemoveRequest>,
@@ -127,7 +128,6 @@ static boost::array<mapfunc_t, ZOIDFS_PROTO_MAX> map_ = {
       &newreq<IOFWDLinkRequest>
    }
 };
-
 
 // ==========================================================================
 
