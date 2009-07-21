@@ -17,6 +17,7 @@
 #include "ResizeTask.hh"
 #include "WriteTask.hh"
 #include "ReadTask.hh"
+#include "LinkTask.hh"
 #include "NotImplementedTask.hh"
 
 using namespace zoidfs;
@@ -56,6 +57,8 @@ Task * ThreadTasks::operator () (Request * req)
          return new WriteTask (p);
       case ZOIDFS_PROTO_READ:
          return new ReadTask (p);
+      case ZOIDFS_PROTO_LINK:
+         return new LinkTask (p);
       default:
          return new NotImplementedTask (p); 
    }; 

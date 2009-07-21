@@ -28,6 +28,7 @@
 #include "IOFWDResizeRequest.hh"
 #include "IOFWDWriteRequest.hh"
 #include "IOFWDReadRequest.hh"
+#include "IOFWDLinkRequest.hh"
 
 using namespace iofwdutil::bmi; 
 using namespace iofwdutil;
@@ -123,7 +124,7 @@ static boost::array<mapfunc_t, ZOIDFS_PROTO_MAX> map_ = {
       &newreq<IOFWDResizeRequest>,
       &newreq<IOFWDWriteRequest>,
       &newreq<IOFWDReadRequest>,
-      &newreq<IOFWDNotImplementedRequest>
+      &newreq<IOFWDLinkRequest>
    }
 };
 
