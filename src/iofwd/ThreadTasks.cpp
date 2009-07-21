@@ -6,6 +6,7 @@
 
 #include "NullTask.hh"
 #include "GetAttrTask.hh"
+#include "SetAttrTask.hh"
 #include "LookupTask.hh"
 #include "CommitTask.hh"
 #include "CreateTask.hh"
@@ -31,6 +32,8 @@ Task * ThreadTasks::operator () (Request * req)
          return new NullTask (p);
       case ZOIDFS_PROTO_GET_ATTR:
          return new GetAttrTask (p);
+      case ZOIDFS_PROTO_SET_ATTR:
+         return new SetAttrTask (p);
       case ZOIDFS_PROTO_LOOKUP:
          return new LookupTask (p);
       case ZOIDFS_PROTO_COMMIT:

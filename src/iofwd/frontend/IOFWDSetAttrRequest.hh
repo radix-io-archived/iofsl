@@ -1,0 +1,41 @@
+#ifndef IOFWD_FRONTEND_IOFWDSETATTRREQUEST_HH
+#define IOFWD_FRONTEND_IOFWDSETATTRREQUEST_HH
+
+#include "zoidfs/util/zoidfs-wrapped.hh"
+#include "IOFWDRequest.hh"
+#include "iofwd/SetAttrRequest.hh"
+
+namespace iofwd
+{
+   namespace frontend
+   {
+//===========================================================================
+
+class IOFWDSetAttrRequest
+   : public IOFWDRequest,
+     public SetAttrRequest
+{
+public:
+   IOFWDSetAttrRequest (iofwdutil::bmi::BMIContext & bmi, int opid, const BMI_unexpected_info & info,
+         iofwdutil::completion::BMIResource & res)
+      : IOFWDRequest (bmi, info, res), SetAttrRequest (opid)
+   {
+   }
+   virtual ~IOFWDSetAttrRequest ();
+
+   virtual const ReqParam & decodeParam () ;
+   virtual iofwdutil::completion::CompletionID * reply (const zoidfs::zoidfs_attr_t * attr);
+
+protected:
+   ReqParam param_;
+
+   zoidfs::zoidfs_handle_t handle_;
+   zoidfs::zoidfs_attr_t attr_;
+   zoidfs::zoidfs_sattr_t sattr_;
+};
+
+//===========================================================================
+   }
+}
+
+#endif
