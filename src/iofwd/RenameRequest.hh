@@ -1,0 +1,51 @@
+#ifndef IOFWD_RENAMEREQUEST_HH
+#define IOFWD_RENAMEREQUEST_HH
+
+#include "Request.hh"
+#include "zoidfs/util/zoidfs-wrapped.hh"
+#include "iofwdutil/completion/CompletionID.hh"
+
+namespace iofwd
+{
+//===========================================================================
+
+class RenameRequest : public Request
+{
+public:
+
+   typedef struct
+   {
+      char * from_full_path;
+      zoidfs::zoidfs_handle_t * from_parent_handle;
+      char * from_component_name;
+
+      char * to_full_path;
+      zoidfs::zoidfs_handle_t * to_parent_handle;
+      char * to_component_name;
+   } ReqParam;
+
+   RenameRequest (int opid) :
+      Request (opid)
+   {
+   }
+   virtual ~RenameRequest ()
+   {
+   }
+
+   /**
+    * Retrieve the request input parameters
+    */
+   virtual const ReqParam & decodeParam ()  = 0;
+
+   /**
+    * Reply with the handle or 0 if an error occurred and the handle does not
+    * need to be transmitted
+    */
+   virtual iofwdutil::completion::CompletionID * reply (const zoidfs::zoidfs_cache_hint_t * from_parent_hint,
+                                                        const zoidfs::zoidfs_cache_hint_t * to_parent_hint) = 0;
+};
+
+//===========================================================================
+}
+
+#endif

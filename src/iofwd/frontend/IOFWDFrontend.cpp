@@ -22,6 +22,7 @@
 #include "IOFWDCommitRequest.hh"
 #include "IOFWDCreateRequest.hh"
 #include "IOFWDRemoveRequest.hh"
+#include "IOFWDRenameRequest.hh"
 #include "IOFWDMkdirRequest.hh"
 #include "IOFWDResizeRequest.hh"
 #include "IOFWDWriteRequest.hh"
@@ -114,7 +115,7 @@ static boost::array<mapfunc_t, ZOIDFS_PROTO_MAX> map_ = {
       &newreq<IOFWDCommitRequest>,
       &newreq<IOFWDCreateRequest>,
       &newreq<IOFWDRemoveRequest>,
-      &newreq<IOFWDNotImplementedRequest>,
+      &newreq<IOFWDRenameRequest>,
       &newreq<IOFWDNotImplementedRequest>,
       &newreq<IOFWDMkdirRequest>,
       &newreq<IOFWDNotImplementedRequest>,
