@@ -3,6 +3,7 @@
 
 #include "zoidfs-wrapped.hh"
 #include "zoidfs-xdr.hh"
+#include "zoidfs-proto.h"
 #include "iofwdutil/xdr/XDRWrappers.hh"
 
 namespace iofwdutil
@@ -41,7 +42,7 @@ namespace iofwdutil
    template <typename T>
    inline void process (T & p, const FileSpecHelper & f)
    {
-      uint8_t haveFullPath;
+      zoidfs::zoidfs_null_param_t haveFullPath;
       if (static_cast<int>( T::XDRTYPE)== static_cast<int>(T::WRITER))
       {
          haveFullPath = (f.full_ != NULL) ? 1 : 0;
