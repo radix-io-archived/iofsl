@@ -19,6 +19,7 @@ struct ReadBuffer
   BufferAllocCompletionID * alloc_id;
   uint64_t siz;
   uint64_t off;
+  iofwdutil::completion::CompletionID * io_id;
   iofwdutil::completion::CompletionID * tx_id;
 
   // for async request
@@ -171,7 +172,6 @@ void ReadTask::runPipelineMode(const ReadRequest::ReqParam & p)
       total_bytes += p.mem_sizes[i];
 
    // iterate until read all regions
-   deque<pair<iofwdutil::completion::CompletionID *, ReadBuffer> > ios;
    while (cur_read_bytes < total_bytes) {
       bool is_issue_read = false;
       size_t cur_pipeline_bytes = std::min(pipeline_bytes, total_bytes - cur_read_bytes);
@@ -179,13 +179,17 @@ void ReadTask::runPipelineMode(const ReadRequest::ReqParam & p)
       // issue send requests one-by-one for already read buffers in tx_q
       // to ensure the message order, tx_q must be empty here
       // TODO: support out-of-order transfer
+      // test for first read buffer
       if (!io_q.empty() && tx_q.empty()) {
          ReadBuffer b = io_q.front();
-         assert(b.alloc_id != NULL);
-         io_q.pop_front();
+         iofwdutil::completion::CompletionID * io_id = b.io_id;
+         if (io_id->test(10)) {
+            delete io_id;
+            io_q.pop_front();
 
-         b.tx_id = request_.sendPipelineBuffer(b.alloc_id->get_buf(), b.siz);
-         tx_q.push_back(b);
+            b.tx_id = request_.sendPipelineBuffer(b.alloc_id->get_buf(), b.siz);
+            tx_q.push_back(b);
+         }        
       }
 
       // try to alloc buffer
@@ -202,7 +206,8 @@ void ReadTask::runPipelineMode(const ReadRequest::ReqParam & p)
          b.mem_sizes = NULL;
          b.file_starts = NULL;
          b.file_sizes = NULL;
-         ios.push_back(make_pair(execPipelineIO(p, &b), b));
+         b.io_id = execPipelineIO(p, &b);
+         io_q.push_back(b);
          is_issue_read = true;
       }
 
@@ -220,18 +225,6 @@ void ReadTask::runPipelineMode(const ReadRequest::ReqParam & p)
             ++it;
          }
       }
-
-      // test for first read buffer
-      // TODO: support for out-of-order read
-      if (!ios.empty()) {
-         iofwdutil::completion::CompletionID * io_id = ios.front().first;
-         if (io_id->test(10)) {
-            delete io_id;
-            ReadBuffer b = ios.front().second;
-            io_q.push_back(b);
-            ios.pop_front();
-         }        
-      }
       
       // advance to read the next pipeline
       if (is_issue_read) {
@@ -240,16 +233,7 @@ void ReadTask::runPipelineMode(const ReadRequest::ReqParam & p)
       }
    }
 
-   // wait remaining I/O requests
-   while (!ios.empty()) {
-      iofwdutil::completion::CompletionID * io_id = ios.front().first;
-      io_id->wait();
-      delete io_id;
-      io_q.push_back(ios.front().second);
-      ios.pop_front();
-   }
-
-   // wait remaining send requests
+   // wait remaining send requests, not to violate message order
    while (!tx_q.empty()) {
       ReadBuffer b = tx_q.front();
       tx_q.pop_front();
@@ -261,18 +245,32 @@ void ReadTask::runPipelineMode(const ReadRequest::ReqParam & p)
    }
 
    // send remaining I/O requests
-   while (!io_q.empty()) {
-      ReadBuffer b = io_q.front();
-      assert(b.alloc_id != NULL);
-      io_q.pop_front();
+   {
+     ReadBuffer prev_b;
+     prev_b.tx_id = NULL;
 
-      iofwdutil::completion::CompletionID * tx_id;
-      tx_id = request_.sendPipelineBuffer(b.alloc_id->get_buf(), b.siz);
-      assert(tx_id != NULL);
-      b.tx_id = tx_id;
-      tx_id->wait();
+     while (!io_q.empty()) {
+       ReadBuffer b = io_q.front();
+       assert(b.alloc_id != NULL);
+       io_q.pop_front();
 
-      releaseReadBuffer(b);
+       iofwdutil::completion::CompletionID * io_id = b.io_id;
+       io_id->wait();
+       delete io_id;
+
+       if (prev_b.tx_id != NULL) {
+         prev_b.tx_id->wait();
+         releaseReadBuffer(prev_b);
+       }
+       b.tx_id = request_.sendPipelineBuffer(b.alloc_id->get_buf(), b.siz);
+       assert(b.tx_id != NULL);
+
+       prev_b = b;
+     }
+     if (prev_b.tx_id != NULL) {
+       prev_b.tx_id->wait();
+       releaseReadBuffer(prev_b);
+     }
    }
 
    // reply status
