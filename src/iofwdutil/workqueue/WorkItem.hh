@@ -42,7 +42,7 @@ private:
    {
       boost::mutex::scoped_lock l (lock_);
       workitem_completed_ = true;
-      ready_.notify_one();
+      ready_.notify_all();
    }
 
    bool hasCompleted () const
