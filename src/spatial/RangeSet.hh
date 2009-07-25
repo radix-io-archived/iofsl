@@ -59,7 +59,7 @@ public:
     it = en_map.lower_bound(r.en);
     while (it != en_map.end()) {
       const Range& rr = it->second;
-      if (rr.st <= r.st && r.en << rr.en) s.insert(rr);
+      if (rr.st <= r.st && r.en <= rr.en) s.insert(rr);
       else break;
       ++it;
     }
