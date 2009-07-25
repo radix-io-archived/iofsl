@@ -3,6 +3,7 @@
  * PVFS driver for ZOIDFS.
  */
 
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
@@ -665,16 +666,25 @@ static int zint_pvfs2_io(const zoidfs_handle_t * handle,
     PVFS_size * displacements;
     PVFS_credentials creds;
     const void * buffer;
+    int32_t * mem_sizes_i32 = (int32_t *)malloc(sizeof(int32_t) * mem_count);
+    int32_t * file_sizes_i32 = (int32_t *)malloc(sizeof(int32_t) * file_count);
+
+    // PVFS_Request_indexed() requests int32_t* for blocklengths, but ZFS uses
+    // uint64_t* for representing sizes. So, the conversion is needed.
+    for (i = 0; i < mem_count; i++)
+        mem_sizes_i32[i] = mem_sizes[i];
+    for (i = 0; i < file_count; i++)
+        file_sizes_i32[i] = file_sizes[i];
 
     PVFS_util_gen_credentials(&creds);
 
     if(mem_count == 1)
     {
         /* contig in memory */
-        ret = PVFS_Request_contiguous(mem_sizes[0], PVFS_BYTE, &mem_req);
+        ret = PVFS_Request_contiguous(mem_sizes_i32[0], PVFS_BYTE, &mem_req);
         if(ret < 0)
         {
-            return zint_pvfs2_output_error(ret);
+            goto error_pvfs;
         }
 
         buffer = mem_starts[0];
@@ -684,7 +694,8 @@ static int zint_pvfs2_io(const zoidfs_handle_t * handle,
         displacements = malloc(sizeof(PVFS_size) * mem_count);
         if(!displacements)
         {
-            return ZFSERR_NOMEM;
+            ret = ZFSERR_NOMEM;
+            goto error;
         }
 
         for(i = 0; i < mem_count; ++i)
@@ -692,14 +703,14 @@ static int zint_pvfs2_io(const zoidfs_handle_t * handle,
             displacements[i] = (intptr_t)mem_starts[i];
         }
 
-        ret = PVFS_Request_indexed(mem_count, (int32_t *)mem_sizes,
+        ret = PVFS_Request_indexed(mem_count, mem_sizes_i32,
                                    displacements, PVFS_BYTE, &mem_req);
 
         free(displacements);
 
         if(ret < 0)
         {
-            return zint_pvfs2_output_error(ret);
+            goto error_pvfs;
         }
 
         buffer = PVFS_BOTTOM;
@@ -709,20 +720,21 @@ static int zint_pvfs2_io(const zoidfs_handle_t * handle,
     {
         /* file request is contiguous */
         offset = file_starts[0];
-        ret = PVFS_Request_contiguous(file_sizes[0], PVFS_BYTE, &file_req);
+        ret = PVFS_Request_contiguous(file_sizes_i32[0], PVFS_BYTE, &file_req);
         if(ret < 0)
         {
-            return zint_pvfs2_output_error(ret);
+            goto error_pvfs;
         }
     }
     else
     {
-        ret = PVFS_Request_indexed(file_count, (int32_t *)file_sizes,
+        assert(sizeof(PVFS_size) == sizeof(uint64_t));
+        ret = PVFS_Request_indexed(file_count, file_sizes_i32,
                                    (PVFS_size *)file_starts,
                                    PVFS_BYTE, &file_req);
         if(ret < 0)
         {
-            return zint_pvfs2_output_error(ret);
+            goto error_pvfs;
         }
     }
 
@@ -732,13 +744,26 @@ static int zint_pvfs2_io(const zoidfs_handle_t * handle,
                       &creds, io_resp, type, NULL);
     if(ret < 0)
     {
-        return zint_pvfs2_output_error(ret);
+        goto error_pvfs;
     }
 
     PVFS_Request_free(&mem_req);
     PVFS_Request_free(&file_req);
 
+    free(mem_sizes_i32);
+    free(file_sizes_i32);
+
     return ZFS_OK;
+
+error:
+    free(mem_sizes_i32);
+    free(file_sizes_i32);
+    return ret;
+
+error_pvfs:
+    free(mem_sizes_i32);
+    free(file_sizes_i32);
+    return zint_pvfs2_output_error(ret);
 }
 
 static int zint_pvfs2_commit(const zoidfs_handle_t * handle)
