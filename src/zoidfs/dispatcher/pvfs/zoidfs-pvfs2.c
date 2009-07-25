@@ -29,6 +29,7 @@
 #define zint_pvfs2_output_handle(_pvfs2_ref, _zfs_handle) \
     do { \
         uint8_t * _zptr = (_zfs_handle)->data; \
+        memset(_zptr, 0, 32); \
         _zptr += sizeof(uint32_t); /* reserved for zoidfs */ \
         *(PVFS_handle *) _zptr = (_pvfs2_ref).handle; \
         _zptr += sizeof(PVFS_handle); \
