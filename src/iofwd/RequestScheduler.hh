@@ -9,6 +9,7 @@
 
 #include "zoidfs/zoidfs.h"
 #include "iofwdutil/zlog/ZLogSource.hh"
+#include "spatial/Range.hh"
 
 namespace iofwdutil {
   namespace completion {
@@ -45,6 +46,7 @@ public:
 
 protected:
   void run();
+  void issue(const std::vector<spatial::Range>& rs);
   void notifyConsumer();
   
 private:

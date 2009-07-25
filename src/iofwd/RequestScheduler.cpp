@@ -26,6 +26,23 @@ namespace iofwd
 {
 //===========================================================================
 
+static bool same_handle(const zoidfs::zoidfs_handle_t *h1,
+                        const zoidfs::zoidfs_handle_t *h2)
+{
+  if (h1 == NULL || h2 == NULL) return false;
+  return memcmp(h1->data, h2->data, sizeof(uint8_t)*32) == 0;
+}
+
+static void check_ranges(const vector<Range>& rs)
+{
+  if (rs.size() >= 2) {
+    for (unsigned int i = 1; i < rs.size(); i++) {
+      assert(rs[0].type == rs[i].type);
+      assert(same_handle(rs[0].handle, rs[i].handle));
+    }
+  }
+}
+
 // The class to hold request information
 class IOCompletionID : public CompletionID
 {
@@ -150,76 +167,127 @@ CompletionID * RequestScheduler::enqueueRead(
 
 void RequestScheduler::run()
 {
+  vector<Range> rs;
+  const int batch_size = 16;
+  int cur_batch = 0;
   while (true) {
-    Range r;
+    // check if RangeScheduler has pending requests
+    Range tmp_r;
+    bool has_tmp_r = false;
     {
-      // deque fron scheduler queue
       boost::mutex::scoped_lock l(lock_);
       while (range_sched_->empty() && !exiting) {
-        // ready_.timed_wait(l, boost::get_system_time()
-        //                      + boost::posix_time::milliseconds(50));
+        if (!rs.empty()) break;
         ready_.wait(l);
       }
       if (exiting)
         break;
 
-      // TODO: dequeue multiple requests
-      bool is_dequeued = range_sched_->dequeue(r);
-      if (!is_dequeued)
-        continue;
-    }
-    {
-      bool is_merged = !r.child_ranges.empty();
-      unsigned int narrays =  is_merged ? r.child_ranges.size() : 1;
-      char ** mem_starts = new char*[narrays];
-      size_t * mem_sizes = new size_t[narrays];
-      uint64_t * file_starts = new uint64_t[narrays];
-      uint64_t * file_sizes = new uint64_t[narrays];
-      if (is_merged) {
-        for (unsigned int i = 0; i < narrays; i++) {
-          const Range& child_r = r.child_ranges[i];
-          mem_starts[i] = child_r.buf;
-          mem_sizes[i] = child_r.en - child_r.st;
-          file_starts[i] = child_r.st;
-          file_sizes[i] = child_r.en - child_r.st;
+      // dequeue requests of same direction (read/write), same handle
+      // TODO: batch_size should be tunable
+      while (cur_batch < batch_size) {
+        Range r;
+        if (range_sched_->empty())
+          break;
+        bool is_dequeued = range_sched_->dequeue(r);
+        if (!is_dequeued) break;
+        if (!rs.empty()) {
+          if (r.type != rs.back().type || !same_handle(r.handle, rs.back().handle)) {
+            // dequeued request is in a different direction/different handle
+            // stop batching.
+            tmp_r = r;
+            has_tmp_r = true;
+            break;
+          }
         }
-      } else {
-        mem_starts[0] = r.buf;
-        mem_sizes[0] = r.en - r.st;
-        file_starts[0] = r.st;
-        file_sizes[0] = r.en - r.st;
+        cur_batch += r.child_ranges.empty() ? 1 : r.child_ranges.size();
+        rs.push_back(r);
       }
-      assert(r.en > r.st);
+    }
 
-      // issue asynchronous I/O using ZoidFSAsyncAPI
-      CompletionID *async_id;
-      if (r.type == Range::RANGE_WRITE) {
-        async_id = async_api_->async_write(
-          r.handle, narrays, (const void**)mem_starts, mem_sizes,
-          narrays, file_starts, file_sizes);
-      } else if (r.type == Range::RANGE_READ) {
-        async_id = async_api_->async_read(
-          r.handle, narrays, (void**)mem_starts, mem_sizes,
-          narrays, file_starts, file_sizes);
-      } else {
-        assert(false);
+    if (rs.empty())
+      continue;
+    
+    // issue asynchronous I/O for rs
+    check_ranges(rs);
+    issue(rs);
+
+    rs.clear();
+    if (has_tmp_r) {
+      rs.push_back(tmp_r);
+      cur_batch = tmp_r.child_ranges.empty() ? 1 : tmp_r.child_ranges.size();
+    } else {
+      cur_batch = 0;
+    }
+  }
+}
+
+void RequestScheduler::issue(const vector<Range>& rs)
+{
+  unsigned int narrays = 0;
+  for (unsigned int i = 0; i < rs.size(); i++) {
+    const Range& r = rs[i];
+    narrays += r.child_ranges.empty() ? 1 : r.child_ranges.size();
+  }
+
+  char ** mem_starts = new char*[narrays];
+  size_t * mem_sizes = new size_t[narrays];
+  uint64_t * file_starts = new uint64_t[narrays];
+  uint64_t * file_sizes = new uint64_t[narrays];
+
+  unsigned int nth = 0;
+  for (unsigned int i = 0; i < rs.size(); i++) {
+    const Range& r = rs[i];
+
+    bool is_merged = !r.child_ranges.empty();
+    unsigned int nranges = is_merged ? r.child_ranges.size() : 1;
+    if (is_merged) {
+      for (unsigned int j = 0; j < nranges; j++) {
+        const Range& child_r = r.child_ranges[j];
+        mem_starts[nth] = child_r.buf;
+        mem_sizes[nth] = child_r.en - child_r.st;
+        file_starts[nth] = child_r.st;
+        file_sizes[nth] = child_r.en - child_r.st;
+        nth++;
       }
+    } else {
+      mem_starts[nth] = r.buf;
+      mem_sizes[nth] = r.en - r.st;
+      file_starts[nth] = r.st;
+      file_sizes[nth] = r.en - r.st;
+      nth++;
+    }
+    assert(r.en > r.st);
+  }
+  assert(nth == narrays);
 
-      // properly release resources, we wrap async_id by IOCompletionID
-      boost::shared_ptr<CompletionID> io_id;
-      io_id.reset(new IOCompletionID(async_id, mem_starts, mem_sizes, file_starts, file_sizes));
+  // issue asynchronous I/O using ZoidFSAsyncAPI
+  CompletionID *async_id;
+  if (rs[0].type == Range::RANGE_WRITE) {
+    async_id = async_api_->async_write(rs[0].handle, narrays, (const void**)mem_starts, mem_sizes,
+                                       narrays, file_starts, file_sizes);
+  } else if (rs[0].type == Range::RANGE_READ) {
+    async_id = async_api_->async_read(rs[0].handle, narrays, (void**)mem_starts, mem_sizes,
+                                      narrays, file_starts, file_sizes);
+  } else {
+    assert(false);
+  }
 
-      // add io_id to associated CompositeCompletionID
-      vector<CompositeCompletionID*>& v = r.cids;
-      assert(v.size() > 0);
-      for (vector<CompositeCompletionID*>::iterator it = v.begin();
-           it != v.end(); ++it) {
-        CompositeCompletionID * ccid = *it;
-        // Because io_id is shared among multiple CompositeCompletionIDs,
-        // we use SharedCompletionID to properly release the resource by using
-        // boost::shared_ptr (e.g. reference counting).
-        ccid->addCompletionID(new SharedCompletionID(io_id));
-      }
+  // properly release resources, we wrap async_id by IOCompletionID
+  boost::shared_ptr<CompletionID> io_id;
+  io_id.reset(new IOCompletionID(async_id, mem_starts, mem_sizes, file_starts, file_sizes));
+
+  // add io_id to associated CompositeCompletionID
+  for (unsigned int i = 0; i < rs.size(); i++) {
+    const vector<CompositeCompletionID*>& v = rs[i].cids;
+    assert(v.size() > 0);
+    for (vector<CompositeCompletionID*>::const_iterator it = v.begin();
+         it != v.end(); ++it) {
+      CompositeCompletionID * ccid = *it;
+      // Because io_id is shared among multiple CompositeCompletionIDs,
+      // we use SharedCompletionID to properly release the resource by using
+      // boost::shared_ptr (e.g. reference counting).
+      ccid->addCompletionID(new SharedCompletionID(io_id));
     }
   }
 }
