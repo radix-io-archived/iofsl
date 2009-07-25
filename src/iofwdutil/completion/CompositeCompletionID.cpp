@@ -17,6 +17,7 @@ CompositeCompletionID::~CompositeCompletionID()
 
 void CompositeCompletionID::wait ()
 {
+   if (num_ids_ == 0) return;
    boost::mutex::scoped_lock lock(lock_);
    while (completed_ids_.size() < num_ids_) {
       while (ids_.empty())
@@ -30,6 +31,7 @@ void CompositeCompletionID::wait ()
 
 bool CompositeCompletionID::test (unsigned int maxms)
 {
+   if (num_ids_ == 0) return true;
    boost::mutex::scoped_lock lock(lock_);
    for (deque<CompletionID*>::iterator it = ids_.begin(); it != ids_.end();) {
       CompletionID * id = *it;
@@ -45,6 +47,7 @@ bool CompositeCompletionID::test (unsigned int maxms)
 
 void CompositeCompletionID::addCompletionID (CompletionID * id)
 {
+   assert(num_ids_ > 0);
    boost::mutex::scoped_lock lock(lock_);
    ids_.push_back(id);
    if (num_ids_ != 0)

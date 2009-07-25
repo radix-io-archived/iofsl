@@ -18,9 +18,7 @@ public:
 
    CompositeCompletionID (unsigned int num_ids)
       : num_ids_(num_ids)
-   {
-      assert(num_ids_ > 0);
-   }
+   {}
    virtual ~CompositeCompletionID();
 
    virtual void wait ();

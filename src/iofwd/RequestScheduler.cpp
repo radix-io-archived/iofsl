@@ -122,9 +122,16 @@ CompletionID * RequestScheduler::enqueueWrite(
   const void ** mem_starts, size_t * mem_sizes,
   uint64_t * file_starts, uint64_t * file_sizes)
 {
-  CompositeCompletionID * ccid = new CompositeCompletionID(count);
+  // ignore zero-length request
+  int valid_count = 0;
+  for (uint32_t i = 0; i < count; i++)
+    if (file_sizes[i] > 0)
+      valid_count++;
+
+  CompositeCompletionID * ccid = new CompositeCompletionID(valid_count);
   for (uint32_t i = 0; i < count; i++) {
     assert(mem_sizes[i] == file_sizes[i]);
+    if (file_sizes[i] == 0) continue;
 
     Range r;
     r.type = Range::RANGE_WRITE;
@@ -146,9 +153,16 @@ CompletionID * RequestScheduler::enqueueRead(
   void ** mem_starts, size_t * mem_sizes,
   uint64_t * file_starts, uint64_t * file_sizes)
 {
-  CompositeCompletionID * ccid = new CompositeCompletionID(count);
+  // ignore zero-length request
+  int valid_count = 0;
+  for (uint32_t i = 0; i < count; i++)
+    if (file_sizes[i] > 0)
+      valid_count++;
+  
+  CompositeCompletionID * ccid = new CompositeCompletionID(valid_count);
   for (uint32_t i = 0; i < count; i++) {
     assert(mem_sizes[i] == file_sizes[i]);
+    if (file_sizes == 0) continue;
 
     Range r;
     r.type = Range::RANGE_READ;
