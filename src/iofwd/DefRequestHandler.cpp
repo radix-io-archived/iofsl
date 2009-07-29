@@ -27,7 +27,7 @@ DefRequestHandler::DefRequestHandler ()
       throw "ZoidFSAPI::init() failed";
    async_api_ = new zoidfs::ZoidFSAsyncAPI(&api_);
    sched_ = new RequestScheduler(async_api_);
-   pool_ = new BufferPool(zoidfs::ZOIDFS_BUFFER_MAX * 2, 100);
+   pool_ = new BufferPool(1024UL * 1024 * 8, 100);
   
    workqueue_normal_.reset (new PoolWorkQueue (0, 100)); 
    workqueue_fast_.reset (new SynchronousWorkQueue ()); 

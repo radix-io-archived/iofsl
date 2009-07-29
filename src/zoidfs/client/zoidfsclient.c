@@ -1671,7 +1671,7 @@ int zoidfs_write(const zoidfs_handle_t *handle, size_t mem_count_,
     uint32_t file_count = file_count_;
     uint64_t pipeline_size = 0;
 
-#define PIPELINE_SIZE (1024UL * 1024 * 16)
+#define PIPELINE_SIZE (1024UL * 1024 * 8)
     size_t total_size = 0;
     for (i = 0; i < mem_count_; i++) {
         total_size += mem_sizes_[i];
