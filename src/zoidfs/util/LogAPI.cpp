@@ -52,7 +52,7 @@ int LogAPI::setattr(const zoidfs_handle_t * handle,
             const zoidfs_sattr_t * a1,
             zoidfs_attr_t * a2)
 {
-   LOG(format("zoidfs_setattr") % handle2string(handle)); 
+   LOG(format("zoidfs_setattr handle=%s") % handle2string(handle)); 
    return api_->setattr (handle, a1, a2); 
 }
 
