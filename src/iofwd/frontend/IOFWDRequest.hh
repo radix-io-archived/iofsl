@@ -52,6 +52,9 @@ protected:
 
    void decodeFileSpec (FileInfo & info)
    {
+      memset(info.parent_handle.data, 0, sizeof(uint8_t) * 32);
+      memset(info.full_path, 0, ZOIDFS_PATH_MAX);
+      memset(info.component_name, 0, ZOIDFS_NAME_MAX);
       process(req_reader_, iofwdutil::xdr::FileSpecHelper (&info.parent_handle, 
               info.component_name, info.full_path));
    }
