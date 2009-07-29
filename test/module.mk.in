@@ -1,5 +1,12 @@
 MODULE_APPS:= xdrspeed bmitest timertest forwarding iofwdreceive iofwdsend \
-    smlinks smtest workqueue levelmatch iofwdlog regexfilter completion
+    smlinks smtest workqueue levelmatch iofwdlog regexfilter completion \
+    zoidfs-md zoidfs-io
+
+MODULE_SOURCES_zoidfs-io := zoidfs-io.c
+ADDINTLIBS_zoidfs-io := zoidfsclient
+
+MODULE_SOURCES_zoidfs-md := zoidfs-md.c
+ADDINTLIBS_zoidfs-md := zoidfsclient
 
 MODULE_SOURCES_completion := completion.cpp
 ADDINTLIBS_completion := iofwdutil
