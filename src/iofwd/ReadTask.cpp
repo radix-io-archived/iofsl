@@ -55,9 +55,12 @@ void ReadTask::runNormalMode(const ReadRequest::ReqParam & p)
          tmp_mem_sizes[i] = p.mem_sizes[i];
    }
 
-   int ret = api_->read (p.handle,
-                         (size_t)p.mem_count, (void**)p.mem_starts, tmp_mem_sizes,
-                         (size_t)p.file_count, p.file_starts, p.file_sizes);
+   std::auto_ptr<iofwdutil::completion::CompletionID> io_id (sched_->enqueueRead (
+      p.handle, (size_t)p.mem_count,
+      (void**)p.mem_starts, tmp_mem_sizes,
+      p.file_starts, p.file_sizes));
+   io_id->wait ();
+   int ret = zoidfs::ZFS_OK;
    request_.setReturnCode (ret);
 
    if (need_size_t_workaround)
