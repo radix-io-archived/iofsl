@@ -249,9 +249,6 @@ void ReadTask::runPipelineMode(const ReadRequest::ReqParam & p)
 
    // send remaining I/O requests
    {
-     ReadBuffer prev_b;
-     prev_b.tx_id = NULL;
-
      while (!io_q.empty()) {
        ReadBuffer b = io_q.front();
        assert(b.alloc_id != NULL);
@@ -261,18 +258,10 @@ void ReadTask::runPipelineMode(const ReadRequest::ReqParam & p)
        io_id->wait();
        delete io_id;
 
-       if (prev_b.tx_id != NULL) {
-         prev_b.tx_id->wait();
-         releaseReadBuffer(prev_b);
-       }
        b.tx_id = request_.sendPipelineBuffer(b.alloc_id->get_buf(), b.siz);
        assert(b.tx_id != NULL);
-
-       prev_b = b;
-     }
-     if (prev_b.tx_id != NULL) {
-       prev_b.tx_id->wait();
-       releaseReadBuffer(prev_b);
+       b.tx_id->wait();
+       releaseReadBuffer(b);
      }
    }
 
