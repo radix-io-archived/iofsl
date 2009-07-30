@@ -39,6 +39,7 @@ Programs that use this dispatcher must set this environment variable. For exampl
 
 TODO:
 -----
+- The mount target code specified by ZOIDFS_SYSIO_MOUNT needs better error checking
 - Currently, zoidfs_link and zoidfs_getdireentires do not work properly in this dispatcher and this code is still under development.
 - On shutdown of the libsysio dispatcher, libsysio asserts are triggered related to pthread_mutex_destroy. This occurs during remove of files and directories. Similar asserts are sometimes triggered if zoidfs_write calls were issued. This is a known issue and is being diagnosed.
 
