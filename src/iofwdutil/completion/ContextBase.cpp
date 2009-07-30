@@ -4,6 +4,7 @@
 #include "Resource.hh"
 #include "iofwdutil/assert.hh"
 #include "ContextBase.hh"
+#include "iofwdutil/tools.hh"
 
 using namespace boost::posix_time;
 
@@ -51,15 +52,17 @@ namespace iofwdutil
          }
       }
 
-      void ContextBase::wait (const CompletionID & id, void **user)
+      void ContextBase::wait (const CompletionID & UNUSED(id), void ** UNUSED(user))
       {
          //resources_[id.getResourceID()]->wait (id, user); 
       }
 
-      bool ContextBase::test (const CompletionID & id, void ** user, 
-            unsigned int mstimeout)
+      bool ContextBase::test (const CompletionID & UNUSED(id), void ** UNUSED(user), 
+            unsigned int UNUSED(mstimeout))
       {
          //return resources_[id.getResourceID()]->test (id, user, mstimeout); 
+         // @TODO
+         return false; 
       }
 
       void ContextBase::waitAny (std::vector<CompletionID *> & ret)
