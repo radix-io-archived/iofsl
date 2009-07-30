@@ -50,6 +50,18 @@ ifdef DISPATCH_PVFS
    MODULE_CFLAGS_zoidfsdispatch += @PVFS2_CFLAGS@
 endif
 
+# If libsysio dispatcher plugin should be built
+ifdef DISPATCH_LIBSYSIO
+   MODULE_SOURCES_zoidfsdispatch += $(addprefix dispatcher/sysio/,\
+   		zoidfs-sysio.c           \
+        )
+   MODULE_LDFLAGS_zoidfsdispatch += @SYSIO_LDFLAGS@ @SYSIO_LIBS@
+   #MODULE_CPPFLAGS_zoidfsdispatch += @SYSIO_CPPFLAGS@
+   #MODULE_CFLAGS_zoidfsdispatch += @SYSIO_CFLAGS@
+   CPPFLAGS += @SYSIO_CPPFLAGS@ -D_LARGEFILE64_SOURCE -DHAVE_POSIX_1003_READLINK -D__USE_LARGEFILE64
+   CFLAGS += @SYSIO_CFLAGS@ -D_LARGEFILE64_SOURCE -DHAVE_POSIX_1003_READLINK -D__USE_LARGEFILE64
+   LDFLAGS += @SYSIO_LDFLAGS@ @SYSIO_LIBS@
+endif
 
 #
 #  C++ wrapper around the zoidfs API
