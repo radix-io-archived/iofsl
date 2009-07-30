@@ -71,7 +71,7 @@ int IOFWDClient::setattr(const zoidfs::zoidfs_handle_t * handle /* in:ptr */,
                    const zoidfs_sattr_t * sattr /* in:ptr */,
                    zoidfs_attr_t * attr /* inout:ptr:nullok */)
 {
-   return comm_.genericOp (ZOIDFS_PROTO_GET_ATTR, 
+   return comm_.genericOp (ZOIDFS_PROTO_SET_ATTR, 
          TSSTART << *handle << *sattr << *attr,
          TSSTART << *attr); 
 }
