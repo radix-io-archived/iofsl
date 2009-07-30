@@ -13,10 +13,9 @@
 #include <sys/time.h>
 #include <sys/types.h>
 
-#include "zoidfs/zoidfs.h"
-#include "zoidfs/zoidfs-proto.h"
-#include "zoidfs/client/bmi_comm.h"
-#include "zoidfs/client/zoidfs_xdr.h"
+#include "zoidfs.h"
+#include "zoidfs-proto.h"
+#include "iofwd_config.h"
 
 #define NAMESIZE 255
 
@@ -37,6 +36,7 @@ int main(int argc, char **argv) {
     zoidfs_dirent_cookie_t cookie = 0;
     char new_fullpath_filename[NAMESIZE];
     char symlink[NAMESIZE], symlink_target[NAMESIZE];
+    char link[NAMESIZE], link_target[NAMESIZE];
     char fullpath_dirname[NAMESIZE], component_dirname[NAMESIZE];
     char fullpath_filename[NAMESIZE], component_filename[NAMESIZE];
 
@@ -47,6 +47,8 @@ int main(int argc, char **argv) {
 
     snprintf(symlink, NAMESIZE, "%s/symlink", argv[1]);
     snprintf(symlink_target, NAMESIZE, "%s/test-zoidfs-fullpath", argv[1]);
+    snprintf(link, NAMESIZE, "%s/link", argv[1]);
+    snprintf(link_target, NAMESIZE, "%s/test-zoidfs-fullpath", argv[1]);
     snprintf(fullpath_dirname, NAMESIZE, "%s/test-dir-fullpath", argv[1]);
     snprintf(component_dirname, NAMESIZE, "test-dir-component");
 
@@ -100,24 +102,25 @@ int main(int argc, char **argv) {
     ret = zoidfs_create(&basedir_handle, component_filename, NULL, &sattr,
                         &fhandle, &created);
     if(ret != ZFS_OK) {
+        fprintf(stderr, "comp create failed!\n");
         goto exit;
     }
 
     /* Check that created == 1 */
     assert(created);
-
     ret = zoidfs_create(&basedir_handle, component_filename, NULL, &sattr,
                         &fhandle, &created);
     if(ret != ZFS_OK) {
+        fprintf(stderr, "comp recreate failed!\n");
         goto exit;
     }
 
     /* Check that created == 0 */
     assert(created == 0);
-
     ret = zoidfs_create(NULL, NULL, fullpath_filename, &sattr, &fhandle,
                         &created);
     if(ret != ZFS_OK) {
+        fprintf(stderr, "fp create failed!\n");
         goto exit;
     }
 
@@ -133,6 +136,18 @@ int main(int argc, char **argv) {
 
     /* Try lookup with handle and component */
     ret = zoidfs_lookup(&basedir_handle, component_filename, NULL, &fhandle);
+    if(ret != ZFS_OK) {
+        goto exit;
+    }
+
+    /* Try lookup with full_path */
+    ret = zoidfs_lookup(NULL, NULL, fullpath_filename, &fhandle);
+    if(ret != ZFS_OK) {
+        goto exit;
+    }
+
+    /* Try lookup with full_path */
+    ret = zoidfs_lookup(NULL, NULL, fullpath_filename, &fhandle);
     if(ret != ZFS_OK) {
         goto exit;
     }
@@ -191,6 +206,15 @@ int main(int argc, char **argv) {
         goto exit;
     }
 
+#ifndef HAVE_DISPATCHER_LIBSYSIO
+    /* create a link */
+    ret = zoidfs_link(NULL, NULL, link, NULL, NULL, link_target,
+                         NULL, NULL);
+    if(ret != ZFS_OK) {
+        goto exit;
+    }
+#endif
+    
     /* readlink */
     ret = zoidfs_lookup(NULL, NULL, symlink, &fhandle);
     if(ret != ZFS_OK)
@@ -258,6 +282,7 @@ int main(int argc, char **argv) {
         goto exit;
     }
 
+#ifndef HAVE_DISPATCHER_LIBSYSIO
     /* List dirents */
     entries = malloc(entry_count * sizeof(zoidfs_dirent_t));
     if (!entries) {
@@ -271,6 +296,7 @@ int main(int argc, char **argv) {
         goto exit;
     }
     free(entries);
+#endif
 
     /* Cleanup directories */
     ret = zoidfs_remove(&basedir_handle, component_dirname, NULL, NULL);

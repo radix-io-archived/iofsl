@@ -270,10 +270,11 @@ int zoidfs_readlink(const zoidfs_handle_t *handle, char *buffer,
     zoidfs_op_status_t op_status = ZFS_OK;
     zoidfs_op_id_t zoidfs_op_id = ZOIDFS_PROTO_READLINK;
     bmi_msg_tag_t tag = gen_tag();
+    uint64_t buffer_length_uint64_t = (uint64_t)buffer_length;
 
     sendbuflen = xdr_sizeof((xdrproc_t)xdr_zoidfs_op_id_t, &zoidfs_op_id) +
                  xdr_sizeof((xdrproc_t)xdr_zoidfs_handle_t, (void *)handle) +
-                 xdr_sizeof((xdrproc_t)xdr_u_long, &buffer_length);
+                 xdr_sizeof((xdrproc_t)xdr_uint64_t, &buffer_length_uint64_t);
     recvbuflen = xdr_sizeof((xdrproc_t)xdr_zoidfs_op_status_t, &op_status) +
                  ZOIDFS_PATH_MAX;
 
@@ -293,8 +294,8 @@ int zoidfs_readlink(const zoidfs_handle_t *handle, char *buffer,
         fprintf(stderr, "zoidfs_readlink: xdr_zoidfs_handle_t() failed.\n");
         return ZFSERR_XDR;
     }
-    if (!xdr_u_long(&xdrs, &buffer_length)) {
-        fprintf(stderr, "zoidfs_readlink: xdr_u_long() failed.\n");
+    if (!xdr_uint64_t(&xdrs, &buffer_length_uint64_t)) {
+        fprintf(stderr, "zoidfs_readlink: xdr_uint64_t() failed.\n");
         return ZFSERR_XDR;
     }
     xdr_destroy(&xdrs);
@@ -787,7 +788,6 @@ int zoidfs_create(const zoidfs_handle_t *parent_handle,
     return op_status;
 }
 
-
 /*
  * zoidfs_rename
  * This function renames an existing file or directory.
@@ -867,19 +867,19 @@ int zoidfs_rename(const zoidfs_handle_t *from_parent_handle,
 
     /* Encode the function parameters using XDR */
     xdrmem_create(&xdrs, sendbuf, sendbuflen, XDR_ENCODE);
+
     if (!xdr_zoidfs_op_id_t(&xdrs, &zoidfs_op_id)) {
         fprintf(stderr, "zoidfs_rename: xdr_zoidfs_op_id_t() failed.\n");
         return ZFSERR_XDR;
     }
+
+    /*
+     * encode the from file data.
+     */
     if (!xdr_zoidfs_null_param_t(&xdrs, &from_null_param)) {
         fprintf(stderr, "zoidfs_rename: xdr_zoidfs_null_param_t() failed.\n");
         return ZFSERR_XDR;
     }
-    if (!xdr_zoidfs_null_param_t(&xdrs, &to_null_param)) {
-        fprintf(stderr, "zoidfs_rename: xdr_zoidfs_null_param_t() failed.\n");
-        return ZFSERR_XDR;
-    }
-
     if (from_full_path) {
         if (!xdr_string(&xdrs, (char **)&from_full_path, ZOIDFS_PATH_MAX)) {
             fprintf(stderr, "zoidfs_rename: xdr_string() failed.\n");
@@ -897,6 +897,13 @@ int zoidfs_rename(const zoidfs_handle_t *from_parent_handle,
         }
     }
 
+    /*
+     * encode the to file data.
+     */
+    if (!xdr_zoidfs_null_param_t(&xdrs, &to_null_param)) {
+        fprintf(stderr, "zoidfs_rename: xdr_zoidfs_null_param_t() failed.\n");
+        return ZFSERR_XDR;
+    }
     if (to_full_path) {
         if (!xdr_string(&xdrs, (char **)&to_full_path, ZOIDFS_PATH_MAX)) {
             fprintf(stderr, "zoidfs_rename: xdr_string() failed.\n");
@@ -1233,15 +1240,14 @@ int zoidfs_symlink(const zoidfs_handle_t *from_parent_handle,
         fprintf(stderr, "zoidfs_symlink: xdr_zoidfs_op_id_t() failed.\n");
         return ZFSERR_XDR;
     }
+
+    /*
+     * encode the from file data including the null_param and the handle / path / name
+     */
     if (!xdr_zoidfs_null_param_t(&xdrs, &from_null_param)) {
         fprintf(stderr, "zoidfs_symlink: xdr_zoidfs_null_param_t() failed.\n");
         return ZFSERR_XDR;
     }
-    if (!xdr_zoidfs_null_param_t(&xdrs, &to_null_param)) {
-        fprintf(stderr, "zoidfs_symlink: xdr_zoidfs_null_param_t() failed.\n");
-        return ZFSERR_XDR;
-    }
-
     if (from_full_path) {
         if (!xdr_string(&xdrs, (char **)&from_full_path, ZOIDFS_PATH_MAX)) {
             fprintf(stderr, "zoidfs_symlink: xdr_string() failed.\n");
@@ -1259,6 +1265,13 @@ int zoidfs_symlink(const zoidfs_handle_t *from_parent_handle,
         }
     }
 
+    /*
+     * encode the to file data including the null_param and the handle / path / name
+     */
+    if (!xdr_zoidfs_null_param_t(&xdrs, &to_null_param)) {
+        fprintf(stderr, "zoidfs_symlink: xdr_zoidfs_null_param_t() failed.\n");
+        return ZFSERR_XDR;
+    }
     if (to_full_path) {
         if (!xdr_string(&xdrs, (char **)&to_full_path, ZOIDFS_PATH_MAX)) {
             fprintf(stderr, "zoidfs_symlink: xdr_string() failed.\n");
@@ -2147,7 +2160,6 @@ int zoidfs_init(void) {
     return 0;
 }
 
-
 /*
  * zoidfs_finalize
  * Finalize the client subsystems.
@@ -2165,6 +2177,8 @@ int zoidfs_finalize(void) {
     }
     return 0;
 }
+
+
 
 /*
  * Local variables:
