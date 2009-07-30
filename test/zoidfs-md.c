@@ -102,25 +102,24 @@ int main(int argc, char **argv) {
     ret = zoidfs_create(&basedir_handle, component_filename, NULL, &sattr,
                         &fhandle, &created);
     if(ret != ZFS_OK) {
-        fprintf(stderr, "comp create failed!\n");
         goto exit;
     }
 
     /* Check that created == 1 */
     assert(created);
+
     ret = zoidfs_create(&basedir_handle, component_filename, NULL, &sattr,
                         &fhandle, &created);
     if(ret != ZFS_OK) {
-        fprintf(stderr, "comp recreate failed!\n");
         goto exit;
     }
 
     /* Check that created == 0 */
     assert(created == 0);
+
     ret = zoidfs_create(NULL, NULL, fullpath_filename, &sattr, &fhandle,
                         &created);
     if(ret != ZFS_OK) {
-        fprintf(stderr, "fp create failed!\n");
         goto exit;
     }
 
