@@ -13,10 +13,9 @@
 #include <sys/time.h>
 #include <sys/types.h>
 
-#include "zoidfs/zoidfs.h"
-#include "zoidfs/zoidfs-proto.h"
-#include "zoidfs/client/bmi_comm.h"
-#include "zoidfs/client/zoidfs_xdr.h"
+#include "zoidfs.h"
+#include "zoidfs-proto.h"
+#include "iofwd_config.h"
 
 #define NAMESIZE 255
 #define BUFSIZE (8 * 1024 * 1024)
@@ -68,8 +67,8 @@ int main(int argc, char **argv) {
     }
 
     ret = zoidfs_lookup(&basedir_handle, filename, NULL, &handle);
+    /* If it exists, we delete it */
     if(ret == ZFS_OK) {
-        /* If it exists, we delete it */
         ret = zoidfs_remove(&basedir_handle, filename, NULL, NULL);
         if(ret != ZFS_OK) {
             goto exit;
@@ -96,7 +95,7 @@ int main(int argc, char **argv) {
     assert(created);
 
     /* Write to the file */
-    memset(mem_starts_write[0], 1, BUFSIZE);
+    memset(mem_starts_write[0], 'a', BUFSIZE);
     file_sizes[0] = mem_sizes[0] = BUFSIZE;
     file_starts[0] = 0;
 
