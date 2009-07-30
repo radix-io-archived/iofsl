@@ -12,6 +12,10 @@
 #include "posix/zoidfs-posix.h"
 #endif
 
+#ifdef HAVE_DISPATCHER_LIBSYSIO
+#include "sysio/zoidfs-sysio.h"
+#endif
+
 #include "zoidfs-local.h"
 
 
@@ -25,9 +29,20 @@ static zint_handler_t * zint_handlers[] =
 #ifdef HAVE_PVFS2
     &pvfs2_handler,
 #endif
+
+/*
+ * If libsysio is available, don't build posix.
+ * TODO: This needs to be improved. Should they
+ * both be built or only one or the other?
+ */
+#ifdef HAVE_DISPATCHER_LIBSYSIO
+    &sysio_handler,
+#else
 #ifdef HAVE_DISPATCHER_POSIX
     &posix_handler,
-#endif
+#endif /* HAVE_DISPATCHER_POSIX */
+#endif /* HAVE_DISPATCHER_LIBSYSIO */
+
     &local_handler
 };
 
@@ -51,7 +66,6 @@ zint_handler_t * zint_get_handler_from_path(
     int ret;
     int i = 0;
     
-  
     for(; i < ZINT_HANDLERS_COUNT; ++i)
     {
         ret = zint_handlers[i]->resolve_path(
