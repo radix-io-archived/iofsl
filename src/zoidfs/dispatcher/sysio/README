@@ -1,0 +1,47 @@
+zoidfs libsysio dispatcher
+
+Authors: Jason Cope, Nawab Ali
+contact: copej@mcs.anl.gov
+Last Updated: 7/30/2009
+
+Summary:
+--------
+This dispatcher interfaces with the libsysio library and provides a zoidfs interface using the libsysio file handle interface (fhi.)
+
+Prerequisites:
+--------------
+The current version of this dispatcher requires:
+ - libsysio with
+   * the file handler interface enabled
+   * the libsysio function calls prefixed with '_zfs_sysio' so that only zoidfs calls are intercepted by libsysio
+   * the stdfd driver disabled
+   * the stddev driver disabled
+   * the native sysio driver enabled
+   * the incore driver disabled
+   * statvfs support
+ - the C++ iofwd server and C zoidfs client compiled with libsysio support
+
+Testing:
+--------
+The libsysio dispatcher has been tested is 32-bit and 64-bit versions of Ubuntu 9.04 (Jaunty Jackalope) using the test/zoidfs_io and test/zoidfs_md binaries without the iofsl server. The libsysio dispatcher has been tested with 32-bit and 64-bit versions of Ubuntu 9.04 (Jaunty Jackalope) using the test/zoidfs_io_iofwd and test/zoidfs_md_iofwd binaries. See 'Usage:' section for setting the appropriate environment variables for these tests to run correctly.
+
+Building:
+---------
+To build this dispatcher, use the --with-libsysio option during IOFSL configuration.
+
+Usage:
+------
+This dispatcher requires the file system mount point exported as an environment variable in addition to other IOFSL environment variables. Set the mount point using following name for bash shells:
+
+export ZOIDFS_SYSIO_MOUNT="/path/to/file/system"
+
+Programs that use this dispatcher must set this environment variable. For example, this variable must be set when using the test/zoidfs_md or test/zoidfs_io programs. It must be set correctly for the src/iofwd/iofwd program to function correctly but is not required for the test/zoidfs_md_iofwd or test/zoidfs_io_iofwd programs.
+
+TODO:
+-----
+- Currently, zoidfs_link and zoidfs_getdireentires do not work properly in this dispatcher and this code is still under development.
+- On shutdown of the libsysio dispatcher, libsysio asserts are triggered related to pthread_mutex_destroy. This occurs during remove of files and directories. Similar asserts are sometimes triggered if zoidfs_write calls were issued. This is a known issue and is being diagnosed.
+
+Thanks:
+-------
+Thanks to Lee Ward for his help and feedback with the libsysio integration and testing. 
