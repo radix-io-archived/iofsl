@@ -1,12 +1,5 @@
 MODULE_APPS:= xdrspeed bmitest timertest forwarding iofwdreceive iofwdsend \
-    smlinks smtest workqueue levelmatch iofwdlog regexfilter completion \
-    zoidfs-md zoidfs-io
-
-MODULE_SOURCES_zoidfs-io := zoidfs-io.c
-ADDINTLIBS_zoidfs-io := zoidfsclient
-
-MODULE_SOURCES_zoidfs-md := zoidfs-md.c
-ADDINTLIBS_zoidfs-md := zoidfsclient
+    smlinks smtest workqueue levelmatch iofwdlog regexfilter completion zoidfs_io zoidfs_md zoidfs_io_iofwd zoidfs_md_iofwd
 
 MODULE_SOURCES_completion := completion.cpp
 ADDINTLIBS_completion := iofwdutil
@@ -40,6 +33,29 @@ ADDINTLIBS_iofwdreceive := iofwdlib iofwdutil
 
 MODULE_SOURCES_forwarding := forwarding.cpp
 ADDINTLIBS_forwarding := iofwdutil 
+
+MODULE_SOURCES_zoidfs_io := zoidfs-io.c 
+ADDINTLIBS_zoidfs_io := zoidfsutil zoidfsdispatch 
+
+MODULE_SOURCES_zoidfs_md := zoidfs-md.c
+ADDINTLIBS_zoidfs_md := zoidfsutil zoidfsdispatch 
+
+MODULE_SOURCES_zoidfs_io_iofwd := zoidfs-io.c 
+ADDINTLIBS_zoidfs_io_iofwd := iofwdclient iofwdlib iofwdutil zoidfsutil zoidfsclient
+
+MODULE_SOURCES_zoidfs_md_iofwd := zoidfs-md.c
+ADDINTLIBS_zoidfs_md_iofwd := iofwdclient iofwdlib iofwdutil zoidfsutil zoidfsclient
+
+MODULE_SOURCES_xdrspeed := $(addprefix xdr/, xdrspeed.cpp)
+ADDINTLIBS_xdrspeed := iofwdutil
+
+MODULE_SOURCES_bmitest := $(addprefix bmi/, bmi.cpp)
+ADDINTLIBS_bmitest := iofwdutil
+LDFLAGS_bmitest := $(BOOST_THREAD_LDFLAGS)
+LIBS_bmitest := $(BOOST_THREAD_LIBS)
+
+MODULE_SOURCES_timertest := $(addprefix timer/, timer.cpp)
+ADDINTLIBS_timertest := iofwdutil
 
 MODULE_SOURCES_xdrspeed := $(addprefix xdr/, xdrspeed.cpp)
 ADDINTLIBS_xdrspeed := iofwdutil
