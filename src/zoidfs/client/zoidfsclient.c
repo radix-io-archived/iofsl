@@ -1058,15 +1058,14 @@ int zoidfs_link(const zoidfs_handle_t *from_parent_handle,
         fprintf(stderr, "zoidfs_link: xdr_zoidfs_op_id_t() failed.\n");
         return ZFSERR_XDR;
     }
+
+    /* 
+     * encode null param with the from handle or path
+     */
     if (!xdr_zoidfs_null_param_t(&xdrs, &from_null_param)) {
         fprintf(stderr, "zoidfs_link: xdr_zoidfs_null_param_t() failed.\n");
         return ZFSERR_XDR;
     }
-    if (!xdr_zoidfs_null_param_t(&xdrs, &to_null_param)) {
-        fprintf(stderr, "zoidfs_link: xdr_zoidfs_null_param_t() failed.\n");
-        return ZFSERR_XDR;
-    }
-
     if (from_full_path) {
         if (!xdr_string(&xdrs, (char **)&from_full_path, ZOIDFS_PATH_MAX)) {
             fprintf(stderr, "zoidfs_link: xdr_string() failed.\n");
@@ -1084,6 +1083,13 @@ int zoidfs_link(const zoidfs_handle_t *from_parent_handle,
         }
     }
 
+    /* 
+     * encode null param with the to handle or path
+     */
+    if (!xdr_zoidfs_null_param_t(&xdrs, &to_null_param)) {
+        fprintf(stderr, "zoidfs_link: xdr_zoidfs_null_param_t() failed.\n");
+        return ZFSERR_XDR;
+    }
     if (to_full_path) {
         if (!xdr_string(&xdrs, (char **)&to_full_path, ZOIDFS_PATH_MAX)) {
             fprintf(stderr, "zoidfs_link: xdr_string() failed.\n");
