@@ -11,6 +11,13 @@ const IOFWDReadLinkRequest::ReqParam & IOFWDReadLinkRequest::decodeParam ()
 {
    process (req_reader_, handle_);
    process (req_reader_, buffer_length_);
+
+   /*
+    * Init param_ with the decoded XDR data
+    */
+   param_.buffer_length = buffer_length_;
+   param_.handle = &handle_;
+
    return param_;
 }
 
