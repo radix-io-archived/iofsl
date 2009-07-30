@@ -29,6 +29,15 @@ static int gen_tag(void)
     return pthread_self();
 }
 
+static int zoidfs_write_pipeline(BMI_addr_t peer_addr, uint64_t pipeline_size,
+                                 size_t list_count, const void ** buf_list,
+                                 const bmi_size_t size_list[], bmi_msg_tag_t tag,
+                                 bmi_context_id context);
+static int zoidfs_read_pipeline(BMI_addr_t peer_addr, uint64_t pipeline_size,
+                                size_t list_count, void ** buf_list,
+                                const bmi_size_t size_list[], bmi_msg_tag_t tag,
+                                bmi_context_id context);
+
 /*
  * zoidfs_null
  * This function implements a noop operation. The IOD returns a 1-byte message
@@ -1648,7 +1657,6 @@ int zoidfs_resize(const zoidfs_handle_t *handle, uint64_t size) {
     return op_status;
 }
 
-
 /*
  * zoidfs_write
  * This function implements the zoidfs write call.
@@ -1667,7 +1675,8 @@ int zoidfs_write(const zoidfs_handle_t *handle, size_t mem_count_,
     bmi_msg_tag_t tag = gen_tag();
 
     uint32_t mem_count = mem_count_;
-    const uint64_t * mem_sizes = mem_sizes_;
+    assert(sizeof(bmi_size_t) == sizeof(size_t));
+    const bmi_size_t * mem_sizes = (const bmi_size_t*)mem_sizes_;
     uint32_t file_count = file_count_;
     uint64_t pipeline_size = 0;
 
@@ -1753,7 +1762,7 @@ int zoidfs_write(const zoidfs_handle_t *handle, size_t mem_count_,
         /* No Pipelining */
         if (mem_count == 1) {
             /* Contiguous write */
-            ret = bmi_comm_send(peer_addr, (void *)mem_starts[0], mem_sizes[0],
+            ret = bmi_comm_send(peer_addr, mem_starts[0], mem_sizes[0],
                                 tag, context);
         } else {
             /* Strided writes */
@@ -1796,10 +1805,10 @@ int zoidfs_write(const zoidfs_handle_t *handle, size_t mem_count_,
     return op_status;
 }
 
-int zoidfs_write_pipeline(BMI_addr_t peer_addr, uint64_t pipeline_size,
-                          size_t list_count, const void ** buf_list, const size_t size_list[],
-                          bmi_msg_tag_t tag, bmi_context_id context)
-{
+static int zoidfs_write_pipeline(BMI_addr_t peer_addr, uint64_t pipeline_size,
+                                 size_t list_count, const void ** buf_list,
+                                 const bmi_size_t size_list[], bmi_msg_tag_t tag,
+                                 bmi_context_id context) {
     int np = 0;
     int ret;
     size_t i;
@@ -1891,7 +1900,8 @@ int zoidfs_read(const zoidfs_handle_t *handle, size_t mem_count_,
     bmi_msg_tag_t tag = gen_tag();
 
     uint32_t mem_count = mem_count_;
-    const uint64_t * mem_sizes = mem_sizes_;
+    assert(sizeof(bmi_size_t) == sizeof(size_t));
+    const bmi_size_t *mem_sizes = (const bmi_size_t*)mem_sizes_;
     uint32_t file_count = file_count_;
     uint64_t pipeline_size = 0;
 
@@ -2019,9 +2029,10 @@ int zoidfs_read(const zoidfs_handle_t *handle, size_t mem_count_,
     return op_status;
 }
 
-int zoidfs_read_pipeline(BMI_addr_t peer_addr, uint64_t pipeline_size,
-                         size_t list_count, void ** buf_list, const size_t size_list[],
-                         bmi_msg_tag_t tag, bmi_context_id context) {
+static int zoidfs_read_pipeline(BMI_addr_t peer_addr, uint64_t pipeline_size,
+                                size_t list_count, void ** buf_list,
+                                const bmi_size_t size_list[], bmi_msg_tag_t tag,
+                                bmi_context_id context) {
     int np = 0;
     int ret;
     size_t i;

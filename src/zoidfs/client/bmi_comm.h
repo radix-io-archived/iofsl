@@ -19,18 +19,18 @@
 #define MAX_IDLE_TIME 10
 #define ION_ENV "ZOIDFS_ION_NAME"
 
-int bmi_comm_send(BMI_addr_t, void *, bmi_size_t, bmi_msg_tag_t,
+int bmi_comm_send(BMI_addr_t, const void *, bmi_size_t, bmi_msg_tag_t,
                   bmi_context_id);
 int bmi_comm_recv(BMI_addr_t, void *, bmi_size_t, bmi_msg_tag_t,
                   bmi_context_id);
-int bmi_comm_sendu(BMI_addr_t, void *, bmi_size_t, bmi_msg_tag_t,
+int bmi_comm_sendu(BMI_addr_t, const void *, bmi_size_t, bmi_msg_tag_t,
                    bmi_context_id);
 int bmi_comm_recvu(BMI_addr_t *, void **, bmi_size_t *, bmi_msg_tag_t *);
 int bmi_comm_send_list(BMI_addr_t,
-                       size_t, const void **, const bmi_size_t *,
-                       bmi_msg_tag_t, bmi_context_id);
+                       size_t, const void *const *buffer_list,
+                       const bmi_size_t *, bmi_msg_tag_t, bmi_context_id);
 int bmi_comm_recv_list(BMI_addr_t,
-                       size_t, void **, const bmi_size_t *,
+                       size_t, void *const *buffer_list, const bmi_size_t *,
                        bmi_msg_tag_t, bmi_context_id);
 
 #endif /* _BMI_COMM_H_ */

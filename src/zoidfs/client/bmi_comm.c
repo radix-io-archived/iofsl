@@ -12,7 +12,7 @@
  * bmi_comm_send
  * Synchronous call for sending messages using BMI.
  */
-int bmi_comm_send(BMI_addr_t peer_addr, void *buffer, bmi_size_t buflen,
+int bmi_comm_send(BMI_addr_t peer_addr, const void *buffer, bmi_size_t buflen,
                   bmi_msg_tag_t tag, bmi_context_id context) {
     bmi_op_id_t op_id;
     int ret, outcount;
@@ -84,7 +84,7 @@ int bmi_comm_recv(BMI_addr_t peer_addr, void *buffer, bmi_size_t buflen,
  * bmi_comm_sendu
  * Synchronous call for sending unexpected messages using BMI.
  */
-int bmi_comm_sendu(BMI_addr_t peer_addr, void *buffer, bmi_size_t buflen,
+int bmi_comm_sendu(BMI_addr_t peer_addr, const void *buffer, bmi_size_t buflen,
                    bmi_msg_tag_t tag, bmi_context_id context) {
     bmi_op_id_t op_id;
     int ret, outcount;
@@ -166,7 +166,7 @@ int bmi_comm_recvu(BMI_addr_t *peer_addr, void **recvbuf,
  * Synchronous call for sending multiple messages using BMI.
  */
 int bmi_comm_send_list(BMI_addr_t peer_addr, size_t list_count,
-                       const void **buffers, const bmi_size_t *buflens,
+                       const void *const *buffers, const bmi_size_t *buflens,
                        bmi_msg_tag_t tag, bmi_context_id context) {
     bmi_op_id_t op_id;
     int ret, i, outcount;
@@ -211,7 +211,7 @@ int bmi_comm_send_list(BMI_addr_t peer_addr, size_t list_count,
  * Synchronous call for receiving multiple messages using BMI.
  */
 int bmi_comm_recv_list(BMI_addr_t peer_addr, size_t list_count,
-                       void ** buffers, const bmi_size_t *buflens,
+                       void *const * buffers, const bmi_size_t *buflens,
                        bmi_msg_tag_t tag, bmi_context_id context)
 {
     bmi_op_id_t op_id;
