@@ -40,7 +40,6 @@ AC_TYPE_UINT64_T
 AC_TYPE_SIZE_T
 AC_TYPE_SSIZE_T
 
-
 # Checks for library functions.
 AC_CHECK_FUNCS([memset])
 AC_CHECK_LIB([rt],[clock_getres],,[AC_MSG_ERROR([Could not find clock_getres!])])
@@ -117,6 +116,84 @@ if test "x${BDB_OK}${MYSQL_OK}"; then
    DISPATCH_POSIX=1
 fi
 AX_MAKE_VAR([DISPATCH_POSIX])
+
+#
+# libsysio dispatcher build env setup
+# Determine is sysio is available and where it is located if it is in a non-standard location
+#
+use_libsysio=false
+AC_ARG_WITH(libsysio,
+[  --with-libsysio=<path>  Location of installed libsysio package],
+       if test "x$withval" != "x" ; then
+              AC_SUBST([SYSIO_LDFLAGS],["-L${withval}/lib"])
+              AC_SUBST([SYSIO_CFLAGS],["-I${withval}/include -I${withval}/misc"])
+              AC_SUBST([SYSIO_CPPFLAGS],["-I${withval}/include -I${withval}/misc"])
+              AC_SUBST([SYSIO_LIBS],["-lsysio"])
+              AC_DEFINE([HAVE_DISPATCHER_LIBSYSIO],[1],[If libsysio is supported on target build platform])
+              DISPATCH_LIBSYSIO=1
+              DISPATCH_POSIX=0
+              use_libsysio=true
+              AX_MAKE_VAR([DISPATCH_LIBSYSIO])
+	fi)
+
+if test x${use_libsysio} == xtrue ; then
+    #
+    # Check that the sysio headers are available 
+    #
+    STCPPFLAGS="${CPPFLAGS}"
+    STCFLAGS="${CFLAGS}"
+    STLDFLAGS="${LDFLAGS}"
+    STLIBS="${LIBS}"
+
+    CPPFLAGS="${CPPFLAGS} ${SYSIO_CPPFLAGS} -D_LARGEFILE64_SOURCE -DHAVE_POSIX_1003_READLINK -D__USE_LARGEFILE64"
+    CFLAGS="${CFLAGS} ${SYSIO_CFLAGS} -D_LARGEFILE64_SOURCE -DHAVE_POSIX_1003_READLINK -D__USE_LARGEFILE64"
+    LDFLAGS="${LDFLAGS} ${SYSIO_LDFLAGS}"
+    LIBS="${LIBS}"
+
+    AC_CHECK_HEADER([fhi.h], [], [AC_MSG_ERROR([Could not find the libsysio header files!])], 
+    [
+    #include <stdlib.h>
+    #include <string.h>
+    #include <errno.h>
+    #include <sys/types.h>
+    #include <sys/stat.h>
+    #include <unistd.h>
+    #include <sys/uio.h>
+    #include <getopt.h>
+    #include <sys/statvfs.h>
+    #include <dirent.h>
+    #include <errno.h>
+    #include <pthread.h>
+
+    #if defined(SYSIO_LABEL_NAMES)
+    #include "sysio.h"
+    #endif
+
+    #include "xtio.h"
+    ])
+
+    AC_CHECK_LIB([sysio], [_sysio_shutdown], [], [AC_MSG_ERROR([Could not find libsysio library!])], [])
+    AC_CHECK_FUNC([_sysio_native_init], [], [AC_MSG_ERROR([libsysio was built without support for the libsysio native driver!])])
+    AC_CHECK_FUNC([_zfs_sysio_fhi_lookup], [], [AC_MSG_ERROR([libsysio was built without the required zoidfs symbols! Check that libsysio was configured with '--with-file-handle-interface=yes --with-alternate-symbols="_zfs_sysio_"' for proper zoidfs support.])])
+    AC_CHECK_FUNC([_zfs_sysio_statvfs], [], [AC_MSG_ERROR([libsysio was built without statvfs support!])])
+
+    #
+    #
+    # Need these sizes for determining how the
+    # sysio handles are packed into the zoidfs handle
+    #
+    AC_CHECK_SIZEOF([struct file_handle_info_export *])
+    AC_CHECK_SIZEOF([uint8_t])
+    AC_CHECK_SIZEOF([size_t])
+
+    #
+    # Reset the flags
+    #
+    CPPFLAGS="${STCPPFLAGS}"
+    CFLAGS="${STCFLAGS}"
+    LDFLAGS="${STLDFLAGS}"
+    LIBS="${STLIBS}"
+fi
 
 dnl
 dnl Control behaviour of the zoidfs posix mapping
