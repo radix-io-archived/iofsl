@@ -159,6 +159,7 @@ int main(int argc, char **argv) {
 
     sattr.mask = ZOIDFS_ATTR_MODE;
     sattr.mode = 0666;
+    resattr.mask = ZOIDFS_ATTR_ALL;
 
     /* Set some attributes */
     ret = zoidfs_setattr(&fhandle, &sattr, &resattr);
