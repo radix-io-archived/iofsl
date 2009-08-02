@@ -1,5 +1,5 @@
 /*
- * zoidfs-md.c
+ * zoidfsapi-lookup-perms.c
  * Test the ZOIDFS metadata interface.
  */
 
@@ -28,7 +28,7 @@ int main(int argc, char **argv) {
     char lookup_component_orig[NAMESIZE], lookup_fullpath_orig[NAMESIZE];
 
     if(argc < 1) {
-        fprintf(stderr, "Usage: test-zoidfs\n");
+        fprintf(stderr, "Usage: zoidfsapi_lookup_perms\n");
         exit(1);
     }
 

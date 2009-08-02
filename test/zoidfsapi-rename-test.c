@@ -1,5 +1,5 @@
 /*
- * zoidfs-md.c
+ * zoidfsapi-rename-test.c
  * Test the ZOIDFS metadata interface.
  */
 
@@ -27,14 +27,13 @@ int main(int argc, char **argv) {
     struct timeval now;
     zoidfs_sattr_t sattr;
     zoidfs_attr_t resattr;
-    char buffer[ZOIDFS_PATH_MAX];
     zoidfs_handle_t basedir_handle;
     zoidfs_handle_t fhandle, rhandle;
     char rename_component_orig[NAMESIZE], rename_fullpath_orig[NAMESIZE];
     char rename_component_target[NAMESIZE], rename_fullpath_target[NAMESIZE];
 
     if(argc < 2) {
-        fprintf(stderr, "Usage: test-zoidfs <pvfs2 mount point>\n");
+        fprintf(stderr, "Usage: zoidfsapi_rename_test <mount point>\n");
         exit(1);
     }
 

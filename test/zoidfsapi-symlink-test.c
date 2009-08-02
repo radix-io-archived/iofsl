@@ -1,6 +1,6 @@
 /*
- * zoidfs-md.c
- * Test the ZOIDFS metadata interface.
+ * zoidfsapi-symlink-test.c
+ * Test the ZOIDFS symlink test.
  */
 
 #include <time.h>
@@ -27,7 +27,6 @@ int main(int argc, char **argv) {
     struct timeval now;
     zoidfs_sattr_t sattr;
     zoidfs_attr_t resattr;
-    char buffer[ZOIDFS_PATH_MAX];
     zoidfs_handle_t basedir_handle;
     zoidfs_handle_t fhandle, shandle;
     char symlink[NAMESIZE], symlink_local[NAMESIZE], symlink_target[NAMESIZE];
@@ -35,7 +34,7 @@ int main(int argc, char **argv) {
     char fullpath_filename[NAMESIZE], component_filename[NAMESIZE];
 
     if(argc < 2) {
-        fprintf(stderr, "Usage: test-zoidfs <pvfs2 mount point>\n");
+        fprintf(stderr, "Usage: zoidfsapi_symlink_test <mount point>\n");
         exit(1);
     }
 
