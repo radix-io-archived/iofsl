@@ -87,6 +87,5 @@ MODULE_SOURCES_zoidfsclient := $(addprefix client/, \
 	zoidfs_xdr.c \
    )
 
-
 # Automatically add -I$(thismoduledir) to CPPFLAGS
 MODULE_CONTAINSINCLUDE := 1

@@ -16,13 +16,17 @@
 /*
  * Size of the zoidfs handle header and payload
  */
+#undef ZOIDFS_HANDLE_DATA_SIZE
 #define ZOIDFS_HANDLE_DATA_SIZE 32
+#undef ZOIDFS_HANDLE_HEADER_SIZE
 #define ZOIDFS_HANDLE_HEADER_SIZE 4
+#undef ZOIDFS_HANDLE_PAYLOAD_SIZE
 #define ZOIDFS_HANDLE_PAYLOAD_SIZE (ZOIDFS_HANDLE_DATA_SIZE - ZOIDFS_HANDLE_HEADER_SIZE) 
 
 /* 
  * Size of the struct file_handle_info_export * fhi_export in struct file_handle_info
  */
+#undef SYSIO_FHE_SIZE
 #ifndef SYSIO_FHE_SIZE
 #define SYSIO_FHE_SIZE SIZEOF_STRUCT_FILE_HANDLE_INFO_EXPORT_P 
 #endif /* SYSIO_FHE_SIZE */
@@ -30,6 +34,7 @@
 /* 
  * Size of the size_t fhi_handle_len in struct file_handle_info
  */
+#undef SYSIO_FHILEN_SIZE
 #ifndef SYSIO_FHILEN_SIZE
 #define SYSIO_FHILEN_SIZE SIZEOF_SIZE_T
 #endif /* SYSIO_FHILEN_SIZE */
@@ -38,6 +43,7 @@
  * Since we are using small buffers and to save space in the zoidfs handle,
  * we store the sysio handle length field in the zoidfs handle as a uint8_t 
  */
+#undef SYSIO_FHILENPACK
 #ifndef SYSIO_FHILENPACK_SIZE
 #define SYSIO_FHILENPACK_SIZE SIZEOF_UINT8_T
 #endif /* SYSIO_FHILENPACK_SIZE */
@@ -53,6 +59,7 @@
  *                        = 32 - 4 - 4 - 1
  *                        = 23 for 32-bit systems
  */
+#undef SYSIO_HANDLE_DATA_SIZE
 #ifndef SYSIO_HANDLE_DATA_SIZE
 #define SYSIO_HANDLE_DATA_SIZE (ZOIDFS_HANDLE_DATA_SIZE - ZOIDFS_HANDLE_HEADER_SIZE - SYSIO_FHE_SIZE - SYSIO_FHILENPACK_SIZE)
 #endif /* SYSIO_HANDLE_DATA_SIZE */

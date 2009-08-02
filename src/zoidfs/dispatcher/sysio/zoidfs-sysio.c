@@ -33,6 +33,27 @@
 #include "zoidfs.h"
 
 /*
+ * zoidfs sysio init variables
+ * ... make sure we only init once
+ */
+static int sysio_dispatcher_initialized = 0;
+static pthread_mutex_t sysio_init_mutex = PTHREAD_MUTEX_INITIALIZER;
+
+/*
+ * root zoidfs handle
+ */
+static char zoidfs_sysio_root_path[4096];
+static char zoidfs_sysio_root_handle_data[SYSIO_HANDLE_DATA_SIZE];
+static struct file_handle_info zoidfs_sysio_root_handle = {NULL, zoidfs_sysio_root_handle_data, SYSIO_HANDLE_DATA_SIZE};
+
+/*
+ * user specified zoidfs handle and path
+ */
+static char zoidfs_sysio_mfs_path[4096];
+static char zoidfs_sysio_mfs_handle_data[SYSIO_HANDLE_DATA_SIZE];
+static struct file_handle_info zoidfs_sysio_mfs_handle = {NULL, zoidfs_sysio_mfs_handle_data, SYSIO_HANDLE_DATA_SIZE};
+
+/*
  * zoidfs sysio trace and debug tools
  */
 
@@ -272,29 +293,17 @@ static inline int zoidfs_handle_to_sysio_handle(const zoidfs_handle_t * _zoidfs_
     zoidfs_print_handle(_zoidfs_h_ref); 
 #endif 
 
+    /*
+     * If we decoded a zoidfs handle that had a NULL value for fhi_export,
+     * set fhi_export to root
+     */
+    if(!_sysio_h_ref->fhi_export)
+    {
+        _sysio_h_ref->fhi_export = &zoidfs_sysio_root_handle;
+    }
+
 	return ZFS_OK;
 }
-
-/*
- * zoidfs sysio init variables
- * ... make sure we only init once
- */
-static int sysio_dispatcher_initialized = 0;
-static pthread_mutex_t sysio_init_mutex = PTHREAD_MUTEX_INITIALIZER;
-
-/*
- * root zoidfs handle
- */
-static char zoidfs_sysio_root_path[4096];
-static char zoidfs_sysio_root_handle_data[SYSIO_HANDLE_DATA_SIZE];
-static struct file_handle_info zoidfs_sysio_root_handle = {NULL, zoidfs_sysio_root_handle_data, SYSIO_HANDLE_DATA_SIZE};
-
-/*
- * user specified zoidfs handle and path
- */
-static char zoidfs_sysio_mfs_path[4096];
-static char zoidfs_sysio_mfs_handle_data[SYSIO_HANDLE_DATA_SIZE];
-static struct file_handle_info zoidfs_sysio_mfs_handle = {NULL, zoidfs_sysio_mfs_handle_data, SYSIO_HANDLE_DATA_SIZE};
 
 /*
  * zfs sysio error handler
