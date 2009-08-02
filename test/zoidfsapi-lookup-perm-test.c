@@ -54,20 +54,20 @@ int main(int argc, char **argv) {
     ret = zoidfs_lookup(&basedir_handle, lookup_component_orig, NULL, &fhandle);
     fprintf(stderr, "/etc/shadow test\n");
     if(ret != ZFS_OK) {
-        fprintf(stderr, "component handle: could not access file with restrictive permissions\n");
+        fprintf(stderr, "component handle: could not access %s\n", lookup_component_orig);
     }
     else
     {
-        fprintf(stderr, "component handle: could access file with restrictive permissions\n");
+        fprintf(stderr, "component handle: could access %s\n", lookup_component_orig);
     }
 
     ret = zoidfs_lookup(NULL, NULL, lookup_fullpath_orig, &fhandle);
     if(ret != ZFS_OK) {
-        fprintf(stderr, "fullpath handle: could not access file with restrictive permissions\n");
+        fprintf(stderr, "fullpath handle: could not access %s\n", lookup_fullpath_orig);
     }
     else
     {
-        fprintf(stderr, "fullpath handle: could access file with restrictive permissions\n");
+        fprintf(stderr, "fullpath handle: could access %s\n", lookup_fullpath_orig);
     }
 
     /*
@@ -81,21 +81,60 @@ int main(int argc, char **argv) {
     ret = zoidfs_lookup(&basedir_handle, lookup_component_orig, NULL, &fhandle);
     fprintf(stderr, "/etc/group test\n");
     if(ret != ZFS_OK) {
-        fprintf(stderr, "component handle: could not access file with nonrestrictive permissions\n");
+        fprintf(stderr, "component handle: could not access %s\n", lookup_component_orig);
     }
     else
     {
-        fprintf(stderr, "component handle: could access file with nonrestrictive permissions\n");
+        fprintf(stderr, "component handle: could access %s\n", lookup_component_orig);
     }
 
     ret = zoidfs_lookup(NULL, NULL, lookup_fullpath_orig, &fhandle);
     if(ret != ZFS_OK) {
-        fprintf(stderr, "fullpath handle: could not access file with nonrestrictive permissions\n");
+        fprintf(stderr, "fullpath handle: could not access %s\n", lookup_fullpath_orig);
     }
     else
     {
-        fprintf(stderr, "fullpath handle: could access file with nonrestrictive permissions\n");
+        fprintf(stderr, "fullpath handle: could access %s\n", lookup_fullpath_orig);
     }
+
+    /*
+     * Try to get a handle for a file that we can't access... like
+     * /root/.bashrc 
+     */
+    /* path variables */
+    /* lookup the basedir */
+    ret = zoidfs_lookup(NULL, NULL, "/root", &basedir_handle);
+    if(ret != ZFS_OK) {
+        goto exit;
+    }
+
+    snprintf(lookup_fullpath_orig, NAMESIZE, "%s/.bashrc", "/root");
+    snprintf(lookup_component_orig, NAMESIZE, ".bashrc");
+
+    ret = zoidfs_lookup(&basedir_handle, lookup_component_orig, NULL, &fhandle);
+    fprintf(stderr, "/root/.bashrc test\n");
+    if(ret != ZFS_OK) {
+        fprintf(stderr, "component handle: could not access %s\n", lookup_component_orig);
+    }
+    else
+    {
+        fprintf(stderr, "component handle: could access %s\n", lookup_component_orig);
+    }
+
+
+    ret = zoidfs_lookup(NULL, NULL, lookup_fullpath_orig, &fhandle);
+    if(ret != ZFS_OK) {
+        fprintf(stderr, "fullpath handle: could not access %s\n", lookup_fullpath_orig);
+    }
+    else
+    {
+        fprintf(stderr, "fullpath handle: could access %s\n", lookup_fullpath_orig);
+    }
+
+    /*
+     * reset the ret value
+     */
+    ret = 0;
 
 exit:
 
