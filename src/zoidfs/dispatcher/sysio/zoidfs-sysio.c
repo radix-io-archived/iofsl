@@ -1389,7 +1389,6 @@ static int zoidfs_sysio_readdir(const zoidfs_handle_t *parent_handle,
 		ZFSSYSIO_INFO("zoidfs_sysio_readdir: fhi_getdirents64() failed, code = %i", cc);
 		ZFSSYSIO_PERROR("zoidfs_sysio_readdir");
 		ZFSSYSIO_TRACE_EXIT;
-		ZFSSYSIO_TRACE_EXIT;
 		return sysio_err_to_zfs_err(errno);
 	}
 	ZFSSYSIO_TRACE_EXIT;
