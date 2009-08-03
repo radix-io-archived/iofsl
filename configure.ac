@@ -69,6 +69,8 @@ if test "A$PVFS2_OK" == "A1" ;
 then
         DISPATCH_PVFS=1
         AX_MAKE_VAR([DISPATCH_PVFS])
+        AC_DEFINE([HAVE_DISPATCHER_PVFS2],[1],[If the PVFS2 dispatcher module
+                   needs to be built])
 fi
 
 AC_ARG_WITH(db,
@@ -110,10 +112,39 @@ AX_MAKE_VAR([MYSQL_CPPFLAGS])
 AX_MAKE_VAR([MYSQL_LDFLAGS_R])
 AX_MAKE_VAR([MYSQL_OK])
 
+
+AC_ARG_ENABLE([posix2],
+              [AC_HELP_STRING([--enable-posix2],
+                              [Enable new POSIX zoidfs driver])],
+              [case "${enableval}" in 
+                  yes) use_posix2=1;;
+                  no) use_posix2=0;;
+                  *) AC_MSG_ERROR([bad value ${enableval} for
+                                   --enable-posix2]) ;;
+               esac],
+               [use_posix2=0])
+
+
+DISPATCH_POSIX2=0
+AC_MSG_CHECKING([If the new POSIX dispatcher drivers needs to be built])
+if test "${use_posix2}" == "1"; then
+   AC_DEFINE([HAVE_DISPATCHER_POSIX],[1],[Use new posix zoidfs driver])
+   DISPATCH_POSIX2=1
+   AC_MSG_RESULT([yes])
+else
+   AC_MSG_RESULT([no])
+fi
+AX_MAKE_VAR([DISPATCH_POSIX2])
+
+
+AC_MSG_CHECKING([If the POSIX dispatcher driver needs to be built])
 DISPATCH_POSIX=0
-if test "x${BDB_OK}${MYSQL_OK}"; then
+if test "x${BDB_OK}${MYSQL_OK}" -a "$use_posix2" == "0"; then
    AC_DEFINE([HAVE_DISPATCHER_POSIX],[1],[Is posix dispatcher available])
    DISPATCH_POSIX=1
+   AC_MSG_RESULT([yes])
+else
+   AC_MSG_RESULT([no])
 fi
 AX_MAKE_VAR([DISPATCH_POSIX])
 
@@ -207,8 +238,12 @@ AC_ARG_ENABLE([stale],
          *)  AC_MSG_ERROR([bad value ${enableval} for --enable-stale]) ;;
      esac],
      [use_stale=false])
+AC_MSG_CHECKING([If the POSIX driver is is allowed to return ESTALE])
 if test x${use_stale} == xtrue ; then
    AC_DEFINE([USE_ESTALE],[1],[If the API can use ESTALE])
+   AC_MSG_RESULT([yes])
+else
+   AC_MSG_RESULT([no])
 fi
 
 
@@ -258,9 +293,19 @@ dnl LDFLAGS="$LDFLAGS $FUSE_LIBS"
 dnl 
 dnl  OPTIONS
 dnl
+
 AC_ARG_ENABLE([valgrind], AS_HELP_STRING([--enable-valgrind], 
                                          [Try harder to be valgrind-clean]),
-                                   [AX_ADD_DEFINE([VALGRIND_SAFE])])
+                                 dnl  [AX_ADD_DEFINE([VALGRIND_SAFE])])
+    [AC_DEFINE([VALGRIND_SAFE],[1],[Clear memory to avoid valgrind warnings])
+     VALGRIND_SAFE=1],
+     [VALGRIND_SAFE=0])
+AC_MSG_CHECKING([If we try harder to be valgrind clean])
+if test ${VALGRIND_SAFE} == "1"; then
+   AC_MSG_RESULT([yes])
+else
+   AC_MSG_RESULT([no])
+fi
 
 AX_OUTPUT_MAKE_VARS
 

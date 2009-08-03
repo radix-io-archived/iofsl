@@ -12,6 +12,7 @@
 #include <unistd.h>
 #include "zoidfs/zoidfs.h"
 #include "../zint-handler.h"
+#include "c-util/tools.h"
 
 #include "pvfs2-sysint.h"
 #include "pvfs2-util.h"
@@ -788,7 +789,7 @@ static int zint_pvfs2_commit(const zoidfs_handle_t * handle)
 static int zint_pvfs2_remove(const zoidfs_handle_t * parent_handle,
                       const char * component_name,
                       const char * full_path,
-                      zoidfs_cache_hint_t * parent_hint)
+                      zoidfs_cache_hint_t * UNUSED(parent_hint))
 {
     int ret;
     PVFS_object_ref ref;
@@ -843,8 +844,8 @@ static int zint_pvfs2_rename(const zoidfs_handle_t * from_parent_handle,
                       const zoidfs_handle_t * to_parent_handle,
                       const char * to_component_name,
                       const char * to_full_path,
-                      zoidfs_cache_hint_t * from_parent_hint,
-                      zoidfs_cache_hint_t * to_parent_hint)
+                      zoidfs_cache_hint_t * UNUSED(from_parent_hint),
+                      zoidfs_cache_hint_t * UNUSED(to_parent_hint))
 {
     int ret;
     PVFS_credentials creds;
@@ -960,14 +961,14 @@ static int zint_pvfs2_rename(const zoidfs_handle_t * from_parent_handle,
     return ZFS_OK;
 }
 
-static int zint_pvfs2_link(const zoidfs_handle_t * from_parent_handle,
-                    const char * from_component_name,
-                    const char * from_full_path,
-                    const zoidfs_handle_t * to_parent_handle,
-                    const char * to_component_name,
-                    const char * to_full_path,
-                    zoidfs_cache_hint_t * from_parent_hint,
-                    zoidfs_cache_hint_t * to_parent_hint)
+static int zint_pvfs2_link(const zoidfs_handle_t * UNUSED(from_parent_handle),
+                    const char * UNUSED(from_component_name),
+                    const char * UNUSED(from_full_path),
+                    const zoidfs_handle_t * UNUSED(to_parent_handle),
+                    const char * UNUSED(to_component_name),
+                    const char * UNUSED(to_full_path),
+                    zoidfs_cache_hint_t * UNUSED(from_parent_hint),
+                    zoidfs_cache_hint_t * UNUSED(to_parent_hint))
 {
     /* PVFS2 does not support hardlinks.  */
     return ZFSERR_NOTIMPL;
@@ -998,6 +999,7 @@ static int zint_pvfs2_symlink(const zoidfs_handle_t * from_parent_handle,
 
     zint_pvfs2_input_handle(from_parent_handle, from_ref);
 
+    /* @TODO: FIX THIS (see ticket )*/
     if (from_component_name && to_component_name)
     {
         return ZFSERR_NOTIMPL;
@@ -1050,7 +1052,7 @@ static int zint_pvfs2_mkdir(const zoidfs_handle_t * parent_handle,
                      const char * component_name,
                      const char * full_path,
                      const zoidfs_sattr_t * attr,
-                     zoidfs_cache_hint_t * parent_hint)
+                     zoidfs_cache_hint_t * UNUSED(parent_hint))
 {
     int ret;
     PVFS_object_ref ref;
@@ -1110,10 +1112,10 @@ static int zint_pvfs2_readdir(const zoidfs_handle_t * parent_handle,
                        size_t * entry_count,
                        zoidfs_dirent_t * entries,
                        uint32_t flags,
-                       zoidfs_cache_hint_t * parent_hint)
+                       zoidfs_cache_hint_t * UNUSED(parent_hint))
 {
     int ret;
-    int i;
+    size_t i;
     PVFS_object_ref ref;
     PVFS_credentials creds;
     PVFS_sysresp_readdir readdir_resp;

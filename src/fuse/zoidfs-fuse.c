@@ -14,8 +14,9 @@
 #include <utime.h>
 #include <pthread.h>
 
+#include "c-util/tools.h"
 #include "zoidfs/zoidfs.h"
-/* #include "src/common/zoidfs-util.h"  */
+#include "zoidfs/c-util/zoidfs-util.h"
 
 #define ZFUSE_DIRENTRY_COUNT 128
 #define ZFUSE_INITIAL_HANDLES 16
@@ -266,7 +267,7 @@ static int zfuse_getattr_helper (const zoidfs_handle_t *
    
    memset(stbuf, 0, sizeof(struct stat));
 
-   // TODO: FIX MASK
+   /* TODO: FIX MASK */
    stbuf->st_mode = attr.mode | zoidfsattrtype_to_posixmode(attr.type) ; 
    stbuf->st_nlink = attr.nlink; 
    stbuf->st_uid = attr.uid; 
@@ -374,7 +375,7 @@ static int zfuse_releasedir (const char * path, struct fuse_file_info * fi)
    return 0; 
 }
 
-static int zfuse_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
+static int zfuse_readdir(const char * UNUSED(path), void *buf, fuse_fill_dir_t filler,
                          off_t offset, struct fuse_file_info *fi)
 {
    /* probably could use fuse_file_info handle here */
@@ -475,7 +476,7 @@ static int zfuse_open(const char *path, struct fuse_file_info *fi)
     return 0;
 }
 
-static int zfuse_write (const char * path, const char * buf, size_t size, 
+static int zfuse_write (const char * UNUSED(path), const char * buf, size_t size, 
       off_t offset, struct fuse_file_info * fi)
 {
    const zoidfs_handle_t * handle = zfuse_handle_lookup (fi->fh); 
@@ -493,7 +494,7 @@ static int zfuse_write (const char * path, const char * buf, size_t size,
    return size;
 }
 
-static int zfuse_read(const char *path, char *buf, size_t size, off_t offset,
+static int zfuse_read(const char * UNUSED(path), char *buf, size_t size, off_t offset,
                       struct fuse_file_info *fi)
 {
    const zoidfs_handle_t * handle = zfuse_handle_lookup (fi->fh); 
@@ -511,7 +512,7 @@ static int zfuse_read(const char *path, char *buf, size_t size, off_t offset,
    return size;
 }
 
-static void * zfuse_init (struct fuse_conn_info *conn)
+static void * zfuse_init (struct fuse_conn_info * UNUSED(conn))
 {
    zfuse_debug("ZFuse Init\n");
    int err = zoidfs_init (); 
@@ -525,7 +526,7 @@ static void * zfuse_init (struct fuse_conn_info *conn)
 }
 
 
-static void zfuse_destroy (void * d)
+static void zfuse_destroy (void * UNUSED(d))
 {
    zfuse_debug ("ZFuse debug\n"); 
    zoidfs_finalize (); 
@@ -548,7 +549,7 @@ static int zfuse_release (const char * path, struct fuse_file_info * fi)
 
 static int zfuse_listxattr (const char * file, char * data, size_t size)
 {
-   const int needed = strlen (ZFUSE_XATTR_ZOIDFSHANDLE)+1; 
+   const size_t needed = strlen (ZFUSE_XATTR_ZOIDFSHANDLE)+1; 
 
    zfuse_debug ("zfuse_listxattr: %s, datasize=%i\n", file, (int)size); 
 
@@ -562,12 +563,15 @@ static int zfuse_listxattr (const char * file, char * data, size_t size)
    return needed;
 }
 
-static int zfuse_getxattr (const char * path, const char * name,
+static int zfuse_getxattr (const char * path, const char * UNUSED(name),
       char * value, size_t size)
 {
+   /* @TODO: name unused? */ 
+
    char buf[256]; 
    zoidfs_handle_t handle; 
    int ret; 
+   size_t needed; 
    
    ret = zoidfs_lookup (NULL, NULL, path, &handle); 
    if (ret != ZFS_OK)
@@ -578,7 +582,7 @@ static int zfuse_getxattr (const char * path, const char * name,
    
    zoidfs_handle_to_text (&handle, buf, sizeof(buf));
    
-   const int needed = strlen(buf); 
+   needed = strlen(buf); 
  
    if (!size)
       return needed;
@@ -590,13 +594,15 @@ static int zfuse_getxattr (const char * path, const char * name,
    return needed; 
 }
 
-static int zfuse_flush (const char * filename, struct fuse_file_info * info)
+static int zfuse_flush (const char * UNUSED(filename), 
+      struct fuse_file_info * UNUSED(info))
 {
    /* we don't buffer so nothing todo */
    return 0; 
 }
 
-static int zfuse_removexattr (const char * filename, const char * attr)
+static int zfuse_removexattr (const char * UNUSED(filename), 
+      const char * UNUSED(attr))
 {
    /* we do not allow removing the zoidfs handle */ 
    /* However, we cannot return EACCESS or otherwise
@@ -697,41 +703,31 @@ static int zfuse_utimens (const char * file, const struct timespec tv[2])
 }
 
 
-static int zfuse_fsync (const char * file, int p, struct fuse_file_info * info)
+static int zfuse_fsync (const char * UNUSED(file), 
+      int UNUSED(p), struct fuse_file_info * UNUSED(info))
 {
    /* we don't buffer */ 
    return 0; 
 }
 
-static int zfuse_fsyncdir (const char * dir, int nometa, 
-      struct fuse_file_info * info)
+static int zfuse_fsyncdir (const char * UNUSED(dir), 
+      int UNUSED(nometa), 
+      struct fuse_file_info * UNUSED(info))
 {
    /* no need */ 
    return 0; 
 }
 
 
-static int zfuse_access (const char * file, int p)
+static int zfuse_access (const char * UNUSED(file), int UNUSED(p))
 {
-/*   zoidfs_handle_t handle; 
-   int ret; 
-
-   ret=zoidfs_lookup (NULL, NULL, file, &handle); 
-   if (ret != ZFS_OK)
-      return zoidfserr_to_posix (ret); 
-
-   zoidfs_attr_t attr;
-   ret = zoidfs_getattr (&handle, &attr); 
-   if (ret != ZFS_OK)
-      return zoidfserr_to_posix (ret); 
-
-     */
+   /* we don't do access since we don't do multiple users yet */ 
    
    return -ENOSYS; 
 
 }
 
-static int zfuse_ftruncate (const char * file, off_t off, 
+static int zfuse_ftruncate (const char * UNUSED(file), off_t off, 
       struct fuse_file_info * info)
 {
    const zoidfs_handle_t * handle = zfuse_handle_lookup (info->fh); 

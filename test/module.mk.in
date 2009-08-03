@@ -37,40 +37,40 @@ MODULE_SOURCES_forwarding := forwarding.cpp
 ADDINTLIBS_forwarding := iofwdutil 
 
 MODULE_SOURCES_zoidfs_io := zoidfs-io.c 
-ADDINTLIBS_zoidfs_io := zoidfsutil zoidfsdispatch 
+ADDINTLIBS_zoidfs_io := zoidfsutil zoidfsdispatch zoidfscutil
 
 MODULE_SOURCES_zoidfs_md := zoidfs-md.c
-ADDINTLIBS_zoidfs_md := zoidfsutil zoidfsdispatch 
+ADDINTLIBS_zoidfs_md := zoidfsutil zoidfsdispatch zoidfscutil
 
 MODULE_SOURCES_zoidfs_io_iofwd := zoidfs-io.c 
-ADDINTLIBS_zoidfs_io_iofwd := iofwdclient iofwdlib iofwdutil zoidfsutil zoidfsclient
+ADDINTLIBS_zoidfs_io_iofwd := iofwdclient iofwdlib iofwdutil zoidfsutil zoidfsclient zoidfscutil
 
 MODULE_SOURCES_zoidfs_md_iofwd := zoidfs-md.c
-ADDINTLIBS_zoidfs_md_iofwd := iofwdclient iofwdlib iofwdutil zoidfsutil zoidfsclient
+ADDINTLIBS_zoidfs_md_iofwd := iofwdclient iofwdlib iofwdutil zoidfsutil zoidfsclient zoidfscutil
 
 MODULE_SOURCES_zoidfs_io_thread := zoidfs-io-thread.c 
-ADDINTLIBS_zoidfs_io_thread := zoidfsutil zoidfsdispatch 
+ADDINTLIBS_zoidfs_io_thread := zoidfsutil zoidfsdispatch  zoidfscutil
 
 MODULE_SOURCES_zoidfs_md_thread := zoidfs-md-thread.c
-ADDINTLIBS_zoidfs_md_thread := zoidfsutil zoidfsdispatch 
+ADDINTLIBS_zoidfs_md_thread := zoidfsutil zoidfsdispatch  zoidfscutil
 
 MODULE_SOURCES_zoidfs_io_iofwd_thread := zoidfs-io-thread.c 
-ADDINTLIBS_zoidfs_io_iofwd_thread := iofwdclient iofwdlib iofwdutil zoidfsutil zoidfsclient
+ADDINTLIBS_zoidfs_io_iofwd_thread := iofwdclient iofwdlib iofwdutil zoidfsutil zoidfsclient zoidfscutil
 
 MODULE_SOURCES_zoidfs_md_iofwd_thread := zoidfs-md-thread.c
-ADDINTLIBS_zoidfs_md_iofwd_thread := iofwdclient iofwdlib iofwdutil zoidfsutil zoidfsclient
+ADDINTLIBS_zoidfs_md_iofwd_thread := iofwdclient iofwdlib iofwdutil zoidfsutil zoidfsclient zoidfscutil
 
 MODULE_SOURCES_zoidfsapi_symlink_test := zoidfsapi-symlink-test.c
-ADDINTLIBS_zoidfsapi_symlink_test := iofwdclient iofwdlib iofwdutil zoidfsutil zoidfsclient
+ADDINTLIBS_zoidfsapi_symlink_test := iofwdclient iofwdlib iofwdutil zoidfsutil zoidfsclient zoidfscutil
 
 MODULE_SOURCES_zoidfsapi_link_test := zoidfsapi-link-test.c
-ADDINTLIBS_zoidfsapi_link_test := iofwdclient iofwdlib iofwdutil zoidfsutil zoidfsclient
+ADDINTLIBS_zoidfsapi_link_test := iofwdclient iofwdlib iofwdutil zoidfsutil zoidfsclient zoidfscutil
 
 MODULE_SOURCES_zoidfsapi_rename_test := zoidfsapi-rename-test.c
-ADDINTLIBS_zoidfsapi_rename_test := iofwdclient iofwdlib iofwdutil zoidfsutil zoidfsclient
+ADDINTLIBS_zoidfsapi_rename_test := iofwdclient iofwdlib iofwdutil zoidfsutil zoidfsclient zoidfscutil
 
 MODULE_SOURCES_zoidfsapi_lookup_perm_test := zoidfsapi-lookup-perm-test.c 
-ADDINTLIBS_zoidfsapi_lookup_perm_test := iofwdclient iofwdlib iofwdutil zoidfsutil zoidfsclient
+ADDINTLIBS_zoidfsapi_lookup_perm_test := iofwdclient iofwdlib iofwdutil zoidfsutil zoidfsclient zoidfscutil
 
 MODULE_SOURCES_xdrspeed := $(addprefix xdr/, xdrspeed.cpp)
 ADDINTLIBS_xdrspeed := iofwdutil

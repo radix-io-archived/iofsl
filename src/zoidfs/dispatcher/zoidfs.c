@@ -3,6 +3,7 @@
 #include <string.h>
 #include "zoidfs/zoidfs.h"
 #include "zint-handler.h"
+#include "c-util/tools.h"
 
 int zoidfs_null(void)
 {
@@ -445,8 +446,8 @@ int zoidfs_finalize(void)
 }
 
 /* Only needed by the BGP ZOID version.  */
-void __zoidfs_init(int pset_mpi_proc_count, int argc, int envc,
-                   const char* argenvint)
+void __zoidfs_init(int UNUSED(pset_mpi_proc_count), int UNUSED(argc), 
+      int UNUSED(envc), const char* UNUSED(argenvint))
 {
     zoidfs_init();
 }

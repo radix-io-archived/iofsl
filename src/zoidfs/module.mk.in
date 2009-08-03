@@ -4,12 +4,13 @@
 MODULE_ARCHIVES := zoidfsdispatch
 MODULE_SOURCES_zoidfsdispatch := $(addprefix dispatcher/, \
    	zoidfs.c \
-	zoidfs-local.c \
+	local/zoidfs-local.c \
 	zint-handler.c \
    )
 
 # If posix dispatcher plugin should be built
 ifdef DISPATCH_POSIX
+   ADDINTLIBS_zoidfsdispatch := zoidfscutil
    MODULE_SOURCES_zoidfsdispatch += $(addprefix dispatcher/posix/, \
         env-parse.c \
         handlecache.c \
@@ -19,7 +20,6 @@ ifdef DISPATCH_POSIX
         set.c \
         trie.c \
         zoidfs-posix.c \
-        zoidfs-util.c \
    )
    ifeq ($(MYSQL_OK),1)
         #MODULE_SOURCES_zoidfsdispatch += dispatcher/posix/persist-mysql.c 
@@ -27,7 +27,7 @@ ifdef DISPATCH_POSIX
         #MODULE_CPPFLAGS_zoidfsdispatch += @MYSQL_CPPFLAGS@
         #MODULE_CFLAGS_zoidfsdispatch += @MYSQL_CFLAGS@
 	# Add to general cflags until makefile.in is fixed
-        MODULE_SOURCES_zoidfsdispatch += dispatcher/posix/persist-mysql.c 
+       MODULE_SOURCES_zoidfsdispatch += dispatcher/posix/persist-mysql.c 
         MODULE_LDFLAGS_zoidfsdispatch += @MYSQL_LDFLAGS@
         CPPFLAGS += @MYSQL_CPPFLAGS@
         CFLAGS += @MYSQL_CFLAGS@
@@ -62,6 +62,25 @@ ifdef DISPATCH_LIBSYSIO
    CFLAGS += @SYSIO_CFLAGS@ -D_LARGEFILE64_SOURCE -DHAVE_POSIX_1003_READLINK -D__USE_LARGEFILE64
    LDFLAGS += @SYSIO_LDFLAGS@ @SYSIO_LIBS@
 endif
+
+# always build posix2 dispatcher
+ifdef DISPATCH_POSIX2
+MODULE_SOURCES_zoidfsdispatch += $(addprefix dispatcher/posix2/,\
+				 zoidfs-posix2.c \
+				 fcache.c \
+				 dcache.c \
+				 )
+
+ADDINTLIBS_zoidfsdispatch += c-util
+endif
+
+#
+# Some C zoidfs utility functions
+#
+MODULE_ARCHIVES += zoidfscutil
+MODULE_SOURCES_zoidfscutil := $(addprefix c-util/, \
+   zoidfs-util.c )
+
 
 #
 #  C++ wrapper around the zoidfs API

@@ -12,10 +12,15 @@ namespace spatial
 {
 //===========================================================================
 
+
+/**
+ * TODO: 
+ *   convert from dual  map to rtree
+ */
 class RangeSet
 {
 public:
-  unsigned int size() const
+  size_t size() const
   {
     return ranges.size();
   }

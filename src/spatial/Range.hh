@@ -55,7 +55,7 @@ inline bool operator<(const Range& r1, const Range& r2)
   if (r1.st == r2.st)
     return r1.en < r2.en;
   return r1.st < r2.st;
-};
+}
 
 //===========================================================================
 }

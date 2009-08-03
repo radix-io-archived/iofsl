@@ -1835,6 +1835,7 @@ static int zoidfs_write_pipeline(BMI_addr_t peer_addr, uint64_t pipeline_size,
     uint64_t st_mem = 0;
     uint64_t st_memofs = 0;
     uint64_t total_size = 0;
+
     for (i = 0; i < list_count; i++)
         total_size += size_list[i];
 

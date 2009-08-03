@@ -5,7 +5,7 @@
 #include <stdio.h>
 #include <pthread.h>
 
-#include "zoidfs-util.h"
+#include "zoidfs/c-util/zoidfs-util.h"
 #include "handlecache.h"
 #include "trie.h"
 #include "hash-table.h"

@@ -1,7 +1,7 @@
 MODULE_APPS := iofwd
 
 MODULE_SOURCES_iofwd := iofwd.cpp IOFWDMain.cpp
-ADDINTLIBS_iofwd := iofwdlib zoidfsutil iofwdutil zoidfsdispatch
+ADDINTLIBS_iofwd := iofwdlib zoidfsutil iofwdutil zoidfsdispatch zoidfscutil
 
 MODULE_ARCHIVES := iofwdlib
 ADDINTLIBS_iofwdlib := zoidfsutil iofwdutil zoidfsdispatch spatial
@@ -45,3 +45,5 @@ MODULE_SOURCES_iofwdlib := \
    DefRequestItem.cpp \
    ThreadTasks.cpp \
    $(iofwd_frontend)
+
+

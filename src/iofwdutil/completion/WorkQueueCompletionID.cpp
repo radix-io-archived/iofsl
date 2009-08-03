@@ -1,4 +1,5 @@
 #include "WorkQueueCompletionID.hh"
+#include "iofwdutil/tools.hh"
 #include "iofwdutil/assert.hh"
 
 namespace iofwdutil
@@ -12,7 +13,8 @@ void WorkQueueCompletionID::wait ()
    tracker_->wait (tracker_id_);
 }
 
-bool WorkQueueCompletionID::test (unsigned int maxms)
+// @TODO: Should this just ignore maxms??
+bool WorkQueueCompletionID::test (unsigned int UNUSED(maxms))
 {
    ALWAYS_ASSERT(tracker_);
    return tracker_->test (tracker_id_);

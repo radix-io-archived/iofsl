@@ -13,7 +13,7 @@
 #include <sys/types.h>
 #include <assert.h>
 
-#include "zoidfs-util.h"
+#include "zoidfs/c-util/zoidfs-util.h"
 #include "persist.h"
 
 /* size of bulk data access buffer */ 

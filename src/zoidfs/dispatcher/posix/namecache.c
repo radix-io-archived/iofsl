@@ -3,6 +3,7 @@
 #include <assert.h>
 #include "namecache.h"
 #include "trie.h"
+#include "c-util/tools.h"
 
 typedef struct nc_entry_t nc_entry_t; 
 
@@ -20,8 +21,8 @@ static int namecache_capacity       = 0;
 static int namecache_count          = 0; 
 static Trie * namecache_trie_handle = 0; 
 static Trie * namecache_trie_path   = 0; 
-static nc_entry_t * namecache_first = 0; 
-static nc_entry_t * namecache_last  = 0; 
+//static nc_entry_t * namecache_first = 0; 
+//static nc_entry_t * namecache_last  = 0; 
 /*=====================*/
 
 
@@ -81,8 +82,8 @@ int namecache_lookup_handle (const char * name, zoidfs_handle_t * handle)
    return 1; 
 }
 
-int namecache_lookup_path (const zoidfs_handle_t * handle,
-      char name, int bufsize)
+int namecache_lookup_path (const zoidfs_handle_t * UNUSED(handle),
+      char UNUSED(name), int UNUSED(bufsize))
 {
    return 0; 
 }
@@ -95,7 +96,7 @@ int namecache_invalidate_path (const char * name)
    return trie_remove (namecache_trie_path, (char*)name); 
 }
 
-int namecache_invalidate_handle (const zoidfs_handle_t * handle)
+int namecache_invalidate_handle (const zoidfs_handle_t * UNUSED(handle))
 {
    return 0; 
 }

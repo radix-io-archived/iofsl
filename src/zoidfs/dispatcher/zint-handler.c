@@ -1,10 +1,13 @@
 #include <assert.h>
 #include <string.h>
 
-#include "zint-handler.h"
+/* get access to HAVE_DISP... defines */
 #include "iofwd_config.h"
 
-#ifdef HAVE_PVFS2
+
+#include "zint-handler.h"
+
+#ifdef HAVE_DISPATCHER_PVFS2
 #include "pvfs/zoidfs-pvfs2.h"
 #endif
 
@@ -16,7 +19,11 @@
 #include "sysio/zoidfs-sysio.h"
 #endif
 
-#include "zoidfs-local.h"
+#ifdef HAVE_DISPATCHER_POSIX2
+#include "posix2/zoidfs-posix2.h"
+#endif
+
+#include "local/zoidfs-local.h"
 
 
 /**
@@ -26,7 +33,7 @@
 
 static zint_handler_t * zint_handlers[] = 
 {
-#ifdef HAVE_PVFS2
+#ifdef HAVE_DISPATCHER_PVFS2
     &pvfs2_handler,
 #endif
 
@@ -37,12 +44,13 @@ static zint_handler_t * zint_handlers[] =
  */
 #ifdef HAVE_DISPATCHER_LIBSYSIO
     &sysio_handler,
-#else
+#endif /* HAVE_DISPATCHER_LIBSYSIO */
+#ifdef HAVE_DISPATCHER_POSIX2
+    &posix2_handler,
+#endif
 #ifdef HAVE_DISPATCHER_POSIX
     &posix_handler,
 #endif /* HAVE_DISPATCHER_POSIX */
-#endif /* HAVE_DISPATCHER_LIBSYSIO */
-
     &local_handler
 };
 
