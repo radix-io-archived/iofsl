@@ -1,5 +1,5 @@
-#ifndef TOOLS_H
-#define TOOLS_H
+#ifndef CUTILS_TOOLS_H
+#define CUTILS_TOOLS_H
 
 #ifdef UNUSED
 #elif defined(__GNUC__)
@@ -10,4 +10,7 @@
 # define UNUSED(x) x
 #endif /* UNUSED */
 
-#endif /* TOOLS_H */
+#define zfsmin(a,b) ((a)<(b) ? (a):(b))
+#define zfsmax(a,b) ((a)>(b) ? (a):(b))
+
+#endif /* CUTILS_TOOLS_H */
