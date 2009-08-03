@@ -37,6 +37,7 @@
  * ... make sure we only init once
  */
 static int sysio_dispatcher_initialized = 0;
+static int sysio_dispatcher_ref_count = 0;
 static pthread_mutex_t sysio_init_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 /*
@@ -1626,7 +1627,7 @@ static int zoidfs_sysio_init(void) {
 
 	
 	pthread_mutex_lock(&sysio_init_mutex);
-	
+    sysio_dispatcher_ref_count++;	
 	if(!sysio_dispatcher_initialized)
 	{
 		char * arg = NULL;
@@ -1698,12 +1699,16 @@ static int zoidfs_sysio_finalize(void) {
 	 * Disable the cleanup code until this is
 	 * corrected
 	 */
-    if(sysio_dispatcher_initialized)
+    if(sysio_dispatcher_initialized && sysio_dispatcher_ref_count == 1)
     {
 	    zoidfs_sysio_unexport(&zoidfs_sysio_root_handle);
 	    zoidfs_sysio_unexport(&zoidfs_sysio_mfs_handle);
         _sysio_shutdown();
         sysio_dispatcher_initialized = 0;
+    }
+    else
+    {
+        sysio_dispatcher_ref_count--;
     }
 	
 	pthread_mutex_unlock(&sysio_init_mutex);
