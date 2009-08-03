@@ -23,10 +23,8 @@ int print_zoidfs_attr_t(zoidfs_attr_t *);
 
 int main(int argc, char **argv) {
     int ret, created;
-    uint32_t flags = 0;
     struct timeval now;
     zoidfs_sattr_t sattr;
-    zoidfs_attr_t resattr;
     zoidfs_handle_t basedir_handle;
     zoidfs_handle_t fhandle, rhandle;
     char rename_component_orig[NAMESIZE], rename_fullpath_orig[NAMESIZE];
