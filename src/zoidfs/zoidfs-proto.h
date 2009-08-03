@@ -62,7 +62,7 @@ enum {
 
 
 #ifdef __cplusplus
-        }  // namespace
+        }  /* namespace */
 #endif
 
 #endif /* _ZOIDFS_PROTO_H_ */
