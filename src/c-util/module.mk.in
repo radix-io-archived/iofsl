@@ -2,7 +2,7 @@ MODULE_ARCHIVES = c-util
 
 
 MODULE_SOURCES_iofwdutil = \
-	c-util.c
+	c-util.c sha1.c
 
 # Automatically add -I$(thismoduledir) to CPPFLAGS
 MODULE_CONTAINSINCLUDE := 0
