@@ -59,10 +59,10 @@ static struct file_handle_info zoidfs_sysio_mfs_handle = {NULL, zoidfs_sysio_mfs
  * zoidfs sysio trace and debug tools
  */
 
- 
+/* 
 #define ZOIDFS_SYSIO_DEBUG
 #define ZFSSYSIO_TRACE_ENABLED
-
+*/
 
 /*
  * print enter trace statement
