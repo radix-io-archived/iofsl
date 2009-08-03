@@ -5,17 +5,33 @@
 
 typedef int zint_handle_type_t;
 
-#define ZOIDFS_HANDLE_TYPE(_handle) \
-    (*(uint32_t *)_handle)
+static inline uint32_t ZOIDFS_HANDLE_TYPE (const zoidfs_handle_t * h)
+{
+   return * (uint32_t*) (&h->data[0]);
+}
 
-#define ZINT_MARK_HANDLE(handleptr,type) \
-    *((uint32_t *)handleptr)=type 
+static inline void ZINT_MARK_HANDLE (const zoidfs_handle_t * h, uint32_t type)
+{
+   *((uint32_t*) (&h->data[0])) = type;
+}
 
-#define ZINT_COPY_CLEANUP_HANDLE(source,dest) \
-        *dest = *source ; ZINT_MARK_HANDLE(dest,0)
+static inline void ZINT_COPY_CLEANUP_HANDLE (const zoidfs_handle_t * source,
+      zoidfs_handle_t * dest)
+{
+   *dest = *source;
+   ZINT_MARK_HANDLE(dest, 0);
+}
 
-#define ZINT_CLEANUP_HANDLE(handleptr) \
-        ZINT_MARK_HANDLE(handleptr,0)
+static inline void ZINT_CLEANUP_HANDLE (zoidfs_handle_t * handle)
+{
+   ZINT_MARK_HANDLE (handle, 0);
+}
+
+/* function to compare two handles, but ignoring the area reserverd for the
+ * dispatcher return 1 if equal, 0 if noneq */
+int zoidfs_dispatch_handle_eq (const zoidfs_handle_t * h1, const
+      zoidfs_handle_t * h2);
+
 
 typedef int (* zint_null_handler_t)(void);
 
@@ -121,7 +137,7 @@ typedef int (* zint_init_t)(void);
 
 typedef int (* zint_finalize_t)(void);
 
-typedef int (*zint_settype_handler_t) (int); 
+typedef int (*zint_settype_handler_t) (int);
 
 typedef struct
 {
@@ -163,14 +179,14 @@ zint_handler_t * zint_get_handler_from_path(
     const char * path,
     char * newpath,
     int newpath_maxlen, int *id, zoidfs_handle_t * newhandle,
-    int * usenew); 
+    int * usenew);
 
 
-int zint_ping_handlers (); 
+int zint_ping_handlers ();
 
 int zint_initialize_handlers ();
 
-int zint_finalize_handlers (); 
+int zint_finalize_handlers ();
 
 #endif /* ZINT_HANDLER_H */
 
@@ -178,7 +194,7 @@ int zint_finalize_handlers ();
  * Local variables:
  *  c-indent-level: 4
  *  c-basic-offset: 4
- * End: 
+ * End:
  *
  * vim: ts=8 sts=4 sw=4 expandtab
  */

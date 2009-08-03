@@ -31,7 +31,7 @@
  * as long as the path exists (even if its a mountpoint for a different fs).
  */
 
-static zint_handler_t * zint_handlers[] = 
+static zint_handler_t * zint_handlers[] =
 {
 #ifdef HAVE_DISPATCHER_PVFS2
     &pvfs2_handler,
@@ -63,6 +63,13 @@ zint_handler_t * zint_get_handler(zint_handle_type_t type)
     return zint_handlers[(uint32_t)(type)];
 }
 
+int zoidfs_dispatch_handle_eq (const zoidfs_handle_t * h1,
+      const zoidfs_handle_t * h2)
+{
+   /* skip first 4 bytes */
+   return memcmp (&h1->data[4], &h2->data[4], sizeof(h2->data)-4)==0;
+}
+
 zint_handler_t * zint_get_handler_from_path(
     const char * path,
     char * newpath,
@@ -73,7 +80,7 @@ zint_handler_t * zint_get_handler_from_path(
 {
     int ret;
     int i = 0;
-    
+
     for(; i < ZINT_HANDLERS_COUNT; ++i)
     {
         ret = zint_handlers[i]->resolve_path(
@@ -81,8 +88,8 @@ zint_handler_t * zint_get_handler_from_path(
             usenew);
         if(ret == ZFS_OK)
         {
-           if (id) 
-              *id = i; 
+           if (id)
+              *id = i;
            return zint_handlers[i];
         }
     }
@@ -97,7 +104,7 @@ int zint_locate_handler_handle(const zoidfs_handle_t * handle,
    {
       return -1;
    }
-   return ZOIDFS_HANDLE_TYPE(handle); 
+   return ZOIDFS_HANDLE_TYPE(handle);
 }
 
 int zint_locate_handler_path(const char * path,
@@ -107,7 +114,7 @@ int zint_locate_handler_path(const char * path,
                         zoidfs_handle_t * newhandle,
                         int * usenew)
 {
-   int id; 
+   int id;
    *handler = zint_get_handler_from_path(
          path, newpath, newpath_maxlen, &id, newhandle,
          usenew);
@@ -133,7 +140,7 @@ int zint_ping_handlers ()
     {
         ret = zint_handlers[i]->null();
         if(ret != ZFS_OK)
-           return ret; 
+           return ret;
     }
     return ZFS_OK;
 }
@@ -142,7 +149,7 @@ int zint_finalize_handlers ()
 {
     int ret;
     int i;
-    int err = ZFS_OK; 
+    int err = ZFS_OK;
 
     for(i=0; i < zint_handler_count();  ++i)
     {

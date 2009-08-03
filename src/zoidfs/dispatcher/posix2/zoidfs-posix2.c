@@ -51,12 +51,6 @@ static dcache_handle dcache;
 
 /* ======================================================================== */
 
-static inline void zoidfs_handle_fix (zoidfs_handle_t * h)
-{
-   ZINT_MARK_HANDLE(h,0); 
-}
-
-
 static inline zoidfs_attr_type_t posixmode_to_zoidfsattrtype (mode_t mode)
 {
    switch (mode & S_IFMT)
