@@ -58,7 +58,7 @@ int main(int argc, char **argv)
         pthread_attr_setdetachstate(&pthread_attrs[i], PTHREAD_CREATE_JOINABLE);
         io_args[i].mountPath = &argv[1];
         io_args[i].threadID = i;
-        ret = pthread_create(&threads[i], &pthread_attrs[i], (void *)zoidfs_io, (void *)&io_args[i]);
+        ret = pthread_create(&threads[i], &pthread_attrs[i], (void *)(zoidfs_io), (void *)&io_args[i]);
         if(ret)
         {
             fprintf(stderr, "COULD NOT CREATE THREAD!\n");
