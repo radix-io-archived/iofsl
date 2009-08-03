@@ -90,16 +90,13 @@ static struct file_handle_info zoidfs_sysio_mfs_handle = {NULL, zoidfs_sysio_mfs
 	/* trace disabled */
 #endif /* ZFSSYSIO_TRACE_ENABLED */ 
 
-#ifdef ZOIDFS_SYSIO_DEBUG
 #define ZFSSYSIO_INFO(__format, ...) \
     do { \
         char __buffer[4096]; \
         sprintf(__buffer, __format, ##__VA_ARGS__); \
         fprintf(stderr, "%s %s, ZOIDFS SYSIO DISPATCHER - INFO %s() %s:%i : %s\n", __DATE__, __TIME__, __func__, __FILE__, __LINE__, __buffer); \
     }while(0)
-#endif /* ZOIDFS_SYSIO_DEBUG */
 
-#ifdef ZOIDFS_SYSIO_DEBUG
 #define ZFSSYSIO_PERROR(__format, ...) \
     do { \
         char __buffer[4096]; \
@@ -108,7 +105,6 @@ static struct file_handle_info zoidfs_sysio_mfs_handle = {NULL, zoidfs_sysio_mfs
         sprintf(__buffer, __format, ##__VA_ARGS__); \
         fprintf(stderr, "%s %s, ZOIDFS SYSIO DISPATCHER - ERROR %s() %s:%i : %s, %s\n", __DATE__, __TIME__, __func__, __FILE__, __LINE__, __buffer, __ebuffer); \
     }while(0)
-#endif /* ZOIDFS_SYSIO_DEBUG */
 
 /* 
  * determine the static size of print storage buffers for the handles
