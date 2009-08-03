@@ -2,5 +2,7 @@ This directory contains ZoidFS API implementations:
 
 * util: C++ wrapper around C API (and one C++ forwarding implementation)
 * client: I/O forwarding C API
-* dispatcher: ZoidFS dispatcher
+* dispatcher: ZoidFS dispatcher: performs operations by 
+    calling one of the dispatcher drivers
+
 
