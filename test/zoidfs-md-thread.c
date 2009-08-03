@@ -92,17 +92,19 @@ void * zoidfs_md(zoidfs_md_t * md_args)
     char ** mountPath = md_args->mountPath;
     int tid = md_args->threadID;
     int ret, created;
-    uint32_t flags = 0;
     struct timeval now;
     zoidfs_sattr_t sattr;
     zoidfs_attr_t resattr;
-    size_t entry_count = 32;
-    zoidfs_dirent_t *entries;
     char buffer[ZOIDFS_PATH_MAX];
     zoidfs_handle_t basedir_handle;
     zoidfs_cache_hint_t parent_hint;
     zoidfs_handle_t fhandle, dhandle;
+#ifndef HAVE_DISPATCHER_LIBSYSIO
+    uint32_t flags = 0;
+    size_t entry_count = 32;
+    zoidfs_dirent_t *entries;
     zoidfs_dirent_cookie_t cookie = 0;
+#endif
     char new_fullpath_filename[NAMESIZE];
     char symlink[NAMESIZE], symlink_target[NAMESIZE];
     char link[NAMESIZE], link_target[NAMESIZE];
