@@ -45,6 +45,29 @@ AC_CHECK_FUNCS([memset])
 AC_CHECK_LIB([rt],[clock_getres],,[AC_MSG_ERROR([Could not find clock_getres!])])
 
 
+# Check for CUNIT
+cunitdir=
+AC_ARG_WITH([cunit],[AS_HELP_STRING([--with-cunit], 
+                        [location of cunit library])],
+                   [cunitdir=$withval])
+ENABLE_CUNIT=
+
+if test "A$cunitdir" != "Ano" ; 
+then
+  if test ! -z "$cunitdir" ; then 
+    LDFLAGS="$LDFLAGS -L${cunitdir}/lib"
+    CPPFLAGS="-I${cunitdir}/include"
+  fi
+  ENABLE_CUNIT=1
+  AC_CHECK_HEADER([CUnit/Basic.h], [], [ENABLE_CUNIT=;])
+  AC_CHECK_LIB([cunit],[CU_basic_run_tests],,[ENABLE_CUNIT=;])
+  if test -z "$ENABLE_CUNIT" ; then
+     AC_MSG_WARN([Could not find usable cunit library -- disabling unit tests])
+  fi
+fi
+AX_MAKE_VAR([ENABLE_CUNIT])
+AX_MAKE_VAR([cunitdir])
+
 # BMI
 AC_LANG_PUSH([C])
 BMI_INCLUDE=
