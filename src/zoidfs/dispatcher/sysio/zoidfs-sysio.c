@@ -59,10 +59,10 @@ static struct file_handle_info zoidfs_sysio_mfs_handle = {NULL, zoidfs_sysio_mfs
  * zoidfs sysio trace and debug tools
  */
 
-/* 
+ 
 #define ZOIDFS_SYSIO_DEBUG
 #define ZFSSYSIO_TRACE_ENABLED
-*/
+
 
 /*
  * print enter trace statement
@@ -70,12 +70,12 @@ static struct file_handle_info zoidfs_sysio_mfs_handle = {NULL, zoidfs_sysio_mfs
 #ifdef ZFSSYSIO_TRACE_ENABLED
 #define ZFSSYSIO_TRACE_ENTER \
 	do { \
-        fprintf(stderr, "%s %s, ENTER %s() %s:%i\n", __DATE__, __TIME__, __func__, __FILE__, __LINE__); \
+        fprintf(stderr, "%s %s, ZOIDFS SYSIO DISPATCHER - ENTER %s() %s:%i\n", __DATE__, __TIME__, __func__, __FILE__, __LINE__); \
 	}while(0)
 #else
 #define ZFSSYSIO_TRACE_ENTER \
 	/* trace disabled */
-#endif
+#endif /* ZFSSYSIO_TRACE_ENABLED */
 
 /*
  * print exit trace statement
@@ -83,12 +83,21 @@ static struct file_handle_info zoidfs_sysio_mfs_handle = {NULL, zoidfs_sysio_mfs
 #ifdef ZFSSYSIO_TRACE_ENABLED
 #define ZFSSYSIO_TRACE_EXIT \
 	do { \
-        fprintf(stderr, "%s %s, EXIT %s() %s:%i\n", __DATE__, __TIME__, __func__, __FILE__, __LINE__); \
+        fprintf(stderr, "%s %s, ZOIDFS SYSIO DISPATCHER - EXIT %s() %s:%i\n", __DATE__, __TIME__, __func__, __FILE__, __LINE__); \
 	}while(0)
 #else
 #define ZFSSYSIO_TRACE_EXIT
 	/* trace disabled */
-#endif
+#endif /* ZFSSYSIO_TRACE_ENABLED */ 
+
+#ifdef ZOIDFS_SYSIO_DEBUG
+#define ZFSSYSIO_INFO(__format, ...) \
+    do { \
+        char buffer[4096]; \
+        sprintf(buffer, __format, __VA_ARGS__); \
+        fprintf(stderr, "%s %s, ZOIDFS SYSIO DISPATCHER - INFO %s() %s:%i : %s\n", __DATE__, __TIME__, __func__, __FILE__, __LINE__, buffer); \
+    }while(0)
+#endif /* ZOIDFS_SYSIO_DEBUG */
 
 /* 
  * determine the static size of print storage buffers for the handles
