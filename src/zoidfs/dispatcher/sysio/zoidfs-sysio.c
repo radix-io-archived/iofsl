@@ -93,9 +93,20 @@ static struct file_handle_info zoidfs_sysio_mfs_handle = {NULL, zoidfs_sysio_mfs
 #ifdef ZOIDFS_SYSIO_DEBUG
 #define ZFSSYSIO_INFO(__format, ...) \
     do { \
-        char buffer[4096]; \
-        sprintf(buffer, __format, __VA_ARGS__); \
-        fprintf(stderr, "%s %s, ZOIDFS SYSIO DISPATCHER - INFO %s() %s:%i : %s\n", __DATE__, __TIME__, __func__, __FILE__, __LINE__, buffer); \
+        char __buffer[4096]; \
+        sprintf(__buffer, __format, ##__VA_ARGS__); \
+        fprintf(stderr, "%s %s, ZOIDFS SYSIO DISPATCHER - INFO %s() %s:%i : %s\n", __DATE__, __TIME__, __func__, __FILE__, __LINE__, __buffer); \
+    }while(0)
+#endif /* ZOIDFS_SYSIO_DEBUG */
+
+#ifdef ZOIDFS_SYSIO_DEBUG
+#define ZFSSYSIO_PERROR(__format, ...) \
+    do { \
+        char __buffer[4096]; \
+        char __ebuffer[2048]; \
+        strerror_r(errno, __ebuffer, 2048); \
+        sprintf(__buffer, __format, ##__VA_ARGS__); \
+        fprintf(stderr, "%s %s, ZOIDFS SYSIO DISPATCHER - ERROR %s() %s:%i : %s, %s\n", __DATE__, __TIME__, __func__, __FILE__, __LINE__, __buffer, __ebuffer); \
     }while(0)
 #endif /* ZOIDFS_SYSIO_DEBUG */
 
@@ -143,7 +154,7 @@ static inline int zoidfs_print_handle(const zoidfs_handle_t * handle)
         }
         i += 1;
     }
-    fprintf(stderr, "zfs handle data:   %s\n", vstr);
+    ZFSSYSIO_INFO("zfs handle data: %s", vstr);
     return ZFS_OK;
 }
 
@@ -187,7 +198,7 @@ static inline int sysio_print_handle(const struct file_handle_info * handle)
         }
         i += 1;
     }
-    fprintf(stderr, "sysio handle data: %s\n", vstr);
+    ZFSSYSIO_INFO("sysio handle data: %s", vstr);
     return ZFS_OK;
 }
 
@@ -201,22 +212,22 @@ static inline int zoidfs_sysio_handle_cmp(const struct file_handle_info * sysio_
 
     if(memcmp(v, zoidfs_handle->data + ZOIDFS_HANDLE_HEADER_SIZE, ZOIDFS_HANDLE_PAYLOAD_SIZE) == 0)
     {
-        fprintf(stderr, "zoidfs-sysio handle cmp, handles are equal\n");
+        ZFSSYSIO_INFO("zoidfs-sysio handle cmp, handles are equal");
     }
     else
     {
-        fprintf(stderr, "zoidfs-sysio handle cmp, handles are not equal\n");
+        ZFSSYSIO_INFO("zoidfs-sysio handle cmp, handles are not equal");
         if(memcmp(v, zoidfs_handle->data + ZOIDFS_HANDLE_HEADER_SIZE, SYSIO_FHE_SIZE) != 0)
         {
-            fprintf(stderr, "zoidfs-sysio handle cmp, fhe_export differs\n");
+            ZFSSYSIO_INFO("zoidfs-sysio handle cmp, fhe_export differs");
         }
         if(memcmp(v + SYSIO_FHE_SIZE, zoidfs_handle->data + ZOIDFS_HANDLE_HEADER_SIZE + SYSIO_FHE_SIZE, SYSIO_HANDLE_DATA_SIZE) != 0)
         {
-            fprintf(stderr, "zoidfs-sysio handle cmp, fhi_handle differs\n");
+            ZFSSYSIO_INFO("zoidfs-sysio handle cmp, fhi_handle differs");
         }
         if(memcmp(v + SYSIO_FHE_SIZE + SYSIO_HANDLE_DATA_SIZE, zoidfs_handle->data + ZOIDFS_HANDLE_HEADER_SIZE + SYSIO_FHE_SIZE + SYSIO_HANDLE_DATA_SIZE, SYSIO_FHILENPACK_SIZE) != 0)
         {
-            fprintf(stderr, "zoidfs-sysio handle cmp, fh_handle_len differs\n");
+            ZFSSYSIO_INFO("zoidfs-sysio handle cmp, fh_handle_len differs");
         }
     }
 
@@ -268,7 +279,7 @@ static inline int sysio_handle_to_zoidfs_handle(const struct file_handle_info * 
 
    
 #ifdef ZOIDFS_SYSIO_DEBUG 
-    fprintf(stderr, "s2z handle data\n");  
+    ZFSSYSIO_INFO("s2z handle data");  
     zoidfs_sysio_handle_cmp(_sysio_h_ref, _zoidfs_h_ref);
     sysio_print_handle(_sysio_h_ref);
     zoidfs_print_handle(_zoidfs_h_ref);
@@ -306,7 +317,7 @@ static inline int zoidfs_handle_to_sysio_handle(const zoidfs_handle_t * _zoidfs_
 	(_sysio_h_ref)->fhi_handle_len = (size_t)(*fhl);
 
 #ifdef ZOIDFS_SYSIO_DEBUG 
-    fprintf(stderr, "z2s handle data\n");  
+    ZFSSYSIO_INFO("z2s handle data");  
     zoidfs_sysio_handle_cmp(_sysio_h_ref, _zoidfs_h_ref);
     sysio_print_handle(_sysio_h_ref);
     zoidfs_print_handle(_zoidfs_h_ref); 
@@ -389,7 +400,7 @@ int zoidfs_sysio_export(int * key, char * base_path, struct file_handle_info * r
      */
     ret = SYSIO_INTERFACE_NAME(_zfs_sysio_fhi_export)(key, sizeof(*key), base_path, 0, &(root_handle->fhi_export));
     if (ret) {
-	fprintf(stderr, "zoidfs_sysio_export: fhi_export() failed.\n");
+	    ZFSSYSIO_INFO("zoidfs_sysio_export: fhi_export() failed.");
 		ZFSSYSIO_TRACE_EXIT;
         return sysio_err_to_zfs_err(errno);
     }
@@ -414,7 +425,7 @@ int zoidfs_sysio_unexport(struct file_handle_info * root_handle)
      */
 	ret = SYSIO_INTERFACE_NAME(_zfs_sysio_fhi_unexport)(root_handle->fhi_export);
     if (ret) {
-		fprintf(stderr, "zoidfs_sysio_unexport: fhi_unexport() failed.\n");
+		ZFSSYSIO_INFO("zoidfs_sysio_unexport: fhi_unexport() failed.");
 		ZFSSYSIO_TRACE_EXIT;
         return sysio_err_to_zfs_err(errno);
     }
@@ -439,7 +450,7 @@ int zoidfs_sysio_rootof(struct file_handle_info * root_handle)
      */
     ret = SYSIO_INTERFACE_NAME(_zfs_sysio_fhi_root_of)(root_handle->fhi_export, root_handle);
     if (ret < 0) {
-	fprintf(stderr, "zoidfs_libsysio_rootof: fhi_root_of() failed.\n");
+	ZFSSYSIO_INFO("zoidfs_libsysio_rootof: fhi_root_of() failed.");
 		ZFSSYSIO_TRACE_EXIT;
         return sysio_err_to_zfs_err(errno);
     }
@@ -447,7 +458,7 @@ int zoidfs_sysio_rootof(struct file_handle_info * root_handle)
      * Verify that the handle data is not too large
      */
     if ((size_t )ret >= SYSIO_HANDLE_DATA_SIZE) {
-	fprintf(stderr, "zoidfs_sysio_rootof: handle data too large, %lu >= %lu\n", (unsigned long)ret, (unsigned long)root_handle->fhi_handle_len);
+	ZFSSYSIO_INFO("zoidfs_sysio_rootof: handle data too large, %lu >= %lu", (unsigned long)ret, (unsigned long)root_handle->fhi_handle_len);
 		ZFSSYSIO_TRACE_EXIT;
         return sysio_err_to_zfs_err(errno);
     }
@@ -480,7 +491,7 @@ static int zoidfs_sysio_getattr(const zoidfs_handle_t *handle, zoidfs_attr_t *at
 	 */
     ret = SYSIO_INTERFACE_NAME(_zfs_sysio_fhi_getattr)(&sysio_handle, &stbuf);
     if (ret) {
-        fprintf(stderr, "zoidfs_sysio_getattr: fhi_getattr() failed, code = %i.\n", ret);
+        ZFSSYSIO_INFO("zoidfs_sysio_getattr: fhi_getattr() failed, code = %i.", ret);
 		ZFSSYSIO_TRACE_EXIT;
         return sysio_err_to_zfs_err(errno);
     }
@@ -623,8 +634,8 @@ static int zoidfs_sysio_setattr(const zoidfs_handle_t *handle, const zoidfs_satt
 	{
 		ret = SYSIO_INTERFACE_NAME(_zfs_sysio_fhi_setattr)(&sysio_handle, &sysio_sattr);
 		if (ret) {
-			fprintf(stderr, "zoidfs_sysio_setattr: fhi_setattr() failed.\n");
-			perror("zoidfs_sysio_setattr");
+			ZFSSYSIO_INFO("zoidfs_sysio_setattr: fhi_setattr() failed.");
+			ZFSSYSIO_PERROR("zoidfs_sysio_setattr");
 			ZFSSYSIO_TRACE_EXIT;
 			return sysio_err_to_zfs_err(errno);
 		}
@@ -635,8 +646,8 @@ static int zoidfs_sysio_setattr(const zoidfs_handle_t *handle, const zoidfs_satt
 	 */
 	ret = zoidfs_sysio_getattr(handle, attr);
 	if (ret != ZFS_OK) {
-		fprintf(stderr, "zoidfs_sysio_setattr: fhi_getattr() failed.\n");
-		perror("zoidfs_sysio_setattr");
+		ZFSSYSIO_INFO("zoidfs_sysio_setattr: fhi_getattr() failed.");
+		ZFSSYSIO_PERROR("zoidfs_sysio_setattr");
 		ZFSSYSIO_TRACE_EXIT;
 		return sysio_err_to_zfs_err(errno);
 	}
@@ -667,7 +678,7 @@ static int zoidfs_sysio_readlink(const zoidfs_handle_t *handle, char *buffer,
 	
 	ret = SYSIO_INTERFACE_NAME(_zfs_sysio_fhi_getattr)(&sysio_link_handle, &stbuf);
 	if (ret) {
-		perror("fhi_getattr");
+		ZFSSYSIO_PERROR("fhi_getattr");
 		ZFSSYSIO_TRACE_EXIT;
 		return sysio_err_to_zfs_err(errno);
 	}
@@ -675,7 +686,7 @@ static int zoidfs_sysio_readlink(const zoidfs_handle_t *handle, char *buffer,
 	if (S_ISLNK(stbuf.st_mode)) {
 		ret = SYSIO_INTERFACE_NAME(_zfs_sysio_fhi_readlink)(&sysio_link_handle, buffer, buffer_length);
 		if (ret < 0) {
-			perror("readlink");
+			ZFSSYSIO_PERROR("readlink");
 			ZFSSYSIO_TRACE_EXIT;
 			return sysio_err_to_zfs_err(errno);
 		}
@@ -702,7 +713,7 @@ static int zoidfs_sysio_lookup(const zoidfs_handle_t *parent_handle,
      * full_path or specify the parent_handle AND the component_name.
      */
     if ((!parent_handle || !component_name) && !full_path) {
-        fprintf(stderr, "zoidfs_sysio_lookup: Invalid path parameters.\n");
+        ZFSSYSIO_INFO("zoidfs_sysio_lookup: Invalid path parameters.");
 		ZFSSYSIO_TRACE_EXIT;
         return sysio_err_to_zfs_err(errno);
     }
@@ -728,8 +739,8 @@ static int zoidfs_sysio_lookup(const zoidfs_handle_t *parent_handle,
 			return sysio_err_to_zfs_err(errno);
 		}
 		if ((size_t )ret >= SYSIO_HANDLE_DATA_SIZE) {
-			fprintf(stderr, "zoidfs_sysio_rootof: handle data too large, %lu >= %lu\n", (unsigned long)ret, (unsigned long)zoidfs_sysio_root_handle.fhi_handle_len);
-			(void )fprintf(stderr, "handle data too large\n");
+			ZFSSYSIO_INFO("zoidfs_sysio_rootof: handle data too large, %lu >= %lu", (unsigned long)ret, (unsigned long)zoidfs_sysio_root_handle.fhi_handle_len);
+			ZFSSYSIO_INFO("handle data too large");
 		}
 		sysio_handle_to_zoidfs_handle(&h, handle);
 
@@ -767,8 +778,8 @@ static int zoidfs_sysio_lookup(const zoidfs_handle_t *parent_handle,
 			return sysio_err_to_zfs_err(errno);
 		}
 		if ((size_t )ret >= SYSIO_HANDLE_DATA_SIZE) {
-			fprintf(stderr, "zoidfs_sysio_rootof: handle data too large, %i >= %i\n", ret, SYSIO_HANDLE_DATA_SIZE);
-			(void )fprintf(stderr, "handle data too large\n");
+			ZFSSYSIO_INFO("zoidfs_sysio_rootof: handle data too large, %i >= %i", ret, SYSIO_HANDLE_DATA_SIZE);
+			ZFSSYSIO_INFO("handle data too large");
 		}
 		sysio_handle_to_zoidfs_handle(&sysio_component_handle, handle);
     }
@@ -800,7 +811,7 @@ static int zoidfs_sysio_remove(const zoidfs_handle_t *parent_handle,
      * full_path or specify the parent_handle AND the component_name.
      */
     if ((!parent_handle || !component_name) && !full_path) {
-        fprintf(stderr, "zoidfs_sysio_remove: Invalid path parameters.\n");
+        ZFSSYSIO_INFO("zoidfs_sysio_remove: Invalid path parameters.");
 		ZFSSYSIO_TRACE_EXIT;
         return sysio_err_to_zfs_err(errno);
     }
@@ -811,15 +822,13 @@ static int zoidfs_sysio_remove(const zoidfs_handle_t *parent_handle,
 		
 		ret = SYSIO_INTERFACE_NAME(_zfs_sysio_fhi_lookup)(&zoidfs_sysio_root_handle, full_path, 0, &sysio_fp_handle);
 		if (ret < 0) {
-			perror("fhi_lookup");
+			ZFSSYSIO_PERROR("fhi_lookup");
 			
 			ZFSSYSIO_TRACE_EXIT;
 			return sysio_err_to_zfs_err(errno);
 		}
 		if ((size_t )ret >= SYSIO_HANDLE_DATA_SIZE) {
-			(void )fprintf(stderr,
-					   "%s: handle data too large\n",
-					   component_name);
+			ZFSSYSIO_INFO("%s: handle data too large", component_name);
 			
 			ZFSSYSIO_TRACE_EXIT;
 			return sysio_err_to_zfs_err(errno);
@@ -837,23 +846,20 @@ static int zoidfs_sysio_remove(const zoidfs_handle_t *parent_handle,
 		 */
 		ret = SYSIO_INTERFACE_NAME(_zfs_sysio_fhi_lookup)(&sysio_parent_handle, component_name, 0, &sysio_fp_handle);
 		if (ret < 0) {
-			perror("fhi_lookup");
+			ZFSSYSIO_PERROR("fhi_lookup");
 			
 			ZFSSYSIO_TRACE_EXIT;
 			return sysio_err_to_zfs_err(errno);
 		}
 		if ((size_t )ret >= SYSIO_HANDLE_DATA_SIZE) {
-			(void )fprintf(stderr,
-					   "%s: handle data too large\n",
-					   component_name);
-			
+			ZFSSYSIO_INFO("%s: handle data too large", component_name);
 			ZFSSYSIO_TRACE_EXIT;
 			return sysio_err_to_zfs_err(errno);
 		}
 	}
 	ret = SYSIO_INTERFACE_NAME(_zfs_sysio_fhi_getattr)(&sysio_fp_handle, &stbuf);
 	if (ret) {
-		perror("fhi_getattr");
+		ZFSSYSIO_PERROR("fhi_getattr");
 		
 		ZFSSYSIO_TRACE_EXIT;
 		return sysio_err_to_zfs_err(errno);
@@ -876,8 +882,8 @@ static int zoidfs_sysio_remove(const zoidfs_handle_t *parent_handle,
 		ret = SYSIO_INTERFACE_NAME(_zfs_sysio_fhi_rmdir)(&where);
 		if (ret < 0)
 		{
-			fprintf(stderr, "zoidfs_sysio_remove: fhi_rmdir() failed, code = %i.\n", ret);
-			perror("zoidfs_sysio_remove");
+			ZFSSYSIO_INFO("zoidfs_sysio_remove: fhi_rmdir() failed, code = %i.", ret);
+			ZFSSYSIO_PERROR("zoidfs_sysio_remove");
 			
 			ZFSSYSIO_TRACE_EXIT;
 			return sysio_err_to_zfs_err(errno);
@@ -901,8 +907,8 @@ static int zoidfs_sysio_remove(const zoidfs_handle_t *parent_handle,
 		ret = SYSIO_INTERFACE_NAME(_zfs_sysio_fhi_unlink)(&where);
 		if (ret < 0)
 		{
-			fprintf(stderr, "zoidfs_sysio_remove: fhi_unlink() failed, code = %i.\n", ret);
-			perror("zoidfs_sysio_remove");
+			ZFSSYSIO_INFO("zoidfs_sysio_remove: fhi_unlink() failed, code = %i.", ret);
+			ZFSSYSIO_PERROR("zoidfs_sysio_remove");
 			
 			ZFSSYSIO_TRACE_EXIT;
 			return sysio_err_to_zfs_err(errno);
@@ -943,7 +949,7 @@ static int zoidfs_sysio_create(const zoidfs_handle_t *parent_handle,
      * full_path or specify the parent_handle AND the component_name.
      */
     if ((!parent_handle || !component_name) && !full_path) {
-        fprintf(stderr, "zoidfs_create: Invalid path parameters.\n");
+        ZFSSYSIO_INFO("zoidfs_create: Invalid path parameters.");
 		ZFSSYSIO_TRACE_EXIT;
         return sysio_err_to_zfs_err(errno);
     }
@@ -971,8 +977,8 @@ static int zoidfs_sysio_create(const zoidfs_handle_t *parent_handle,
 
         ret = SYSIO_INTERFACE_NAME(_zfs_sysio_fhi_create)(&where, sattr->mode);
         if (ret < 0) {
-            fprintf(stderr, "zoidfs_sysio_create: fhi_create() failed, full path = %s.\n", where.fhida_path);
-			perror("zoidfs_sysio_create");
+            ZFSSYSIO_INFO("zoidfs_sysio_create: fhi_create() failed, full path = %s.", where.fhida_path);
+			ZFSSYSIO_PERROR("zoidfs_sysio_create");
             *created = 0;
             return sysio_err_to_zfs_err(errno);
         }
@@ -1021,8 +1027,8 @@ static int zoidfs_sysio_create(const zoidfs_handle_t *parent_handle,
 		ret = SYSIO_INTERFACE_NAME(_zfs_sysio_fhi_create)(&where, sattr->mode);
         if (ret < 0)
 		{
-            fprintf(stderr, "zoidfs_sysio_create: fhi_create() failed, comp path = %s.\n", where.fhida_path);
-			perror("zoidfs_sysio_create");
+            ZFSSYSIO_INFO("zoidfs_sysio_create: fhi_create() failed, comp path = %s.", where.fhida_path);
+			ZFSSYSIO_PERROR("zoidfs_sysio_create");
             *created = 0;
 			ZFSSYSIO_TRACE_EXIT;
             return sysio_err_to_zfs_err(errno);
@@ -1074,7 +1080,7 @@ static int zoidfs_sysio_rename(const zoidfs_handle_t *from_parent_handle,
      * full_path or specify the parent_handle AND the component_name.
      */
     if ((!from_parent_handle || !from_component_name) && !from_full_path) {
-        fprintf(stderr, "zoidfs_sysio_rename: Invalid path parameters.\n");
+        ZFSSYSIO_INFO("zoidfs_sysio_rename: Invalid path parameters.");
 		ZFSSYSIO_TRACE_EXIT;
         return sysio_err_to_zfs_err(errno);
     }
@@ -1110,8 +1116,8 @@ static int zoidfs_sysio_rename(const zoidfs_handle_t *from_parent_handle,
 	 */
 	ret = SYSIO_INTERFACE_NAME(_zfs_sysio_fhi_rename)(&where_from, &where_to);
 	if (ret < 0) {
-		fprintf(stderr, "zoidfs_sysio_rename: fhi_rename() failed.\n");
-		perror("zoidfs_sysio_rename");
+		ZFSSYSIO_INFO("zoidfs_sysio_rename: fhi_rename() failed.");
+		ZFSSYSIO_PERROR("zoidfs_sysio_rename");
 		ZFSSYSIO_TRACE_EXIT;
 		return sysio_err_to_zfs_err(errno);
 	}
@@ -1148,7 +1154,7 @@ static int zoidfs_sysio_link(const zoidfs_handle_t *from_parent_handle,
      * full_path or specify the parent_handle AND the component_name.
      */
     if ((!from_parent_handle || !from_component_name) && !from_full_path) {
-        fprintf(stderr, "zoidfs_sysio_rename: Invalid path parameters.\n");
+        ZFSSYSIO_INFO("zoidfs_sysio_rename: Invalid path parameters.");
 		ZFSSYSIO_TRACE_EXIT;
         return sysio_err_to_zfs_err(errno);
     }
@@ -1184,8 +1190,8 @@ static int zoidfs_sysio_link(const zoidfs_handle_t *from_parent_handle,
 	 */
 	ret = SYSIO_INTERFACE_NAME(_zfs_sysio_fhi_link)(&where_to, &where_from);
 	if (ret < 0) {
-		fprintf(stderr, "zoidfs_sysio_link: fhi_link() failed, code = %i.\n", ret);
-		perror("zoidfs_sysio_link");
+		ZFSSYSIO_INFO("zoidfs_sysio_link: fhi_link() failed, code = %i.", ret);
+		ZFSSYSIO_PERROR("zoidfs_sysio_link");
 		ZFSSYSIO_TRACE_EXIT;
 		return sysio_err_to_zfs_err(errno);
 	}
@@ -1226,7 +1232,7 @@ static int zoidfs_sysio_symlink(const zoidfs_handle_t *from_parent_handle,
      * full_path or specify the parent_handle AND the component_name.
      */
     if ((!from_parent_handle || !from_component_name) && !from_full_path) {
-        fprintf(stderr, "zoidfs_sysio_symlink: Invalid path parameters.\n");
+        ZFSSYSIO_INFO("zoidfs_sysio_symlink: Invalid path parameters.");
 		ZFSSYSIO_TRACE_EXIT;
         return sysio_err_to_zfs_err(errno);
     }
@@ -1266,8 +1272,8 @@ static int zoidfs_sysio_symlink(const zoidfs_handle_t *from_parent_handle,
 	 */
 	ret = SYSIO_INTERFACE_NAME(_zfs_sysio_fhi_symlink)(&where_from, path_to);
 	if (ret < 0) {
-		fprintf(stderr, "zoidfs_sysio_symlink: fhi_symlink() failed.\n");
-		perror("zoidfs_sysio_symlink");
+		ZFSSYSIO_INFO("zoidfs_sysio_symlink: fhi_symlink() failed.");
+		ZFSSYSIO_PERROR("zoidfs_sysio_symlink");
 		ZFSSYSIO_TRACE_EXIT;
 		return sysio_err_to_zfs_err(errno);
 	}
@@ -1294,8 +1300,8 @@ static int zoidfs_sysio_mkdir(const zoidfs_handle_t *parent_handle,
      * full_path or specify the parent_handle AND the component_name.
      */
     if ((!parent_handle || !component_name) && !full_path) {
-        fprintf(stderr, "zoidfs_sysio_mkdir: Invalid path parameters.\n");
-		perror("zoidfs_sysio_mkdir");
+        ZFSSYSIO_INFO("zoidfs_sysio_mkdir: Invalid path parameters.");
+		ZFSSYSIO_PERROR("zoidfs_sysio_mkdir");
 		ZFSSYSIO_TRACE_EXIT;
         return sysio_err_to_zfs_err(errno);
     }
@@ -1312,8 +1318,8 @@ static int zoidfs_sysio_mkdir(const zoidfs_handle_t *parent_handle,
 
         ret = SYSIO_INTERFACE_NAME(_zfs_sysio_fhi_mkdir)(&where, sattr->mode);
         if (ret < 0) {
-            fprintf(stderr, "zoidfs_sysio_mkdir: fhi_mkdir() failed, code = %i.\n", ret);
-			perror("zoidfs_sysio_mkdir");
+            ZFSSYSIO_INFO("zoidfs_sysio_mkdir: fhi_mkdir() failed, code = %i.", ret);
+			ZFSSYSIO_PERROR("zoidfs_sysio_mkdir");
 			ZFSSYSIO_TRACE_EXIT;
             return sysio_err_to_zfs_err(errno);
         }
@@ -1335,8 +1341,8 @@ static int zoidfs_sysio_mkdir(const zoidfs_handle_t *parent_handle,
 		ret = SYSIO_INTERFACE_NAME(_zfs_sysio_fhi_mkdir)(&where, sattr->mode);
         if (ret < 0)
 		{
-            fprintf(stderr, "zoidfs_sysio_mkdir: fhi_mkdir() failed, code = %i.\n", ret);
-			perror("zoidfs_sysio_mkdir");
+            ZFSSYSIO_INFO("zoidfs_sysio_mkdir: fhi_mkdir() failed, code = %i.", ret);
+			ZFSSYSIO_PERROR("zoidfs_sysio_mkdir");
 			ZFSSYSIO_TRACE_EXIT;
             return sysio_err_to_zfs_err(errno);
 		}
@@ -1376,10 +1382,7 @@ static int zoidfs_sysio_readdir(const zoidfs_handle_t *parent_handle,
 	while ((cc = SYSIO_INTERFACE_NAME(_zfs_sysio_fhi_getdirentries64)(&sysio_parent_handle, (char *)buffer, *entry_count, (off64_t *) &cookie)) > 0) {
 		dp = buffer;
 		while (cc > 0) {
-			(void )fprintf(stderr, "\t%s: ino %llu type %u\n",
-				      dp->d_name,
-				      (unsigned long long )dp->d_ino,
-				      (int )dp->d_type);
+			ZFSSYSIO_INFO("\t%s: ino %llu type %u", dp->d_name, (unsigned long long )dp->d_ino, (int )dp->d_type);
 			cc -= dp->d_reclen;
 			/* dp = (struct dirent *)((char *)dp + dp->d_reclen); */
 		}
@@ -1387,8 +1390,8 @@ static int zoidfs_sysio_readdir(const zoidfs_handle_t *parent_handle,
 	
 	if(cc < 0)
 	{
-		fprintf(stderr, "zoidfs_sysio_readdir: fhi_getdirents64() failed, code = %i\n", cc);
-		perror("zoidfs_sysio_readdir");
+		ZFSSYSIO_INFO("zoidfs_sysio_readdir: fhi_getdirents64() failed, code = %i", cc);
+		ZFSSYSIO_PERROR("zoidfs_sysio_readdir");
 		ZFSSYSIO_TRACE_EXIT;
 		ZFSSYSIO_TRACE_EXIT;
 		return sysio_err_to_zfs_err(errno);
@@ -1418,8 +1421,8 @@ static int zoidfs_sysio_resize(const zoidfs_handle_t *handle, uint64_t size)
 
 	ret = SYSIO_INTERFACE_NAME(_zfs_sysio_fhi_truncate)(&sysio_component_handle, size);
 	if (ret < 0) {
-		fprintf(stderr, "zoidfs_sysio_resize: fhi_truncate() failed, code = %i.\n", ret);
-		perror("zoidfs_sysio_resize");
+		ZFSSYSIO_INFO("zoidfs_sysio_resize: fhi_truncate() failed, code = %i.", ret);
+		ZFSSYSIO_PERROR("zoidfs_sysio_resize");
 		ZFSSYSIO_TRACE_EXIT;
 		return sysio_err_to_zfs_err(errno);
 	}
@@ -1471,8 +1474,8 @@ static int zoidfs_sysio_write(const zoidfs_handle_t *handle, size_t mem_count,
 	
 	ret = SYSIO_INTERFACE_NAME(_zfs_sysio_fhi_iwrite64x)(&sysio_component_handle, iovs, mem_count, xtvs, file_count, &ioidp);
 	if (ret < 0) {
-		fprintf(stderr, "zoidfs_sysio_write: fhi_iwrite64x() failed, code = %i.\n", ret);
-		perror("zoidfs_sysio_write");
+		ZFSSYSIO_INFO("zoidfs_sysio_write: fhi_iwrite64x() failed, code = %i.", ret);
+		ZFSSYSIO_PERROR("zoidfs_sysio_write");
 
 	    free(iovs);
 	    free(xtvs);
@@ -1483,8 +1486,8 @@ static int zoidfs_sysio_write(const zoidfs_handle_t *handle, size_t mem_count,
 		
 	ret = SYSIO_INTERFACE_NAME(_zfs_sysio_fhi_iowait)(&ioidp);
 	if (ret < 0) {
-		fprintf(stderr, "zoidfs_sysio_write: fhi_iowait() failed, code = %i.\n", ret);
-		perror("zoidfs_sysio_write");
+		ZFSSYSIO_INFO("zoidfs_sysio_write: fhi_iowait() failed, code = %i.", ret);
+		ZFSSYSIO_PERROR("zoidfs_sysio_write");
 
 	    free(iovs);
 	    free(xtvs);
@@ -1547,8 +1550,8 @@ static int zoidfs_sysio_read(const zoidfs_handle_t *handle, size_t mem_count,
 	
 	ret = SYSIO_INTERFACE_NAME(_zfs_sysio_fhi_iread64x)(&sysio_component_handle, iovs, mem_count, xtvs, file_count, &ioidp);
 	if (ret < 0) {
-		fprintf(stderr, "zoidfs_sysio_read: fhi_iread64x() failed, code = %i.\n", ret);
-		perror("zoidfs_sysio_read");
+		ZFSSYSIO_INFO("zoidfs_sysio_read: fhi_iread64x() failed, code = %i.", ret);
+		ZFSSYSIO_PERROR("zoidfs_sysio_read");
 	
         free(iovs);
 	    free(xtvs);
@@ -1559,8 +1562,8 @@ static int zoidfs_sysio_read(const zoidfs_handle_t *handle, size_t mem_count,
 		
 	ret = SYSIO_INTERFACE_NAME(_zfs_sysio_fhi_iowait)(&ioidp);
 	if (ret < 0) {
-		fprintf(stderr, "zoidfs_sysio_read: fhi_iowait() failed, code = %i.\n", ret);
-		perror("zoidfs_sysio_write");
+		ZFSSYSIO_INFO("zoidfs_sysio_read: fhi_iowait() failed, code = %i.", ret);
+		ZFSSYSIO_PERROR("zoidfs_sysio_write");
 	
         free(iovs);
 	    free(xtvs);
@@ -1605,8 +1608,8 @@ static int zoidfs_sysio_drv_init_all()
 		err = (**f++)();
 		if (err)
 		{
-			fprintf(stderr, "zoidfs_sysio_drv_init_all: failed, code = %i\n", err);
-			perror("zoidfs_sysio_drv_init_all");
+			ZFSSYSIO_INFO("zoidfs_sysio_drv_init_all: failed, code = %i", err);
+			ZFSSYSIO_PERROR("zoidfs_sysio_drv_init_all");
 			ZFSSYSIO_TRACE_EXIT;
 			return err;
 		}
@@ -1636,7 +1639,7 @@ static int zoidfs_sysio_init(void) {
 		char * mfs = getenv("ZOIDFS_SYSIO_MOUNT");
 		if (err)
 		{
-			fprintf(stderr, "zoidfs_sysio_init() failed\n");
+			ZFSSYSIO_INFO("zoidfs_sysio_init() failed");
 			ZFSSYSIO_TRACE_EXIT;
 			return err;
 		}
@@ -1644,7 +1647,7 @@ static int zoidfs_sysio_init(void) {
 		err = zoidfs_sysio_drv_init_all();
 		if (err)
 		{
-			fprintf(stderr, "zoidfs_sysio_init() failed\n");
+			ZFSSYSIO_INFO("zoidfs_sysio_init() failed");
 			ZFSSYSIO_TRACE_EXIT;
 			return err;
 		}
@@ -1657,7 +1660,7 @@ static int zoidfs_sysio_init(void) {
 		err = _sysio_boot("namespace", arg);
 		if (err)
 		{
-			fprintf(stderr, "zoidfs_sysio_init() failed");
+			ZFSSYSIO_INFO("zoidfs_sysio_init() failed");
 			ZFSSYSIO_TRACE_EXIT;
 			return err;
 		}
