@@ -46,14 +46,13 @@ int compare_attr(zoidfs_attr_t * file, zoidfs_attr_t * link)
 
 int main(int argc, char **argv) {
     int ret, created;
-    uint32_t flags = 0;
     struct timeval now;
     zoidfs_sattr_t sattr;
     zoidfs_attr_t resattr_file;
     zoidfs_attr_t resattr_link;
     zoidfs_handle_t basedir_handle;
     zoidfs_handle_t fhandle, shandle;
-    char symlink[NAMESIZE], symlink_local[NAMESIZE], symlink_target[NAMESIZE];
+    char symlink[NAMESIZE], symlink_local[NAMESIZE];
     char symlink_component_target[NAMESIZE], symlink_fullpath_target[NAMESIZE];
     char fullpath_filename[NAMESIZE], component_filename[NAMESIZE];
 
