@@ -21,16 +21,11 @@
 
 int print_zoidfs_attr_t(zoidfs_attr_t *);
 
-int main(int argc, char **argv) {
+int main(void) {
     int ret;
     zoidfs_handle_t basedir_handle;
     zoidfs_handle_t fhandle;
     char lookup_component_orig[NAMESIZE], lookup_fullpath_orig[NAMESIZE];
-
-    if(argc < 1) {
-        fprintf(stderr, "Usage: zoidfsapi_lookup_perms\n");
-        exit(1);
-    }
 
     ret = zoidfs_init();
     if(ret != ZFS_OK) {
