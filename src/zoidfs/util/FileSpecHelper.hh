@@ -79,14 +79,9 @@ namespace iofwdutil
          // know if the size calculation is for reads or writes...
          // for now, just factor in both path components
          process (p, haveFullPath);
-         if (haveFullPath) {
-            process (p, XDRString (f.full_, ZOIDFS_PATH_MAX));
-         }
-         else
-         {
-            process (p, *f.handle_); 
-            process (p, XDRString (f.component_, ZOIDFS_NAME_MAX));
-         }
+         process (p, XDRString (f.full_, ZOIDFS_PATH_MAX));
+         process (p, *f.handle_); 
+         process (p, XDRString (f.component_, ZOIDFS_NAME_MAX));
       }
    }
    
