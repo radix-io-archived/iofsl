@@ -38,9 +38,9 @@ then
   then
       AC_PATH_PROG([MYSQL_CONFIG], [mysql_config], [missing])
   fi
+  AC_MSG_CHECKING([for MySQL])
   if test "$MYSQL_CONFIG" != "missing"
   then
-      AC_MSG_CHECKING([for MySQL])
       MYSQL_CFLAGS="`$MYSQL_CONFIG --include`"
       MYSQL_CFLAGS="`$MYSQL_CONFIG --cflags`"
       MYSQL_LDFLAGS="`$MYSQL_CONFIG --libs`"
