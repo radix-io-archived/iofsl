@@ -151,7 +151,7 @@ AC_ARG_ENABLE([posix2],
 DISPATCH_POSIX2=0
 AC_MSG_CHECKING([If the new POSIX dispatcher drivers needs to be built])
 if test "${use_posix2}" == "1"; then
-   AC_DEFINE([HAVE_DISPATCHER_POSIX],[1],[Use new posix zoidfs driver])
+   AC_DEFINE([HAVE_DISPATCHER_POSIX2],[1],[Use new posix zoidfs driver])
    DISPATCH_POSIX2=1
    AC_MSG_RESULT([yes])
 else
