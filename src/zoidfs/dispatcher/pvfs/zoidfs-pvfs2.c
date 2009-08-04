@@ -977,12 +977,12 @@ static int zint_pvfs2_link(const zoidfs_handle_t * UNUSED(from_parent_handle),
 static int zint_pvfs2_symlink(const zoidfs_handle_t * from_parent_handle,
                        const char * from_component_name,
                        const char * from_full_path,
-                       const zoidfs_handle_t * to_parent_handle,
+                       const zoidfs_handle_t * UNUSED(to_parent_handle),
                        const char * to_component_name,
                        const char * to_full_path,
                        const zoidfs_sattr_t * attr,
-                       zoidfs_cache_hint_t * from_parent_hint,
-                       zoidfs_cache_hint_t * to_parent_hint)
+                       zoidfs_cache_hint_t * UNUSED(from_parent_hint),
+                       zoidfs_cache_hint_t * UNUSED(to_parent_hint))
 {
     int ret;
     PVFS_sys_attr pattr;
