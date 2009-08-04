@@ -54,13 +54,13 @@ typedef struct
 
 /* ======================================================================== */
 
-static int gencache_key_hash (void * userptr, HashTableKey val)
+static unsigned long gencache_key_hash (void * userptr, HashTableKey val)
 {
    gencache_instance_t * gc = (gencache_instance_t *) userptr;
    return gc->fn_key_hash (val); 
 }
 
-static int gencache_hash_key_compare (void * userptr, HashTableKey value1, 
+static int gencache_key_compare (void * userptr, HashTableKey value1, 
       HashTableKey value2)
 {
    gencache_instance_t * gc = (gencache_instance_t *) userptr;
@@ -88,7 +88,7 @@ gencache_handle gencache_init (const gencache_init_t * init)
 {
    gencache_instance_t * gc = malloc (sizeof(gencache_instance_t));
 
-   gc->lock = PTHREAD_MUTEX_INITIALIZER; 
+   pthread_mutex_init (&gc->lock, 0); 
    gc->capacity = init->max_cache_size; 
    gc->count = 0; 
    gc->fn_key_free = init->fn_key_free; 
@@ -109,7 +109,7 @@ gencache_handle gencache_init (const gencache_init_t * init)
 
 int gencache_done (gencache_handle handle)
 {
-   gencache_instance_t * gc = malloc (sizeof(gencache_instance_t));
+   gencache_instance_t * gc = handle; 
    pthread_mutex_lock (&gc->lock); 
    do
    {
@@ -117,7 +117,10 @@ int gencache_done (gencache_handle handle)
    } while (0); 
 
    pthread_mutex_unlock (&gc->lock); 
+   pthread_mutex_destroy (&gc->lock); 
    free (gc); 
+
+   return 1; 
 }
 
 int gencache_key_unlock (gencache_handle handle, gencache_lock_info * info)
@@ -189,7 +192,7 @@ static void gencache_recycle_remove (gencache_instance_t * gc, gencache_priv_val
    {
       assert (gc->recycle_head == item); 
       assert (item->next); 
-      gc->next->prev = 0; 
+      item->next->prev = 0; 
       gc->recycle_head = item->next; 
       item->next = item->prev = 0; 
       return; 
@@ -238,10 +241,10 @@ static void gencache_item_refresh (gencache_instance_t * gc, gencache_priv_value
 
    /* if the item is connected, first disconnect from the list */
    if (item->next != 0 && item->prev != 0 && gc->recycle_head)
-      gencache_recycle_remove (item); 
+      gencache_recycle_remove (gc, item); 
 
    /* Add to the tail of the list */
-   gencache_recycle_add_tail (item); 
+   gencache_recycle_add_tail (gc, item); 
 }
 
 
@@ -252,8 +255,10 @@ static void gencache_item_refresh (gencache_instance_t * gc, gencache_priv_value
  */
 static void gencache_recycle (gencache_instance_t * gc)
 {
+   gencache_priv_value_t * item;
+   
  restart:
-   gencache_priv_value_t * item = gc->recycle_head; 
+   item = gc->recycle_head; 
    if (!gc->count)
    {
       assert (!gc->recycle_head); 
@@ -270,8 +275,8 @@ static void gencache_recycle (gencache_instance_t * gc)
          /* disconnect from recycle list */
          gencache_recycle_remove (gc, item); 
 
-         assert (count); 
-         --count;
+         assert (gc->count); 
+         --gc->count;
          i = hash_table_remove (gc->hash, item->key); 
          assert (i); 
          return; 
@@ -282,7 +287,7 @@ static void gencache_recycle (gencache_instance_t * gc)
    /* sleep until somebody unlocked something and retry */
    /* NOTE: there is probably an issue here when a thread is blocking on
     * remove_item and another thread is blocked here */
-   pthread_cond_wait (&gc->cond, &gc->mutex); 
+   pthread_cond_wait (&gc->cond, &gc->lock); 
    goto restart; 
 }
 
@@ -298,7 +303,7 @@ int gencache_key_add (gencache_handle handle, gencache_key_t key, gencache_value
    item->next = item->prev = 0; 
    item->key = key;
    item->value = value; 
-   item->lock = PTHREAD_MUTEX_INITIALIZER; 
+   pthread_mutex_init (&item->lock, 0); 
    item->refcount = 0; 
 
 
@@ -312,14 +317,15 @@ int gencache_key_add (gencache_handle handle, gencache_key_t key, gencache_value
          gencache_recycle (gc); 
       }
 
-      assert (gc->count == hash_table_num_entries (gc->hash)); 
+      assert ((unsigned int) gc->count == 
+            (unsigned int) hash_table_num_entries (gc->hash)); 
       assert (gc->count != gc->capacity); 
 
-      tmp = hash_table_add (gc->hash, key,
+      tmp = hash_table_insert (gc->hash, key,
             item);
       assert (tmp); 
 
-      ++count; 
+      ++gc->count; 
 
       gencache_item_refresh (gc, item); 
 
@@ -332,11 +338,11 @@ int gencache_key_add (gencache_handle handle, gencache_key_t key, gencache_value
       /* inc refcount on item */
       pthread_mutex_lock (&item->lock); 
       ++item->refcount; 
-      pthread_mutex_unlock (&item->unlock); 
+      pthread_mutex_unlock (&item->lock); 
    }
 
 
-   pthread_mutex_unlock (&gc->unlock); 
+   pthread_mutex_unlock (&gc->lock); 
 
    return ret;  
 }
@@ -355,6 +361,7 @@ int gencache_key_remove (gencache_handle handle, gencache_key_t key)
 {
    gencache_instance_t * gc = (gencache_instance_t *) handle;
    int ret = 1; 
+   int i; 
 
    pthread_mutex_lock (&gc->lock); 
    do
@@ -401,16 +408,17 @@ int gencache_key_remove (gencache_handle handle, gencache_key_t key)
       i = hash_table_remove (gc->hash, key); 
       assert (i); 
          
-      --count; 
+      --gc->count; 
 
-      assert (count == hash_table_num_entries (gc->hash)); 
+      assert ((unsigned int) gc->count == 
+            (unsigned int) hash_table_num_entries (gc->hash)); 
 
    } while (0); 
    pthread_mutex_unlock (&gc->lock); 
    return ret; 
 }
 
-static int gencache_key_lookup_helper (gencache_handle handlem gencache_key_t key,
+static int gencache_key_lookup_helper (gencache_handle handle, gencache_key_t key,
       gencache_value_t * value, gencache_lock_info * lock, int refresh)
 {
    gencache_instance_t * gc = (gencache_instance_t *) handle;
@@ -438,7 +446,7 @@ static int gencache_key_lookup_helper (gencache_handle handlem gencache_key_t ke
          /* inc refcount on item */
          pthread_mutex_lock (&item->lock); 
          ++item->refcount; 
-         pthread_mutex_unlock (&item->unlock); 
+         pthread_mutex_unlock (&item->lock); 
       }
 
       if (refresh)

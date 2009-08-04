@@ -67,6 +67,7 @@ static const int hash_table_num_primes
 int hash_table_set_user (HashTable * hash_table, void * userptr)
 {
    hash_table->user_ptr = userptr;
+   return 1; 
 }
 
 void * hash_table_get_user (HashTable * hash_table)

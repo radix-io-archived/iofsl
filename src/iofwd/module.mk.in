@@ -4,7 +4,7 @@ MODULE_SOURCES_iofwd := iofwd.cpp IOFWDMain.cpp
 ADDINTLIBS_iofwd := iofwdlib zoidfsutil iofwdutil zoidfsdispatch zoidfscutil
 
 MODULE_ARCHIVES := iofwdlib
-ADDINTLIBS_iofwdlib := zoidfsutil iofwdutil zoidfsdispatch spatial
+ADDINTLIBS_iofwdlib := zoidfsutil iofwdutil zoidfsdispatch 
 MODULE_LDFLAGS_iofwdlib := $(BOOST_THREAD_LDFLAGS)
 MODULE_LIBS_iofwdlib := $(BOOST_THREAD_LIBS)
 

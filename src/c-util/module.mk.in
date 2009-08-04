@@ -1,9 +1,12 @@
 MODULE_ARCHIVES = c-util
 
 
-MODULE_SOURCES_iofwdutil = \
-	c-util.c sha1.c
+MODULE_SOURCES_c-util = \
+	sha1.c \
+	gencache.c \
+	hash-table.c \
+	env-parse.c
 
 # Automatically add -I$(thismoduledir) to CPPFLAGS
-MODULE_CONTAINSINCLUDE := 0
+MODULE_CONTAINSINCLUDE := 1
 

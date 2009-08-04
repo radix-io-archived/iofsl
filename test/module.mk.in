@@ -98,6 +98,7 @@ ifdef ENABLE_CUNIT
 MODULE_APPS += gencache-unit 
 
 MODULE_SOURCES_gencache-unit := gencache-unit.c
-LIBS_gencache-unit := -Lcunit
+LIBS_gencache-unit := -lcunit
+ADDINTLIBS_gencache-unit := c-util
 
 endif

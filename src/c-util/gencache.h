@@ -10,7 +10,7 @@
 
 typedef void * gencache_handle; 
 
-typedef const void * gencache_key_t; 
+typedef void * gencache_key_t; 
 typedef void * gencache_value_t; 
 
 typedef void * gencache_lock_info; 
@@ -19,7 +19,7 @@ typedef void * gencache_lock_info;
 typedef int (*gencache_item_free_function_t) (void * item);
 typedef int (*gencache_key_free_function_t) (void * item);
 typedef int (*gencache_compare_function_t) (const void * item1, const void * item2); 
-typedef int (*gencache_hash_function_t) (gencache_key_t key); 
+typedef unsigned long (*gencache_hash_function_t) (gencache_key_t key); 
 
 typedef struct 
 {

@@ -211,12 +211,16 @@ clean_$(1):
 .PHONY: app_$(1)
 app_$(1): $$(DIR_$(1))/$(1)
 
+# note problem here: doesn't see dependency on dependent libs of dependent
+# libs (i.e. if prog depends on libA, and libA has ADDINTLIBS_A=B then doesn't
+# see dependency on lib B
 $$(DIR_$(1))/$(1): $$(OBJS_$(1)) \
    		   $$(foreach l,$$(ADDINTLIBS_$(1)),$$(LIBNAME_$$(l)))
 	$(Q) "  LD		$(1)"
 	$(E) $(LD)  -o $$@ $$(filter %.o,$$^) $$(foreach l,$$(ADDINTLIBS_$(1)),-l$$(l)) \
 	   $$(ADDLIBS_$(1))  $$(ADDLIBS) $$(foreach l,$$(ADDINTLIBS_$(1)),$$(MODULE_LDFLAGS_$$(l))) \
 	   $$(foreach l,$$(ADDINTLIBS_$(1)),$$(MODULE_LIBS_$$(l))) $(LDFLAGS) \
+	   $$(foreach l,$$(ADDINTLIBS_$(1)),$$(addprefix -l,$$(ADDINTLIBS_$$(l)))) \
 	   $$(LDFLAGS_$(1)) $$(LIBS_$(1))
 
 .PHONY: info_$(1)

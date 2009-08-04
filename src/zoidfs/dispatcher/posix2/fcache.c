@@ -33,18 +33,18 @@ static int filename_gencache_key_compare (const void * i1, const void * i2)
          sizeof (((zoidfs_handle_t *)i1)->data)) == 0 ? 1 : 0); 
 }
 
-static int filename_gencache_key_hash (gencache_key_t key)
+static unsigned long filename_gencache_key_hash (gencache_key_t key)
 {
    const zoidfs_handle_t * h = (zoidfs_handle_t *) key; 
    const int * ptr = (int *) &h->data; 
-   int init = 66; 
+   unsigned long init = 66; 
    unsigned int  i; 
    assert (sizeof (h->data) % sizeof(int) == 0); 
    for (i=0; i<sizeof (h->data)/sizeof(int); ++i)
    {
       init ^= *ptr++; 
    }
-   return i; 
+   return init; 
 }
 
 
