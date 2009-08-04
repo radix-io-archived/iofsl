@@ -73,17 +73,22 @@ static int done_suite ()
    return 0; /* success */ 
 }
 
+static void addItem (intptr_t i)
+{
+      char buf[255]; 
+      sprintf (buf, "%i", (int) i); 
+      char * str = strdup (buf); 
+      gencache_key_add (handle, (gencache_key_t) i, 
+            str, 0); 
+}
+
 static void test1 ()
 {
    /* add 100 items */ 
    intptr_t i; 
    for (i=0; i<ADD_COUNT; ++i)
    {
-      char buf[255]; 
-      sprintf (buf, "%i", (int) i); 
-      char * str = strdup (buf); 
-      gencache_key_add (handle, (gencache_key_t) i, 
-            str, 0); 
+      addItem (i); 
    }
 }
 
@@ -96,7 +101,6 @@ static void test2 ()
       void * found = 0; 
       int ret = gencache_key_lookup (handle, (gencache_key_t) i, 
             &found, 0); 
-      printf ("key %i = %p\n", i, found); 
       if (i < (ADD_COUNT - CACHE_SIZE))
       {
          CU_ASSERT_FALSE (ret); 
@@ -106,6 +110,26 @@ static void test2 ()
          CU_ASSERT_TRUE (ret); 
          CU_ASSERT_EQUAL (i, atoi (found)); 
       }
+   }
+}
+
+static void checkItem (intptr_t key, const char * data)
+{
+   CU_ASSERT_EQUAL ((int) key, atoi (data)); 
+}
+
+static void test3 ()
+{
+   unsigned int i; 
+   /* add random items, and lookup random even items */
+   for (i=0; i<ADD_COUNT; ++i)
+   {
+      void * data;
+      intptr_t key; 
+      addItem (random () % ADD_COUNT); 
+      key = ((random () % ADD_COUNT) >> 1) << 1;  
+      if (gencache_key_lookup (handle, (gencache_key_t) key, &data, 0))
+         checkItem (key, data); 
    }
 }
 
@@ -126,7 +150,8 @@ int main (int UNUSED(argc), char ** UNUSED(args))
 
    /* add the tests to the suite */
    if ((NULL == CU_add_test(pSuite, "Adding entries", test1)) ||
-       (NULL == CU_add_test(pSuite, "Checking ordered expire", test2)))
+       (NULL == CU_add_test(pSuite, "Checking ordered expire", test2)) ||
+       (NULL == CU_add_test(pSuite, "Lookup and add mix", test3)))
    {
       CU_cleanup_registry();
       return CU_get_error();
