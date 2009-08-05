@@ -10,6 +10,30 @@
 #ifndef _ZOIDFS_SYSIO_H_
 #define _ZOIDFS_SYSIO_H_
 
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <errno.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <unistd.h>
+#include <sys/uio.h>
+#include <getopt.h>
+#include <sys/statvfs.h>
+#include <dirent.h>
+#include <errno.h>
+#include <pthread.h>
+
+#include "zoidfs.h"
+#include "c-util/tools.h"
+
+#if defined(SYSIO_LABEL_NAMES)
+#include "sysio.h"
+#endif
+
+#include "xtio.h"
+#include "fhi.h"
+
 #include "../zint-handler.h"
 #include "iofwd_config.h" /* Need this for the SIZEOF defines */
 

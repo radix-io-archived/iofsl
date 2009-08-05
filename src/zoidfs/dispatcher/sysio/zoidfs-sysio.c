@@ -9,30 +9,36 @@
 
 #include "zoidfs-sysio.h"
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <errno.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <unistd.h>
-#include <sys/uio.h>
-#include <getopt.h>
-#include <sys/statvfs.h>
-#include <dirent.h>
-#include <errno.h>
-#include <pthread.h>
+/*
+ * libsysio FHI function declarations externs for alternate symbol builds
+ */
 
-#if defined(SYSIO_LABEL_NAMES)
-#include "sysio.h"
-#endif
+extern int SYSIO_INTERFACE_NAME(_zfs_sysio_fhi_export)(const void *key, size_t keylen, const char *source, unsigned flags, struct file_handle_info_export **fhiexpp);
+extern int SYSIO_INTERFACE_NAME(_zfs_sysio_fhi_unexport)(struct file_handle_info_export *fhiexp);
+extern ssize_t SYSIO_INTERFACE_NAME(_zfs_sysio_fhi_root_of)(struct file_handle_info_export *fhiexp, struct file_handle_info *fhi);
+extern int SYSIO_INTERFACE_NAME(_zfs_sysio_fhi_iodone)(ioid_t ioid);
+extern ssize_t SYSIO_INTERFACE_NAME(_zfs_sysio_fhi_iowait)(ioid_t ioid);
+extern int SYSIO_INTERFACE_NAME(_zfs_sysio_fhi_getattr)(struct file_handle_info *fhi, struct stat64 *buf);
+extern int SYSIO_INTERFACE_NAME(_zfs_sysio_fhi_setattr)(struct file_handle_info *fhi, struct file_handle_info_sattr *fhisattr);
+extern ssize_t SYSIO_INTERFACE_NAME(_zfs_sysio_fhi_lookup)(struct file_handle_info *parent_fhi, const char *path, unsigned iopmask, struct file_handle_info *result);
+extern ssize_t SYSIO_INTERFACE_NAME(_zfs_sysio_fhi_readlink)(struct file_handle_info *fhi, char *buf, size_t bufsiz);
+extern int SYSIO_INTERFACE_NAME(_zfs_sysio_fhi_iread64x)(struct file_handle_info *fhi, const struct iovec *iov, size_t iov_count, const struct xtvec64 *xtv, size_t xtv_count, ioid_t *ioidp);
+extern int SYSIO_INTERFACE_NAME(_zfs_sysio_fhi_iwrite64x)(struct file_handle_info *fhi, const struct iovec *iov, size_t iov_count, const struct xtvec64 *xtv, size_t xtv_count, ioid_t *ioidp);
+extern int SYSIO_INTERFACE_NAME(_zfs_sysio_fhi_create)(struct file_handle_info_dirop_args *where, mode_t mode);
+extern int SYSIO_INTERFACE_NAME(_zfs_sysio_fhi_unlink)(struct file_handle_info_dirop_args *where);
+extern int SYSIO_INTERFACE_NAME(_zfs_sysio_fhi_rename)(struct file_handle_info_dirop_args *from, struct file_handle_info_dirop_args *to);
+extern int SYSIO_INTERFACE_NAME(_zfs_sysio_fhi_link)(struct file_handle_info_dirop_args *from, struct file_handle_info_dirop_args *to);
+extern int SYSIO_INTERFACE_NAME(_zfs_sysio_fhi_symlink)(struct file_handle_info_dirop_args *to, const char *from);
+extern int SYSIO_INTERFACE_NAME(_zfs_sysio_fhi_mkdir)(struct file_handle_info_dirop_args *where, mode_t mode);
+extern int SYSIO_INTERFACE_NAME(_zfs_sysio_fhi_rmdir)(struct file_handle_info_dirop_args *where);
 
-#include "xtio.h"
-#include "fhi.h"
-
-#include "zoidfs.h"
-#include "c-util/tools.h"
-
+/*
+ * libsysio init and shutdown function externs
+ */
+extern int _sysio_init(void); 
+extern int _sysio_shutdown(void);
+extern int _sysio_boot(char *, char *);
+ 
 /*
  * zoidfs sysio init variables
  * ... make sure we only init once
@@ -90,19 +96,19 @@ static struct file_handle_info zoidfs_sysio_mfs_handle = {NULL, zoidfs_sysio_mfs
 	/* trace disabled */
 #endif /* ZFSSYSIO_TRACE_ENABLED */ 
 
-#define ZFSSYSIO_INFO(__format, ...) \
+#define ZFSSYSIO_INFO(...) \
     do { \
         char __buffer[4096]; \
-        sprintf(__buffer, __format, ##__VA_ARGS__); \
+        sprintf(__buffer, ##__VA_ARGS__); \
         fprintf(stderr, "%s %s, ZOIDFS SYSIO DISPATCHER - INFO %s() %s:%i : %s\n", __DATE__, __TIME__, __func__, __FILE__, __LINE__, __buffer); \
     }while(0)
 
-#define ZFSSYSIO_PERROR(__format, ...) \
+#define ZFSSYSIO_PERROR(...) \
     do { \
         char __buffer[4096]; \
         char __ebuffer[2048]; \
         strerror_r(errno, __ebuffer, 2048); \
-        sprintf(__buffer, __format, ##__VA_ARGS__); \
+        sprintf(__buffer, ##__VA_ARGS__); \
         fprintf(stderr, "%s %s, ZOIDFS SYSIO DISPATCHER - ERROR %s() %s:%i : %s, %s\n", __DATE__, __TIME__, __func__, __FILE__, __LINE__, __buffer, __ebuffer); \
     }while(0)
 
@@ -471,8 +477,8 @@ static int zoidfs_sysio_getattr(const zoidfs_handle_t *handle, zoidfs_attr_t *at
 {
     int ret;
     struct stat64 stbuf;
-    char sysio_handle_data[SYSIO_HANDLE_DATA_SIZE];
-    struct file_handle_info sysio_handle = {NULL, (void *)sysio_handle_data, (size_t)SYSIO_HANDLE_DATA_SIZE};
+    static char sysio_handle_data[SYSIO_HANDLE_DATA_SIZE];
+    struct file_handle_info sysio_handle = {NULL, (void *)sysio_handle_data, SYSIO_HANDLE_DATA_SIZE};
 
 	ZFSSYSIO_TRACE_ENTER;
 
@@ -557,7 +563,7 @@ static int zoidfs_sysio_setattr(const zoidfs_handle_t *handle, const zoidfs_satt
     struct file_handle_info_sattr sysio_sattr;
 
 	int setAttrs = 0;
-    char sysio_handle_data[SYSIO_HANDLE_DATA_SIZE];
+    static char sysio_handle_data[SYSIO_HANDLE_DATA_SIZE];
     struct file_handle_info sysio_handle = {NULL, sysio_handle_data, SYSIO_HANDLE_DATA_SIZE};
 	
 	ZFSSYSIO_TRACE_ENTER;
@@ -662,7 +668,7 @@ static int zoidfs_sysio_readlink(const zoidfs_handle_t *handle, char *buffer,
 	
     int ret;
 	struct stat64 stbuf;
-	char sysio_link_handle_data[SYSIO_HANDLE_DATA_SIZE];
+	static char sysio_link_handle_data[SYSIO_HANDLE_DATA_SIZE];
 	struct file_handle_info sysio_link_handle = {NULL, sysio_link_handle_data, SYSIO_HANDLE_DATA_SIZE};
 	
 	ZFSSYSIO_TRACE_ENTER;
@@ -722,7 +728,7 @@ static int zoidfs_sysio_lookup(const zoidfs_handle_t *parent_handle,
 		/*
 		 * sysio parent handle
 		 */
-		char h_data[SYSIO_HANDLE_DATA_SIZE];
+		static char h_data[SYSIO_HANDLE_DATA_SIZE];
 		struct file_handle_info h = {NULL, h_data, SYSIO_HANDLE_DATA_SIZE};
 	
 		/*
@@ -747,13 +753,13 @@ static int zoidfs_sysio_lookup(const zoidfs_handle_t *parent_handle,
 		/*
 		 * sysio parent handle
 		 */
-		char sysio_parent_handle_data[SYSIO_HANDLE_DATA_SIZE];
+		static char sysio_parent_handle_data[SYSIO_HANDLE_DATA_SIZE];
 		struct file_handle_info sysio_parent_handle = {NULL, sysio_parent_handle_data, SYSIO_HANDLE_DATA_SIZE};
 		
 		/*
 		 * sysio component handle
 		 */
-		char sysio_component_handle_data[SYSIO_HANDLE_DATA_SIZE];
+		static char sysio_component_handle_data[SYSIO_HANDLE_DATA_SIZE];
 		struct file_handle_info sysio_component_handle = {NULL, sysio_component_handle_data, SYSIO_HANDLE_DATA_SIZE};
 		int ret = 0;
 		
@@ -793,10 +799,10 @@ static int zoidfs_sysio_remove(const zoidfs_handle_t *parent_handle,
                   const char *component_name, const char *full_path,
                   zoidfs_cache_hint_t * UNUSED(parent_hint)) {
     int ret;
-    char sysio_parent_handle_data[SYSIO_HANDLE_DATA_SIZE];
+    static char sysio_parent_handle_data[SYSIO_HANDLE_DATA_SIZE];
     struct file_handle_info sysio_parent_handle = {NULL, sysio_parent_handle_data, SYSIO_HANDLE_DATA_SIZE};
     struct file_handle_info_dirop_args where;
-	char sysio_fp_handle_data[SYSIO_HANDLE_DATA_SIZE];
+	static char sysio_fp_handle_data[SYSIO_HANDLE_DATA_SIZE];
 	struct file_handle_info sysio_fp_handle = {NULL, sysio_fp_handle_data, SYSIO_HANDLE_DATA_SIZE};
 	struct stat64 stbuf;
 
@@ -953,7 +959,7 @@ static int zoidfs_sysio_create(const zoidfs_handle_t *parent_handle,
     if (full_path)
 	{
 		int ret = 0;
-		char sysio_component_handle_data[SYSIO_HANDLE_DATA_SIZE];
+		static char sysio_component_handle_data[SYSIO_HANDLE_DATA_SIZE];
 		struct file_handle_info sysio_component_handle = {NULL, sysio_component_handle_data, SYSIO_HANDLE_DATA_SIZE};
 
 		/*
@@ -996,9 +1002,9 @@ static int zoidfs_sysio_create(const zoidfs_handle_t *parent_handle,
 	 * Not the full path, so build the root handle
 	 */
     } else {
-		char sysio_parent_handle_data[SYSIO_HANDLE_DATA_SIZE];
+		static char sysio_parent_handle_data[SYSIO_HANDLE_DATA_SIZE];
 		struct file_handle_info sysio_parent_handle = {NULL, sysio_parent_handle_data, SYSIO_HANDLE_DATA_SIZE};
-		char sysio_component_handle_data[SYSIO_HANDLE_DATA_SIZE];
+		static char sysio_component_handle_data[SYSIO_HANDLE_DATA_SIZE];
 		struct file_handle_info sysio_component_handle = {NULL, sysio_component_handle_data, SYSIO_HANDLE_DATA_SIZE};
 		
 		/*
@@ -1065,9 +1071,9 @@ static int zoidfs_sysio_rename(const zoidfs_handle_t *from_parent_handle,
     int ret;
     struct file_handle_info_dirop_args where_to;
 	struct file_handle_info_dirop_args where_from;
-	char sysio_to_parent_handle_data[SYSIO_HANDLE_DATA_SIZE];
+	static char sysio_to_parent_handle_data[SYSIO_HANDLE_DATA_SIZE];
 	struct file_handle_info sysio_to_parent_handle = {NULL, sysio_to_parent_handle_data, SYSIO_HANDLE_DATA_SIZE};
-	char sysio_from_parent_handle_data[SYSIO_HANDLE_DATA_SIZE];
+	static char sysio_from_parent_handle_data[SYSIO_HANDLE_DATA_SIZE];
 	struct file_handle_info sysio_from_parent_handle = {NULL, sysio_from_parent_handle_data, SYSIO_HANDLE_DATA_SIZE};
 	
 	ZFSSYSIO_TRACE_ENTER;
@@ -1139,9 +1145,9 @@ static int zoidfs_sysio_link(const zoidfs_handle_t *from_parent_handle,
     int ret;
     struct file_handle_info_dirop_args where_to;
 	struct file_handle_info_dirop_args where_from;
-	char sysio_to_parent_handle_data[SYSIO_HANDLE_DATA_SIZE];
+	static char sysio_to_parent_handle_data[SYSIO_HANDLE_DATA_SIZE];
 	struct file_handle_info sysio_to_parent_handle = {NULL, sysio_to_parent_handle_data, SYSIO_HANDLE_DATA_SIZE};
-	char sysio_from_parent_handle_data[SYSIO_HANDLE_DATA_SIZE];
+	static char sysio_from_parent_handle_data[SYSIO_HANDLE_DATA_SIZE];
 	struct file_handle_info sysio_from_parent_handle = {NULL, sysio_from_parent_handle_data, SYSIO_HANDLE_DATA_SIZE};
 	
 	ZFSSYSIO_TRACE_ENTER;
@@ -1214,9 +1220,9 @@ static int zoidfs_sysio_symlink(const zoidfs_handle_t *from_parent_handle,
     int ret;
     struct file_handle_info_dirop_args where_to;
 	struct file_handle_info_dirop_args where_from;
-	char sysio_to_parent_handle_data[SYSIO_HANDLE_DATA_SIZE];
+	static char sysio_to_parent_handle_data[SYSIO_HANDLE_DATA_SIZE];
 	struct file_handle_info sysio_to_parent_handle = {NULL, sysio_to_parent_handle_data, SYSIO_HANDLE_DATA_SIZE};
-	char sysio_from_parent_handle_data[SYSIO_HANDLE_DATA_SIZE];
+	static char sysio_from_parent_handle_data[SYSIO_HANDLE_DATA_SIZE];
 	struct file_handle_info sysio_from_parent_handle = {NULL, sysio_from_parent_handle_data, SYSIO_HANDLE_DATA_SIZE};
 	const char * path_from;
 	const char * path_to;
@@ -1323,7 +1329,7 @@ static int zoidfs_sysio_mkdir(const zoidfs_handle_t *parent_handle,
 	 * Not the full path, so build the root handle
 	 */
     } else {
-		char sysio_parent_handle_data[SYSIO_HANDLE_DATA_SIZE];
+		static char sysio_parent_handle_data[SYSIO_HANDLE_DATA_SIZE];
 		struct file_handle_info sysio_parent_handle = {NULL, sysio_parent_handle_data, SYSIO_HANDLE_DATA_SIZE};
 		
 		/*
@@ -1359,7 +1365,7 @@ static int zoidfs_sysio_readdir(const zoidfs_handle_t *parent_handle,
                    zoidfs_dirent_t * UNUSED(entries), uint32_t UNUSED(flags),
                    zoidfs_cache_hint_t * UNUSED(parent_hint)) {
 
-	char sysio_parent_handle_data[SYSIO_HANDLE_DATA_SIZE];
+	static char sysio_parent_handle_data[SYSIO_HANDLE_DATA_SIZE];
 	struct file_handle_info sysio_parent_handle = {NULL, sysio_parent_handle_data, SYSIO_HANDLE_DATA_SIZE};
 	struct dirent64 * buffer, * dp;
     int cc = 0;
@@ -1406,7 +1412,7 @@ static int zoidfs_sysio_resize(const zoidfs_handle_t *handle, uint64_t size)
     /*
      * Setup the file handle based on the libsysio handle and the file handle
      */
-	char sysio_component_handle_data[SYSIO_HANDLE_DATA_SIZE];
+	static char sysio_component_handle_data[SYSIO_HANDLE_DATA_SIZE];
 	struct file_handle_info sysio_component_handle = {NULL, sysio_component_handle_data, SYSIO_HANDLE_DATA_SIZE};
     int ret = 0;
 
@@ -1438,7 +1444,7 @@ static int zoidfs_sysio_write(const zoidfs_handle_t *handle, size_t mem_count,
 	unsigned int i = 0;
 	struct iovec * iovs = (struct iovec *)malloc(sizeof(struct iovec) * mem_count);
 	struct xtvec64 * xtvs = (struct xtvec64 *)malloc(sizeof(struct xtvec64) * mem_count);
-	char sysio_component_handle_data[SYSIO_HANDLE_DATA_SIZE];
+	static char sysio_component_handle_data[SYSIO_HANDLE_DATA_SIZE];
 	struct file_handle_info sysio_component_handle = {NULL, sysio_component_handle_data, SYSIO_HANDLE_DATA_SIZE};
 	ioid_t ioidp;
 	
@@ -1514,7 +1520,7 @@ static int zoidfs_sysio_read(const zoidfs_handle_t *handle, size_t mem_count,
 	unsigned int i = 0;
 	struct iovec * iovs = (struct iovec *)malloc(sizeof(struct iovec) * mem_count);
 	struct xtvec64 * xtvs = (struct xtvec64 *)malloc(sizeof(struct xtvec64) * mem_count);
-	char sysio_component_handle_data[SYSIO_HANDLE_DATA_SIZE];
+	static char sysio_component_handle_data[SYSIO_HANDLE_DATA_SIZE];
 	struct file_handle_info sysio_component_handle = {NULL, sysio_component_handle_data, SYSIO_HANDLE_DATA_SIZE};
 	ioid_t ioidp;
 
