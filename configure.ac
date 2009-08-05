@@ -54,16 +54,37 @@ ENABLE_CUNIT=
 
 if test "A$cunitdir" != "Ano" ; 
 then
+  #
+  # backup the original flags
+  #
+  ORIG_LDFLAGS="${LDFLAGS}"
+  ORIG_CPPFLAGS="${CPPFLAGS}"
+  ORIG_LIBS="${LIBS}"
+  ORIG_CFLAGS="${CFLAGS}"
   if test ! -z "$cunitdir" ; then 
-    LDFLAGS="$LDFLAGS -L${cunitdir}/lib"
-    CPPFLAGS="-I${cunitdir}/include"
+    LDFLAGS="${LDFLAGS} -L${cunitdir}/lib"
+    CPPFLAGS="${CPPFLAGS} -I${cunitdir}/include"
   fi
   ENABLE_CUNIT=1
   AC_CHECK_HEADER([CUnit/Basic.h], [], [ENABLE_CUNIT=;])
   AC_CHECK_LIB([cunit],[CU_basic_run_tests],,[ENABLE_CUNIT=;])
   if test -z "$ENABLE_CUNIT" ; then
      AC_MSG_WARN([Could not find usable cunit library -- disabling unit tests])
+  else
+     if test ! -z "$cunitdir" ; then
+         AC_SUBST([CUNIT_LDFLAGS],["-L${cunitdir}/lib"])
+         AC_SUBST([CUNIT_CFLAGS],["-I${cunitdir}/include"])
+         AC_SUBST([CUNIT_CPPFLAGS],["-I${cunitdir}/include"])
+         AC_SUBST([CUNIT_LIBS],["-lcunit"])
+     fi
   fi
+  #
+  # reset to the original flags
+  #
+  LDFLAGS="${ORIG_LDFLAGS}"
+  CPPFLAGS="${ORIG_CPPFLAGS}"
+  LIBS="${ORIG_LIBS}"
+  CFLAGS="${ORIG_CFLAGS}"
 fi
 AX_MAKE_VAR([ENABLE_CUNIT])
 AX_MAKE_VAR([cunitdir])
