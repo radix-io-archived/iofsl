@@ -3,19 +3,13 @@ MODULE_APPS := fuseclient fusedispatch
 TMP_SOURCES := zoidfs-fuse.c 
 
 MODULE_SOURCES_fuseclient := $(TMP_SOURCES)
-ADDINTLIBS_fuseclient := zoidfscutil zoidfsclient
+ADDINTLIBS_fuseclient := zoidfscutil zoidfsclient c-util
 MODULE_LDFLAGS_fuseclient := $(FUSE_LDFLAGS)
-MODULE_CFLAGS_fuseclient += "-D_FILE_OFFSET_BITS=64" 
-MODULE_CPPFLAGS_fuseclient += "-D_FILE_OFFSET_BITS=64" 
-CFLAGS += "-D_FILE_OFFSET_BITS=64" 
 CPPFLAGS += "-D_FILE_OFFSET_BITS=64" 
 LIBS_fuseclient := $(FUSE_LIBS)
 
 MODULE_SOURCES_fusedispatch :=$(TMP_SOURCES)
-ADDINTLIBS_fusedispatch := zoidfscutil zoidfsdispatch
+ADDINTLIBS_fusedispatch := zoidfscutil zoidfsdispatch c-util
 MODULE_LDFLAGS_fusedispatch := $(FUSE_LDFLAGS)
-MODULE_CFLAGS_fusedispatch += "-D_FILE_OFFSET_BITS=64" 
-MODULE_CPPFLAGS_fusedispatch += "-D_FILE_OFFSET_BITS=64" 
-CFLAGS += "-D_FILE_OFFSET_BITS=64" 
 CPPFLAGS += "-D_FILE_OFFSET_BITS=64" 
 LIBS_fusedispatch := $(FUSE_LIBS)
