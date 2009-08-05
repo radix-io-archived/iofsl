@@ -45,6 +45,12 @@ static void addItem (unsigned int i)
    CU_ASSERT_TRUE(filename_add (handle, &h, buf)); 
 }
 
+static void checkItem (const zoidfs_handle_t * h, const char * data)
+{
+   CU_ASSERT_EQUAL (*(unsigned int *) (&h->data[5]), (unsigned int) atoi (data)); 
+}
+
+
 static void test1 ()
 {
    char buf[255]; 
@@ -61,11 +67,32 @@ static void test1 ()
 
 static void test2 ()
 {
-}
+   /* add 100 items */ 
+   unsigned int  i; 
+   int j; 
+   char buf[255]; 
 
-static void checkItem (const zoidfs_handle_t * h, const char * data)
-{
-   CU_ASSERT_EQUAL (*(unsigned int *) (&h->data[5]), (unsigned int) atoi (data)); 
+   for (i=0; i<ADD_COUNT; ++i)
+   {
+      addItem (i); 
+   }
+
+   /* Try looking up strings; we should have the last CACHE_SIZE strings */ 
+   for (j=ADD_COUNT-1; j>=0; --j)
+   {
+      zoidfs_handle_t h; 
+      sethandle (&h, j); 
+      int ret = filename_lookup (handle, &h, buf, sizeof(buf)); 
+      if (j < (ADD_COUNT - CACHE_SIZE))
+      {
+         CU_ASSERT_FALSE (ret); 
+      }
+      else
+      {
+         CU_ASSERT_TRUE (ret); 
+         checkItem (&h, buf); 
+      }
+   }
 }
 
 static void test3 ()
