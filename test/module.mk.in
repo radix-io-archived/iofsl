@@ -92,6 +92,10 @@ LIBS_bmitest := $(BOOST_THREAD_LIBS)
 MODULE_SOURCES_timertest := $(addprefix timer/, timer.cpp)
 ADDINTLIBS_timertest := iofwdutil
 
+MODULE_SOURCES_xdrspeed := $(addprefix xdr/, xdrspeed.cpp)
+ADDINTLIBS_xdrspeed := iofwdutil
+
+ifdef ENABLE_CUNIT
 
 MODULE_SOURCES_zoidfs_md_cunit := zoidfs-md-cunit.c 
 ADDINTLIBS_zoidfs_md_cunit := iofwdclient iofwdlib iofwdutil zoidfsutil zoidfsclient zoidfscutil
@@ -100,6 +104,11 @@ LIBS_zoidfs_md_cunit := @CUNIT_LIBS@
 CPPFLAGS += @CUNIT_CPPFLAGS@
 CFLAGS += @CUNIT_CFLAGS@
 
-MODULE_SOURCES_xdrspeed := $(addprefix xdr/, xdrspeed.cpp)
-ADDINTLIBS_xdrspeed := iofwdutil
 
+MODULE_APPS += fcache-unit 
+MODULE_SOURCES_fcache-unit := fcache-unit.c
+LIBS_fcache-unit := @CUNIT_LIBS@
+ADDINTLIBS_fcache-unit := c-util zoidfsdispatch
+
+
+endif
