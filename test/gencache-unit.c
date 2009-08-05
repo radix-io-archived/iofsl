@@ -126,10 +126,13 @@ static void test3 ()
    {
       void * data;
       intptr_t key; 
-      addItem (random () % ADD_COUNT); 
       key = ((random () % ADD_COUNT) >> 1) << 1;  
-      if (gencache_key_lookup (handle, (gencache_key_t) key, &data, 0))
+      if (gencache_key_lookup_refresh (handle, (gencache_key_t) key, &data, 0))
          checkItem (key, data); 
+      
+      key = (random () % ADD_COUNT); 
+      if (!gencache_key_lookup (handle, (gencache_key_t) key, &data, 0))
+         addItem (key); 
    }
 }
 

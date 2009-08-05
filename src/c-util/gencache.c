@@ -268,6 +268,7 @@ static void gencache_recycle (gencache_instance_t * gc)
 
    do
    {
+      /* find an item that is not in use */
       if (!item->refcount)
       {
          int i; 
@@ -281,6 +282,10 @@ static void gencache_recycle (gencache_instance_t * gc)
          assert (i); 
          return; 
       }
+
+      /* item is locked -> try next one */
+      item = item->next;
+
    } while (item); 
 
    /* could not find an unlocked item */
@@ -291,6 +296,17 @@ static void gencache_recycle (gencache_instance_t * gc)
    goto restart; 
 }
 
+
+/*
+ * Needs to be called with lock held
+ */
+static gencache_priv_value_t * gencache_lookup_internal (gencache_instance_t * gc, 
+      gencache_key_t key)
+{
+   return (gencache_priv_value_t *) hash_table_lookup (gc->hash, key); 
+}
+
+
 int gencache_key_add (gencache_handle handle, gencache_key_t key, gencache_value_t value, 
       gencache_lock_info * lock)
 {
@@ -299,6 +315,8 @@ int gencache_key_add (gencache_handle handle, gencache_key_t key, gencache_value
    gencache_instance_t * gc = (gencache_instance_t *) handle;
    gencache_priv_value_t * item = malloc (sizeof (gencache_priv_value_t)); 
 
+   assert ((unsigned int) gc->count == 
+            (unsigned int) hash_table_num_entries (gc->hash)); 
 
    item->next = item->prev = 0; 
    item->key = key;
@@ -308,6 +326,12 @@ int gencache_key_add (gencache_handle handle, gencache_key_t key, gencache_value
 
 
    pthread_mutex_lock (&gc->lock); 
+
+#ifndef NDEBUG
+   /* duplicates are not allowed! */ 
+   assert (!gencache_lookup_internal (gc, key)); 
+#endif
+
    do
    {
       /* check if we have space */
@@ -343,19 +367,12 @@ int gencache_key_add (gencache_handle handle, gencache_key_t key, gencache_value
 
 
    pthread_mutex_unlock (&gc->lock); 
+      
+   assert ((unsigned int) gc->count == 
+            (unsigned int) hash_table_num_entries (gc->hash)); 
 
    return ret;  
 }
-
-/*
- * Needs to be called with lock held
- */
-static gencache_priv_value_t * gencache_lookup_internal (gencache_instance_t * gc, 
-      gencache_key_t key)
-{
-   return (gencache_priv_value_t *) hash_table_lookup (gc->hash, key); 
-}
-
 
 int gencache_key_remove (gencache_handle handle, gencache_key_t key)
 {
