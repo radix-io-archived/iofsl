@@ -64,6 +64,8 @@ then
   if test ! -z "$cunitdir" ; then 
     LDFLAGS="${LDFLAGS} -L${cunitdir}/lib"
     CPPFLAGS="${CPPFLAGS} -I${cunitdir}/include"
+    CFLAGS="${CFLAGS} -I${cunitdir}/include"
+    LIBS="${LIBS} -lcunit"
   fi
   ENABLE_CUNIT=1
   AC_CHECK_HEADER([CUnit/Basic.h], [], [ENABLE_CUNIT=;])
@@ -72,10 +74,10 @@ then
      AC_MSG_WARN([Could not find usable cunit library -- disabling unit tests])
   else
      if test ! -z "$cunitdir" ; then
-         AC_SUBST([CUNIT_LDFLAGS],["-L${cunitdir}/lib"])
-         AC_SUBST([CUNIT_CFLAGS],["-I${cunitdir}/include"])
-         AC_SUBST([CUNIT_CPPFLAGS],["-I${cunitdir}/include"])
-         AC_SUBST([CUNIT_LIBS],["-lcunit"])
+         AC_SUBST([CUNIT_LDFLAGS],["${LDFLAGS}"])
+         AC_SUBST([CUNIT_CFLAGS],["${CFLAGS}"])
+         AC_SUBST([CUNIT_CPPFLAGS],["${CPPFLAGS}"])
+         AC_SUBST([CUNIT_LIBS],["${LIBS}"])
      fi
   fi
   #
