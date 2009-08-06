@@ -62,10 +62,9 @@ then
   ORIG_LIBS="${LIBS}"
   ORIG_CFLAGS="${CFLAGS}"
   if test ! -z "$cunitdir" ; then 
-    LDFLAGS="${LDFLAGS} -L${cunitdir}/lib"
-    CPPFLAGS="${CPPFLAGS} -I${cunitdir}/include"
-    CFLAGS="${CFLAGS} -I${cunitdir}/include"
-    LIBS="${LIBS} -lcunit"
+    LDFLAGS="-L${cunitdir}/lib"
+    CPPFLAGS="-I${cunitdir}/include"
+    CFLAGS="-I${cunitdir}/include"
   fi
   ENABLE_CUNIT=1
   AC_CHECK_HEADER([CUnit/Basic.h], [], [ENABLE_CUNIT=;])

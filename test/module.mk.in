@@ -1,7 +1,8 @@
 MODULE_APPS:= xdrspeed bmitest timertest forwarding iofwdreceive iofwdsend \
     smlinks smtest workqueue levelmatch iofwdlog regexfilter completion zoidfs_io zoidfs_md zoidfs_io_iofwd zoidfs_md_iofwd \
     zoidfsapi_symlink_test zoidfsapi_link_test zoidfsapi_rename_test zoidfsapi_lookup_perm_test \
-    zoidfs_io_thread zoidfs_md_thread zoidfs_io_iofwd_thread zoidfs_md_iofwd_thread
+    zoidfs_io_thread zoidfs_md_thread zoidfs_io_iofwd_thread zoidfs_md_iofwd_thread \
+    zoidfs_md_cunit
 
 MODULE_SOURCES_completion := completion.cpp
 ADDINTLIBS_completion := iofwdutil
@@ -91,20 +92,13 @@ LIBS_bmitest := $(BOOST_THREAD_LIBS)
 MODULE_SOURCES_timertest := $(addprefix timer/, timer.cpp)
 ADDINTLIBS_timertest := iofwdutil
 
-ifdef ENABLE_CUNIT
-MODULE_APPS += zoidfs_md_cunit
-
-LDFLAGS += @CUNIT_LDFLAGS@ @CUNIT_LIBS@ 
-CPPFLAGS += @CUNIT_CPPFLAGS@
-CFLAGS += @CUNIT_CFLAGS@
 
 MODULE_SOURCES_zoidfs_md_cunit := zoidfs-md-cunit.c 
 ADDINTLIBS_zoidfs_md_cunit := iofwdclient iofwdlib iofwdutil zoidfsutil zoidfsclient zoidfscutil
-
-
-#MODULE_SOURCES_gencache-unit := gencache-unit.c
-#ADDINTLIBS_gencache-unit := c-util
-endif
+LDFLAGS_zoidfs_md_cunit := @CUNIT_LDFLAGS@ @CUNIT_LIBS@
+LIBS_zoidfs_md_cunit := @CUNIT_LIBS@
+CPPFLAGS += @CUNIT_CPPFLAGS@
+CFLAGS += @CUNIT_CFLAGS@
 
 MODULE_SOURCES_xdrspeed := $(addprefix xdr/, xdrspeed.cpp)
 ADDINTLIBS_xdrspeed := iofwdutil
