@@ -1,0 +1,497 @@
+#include <time.h>
+#include <stdio.h>
+#include <errno.h>
+#include <string.h>
+#include <unistd.h>
+#include <stdlib.h>
+#include <assert.h>
+#include <sys/time.h>
+#include <sys/types.h>
+
+#include "zoidfs.h"
+#include "zoidfs-proto.h"
+#include "iofwd_config.h"
+
+#define NAMESIZE 255
+#define BUFSIZE (8 * 1024 * 1024)
+
+#include "CUnit/Basic.h"
+
+/* path variables */
+static char link_component_filename[NAMESIZE], link_component_dirname[NAMESIZE];
+static char link_fullpath_filename[NAMESIZE], link_fullpath_dirname[NAMESIZE];
+static char symlink_component_filename[NAMESIZE], symlink_component_dirname[NAMESIZE];
+static char symlink_fullpath_filename[NAMESIZE], symlink_fullpath_dirname[NAMESIZE];
+static char fullpath_dirname[NAMESIZE], component_dirname[NAMESIZE];
+static char fullpath_filename[NAMESIZE], component_filename[NAMESIZE];
+static char rename_fullpath_dirname[NAMESIZE], rename_component_dirname[NAMESIZE];
+static char rename_fullpath_filename[NAMESIZE], rename_component_filename[NAMESIZE];
+
+/* basedir handle */
+static zoidfs_handle_t basedir_handle;
+
+/* setup the file paths */
+int init_path_names(char * mpt)
+{
+    snprintf(symlink_component_filename, NAMESIZE, "symlink_comp_file");
+    snprintf(symlink_component_dirname, NAMESIZE, "symlink_comp_dir");
+    snprintf(symlink_fullpath_filename, NAMESIZE, "%s/symlink_full_file", mpt);
+    snprintf(symlink_fullpath_dirname, NAMESIZE, "%s/symlink_full_dir", mpt);
+
+    snprintf(link_component_filename, NAMESIZE, "link_comp_file");
+    snprintf(link_component_dirname, NAMESIZE, "link_comp_dir");
+    snprintf(link_fullpath_filename, NAMESIZE, "%s/link_full_file", mpt);
+    snprintf(link_fullpath_dirname, NAMESIZE, "%s/link_full_dir", mpt);
+
+    snprintf(component_filename, NAMESIZE, "test-zoidfs-file-comp");
+    snprintf(component_dirname, NAMESIZE, "test-zoidfs-dir-comp");
+    snprintf(fullpath_filename, NAMESIZE, "%s/test-zoidfs-file-full", mpt);
+    snprintf(fullpath_dirname, NAMESIZE, "%s/test-zoidfs-dir-full", mpt);
+
+    snprintf(rename_component_filename, NAMESIZE, "test-zoidfs-file-comp-rename");
+    snprintf(rename_component_dirname, NAMESIZE, "test-zoidfs-dir-comp-rename");
+    snprintf(rename_fullpath_filename, NAMESIZE, "%s/test-zoidfs-file-full-rename", mpt);
+    snprintf(rename_fullpath_dirname, NAMESIZE, "%s/test-zoidfs-dir-full-rename", mpt);
+
+    return 0;
+}
+
+int init_basedir_handle(char * mpt)
+{
+    return zoidfs_lookup(NULL, NULL, mpt, &basedir_handle);
+}
+
+int testCREATE(void)
+{
+    int created = 0;
+    struct timeval now;
+    zoidfs_sattr_t sattr;
+    zoidfs_handle_t fhandle;
+
+    /* set the attrs */
+    sattr.mask = ZOIDFS_ATTR_SETABLE;
+    sattr.mode = 0755;
+    sattr.uid = getuid();
+    sattr.gid = getgid();
+
+    gettimeofday(&now, NULL);
+    sattr.atime.seconds = now.tv_sec;
+    sattr.atime.nseconds = now.tv_usec;
+    sattr.mtime.seconds = now.tv_sec;
+    sattr.mtime.nseconds = now.tv_usec;
+
+    /* create a file using the base handle and component name*/
+    CU_ASSERT(ZFS_OK == zoidfs_create(&basedir_handle, component_filename, NULL, &sattr, &fhandle, &created));
+
+    /* create a file using the base handle and component name*/
+    CU_ASSERT(ZFS_OK == zoidfs_create(NULL, NULL, fullpath_filename, &sattr, &fhandle, &created));
+
+    return 0;
+}
+
+int testLOOKUP(void)
+{
+    zoidfs_handle_t fhandle;
+
+    CU_ASSERT(ZFS_OK == zoidfs_lookup(&basedir_handle, component_dirname, NULL, &fhandle));
+    CU_ASSERT(ZFS_OK == zoidfs_lookup(NULL, NULL, fullpath_filename, &fhandle));
+    CU_ASSERT(ZFS_OK == zoidfs_lookup(NULL, NULL, fullpath_dirname, &fhandle));
+    CU_ASSERT(ZFS_OK == zoidfs_lookup(&basedir_handle, symlink_component_filename, NULL, &fhandle));
+    CU_ASSERT(ZFS_OK == zoidfs_lookup(&basedir_handle, symlink_component_dirname, NULL, &fhandle));
+    CU_ASSERT(ZFS_OK == zoidfs_lookup(NULL, NULL, symlink_fullpath_filename, &fhandle));
+    CU_ASSERT(ZFS_OK == zoidfs_lookup(NULL, NULL, symlink_fullpath_dirname, &fhandle));
+
+    return 0;
+}
+
+/*
+ * write macro
+ */
+#define ZOIDFS_WRITE_COMP_DEF(_N, _BSIZE) \
+int _do_zoidfs_write_comp_nbuf##_N##_bsize##_BSIZE() \
+{\
+    int ret = 0; \
+    size_t mem_sizes[_N]; \
+    size_t _foff = 0; \
+    size_t mem_count, file_count; \
+    uint64_t file_sizes[_N], file_starts[_N]; \
+    void *mem_starts_write[_N]; \
+    size_t _i = 0; \
+    zoidfs_handle_t handle; \
+    int created = 0; \
+    struct timeval now; \
+    zoidfs_sattr_t sattr; \
+    sattr.mask = ZOIDFS_ATTR_SETABLE; \
+    sattr.mode = 0755; \
+    sattr.uid = getuid(); \
+    sattr.gid = getgid(); \
+    gettimeofday(&now, NULL); \
+    sattr.atime.seconds = now.tv_sec; \
+    sattr.atime.nseconds = now.tv_usec; \
+    sattr.mtime.seconds = now.tv_sec; \
+    sattr.mtime.nseconds = now.tv_usec; \
+    mem_count = _N; \
+    file_count = _N; \
+    for(_i = 0 ; _i < mem_count ; _i++) \
+    { \
+        mem_starts_write[_i] = malloc(_BSIZE); \
+        memset(mem_starts_write[_i], 'a', _BSIZE); \
+        file_sizes[_i] = mem_sizes[_i] = _BSIZE; \
+        file_starts[_i] = _foff; \
+        _foff += _BSIZE; \
+    } \
+    zoidfs_create(&basedir_handle, component_filename, NULL, &sattr, &handle, &created); \
+    zoidfs_lookup(&basedir_handle, component_filename, NULL, &handle);\
+    ret = zoidfs_write(&handle, mem_count, (const void **)mem_starts_write, mem_sizes, file_count, file_starts, file_sizes); \
+    zoidfs_remove(&basedir_handle, component_filename, NULL, NULL); \
+    for(_i = 0 ; _i < mem_count ; _i++) \
+    { \
+        free(mem_starts_write[_i]); \
+    } \
+    return ret; \
+}
+
+#define ZOIDFS_WRITE_FULL_DEF(_N, _BSIZE) \
+int _do_zoidfs_write_full_nbuf##_N##_bsize##_BSIZE() \
+{\
+    int ret = 0; \
+    size_t mem_sizes[_N]; \
+    size_t _foff = 0; \
+    size_t mem_count, file_count; \
+    uint64_t file_sizes[_N], file_starts[_N]; \
+    void *mem_starts_write[_N]; \
+    size_t _i = 0; \
+    zoidfs_handle_t handle; \
+    int created = 0; \
+    struct timeval now; \
+    zoidfs_sattr_t sattr; \
+    sattr.mask = ZOIDFS_ATTR_SETABLE; \
+    sattr.mode = 0755; \
+    sattr.uid = getuid(); \
+    sattr.gid = getgid(); \
+    gettimeofday(&now, NULL); \
+    sattr.atime.seconds = now.tv_sec; \
+    sattr.atime.nseconds = now.tv_usec; \
+    sattr.mtime.seconds = now.tv_sec; \
+    sattr.mtime.nseconds = now.tv_usec; \
+    mem_count = _N; \
+    file_count = _N; \
+    for(_i = 0 ; _i < mem_count ; _i++) \
+    { \
+        mem_starts_write[_i] = malloc(_BSIZE); \
+        memset(mem_starts_write[_i], 'a', _BSIZE); \
+        file_sizes[_i] = mem_sizes[_i] = _BSIZE; \
+        file_starts[_i] = _foff; \
+        _foff += _BSIZE; \
+    } \
+    zoidfs_create(NULL, NULL, fullpath_filename, &sattr, &handle, &created); \
+    zoidfs_lookup(NULL, NULL, fullpath_filename, &handle);\
+    ret = zoidfs_write(&handle, mem_count, (const void **)mem_starts_write, mem_sizes, file_count, file_starts, file_sizes); \
+    zoidfs_remove(NULL, NULL, fullpath_filename, NULL); \
+    for(_i = 0 ; _i < mem_count ; _i++) \
+    { \
+        free(mem_starts_write[_i]); \
+    } \
+    return ret; \
+}
+
+#define ZOIDFS_READ_COMP_DEF(_N, _BSIZE) \
+int _do_zoidfs_read_comp_nbuf##_N##_bsize##_BSIZE() \
+{\
+    int ret = 0; \
+    size_t mem_sizes[_N]; \
+    size_t _foff = 0; \
+    size_t mem_count, file_count; \
+    uint64_t file_sizes[_N], file_starts[_N]; \
+    void *mem_starts_write[_N], *mem_starts_read[_N]; \
+    size_t _i = 0; \
+    zoidfs_handle_t handle; \
+    int created = 0; \
+    struct timeval now; \
+    zoidfs_sattr_t sattr; \
+    sattr.mask = ZOIDFS_ATTR_SETABLE; \
+    sattr.mode = 0755; \
+    sattr.uid = getuid(); \
+    sattr.gid = getgid(); \
+    gettimeofday(&now, NULL); \
+    sattr.atime.seconds = now.tv_sec; \
+    sattr.atime.nseconds = now.tv_usec; \
+    sattr.mtime.seconds = now.tv_sec; \
+    sattr.mtime.nseconds = now.tv_usec; \
+    mem_count = _N; \
+    file_count = _N; \
+    for(_i = 0 ; _i < mem_count ; _i++) \
+    { \
+        mem_starts_write[_i] = malloc(_BSIZE); \
+        mem_starts_read[_i] = malloc(_BSIZE); \
+        memset(mem_starts_write[_i], 'a', _BSIZE); \
+        memset(mem_starts_read[_i], '0', _BSIZE); \
+        file_sizes[_i] = mem_sizes[_i] = _BSIZE; \
+        file_starts[_i] = _foff; \
+        _foff += _BSIZE; \
+    } \
+    zoidfs_create(&basedir_handle, component_filename, NULL, &sattr, &handle, &created); \
+    zoidfs_lookup(&basedir_handle, component_filename, NULL, &handle);\
+    zoidfs_write(&handle, mem_count, (const void **)mem_starts_write, mem_sizes, file_count, file_starts, file_sizes); \
+    ret = zoidfs_read(&handle, mem_count, (void **)mem_starts_read, mem_sizes, file_count, file_starts, file_sizes); \
+    zoidfs_remove(&basedir_handle, component_filename, NULL, NULL); \
+    for(_i = 0 ; _i < mem_count ; _i++) \
+    { \
+        if(memcmp(mem_starts_write[_i], mem_starts_read[_i], _BSIZE) != 0) \
+        { \
+            ret = -1; \
+        } \
+        free(mem_starts_write[_i]); \
+        free(mem_starts_read[_i]); \
+    } \
+    return ret; \
+}
+
+#define ZOIDFS_READ_FULL_DEF(_N, _BSIZE) \
+int _do_zoidfs_read_full_nbuf##_N##_bsize##_BSIZE() \
+{\
+    int ret = 0; \
+    size_t mem_sizes[_N]; \
+    size_t _foff = 0; \
+    size_t mem_count, file_count; \
+    uint64_t file_sizes[_N], file_starts[_N]; \
+    void *mem_starts_write[_N], *mem_starts_read[_N]; \
+    size_t _i = 0; \
+    zoidfs_handle_t handle; \
+    int created = 0; \
+    struct timeval now; \
+    zoidfs_sattr_t sattr; \
+    sattr.mask = ZOIDFS_ATTR_SETABLE; \
+    sattr.mode = 0755; \
+    sattr.uid = getuid(); \
+    sattr.gid = getgid(); \
+    gettimeofday(&now, NULL); \
+    sattr.atime.seconds = now.tv_sec; \
+    sattr.atime.nseconds = now.tv_usec; \
+    sattr.mtime.seconds = now.tv_sec; \
+    sattr.mtime.nseconds = now.tv_usec; \
+    mem_count = _N; \
+    file_count = _N; \
+    for(_i = 0 ; _i < mem_count ; _i++) \
+    { \
+        mem_starts_write[_i] = malloc(_BSIZE); \
+        mem_starts_read[_i] = malloc(_BSIZE); \
+        memset(mem_starts_write[_i], 'a', _BSIZE); \
+        memset(mem_starts_read[_i], '0', _BSIZE); \
+        file_sizes[_i] = mem_sizes[_i] = _BSIZE; \
+        file_starts[_i] = _foff; \
+        _foff += _BSIZE; \
+    } \
+    zoidfs_create(NULL, NULL, fullpath_filename, &sattr, &handle, &created); \
+    zoidfs_lookup(NULL, NULL, fullpath_filename, &handle);\
+    zoidfs_write(&handle, mem_count, (const void **)mem_starts_write, mem_sizes, file_count, file_starts, file_sizes); \
+    ret = zoidfs_read(&handle, mem_count, (void **)mem_starts_read, mem_sizes, file_count, file_starts, file_sizes); \
+    zoidfs_remove(NULL, NULL, fullpath_filename, NULL); \
+    for(_i = 0 ; _i < mem_count ; _i++) \
+    { \
+        if(memcmp(mem_starts_write[_i], mem_starts_read[_i], _BSIZE) != 0) \
+        { \
+            ret = -1; \
+        }\
+        free(mem_starts_write[_i]); \
+        free(mem_starts_read[_i]); \
+    } \
+    return ret; \
+}
+
+/*
+ * invoke write macro
+ */
+#define ZOIDFS_WRITE_FULL(_N, _BSIZE) _do_zoidfs_write_full_nbuf##_N##_bsize##_BSIZE()
+#define ZOIDFS_WRITE_COMP(_N, _BSIZE) _do_zoidfs_write_comp_nbuf##_N##_bsize##_BSIZE()
+
+/*
+ * invoke read macro
+ */
+#define ZOIDFS_READ_FULL(_N, _BSIZE) _do_zoidfs_read_full_nbuf##_N##_bsize##_BSIZE()
+#define ZOIDFS_READ_COMP(_N, _BSIZE) _do_zoidfs_read_comp_nbuf##_N##_bsize##_BSIZE()
+
+/*
+ * write macro buffer size constants
+ */
+#define B_1M 1 * 1024 * 1024
+#define B_2M 2 * 1024 * 1024
+#define B_4M 4 * 1024 * 1024
+#define B_8M 8 * 1024 * 1024
+
+ZOIDFS_WRITE_COMP_DEF(1, B_1M)
+ZOIDFS_WRITE_COMP_DEF(2, B_1M)
+ZOIDFS_WRITE_COMP_DEF(3, B_1M)
+ZOIDFS_WRITE_COMP_DEF(4, B_1M)
+ZOIDFS_WRITE_COMP_DEF(8, B_1M)
+ZOIDFS_WRITE_COMP_DEF(1, B_2M)
+ZOIDFS_WRITE_COMP_DEF(2, B_2M)
+ZOIDFS_WRITE_COMP_DEF(3, B_2M)
+ZOIDFS_WRITE_COMP_DEF(4, B_2M)
+ZOIDFS_WRITE_COMP_DEF(1, B_4M)
+ZOIDFS_WRITE_COMP_DEF(2, B_4M)
+ZOIDFS_WRITE_COMP_DEF(1, B_8M)
+
+ZOIDFS_WRITE_FULL_DEF(1, B_1M)
+ZOIDFS_WRITE_FULL_DEF(2, B_1M)
+ZOIDFS_WRITE_FULL_DEF(3, B_1M)
+ZOIDFS_WRITE_FULL_DEF(4, B_1M)
+ZOIDFS_WRITE_FULL_DEF(8, B_1M)
+ZOIDFS_WRITE_FULL_DEF(1, B_2M)
+ZOIDFS_WRITE_FULL_DEF(2, B_2M)
+ZOIDFS_WRITE_FULL_DEF(3, B_2M)
+ZOIDFS_WRITE_FULL_DEF(4, B_2M)
+ZOIDFS_WRITE_FULL_DEF(1, B_4M)
+ZOIDFS_WRITE_FULL_DEF(2, B_4M)
+ZOIDFS_WRITE_FULL_DEF(1, B_8M)
+
+ZOIDFS_READ_COMP_DEF(1, B_1M)
+ZOIDFS_READ_COMP_DEF(2, B_1M)
+ZOIDFS_READ_COMP_DEF(3, B_1M)
+ZOIDFS_READ_COMP_DEF(4, B_1M)
+ZOIDFS_READ_COMP_DEF(8, B_1M)
+ZOIDFS_READ_COMP_DEF(1, B_2M)
+ZOIDFS_READ_COMP_DEF(2, B_2M)
+ZOIDFS_READ_COMP_DEF(3, B_2M)
+ZOIDFS_READ_COMP_DEF(4, B_2M)
+ZOIDFS_READ_COMP_DEF(1, B_4M)
+ZOIDFS_READ_COMP_DEF(2, B_4M)
+ZOIDFS_READ_COMP_DEF(1, B_8M)
+
+ZOIDFS_READ_FULL_DEF(1, B_1M)
+ZOIDFS_READ_FULL_DEF(2, B_1M)
+ZOIDFS_READ_FULL_DEF(3, B_1M)
+ZOIDFS_READ_FULL_DEF(4, B_1M)
+ZOIDFS_READ_FULL_DEF(8, B_1M)
+ZOIDFS_READ_FULL_DEF(1, B_2M)
+ZOIDFS_READ_FULL_DEF(2, B_2M)
+ZOIDFS_READ_FULL_DEF(3, B_2M)
+ZOIDFS_READ_FULL_DEF(4, B_2M)
+ZOIDFS_READ_FULL_DEF(1, B_4M)
+ZOIDFS_READ_FULL_DEF(2, B_4M)
+ZOIDFS_READ_FULL_DEF(1, B_8M)
+
+int testWRITE(void)
+{
+    CU_ASSERT(ZFS_OK == ZOIDFS_WRITE_COMP(1, B_1M));
+    CU_ASSERT(ZFS_OK == ZOIDFS_WRITE_COMP(2, B_1M));
+    CU_ASSERT(ZFS_OK == ZOIDFS_WRITE_COMP(3, B_1M));
+    CU_ASSERT(ZFS_OK == ZOIDFS_WRITE_COMP(4, B_1M));
+    CU_ASSERT(ZFS_OK == ZOIDFS_WRITE_COMP(8, B_1M));
+    CU_ASSERT(ZFS_OK == ZOIDFS_WRITE_COMP(1, B_2M));
+    CU_ASSERT(ZFS_OK == ZOIDFS_WRITE_COMP(2, B_2M));
+    CU_ASSERT(ZFS_OK == ZOIDFS_WRITE_COMP(3, B_2M));
+    CU_ASSERT(ZFS_OK == ZOIDFS_WRITE_COMP(4, B_2M));
+    CU_ASSERT(ZFS_OK == ZOIDFS_WRITE_COMP(1, B_4M));
+    CU_ASSERT(ZFS_OK == ZOIDFS_WRITE_COMP(2, B_4M));
+    CU_ASSERT(ZFS_OK == ZOIDFS_WRITE_COMP(1, B_8M));
+
+    CU_ASSERT(ZFS_OK == ZOIDFS_WRITE_FULL(1, B_1M));
+    CU_ASSERT(ZFS_OK == ZOIDFS_WRITE_FULL(2, B_1M));
+    CU_ASSERT(ZFS_OK == ZOIDFS_WRITE_FULL(3, B_1M));
+    CU_ASSERT(ZFS_OK == ZOIDFS_WRITE_FULL(4, B_1M));
+    CU_ASSERT(ZFS_OK == ZOIDFS_WRITE_FULL(8, B_1M));
+    CU_ASSERT(ZFS_OK == ZOIDFS_WRITE_FULL(1, B_2M));
+    CU_ASSERT(ZFS_OK == ZOIDFS_WRITE_FULL(2, B_2M));
+    CU_ASSERT(ZFS_OK == ZOIDFS_WRITE_FULL(3, B_2M));
+    CU_ASSERT(ZFS_OK == ZOIDFS_WRITE_FULL(4, B_2M));
+    CU_ASSERT(ZFS_OK == ZOIDFS_WRITE_FULL(1, B_4M));
+    CU_ASSERT(ZFS_OK == ZOIDFS_WRITE_FULL(2, B_4M));
+    CU_ASSERT(ZFS_OK == ZOIDFS_WRITE_FULL(1, B_8M));
+
+    return 0;
+}
+
+int testREAD(void)
+{
+    CU_ASSERT(ZFS_OK == ZOIDFS_READ_COMP(1, B_1M));
+    CU_ASSERT(ZFS_OK == ZOIDFS_READ_COMP(2, B_1M));
+    CU_ASSERT(ZFS_OK == ZOIDFS_READ_COMP(3, B_1M));
+    CU_ASSERT(ZFS_OK == ZOIDFS_READ_COMP(4, B_1M));
+    CU_ASSERT(ZFS_OK == ZOIDFS_READ_COMP(8, B_1M));
+    CU_ASSERT(ZFS_OK == ZOIDFS_READ_COMP(1, B_2M));
+    CU_ASSERT(ZFS_OK == ZOIDFS_READ_COMP(2, B_2M));
+    CU_ASSERT(ZFS_OK == ZOIDFS_READ_COMP(3, B_2M));
+    CU_ASSERT(ZFS_OK == ZOIDFS_READ_COMP(4, B_2M));
+    CU_ASSERT(ZFS_OK == ZOIDFS_READ_COMP(1, B_4M));
+    CU_ASSERT(ZFS_OK == ZOIDFS_READ_COMP(2, B_4M));
+    CU_ASSERT(ZFS_OK == ZOIDFS_READ_COMP(1, B_8M));
+
+    CU_ASSERT(ZFS_OK == ZOIDFS_READ_FULL(1, B_1M));
+    CU_ASSERT(ZFS_OK == ZOIDFS_READ_FULL(2, B_1M));
+    CU_ASSERT(ZFS_OK == ZOIDFS_READ_FULL(3, B_1M));
+    CU_ASSERT(ZFS_OK == ZOIDFS_READ_FULL(4, B_1M));
+    CU_ASSERT(ZFS_OK == ZOIDFS_READ_FULL(8, B_1M));
+    CU_ASSERT(ZFS_OK == ZOIDFS_READ_FULL(1, B_2M));
+    CU_ASSERT(ZFS_OK == ZOIDFS_READ_FULL(2, B_2M));
+    CU_ASSERT(ZFS_OK == ZOIDFS_READ_FULL(3, B_2M));
+    CU_ASSERT(ZFS_OK == ZOIDFS_READ_FULL(4, B_2M));
+    CU_ASSERT(ZFS_OK == ZOIDFS_READ_FULL(1, B_4M));
+    CU_ASSERT(ZFS_OK == ZOIDFS_READ_FULL(2, B_4M));
+    CU_ASSERT(ZFS_OK == ZOIDFS_READ_FULL(1, B_8M));
+
+    return 0;
+}
+
+int init_suite_dispatch_basic(void)
+{
+    return 0;
+}
+
+int clean_suite_dispatch_basic(void)
+{
+    return 0;
+}
+
+/* The main() function for setting up and running the tests.
+ * Returns a CUE_SUCCESS on successful running, another
+ * CUnit error code on failure.
+ */
+int main(int argc, char ** argv)
+{
+   CU_pSuite pSuite = NULL;
+
+   if(argc < 2)
+   {
+    fprintf(stderr, "incorrect cmd line args!\n");
+    return -1;
+   }
+
+    zoidfs_init();
+
+   /* setup path names for the tests */
+   init_path_names(argv[1]);
+
+   /* init the base handle for the mount point*/
+   init_basedir_handle(argv[1]);
+
+   /* initialize the CUnit test registry */
+   if (CUE_SUCCESS != CU_initialize_registry())
+      return CU_get_error();
+
+   /* add a suite to the registry */
+   pSuite = CU_add_suite("Basic Dispatcher Test Suite", init_suite_dispatch_basic, clean_suite_dispatch_basic);
+   if (NULL == pSuite) {
+      CU_cleanup_registry();
+      return CU_get_error();
+   }
+
+   /* add the tests to the suite */
+   if (
+        (NULL == CU_add_test(pSuite, "test of zoidfs_write()", (CU_TestFunc) testWRITE)) ||
+        (NULL == CU_add_test(pSuite, "test of zoidfs_read()", (CU_TestFunc) testREAD))
+      )
+   {
+      CU_cleanup_registry();
+      return CU_get_error();
+   }
+
+   /* Run all tests using the CUnit Basic interface */
+   CU_basic_set_mode(CU_BRM_VERBOSE);
+   CU_basic_run_tests();
+   CU_cleanup_registry();
+
+   zoidfs_finalize();
+
+   return CU_get_error();
+}
