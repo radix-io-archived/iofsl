@@ -13,6 +13,7 @@ typedef void * gencache_handle;
 typedef void * gencache_key_t; 
 typedef void * gencache_value_t; 
 
+/* we store a pointer to the item in gencache_lock_info */ 
 typedef void * gencache_lock_info; 
 
 

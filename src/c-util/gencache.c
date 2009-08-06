@@ -126,7 +126,7 @@ int gencache_done (gencache_handle handle)
 int gencache_key_unlock (gencache_handle handle, gencache_lock_info * info)
 {
    gencache_instance_t * gc = (gencache_instance_t *) handle;
-   gencache_priv_value_t * item = (gencache_priv_value_t *) info; 
+   gencache_priv_value_t * item = (gencache_priv_value_t *) (*info); 
 
    pthread_mutex_lock (&gc->lock); 
 
@@ -153,7 +153,8 @@ int gencache_key_unlock (gencache_handle handle, gencache_lock_info * info)
    return 1; 
 }
 
-/* needs to be called with global lock */
+/* needs to be called with global lock 
+ * Don't need to free the item, is done by hash table */
 static void gencache_recycle_remove (gencache_instance_t * gc, gencache_priv_value_t * item)
 {
    /* list cannot be empty */
@@ -422,6 +423,10 @@ int gencache_key_remove (gencache_handle handle, gencache_key_t key)
        */
       assert (!item->refcount); 
 
+      /* Remove it from the recycle list */
+      gencache_recycle_remove (gc, item); 
+
+      /* Remove it from the hash table, causing it to be freed */ 
       i = hash_table_remove (gc->hash, key); 
       assert (i); 
          
@@ -459,6 +464,7 @@ static int gencache_key_lookup_helper (gencache_handle handle, gencache_key_t ke
 
       if (lock)
       {
+         /* store pointer to item */ 
          *lock = item; 
          /* inc refcount on item */
          pthread_mutex_lock (&item->lock); 

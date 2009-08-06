@@ -36,15 +36,20 @@ static int filename_gencache_key_compare (const void * i1, const void * i2)
 static unsigned long filename_gencache_key_hash (gencache_key_t key)
 {
    const zoidfs_handle_t * h = (zoidfs_handle_t *) key; 
-   const int * ptr = (int *) &h->data; 
-   unsigned long init = 66; 
+   const unsigned char * ptr = (unsigned char *) &h->data; 
+   unsigned char init[sizeof(unsigned long)];
    unsigned int  i; 
-   assert (sizeof (h->data) % sizeof(int) == 0); 
-   for (i=0; i<sizeof (h->data)/sizeof(int); ++i)
+   unsigned int pos = 0; 
+
+   memset (&init, 0, sizeof(init)); 
+
+   for (i=0; i<sizeof (h->data); ++i)
    {
-      init ^= *ptr++; 
+      init[pos++] ^= *ptr++; 
+      if (pos == sizeof(unsigned long))
+         pos = 0; 
    }
-   return init; 
+   return *(unsigned long *) &init[0]; 
 }
 
 
@@ -66,7 +71,9 @@ fcache_handle filename_create (int cachesize)
 
 int filename_destroy (fcache_handle handle)
 {
-   return gencache_done (handle->gencache); 
+   int ret = gencache_done (handle->gencache); 
+   free ((fcache_instance *) handle); 
+   return ret; 
 }
 
 int filename_lookup (fcache_handle fh, const zoidfs_handle_t * h, char * buf, int bufsize)
@@ -76,7 +83,7 @@ int filename_lookup (fcache_handle fh, const zoidfs_handle_t * h, char * buf, in
 
    /* need to lock cache entry, otherwise some other thread could free the
     * string while we're copying it */ 
-   int ret = gencache_key_lookup (fh->gencache, h, (gencache_value_t *) &data, &lock); 
+   int ret = gencache_key_lookup (fh->gencache, (gencache_key_t) h, (gencache_value_t *) &data, &lock); 
    if (ret)
    {
       strncpy (buf, data, bufsize-1); 
@@ -87,19 +94,25 @@ int filename_lookup (fcache_handle fh, const zoidfs_handle_t * h, char * buf, in
    return ret; 
 }
 
+/*
+ * Makes a copy of the data */ 
 int filename_add    (fcache_handle fh, const zoidfs_handle_t * h, const char * buf)
 {
    char * dup = strdup (buf); 
 
+   zoidfs_handle_t * myhandle = malloc (sizeof (zoidfs_handle_t)); 
+
+   *myhandle = *h; 
+
    /* no need to lock the entry */ 
-   int ret = gencache_key_add (fh->gencache, h, dup, 0); 
+   int ret = gencache_key_add (fh->gencache, (gencache_key_t) myhandle, dup, 0); 
 
    return ret; 
 }
 
 int filename_remove (fcache_handle fh, const zoidfs_handle_t * h)
 {
-   return gencache_key_remove (fh->gencache, h); 
+   return gencache_key_remove (fh->gencache, (gencache_key_t) h); 
 }
 
 
