@@ -90,13 +90,13 @@ CFLAGS += @CUNIT_CFLAGS@
 
 MODULE_APPS += gencache-unit 
 MODULE_SOURCES_gencache-unit := gencache-unit.c
-LIBS_gencache-unit := @CUNIT_LIBS@
-ADDINTLIBS_gencache-unit := c-util
+LIBS_gencache-unit := @CUNIT_LDFLAGS@ @CUNIT_LIBS@
+ADDINTLIBS_gencache-unit := c-util zoidfscutil
 
 MODULE_APPS += fcache-unit 
 MODULE_SOURCES_fcache-unit := fcache-unit.c
-LIBS_fcache-unit := @CUNIT_LIBS@
-ADDINTLIBS_fcache-unit := c-util zoidfsdispatch
+LIBS_fcache-unit := @CUNIT_LDFLAGS@ @CUNIT_LIBS@
+ADDINTLIBS_fcache-unit := c-util zoidfsdispatch zoidfscutil
 
 MODULE_APPS += zoidfs_md_cunit
 MODULE_SOURCES_zoidfs_md_cunit := zoidfs-md-cunit.c 

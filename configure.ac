@@ -72,12 +72,10 @@ then
   if test -z "$ENABLE_CUNIT" ; then
      AC_MSG_WARN([Could not find usable cunit library -- disabling unit tests])
   else
-     if test ! -z "$cunitdir" ; then
-         AC_SUBST([CUNIT_LDFLAGS],["${LDFLAGS}"])
-         AC_SUBST([CUNIT_CFLAGS],["${CFLAGS}"])
-         AC_SUBST([CUNIT_CPPFLAGS],["${CPPFLAGS}"])
-         AC_SUBST([CUNIT_LIBS],["${LIBS}"])
-     fi
+    AC_SUBST([CUNIT_LDFLAGS],["${LDFLAGS}"])
+    AC_SUBST([CUNIT_CFLAGS],["${CFLAGS}"])
+    AC_SUBST([CUNIT_CPPFLAGS],["${CPPFLAGS}"])
+    AC_SUBST([CUNIT_LIBS],["${LIBS}"])
   fi
   #
   # reset to the original flags
