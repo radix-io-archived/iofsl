@@ -2153,7 +2153,7 @@ int zoidfs_init(void) {
      */
     ion_name = getenv(ION_ENV);
     if (!ion_name) {
-        fprintf(stderr, "zoidfs_init: getenv() failed.\n");
+        fprintf(stderr, "zoidfs_init: getenv(\"%s\") failed.\n", ION_ENV);
         exit(1);
     }
 
