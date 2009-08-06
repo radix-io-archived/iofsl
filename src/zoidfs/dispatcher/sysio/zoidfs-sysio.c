@@ -693,6 +693,12 @@ static int zoidfs_sysio_readlink(const zoidfs_handle_t *handle, char *buffer,
 			return sysio_err_to_zfs_err(errno);
 		}
 	}
+    else
+    {
+        ZFSSYSIO_INFO("zoidfs_sysio_readlink: invalid operation, not a link");
+	    ZFSSYSIO_TRACE_EXIT;
+        return ZFSERR_OTHER;
+    }
 	
 	ZFSSYSIO_TRACE_EXIT;
     return ZFS_OK;
@@ -1365,38 +1371,63 @@ static int zoidfs_sysio_readdir(const zoidfs_handle_t *parent_handle,
                    zoidfs_dirent_t * UNUSED(entries), uint32_t UNUSED(flags),
                    zoidfs_cache_hint_t * UNUSED(parent_hint)) {
 
+    struct stat64 stbuf;
 	static char sysio_parent_handle_data[SYSIO_HANDLE_DATA_SIZE];
 	struct file_handle_info sysio_parent_handle = {NULL, sysio_parent_handle_data, SYSIO_HANDLE_DATA_SIZE};
 	struct dirent64 * buffer, * dp;
     int cc = 0;
-	
+    int ret = 0;	
 	ZFSSYSIO_TRACE_ENTER;
+
+	/*
+     * Setup the file handle based on the libsysio handle and the file handle
+     */
+	zoidfs_handle_to_sysio_handle(parent_handle, &sysio_parent_handle);
+
+    /*
+     * determine if this is a dir... if not, exit with an error
+     */
+    ret = SYSIO_INTERFACE_NAME(_zfs_sysio_fhi_getattr)(&sysio_parent_handle, &stbuf);
+    if (ret) {
+        ZFSSYSIO_PERROR("fhi_getattr");
+
+        ZFSSYSIO_TRACE_EXIT;
+        return sysio_err_to_zfs_err(errno);
+    }
+    if(!S_ISDIR(stbuf.st_mode))
+    {
+        ZFSSYSIO_INFO("zoidfs_sysio_readdir: invalid operation, handle not a directory");
+	    ZFSSYSIO_TRACE_EXIT;
+        return ZFSERR_NOTDIR;
+    }
+
 	/*
 	 * Malloc the dirent buffer
 	 */
 	buffer = (struct dirent64 *)malloc(*entry_count * sizeof(struct dirent64));
 	
-	/*
-     * Setup the file handle based on the libsysio handle and the file handle
-     */
-	zoidfs_handle_to_sysio_handle(parent_handle, &sysio_parent_handle);
-	
-	while ((cc = SYSIO_INTERFACE_NAME(_zfs_sysio_fhi_getdirentries64)(&sysio_parent_handle, (char *)buffer, *entry_count, (off64_t *) &cookie)) > 0) {
+    /* DOES NOT WORK in libsysio */	
+	/*while ((cc = SYSIO_INTERFACE_NAME(_zfs_sysio_fhi_getdirentries64)(&sysio_parent_handle, (char *)buffer, *entry_count, (off64_t *) &cookie)) > 0) {
 		dp = buffer;
 		while (cc > 0) {
 			ZFSSYSIO_INFO("\t%s: ino %llu type %u", dp->d_name, (unsigned long long )dp->d_ino, (int )dp->d_type);
 			cc -= dp->d_reclen;
-			/* dp = (struct dirent *)((char *)dp + dp->d_reclen); */
+			dp = (struct dirent *)((char *)dp + dp->d_reclen);
 		}
-	}
+	}*/
 	
-	if(cc < 0)
+	/*if(cc < 0)
 	{
 		ZFSSYSIO_INFO("zoidfs_sysio_readdir: fhi_getdirents64() failed, code = %i", cc);
 		ZFSSYSIO_PERROR("zoidfs_sysio_readdir");
 		ZFSSYSIO_TRACE_EXIT;
 		return sysio_err_to_zfs_err(errno);
-	}
+	}*/
+
+    /* Cleanup */
+    free(buffer);
+
+    /* For now, assume that this completes correctly */
 	ZFSSYSIO_TRACE_EXIT;
     return ZFS_OK;
 }
