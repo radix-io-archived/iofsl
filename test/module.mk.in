@@ -1,20 +1,7 @@
 MODULE_APPS:= xdrspeed bmitest timertest forwarding iofwdreceive iofwdsend \
     smlinks smtest workqueue levelmatch iofwdlog regexfilter completion zoidfs_io zoidfs_md zoidfs_io_iofwd zoidfs_md_iofwd \
     zoidfsapi_symlink_test zoidfsapi_link_test zoidfsapi_rename_test zoidfsapi_lookup_perm_test \
-<<<<<<< HEAD:test/module.mk.in
-    zoidfs_io_thread zoidfs_md_thread zoidfs_io_iofwd_thread zoidfs_md_iofwd_thread \
-    zoidfs_md_cunit
-=======
-<<<<<<< Updated upstream:test/module.mk.in
-<<<<<<< Updated upstream:test/module.mk.in
     zoidfs_io_thread zoidfs_md_thread zoidfs_io_iofwd_thread zoidfs_md_iofwd_thread
-=======
-    zoidfs_io_thread zoidfs_md_thread zoidfs_io_iofwd_thread zoidfs_md_iofwd_thread 
->>>>>>> Stashed changes:test/module.mk.in
-=======
-    zoidfs_io_thread zoidfs_md_thread zoidfs_io_iofwd_thread zoidfs_md_iofwd_thread 
->>>>>>> Stashed changes:test/module.mk.in
->>>>>>> Added unit test for fcache (basic):test/module.mk.in
 
 MODULE_SOURCES_completion := completion.cpp
 ADDINTLIBS_completion := iofwdutil
@@ -96,18 +83,10 @@ ADDINTLIBS_timertest := iofwdutil
 MODULE_SOURCES_xdrspeed := $(addprefix xdr/, xdrspeed.cpp)
 ADDINTLIBS_xdrspeed := iofwdutil
 
-MODULE_SOURCES_bmitest := $(addprefix bmi/, bmi.cpp)
-ADDINTLIBS_bmitest := iofwdutil
-LDFLAGS_bmitest := $(BOOST_THREAD_LDFLAGS)
-LIBS_bmitest := $(BOOST_THREAD_LIBS)
-
-MODULE_SOURCES_timertest := $(addprefix timer/, timer.cpp)
-ADDINTLIBS_timertest := iofwdutil
-
-MODULE_SOURCES_xdrspeed := $(addprefix xdr/, xdrspeed.cpp)
-ADDINTLIBS_xdrspeed := iofwdutil
-
 ifdef ENABLE_CUNIT
+
+CPPFLAGS += @CUNIT_CPPFLAGS@
+CFLAGS += @CUNIT_CFLAGS@
 
 MODULE_APPS += gencache-unit 
 MODULE_SOURCES_gencache-unit := gencache-unit.c
@@ -124,7 +103,11 @@ MODULE_SOURCES_zoidfs_md_cunit := zoidfs-md-cunit.c
 ADDINTLIBS_zoidfs_md_cunit := iofwdclient iofwdlib iofwdutil zoidfsutil zoidfsclient zoidfscutil
 LDFLAGS_zoidfs_md_cunit := @CUNIT_LDFLAGS@ @CUNIT_LIBS@
 LIBS_zoidfs_md_cunit := @CUNIT_LIBS@
-CPPFLAGS += @CUNIT_CPPFLAGS@
-CFLAGS += @CUNIT_CFLAGS@
+
+MODULE_APPS += zoidfs_io_cunit
+MODULE_SOURCES_zoidfs_io_cunit := zoidfs-io-cunit.c 
+ADDINTLIBS_zoidfs_io_cunit := iofwdclient iofwdlib iofwdutil zoidfsutil zoidfsclient zoidfscutil
+LDFLAGS_zoidfs_io_cunit := @CUNIT_LDFLAGS@ @CUNIT_LIBS@
+LIBS_zoidfs_io_cunit := @CUNIT_LIBS@
 
 endif
