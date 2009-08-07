@@ -1694,8 +1694,7 @@ int zoidfs_write(const zoidfs_handle_t *handle, size_t mem_count_,
     bmi_msg_tag_t tag = gen_tag();
 
     uint32_t mem_count = mem_count_;
-    assert(sizeof(bmi_size_t) == sizeof(size_t));
-    const bmi_size_t * mem_sizes = (const bmi_size_t*)mem_sizes_;
+    bmi_size_t * mem_sizes = (bmi_size_t*)malloc(sizeof(bmi_size_t) * mem_count);
     uint32_t file_count = file_count_;
     uint64_t pipeline_size = 0;
 
@@ -1703,13 +1702,13 @@ int zoidfs_write(const zoidfs_handle_t *handle, size_t mem_count_,
     size_t total_size = 0;
     for (i = 0; i < mem_count_; i++) {
         total_size += mem_sizes_[i];
+        mem_sizes[i] = (bmi_size_t) mem_sizes_[i];
         if (mem_sizes_[i] > ZOIDFS_BUFFER_MAX)
             pipeline_size = PIPELINE_SIZE;
     }
     if (total_size >= PIPELINE_SIZE)
         pipeline_size = PIPELINE_SIZE;
 
-    assert(sizeof(size_t) == sizeof(uint64_t));
     recvbuflen = xdr_sizeof((xdrproc_t)xdr_zoidfs_op_status_t, &op_status) +
                  sizeof(uint32_t) + file_count * xdr_sizeof((xdrproc_t)xdr_uint64_t, &file_count);
     sendbuflen = xdr_sizeof((xdrproc_t)xdr_zoidfs_op_id_t, &zoidfs_op_id) +
@@ -1821,6 +1820,9 @@ int zoidfs_write(const zoidfs_handle_t *handle, size_t mem_count_,
     /* Free up the message buffers */
     BMI_memfree(peer_addr, recvbuf, recvbuflen, BMI_RECV);
 
+    /* free the temp mem_size array */
+    free(mem_sizes);
+
     return op_status;
 }
 
@@ -1920,21 +1922,20 @@ int zoidfs_read(const zoidfs_handle_t *handle, size_t mem_count_,
     bmi_msg_tag_t tag = gen_tag();
 
     uint32_t mem_count = mem_count_;
-    assert(sizeof(bmi_size_t) == sizeof(size_t));
-    const bmi_size_t *mem_sizes = (const bmi_size_t*)mem_sizes_;
+    bmi_size_t * mem_sizes = (bmi_size_t*)malloc(sizeof(bmi_size_t) * mem_count);
     uint32_t file_count = file_count_;
     uint64_t pipeline_size = 0;
 
     size_t total_size = 0;
     for (i = 0; i < mem_count_; i++) {
         total_size += mem_sizes_[i];
+        mem_sizes[i] = (bmi_size_t)mem_sizes_[i];
         if (mem_sizes_[i] > ZOIDFS_BUFFER_MAX)
             pipeline_size = PIPELINE_SIZE;
     }
     if (total_size >= PIPELINE_SIZE)
         pipeline_size = PIPELINE_SIZE;
 
-    assert(sizeof(size_t) == sizeof(uint64_t));
     recvbuflen = xdr_sizeof((xdrproc_t)xdr_zoidfs_op_status_t, &op_status) +
                  sizeof(uint32_t) + file_count * xdr_sizeof((xdrproc_t)xdr_uint64_t, &file_count);
     sendbuflen = xdr_sizeof((xdrproc_t)xdr_zoidfs_op_id_t, &zoidfs_op_id) +
@@ -2045,6 +2046,9 @@ int zoidfs_read(const zoidfs_handle_t *handle, size_t mem_count_,
     /* Free up the message buffers */
     BMI_memfree(peer_addr, recvbuf, recvbuflen, BMI_RECV);
     BMI_memfree(peer_addr, sendbuf, sendbuflen, BMI_SEND);
+
+    /* free the temp mem_sizes array */
+    free(mem_sizes);
 
     return op_status;
 }
