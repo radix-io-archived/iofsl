@@ -9,7 +9,7 @@ dnl
 AC_DEFUN([AX_LIB_MYSQL],
 [
 AC_ARG_WITH([mysql],
-  AC_HELP_STRING([--with-mysql=@<:@ARG@:>@],
+  AC_HELP_STRING([--with-mysql@<:@=ARG@:>@],
       [use MySQL client library @<:@default=yes@:>@, optionally specify path to mysql_config]
   ),
   [

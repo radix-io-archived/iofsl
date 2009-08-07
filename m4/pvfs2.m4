@@ -7,7 +7,7 @@ dnl
 AC_DEFUN([AX_LIB_PVFS2],
 [
 AC_ARG_WITH([pvfs2],
-  [AC_HELP_STRING([--with-pvfs2=arg],
+  [AC_HELP_STRING([--with-pvfs2@<:@=ARG@:>@],
          [Include PVFS2 backend support @<:@default=auto@:>@])],
   [use_pvfs2=${withval}],
   [use_pvfs2=auto])

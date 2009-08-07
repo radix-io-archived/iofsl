@@ -47,7 +47,7 @@ AC_CHECK_LIB([rt],[clock_getres],,[AC_MSG_ERROR([Could not find clock_getres!])]
 
 # Check for CUNIT
 cunitdir=
-AC_ARG_WITH([cunit],[AS_HELP_STRING([--with-cunit], 
+AC_ARG_WITH([cunit],[AS_HELP_STRING([--with-cunit@<:@=DIR@:>@], 
                         [location of cunit library])],
                    [cunitdir=$withval])
 ENABLE_CUNIT=
@@ -92,7 +92,7 @@ AX_MAKE_VAR([cunitdir])
 AC_LANG_PUSH([C])
 BMI_INCLUDE=
 BMI_LIBS=
-AC_ARG_WITH([bmi],[AS_HELP_STRING([--with-bmi], 
+AC_ARG_WITH([bmi],[AS_HELP_STRING([--with-bmi@<:@=DIR@:>@], 
                         [location of BMI library])],
                    [bmidir=$withval])
 if test "x$bmidir" != "x" ; then
@@ -117,7 +117,7 @@ then
 fi
 
 AC_ARG_WITH(db,
-           [AC_HELP_STRING([--with-db=<dir>],
+           [AC_HELP_STRING([--with-db@<:@=DIR@:>@],
                   [Location of installed DB package (default= /usr)])],
            [AX_LIB_DB(${withval})],
            [AX_LIB_DB("")])
@@ -197,7 +197,7 @@ AX_MAKE_VAR([DISPATCH_POSIX])
 #
 use_libsysio=false
 AC_ARG_WITH(libsysio,
-[  --with-libsysio=<path>  Location of installed libsysio package],
+[  --with-libsysio@<:@=DIR@:>@  Location of installed libsysio package],
        if test "x$withval" != "x" ; then
               AC_SUBST([SYSIO_LDFLAGS],["-L${withval}/lib"])
               AC_SUBST([SYSIO_CFLAGS],["-I${withval}/include -I${withval}/misc"])

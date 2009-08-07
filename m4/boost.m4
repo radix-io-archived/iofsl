@@ -81,7 +81,7 @@ IFS=$boost_save_IFS
 shift
 boost_version_req=`expr "$[1]" '*' 100000 + "$[2]" '*' 100 + "$[3]"`
 AC_ARG_WITH([boost],
-   [AS_HELP_STRING([--with-boost=DIR],
+   [AS_HELP_STRING([--with-boost@<:@=DIR@:>@],
                    [prefix of Boost $1 @<:@guess@:>@])])dnl
 AC_SUBST([DISTCHECK_CONFIGURE_FLAGS],
          ["$DISTCHECK_CONFIGURE_FLAGS '--with-boost=$with_boost'"])
