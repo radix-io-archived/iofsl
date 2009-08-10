@@ -1,7 +1,10 @@
+# Don't add cunit tests here, they get added conditionally below
 MODULE_APPS:= xdrspeed bmitest timertest forwarding iofwdreceive iofwdsend \
-    smlinks smtest workqueue levelmatch iofwdlog regexfilter completion zoidfs_io zoidfs_md zoidfs_io_iofwd zoidfs_md_iofwd \
-    zoidfsapi_symlink_test zoidfsapi_link_test zoidfsapi_rename_test zoidfsapi_lookup_perm_test \
-    zoidfs_io_thread zoidfs_md_thread zoidfs_io_iofwd_thread zoidfs_md_iofwd_thread
+   smlinks smtest workqueue levelmatch iofwdlog regexfilter completion \
+   zoidfs_io zoidfs_md zoidfs_io_iofwd zoidfs_md_iofwd zoidfsapi_symlink_test \
+   zoidfsapi_link_test zoidfsapi_rename_test zoidfsapi_lookup_perm_test \
+   zoidfs_io_thread zoidfs_md_thread zoidfs_io_iofwd_thread \
+   zoidfs_md_iofwd_thread 
 
 MODULE_SOURCES_completion := completion.cpp
 ADDINTLIBS_completion := iofwdutil
@@ -85,6 +88,7 @@ ADDINTLIBS_xdrspeed := iofwdutil
 
 ifdef ENABLE_CUNIT
 
+# there are no per-app/file CPPFLAGS/CFLAGS yet...
 CPPFLAGS += @CUNIT_CPPFLAGS@
 CFLAGS += @CUNIT_CFLAGS@
 
@@ -92,11 +96,19 @@ MODULE_APPS += gencache-unit
 MODULE_SOURCES_gencache-unit := gencache-unit.c
 LIBS_gencache-unit := @CUNIT_LDFLAGS@ @CUNIT_LIBS@
 ADDINTLIBS_gencache-unit := c-util zoidfscutil
+LDFLAGS_gencache-unit := @CUNIT_LDFLAGS@
 
 MODULE_APPS += fcache-unit 
 MODULE_SOURCES_fcache-unit := fcache-unit.c
-LIBS_fcache-unit := @CUNIT_LDFLAGS@ @CUNIT_LIBS@
+LIBS_fcache-unit := @CUNIT_LIBS@
 ADDINTLIBS_fcache-unit := c-util zoidfsdispatch zoidfscutil
+LDFLAGS_fcache-unit := @CUNIT_LDFLAGS@
+
+MODULE_APPS += dcache-unit 
+MODULE_SOURCES_dcache-unit := dcache-unit.c
+LIBS_dcache-unit := @CUNIT_LIBS@
+ADDINTLIBS_dcache-unit := c-util zoidfsdispatch zoidfscutil
+LDFLAGS_dcache-unit := @CUNIT_LDFLAGS@
 
 MODULE_APPS += zoidfs_md_cunit
 MODULE_SOURCES_zoidfs_md_cunit := zoidfs-md-cunit.c 
