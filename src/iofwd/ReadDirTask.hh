@@ -29,7 +29,7 @@ public:
        int ret = api_->readdir (p.handle, p.cookie, &entry_count,
                                 p.entries, p.flags, &parent_hint);
        request_.setReturnCode (ret); 
-       std::auto_ptr<iofwdutil::completion::CompletionID> id (request_.reply (p.entry_count, p.entries, &parent_hint));
+       std::auto_ptr<iofwdutil::completion::CompletionID> id (request_.reply (entry_count, p.entries, &parent_hint));
        id->wait ();
   }
 
