@@ -20,6 +20,7 @@ iofwd_frontend := $(addprefix frontend/, \
 	IOFWDCommitRequest.cpp \
 	IOFWDCreateRequest.cpp \
 	IOFWDMkdirRequest.cpp \
+	IOFWDReadDirRequest.cpp \
 	IOFWDRemoveRequest.cpp \
 	IOFWDRenameRequest.cpp \
 	IOFWDSymLinkRequest.cpp \

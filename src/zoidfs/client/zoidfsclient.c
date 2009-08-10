@@ -1500,12 +1500,13 @@ int zoidfs_mkdir(const zoidfs_handle_t *parent_handle,
  * fetching the dirents from.
  */
 int zoidfs_readdir(const zoidfs_handle_t *parent_handle,
-                   zoidfs_dirent_cookie_t cookie, size_t *entry_count,
+                   zoidfs_dirent_cookie_t cookie, size_t *entry_count_,
                    zoidfs_dirent_t *entries, uint32_t flags,
                    zoidfs_cache_hint_t *parent_hint) {
     int ret;
     XDR xdrs;
     void *sendbuf, *recvbuf;
+    uint32_t entry_count = *entry_count_; // workaround for 32bit
     zoidfs_cache_hint_t hint;
     bmi_size_t sendbuflen, recvbuflen;
     zoidfs_op_status_t op_status = ZFS_OK;
@@ -1513,16 +1514,14 @@ int zoidfs_readdir(const zoidfs_handle_t *parent_handle,
     bmi_msg_tag_t tag = gen_tag();
 
     recvbuflen = xdr_sizeof((xdrproc_t)xdr_zoidfs_op_status_t, &op_status) +
-                 xdr_sizeof((xdrproc_t)xdr_u_long, entry_count) +
-                 *entry_count * xdr_sizeof((xdrproc_t)xdr_zoidfs_dirent_t,
-                                           entries) +
-                 xdr_sizeof((xdrproc_t)xdr_zoidfs_cache_hint_t, &hint);
+        xdr_sizeof((xdrproc_t)xdr_uint32_t, &entry_count) +
+        sizeof(uint32_t) + entry_count * xdr_sizeof((xdrproc_t)xdr_zoidfs_dirent_t, entries) +
+        xdr_sizeof((xdrproc_t)xdr_zoidfs_cache_hint_t, &hint);
 
     sendbuflen = xdr_sizeof((xdrproc_t)xdr_zoidfs_op_id_t, &zoidfs_op_id) +
-                 xdr_sizeof((xdrproc_t)xdr_zoidfs_handle_t,
-                            (void *)parent_handle) +
+                 xdr_sizeof((xdrproc_t)xdr_zoidfs_handle_t, (void *)parent_handle) +
                  xdr_sizeof((xdrproc_t)xdr_zoidfs_dirent_cookie_t, &cookie) +
-                 xdr_sizeof((xdrproc_t)xdr_u_long, entry_count) +
+                 xdr_sizeof((xdrproc_t)xdr_uint32_t, &entry_count) +
                  xdr_sizeof((xdrproc_t)xdr_uint32_t, &flags);
 
     sendbuf = BMI_memalloc(peer_addr, sendbuflen, BMI_SEND);
@@ -1546,8 +1545,8 @@ int zoidfs_readdir(const zoidfs_handle_t *parent_handle,
                 "zoidfs_readdir: xdr_zoidfs_dirent_cookie_t() failed.\n");
         return ZFSERR_XDR;
     }
-    if (!xdr_u_long(&xdrs, entry_count)) {
-        fprintf(stderr, "zoidfs_readdir: xdr_u_long() failed.\n");
+    if (!xdr_uint32_t(&xdrs, &entry_count)) {
+        fprintf(stderr, "zoidfs_readdir: xdr_uint32_t() failed.\n");
         return ZFSERR_XDR;
     }
     if (!xdr_uint32_t(&xdrs, &flags)) {
@@ -1578,8 +1577,8 @@ int zoidfs_readdir(const zoidfs_handle_t *parent_handle,
         fprintf(stderr, "zoidfs_readdir: xdr_zoidfs_op_status_t() failed.\n");
         return ZFSERR_XDR;
     }
-    if (!xdr_u_long(&xdrs, entry_count)) {
-        fprintf(stderr, "zoidfs_readdir: xdr_u_long() failed.\n");
+    if (!xdr_uint32_t(&xdrs, &entry_count)) {
+        fprintf(stderr, "zoidfs_readdir: xdr_uint32_t() failed.\n");
         return ZFSERR_XDR;
     }
     if (!xdr_array(&xdrs, (char **)&entries, (unsigned int *)&entry_count,
