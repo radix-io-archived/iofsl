@@ -97,6 +97,24 @@ static void test2 ()
 
 static void test3 ()
 {
+   unsigned int i=0; 
+
+   for (i=0; i<ADD_COUNT; ++i)
+   {
+      zoidfs_handle_t h; 
+      unsigned int val = random () % ADD_COUNT; 
+      sethandle (&h, val); 
+      char buf[255]; 
+
+      if (filename_lookup (handle, &h, buf, sizeof(buf)))
+      {
+         checkItem (&h, buf); 
+      }
+      else
+      {
+         addItem (val); 
+      }
+   }
 }
 
 int main (int UNUSED(argc), char ** UNUSED(args))

@@ -65,6 +65,7 @@ fcache_handle filename_create (int cachesize)
    init.fn_key_hash = filename_gencache_key_hash; 
    
    h = (fcache_handle) malloc (sizeof (fcache_instance)); 
+   memset (h, 0, sizeof(fcache_instance)); 
    h->gencache = gencache_init (&init); 
    return h; 
 }

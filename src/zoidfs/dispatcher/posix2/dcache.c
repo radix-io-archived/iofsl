@@ -22,7 +22,7 @@ struct dcache_instance
 /* the value type for the gencache */
 typedef struct 
 {
-   int fd;
+   dcache_fdtype fd;
 /*   pthread_mutex_t lock;  */
 } FDValue; 
 
@@ -130,6 +130,8 @@ static int dcache_getfd_helper (dcache_handle h, const zoidfs_handle_t * handle,
 int dcache_getfd (dcache_handle h, const zoidfs_handle_t * handle, Descriptor * dest)
 {
    int ret; 
+
+   assert (dest); 
 
    pthread_mutex_lock (&h->lock); 
    ret = dcache_getfd_helper (h, handle, dest); 
