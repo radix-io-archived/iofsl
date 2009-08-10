@@ -1516,7 +1516,7 @@ static int zoidfs_sysio_write(const zoidfs_handle_t *handle, size_t mem_count,
 		return sysio_err_to_zfs_err(errno);
 	}
 		
-	ret = SYSIO_INTERFACE_NAME(_zfs_sysio_fhi_iowait)(&ioidp);
+	ret = SYSIO_INTERFACE_NAME(_zfs_sysio_fhi_iowait)(ioidp);
 	if (ret < 0) {
 		ZFSSYSIO_INFO("zoidfs_sysio_write: fhi_iowait() failed, code = %i.", ret);
 		ZFSSYSIO_PERROR("zoidfs_sysio_write");
@@ -1592,7 +1592,7 @@ static int zoidfs_sysio_read(const zoidfs_handle_t *handle, size_t mem_count,
 		return sysio_err_to_zfs_err(errno);
 	}
 		
-	ret = SYSIO_INTERFACE_NAME(_zfs_sysio_fhi_iowait)(&ioidp);
+	ret = SYSIO_INTERFACE_NAME(_zfs_sysio_fhi_iowait)(ioidp);
 	if (ret < 0) {
 		ZFSSYSIO_INFO("zoidfs_sysio_read: fhi_iowait() failed, code = %i.", ret);
 		ZFSSYSIO_PERROR("zoidfs_sysio_write");
