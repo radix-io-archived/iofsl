@@ -702,7 +702,7 @@ static int zoidfs_posix_lookup(const zoidfs_handle_t *parent_handle,
 
    filename2handle (&s, newpath, handle);
 
-   /* add name to cache */
+   /* add name to cache; replace if exists */
    filename_add (fcache, handle, newpath);
 
    return ZFS_OK;
@@ -864,7 +864,7 @@ static int zoidfs_posix_symlink(const zoidfs_handle_t *from_parent_handle,
          to_component_name, to_full_path, p2, sizeof(p2)))
       return ZFSERR_STALE;
   
-   return posixcheck (symlink(p2, p1));
+   return posixcheck (symlink(p1, p2));
 }
 
 
