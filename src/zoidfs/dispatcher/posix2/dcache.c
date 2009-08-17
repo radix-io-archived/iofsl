@@ -111,7 +111,8 @@ static int dcache_getfd_helper (dcache_handle h, const zoidfs_handle_t * handle,
       Descriptor * dest)
 {
    FDValue * t; 
-   int ret = gencache_key_lookup (h->gencache, handle, (gencache_value_t*) &t, &dest->lock); 
+   int ret = gencache_key_lookup (h->gencache, (gencache_key_t) handle,
+         (gencache_value_t*) &t, &dest->lock); 
 
    if (ret)
    {
@@ -149,7 +150,7 @@ int dcache_removefd (dcache_handle h, const zoidfs_handle_t * handle)
 {
    int ret; 
    pthread_mutex_lock (&h->lock); 
-   ret = gencache_key_remove (h->gencache, handle); 
+   ret = gencache_key_remove (h->gencache, (gencache_key_t) handle); 
    pthread_mutex_unlock (&h->lock); 
    return ret; 
 }
@@ -190,7 +191,8 @@ int dcache_addfd (dcache_handle h, const zoidfs_handle_t * handle,
    dest->fd = fd; 
    dest->handle = handle; 
 
-   ret = gencache_key_add (h->gencache, newhandle, newdest, &dest->lock); 
+   /* no duplicates */
+   ret = gencache_key_add (h->gencache, newhandle, newdest, &dest->lock, 0); 
    assert (ret); 
 
    pthread_mutex_unlock (&h->lock); 

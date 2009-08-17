@@ -106,7 +106,7 @@ int filename_add    (fcache_handle fh, const zoidfs_handle_t * h, const char * b
    *myhandle = *h; 
 
    /* no need to lock the entry */ 
-   int ret = gencache_key_add (fh->gencache, (gencache_key_t) myhandle, dup, 0); 
+   int ret = gencache_key_add (fh->gencache, (gencache_key_t) myhandle, dup, 0, 1); 
 
    return ret; 
 }

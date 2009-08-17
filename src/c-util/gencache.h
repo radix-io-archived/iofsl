@@ -44,7 +44,7 @@ int gencache_key_unlock (gencache_handle handle, gencache_lock_info * info);
 
 /* Add key to cache. If info isn't NULL, lock the entry */
 int gencache_key_add (gencache_handle handle, gencache_key_t key,
-      gencache_value_t value, gencache_lock_info * info); 
+      gencache_value_t value, gencache_lock_info * info, int dupok); 
 
 /*
  * If the key is removed, block until the key becomes free

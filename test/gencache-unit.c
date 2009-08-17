@@ -79,7 +79,7 @@ static void addItem (intptr_t i)
       sprintf (buf, "%i", (int) i); 
       char * str = strdup (buf); 
       gencache_key_add (handle, (gencache_key_t) i, 
-            str, 0); 
+            str, 0, 0); 
 }
 
 static void test1 ()

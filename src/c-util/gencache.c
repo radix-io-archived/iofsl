@@ -309,7 +309,7 @@ static gencache_priv_value_t * gencache_lookup_internal (gencache_instance_t * g
 
 
 int gencache_key_add (gencache_handle handle, gencache_key_t key, gencache_value_t value, 
-      gencache_lock_info * lock)
+      gencache_lock_info * lock, int dupok)
 {
    int ret = 1;  
    int tmp; 
@@ -328,10 +328,24 @@ int gencache_key_add (gencache_handle handle, gencache_key_t key, gencache_value
 
    pthread_mutex_lock (&gc->lock); 
 
-#ifndef NDEBUG
-   /* duplicates are not allowed! */ 
-   assert (!gencache_lookup_internal (gc, key)); 
-#endif
+
+   tmp = (gencache_lookup_internal (gc, key) != 0); 
+
+   if (dupok)
+   {
+      if (tmp)
+      {
+         /* if there is already an entry and duplicates are fine, 
+          * don't add */ 
+         ret = 0; 
+         goto exit; 
+      }
+   }
+   else
+   {
+      /* duplicates are not allowed! */ 
+      assert (!tmp && "Duplicate key!"); 
+   }
 
    do
    {
@@ -339,6 +353,9 @@ int gencache_key_add (gencache_handle handle, gencache_key_t key, gencache_value
       while (gc->count == gc->capacity)
       {
          /* try to remove an item */
+         /* Note that if recycle needs to wait for an item to be unlocked, 
+          * it will give up gc->lock; When it returns, it will have reacquired
+          * the lock */ 
          gencache_recycle (gc); 
       }
 
@@ -367,6 +384,7 @@ int gencache_key_add (gencache_handle handle, gencache_key_t key, gencache_value
    }
 
 
+exit:
    pthread_mutex_unlock (&gc->lock); 
       
    assert ((unsigned int) gc->count == 

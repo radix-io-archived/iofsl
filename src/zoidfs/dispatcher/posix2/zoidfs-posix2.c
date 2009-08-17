@@ -608,7 +608,7 @@ static int getfd_handle (const zoidfs_handle_t * handle, Descriptor * desc, int 
       }
 
       /* Handle is not there: try to map to a filename and reopen */
-      if (handle2filename (handle, buf, sizeof(buf)))
+      if (!handle2filename (handle, buf, sizeof(buf)))
          return 0;   /* ESTALE */
 
       /* we have the filename: open the file and add to the descriptor cache */
