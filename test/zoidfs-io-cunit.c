@@ -433,6 +433,131 @@ int testREAD(void)
     return 0;
 }
 
+int safe_read (const char * fullpath, 
+      const zoidfs_handle_t * handle /* in:ptr */,
+                size_t mem_count /* in:obj */,
+                void * mem_starts[] /* out:arr2d:size=+1:zerocopy */,
+                const size_t mem_sizes[] /* in:arr:size=-2 */,
+                size_t file_count /* in:obj */,
+                const uint64_t file_starts[] /* in:arr:size=-1 */,
+                uint64_t file_sizes[] /* inout:arr:size=-2 */)
+{
+   assert (fullpath); 
+   return zoidfs_read (handle, mem_count, mem_starts, 
+         mem_sizes, file_count, file_starts, file_sizes); 
+}
+
+int safe_write (const char * fullpath, 
+      const zoidfs_handle_t * handle /* in:ptr */,
+                 size_t mem_count /* in:obj */,
+                 const void * mem_starts[] /* in:arr2d:size=+1:zerocopy */,
+                 const size_t mem_sizes[] /* in:arr:size=-2 */,
+                 size_t file_count /* in:obj */,
+                 const uint64_t file_starts[] /* in:arr:size=-1 */,
+                 uint64_t file_sizes[] /* inout:arr:size=-2 */)
+{
+   assert (fullpath); 
+   return zoidfs_write (handle, mem_count, mem_starts, mem_sizes, file_count, 
+         file_starts, file_sizes); 
+}
+
+
+void testValidate ()
+{
+   zoidfs_handle_t handle; 
+   int created; 
+   zoidfs_sattr_t attr; 
+   const unsigned int mb = 1024*1024; 
+   const unsigned int filesize = 128*mb; 
+   const unsigned int maxseg = 32; 
+   const unsigned int maxsegsize = 4*mb;
+   const unsigned int maxmem = 256*mb; 
+   const unsigned int rounds = 16; 
+   const unsigned int firstskip = 4*mb; 
+   const unsigned int maxhole = 4*mb; 
+   void * mem; 
+   uint64_t * ofs; 
+   uint64_t * size; 
+   unsigned int round; 
+
+   assert (firstskip <= filesize); 
+
+   attr.mask = 0; 
+
+   /* create fullpath_filename */
+   CU_ASSERT_TRUE_FATAL(ZFS_OK == zoidfs_create (0, 0, fullpath_filename, &attr, &handle, &created)); 
+   CU_ASSERT_TRUE(created); 
+
+   mem = malloc (maxmem); 
+   ofs = malloc (sizeof (uint64_t) * maxseg); 
+   size = malloc (sizeof (uint64_t) * maxseg); 
+
+   for (round=0; round<rounds; ++round)
+   {
+      unsigned int i; 
+      uint64_t curofs = random () % firstskip; 
+      uint64_t cursize; 
+      size_t totalsize = 0;
+
+      /* generate access list */ 
+      const unsigned int segments = random () % maxseg; 
+      unsigned int segcount = 0; 
+
+      int ret; 
+      char fill; 
+
+      for (i=0; i<segments; ++i)
+      {
+         cursize = random () % maxsegsize; 
+         curofs += random () % maxhole; 
+
+         if (curofs > filesize)
+            curofs = filesize; 
+
+         if (curofs + cursize > filesize)
+            cursize = filesize - curofs; 
+
+         if (curofs && cursize)
+         {
+            ofs[segcount] = curofs; 
+            size[segcount] = cursize; 
+            totalsize += cursize; 
+            ++segcount; 
+         }
+      }
+
+      fill = random() % 256; 
+      memset (mem, fill, totalsize); 
+
+      ret = safe_write (fullpath_filename, &handle, 1, (const void **) &mem, &totalsize, segcount,
+            ofs, size);
+      CU_ASSERT_EQUAL (ret, ZFS_OK); 
+
+      ret = safe_read (fullpath_filename, &handle, 1, &mem, &totalsize, segcount, 
+            ofs, size); 
+      CU_ASSERT_EQUAL (ret, ZFS_OK); 
+
+      for (i=0; i<totalsize; ++i)
+      {
+         if ( ((const char *) mem)[i] != fill)
+         {
+            char buf[255]; 
+            snprintf (buf, sizeof(buf), "Problem in data validation! Expected %i, got %i!",
+                  (int) fill, (int) ((const char *)mem)[i]); 
+            CU_FAIL (buf); 
+            break; 
+         }
+      }
+   }
+
+   free (size); 
+   free (ofs); 
+   free (mem); 
+
+
+   CU_ASSERT_TRUE (ZFS_OK == zoidfs_remove (0, 0, fullpath_filename, 0)); 
+}
+
 int init_suite_dispatch_basic(void)
 {
     return 0;
@@ -479,7 +604,8 @@ int main(int argc, char ** argv)
    /* add the tests to the suite */
    if (
         (NULL == CU_add_test(pSuite, "test of zoidfs_write()", (CU_TestFunc) testWRITE)) ||
-        (NULL == CU_add_test(pSuite, "test of zoidfs_read()", (CU_TestFunc) testREAD))
+        (NULL == CU_add_test(pSuite, "test of zoidfs_read()", (CU_TestFunc) testREAD)) ||
+        (NULL == CU_add_test(pSuite, "data validation read/write", (CU_TestFunc) testValidate))
       )
    {
       CU_cleanup_registry();
