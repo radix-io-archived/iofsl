@@ -22,7 +22,7 @@ class IOFWDMain
 {
 public:
 
-   IOFWDMain (); 
+   IOFWDMain (bool notrap = false); 
 
    // Called to initialize the server
    void boot ();
@@ -39,6 +39,9 @@ protected:
    iofwdutil::zlog::ZLogSource & mainlog_; 
 
    iofwdutil::completion::BMIResource bmires_; 
+
+   // If set, don't catch CTRL-C and don't protect threads from signals
+   bool notrap_; 
 }; 
 
 //===========================================================================

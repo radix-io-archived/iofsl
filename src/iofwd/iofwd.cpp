@@ -15,56 +15,8 @@ using namespace std;
 static std::string      opt_configfile; 
 static unsigned int     opt_debug               = 0; 
 static bool             opt_verbose             = 0; 
+static bool             opt_notrap              = 0; 
 // ==========================================================================
-
-// ============= Global Static Variables ====================================
-//static iofwd::IOFWDMain *      iofwd_main; 
-//static bool                    trap_received = 0; 
-// ==========================================================================
-
-/**
- * Called when another ctrl-c is detected before the server could shut down
- */
-/*static void forceKill ()
-{
-   exit (3); 
-}*/
-
-
-/**
- * Called when on SIGINT
- */
-/*static void signalHandler (int , siginfo_t * , void * )
-{
-   if (trap_received)
-   {
-      forceKill (); 
-      exit (2); 
-   }
-
-   trap_received = 1; 
-
-   ASSERT (iofwd_main); 
-   iofwd_main->shutdown (); 
-}*/
-
-
-/*static void trapSignals (iofwd::IOFWDMain & main)
-{
-   iofwd_main = &main; 
-
-   struct sigaction act; 
-#ifdef VALGRIND_SAFE
-   memset (&act, 0, sizeof(act)); 
-#endif
-   act.sa_flags = SA_SIGINFO | SA_NODEFER ;
-   sigemptyset (&act.sa_mask); 
-   if (sigaction (SIGINT, &act, NULL) < 0)
-   {
-      //  TODO
-   }
-} */
-
 
 int main (int argc, char ** args)
 {
@@ -78,6 +30,7 @@ int main (int argc, char ** args)
       ("config", po::value<std::string>(), "specify configuration file")
       ("debug", po::value<unsigned int>(), "set debug level")
       ("verbose", po::value<bool>(), "Enable verbose messages")
+      ("notrap", "Don't trap signals (for debugging)")
       ;
 
    po::variables_map vm;
@@ -115,16 +68,24 @@ int main (int argc, char ** args)
    if (vm.count("verbose"))
       opt_verbose = vm["verbose"].as<bool> (); 
 
+   if (vm.count("notrap"))
+      opt_notrap = true; 
    
    // ---- enable logging ---
    iofwdutil::zlog::ZLogSource & mainlog = iofwdutil::IOFWDLog::getSource (); 
    ZLOG_INFO(mainlog, "iofwd main started..."); 
    
+   if (opt_notrap)
+   {
+      ZLOG_INFO(mainlog, "--notrap specified: won't protect threads from"
+            " CTRL-C. Use SIGUSR1 for a clean"
+            " shutdown"); 
+   }
    
 
    try
    {
-      iofwd::IOFWDMain main; 
+      iofwd::IOFWDMain main (opt_notrap); 
       ZLOG_INFO (mainlog, "Booting IOFWDMain..."); 
       main.boot (); 
 

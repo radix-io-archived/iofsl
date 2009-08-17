@@ -10,11 +10,11 @@ namespace iofwd
 {
 //===========================================================================
 
-IOFWDMain::IOFWDMain ()
-   : mainlog_ (IOFWDLog::getSource ())
+IOFWDMain::IOFWDMain (bool notrap)
+   : mainlog_ (IOFWDLog::getSource ()), notrap_(notrap)
 {
    // Make sure that we do have signals sent to a random thread
-   disableAllSignals (); 
+   disableAllSignals (notrap); 
 }
 
 void IOFWDMain::boot ()
@@ -47,7 +47,12 @@ void IOFWDMain::run ()
    // Wait for ctrl-c
    sigset_t set; 
    sigemptyset (&set); 
-   sigaddset (&set, SIGINT); 
+   
+   if (!notrap_)
+      sigaddset (&set, SIGINT); 
+
+   sigaddset (&set, SIGUSR1); 
+
    waitSignal (&set); 
 }
 
