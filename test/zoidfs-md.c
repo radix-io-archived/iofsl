@@ -30,12 +30,10 @@ int main(int argc, char **argv) {
     zoidfs_handle_t basedir_handle;
     zoidfs_cache_hint_t parent_hint;
     zoidfs_handle_t fhandle, dhandle;
-#ifndef HAVE_DISPATCHER_LIBSYSIO
     uint32_t flags = 0;
     size_t entry_count = 32;
     zoidfs_dirent_t *entries;
     zoidfs_dirent_cookie_t cookie = 0;
-#endif
     char new_fullpath_filename[NAMESIZE];
     char symlink[NAMESIZE], symlink_target[NAMESIZE];
     char link[NAMESIZE], link_target[NAMESIZE];
@@ -289,10 +287,7 @@ int main(int argc, char **argv) {
     }
 
     /* List dirents */
-    size_t entry_count = 16;
-    zoidfs_dirent_cookie_t cookie = 0;
-    uint32_t flags = 0;
-    zoidfs_dirent_t * entries = malloc(entry_count * sizeof(zoidfs_dirent_t));
+    entries = malloc(entry_count * sizeof(zoidfs_dirent_t));
     if (!entries) {
         perror("zoidfs-md: malloc() failed");
         goto exit;
