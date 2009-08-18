@@ -208,14 +208,12 @@ int main(int argc, char **argv) {
         goto exit;
     }
 
-#ifndef HAVE_DISPATCHER_LIBSYSIO
     /* create a link */
     ret = zoidfs_link(NULL, NULL, link, NULL, NULL, link_target,
                          NULL, NULL);
     if(ret != ZFS_OK) {
         goto exit;
     }
-#endif
     
     /* readlink */
     ret = zoidfs_lookup(NULL, NULL, symlink, &fhandle);
@@ -233,6 +231,12 @@ int main(int argc, char **argv) {
     if(ret != ZFS_OK) {
         goto exit;
     }
+
+    ret = zoidfs_remove(NULL, NULL, link, NULL);
+    if(ret != ZFS_OK) {
+        goto exit;
+    }
+
 
     /* Remove the files */
     ret = zoidfs_remove(&basedir_handle, component_filename, NULL, NULL);
@@ -284,9 +288,11 @@ int main(int argc, char **argv) {
         goto exit;
     }
 
-#ifndef HAVE_DISPATCHER_LIBSYSIO
     /* List dirents */
-    entries = malloc(entry_count * sizeof(zoidfs_dirent_t));
+    size_t entry_count = 16;
+    zoidfs_dirent_cookie_t cookie = 0;
+    uint32_t flags = 0;
+    zoidfs_dirent_t * entries = malloc(entry_count * sizeof(zoidfs_dirent_t));
     if (!entries) {
         perror("zoidfs-md: malloc() failed");
         goto exit;
@@ -298,7 +304,6 @@ int main(int argc, char **argv) {
         goto exit;
     }
     free(entries);
-#endif
 
     /* Cleanup directories */
     ret = zoidfs_remove(&basedir_handle, component_dirname, NULL, NULL);
