@@ -293,33 +293,41 @@ int testSETATTR(void)
     sattr.mask = ZOIDFS_ATTR_MODE;
     sattr.mode = 0644;
 
+    gattr.mask = ZOIDFS_ATTR_MODE; 
+
     zoidfs_lookup(&basedir_handle, component_filename, NULL, &fhandle);
     CU_ASSERT(ZFS_OK == zoidfs_setattr(&fhandle, &sattr, &gattr));
     CU_ASSERT(gattr.mode == 0644);
+    
+    gattr.mask = ZOIDFS_ATTR_MODE; 
 
     zoidfs_lookup(&basedir_handle, component_dirname, NULL, &fhandle);
     CU_ASSERT(ZFS_OK == zoidfs_setattr(&fhandle, &sattr, &gattr));
     CU_ASSERT(gattr.mode == 0644);
+    
+    gattr.mask = ZOIDFS_ATTR_MODE; 
 
     zoidfs_lookup(NULL, NULL, fullpath_filename, &fhandle);
-    CU_ASSERT(ZFS_OK == zoidfs_setattr(&fhandle, &sattr, &gattr));
-    CU_ASSERT(gattr.mode == 0644);
+    CU_ASSERT_EQUAL(ZFS_OK, zoidfs_setattr(&fhandle, &sattr, &gattr));
+    CU_ASSERT_EQUAL(gattr.mode, 0644);
+    
+    gattr.mask = ZOIDFS_ATTR_MODE; 
 
     zoidfs_lookup(NULL, NULL, fullpath_dirname, &fhandle);
-    CU_ASSERT(ZFS_OK == zoidfs_setattr(&fhandle, &sattr, &gattr));
-    CU_ASSERT(gattr.mode == 0644);
-
+    CU_ASSERT_EQUAL(ZFS_OK, zoidfs_setattr(&fhandle, &sattr, &gattr));
+    CU_ASSERT_EQUAL(gattr.mode, 0644);
+    
     zoidfs_lookup(&basedir_handle, symlink_component_filename, NULL, &fhandle);
-    CU_ASSERT(ZFS_OK == zoidfs_setattr(&fhandle, &sattr, &gattr));
+    CU_ASSERT_EQUAL(ZFS_OK, zoidfs_setattr(&fhandle, &sattr, &gattr));
 
     zoidfs_lookup(&basedir_handle, symlink_component_dirname, NULL, &fhandle);
-    CU_ASSERT(ZFS_OK == zoidfs_setattr(&fhandle, &sattr, &gattr));
+    CU_ASSERT_EQUAL(ZFS_OK, zoidfs_setattr(&fhandle, &sattr, &gattr));
 
     zoidfs_lookup(NULL, NULL, symlink_fullpath_filename, &fhandle);
-    CU_ASSERT(ZFS_OK == zoidfs_setattr(&fhandle, &sattr, &gattr));
+    CU_ASSERT_EQUAL(ZFS_OK, zoidfs_setattr(&fhandle, &sattr, &gattr));
 
     zoidfs_lookup(NULL, NULL, symlink_fullpath_dirname, &fhandle);
-    CU_ASSERT(ZFS_OK == zoidfs_setattr(&fhandle, &sattr, &gattr));
+    CU_ASSERT_EQUAL(ZFS_OK, zoidfs_setattr(&fhandle, &sattr, &gattr));
 
     return 0;
 }
@@ -398,36 +406,43 @@ int testRESIZE(void)
 {
     zoidfs_handle_t fhandle;
     zoidfs_attr_t gattr;
+    unsigned int size; 
 
+    size = random () % 2048;
     gattr.mask = ZOIDFS_ATTR_ALL;
     zoidfs_lookup(&basedir_handle, component_filename, NULL, &fhandle);
-    CU_ASSERT(ZFS_OK == zoidfs_resize(&fhandle, 1021));
+    CU_ASSERT_EQUAL(ZFS_OK , zoidfs_resize(&fhandle, size));
     zoidfs_getattr(&fhandle, &gattr);
-    CU_ASSERT(gattr.size == 1021);
+    CU_ASSERT_EQUAL(gattr.size , size);
 
+    /* directory, should fail */ 
     zoidfs_lookup(&basedir_handle, component_dirname, NULL, &fhandle);
-    CU_ASSERT(ZFS_OK != zoidfs_resize(&fhandle, 1021));
+    CU_ASSERT_NOT_EQUAL(ZFS_OK, zoidfs_resize(&fhandle, size));
 
+    size = random () % 2048;
     gattr.mask = ZOIDFS_ATTR_ALL;
     zoidfs_lookup(NULL, NULL, fullpath_filename, &fhandle);
-    CU_ASSERT(ZFS_OK == zoidfs_resize(&fhandle, 1021))
+    CU_ASSERT_EQUAL(ZFS_OK, zoidfs_resize(&fhandle, size))
     zoidfs_getattr(&fhandle, &gattr);
-    CU_ASSERT(gattr.size == 1021);
+    CU_ASSERT_EQUAL(gattr.size , size);
 
+    /* directory, should fail */
     zoidfs_lookup(NULL, NULL, fullpath_dirname, &fhandle);
-    CU_ASSERT(ZFS_OK != zoidfs_resize(&fhandle, 1021));
+    CU_ASSERT_NOT_EQUAL(ZFS_OK, zoidfs_resize(&fhandle, size));
 
     zoidfs_lookup(&basedir_handle, symlink_component_filename, NULL, &fhandle);
-    CU_ASSERT(ZFS_OK != zoidfs_resize(&fhandle, 1021));
+    CU_ASSERT_EQUAL(ZFS_OK, zoidfs_resize(&fhandle, size));
 
+    /* directory, should fail */
     zoidfs_lookup(&basedir_handle, symlink_component_dirname, NULL, &fhandle);
-    CU_ASSERT(ZFS_OK != zoidfs_resize(&fhandle, 1021));
+    CU_ASSERT_NOT_EQUAL(ZFS_OK, zoidfs_resize(&fhandle, size));
 
     zoidfs_lookup(NULL, NULL, symlink_fullpath_filename, &fhandle);
-    CU_ASSERT(ZFS_OK != zoidfs_resize(&fhandle, 1021));
+    CU_ASSERT_EQUAL(ZFS_OK, zoidfs_resize(&fhandle, size));
 
+    /* directory, should fail */
     zoidfs_lookup(NULL, NULL, symlink_fullpath_dirname, &fhandle);
-    CU_ASSERT(ZFS_OK != zoidfs_resize(&fhandle, 1021));
+    CU_ASSERT_NOT_EQUAL(ZFS_OK, zoidfs_resize(&fhandle, size));
 
     return 0;
 }
