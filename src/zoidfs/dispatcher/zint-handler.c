@@ -59,8 +59,9 @@ static zint_handler_t * zint_handlers[] =
 
 zint_handler_t * zint_get_handler(zint_handle_type_t type)
 {
-    assert(type < ZINT_HANDLERS_COUNT);
-    return zint_handlers[(uint32_t)(type)];
+   if (type >= ZINT_HANDLERS_COUNT)
+      return 0; 
+   return zint_handlers[(uint32_t)(type)];
 }
 
 int zoidfs_dispatch_handle_eq (const zoidfs_handle_t * h1,
