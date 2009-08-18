@@ -1369,16 +1369,20 @@ static int zoidfs_sysio_mkdir(const zoidfs_handle_t *parent_handle,
  */
 static int zoidfs_sysio_readdir(const zoidfs_handle_t *parent_handle,
                    zoidfs_dirent_cookie_t cookie, size_t *entry_count,
-                   zoidfs_dirent_t * UNUSED(entries), uint32_t UNUSED(flags),
+                   zoidfs_dirent_t * entries, uint32_t UNUSED(flags),
                    zoidfs_cache_hint_t * UNUSED(parent_hint)) {
 
     struct stat64 stbuf;
 	static char sysio_parent_handle_data[SYSIO_HANDLE_DATA_SIZE];
 	struct file_handle_info sysio_parent_handle = {NULL, sysio_parent_handle_data, SYSIO_HANDLE_DATA_SIZE};
-	struct dirent64 * buffer, * dp;
+	struct dirent64 * dp;
+    static char buf[4096];
     int cc = 0;
-    int ret = 0;	
+    int ret = 0;
+    int i = 0;	
 	ZFSSYSIO_TRACE_ENTER;
+    off64_t base = cookie;
+    off64_t t_base = cookie;
 
 	/*
      * Setup the file handle based on the libsysio handle and the file handle
@@ -1402,18 +1406,53 @@ static int zoidfs_sysio_readdir(const zoidfs_handle_t *parent_handle,
         return ZFSERR_NOTDIR;
     }
 
-	/*
-	 * Malloc the dirent buffer
-	 */
-	buffer = (struct dirent64 *)malloc(*entry_count * sizeof(struct dirent64));
-	
-    /* DOES NOT WORK in libsysio */	
-	while ((cc = SYSIO_INTERFACE_NAME(_zfs_sysio_fhi_getdirentries64)(&sysio_parent_handle, (char *)buffer, *entry_count, (off64_t *) &cookie)) > 0) {
-		dp = buffer;
-		while (cc > 0) {
-			ZFSSYSIO_INFO("\t%s: ino %llu type %u", dp->d_name, (unsigned long long )dp->d_ino, (int )dp->d_type);
-			cc -= dp->d_reclen;
-			dp = (struct dirent *)((char *)dp + dp->d_reclen);
+    /*
+     * Look for all directory entries in the handle
+     */
+	for(;;) 
+    {
+        cc = SYSIO_INTERFACE_NAME(_zfs_sysio_fhi_getdirentries64)(&sysio_parent_handle, (char *)buf, sizeof(buf), (off64_t *) &base);
+
+        /*
+         * If we recieved no mor dir entries, break from the loop
+         */
+        if(cc <= 0)
+            break;
+		
+        /*
+         * Parse the raw dir entry data and convert it to a zoidfs readable format
+         */
+        dp = (struct dirent64 *) buf;
+        t_base = base;
+		while (cc > 0 && i < entry_count) {
+            zoidfs_handle_t ehandle;
+            zoidfs_attr_t attr;
+
+			ZFSSYSIO_INFO("readdir results: \t%s: cc %i ino %llu type %u", dp->d_name, cc, (unsigned long long )dp->d_ino, (int )dp->d_type);
+
+            /*
+             * Lookup the entry handle
+             */
+            zoidfs_lookup(parent_handle, dp->d_name, NULL, &ehandle);
+
+            /*
+             * Get the handle attrs
+             */
+            attr.mask = ZOIDFS_ATTR_ALL;
+            zoidfs_getattr(&ehandle, &attr);
+
+            /*
+             * Copy sysio dirents into zfs dirents 
+             */
+            strncpy(entries[i].name, dp->d_name, sizeof(entries[i].name));
+            memcpy(&entries[i].handle, &ehandle, sizeof(zoidfs_handle_t));            
+			memcpy(&entries[i].attr, &attr, sizeof(zoidfs_attr_t));
+            entries[i].cookie = t_base;
+          
+            i++; 
+            t_base += dp->d_reclen; 
+            cc -= dp->d_reclen;
+			dp = (struct dirent64 *)((char *)dp + dp->d_reclen);
 		}
 	}
 	
@@ -1424,9 +1463,6 @@ static int zoidfs_sysio_readdir(const zoidfs_handle_t *parent_handle,
 		ZFSSYSIO_TRACE_EXIT;
 		return sysio_err_to_zfs_err(errno);
 	}
-
-    /* Cleanup */
-    free(buffer);
 
     /* For now, assume that this completes correctly */
 	ZFSSYSIO_TRACE_EXIT;
