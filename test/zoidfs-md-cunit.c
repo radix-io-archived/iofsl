@@ -133,16 +133,22 @@ int testSYMLINK(void)
     sattr.mtime.nseconds = now.tv_usec;
 
     /* create a file using the base handle and component name*/
-    CU_ASSERT(ZFS_OK == zoidfs_symlink(&basedir_handle, symlink_component_filename, NULL, &basedir_handle, component_filename, NULL, &sattr, NULL, NULL));
+    CU_ASSERT(ZFS_OK == zoidfs_symlink(&basedir_handle, component_filename,
+             NULL, &basedir_handle, symlink_component_filename, NULL, &sattr,
+             NULL, NULL));
 
     /* create a file using the base handle and component name*/
-    CU_ASSERT(ZFS_OK == zoidfs_symlink(&basedir_handle, symlink_component_dirname, NULL, &basedir_handle, component_dirname, NULL, &sattr, NULL, NULL));
+    CU_ASSERT(ZFS_OK == zoidfs_symlink(&basedir_handle, component_dirname,
+             NULL, &basedir_handle, symlink_component_dirname, NULL, &sattr,
+             NULL, NULL));
 
     /* create a file using the base handle and component name*/
-    CU_ASSERT(ZFS_OK == zoidfs_symlink(NULL, NULL, symlink_fullpath_filename, NULL, NULL, fullpath_filename, &sattr, NULL, NULL));
+    CU_ASSERT(ZFS_OK == zoidfs_symlink(NULL, NULL, fullpath_filename, NULL,
+             NULL, symlink_fullpath_filename, &sattr, NULL, NULL));
 
     /* create a file using the base handle and component name*/
-    CU_ASSERT(ZFS_OK == zoidfs_symlink(NULL, NULL, symlink_fullpath_dirname, NULL, NULL, fullpath_dirname, &sattr, NULL, NULL));
+    CU_ASSERT(ZFS_OK == zoidfs_symlink(NULL, NULL, fullpath_dirname, NULL,
+             NULL, symlink_fullpath_dirname, &sattr, NULL, NULL));
 
     return 0;
 }
