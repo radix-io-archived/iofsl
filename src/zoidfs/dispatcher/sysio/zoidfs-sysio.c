@@ -28,7 +28,7 @@ extern int SYSIO_INTERFACE_NAME(_zfs_sysio_fhi_create)(struct file_handle_info_d
 extern int SYSIO_INTERFACE_NAME(_zfs_sysio_fhi_unlink)(struct file_handle_info_dirop_args *where);
 extern int SYSIO_INTERFACE_NAME(_zfs_sysio_fhi_rename)(struct file_handle_info_dirop_args *from, struct file_handle_info_dirop_args *to);
 extern int SYSIO_INTERFACE_NAME(_zfs_sysio_fhi_link)(struct file_handle_info_dirop_args *from, struct file_handle_info_dirop_args *to);
-extern int SYSIO_INTERFACE_NAME(_zfs_sysio_fhi_symlink)(struct file_handle_info_dirop_args *to, const char *from);
+extern int SYSIO_INTERFACE_NAME(_zfs_sysio_fhi_symlink)(char * from, struct file_handle_info_dirop_args *to);
 extern int SYSIO_INTERFACE_NAME(_zfs_sysio_fhi_mkdir)(struct file_handle_info_dirop_args *where, mode_t mode);
 extern int SYSIO_INTERFACE_NAME(_zfs_sysio_fhi_rmdir)(struct file_handle_info_dirop_args *where);
 
@@ -1278,7 +1278,8 @@ static int zoidfs_sysio_symlink(const zoidfs_handle_t *from_parent_handle,
 	/*
 	 * Invoke the libsysio symlink call
 	 */
-	ret = SYSIO_INTERFACE_NAME(_zfs_sysio_fhi_symlink)(&where_from, path_to);
+	//ret = SYSIO_INTERFACE_NAME(_zfs_sysio_fhi_symlink)(&where_from, path_to);
+	ret = SYSIO_INTERFACE_NAME(_zfs_sysio_fhi_symlink)(path_to, &where_from);
 	if (ret < 0) {
 		ZFSSYSIO_INFO("zoidfs_sysio_symlink: fhi_symlink() failed.");
 		ZFSSYSIO_PERROR("zoidfs_sysio_symlink");
@@ -1407,22 +1408,22 @@ static int zoidfs_sysio_readdir(const zoidfs_handle_t *parent_handle,
 	buffer = (struct dirent64 *)malloc(*entry_count * sizeof(struct dirent64));
 	
     /* DOES NOT WORK in libsysio */	
-	/*while ((cc = SYSIO_INTERFACE_NAME(_zfs_sysio_fhi_getdirentries64)(&sysio_parent_handle, (char *)buffer, *entry_count, (off64_t *) &cookie)) > 0) {
+	while ((cc = SYSIO_INTERFACE_NAME(_zfs_sysio_fhi_getdirentries64)(&sysio_parent_handle, (char *)buffer, *entry_count, (off64_t *) &cookie)) > 0) {
 		dp = buffer;
 		while (cc > 0) {
 			ZFSSYSIO_INFO("\t%s: ino %llu type %u", dp->d_name, (unsigned long long )dp->d_ino, (int )dp->d_type);
 			cc -= dp->d_reclen;
 			dp = (struct dirent *)((char *)dp + dp->d_reclen);
 		}
-	}*/
+	}
 	
-	/*if(cc < 0)
+	if(cc < 0)
 	{
 		ZFSSYSIO_INFO("zoidfs_sysio_readdir: fhi_getdirents64() failed, code = %i", cc);
 		ZFSSYSIO_PERROR("zoidfs_sysio_readdir");
 		ZFSSYSIO_TRACE_EXIT;
 		return sysio_err_to_zfs_err(errno);
-	}*/
+	}
 
     /* Cleanup */
     free(buffer);
@@ -1446,12 +1447,28 @@ static int zoidfs_sysio_resize(const zoidfs_handle_t *handle, uint64_t size)
 	static char sysio_component_handle_data[SYSIO_HANDLE_DATA_SIZE];
 	struct file_handle_info sysio_component_handle = {NULL, sysio_component_handle_data, SYSIO_HANDLE_DATA_SIZE};
     int ret = 0;
+    struct file_handle_info_sattr sattr;
 
 	zoidfs_handle_to_sysio_handle(handle, &sysio_component_handle);
 
 	ZFSSYSIO_TRACE_ENTER;
 
-	ret = SYSIO_INTERFACE_NAME(_zfs_sysio_fhi_truncate)(&sysio_component_handle, size);
+    /*
+     * clear unused sattr atrributes
+     */
+    sattr.fhisattr_mode_set = 0;
+    sattr.fhisattr_uid_set = 0;
+    sattr.fhisattr_gid_set = 0;
+    sattr.fhisattr_mtime_set = 0;
+    sattr.fhisattr_atime_set = 0;
+
+    /*
+     * set the size of the file
+     */
+    sattr.fhisattr_size = size;
+    sattr.fhisattr_size_set = 1;
+
+	ret = SYSIO_INTERFACE_NAME(_zfs_sysio_fhi_setattr)(&sysio_component_handle, &sattr);
 	if (ret < 0) {
 		ZFSSYSIO_INFO("zoidfs_sysio_resize: fhi_truncate() failed, code = %i.", ret);
 		ZFSSYSIO_PERROR("zoidfs_sysio_resize");
