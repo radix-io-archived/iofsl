@@ -28,10 +28,10 @@ extern int SYSIO_INTERFACE_NAME(_zfs_sysio_fhi_create)(struct file_handle_info_d
 extern int SYSIO_INTERFACE_NAME(_zfs_sysio_fhi_unlink)(struct file_handle_info_dirop_args *where);
 extern int SYSIO_INTERFACE_NAME(_zfs_sysio_fhi_rename)(struct file_handle_info_dirop_args *from, struct file_handle_info_dirop_args *to);
 extern int SYSIO_INTERFACE_NAME(_zfs_sysio_fhi_link)(struct file_handle_info_dirop_args *from, struct file_handle_info_dirop_args *to);
-extern int SYSIO_INTERFACE_NAME(_zfs_sysio_fhi_symlink)(char * from, struct file_handle_info_dirop_args *to);
+extern int SYSIO_INTERFACE_NAME(_zfs_sysio_fhi_symlink)(const char * from, struct file_handle_info_dirop_args *to);
 extern int SYSIO_INTERFACE_NAME(_zfs_sysio_fhi_mkdir)(struct file_handle_info_dirop_args *where, mode_t mode);
 extern int SYSIO_INTERFACE_NAME(_zfs_sysio_fhi_rmdir)(struct file_handle_info_dirop_args *where);
-
+extern ssize_t SYSIO_INTERFACE_NAME(_zfs_sysio_fhi_getdirentries64)(struct file_handle_info *fhi, char *buf, size_t nbytes, off64_t * __restrict basep);
 /*
  * libsysio init and shutdown function externs
  */
@@ -1278,8 +1278,7 @@ static int zoidfs_sysio_symlink(const zoidfs_handle_t *from_parent_handle,
 	/*
 	 * Invoke the libsysio symlink call
 	 */
-	//ret = SYSIO_INTERFACE_NAME(_zfs_sysio_fhi_symlink)(&where_from, path_to);
-	ret = SYSIO_INTERFACE_NAME(_zfs_sysio_fhi_symlink)(path_to, &where_from);
+	ret = SYSIO_INTERFACE_NAME(_zfs_sysio_fhi_symlink)((const char *)path_to, &where_from);
 	if (ret < 0) {
 		ZFSSYSIO_INFO("zoidfs_sysio_symlink: fhi_symlink() failed.");
 		ZFSSYSIO_PERROR("zoidfs_sysio_symlink");
@@ -1379,10 +1378,11 @@ static int zoidfs_sysio_readdir(const zoidfs_handle_t *parent_handle,
     static char buf[4096];
     int cc = 0;
     int ret = 0;
-    int i = 0;	
-	ZFSSYSIO_TRACE_ENTER;
+    unsigned int i = 0;	
     off64_t base = cookie;
     off64_t t_base = cookie;
+
+	ZFSSYSIO_TRACE_ENTER;
 
 	/*
      * Setup the file handle based on the libsysio handle and the file handle
@@ -1414,46 +1414,52 @@ static int zoidfs_sysio_readdir(const zoidfs_handle_t *parent_handle,
         cc = SYSIO_INTERFACE_NAME(_zfs_sysio_fhi_getdirentries64)(&sysio_parent_handle, (char *)buf, sizeof(buf), (off64_t *) &base);
 
         /*
-         * If we recieved no mor dir entries, break from the loop
+         * If we recieved no more dir entries, break from the loop and return the number of entries found
          */
         if(cc <= 0)
+        {
+            *entry_count = i;
             break;
+        }
 		
         /*
          * Parse the raw dir entry data and convert it to a zoidfs readable format
          */
         dp = (struct dirent64 *) buf;
         t_base = base;
-		while (cc > 0 && i < entry_count) {
-            zoidfs_handle_t ehandle;
+		while (cc > 0 && i < *entry_count) {
             zoidfs_attr_t attr;
-
-			ZFSSYSIO_INFO("readdir results: \t%s: cc %i ino %llu type %u", dp->d_name, cc, (unsigned long long )dp->d_ino, (int )dp->d_type);
 
             /*
              * Lookup the entry handle
              */
-            zoidfs_lookup(parent_handle, dp->d_name, NULL, &ehandle);
+            zoidfs_lookup(parent_handle, dp->d_name, NULL, &entries[i].handle);
 
             /*
              * Get the handle attrs
              */
             attr.mask = ZOIDFS_ATTR_ALL;
-            zoidfs_getattr(&ehandle, &attr);
+            zoidfs_getattr(&entries[i].handle, &entries[i].attr);
 
             /*
              * Copy sysio dirents into zfs dirents 
              */
-            strncpy(entries[i].name, dp->d_name, sizeof(entries[i].name));
-            memcpy(&entries[i].handle, &ehandle, sizeof(zoidfs_handle_t));            
-			memcpy(&entries[i].attr, &attr, sizeof(zoidfs_attr_t));
+            strncpy(entries[i].name, dp->d_name, ZOIDFS_NAME_MAX + 1);
             entries[i].cookie = t_base;
-          
+
             i++; 
             t_base += dp->d_reclen; 
             cc -= dp->d_reclen;
 			dp = (struct dirent64 *)((char *)dp + dp->d_reclen);
 		}
+       
+        /*
+         * No more entries allowed... exit loop
+         */ 
+        if(i == *entry_count)
+        {
+            break;
+        }
 	}
 	
 	if(cc < 0)
