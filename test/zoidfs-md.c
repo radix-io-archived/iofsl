@@ -31,7 +31,7 @@ int main(int argc, char **argv) {
     zoidfs_cache_hint_t parent_hint;
     zoidfs_handle_t fhandle, dhandle;
     uint32_t flags = 0;
-    size_t entry_count = 32;
+    size_t entry_count = 32, i = 0;
     zoidfs_dirent_t *entries;
     zoidfs_dirent_cookie_t cookie = 0;
     char new_fullpath_filename[NAMESIZE];
@@ -297,6 +297,12 @@ int main(int argc, char **argv) {
                          NULL);
     if(ret != ZFS_OK) {
         goto exit;
+    }
+
+    fprintf(stderr, "entry count: %lu\n", entry_count);
+    for(i = 0 ; i < entry_count ; i++)
+    {
+        fprintf(stderr, "entry name #%lu: %s\n", i, entries[i].name);
     }
     free(entries);
 
