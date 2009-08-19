@@ -200,7 +200,7 @@ int main(int argc, char **argv) {
 
     /* create symlinks */
     sattr.mask = ZOIDFS_ATTR_SETABLE;
-    ret = zoidfs_symlink(NULL, NULL, symlink, NULL, NULL, symlink_target,
+    ret = zoidfs_symlink(NULL, NULL, symlink_target, NULL, NULL, symlink,
                          &sattr, NULL, NULL);
     if(ret != ZFS_OK) {
         goto exit;
