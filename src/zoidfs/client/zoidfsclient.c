@@ -1596,6 +1596,9 @@ int zoidfs_readdir(const zoidfs_handle_t *parent_handle,
     }
     xdr_destroy(&xdrs);
 
+    /* set the number of entries found by readdir() */
+    *entry_count_ = entry_count;
+
     /* Free up the message buffers */
     BMI_memfree(peer_addr, recvbuf, recvbuflen, BMI_RECV);
     BMI_memfree(peer_addr, sendbuf, sendbuflen, BMI_SEND);
