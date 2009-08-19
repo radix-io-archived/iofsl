@@ -1278,7 +1278,7 @@ static int zoidfs_sysio_symlink(const zoidfs_handle_t *from_parent_handle,
 	/*
 	 * Invoke the libsysio symlink call
 	 */
-	ret = SYSIO_INTERFACE_NAME(_zfs_sysio_fhi_symlink)((const char *)path_to, &where_from);
+	ret = SYSIO_INTERFACE_NAME(_zfs_sysio_fhi_symlink)((const char *)path_from, &where_to);
 	if (ret < 0) {
 		ZFSSYSIO_INFO("zoidfs_sysio_symlink: fhi_symlink() failed.");
 		ZFSSYSIO_PERROR("zoidfs_sysio_symlink");
