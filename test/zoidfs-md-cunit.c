@@ -318,33 +318,63 @@ int testSETATTR(void)
     zoidfs_attr_t gattr;
     zoidfs_sattr_t sattr;
 
+#define SATTR_MASK_MODE_0644 \
+do{ \
+    sattr.mask = ZOIDFS_ATTR_MODE; \
+    sattr.mode = 0644; \
+}while(0)
+
+#define SATTR_MASK_MODE_0755 \
+do{ \
+    sattr.mask = ZOIDFS_ATTR_MODE; \
+    sattr.mode = 0755; \
+}while(0)
+
+#define ATTR_MASK_MODE \
+do{ \
+    gattr.mask = ZOIDFS_ATTR_MODE; \
+}while(0)
+
     /* set the attrs */
-    sattr.mask = ZOIDFS_ATTR_MODE;
-    sattr.mode = 0644;
-
-    gattr.mask = ZOIDFS_ATTR_MODE; 
-
+    SATTR_MASK_MODE_0644;
+    ATTR_MASK_MODE;
     zoidfs_lookup(&basedir_handle, component_filename, NULL, &fhandle);
     CU_ASSERT(ZFS_OK == zoidfs_setattr(&fhandle, &sattr, &gattr));
     CU_ASSERT(gattr.mode == 0644);
+    SATTR_MASK_MODE_0755;
+    ATTR_MASK_MODE;
+    CU_ASSERT(ZFS_OK == zoidfs_setattr(&fhandle, &sattr, &gattr));
+    CU_ASSERT(gattr.mode == 0755);
     
-    gattr.mask = ZOIDFS_ATTR_MODE; 
-
+    SATTR_MASK_MODE_0644;
+    ATTR_MASK_MODE;
     zoidfs_lookup(&basedir_handle, component_dirname, NULL, &fhandle);
     CU_ASSERT(ZFS_OK == zoidfs_setattr(&fhandle, &sattr, &gattr));
     CU_ASSERT(gattr.mode == 0644);
+    SATTR_MASK_MODE_0755;
+    ATTR_MASK_MODE;
+    CU_ASSERT(ZFS_OK == zoidfs_setattr(&fhandle, &sattr, &gattr));
+    CU_ASSERT(gattr.mode == 0755);
     
-    gattr.mask = ZOIDFS_ATTR_MODE; 
-
+    SATTR_MASK_MODE_0644;
+    ATTR_MASK_MODE;
     zoidfs_lookup(NULL, NULL, fullpath_filename, &fhandle);
     CU_ASSERT_EQUAL(ZFS_OK, zoidfs_setattr(&fhandle, &sattr, &gattr));
     CU_ASSERT_EQUAL(gattr.mode, 0644);
+    SATTR_MASK_MODE_0755;
+    ATTR_MASK_MODE;
+    CU_ASSERT(ZFS_OK == zoidfs_setattr(&fhandle, &sattr, &gattr));
+    CU_ASSERT(gattr.mode == 0755);
     
-    gattr.mask = ZOIDFS_ATTR_MODE; 
-
+    SATTR_MASK_MODE_0644;
+    ATTR_MASK_MODE;
     zoidfs_lookup(NULL, NULL, fullpath_dirname, &fhandle);
     CU_ASSERT_EQUAL(ZFS_OK, zoidfs_setattr(&fhandle, &sattr, &gattr));
     CU_ASSERT_EQUAL(gattr.mode, 0644);
+    SATTR_MASK_MODE_0755;
+    ATTR_MASK_MODE;
+    CU_ASSERT(ZFS_OK == zoidfs_setattr(&fhandle, &sattr, &gattr));
+    CU_ASSERT(gattr.mode == 0755);
     
     zoidfs_lookup(&basedir_handle, symlink_component_filename, NULL, &fhandle);
     CU_ASSERT_EQUAL(ZFS_OK, zoidfs_setattr(&fhandle, &sattr, &gattr));
