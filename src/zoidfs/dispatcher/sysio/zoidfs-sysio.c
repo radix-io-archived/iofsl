@@ -120,6 +120,18 @@ static struct file_handle_info zoidfs_sysio_mfs_handle = {NULL, zoidfs_sysio_mfs
 #endif /*  _ZOIDFS_SYSIO_THANDLE_BUFFER_SIZE */
 
 /*
+ * Make sure that the full path is an absolute path
+ */
+static inline int zoidfs_sysio_valid_full_path(const char * path)
+{
+    if(path[0] == '/')
+    {
+        return 1;
+    }
+    return 0;
+}
+
+/*
  * Dump the hex values for a zoidfs handle to stderr
  */
 static inline int zoidfs_print_handle(const zoidfs_handle_t * handle)
@@ -396,7 +408,15 @@ int zoidfs_sysio_export(int * key, char * base_path, struct file_handle_info * r
     int ret = 0;
 
 	ZFSSYSIO_TRACE_ENTER;
-    
+
+    /* check the format of the path */
+    if(!zoidfs_sysio_valid_full_path(base_path))
+    {
+	    ZFSSYSIO_INFO("zoidfs_sysio_export: invalid full path format.");
+		ZFSSYSIO_TRACE_EXIT;
+        return ZFSERR_OTHER; 
+    }
+
     /*
      * export remote_fs_path based on key
      */
@@ -715,7 +735,7 @@ static int zoidfs_sysio_lookup(const zoidfs_handle_t *parent_handle,
                   zoidfs_handle_t *handle) {
 
 	ZFSSYSIO_TRACE_ENTER;
-	
+
     /*
      * Check for invalid path params. The caller should either specify the
      * full_path or specify the parent_handle AND the component_name.
@@ -729,13 +749,22 @@ static int zoidfs_sysio_lookup(const zoidfs_handle_t *parent_handle,
 	/*
 	 * Full path given
 	 */
-    if (full_path) {
+    if (full_path) 
+    {
 		int ret = 0;
 		/*
 		 * sysio parent handle
 		 */
 		static char h_data[SYSIO_HANDLE_DATA_SIZE];
 		struct file_handle_info h = {NULL, h_data, SYSIO_HANDLE_DATA_SIZE};
+	
+        /* check the format of the path */
+        if(!zoidfs_sysio_valid_full_path(full_path))
+        {
+            ZFSSYSIO_INFO("zoidfs_sysio_lookup: invalid full path format.");
+            ZFSSYSIO_TRACE_EXIT;
+            return ZFSERR_OTHER;
+        }
 	
 		/*
 		 * Lookup the exported file info for the parent handle
@@ -828,6 +857,14 @@ static int zoidfs_sysio_remove(const zoidfs_handle_t *parent_handle,
 	{
 		int ret = 0;
 		
+        /* check the format of the path */
+        if(!zoidfs_sysio_valid_full_path(full_path))
+        {
+            ZFSSYSIO_INFO("zoidfs_sysio_remove: invalid full path format.");
+            ZFSSYSIO_TRACE_EXIT;
+            return ZFSERR_OTHER;
+        }
+	
 		ret = SYSIO_INTERFACE_NAME(_zfs_sysio_fhi_lookup)(&zoidfs_sysio_root_handle, full_path, 0, &sysio_fp_handle);
 		if (ret < 0) {
 			ZFSSYSIO_PERROR("fhi_lookup");
@@ -952,6 +989,7 @@ static int zoidfs_sysio_create(const zoidfs_handle_t *parent_handle,
     struct file_handle_info_dirop_args where;
 
 	ZFSSYSIO_TRACE_ENTER;
+
     /*
      * Check for invalid path params. The caller should either specify the
      * full_path or specify the parent_handle AND the component_name.
@@ -967,6 +1005,14 @@ static int zoidfs_sysio_create(const zoidfs_handle_t *parent_handle,
 		int ret = 0;
 		static char sysio_component_handle_data[SYSIO_HANDLE_DATA_SIZE];
 		struct file_handle_info sysio_component_handle = {NULL, sysio_component_handle_data, SYSIO_HANDLE_DATA_SIZE};
+
+        /* check the format of the path */
+        if(!zoidfs_sysio_valid_full_path(full_path))
+        {
+            ZFSSYSIO_INFO("zoidfs_sysio_create: invalid full path format.");
+            ZFSSYSIO_TRACE_EXIT;
+            return ZFSERR_OTHER;
+        }
 
 		/*
 		 * The file exists... don't create it and return a misc err code
@@ -1083,6 +1129,7 @@ static int zoidfs_sysio_rename(const zoidfs_handle_t *from_parent_handle,
 	struct file_handle_info sysio_from_parent_handle = {NULL, sysio_from_parent_handle_data, SYSIO_HANDLE_DATA_SIZE};
 	
 	ZFSSYSIO_TRACE_ENTER;
+
     /*
      * Check for invalid path params. The caller should either specify the
      * full_path or specify the parent_handle AND the component_name.
@@ -1098,11 +1145,25 @@ static int zoidfs_sysio_rename(const zoidfs_handle_t *from_parent_handle,
 	 */
 	if(from_full_path)
 	{
+        /* check the format of the path */
+        if(!zoidfs_sysio_valid_full_path(from_full_path))
+        {
+            ZFSSYSIO_INFO("zoidfs_sysio_rename: invalid from full path format.");
+            ZFSSYSIO_TRACE_EXIT;
+            return ZFSERR_OTHER;
+        }
         where_from.fhida_path = from_full_path;
 		where_from.fhida_dir = &zoidfs_sysio_root_handle;
 	}
 	if(to_full_path)
 	{
+        /* check the format of the path */
+        if(!zoidfs_sysio_valid_full_path(to_full_path))
+        {
+            ZFSSYSIO_INFO("zoidfs_sysio_rename: invalid to full path format.");
+            ZFSSYSIO_TRACE_EXIT;
+            return ZFSERR_OTHER;
+        }
         where_to.fhida_path = to_full_path;
 		where_to.fhida_dir = &zoidfs_sysio_root_handle;
 	}
@@ -1172,11 +1233,25 @@ static int zoidfs_sysio_link(const zoidfs_handle_t *from_parent_handle,
 	 */
 	if(from_full_path)
 	{
+        /* check the format of the path */
+        if(!zoidfs_sysio_valid_full_path(to_full_path))
+        {
+            ZFSSYSIO_INFO("zoidfs_sysio_link: invalid from full path format.");
+            ZFSSYSIO_TRACE_EXIT;
+            return ZFSERR_OTHER;
+        }
         where_from.fhida_path = from_full_path;
 		where_from.fhida_dir = &zoidfs_sysio_root_handle;
 	}
 	if(to_full_path)
 	{
+        /* check the format of the path */
+        if(!zoidfs_sysio_valid_full_path(to_full_path))
+        {
+            ZFSSYSIO_INFO("zoidfs_sysio_link: invalid to full path format.");
+            ZFSSYSIO_TRACE_EXIT;
+            return ZFSERR_OTHER;
+        }
         where_to.fhida_path = to_full_path;
 		where_to.fhida_dir = &zoidfs_sysio_root_handle;
 	}
@@ -1250,6 +1325,13 @@ static int zoidfs_sysio_symlink(const zoidfs_handle_t *from_parent_handle,
 	 */
 	if(to_full_path)
 	{
+        /* check the format of the path */
+        if(!zoidfs_sysio_valid_full_path(to_full_path))
+        {
+            ZFSSYSIO_INFO("zoidfs_sysio_symlink: invalid to full path format.");
+            ZFSSYSIO_TRACE_EXIT;
+            return ZFSERR_OTHER;
+        }
         where_to.fhida_path = to_full_path;
 		where_to.fhida_dir = &zoidfs_sysio_root_handle;
 		path_to = to_full_path;
@@ -1263,6 +1345,13 @@ static int zoidfs_sysio_symlink(const zoidfs_handle_t *from_parent_handle,
 	}
 	if(from_full_path)
 	{
+        /* check the format of the path */
+        if(!zoidfs_sysio_valid_full_path(from_full_path))
+        {
+            ZFSSYSIO_INFO("zoidfs_sysio_symlink: invalid from full path format.");
+            ZFSSYSIO_TRACE_EXIT;
+            return ZFSERR_OTHER;
+        }
         where_from.fhida_path = from_full_path;
 		where_from.fhida_dir = &zoidfs_sysio_root_handle;
 		path_from = from_full_path;
@@ -1321,6 +1410,14 @@ static int zoidfs_sysio_mkdir(const zoidfs_handle_t *parent_handle,
 		 */
 		int ret = 0;
 		
+        /* check the format of the path */
+        if(!zoidfs_sysio_valid_full_path(full_path))
+        {
+            ZFSSYSIO_INFO("zoidfs_sysio_mkdir: invalid full path format.");
+            ZFSSYSIO_TRACE_EXIT;
+            return ZFSERR_OTHER;
+        }
+
         where.fhida_path = full_path;
 		where.fhida_dir = &zoidfs_sysio_root_handle;
 
