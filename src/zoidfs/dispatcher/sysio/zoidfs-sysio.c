@@ -665,14 +665,18 @@ static int zoidfs_sysio_setattr(const zoidfs_handle_t *handle, const zoidfs_satt
 	
 	/*
 	 * Execute the zoidfs_sysio getattr call and populate the attr struct
+     * attr can be NULL... only run getattr if not NULL
 	 */
-	ret = zoidfs_sysio_getattr(handle, attr);
-	if (ret != ZFS_OK) {
-		ZFSSYSIO_INFO("zoidfs_sysio_setattr: fhi_getattr() failed.");
-		ZFSSYSIO_PERROR("zoidfs_sysio_setattr");
-		ZFSSYSIO_TRACE_EXIT;
-		return sysio_err_to_zfs_err(errno);
-	}
+    if(attr)
+    {
+	    ret = zoidfs_sysio_getattr(handle, attr);
+	    if (ret != ZFS_OK) 
+        {
+		    ZFSSYSIO_INFO("zoidfs_sysio_setattr: fhi_getattr() failed.");
+		    ZFSSYSIO_PERROR("zoidfs_sysio_setattr");
+		    ZFSSYSIO_TRACE_EXIT;
+		    return sysio_err_to_zfs_err(errno);
+	    }
 	
 	ZFSSYSIO_TRACE_EXIT;
     return ZFS_OK;
