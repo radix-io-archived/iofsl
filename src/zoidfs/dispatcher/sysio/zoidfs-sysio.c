@@ -1019,7 +1019,7 @@ static int zoidfs_sysio_create(const zoidfs_handle_t *parent_handle,
         }
 
 		/*
-		 * The file exists... don't create it and return a misc err code
+		 * The file exists... don't create it and return the handle w/ created == 0 
 		 */
 		ret = SYSIO_INTERFACE_NAME(_zfs_sysio_fhi_lookup)(&zoidfs_sysio_root_handle, full_path, 0, &sysio_component_handle);
 		if(ret >= 0)
@@ -1469,7 +1469,7 @@ static int zoidfs_sysio_mkdir(const zoidfs_handle_t *parent_handle,
  */
 static int zoidfs_sysio_readdir(const zoidfs_handle_t *parent_handle,
                    zoidfs_dirent_cookie_t cookie, size_t *entry_count,
-                   zoidfs_dirent_t * entries, uint32_t UNUSED(flags),
+                   zoidfs_dirent_t * entries, uint32_t flags,
                    zoidfs_cache_hint_t * UNUSED(parent_hint)) {
 
     struct stat64 stbuf;
