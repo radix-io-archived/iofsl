@@ -172,8 +172,8 @@ enum {
  * Always 64bits for portability
  * IOFSL configure will ensure that 64bits are available
  */
-typedef zoidfs_size_t uint64_t
-typedef zoidfs_ofs_t uint64_t
+typedef uint64_t zoidfs_size_t;
+typedef uint64_t zoidfs_ofs_t;
 
 /**
  * OPTIONAL
@@ -218,20 +218,20 @@ int zoidfs_readlink(const zoidfs_handle_t * handle /* in:ptr */,
                     size_t buffer_length /* in:obj */);
 
 int zoidfs_read(const zoidfs_handle_t * handle /* in:ptr */,
-                size_t mem_count /* in:obj */,
+                zoidfs_size_t mem_count /* in:obj */,
                 void * mem_starts[] /* out:arr2d:size=+1:zerocopy */,
-                const size_t mem_sizes[] /* in:arr:size=-2 */,
-                size_t file_count /* in:obj */,
-                const uint64_t file_starts[] /* in:arr:size=-1 */,
-                uint64_t file_sizes[] /* inout:arr:size=-2 */);
+                const zoidfs_size_t mem_sizes[] /* in:arr:size=-2 */,
+                zoidfs_size_t file_count /* in:obj */,
+                const zoidfs_ofs_t file_starts[] /* in:arr:size=-1 */,
+                zoidfs_size_t file_sizes[] /* inout:arr:size=-2 */);
 
 int zoidfs_write(const zoidfs_handle_t * handle /* in:ptr */,
-                 size_t mem_count /* in:obj */,
+                 zoidfs_size_t mem_count /* in:obj */,
                  const void * mem_starts[] /* in:arr2d:size=+1:zerocopy */,
-                 const size_t mem_sizes[] /* in:arr:size=-2 */,
-                 size_t file_count /* in:obj */,
-                 const uint64_t file_starts[] /* in:arr:size=-1 */,
-                 uint64_t file_sizes[] /* inout:arr:size=-2 */);
+                 const zoidfs_size_t mem_sizes[] /* in:arr:size=-2 */,
+                 zoidfs_size_t file_count /* in:obj */,
+                 const zoidfs_ofs_t file_starts[] /* in:arr:size=-1 */,
+                 zoidfs_size_t file_sizes[] /* inout:arr:size=-2 */);
 
 int zoidfs_commit(const zoidfs_handle_t * handle /* in:ptr */);
 
