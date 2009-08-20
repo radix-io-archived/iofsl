@@ -5,6 +5,18 @@
 #include "zint-handler.h"
 #include "c-util/tools.h"
 
+/*
+ * Make sure that the full path is an absolute path
+ */
+static inline int zoidfs_full_path_validate(const char * path)
+{
+    if(path[0] == '/')
+    {
+        return 1;
+    }
+    return 0;
+}
+
 int zoidfs_null(void)
 {
    return zint_ping_handlers (); 
@@ -25,8 +37,12 @@ int zoidfs_create(const zoidfs_handle_t * parent_handle,
     int usenew = 0; 
 
     if (full_path)
+    {
+       if(!zoidfs_full_path_validate(full_path))
+            return ZFSERR_OTHER;
        id = zint_locate_handler_path (full_path, &handler, newpath, ZOIDFS_PATH_MAX,
              &newhandle, &usenew);
+    }
     else
        id = zint_locate_handler_handle(parent_handle, &handler);
     if(id < 0)
@@ -88,8 +104,12 @@ int zoidfs_lookup(const zoidfs_handle_t * parent_handle,
     int usenew = 0; 
 
     if (full_path)
+    {
+       if(!zoidfs_full_path_validate(full_path))
+            return ZFSERR_OTHER;
        hid = zint_locate_handler_path (full_path, &handler, new_path,
              ZOIDFS_PATH_MAX, &newhandle, &usenew);
+    }
     else
        hid = zint_locate_handler_handle(parent_handle, &handler);
     if(hid < 0)
@@ -184,8 +204,12 @@ int zoidfs_remove(const zoidfs_handle_t * parent_handle,
     int usenew = 0; 
    
     if (full_path)
+    {
+       if(!zoidfs_full_path_validate(full_path))
+            return ZFSERR_OTHER;
        ret = zint_locate_handler_path (full_path, &handler, newpath, ZOIDFS_PATH_MAX,
              &newhandle, &usenew);
+    }
     else
        ret = zint_locate_handler_handle(parent_handle, &handler);
     if(ret < 0)
@@ -231,8 +255,12 @@ int zoidfs_rename(const zoidfs_handle_t * from_parent_handle,
     zoidfs_handle_t to_newhandle; 
 
     if (from_full_path)
+    {
+       if(!zoidfs_full_path_validate(from_full_path))
+            return ZFSERR_OTHER;
        ret = zint_locate_handler_path (from_full_path, &handler, new_from_path, ZOIDFS_PATH_MAX,
              &from_newhandle, &from_usenew);
+    }
     else
        ret = zint_locate_handler_handle(from_parent_handle, &handler);
     if(ret < 0)
@@ -241,8 +269,12 @@ int zoidfs_rename(const zoidfs_handle_t * from_parent_handle,
     }
 
     if (to_full_path)
+    {
+       if(!zoidfs_full_path_validate(to_full_path))
+            return ZFSERR_OTHER;
        ret = zint_locate_handler_path (to_full_path, &handler, new_to_path, ZOIDFS_PATH_MAX,
              &to_newhandle, &to_usenew);
+    }
     else
        ret = zint_locate_handler_handle(to_parent_handle, &handler);
     if(ret < 0)
@@ -280,8 +312,12 @@ int zoidfs_link(const zoidfs_handle_t * from_parent_handle,
     zoidfs_handle_t from_newhandle; 
 
     if (from_full_path)
+    {
+       if(!zoidfs_full_path_validate(from_full_path))
+            return ZFSERR_OTHER;
        ret = zint_locate_handler_path (from_full_path, &handler, new_from_path, ZOIDFS_PATH_MAX,
              &from_newhandle, &from_usenew);
+    }
     else
        ret = zint_locate_handler_handle(from_parent_handle, &handler);
     if(ret < 0)
@@ -290,8 +326,12 @@ int zoidfs_link(const zoidfs_handle_t * from_parent_handle,
     }
 
     if (to_full_path)
+    {
+       if(!zoidfs_full_path_validate(to_full_path))
+            return ZFSERR_OTHER;
        ret = zint_locate_handler_path (to_full_path, &handler, new_to_path, ZOIDFS_PATH_MAX,
              &to_newhandle, &to_usenew);
+    }
     else
        ret = zint_locate_handler_handle(to_parent_handle, &handler);
     if(ret < 0)
@@ -330,8 +370,12 @@ int zoidfs_symlink(const zoidfs_handle_t * from_parent_handle,
     zoidfs_handle_t from_newhandle; 
 
     if (from_full_path)
+    {
+       if(!zoidfs_full_path_validate(from_full_path))
+            return ZFSERR_OTHER;
        ret = zint_locate_handler_path (from_full_path, &handler, new_from_path, ZOIDFS_PATH_MAX,
              &from_newhandle, &from_usenew);
+    }
     else
        ret = zint_locate_handler_handle(from_parent_handle, &handler);
     if(ret < 0)
@@ -340,8 +384,12 @@ int zoidfs_symlink(const zoidfs_handle_t * from_parent_handle,
     }
 
     if (to_full_path)
+    {
+       if(!zoidfs_full_path_validate(to_full_path))
+            return ZFSERR_OTHER;
        ret = zint_locate_handler_path (to_full_path, &handler, new_to_path, ZOIDFS_PATH_MAX,
              &to_newhandle, &to_usenew);
+    }
     else
        ret = zint_locate_handler_handle(to_parent_handle, &handler);
     if(ret < 0)
@@ -373,8 +421,12 @@ int zoidfs_mkdir(const zoidfs_handle_t * parent_handle,
     zoidfs_handle_t newhandle; 
 
     if (full_path)
+    {
+       if(!zoidfs_full_path_validate(full_path))
+            return ZFSERR_OTHER;
        ret = zint_locate_handler_path (full_path, &handler, new_path, ZOIDFS_PATH_MAX,
              &newhandle, &usenew);
+    }
     else
        ret = zint_locate_handler_handle(parent_handle, &handler);
     if(ret < 0)

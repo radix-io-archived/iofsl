@@ -677,7 +677,7 @@ static int zoidfs_sysio_setattr(const zoidfs_handle_t *handle, const zoidfs_satt
 		    ZFSSYSIO_TRACE_EXIT;
 		    return sysio_err_to_zfs_err(errno);
 	    }
-	
+    }	
 	ZFSSYSIO_TRACE_EXIT;
     return ZFS_OK;
 }
