@@ -466,7 +466,7 @@ int testREADDIR(void)
     CU_ASSERT_NOT_EQUAL(ZFS_OK, zoidfs_readdir(&fhandle, cookie, &entry_count, entries, flags, NULL)); 
     free(entries);
     
-    /*cookie = 0;
+    cookie = 0;
     entry_count = 32;
     entries = malloc(entry_count * sizeof(zoidfs_dirent_t));
     memset(entries, 0, entry_count * sizeof(zoidfs_dirent_t));
@@ -480,7 +480,7 @@ int testREADDIR(void)
     memset(entries, 0, entry_count * sizeof(zoidfs_dirent_t));
     zoidfs_lookup(NULL, NULL, symlink_fullpath_dirname_slash, &fhandle);
     CU_ASSERT_EQUAL(ZFS_OK, zoidfs_readdir(&fhandle, cookie, &entry_count, entries, flags, NULL)); 
-    free(entries);*/
+    free(entries);
 
     cookie = 0;
     entry_count = 32;
