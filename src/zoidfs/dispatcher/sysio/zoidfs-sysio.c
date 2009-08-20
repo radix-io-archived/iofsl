@@ -1528,19 +1528,40 @@ static int zoidfs_sysio_readdir(const zoidfs_handle_t *parent_handle,
          */
         dp = (struct dirent64 *) buf;
         t_base = base;
-		while (cc > 0 && i < *entry_count) {
+		while (cc > 0 && i < *entry_count)
+        {
             zoidfs_attr_t attr;
 
             /*
-             * Lookup the entry handle
+             * Lookup the entry handle and save it if ZOIDFS_RETR_HANDLE
              */
-            zoidfs_lookup(parent_handle, dp->d_name, NULL, &entries[i].handle);
+            if((flags & ZOIDFS_RETR_HANDLE) == ZOIDFS_RETR_HANDLE)
+            {
+                /*
+                 * lookup and save the handle
+                 */
+                zoidfs_lookup(parent_handle, dp->d_name, NULL, &entries[i].handle);
 
-            /*
-             * Get the handle attrs
-             */
-            attr.mask = ZOIDFS_ATTR_ALL;
-            zoidfs_getattr(&entries[i].handle, &entries[i].attr);
+                /*
+                 * Get the handle attrs
+                 */
+                attr.mask = ZOIDFS_ATTR_ALL;
+                zoidfs_getattr(&entries[i].handle, &entries[i].attr);
+            }
+            else
+            {
+                zoidfs_handle_t ehandle;
+                /*
+                 * lookup and save the handle
+                 */
+                zoidfs_lookup(parent_handle, dp->d_name, NULL, &ehandle);
+
+                /*
+                 * Get the handle attrs
+                 */
+                attr.mask = ZOIDFS_ATTR_ALL;
+                zoidfs_getattr(&ehandle, &entries[i].attr);
+            }
 
             /*
              * Copy sysio dirents into zfs dirents 
