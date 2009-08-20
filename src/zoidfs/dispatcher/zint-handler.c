@@ -37,11 +37,6 @@ static zint_handler_t * zint_handlers[] =
     &pvfs2_handler,
 #endif
 
-/*
- * If libsysio is available, don't build posix.
- * TODO: This needs to be improved. Should they
- * both be built or only one or the other?
- */
 #ifdef HAVE_DISPATCHER_LIBSYSIO
     &sysio_handler,
 #endif /* HAVE_DISPATCHER_LIBSYSIO */
