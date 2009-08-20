@@ -167,6 +167,14 @@ enum {
     ZFSERR_OTHER=99999
 };
 
+/*
+ * zoidfs file offset and size types
+ * Always 64bits for portability
+ * IOFSL configure will ensure that 64bits are available
+ */
+typedef zoidfs_size_t uint64_t
+typedef zoidfs_ofs_t uint64_t
+
 /**
  * OPTIONAL
  */

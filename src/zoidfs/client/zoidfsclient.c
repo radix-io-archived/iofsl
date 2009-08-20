@@ -1506,7 +1506,7 @@ int zoidfs_readdir(const zoidfs_handle_t *parent_handle,
     int ret;
     XDR xdrs;
     void *sendbuf, *recvbuf;
-    uint32_t entry_count = *entry_count_; // workaround for 32bit
+    uint32_t entry_count = *entry_count_; /* workaround for 32bit */
     zoidfs_cache_hint_t hint;
     bmi_size_t sendbuflen, recvbuflen;
     zoidfs_op_status_t op_status = ZFS_OK;
@@ -1847,6 +1847,9 @@ static int zoidfs_write_pipeline(BMI_addr_t peer_addr, uint64_t pipeline_size,
         uint64_t en = 0;
         uint64_t en_mem = 0;
         uint64_t en_memofs = 0;
+        size_t p_list_count = 0;
+        const char ** p_buf_list = NULL;
+        bmi_size_t * p_size_list = NULL;
         for (i = 0; i < list_count; i++) {
             if (st + pipeline_size <= en + size_list[i]) {
                 en_mem = i;
@@ -1860,10 +1863,10 @@ static int zoidfs_write_pipeline(BMI_addr_t peer_addr, uint64_t pipeline_size,
                 en_memofs = size_list[i];
             }
         }
-        // create next request
-        size_t p_list_count = en_mem + 1 - st_mem;
-        const char ** p_buf_list = (const char**)malloc(sizeof(char*) * p_list_count);
-        bmi_size_t * p_size_list = (bmi_size_t*)malloc(sizeof(size_t) * p_list_count);
+        /* create next request */
+        p_list_count = en_mem + 1 - st_mem;
+        p_buf_list = (const char**)malloc(sizeof(char*) * p_list_count);
+        p_size_list = (bmi_size_t*)malloc(sizeof(size_t) * p_list_count);
         if (st_mem == en_mem) {
             p_buf_list[0] = ((const char*)buf_list[st_mem]) + st_memofs;
             assert(en_memofs > st_memofs);
@@ -1883,15 +1886,15 @@ static int zoidfs_write_pipeline(BMI_addr_t peer_addr, uint64_t pipeline_size,
                 assert(p_size_list[i] > 0);
             }
         }
-        // send it
+        /* send it */
         {
             size_t p_total_size = 0;
             for (i = 0; i < p_list_count; i++) p_total_size += p_size_list[i];
-            // assert(p_total_size == min(pipeline_size, total_size -st));
+            /* assert(p_total_size == min(pipeline_size, total_size -st)); */
             ret = bmi_comm_send_list(peer_addr, p_list_count, (const void**)p_buf_list,
                                      p_size_list, tag, context);
         }
-        // next
+        /* next */
         st = en;
         st_mem = en_mem;
         st_memofs = en_memofs;
@@ -1910,10 +1913,10 @@ static int zoidfs_write_pipeline(BMI_addr_t peer_addr, uint64_t pipeline_size,
  * zoidfs_read
  * This function implements the zoidfs read call.
  */
-int zoidfs_read(const zoidfs_handle_t *handle, size_t mem_count_,
-                void *mem_starts[], const size_t mem_sizes_[],
-                size_t file_count_, const uint64_t file_starts[],
-                uint64_t file_sizes[]) {
+int zoidfs_read(const zoidfs_handle_t *handle, zoidfs_size_t mem_count_,
+                void *mem_starts[], const zoidfs_size_t mem_sizes_[],
+                zoidfs_size_t file_count_, const zoidfs_ofs_t file_starts[],
+                zoidfs_size_t file_sizes[]) {
     int ret;
     size_t i;
     XDR xdrs;
@@ -2072,6 +2075,9 @@ static int zoidfs_read_pipeline(BMI_addr_t peer_addr, uint64_t pipeline_size,
         uint64_t en = 0;
         uint64_t en_mem = 0;
         uint64_t en_memofs = 0;
+        size_t p_list_count = 0;
+        char ** p_buf_list = NULL;
+        bmi_size_t * p_size_list = NULL;
         for (i = 0; i < list_count; i++) {
             if (st + pipeline_size <= en + size_list[i]) {
                 en_mem = i;
@@ -2085,10 +2091,10 @@ static int zoidfs_read_pipeline(BMI_addr_t peer_addr, uint64_t pipeline_size,
                 en_memofs = size_list[i];
             }
         }
-        // create next request
-        size_t p_list_count = en_mem + 1 - st_mem;
-        char ** p_buf_list = (char**)malloc(sizeof(char*) * p_list_count);
-        bmi_size_t * p_size_list = (bmi_size_t*)malloc(sizeof(size_t) * p_list_count);
+        /* create next request */
+        p_list_count = en_mem + 1 - st_mem;
+        p_buf_list = (char**)malloc(sizeof(char*) * p_list_count);
+        p_size_list = (bmi_size_t*)malloc(sizeof(size_t) * p_list_count);
         if (st_mem == en_mem) {
             p_buf_list[0] = ((char*)buf_list[st_mem]) + st_memofs;
             assert(en_memofs > st_memofs);
@@ -2108,15 +2114,15 @@ static int zoidfs_read_pipeline(BMI_addr_t peer_addr, uint64_t pipeline_size,
                 assert(p_size_list[i] > 0);
             }
         }
-        // recv
+        /* recv */
         {
             size_t p_total_size = 0;
             for (i = 0; i < p_list_count; i++) p_total_size += p_size_list[i];
-            // assert(p_total_size == std::min(pipeline_size, total_size -st));
+            /* assert(p_total_size == std::min(pipeline_size, total_size -st)); */
             ret = bmi_comm_recv_list(peer_addr, p_list_count, (void**)p_buf_list,
                                      p_size_list, tag, context);
         }
-        // next
+        /* next */
         st = en;
         st_mem = en_mem;
         st_memofs = en_memofs;
