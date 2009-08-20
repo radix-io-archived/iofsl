@@ -1,0 +1,58 @@
+--------------------------------------------------------------------------------
+IOFSL ZoidFS libsysio driver
+Author: Jason Cope
+Email: copej@mcs.anl.gov
+Last Updated: 8/19/2009
+--------------------------------------------------------------------------------
+
+Summary:
+--------------------------------------------------------------------------------
+This library provides a libsysio driver that communicates using the ZoidFS
+protocol. libsysio applications can load this driver to communicate
+with IOFSL servers. IOFSL servers using the libsysio dispatcher can load 
+this driver to communicate with other IOFSL servers using the ZoidFS
+protocol only (servers can forward requests to other servers, but
+can't communicate anything else).
+
+This module provides:
+    - a user-space, POSIX libsysio client interface to IOFSL
+    - a libsysio IOFSL / ZoidFS backend driver
+
+Use cases:
+    - POSIX I/O for applications on systems that do not support FUSE client
+    - Communication with other IOFSL servers using libsysio for file
+      and namespace management (this is unintended, but possible)
+
+This capability is similar to the native driver provided by libsysio and
+liblustre provided by Lustre.
+
+Software Dependencies and Perquisites:
+--------------------------------------------------------------------------------
+IOFSL ZoidFS C Client - This software requires the ZoidFS C client to 
+      I/O requests                
+BMI - Since we use ZoidFS to forward I/O calls, we require BMI for the
+      communication transport layer
+libsysio - A standard libsysio library is required. This provides the 
+      user-space file management capabilities for this driver
+
+Building and Installing:
+--------------------------------------------------------------------------------
+This module extracts the the object files for static BMI, libsysio, and IOFSL 
+ZoidFS C Client libraries and generates a single static library and a single
+shared library that provides IOFSL support to clients.
+
+For servers, this driver and library must be directly linked into libsysio when
+libsysio is built.
+
+The Rules.make.patch and Makefile.am.patch must be applied to the libsysio
+Rules.make and Makefile.am files in the top level of the source directory.
+
+The driver source code directory ('./iofwd') must be placed in the dev/ of the 
+libsysio source code tree. 
+
+TODO:
+--------------------------------------------------------------------------------
+ - Implement the rest of the POSIX syscalls (open, close, unlink are OK)
+ - Is the server <-> server communication useful? Does it even make sense?
+ - Performance eval
+ - Fix the shared library creation code... broken
