@@ -307,40 +307,112 @@ int testGETATTR(void)
     zoidfs_handle_t fhandle;
     zoidfs_attr_t gattr;
 
+    /* get all attributes for a regular file */
+    gattr.mask = ZOIDFS_ATTR_ALL;
     zoidfs_lookup(&basedir_handle, component_filename, NULL, &fhandle);
     CU_ASSERT(ZFS_OK == zoidfs_getattr(&fhandle, &gattr));
+    CU_ASSERT(gattr.mask == ZOIDFS_ATTR_ALL);
     CU_ASSERT(gattr.type == ZOIDFS_REG);
     CU_ASSERT((gattr.mode & 0777) == 0755);
 
+    /* get size attributes for a regular file */
+    gattr.mask = ZOIDFS_ATTR_SIZE;
+    zoidfs_lookup(&basedir_handle, component_filename, NULL, &fhandle);
+    CU_ASSERT(ZFS_OK == zoidfs_getattr(&fhandle, &gattr));
+    CU_ASSERT(gattr.mask == ZOIDFS_ATTR_SIZE);
+
+    /* get blocksize attributes for a regular file */
+    gattr.mask = ZOIDFS_ATTR_BSIZE;
+    zoidfs_lookup(&basedir_handle, component_filename, NULL, &fhandle);
+    CU_ASSERT(ZFS_OK == zoidfs_getattr(&fhandle, &gattr));
+    CU_ASSERT(gattr.mask == ZOIDFS_ATTR_BSIZE);
+
+    /* get nlink attributes for a regular file */
+    gattr.mask = ZOIDFS_ATTR_NLINK;
+    zoidfs_lookup(&basedir_handle, component_filename, NULL, &fhandle);
+    CU_ASSERT(ZFS_OK == zoidfs_getattr(&fhandle, &gattr));
+    CU_ASSERT(gattr.mask == ZOIDFS_ATTR_NLINK);
+
+    /* get atime attributes for a regular file */
+    gattr.mask = ZOIDFS_ATTR_ATIME;
+    zoidfs_lookup(&basedir_handle, component_filename, NULL, &fhandle);
+    CU_ASSERT(ZFS_OK == zoidfs_getattr(&fhandle, &gattr));
+    CU_ASSERT(gattr.mask == ZOIDFS_ATTR_ATIME);
+
+    /* get mtime attributes for a regular file */
+    gattr.mask = ZOIDFS_ATTR_MTIME;
+    zoidfs_lookup(&basedir_handle, component_filename, NULL, &fhandle);
+    CU_ASSERT(ZFS_OK == zoidfs_getattr(&fhandle, &gattr));
+    CU_ASSERT(gattr.mask == ZOIDFS_ATTR_MTIME);
+
+    /* get ctime attributes for a regular file */
+    gattr.mask = ZOIDFS_ATTR_CTIME;
+    zoidfs_lookup(&basedir_handle, component_filename, NULL, &fhandle);
+    CU_ASSERT(ZFS_OK == zoidfs_getattr(&fhandle, &gattr));
+    CU_ASSERT(gattr.mask == ZOIDFS_ATTR_CTIME);
+
+    /* get fsid attributes for a regular file */
+    gattr.mask = ZOIDFS_ATTR_FSID;
+    zoidfs_lookup(&basedir_handle, component_filename, NULL, &fhandle);
+    CU_ASSERT(ZFS_OK == zoidfs_getattr(&fhandle, &gattr));
+    CU_ASSERT(gattr.mask == ZOIDFS_ATTR_FSID);
+
+    /* get fileid attributes for a regular file */
+    gattr.mask = ZOIDFS_ATTR_FILEID;
+    zoidfs_lookup(&basedir_handle, component_filename, NULL, &fhandle);
+    CU_ASSERT(ZFS_OK == zoidfs_getattr(&fhandle, &gattr));
+    CU_ASSERT(gattr.mask == ZOIDFS_ATTR_FILEID);
+
+    /* get all attributes for a directory */
+    gattr.mask = ZOIDFS_ATTR_ALL;
     zoidfs_lookup(&basedir_handle, component_dirname, NULL, &fhandle);
     CU_ASSERT(ZFS_OK == zoidfs_getattr(&fhandle, &gattr));
+    CU_ASSERT(gattr.mask == ZOIDFS_ATTR_ALL);
     CU_ASSERT(gattr.type == ZOIDFS_DIR);
     CU_ASSERT((gattr.mode & 0777) == 0755);
 
+    /* get all attributes for a regular file */
+    gattr.mask = ZOIDFS_ATTR_ALL;
     zoidfs_lookup(NULL, NULL, fullpath_filename, &fhandle);
     CU_ASSERT(ZFS_OK == zoidfs_getattr(&fhandle, &gattr));
+    CU_ASSERT(gattr.mask == ZOIDFS_ATTR_ALL);
     CU_ASSERT(gattr.type == ZOIDFS_REG);
     CU_ASSERT((gattr.mode & 0777) == 0755);
 
+    /* get all attributes for a directory */
+    gattr.mask = ZOIDFS_ATTR_ALL;
     zoidfs_lookup(NULL, NULL, fullpath_dirname, &fhandle);
     CU_ASSERT(ZFS_OK == zoidfs_getattr(&fhandle, &gattr));
+    CU_ASSERT(gattr.mask == ZOIDFS_ATTR_ALL);
     CU_ASSERT(gattr.type == ZOIDFS_DIR);
     CU_ASSERT((gattr.mode & 0777) == 0755);
 
+    /* get all attributes for a regular file */
+    gattr.mask = ZOIDFS_ATTR_ALL;
     zoidfs_lookup(&basedir_handle, symlink_component_filename, NULL, &fhandle);
     CU_ASSERT(ZFS_OK == zoidfs_getattr(&fhandle, &gattr));
+    CU_ASSERT(gattr.mask == ZOIDFS_ATTR_ALL);
     CU_ASSERT(gattr.type == ZOIDFS_LNK);
 
+    /* get all attributes for a regular file */
+    gattr.mask = ZOIDFS_ATTR_ALL;
     zoidfs_lookup(&basedir_handle, symlink_component_dirname, NULL, &fhandle);
     CU_ASSERT(ZFS_OK == zoidfs_getattr(&fhandle, &gattr));
+    CU_ASSERT(gattr.mask == ZOIDFS_ATTR_ALL);
     CU_ASSERT(gattr.type == ZOIDFS_LNK);
 
+    /* get all attributes for a regular file */
+    gattr.mask = ZOIDFS_ATTR_ALL;
     zoidfs_lookup(NULL, NULL, symlink_fullpath_filename, &fhandle);
     CU_ASSERT(ZFS_OK == zoidfs_getattr(&fhandle, &gattr));
+    CU_ASSERT(gattr.mask == ZOIDFS_ATTR_ALL);
     CU_ASSERT(gattr.type == ZOIDFS_LNK);
 
+    /* get all attributes for a regular file */
+    gattr.mask = ZOIDFS_ATTR_ALL;
     zoidfs_lookup(NULL, NULL, symlink_fullpath_dirname, &fhandle);
     CU_ASSERT(ZFS_OK == zoidfs_getattr(&fhandle, &gattr));
+    CU_ASSERT(gattr.mask == ZOIDFS_ATTR_ALL);
     CU_ASSERT(gattr.type == ZOIDFS_LNK);
 
     return 0;
