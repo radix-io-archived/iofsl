@@ -389,9 +389,11 @@ static int zoidfs_posix_getattr(const zoidfs_handle_t *handle, zoidfs_attr_t *at
    }
 
    /* always retrieve everything */
-   attr->mask = ZOIDFS_ATTR_MODE | ZOIDFS_ATTR_NLINK |
+
+   /* Don't modify the mask! */ 
+   /* attr->mask = ZOIDFS_ATTR_MODE | ZOIDFS_ATTR_NLINK |
       ZOIDFS_ATTR_UID  |ZOIDFS_ATTR_GID | ZOIDFS_ATTR_SIZE |
-      ZOIDFS_ATTR_ATIME | ZOIDFS_ATTR_CTIME | ZOIDFS_ATTR_MTIME;
+      ZOIDFS_ATTR_ATIME | ZOIDFS_ATTR_CTIME | ZOIDFS_ATTR_MTIME; */
 
    posixtime_to_zoidfs (&s.st_ctime,  &attr->ctime);
    posixtime_to_zoidfs (&s.st_atime,  &attr->atime);
