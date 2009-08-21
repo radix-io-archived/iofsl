@@ -1249,6 +1249,15 @@ static int zoidfs_sysio_link(const zoidfs_handle_t *from_parent_handle,
 	}
 	if(to_full_path)
 	{
+        zoidfs_handle_t fhandle;
+
+        /* If the file exists, return an error */        
+        if(zoidfs_lookup(NULL, NULL, to_full_path, &fhandle) == ZFS_OK)
+        {
+		    ZFSSYSIO_INFO("zoidfs_sysio_link: target file already exists");
+            return sysio_err_to_zfs_err(EEXIST);
+        }
+
         /* check the format of the path */
         if(!zoidfs_sysio_valid_full_path(to_full_path))
         {
@@ -1267,6 +1276,15 @@ static int zoidfs_sysio_link(const zoidfs_handle_t *from_parent_handle,
 	}
 	if(to_component_name)
 	{
+        zoidfs_handle_t fhandle;
+
+        /* If the file exists, return an error */        
+        if(zoidfs_lookup(to_parent_handle, to_component_name, NULL, &fhandle) == ZFS_OK)
+        {
+		    ZFSSYSIO_INFO("zoidfs_sysio_link: target file already exists");
+            return sysio_err_to_zfs_err(EEXIST);
+        }
+
 		zoidfs_handle_to_sysio_handle(to_parent_handle, &sysio_to_parent_handle);
         where_to.fhida_path = to_component_name;
 		where_to.fhida_dir = &sysio_to_parent_handle;
@@ -1334,6 +1352,7 @@ static int zoidfs_sysio_symlink(const zoidfs_handle_t *from_parent_handle,
         /* If the file exists, return an error */        
         if(zoidfs_lookup(NULL, NULL, to_full_path, &fhandle) == ZFS_OK)
         {
+		    ZFSSYSIO_INFO("zoidfs_sysio_symlink: target file already exists");
             return sysio_err_to_zfs_err(EEXIST);
         }
 
@@ -1355,6 +1374,7 @@ static int zoidfs_sysio_symlink(const zoidfs_handle_t *from_parent_handle,
         /* If the file exists, return an error */        
         if(zoidfs_lookup(to_parent_handle, to_component_name, NULL, &fhandle) == ZFS_OK)
         {
+		    ZFSSYSIO_INFO("zoidfs_sysio_symlink: target file already exists");
             return sysio_err_to_zfs_err(EEXIST);
         }
 
