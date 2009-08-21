@@ -122,13 +122,17 @@ ADDINTLIBS_zoidfs_md_cunit_local := iofwdclient iofwdlib iofwdutil zoidfsutil zo
 LDFLAGS_zoidfs_md_cunit_local := @CUNIT_LDFLAGS@ @CUNIT_LIBS@
 LIBS_zoidfs_md_cunit_local := @CUNIT_LIBS@
 
-
-
-
 MODULE_APPS += zoidfs_io_cunit
 MODULE_SOURCES_zoidfs_io_cunit := zoidfs-io-cunit.c 
 ADDINTLIBS_zoidfs_io_cunit := iofwdclient iofwdlib iofwdutil zoidfsutil zoidfsclient zoidfscutil
 LDFLAGS_zoidfs_io_cunit := @CUNIT_LDFLAGS@ @CUNIT_LIBS@
 LIBS_zoidfs_io_cunit := @CUNIT_LIBS@
+
+MODULE_APPS += zoidfs_io_cunit_local
+MODULE_SOURCES_zoidfs_io_cunit_local := zoidfs-io-cunit.c 
+ADDINTLIBS_zoidfs_io_cunit_local := iofwdclient iofwdlib iofwdutil zoidfsutil zoidfsdispatch zoidfscutil
+LDFLAGS_zoidfs_io_cunit_local := @CUNIT_LDFLAGS@ @CUNIT_LIBS@
+LIBS_zoidfs_io_cunit_local := @CUNIT_LIBS@
+
 
 endif
