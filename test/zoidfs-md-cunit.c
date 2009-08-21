@@ -203,27 +203,42 @@ int testLINK(void)
     sattr.mtime.seconds = now.tv_sec;
     sattr.mtime.nseconds = now.tv_usec;
 
+    /* Remove files in case they already exist; Ignore possible errors */
+    zoidfs_remove(&basedir_handle, link_component_filename, NULL, NULL); 
+    zoidfs_remove(NULL, NULL, link_fullpath_filename, NULL);
+
     /* create a file using the base handle and component name*/
-    CU_ASSERT_EQUAL(ZFS_OK, zoidfs_link(&basedir_handle, link_component_filename, NULL, &basedir_handle, component_filename, NULL, NULL, NULL));
-    CU_ASSERT_EQUAL(ZFSERR_EXIST, zoidfs_link(&basedir_handle, link_component_filename, NULL, &basedir_handle, component_filename, NULL, NULL, NULL));
+    CU_ASSERT_EQUAL(ZFS_OK, zoidfs_link(&basedir_handle, component_filename,
+             NULL, &basedir_handle, link_component_filename, NULL, NULL,
+             NULL)); 
+    
+    CU_ASSERT_EQUAL(ZFSERR_EXIST,
+             zoidfs_link(&basedir_handle, component_filename, NULL,
+                &basedir_handle, link_component_filename, NULL, NULL, NULL));
     total_file_count++;
 
     /* create a file using the base handle and component name*/
-    CU_ASSERT_NOT_EQUAL(ZFS_OK, zoidfs_link(&basedir_handle, link_component_dirname, NULL, &basedir_handle, component_dirname, NULL, NULL, NULL));
+    CU_ASSERT_NOT_EQUAL(ZFS_OK, zoidfs_link(&basedir_handle,
+             component_dirname, NULL, &basedir_handle, link_component_dirname,
+             NULL, NULL, NULL));
 
     /* create a file using the base handle and component name*/
-    CU_ASSERT_EQUAL(ZFS_OK, zoidfs_link(NULL, NULL, link_fullpath_filename, NULL, NULL, fullpath_filename, NULL, NULL));
-    CU_ASSERT_EQUAL(ZFSERR_EXIST, zoidfs_link(NULL, NULL, link_fullpath_filename, NULL, NULL, fullpath_filename, NULL, NULL));
+    CU_ASSERT_EQUAL(ZFS_OK, zoidfs_link(NULL, NULL, fullpath_filename, NULL,
+             NULL, link_fullpath_filename, NULL, NULL));
+    CU_ASSERT_EQUAL(ZFSERR_EXIST, zoidfs_link(NULL, NULL, fullpath_filename,
+             NULL, NULL, link_fullpath_filename, NULL, NULL));
     total_file_count++;
 
     /* create a file using the base handle and component name*/
-    CU_ASSERT_NOT_EQUAL(ZFS_OK, zoidfs_link(NULL, NULL, link_fullpath_dirname, NULL, NULL, fullpath_dirname, NULL, NULL));
+    CU_ASSERT_NOT_EQUAL(ZFS_OK, zoidfs_link(NULL, NULL, fullpath_dirname,
+             NULL, NULL, link_fullpath_dirname, NULL, NULL));
 
     /* remove the links... this should be in the REMOVE test, but
      * ESTALE is triggered for libsysio dispatcher... leave here until 
      * corrected
      */
-    CU_ASSERT(ZFS_OK == zoidfs_remove(&basedir_handle, link_component_filename, NULL, NULL));
+    CU_ASSERT(ZFS_OK == zoidfs_remove(&basedir_handle, link_component_filename,
+             NULL, NULL)); 
     total_file_count--;
     
     CU_ASSERT(ZFS_OK == zoidfs_remove(NULL, NULL, link_fullpath_filename, NULL));
