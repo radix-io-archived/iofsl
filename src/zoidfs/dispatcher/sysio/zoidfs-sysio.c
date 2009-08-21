@@ -499,6 +499,7 @@ static int zoidfs_sysio_getattr(const zoidfs_handle_t *handle, zoidfs_attr_t *at
     struct stat64 stbuf;
     static char sysio_handle_data[SYSIO_HANDLE_DATA_SIZE];
     struct file_handle_info sysio_handle = {NULL, (void *)sysio_handle_data, SYSIO_HANDLE_DATA_SIZE};
+    int smask = 0;
 
 	ZFSSYSIO_TRACE_ENTER;
 
@@ -519,53 +520,91 @@ static int zoidfs_sysio_getattr(const zoidfs_handle_t *handle, zoidfs_attr_t *at
     }
 
     /* Convert the SYSIO attributes to ZOIDFS attributes */
-	if (S_ISDIR(stbuf.st_mode))
-        attr->type = ZOIDFS_DIR;
-	else if (S_ISCHR(stbuf.st_mode))
-        attr->type = ZOIDFS_CHR;
-	else if (S_ISBLK(stbuf.st_mode))
-        attr->type = ZOIDFS_BLK;
-	else if (S_ISREG(stbuf.st_mode))
-        attr->type = ZOIDFS_REG;
+    if((attr->mask & ZOIDFS_ATTR_MODE) == ZOIDFS_ATTR_MODE)
+    {
+    	if (S_ISDIR(stbuf.st_mode))
+            attr->type = ZOIDFS_DIR;
+    	else if (S_ISCHR(stbuf.st_mode))
+            attr->type = ZOIDFS_CHR;
+    	else if (S_ISBLK(stbuf.st_mode))
+            attr->type = ZOIDFS_BLK;
+    	else if (S_ISREG(stbuf.st_mode))
+            attr->type = ZOIDFS_REG;
 #ifdef S_ISFIFO
-	else if (S_ISFIFO(stbuf.st_mode))
-        attr->type = ZOIDFS_FIFO;
+    	else if (S_ISFIFO(stbuf.st_mode))
+            attr->type = ZOIDFS_FIFO;
 #endif
 #ifdef S_ISLNK
-	else if (S_ISLNK(stbuf.st_mode))
-        attr->type = ZOIDFS_LNK;
+    	else if (S_ISLNK(stbuf.st_mode))
+            attr->type = ZOIDFS_LNK;
 #endif
 #ifdef S_ISSOCK
-	else if (S_ISSOCK(stbuf.st_mode))
-        attr->type = ZOIDFS_SOCK;
+    	else if (S_ISSOCK(stbuf.st_mode))
+            attr->type = ZOIDFS_SOCK;
 #endif
-	else
-        attr->type = ZOIDFS_INVAL;
+    	else
+            attr->type = ZOIDFS_INVAL;
+        
+        attr->mode = stbuf.st_mode & 0777;
+        smask = smask | ZOIDFS_ATTR_MODE;
+    }
 
-	/* always set all attrs */
-    attr->mask =	ZOIDFS_ATTR_MODE |
-					ZOIDFS_ATTR_NLINK | 
-					ZOIDFS_ATTR_UID |
-					ZOIDFS_ATTR_GID |
-					ZOIDFS_ATTR_SIZE |
-					ZOIDFS_ATTR_ATIME |
-					ZOIDFS_ATTR_CTIME |
-					ZOIDFS_ATTR_MTIME;
-	
-    attr->mode = stbuf.st_mode & 0777;
-    attr->nlink = stbuf.st_nlink;
-    attr->uid = stbuf.st_uid;
-    attr->gid = stbuf.st_gid;
-    attr->size = stbuf.st_size;
-    attr->blocksize = stbuf.st_blksize;
-    attr->fsid = 0;     /* can't get this value... set to 0 */
-    attr->fileid = 0;   /* can't get this value... set to 0 */
-    attr->atime.seconds = stbuf.st_atime;
-    attr->atime.nseconds = 0;
-    attr->mtime.seconds = stbuf.st_mtime;
-    attr->mtime.nseconds = 0;
-    attr->ctime.seconds = stbuf.st_ctime;
-    attr->ctime.nseconds = 0;
+    if((attr->mask & ZOIDFS_ATTR_NLINK) == ZOIDFS_ATTR_NLINK)
+    {
+        attr->nlink = stbuf.st_nlink;
+        smask = smask | ZOIDFS_ATTR_NLINK;
+    }
+    if((attr->mask & ZOIDFS_ATTR_UID) == ZOIDFS_ATTR_UID)
+    {
+        attr->uid = stbuf.st_uid;
+        smask = smask | ZOIDFS_ATTR_UID;
+    }
+    if((attr->mask & ZOIDFS_ATTR_GID) == ZOIDFS_ATTR_GID)
+    {
+        attr->gid = stbuf.st_gid;
+        smask = smask | ZOIDFS_ATTR_GID;
+    }
+    if((attr->mask & ZOIDFS_ATTR_SIZE) == ZOIDFS_ATTR_SIZE)
+    {
+        attr->size = stbuf.st_size;
+        smask = smask | ZOIDFS_ATTR_SIZE;
+    }
+    if((attr->mask & ZOIDFS_ATTR_BSIZE) == ZOIDFS_ATTR_BSIZE)
+    {
+        attr->blocksize = stbuf.st_blksize;
+        smask = smask | ZOIDFS_ATTR_BSIZE;
+    }
+    if((attr->mask & ZOIDFS_ATTR_ATIME) == ZOIDFS_ATTR_ATIME)
+    {
+        attr->atime.seconds = stbuf.st_atime;
+        attr->atime.nseconds = 0;
+        smask = smask | ZOIDFS_ATTR_ATIME;
+    }
+    if((attr->mask & ZOIDFS_ATTR_MTIME) == ZOIDFS_ATTR_MTIME)
+    {
+        attr->mtime.seconds = stbuf.st_mtime;
+        attr->mtime.nseconds = 0;
+        smask = smask | ZOIDFS_ATTR_MTIME;
+    }
+    if((attr->mask & ZOIDFS_ATTR_CTIME) == ZOIDFS_ATTR_CTIME)
+    {
+        attr->ctime.seconds = stbuf.st_ctime;
+        attr->ctime.nseconds = 0;
+        smask = smask | ZOIDFS_ATTR_CTIME;
+    }
+    if((attr->mask & ZOIDFS_ATTR_FSID) == ZOIDFS_ATTR_FSID)
+    {
+        attr->fsid = stbuf.st_dev;
+        smask = smask | ZOIDFS_ATTR_FSID;
+    }
+    if((attr->mask & ZOIDFS_ATTR_FILEID) == ZOIDFS_ATTR_FILEID)
+    {
+        attr->fileid = stbuf.st_ino;
+        smask = smask | ZOIDFS_ATTR_FILEID;
+    }
+
+    /* reset the mask with the values set in attr */
+    attr->mask = smask;
 
 	ZFSSYSIO_TRACE_EXIT;
     return ZFS_OK;
