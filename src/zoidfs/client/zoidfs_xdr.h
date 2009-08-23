@@ -3,6 +3,7 @@
  * XDR encoding/decoding function declarations for ZOIDFS data structures.
  *
  * Nawab Ali <alin@cse.ohio-state.edu>
+ * Dries Kimpe <dkimpe@mcs.anl.gov>
  */
 
 #ifndef _ZOIDFS_XDR_H_
@@ -17,11 +18,24 @@
 #include "zoidfs/zoidfs.h"
 #include "zoidfs/zoidfs-proto.h"
 
-#ifndef MAXARRSIZE
-#define MAXARRSIZE	4096
-#endif
+
+/* Helper struct to bind arguments */ 
+typedef struct 
+{
+   unsigned int maxcount;
+   uint32_t * count;
+   zoidfs_dirent_t ** entries;
+} dirent_t_transfer; 
+
+/* Helper for string */
+typedef struct
+{
+   unsigned int maxsize; 
+   char * buffer; 
+} string_transfer; 
 
 /* XDR encoding/decoding function declarations */
+bool_t xdr_string_helper (XDR *, string_transfer *); 
 bool_t xdr_zoidfs_attr_t(XDR *, zoidfs_attr_t *);
 bool_t xdr_zoidfs_time_t(XDR *, zoidfs_time_t *);
 bool_t xdr_zoidfs_sattr_t(XDR *, zoidfs_sattr_t *);
@@ -33,6 +47,13 @@ bool_t xdr_zoidfs_attr_type_t(XDR *, zoidfs_attr_type_t *);
 bool_t xdr_zoidfs_cache_hint_t(XDR *, zoidfs_cache_hint_t *);
 bool_t xdr_zoidfs_null_param_t(XDR *, zoidfs_null_param_t *);
 bool_t xdr_zoidfs_dirent_cookie_t(XDR *, zoidfs_dirent_cookie_t *);
+bool_t xdr_zoidfs_dirent_array (XDR * xdr, dirent_t_transfer * t); 
+
+unsigned int xdr_zoidfs_dirent_array_size (unsigned int entry_count);
+
+/* maxlen is the maximum number of CHARACTERS (not including any terminating
+ * 0) in the string */ 
+unsigned int xdr_stringsize (unsigned int maxlen);
 
 #endif /* _ZOIDFS_XDR_H_ */
 

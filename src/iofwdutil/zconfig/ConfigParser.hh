@@ -20,6 +20,21 @@ public:
    ~ConfigParser (); 
 
 
+   /** Return a configparser for a subsection */ 
+   ConfigParser getSubSection (const std::string & section)
+   {
+      return ConfigParser (*this, section); 
+   }
+
+
+   /** 
+    * Return key 
+    *
+    * Use own value type that has an boost::any and member T as<T> ()
+    *
+   template <typename T>
+   T & get (const std::string & key) const;  
+   */
 protected:
 
 }; 

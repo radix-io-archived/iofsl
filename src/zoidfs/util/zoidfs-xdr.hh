@@ -3,6 +3,7 @@
 
 // #include "xdr/XDR.hh"
 
+#include "iofwdutil/assert.hh"
 #include "zoidfs/util/zoidfs-wrapped.hh"
 
 namespace iofwdutil
@@ -87,6 +88,7 @@ inline
 T & process (T & f, zoidfs::zoidfs_dirent_t & t)
 {
    // could also use sizeof(t.name) here but ZOIDFS_NAME_MAX is more accurate
+   STATIC_ASSERT(sizeof (t.name) == ZOIDFS_NAME_MAX +1 ); 
    process(f, XDRString(t.name, ZOIDFS_NAME_MAX)); 
    process(f, t.handle);
    process(f, t.attr);

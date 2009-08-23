@@ -52,21 +52,20 @@ int bmi_comm_send(BMI_addr_t peer_addr, const void *buffer, bmi_size_t buflen,
  * Synchronous call for receiving messages using BMI.
  */
 int bmi_comm_recv(BMI_addr_t peer_addr, void *buffer, bmi_size_t buflen,
-                  bmi_msg_tag_t tag, bmi_context_id context) {
+                  bmi_msg_tag_t tag, bmi_context_id context, bmi_size_t * actual_size) {
     bmi_op_id_t op_id;
     int ret, outcount;
-    bmi_size_t actual_size;
     bmi_error_code_t error_code;
 
     /* Post the BMI recv request and wait for its completion */
-    ret = BMI_post_recv(&op_id, peer_addr, buffer, buflen, &actual_size,
+    ret = BMI_post_recv(&op_id, peer_addr, buffer, buflen, actual_size,
                         BMI_PRE_ALLOC, tag, NULL, context, NULL);
     if (ret < 0) {
         fprintf(stderr, "bmi_comm_recv: BMI_post_recv() failed.\n");
         exit(1);
     } else if (ret == 0) {
         do {
-            ret = BMI_test(op_id, &outcount, &error_code, &actual_size, NULL,
+            ret = BMI_test(op_id, &outcount, &error_code, actual_size, NULL,
                            MAX_IDLE_TIME, context);
         } while (ret == 0 && outcount == 0);
 

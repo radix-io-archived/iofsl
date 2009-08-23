@@ -3,7 +3,7 @@
 
 #include "zoidfs/zoidfs.h"
 
-typedef int zint_handle_type_t;
+typedef unsigned int zint_handle_type_t;
 
 static inline uint32_t ZOIDFS_HANDLE_TYPE (const zoidfs_handle_t * h)
 {

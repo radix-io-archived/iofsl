@@ -7,6 +7,8 @@ namespace iofwd
    {
 //===========================================================================
 
+iofwdutil::zlog::ZLogSource & IOFWDRequest::log_ = iofwdutil::IOFWDLog::getSource(); 
+
 IOFWDRequest::IOFWDRequest (iofwdutil::bmi::BMIContext & bmi, const BMI_unexpected_info & info,
       iofwdutil::completion::BMIResource & res)
    : bmi_ (bmi), raw_request_ (info), addr_ (raw_request_.getAddr()),
@@ -39,6 +41,9 @@ void IOFWDRequest::beginReply (size_t maxsize)
 CompletionID * IOFWDRequest::sendReply ()
 {
    // beginReply allocated BMI mem
+   ZLOG_DEBUG_EXTREME (log_, iofwdutil::format("Sending reply of %lu bytes (max bufsize = %lu bytes)")
+             % reply_writer_.size() % reply_writer_.getMaxSize()); 
+
    return ll_sendReply (reply_writer_.getBuf(), reply_writer_.size(), 
          BMI_PRE_ALLOC); 
 }
@@ -52,6 +57,7 @@ inline CompletionID * IOFWDRequest::ll_sendReply (const void * buf, size_t bufsi
       bmi_buffer_type type)
 {
    // Server replies with same tag
+
    iofwdutil::completion::BMICompletionID * id = new iofwdutil::completion::BMICompletionID (); 
    bmires_.postSend (id, addr_, buf, bufsize, type, tag_, 0); 
    return id; 

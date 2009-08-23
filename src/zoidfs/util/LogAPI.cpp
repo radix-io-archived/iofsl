@@ -195,7 +195,7 @@ int LogAPI::readdir(const zoidfs_handle_t * parent_handle,
             uint32_t flags,
             zoidfs_cache_hint_t * parent_hint)
 {
-   LOG("zoidfs_readdir"); 
+   LOG(format("zoidfs_readdir entry_count=%u") % *entry_count); 
    return api_->readdir (parent_handle, cookie, entry_count, entries, flags,
          parent_hint); 
 }

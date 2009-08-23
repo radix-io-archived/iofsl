@@ -4,6 +4,11 @@
  * the IONs over BMI.
  *
  * Nawab Ali <alin@cse.ohio-state.edu>
+ *
+ * @TODO: check this and fix all the bugs:
+ *    * xdr_array: max_count refers to the size of the allocated memory, and
+ *      should not be INT_MAX or something equally stupid.
+ *    
  */
 
 #include <bmi.h>
@@ -42,6 +47,8 @@ static int zoidfs_read_pipeline(BMI_addr_t peer_addr, uint64_t pipeline_size,
  * zoidfs_null
  * This function implements a noop operation. The IOD returns a 1-byte message
  * to the CN.
+ *
+ * @TODO: zoidfs_null should return a zoidfs_status
  */
 int zoidfs_null(void) {
     int ret;
@@ -51,6 +58,7 @@ int zoidfs_null(void) {
     zoidfs_op_status_t op_status = ZFS_OK;
     zoidfs_op_id_t zoidfs_op_id = ZOIDFS_PROTO_NULL;
     bmi_msg_tag_t tag = gen_tag();
+    bmi_size_t actual_size; 
 
     recvbuflen = xdr_sizeof((xdrproc_t)xdr_zoidfs_op_status_t, &op_status);
 /*    C_STATIC_ASSERT(sizeof(bmi_size_t) >= sizeof(unsigned long));  */
@@ -84,7 +92,7 @@ int zoidfs_null(void) {
     }
 
     /* Do a BMI receive in recvbuf */
-    ret = bmi_comm_recv(peer_addr, recvbuf, recvbuflen, tag, context);
+    ret = bmi_comm_recv(peer_addr, recvbuf, recvbuflen, tag, context, &actual_size);
 
     /* Free up the message buffers */
     BMI_memfree(peer_addr, recvbuf, recvbuflen, BMI_RECV);
@@ -107,6 +115,7 @@ int zoidfs_getattr(const zoidfs_handle_t *handle, zoidfs_attr_t *attr) {
     zoidfs_op_status_t op_status = ZFS_OK;
     zoidfs_op_id_t zoidfs_op_id = ZOIDFS_PROTO_GET_ATTR;
     bmi_msg_tag_t tag = gen_tag();
+    bmi_size_t actual_size; 
 
     sendbuflen = xdr_sizeof((xdrproc_t)xdr_zoidfs_op_id_t, &zoidfs_op_id) +
                  xdr_sizeof((xdrproc_t)xdr_zoidfs_handle_t, (void *)handle) +
@@ -150,10 +159,10 @@ int zoidfs_getattr(const zoidfs_handle_t *handle, zoidfs_attr_t *attr) {
     }
 
     /* Do a BMI receive in recvbuf */
-    ret = bmi_comm_recv(peer_addr, recvbuf, recvbuflen, tag, context);
+    ret = bmi_comm_recv(peer_addr, recvbuf, recvbuflen, tag, context, &actual_size);
 
     /* Decode the ION response */
-    xdrmem_create(&xdrs, recvbuf, recvbuflen, XDR_DECODE);
+    xdrmem_create(&xdrs, recvbuf, actual_size, XDR_DECODE);
     if (!xdr_zoidfs_op_status_t(&xdrs, &op_status)) {
         fprintf(stderr, "zoidfs_getattr: xdr_zoidfs_op_status_t() failed.\n");
         return ZFSERR_XDR;
@@ -185,6 +194,7 @@ int zoidfs_setattr(const zoidfs_handle_t *handle, const zoidfs_sattr_t *sattr,
     zoidfs_op_status_t op_status = ZFS_OK;
     zoidfs_op_id_t zoidfs_op_id = ZOIDFS_PROTO_SET_ATTR;
     bmi_msg_tag_t tag = gen_tag();
+    bmi_size_t actual_size; 
 
     recvbuflen = xdr_sizeof((xdrproc_t)xdr_zoidfs_op_status_t, &op_status) +
                  xdr_sizeof((xdrproc_t)xdr_zoidfs_attr_t, attr);
@@ -233,10 +243,10 @@ int zoidfs_setattr(const zoidfs_handle_t *handle, const zoidfs_sattr_t *sattr,
     }
 
     /* Do a BMI receive in recvbuf */
-    ret = bmi_comm_recv(peer_addr, recvbuf, recvbuflen, tag, context);
+    ret = bmi_comm_recv(peer_addr, recvbuf, recvbuflen, tag, context, &actual_size);
 
     /* Decode the ION response */
-    xdrmem_create(&xdrs, recvbuf, recvbuflen, XDR_DECODE);
+    xdrmem_create(&xdrs, recvbuf, actual_size, XDR_DECODE);
     if (!xdr_zoidfs_op_status_t(&xdrs, &op_status)) {
         fprintf(stderr, "zoidfs_setattr: xdr_zoidfs_op_status_t() failed.\n");
         return ZFSERR_XDR;
@@ -271,12 +281,13 @@ int zoidfs_readlink(const zoidfs_handle_t *handle, char *buffer,
     zoidfs_op_id_t zoidfs_op_id = ZOIDFS_PROTO_READLINK;
     bmi_msg_tag_t tag = gen_tag();
     uint64_t buffer_length_uint64_t = (uint64_t)buffer_length;
+    bmi_size_t actual_size; 
 
     sendbuflen = xdr_sizeof((xdrproc_t)xdr_zoidfs_op_id_t, &zoidfs_op_id) +
                  xdr_sizeof((xdrproc_t)xdr_zoidfs_handle_t, (void *)handle) +
                  xdr_sizeof((xdrproc_t)xdr_uint64_t, &buffer_length_uint64_t);
     recvbuflen = xdr_sizeof((xdrproc_t)xdr_zoidfs_op_status_t, &op_status) +
-                 ZOIDFS_PATH_MAX;
+                 xdr_stringsize (ZOIDFS_PATH_MAX);
 
     sendbuf = BMI_memalloc(peer_addr, sendbuflen, BMI_SEND);
     if (!sendbuf) {
@@ -314,17 +325,20 @@ int zoidfs_readlink(const zoidfs_handle_t *handle, char *buffer,
     }
 
     /* Do a BMI receive in recvbuf */
-    ret = bmi_comm_recv(peer_addr, recvbuf, recvbuflen, tag, context);
+    ret = bmi_comm_recv(peer_addr, recvbuf, recvbuflen, tag, context, &actual_size);
 
     /* Decode the ION response */
-    xdrmem_create(&xdrs, recvbuf, recvbuflen, XDR_DECODE);
+    xdrmem_create(&xdrs, recvbuf, actual_size, XDR_DECODE);
     if (!xdr_zoidfs_op_status_t(&xdrs, &op_status)) {
         fprintf(stderr, "zoidfs_readlink: xdr_zoidfs_op_status_t() failed.\n");
         return ZFSERR_XDR;
     }
-    if (!xdr_string(&xdrs, (char **)&buffer, ZOIDFS_PATH_MAX)) {
-        fprintf(stderr, "zoidfs_readlink: xdr_string() failed.\n");
-        return ZFSERR_XDR;
+    if (op_status == ZFS_OK)
+    {
+       if (!xdr_string(&xdrs, (char **)&buffer, ZOIDFS_PATH_MAX)) {
+          fprintf(stderr, "zoidfs_readlink: xdr_string() failed.\n");
+          return ZFSERR_XDR;
+       }
     }
     xdr_destroy(&xdrs);
 
@@ -352,6 +366,7 @@ int zoidfs_lookup(const zoidfs_handle_t *parent_handle,
     zoidfs_op_status_t op_status = ZFS_OK;
     zoidfs_op_id_t zoidfs_op_id = ZOIDFS_PROTO_LOOKUP;
     bmi_msg_tag_t tag = gen_tag();
+    bmi_size_t actual_size; 
 
     /*
      * Check for invalid path params. The caller should either specify the
@@ -372,7 +387,7 @@ int zoidfs_lookup(const zoidfs_handle_t *parent_handle,
         sendbuflen = xdr_sizeof((xdrproc_t)xdr_zoidfs_op_id_t, &zoidfs_op_id) +
                      xdr_sizeof((xdrproc_t)xdr_zoidfs_null_param_t,
                                 &null_param) +
-                     ZOIDFS_PATH_MAX;
+                     xdr_stringsize (ZOIDFS_PATH_MAX);
     } else {
         null_param = 0;
         sendbuflen = xdr_sizeof((xdrproc_t)xdr_zoidfs_op_id_t, &zoidfs_op_id) +
@@ -380,7 +395,7 @@ int zoidfs_lookup(const zoidfs_handle_t *parent_handle,
                                 &null_param) +
                      xdr_sizeof((xdrproc_t)xdr_zoidfs_handle_t,
                                 (void *)parent_handle) +
-                     ZOIDFS_NAME_MAX;
+                     xdr_stringsize(ZOIDFS_NAME_MAX);
     }
     recvbuflen = xdr_sizeof((xdrproc_t)xdr_zoidfs_op_status_t, &op_status) +
                  xdr_sizeof((xdrproc_t)xdr_zoidfs_handle_t, handle);
@@ -433,10 +448,10 @@ int zoidfs_lookup(const zoidfs_handle_t *parent_handle,
     }
 
     /* Do a BMI receive in recvbuf */
-    ret = bmi_comm_recv(peer_addr, recvbuf, recvbuflen, tag, context);
+    ret = bmi_comm_recv(peer_addr, recvbuf, recvbuflen, tag, context, &actual_size);
 
     /* Decode the ION response */
-    xdrmem_create(&xdrs, recvbuf, recvbuflen, XDR_DECODE);
+    xdrmem_create(&xdrs, recvbuf, actual_size, XDR_DECODE);
     if (!xdr_zoidfs_op_status_t(&xdrs, &op_status)) {
         fprintf(stderr, "zoidfs_lookup: xdr_zoidfs_op_status_t() failed.\n");
         return ZFSERR_XDR;
@@ -471,6 +486,7 @@ int zoidfs_remove(const zoidfs_handle_t *parent_handle,
     zoidfs_op_status_t op_status = ZFS_OK;
     zoidfs_op_id_t zoidfs_op_id = ZOIDFS_PROTO_REMOVE;
     bmi_msg_tag_t tag = gen_tag();
+    bmi_size_t actual_size; 
 
     /*
      * Check for invalid path params. The caller should either specify the
@@ -491,7 +507,7 @@ int zoidfs_remove(const zoidfs_handle_t *parent_handle,
         sendbuflen = xdr_sizeof((xdrproc_t)xdr_zoidfs_op_id_t, &zoidfs_op_id) +
                      xdr_sizeof((xdrproc_t)xdr_zoidfs_null_param_t,
                                 &null_param) +
-                     ZOIDFS_PATH_MAX;
+                     xdr_stringsize(ZOIDFS_PATH_MAX);
     } else {
         null_param = 0;
         sendbuflen = xdr_sizeof((xdrproc_t)xdr_zoidfs_op_id_t, &zoidfs_op_id) +
@@ -499,7 +515,7 @@ int zoidfs_remove(const zoidfs_handle_t *parent_handle,
                                 &null_param) +
                      xdr_sizeof((xdrproc_t)xdr_zoidfs_handle_t,
                                 (void *)parent_handle) +
-                     ZOIDFS_NAME_MAX;
+                     xdr_stringsize (ZOIDFS_NAME_MAX);
     }
 
     if (parent_hint) {
@@ -561,10 +577,10 @@ int zoidfs_remove(const zoidfs_handle_t *parent_handle,
     }
 
     /* Do a BMI receive in recvbuf */
-    ret = bmi_comm_recv(peer_addr, recvbuf, recvbuflen, tag, context);
+    ret = bmi_comm_recv(peer_addr, recvbuf, recvbuflen, tag, context, &actual_size);
 
     /* Decode the ION response */
-    xdrmem_create(&xdrs, recvbuf, recvbuflen, XDR_DECODE);
+    xdrmem_create(&xdrs, recvbuf, actual_size, XDR_DECODE);
     if (!xdr_zoidfs_op_status_t(&xdrs, &op_status)) {
         fprintf(stderr, "zoidfs_remove: xdr_zoidfs_op_status_t() failed.\n");
         return ZFSERR_XDR;
@@ -598,6 +614,7 @@ int zoidfs_commit(const zoidfs_handle_t *handle) {
     zoidfs_op_status_t op_status = ZFS_OK;
     zoidfs_op_id_t zoidfs_op_id = ZOIDFS_PROTO_COMMIT;
     bmi_msg_tag_t tag = gen_tag();
+    bmi_size_t actual_size; 
 
     recvbuflen = xdr_sizeof((xdrproc_t)xdr_zoidfs_op_status_t, &op_status);
     sendbuflen = xdr_sizeof((xdrproc_t)xdr_zoidfs_op_id_t, &zoidfs_op_id) +
@@ -635,10 +652,10 @@ int zoidfs_commit(const zoidfs_handle_t *handle) {
     }
 
     /* Do a BMI receive in recvbuf */
-    ret = bmi_comm_recv(peer_addr, recvbuf, recvbuflen, tag, context);
+    ret = bmi_comm_recv(peer_addr, recvbuf, recvbuflen, tag, context, &actual_size);
 
     /* Decode the ION response */
-    xdrmem_create(&xdrs, recvbuf, recvbuflen, XDR_DECODE);
+    xdrmem_create(&xdrs, recvbuf, actual_size, XDR_DECODE);
     if (!xdr_zoidfs_op_status_t(&xdrs, &op_status)) {
         fprintf(stderr, "zoidfs_commit: xdr_zoidfs_op_status_t() failed.\n");
         return ZFSERR_XDR;
@@ -669,6 +686,7 @@ int zoidfs_create(const zoidfs_handle_t *parent_handle,
     zoidfs_op_status_t op_status = ZFS_OK;
     zoidfs_op_id_t zoidfs_op_id = ZOIDFS_PROTO_CREATE;
     bmi_msg_tag_t tag = gen_tag();
+    bmi_size_t actual_size; 
 
     /*
      * Check for invalid path params. The caller should either specify the
@@ -689,7 +707,7 @@ int zoidfs_create(const zoidfs_handle_t *parent_handle,
         sendbuflen = xdr_sizeof((xdrproc_t)xdr_zoidfs_op_id_t, &zoidfs_op_id) +
                      xdr_sizeof((xdrproc_t)xdr_zoidfs_null_param_t,
                                 &null_param) +
-                     ZOIDFS_PATH_MAX +
+                     xdr_stringsize (ZOIDFS_PATH_MAX) +
                      xdr_sizeof((xdrproc_t)xdr_zoidfs_sattr_t, (void *)sattr);
     } else {
         null_param = 0;
@@ -698,7 +716,7 @@ int zoidfs_create(const zoidfs_handle_t *parent_handle,
                                 &null_param) +
                      xdr_sizeof((xdrproc_t)xdr_zoidfs_handle_t,
                                 (void *)parent_handle) +
-                     ZOIDFS_NAME_MAX +
+                     xdr_stringsize (ZOIDFS_NAME_MAX) +
                      xdr_sizeof((xdrproc_t)xdr_zoidfs_sattr_t, (void *)sattr);
     }
 
@@ -759,10 +777,10 @@ int zoidfs_create(const zoidfs_handle_t *parent_handle,
     }
 
     /* Do a BMI receive in recvbuf */
-    ret = bmi_comm_recv(peer_addr, recvbuf, recvbuflen, tag, context);
+    ret = bmi_comm_recv(peer_addr, recvbuf, recvbuflen, tag, context, &actual_size); 
 
     /* Decode the ION response */
-    xdrmem_create(&xdrs, recvbuf, recvbuflen, XDR_DECODE);
+    xdrmem_create(&xdrs, recvbuf, actual_size, XDR_DECODE);
     if (!xdr_zoidfs_op_status_t(&xdrs, &op_status)) {
         fprintf(stderr, "zoidfs_create: xdr_zoidfs_op_status_t() failed.\n");
         return ZFSERR_XDR;
@@ -809,6 +827,7 @@ int zoidfs_rename(const zoidfs_handle_t *from_parent_handle,
     zoidfs_op_id_t zoidfs_op_id = ZOIDFS_PROTO_RENAME;
     zoidfs_null_param_t from_null_param, to_null_param;
     bmi_msg_tag_t tag = gen_tag();
+    bmi_size_t actual_size; 
 
     /*
      * Check for invalid path params. The caller should either specify the
@@ -833,27 +852,27 @@ int zoidfs_rename(const zoidfs_handle_t *from_parent_handle,
         from_null_param = 1;
         sendbuflen += xdr_sizeof((xdrproc_t)xdr_zoidfs_null_param_t,
                                  &from_null_param) +
-                      ZOIDFS_PATH_MAX;
+                      xdr_stringsize (ZOIDFS_PATH_MAX);
     } else {
         from_null_param = 0;
         sendbuflen += xdr_sizeof((xdrproc_t)xdr_zoidfs_null_param_t,
                                  &from_null_param) +
                       xdr_sizeof((xdrproc_t)xdr_zoidfs_handle_t,
                                  (void *)from_parent_handle) +
-                      ZOIDFS_NAME_MAX;
+                      xdr_stringsize (ZOIDFS_NAME_MAX);
     }
     if (to_full_path) {
         to_null_param = 1;
         sendbuflen += xdr_sizeof((xdrproc_t)xdr_zoidfs_null_param_t,
                                  &to_null_param) +
-                      ZOIDFS_PATH_MAX;
+                      xdr_stringsize (ZOIDFS_PATH_MAX);
     } else {
         to_null_param = 0;
         sendbuflen += xdr_sizeof((xdrproc_t)xdr_zoidfs_null_param_t,
                                  &to_null_param) +
                       xdr_sizeof((xdrproc_t)xdr_zoidfs_handle_t,
                                  (void *)to_parent_handle) +
-                      ZOIDFS_NAME_MAX;
+                      xdr_stringsize (ZOIDFS_NAME_MAX);
     }
 
     recvbuflen = xdr_sizeof((xdrproc_t)xdr_zoidfs_op_status_t, &op_status) +
@@ -935,10 +954,10 @@ int zoidfs_rename(const zoidfs_handle_t *from_parent_handle,
     }
 
     /* Do a BMI receive in recvbuf */
-    ret = bmi_comm_recv(peer_addr, recvbuf, recvbuflen, tag, context);
+    ret = bmi_comm_recv(peer_addr, recvbuf, recvbuflen, tag, context, &actual_size);
 
     /* Decode the ION response */
-    xdrmem_create(&xdrs, recvbuf, recvbuflen, XDR_DECODE);
+    xdrmem_create(&xdrs, recvbuf, actual_size, XDR_DECODE);
     if (!xdr_zoidfs_op_status_t(&xdrs, &op_status)) {
         fprintf(stderr, "zoidfs_rename: xdr_zoidfs_op_status_t() failed.\n");
         return ZFSERR_XDR;
@@ -996,6 +1015,7 @@ int zoidfs_link(const zoidfs_handle_t *from_parent_handle,
     zoidfs_op_id_t zoidfs_op_id = ZOIDFS_PROTO_LINK;
     zoidfs_null_param_t from_null_param, to_null_param;
     bmi_msg_tag_t tag = gen_tag();
+    bmi_size_t actual_size; 
 
     /*
      * Check for invalid path params. The caller should either specify the
@@ -1020,27 +1040,27 @@ int zoidfs_link(const zoidfs_handle_t *from_parent_handle,
         from_null_param = 1;
         sendbuflen += xdr_sizeof((xdrproc_t)xdr_zoidfs_null_param_t,
                                  &from_null_param) +
-                      ZOIDFS_PATH_MAX;
+                      xdr_stringsize (ZOIDFS_PATH_MAX);
     } else {
         from_null_param = 0;
         sendbuflen += xdr_sizeof((xdrproc_t)xdr_zoidfs_null_param_t,
                                  &from_null_param) +
                       xdr_sizeof((xdrproc_t)xdr_zoidfs_handle_t,
                                  (void *)from_parent_handle) +
-                      ZOIDFS_NAME_MAX;
+                      xdr_stringsize (ZOIDFS_NAME_MAX);
     }
     if (to_full_path) {
         to_null_param = 1;
         sendbuflen += xdr_sizeof((xdrproc_t)xdr_zoidfs_null_param_t,
                                  &to_null_param) +
-                      ZOIDFS_PATH_MAX;
+                      xdr_stringsize (ZOIDFS_PATH_MAX);
     } else {
         to_null_param = 0;
         sendbuflen += xdr_sizeof((xdrproc_t)xdr_zoidfs_null_param_t,
                                  &to_null_param) +
                       xdr_sizeof((xdrproc_t)xdr_zoidfs_handle_t,
                                  (void *)to_parent_handle) +
-                      ZOIDFS_NAME_MAX;
+                      xdr_stringsize (ZOIDFS_NAME_MAX);
     }
 
     recvbuflen = xdr_sizeof((xdrproc_t)xdr_zoidfs_op_status_t, &op_status) +
@@ -1121,34 +1141,37 @@ int zoidfs_link(const zoidfs_handle_t *from_parent_handle,
     }
 
     /* Do a BMI receive in recvbuf */
-    ret = bmi_comm_recv(peer_addr, recvbuf, recvbuflen, tag, context);
+    ret = bmi_comm_recv(peer_addr, recvbuf, recvbuflen, tag, context, &actual_size);
 
     /* Decode the ION response */
-    xdrmem_create(&xdrs, recvbuf, recvbuflen, XDR_DECODE);
+    xdrmem_create(&xdrs, recvbuf, actual_size, XDR_DECODE);
     if (!xdr_zoidfs_op_status_t(&xdrs, &op_status)) {
         fprintf(stderr, "zoidfs_link: xdr_zoidfs_op_status_t() failed.\n");
         return ZFSERR_XDR;
     }
 
-    if (from_parent_hint) {
-        if (!xdr_zoidfs_cache_hint_t(&xdrs, from_parent_hint)) {
-            fprintf(stderr,
-                    "zoidfs_link: xdr_zoidfs_cache_hint_t() failed.\n");
-            return ZFSERR_XDR;
-        }
-    } else {
-        if (!xdr_zoidfs_cache_hint_t(&xdrs, &hint)) {
-            fprintf(stderr,
-                    "zoidfs_link: xdr_zoidfs_cache_hint_t() failed.\n");
-            return ZFSERR_XDR;
-        }
-    }
-    if (to_parent_hint) {
-        if (!xdr_zoidfs_cache_hint_t(&xdrs, to_parent_hint)) {
-            fprintf(stderr,
-                    "zoidfs_link: xdr_zoidfs_cache_hint_t() failed.\n");
-            return ZFSERR_XDR;
-        }
+    if (op_status == ZFS_OK)
+    {
+       if (from_parent_hint) {
+          if (!xdr_zoidfs_cache_hint_t(&xdrs, from_parent_hint)) {
+             fprintf(stderr,
+                   "zoidfs_link: xdr_zoidfs_cache_hint_t() failed.\n");
+             return ZFSERR_XDR;
+          }
+       } else {
+          if (!xdr_zoidfs_cache_hint_t(&xdrs, &hint)) {
+             fprintf(stderr,
+                   "zoidfs_link: xdr_zoidfs_cache_hint_t() failed.\n");
+             return ZFSERR_XDR;
+          }
+       }
+       if (to_parent_hint) {
+          if (!xdr_zoidfs_cache_hint_t(&xdrs, to_parent_hint)) {
+             fprintf(stderr,
+                   "zoidfs_link: xdr_zoidfs_cache_hint_t() failed.\n");
+             return ZFSERR_XDR;
+          }
+       }
     }
 
     xdr_destroy(&xdrs);
@@ -1183,6 +1206,7 @@ int zoidfs_symlink(const zoidfs_handle_t *from_parent_handle,
     zoidfs_op_id_t zoidfs_op_id = ZOIDFS_PROTO_SYMLINK;
     zoidfs_null_param_t from_null_param, to_null_param;
     bmi_msg_tag_t tag = gen_tag();
+    bmi_size_t actual_size; 
 
     /*
      * Check for invalid path params. The caller should either specify the
@@ -1203,31 +1227,37 @@ int zoidfs_symlink(const zoidfs_handle_t *from_parent_handle,
      * path of the object or the parent_handle and component_name. This is
      * required for decoding the parameters correctly on the server.
      */
-    if (from_full_path) {
+    if (from_full_path) 
+    {
         from_null_param = 1;
+
+        /* @TODO THIS IS WRONG! */ 
         sendbuflen += xdr_sizeof((xdrproc_t)xdr_zoidfs_null_param_t,
                                  &from_null_param) +
-                      ZOIDFS_PATH_MAX;
+                      xdr_stringsize (ZOIDFS_PATH_MAX);
     } else {
         from_null_param = 0;
+        /* @TODO THIS IS WRONG! */ 
         sendbuflen += xdr_sizeof((xdrproc_t)xdr_zoidfs_null_param_t,
                                  &from_null_param) +
                       xdr_sizeof((xdrproc_t)xdr_zoidfs_handle_t,
                                  (void *)from_parent_handle) +
-                      ZOIDFS_NAME_MAX;
+                      xdr_stringsize (ZOIDFS_NAME_MAX);
     }
     if (to_full_path) {
         to_null_param = 1;
+        /* @TODO THIS IS WRONG! */ 
         sendbuflen += xdr_sizeof((xdrproc_t)xdr_zoidfs_null_param_t,
                                  &to_null_param) +
-                      ZOIDFS_PATH_MAX;
+                      xdr_stringsize (ZOIDFS_PATH_MAX);
     } else {
         to_null_param = 0;
+        /* @TODO THIS IS WRONG! */ 
         sendbuflen += xdr_sizeof((xdrproc_t)xdr_zoidfs_null_param_t,
                                  &to_null_param) +
                       xdr_sizeof((xdrproc_t)xdr_zoidfs_handle_t,
                                  (void *)to_parent_handle) +
-                      ZOIDFS_NAME_MAX;
+                      xdr_stringsize (ZOIDFS_NAME_MAX);
     }
 
     sendbuflen += xdr_sizeof((xdrproc_t)xdr_zoidfs_sattr_t, (void *)sattr);
@@ -1314,34 +1344,38 @@ int zoidfs_symlink(const zoidfs_handle_t *from_parent_handle,
     }
 
     /* Do a BMI receive in recvbuf */
-    ret = bmi_comm_recv(peer_addr, recvbuf, recvbuflen, tag, context);
+    ret = bmi_comm_recv(peer_addr, recvbuf, recvbuflen, tag, context, &actual_size);
 
     /* Decode the ION response */
-    xdrmem_create(&xdrs, recvbuf, recvbuflen, XDR_DECODE);
+    xdrmem_create(&xdrs, recvbuf, actual_size, XDR_DECODE);
     if (!xdr_zoidfs_op_status_t(&xdrs, &op_status)) {
         fprintf(stderr, "zoidfs_symlink: xdr_zoidfs_op_status_t() failed.\n");
         return ZFSERR_XDR;
     }
 
-    if (from_parent_hint) {
-        if (!xdr_zoidfs_cache_hint_t(&xdrs, from_parent_hint)) {
-            fprintf(stderr,
-                    "zoidfs_symlink: xdr_zoidfs_cache_hint_t() failed.\n");
-            return ZFSERR_XDR;
-        }
-    } else {
-        if (!xdr_zoidfs_cache_hint_t(&xdrs, &hint)) {
-            fprintf(stderr,
-                    "zoidfs_symlink: xdr_zoidfs_cache_hint_t() failed.\n");
-            return ZFSERR_XDR;
-        }
-    }
-    if (to_parent_hint) {
-        if (!xdr_zoidfs_cache_hint_t(&xdrs, to_parent_hint)) {
-            fprintf(stderr,
-                    "zoidfs_symlink: xdr_zoidfs_cache_hint_t() failed.\n");
-            return ZFSERR_XDR;
-        }
+    if (op_status == ZFS_OK)
+    {
+       if (from_parent_hint) 
+       {
+          if (!xdr_zoidfs_cache_hint_t(&xdrs, from_parent_hint)) {
+             fprintf(stderr,
+                   "zoidfs_symlink: xdr_zoidfs_cache_hint_t() failed.\n");
+             return ZFSERR_XDR;
+          }
+       } else {
+          if (!xdr_zoidfs_cache_hint_t(&xdrs, &hint)) {
+             fprintf(stderr,
+                   "zoidfs_symlink: xdr_zoidfs_cache_hint_t() failed.\n");
+             return ZFSERR_XDR;
+          }
+       }
+       if (to_parent_hint) {
+          if (!xdr_zoidfs_cache_hint_t(&xdrs, to_parent_hint)) {
+             fprintf(stderr,
+                   "zoidfs_symlink: xdr_zoidfs_cache_hint_t() failed.\n");
+             return ZFSERR_XDR;
+          }
+       }
     }
 
     xdr_destroy(&xdrs);
@@ -1371,6 +1405,7 @@ int zoidfs_mkdir(const zoidfs_handle_t *parent_handle,
     zoidfs_op_status_t op_status = ZFS_OK;
     zoidfs_op_id_t zoidfs_op_id = ZOIDFS_PROTO_MKDIR;
     bmi_msg_tag_t tag = gen_tag();
+    bmi_size_t actual_size; 
 
     /*
      * Check for invalid path params. The caller should either specify the
@@ -1391,7 +1426,7 @@ int zoidfs_mkdir(const zoidfs_handle_t *parent_handle,
         sendbuflen = xdr_sizeof((xdrproc_t)xdr_zoidfs_op_id_t, &zoidfs_op_id) +
                      xdr_sizeof((xdrproc_t)xdr_zoidfs_null_param_t,
                                 &null_param) +
-                     ZOIDFS_PATH_MAX +
+                     xdr_stringsize(ZOIDFS_PATH_MAX) +
                      xdr_sizeof((xdrproc_t)xdr_zoidfs_sattr_t, (void *)sattr);
     } else {
         null_param = 0;
@@ -1400,7 +1435,7 @@ int zoidfs_mkdir(const zoidfs_handle_t *parent_handle,
                                 &null_param) +
                      xdr_sizeof((xdrproc_t)xdr_zoidfs_handle_t,
                                 (void *)parent_handle) +
-                     ZOIDFS_NAME_MAX +
+                     xdr_stringsize (ZOIDFS_NAME_MAX) +
                      xdr_sizeof((xdrproc_t)xdr_zoidfs_sattr_t, (void *)sattr);
     }
 
@@ -1468,10 +1503,10 @@ int zoidfs_mkdir(const zoidfs_handle_t *parent_handle,
     }
 
     /* Do a BMI receive in recvbuf */
-    ret = bmi_comm_recv(peer_addr, recvbuf, recvbuflen, tag, context);
+    ret = bmi_comm_recv(peer_addr, recvbuf, recvbuflen, tag, context, &actual_size);
 
     /* Decode the ION response */
-    xdrmem_create(&xdrs, recvbuf, recvbuflen, XDR_DECODE);
+    xdrmem_create(&xdrs, recvbuf, actual_size, XDR_DECODE);
     if (!xdr_zoidfs_op_status_t(&xdrs, &op_status)) {
         fprintf(stderr, "zoidfs_mkdir: xdr_zoidfs_op_status_t() failed.\n");
         return ZFSERR_XDR;
@@ -1506,17 +1541,31 @@ int zoidfs_readdir(const zoidfs_handle_t *parent_handle,
     int ret;
     XDR xdrs;
     void *sendbuf, *recvbuf;
+    /* @TODO: put assert here checking there is no overflow */
     uint32_t entry_count = *entry_count_; /* workaround for 32bit */
     zoidfs_cache_hint_t hint;
     bmi_size_t sendbuflen, recvbuflen;
     zoidfs_op_status_t op_status = ZFS_OK;
     zoidfs_op_id_t zoidfs_op_id = ZOIDFS_PROTO_READDIR;
     bmi_msg_tag_t tag = gen_tag();
+    dirent_t_transfer trans; 
+    bmi_size_t actual_size; 
 
-    recvbuflen = xdr_sizeof((xdrproc_t)xdr_zoidfs_op_status_t, &op_status) +
-        xdr_sizeof((xdrproc_t)xdr_uint32_t, &entry_count) +
-        sizeof(uint32_t) + entry_count * xdr_sizeof((xdrproc_t)xdr_zoidfs_dirent_t, entries) +
-        xdr_sizeof((xdrproc_t)xdr_zoidfs_cache_hint_t, &hint);
+    /* server sends int32_t (returncode) followed by int32_t (entry_count)
+    * followed by an array of zoidfs_dirent_t followed by the
+    * zoidfs_cache_hint_t */
+
+    trans.count = &entry_count; 
+    trans.entries = &entries; 
+    trans.maxcount = entry_count; 
+
+    recvbuflen = 
+         xdr_sizeof((xdrproc_t) xdr_zoidfs_op_status_t, &op_status)  /* int32_t */ 
+       + xdr_sizeof((xdrproc_t) xdr_uint32_t, &entry_count) /* entry_count (uint32_t) */ 
+       + xdr_sizeof((xdrproc_t) xdr_zoidfs_cache_hint_t, &hint)
+       /* cannot use xdr_sizeof because that requires actual data (i.e. string
+        * lengths) */ 
+       + xdr_zoidfs_dirent_array_size (entry_count); 
 
     sendbuflen = xdr_sizeof((xdrproc_t)xdr_zoidfs_op_id_t, &zoidfs_op_id) +
                  xdr_sizeof((xdrproc_t)xdr_zoidfs_handle_t, (void *)parent_handle) +
@@ -1569,30 +1618,38 @@ int zoidfs_readdir(const zoidfs_handle_t *parent_handle,
     }
 
     /* Do a BMI receive in recvbuf */
-    ret = bmi_comm_recv(peer_addr, recvbuf, recvbuflen, tag, context);
+    ret = bmi_comm_recv(peer_addr, recvbuf, recvbuflen, tag, context, &actual_size);
 
     /* Decode the ION response */
-    xdrmem_create(&xdrs, recvbuf, recvbuflen, XDR_DECODE);
+    xdrmem_create(&xdrs, recvbuf, actual_size, XDR_DECODE);
     if (!xdr_zoidfs_op_status_t(&xdrs, &op_status)) {
         fprintf(stderr, "zoidfs_readdir: xdr_zoidfs_op_status_t() failed.\n");
         return ZFSERR_XDR;
     }
-    if (!xdr_uint32_t(&xdrs, &entry_count)) {
-        fprintf(stderr, "zoidfs_readdir: xdr_uint32_t() failed.\n");
-        return ZFSERR_XDR;
-    }
-    if (!xdr_array(&xdrs, (char **)&entries, (unsigned int *)&entry_count,
-                   MAXARRSIZE, sizeof(zoidfs_dirent_t),
-                   (xdrproc_t)xdr_zoidfs_dirent_t)) {
-        fprintf(stderr, "zoidfs_readdir: xdr_array() failed.\n");
-        return ZFSERR_XDR;
-    }
-    if (parent_hint) {
-        if (!xdr_zoidfs_cache_hint_t(&xdrs, parent_hint)) {
-            fprintf(stderr,
-                    "zoidfs_readdir: xdr_zoidfs_cache_hint_t() failed.\n");
-            return ZFSERR_XDR;
-        }
+
+    /* If an error occurs, no dir entries are returned */
+    if (op_status == ZFS_OK)
+    {
+       if (!xdr_uint32_t(&xdrs, &entry_count)) {
+          fprintf(stderr, "zoidfs_readdir: xdr_uint32_t() failed.\n");
+          return ZFSERR_XDR;
+       }
+
+       /* xdr_array(&xdrs, (char **)&entries, (unsigned int *)&entry_count,
+          entry_count, sizeof(zoidfs_dirent_t),
+          (xdrproc_t)xdr_zoidfs_dirent_t)) {*/ 
+       if (!xdr_zoidfs_dirent_array (&xdrs, &trans))
+       {
+          fprintf(stderr, "zoidfs_readdir: xdr_array() failed.\n");
+          return ZFSERR_XDR;
+       }
+       if (parent_hint) {
+          if (!xdr_zoidfs_cache_hint_t(&xdrs, parent_hint)) {
+             fprintf(stderr,
+                   "zoidfs_readdir: xdr_zoidfs_cache_hint_t() failed.\n");
+             return ZFSERR_XDR;
+          }
+       }
     }
     xdr_destroy(&xdrs);
 
@@ -1604,7 +1661,7 @@ int zoidfs_readdir(const zoidfs_handle_t *parent_handle,
     BMI_memfree(peer_addr, sendbuf, sendbuflen, BMI_SEND);
 
     return op_status;
-}
+    }
 
 
 /*
@@ -1619,6 +1676,7 @@ int zoidfs_resize(const zoidfs_handle_t *handle, uint64_t size) {
     zoidfs_op_status_t op_status = ZFS_OK;
     zoidfs_op_id_t zoidfs_op_id = ZOIDFS_PROTO_RESIZE;
     bmi_msg_tag_t tag = gen_tag();
+    bmi_size_t actual_size; 
 
     recvbuflen = xdr_sizeof((xdrproc_t)xdr_zoidfs_op_status_t, &op_status);
     sendbuflen = xdr_sizeof((xdrproc_t)xdr_zoidfs_op_id_t, &zoidfs_op_id) +
@@ -1661,10 +1719,10 @@ int zoidfs_resize(const zoidfs_handle_t *handle, uint64_t size) {
     }
 
     /* Do a BMI receive in recvbuf */
-    ret = bmi_comm_recv(peer_addr, recvbuf, recvbuflen, tag, context);
+    ret = bmi_comm_recv(peer_addr, recvbuf, recvbuflen, tag, context, &actual_size);
 
     /* Decode the ION response */
-    xdrmem_create(&xdrs, recvbuf, recvbuflen, XDR_DECODE);
+    xdrmem_create(&xdrs, recvbuf, actual_size, XDR_DECODE);
     if (!xdr_zoidfs_op_status_t(&xdrs, &op_status)) {
         fprintf(stderr, "zoidfs_resize: xdr_zoidfs_op_status_t() failed.\n");
         return ZFSERR_XDR;
@@ -1699,6 +1757,7 @@ int zoidfs_write(const zoidfs_handle_t *handle, size_t mem_count_,
     bmi_size_t * mem_sizes = (bmi_size_t*)malloc(sizeof(bmi_size_t) * mem_count);
     uint32_t file_count = file_count_;
     uint64_t pipeline_size = 0;
+    bmi_size_t actual_size; 
 
 #define PIPELINE_SIZE (1024UL * 1024 * 8)
     size_t total_size = 0;
@@ -1745,6 +1804,7 @@ int zoidfs_write(const zoidfs_handle_t *handle, size_t mem_count_,
         fprintf(stderr, "zoidfs_write: xdr_uint32_t() failed.\n");
         return ZFSERR_XDR;
     }
+    /* INT_MAX IS WRONG! */ 
     if (!xdr_array(&xdrs, (char **)&mem_sizes, (unsigned int *)&mem_count,
                    INT_MAX, sizeof(uint64_t), (xdrproc_t)xdr_uint64_t)) {
         fprintf(stderr, "zoidfs_write: xdr_array() failed.\n");
@@ -1754,6 +1814,7 @@ int zoidfs_write(const zoidfs_handle_t *handle, size_t mem_count_,
         fprintf(stderr, "zoidfs_write: xdr_uint32_t() failed.\n");
         return ZFSERR_XDR;
     }
+    /* INT_MAX is WRONG */ 
     if (!xdr_array(&xdrs, (char **)&file_starts, (unsigned int *)&file_count,
                    INT_MAX, sizeof(uint64_t), (xdrproc_t)xdr_uint64_t)) {
         fprintf(stderr, "zoidfs_write: xdr_array() failed.\n");
@@ -1804,10 +1865,10 @@ int zoidfs_write(const zoidfs_handle_t *handle, size_t mem_count_,
         return ZFSERR_MISC;
     }
 
-    ret = bmi_comm_recv(peer_addr, recvbuf, recvbuflen, tag, context);
+    ret = bmi_comm_recv(peer_addr, recvbuf, recvbuflen, tag, context, &actual_size);
 
     /* Decode the ION response */
-    xdrmem_create(&xdrs, recvbuf, recvbuflen, XDR_DECODE);
+    xdrmem_create(&xdrs, recvbuf, actual_size, XDR_DECODE);
     if (!xdr_zoidfs_op_status_t(&xdrs, &op_status)) {
         fprintf(stderr, "zoidfs_write: xdr_zoidfs_op_status_t() failed.\n");
         return ZFSERR_XDR;
@@ -1930,6 +1991,7 @@ int zoidfs_read(const zoidfs_handle_t *handle, zoidfs_size_t mem_count_,
     bmi_size_t * mem_sizes = (bmi_size_t*)malloc(sizeof(bmi_size_t) * mem_count);
     uint32_t file_count = file_count_;
     uint64_t pipeline_size = 0;
+    bmi_size_t actual_size; 
 
     size_t total_size = 0;
     for (i = 0; i < mem_count_; i++) {
@@ -2012,7 +2074,7 @@ int zoidfs_read(const zoidfs_handle_t *handle, zoidfs_size_t mem_count_,
         if (mem_count == 1) {
             /* Contiguous read */
             ret = bmi_comm_recv(peer_addr, mem_starts[0], ZOIDFS_BUFFER_MAX, tag,
-                                context);
+                                context, &actual_size);
         } else {
             /* Strided reads */
             ret = bmi_comm_recv_list(peer_addr, mem_count,
@@ -2033,10 +2095,10 @@ int zoidfs_read(const zoidfs_handle_t *handle, zoidfs_size_t mem_count_,
         return ZFSERR_MISC;
     }
 
-    ret = bmi_comm_recv(peer_addr, recvbuf, recvbuflen, tag, context);
+    ret = bmi_comm_recv(peer_addr, recvbuf, recvbuflen, tag, context, &actual_size);
 
     /* Decode the ION response */
-    xdrmem_create(&xdrs, recvbuf, recvbuflen, XDR_DECODE);
+    xdrmem_create(&xdrs, recvbuf, actual_size, XDR_DECODE);
     if (!xdr_zoidfs_op_status_t(&xdrs, &op_status)) {
         fprintf(stderr, "zoidfs_read: xdr_zoidfs_op_status_t() failed.\n");
         return ZFSERR_XDR;

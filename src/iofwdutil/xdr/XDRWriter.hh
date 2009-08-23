@@ -29,6 +29,7 @@ public:
       return mem_; 
    }
 
+   /* Return actual encoded data size */ 
    size_t size () const
    {
       return getPos (); 

@@ -1,11 +1,27 @@
+#include <assert.h>
 /*
  * zoidfs_xdr.c
  * XDR encoding/decoding function implementation for ZOIDFS data structures.
  *
  * Nawab Ali <alin@cse.ohio-state.edu>
+ *
+ * Dries Kimpe <dkimpe@mcs.anl.gov> 
  */
 
 #include "zoidfs_xdr.h"
+
+
+/* round up to next multiple of 4 */
+
+static inline unsigned int round4 (unsigned int s)
+{
+   return (((s+3)/4)*4);
+}
+
+unsigned int xdr_stringsize (unsigned int maxlen)
+{
+   return 4 + round4 (maxlen); 
+}
 
 /*
  * xdr_zoidfs_op_id_t
@@ -24,6 +40,11 @@ bool_t xdr_zoidfs_null_param_t(XDR *xdrs, zoidfs_null_param_t *null_param) {
     return(xdr_int32_t(xdrs, null_param));
 }
 
+bool_t xdr_string_helper (XDR * xdr, string_transfer * t)
+{
+   assert (t->buffer); 
+   return xdr_string (xdr, &t->buffer, t->maxsize); 
+}
 
 /*
  * xdr_zoidfs_op_status_t
@@ -39,7 +60,7 @@ bool_t xdr_zoidfs_op_status_t(XDR *xdrs, zoidfs_op_status_t *op_status) {
  * Encode/decode zoidfs_handle_t using XDR.
  */
 bool_t xdr_zoidfs_handle_t(XDR *xdrs, const zoidfs_handle_t *handle) {
-    return(xdr_opaque(xdrs, (char *)handle->data, 32));
+    return(xdr_opaque(xdrs, (char *)handle->data, sizeof (handle->data)));
 }
 
 
@@ -51,39 +72,42 @@ bool_t xdr_zoidfs_dirent_cookie_t(XDR *xdrs, zoidfs_dirent_cookie_t *cookie) {
     return(xdr_uint64_t(xdrs, cookie));
 }
 
+/* return max size required for entry_count dirent structures */ 
+unsigned int xdr_zoidfs_dirent_array_size (unsigned int entry_count)
+{
+   zoidfs_dirent_t dummy; 
+
+   unsigned int ret = 
+       4 /* number of entries in array */ + 
+       entry_count * (4  /* length of string */  
+          + round4 (ZOIDFS_NAME_MAX) /* string data */ 
+          + xdr_sizeof ((xdrproc_t) xdr_zoidfs_handle_t, &dummy.handle)
+          + xdr_sizeof ((xdrproc_t) xdr_zoidfs_attr_t, &dummy.attr)
+          + xdr_sizeof ((xdrproc_t) xdr_zoidfs_dirent_cookie_t, &dummy.cookie)
+        ); 
+
+   return ret; 
+
+}
 
 /*
  * xdr_zoidfs_dirent_t
  * Encode/decode zoidfs_dirent_t using XDR.
+ *
+ * This is ridiculous: this function is also called for size calculations,
+ * so why should it allocate memory in that case???
  */
-bool_t xdr_zoidfs_dirent_t(XDR *xdrs, zoidfs_dirent_t *dirent) {
+bool_t xdr_zoidfs_dirent_t(XDR *xdrs, zoidfs_dirent_t *dirent) 
+{
     bool_t ret;
-    char *str = malloc(ZOIDFS_NAME_MAX+1);
-    if (!str) {
-        return 0;
-    }
-    memset(str, 0, ZOIDFS_NAME_MAX+1);
 
-    /*
-     * It turns out that XDR can only encode/decode dynamically allocated
-     * strings. Hence, we have to jump through a few hoops here. This is
-     * worth investigating though.
-     */
-    if (xdrs->x_op == XDR_ENCODE) {
-        strncpy(str, dirent->name, ZOIDFS_NAME_MAX);
-        ret = xdr_string(xdrs, (char **)&str, ZOIDFS_NAME_MAX+1) &&
-              xdr_zoidfs_handle_t(xdrs, &dirent->handle) &&
-              xdr_zoidfs_attr_t(xdrs, &dirent->attr) &&
-              xdr_zoidfs_dirent_cookie_t(xdrs, &dirent->cookie);
-    } else {
-        ret = xdr_string(xdrs, (char **)&str, ZOIDFS_NAME_MAX+1) &&
-              xdr_zoidfs_handle_t(xdrs, &dirent->handle) &&
-              xdr_zoidfs_attr_t(xdrs, &dirent->attr) &&
-              xdr_zoidfs_dirent_cookie_t(xdrs, &dirent->cookie);
-        strncpy(dirent->name, str, ZOIDFS_NAME_MAX);
-    }
+    char * ptr = &dirent->name[0]; 
 
-    free(str);
+    ret = xdr_string(xdrs, &ptr, sizeof (dirent->name)-1);
+    ret = ret &&  xdr_zoidfs_handle_t(xdrs, &dirent->handle);
+    ret = ret &&  xdr_zoidfs_attr_t(xdrs, &dirent->attr);
+    ret = ret &&  xdr_zoidfs_dirent_cookie_t(xdrs, &dirent->cookie);
+
     return(ret);
 }
 
@@ -170,6 +194,19 @@ bool_t xdr_zoidfs_sattr_t(XDR *xdrs, zoidfs_sattr_t *attr) {
     return(ret);
 }
 
+bool_t xdr_zoidfs_dirent_array (XDR * xdr, dirent_t_transfer * t)
+{
+   unsigned int c = *t->count; 
+
+   /* t->entries is a pointer to a pointer to a set of dirent_t structs */ 
+   assert (t->entries);
+   assert (*t->entries); 
+   bool_t ret = xdr_array (xdr, (char **) t->entries, &c, t->maxcount, 
+         sizeof (zoidfs_dirent_t), (xdrproc_t) xdr_zoidfs_dirent_t ); 
+
+   *t->count = c;
+   return ret; 
+}
 /*
  * Local variables:
  *  mode: c

@@ -51,6 +51,12 @@ public:
       destroy (); 
    }
 
+   /* Return max size of encoded data */ 
+   size_t getMaxSize () const
+   {
+      return size_; 
+   }
+
    size_t getPos () const 
    {
       return xdr_getpos (&xdr_); 

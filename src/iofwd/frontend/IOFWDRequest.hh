@@ -21,6 +21,8 @@
 
 #include "iofwdutil/completion/BMIResource.hh"
 
+#include "iofwdutil/IOFWDLog.hh"
+
 using iofwdutil::completion::CompletionID; 
 
 namespace iofwd
@@ -69,6 +71,8 @@ protected:
    {
       iofwdutil::xdr::XDRSizeProcessor s; 
       applyTypes (s, op); 
+      fprintf (stderr, "simpleReply: actual=%u, max=%u\n", 
+            s.getSize().actual, s.getSize().max);  
       beginReply (s.getSize().actual); 
       applyTypes (reply_writer_, op); 
       return sendReply (); 
@@ -106,6 +110,8 @@ protected:
    iofwdutil::bmi::BMIBuffer buffer_send_; 
 
    iofwdutil::completion::BMIResource & bmires_; 
+
+   static iofwdutil::zlog::ZLogSource & log_; 
 }; 
 
 

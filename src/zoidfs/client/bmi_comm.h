@@ -22,7 +22,7 @@
 int bmi_comm_send(BMI_addr_t, const void *, bmi_size_t, bmi_msg_tag_t,
                   bmi_context_id);
 int bmi_comm_recv(BMI_addr_t, void *, bmi_size_t, bmi_msg_tag_t,
-                  bmi_context_id);
+                  bmi_context_id, bmi_size_t * actual_size );
 int bmi_comm_sendu(BMI_addr_t, const void *, bmi_size_t, bmi_msg_tag_t,
                    bmi_context_id);
 int bmi_comm_recvu(BMI_addr_t *, void **, bmi_size_t *, bmi_msg_tag_t *);

@@ -2,6 +2,12 @@
 #define ZOIDFS_H
 
 #define ZOIDFS_NULL_COOKIE 0
+
+/* NOTE: The following states that a valid name can be up to and including 256 
+ * characters. This means that in C, the buffer is going to be ZOIDFS_NAME_MAX
+ * + 1. 
+ * We might consider adjusting the lenghts below so that they are still
+ * aligned... */
 #define ZOIDFS_NAME_MAX 256
 #define ZOIDFS_PATH_MAX 4096
 
