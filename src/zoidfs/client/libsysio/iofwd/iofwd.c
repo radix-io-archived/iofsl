@@ -31,6 +31,7 @@
 #include <sys/queue.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <sys/uio.h>
 
 #include "sysio.h"
 #include "xtio.h"
@@ -38,6 +39,7 @@
 #include "inode.h"
 #include "mount.h"
 #include "dev.h"
+
 
 #include "iofwd.h"
 
@@ -163,6 +165,22 @@ int __attribute__((weak)) SYSIO_INTERFACE_NAME(close)(int oflag)
     return 0;
 }
 
+int __attribute__((weak)) SYSIO_INTERFACE_NAME(mkdir)(const char * path, mode_t oflag)
+{
+    SYSIO_IOFWD_FENTER();
+    SYSIO_IOFWD_FINFO("WARNING: not implemented!");
+    SYSIO_IOFWD_FEXIT();
+    return 0;
+}
+
+/*int __attribute__((weak)) SYSIO_INTERFACE_NAME(rmdir)(const char * path)
+{
+    SYSIO_IOFWD_FENTER();
+    SYSIO_IOFWD_FINFO("WARNING: not implemented!");
+    SYSIO_IOFWD_FEXIT();
+    return 0;
+}*/
+
 /*int __attribute__((weak)) SYSIO_INTERFACE_NAME(unlink)(const char * path)
 {
     SYSIO_IOFWD_FENTER();
@@ -254,95 +272,114 @@ do { \
 
 #define COPY_SYSIO_ZFS_ATTR(src, dest)              \
 do {                                                \
-    (dest)->mask = ZFS_ATTR_ALL;                    \
+    (dest)->mask = ZOIDFS_ATTR_ALL;                 \
     (dest)->mode = (src)->st_mode & 0777;           \
     if(S_ISREG((src)->st_mode))                     \
     {                                               \
-        (dest)->mode = ZOIDFS_REG;                  \
+        (dest)->type = ZOIDFS_REG;                  \
     else if(S_ISDIR((src)->st_mode))                \
     {                                               \
-        (dest)->mode = ZOIDFS_DIR;                  \
+        (dest)->type = ZOIDFS_DIR;                  \
     }                                               \
     else if(S_ISCHR((src)->st_mode))                \
     {                                               \
-        (dest)->mode = ZOIDFS_CHR;                  \
+        (dest)->type = ZOIDFS_CHR;                  \
     }                                               \
     else if(S_ISBLK((src)->st_mode))                \
     {                                               \
-        (dest)->mode = ZOIDFS_BLK;                  \
+        (dest)->type = ZOIDFS_BLK;                  \
     }                                               \
     else if(S_ISFIFO((src)->st_mode))               \
     {                                               \
-        (dest)->mode = ZOIDFS_FIFO;                 \
+        (dest)->type = ZOIDFS_FIFO;                 \
     }                                               \
     else if(S_ISLNK((src)->st_mode))                \
     {                                               \
-        (dest)->mode = ZOIDFS_LNK;                  \
+        (dest)->type = ZOIDFS_LNK;                  \
     }                                               \
     else if(S_ISSOCK((src)->st_mode))               \
     {                                               \
-        (dest)->mode = ZOIDFS_SOCK;                 \
+        (dest)->type = ZOIDFS_SOCK;                 \
     }                                               \
     else                                            \
     {                                               \
-        (dest)->mode = ZOIDFS_INVAL;                \
+        (dest)->type = ZOIDFS_INVAL;                \
     }                                               \
     (dest)->uid = (src)->st_uid;                    \
     (dest)->gid = (src)->st_gid;                    \
     (dest)->size = (src)->st_size;                  \
     (dest)->blocksize = (src)->st_blksize;          \
     (dest)->nlink = (src)->st_nlink;                \
-    (dest)->mode = (src)->st_mode;                  \
     (dest)->atime.seconds = (src)->st_atime;        \
     (dest)->atime.nseconds = 0;                     \
     (dest)->mtime.seconds = (src)->st_mtime;        \
     (dest)->mtime.nseconds = 0;                     \
     (dest)->ctime.seconds = (src)->st_ctime;        \
     (dest)->ctime.nseconds = 0;                     \
-    (dest)->fileid = 0;                             \
-    (dest)->fsid = 0;                               \
+    (dest)->fileid = (src)->st_ino;                             \
+    (dest)->fsid = (src)->st_dev;                               \
 } while(0);
 
 #define COPY_ZFS_SYSIO_ATTR(src, dest)              \
 do {                                                \
     (dest)->st_mode = (src)->mode & 0777;           \
-    if((src)->mode == ZOIDFS_REG)                   \
+    if((src)->type == ZOIDFS_REG)                   \
     {                                               \
        (dest)->st_mode = (dest)->st_mode | S_IFREG; \
     }                                               \
-    else if((src)->mode == ZOIDFS_DIR)              \
+    else if((src)->type == ZOIDFS_DIR)              \
     {                                               \
        (dest)->st_mode = (dest)->st_mode | S_IFDIR; \
     }                                               \
-    else if((src)->mode == ZOIDFS_LNK)              \
+    else if((src)->type == ZOIDFS_LNK)              \
     {                                               \
        (dest)->st_mode = (dest)->st_mode | S_IFLNK; \
     }                                               \
-    else if((src)->mode == ZOIDFS_CHR)              \
+    else if((src)->type == ZOIDFS_CHR)              \
     {                                               \
        (dest)->st_mode = (dest)->st_mode | S_IFCHR; \
     }                                               \
-    else if((src)->mode == ZOIDFS_BLK)              \
+    else if((src)->type == ZOIDFS_BLK)              \
     {                                               \
        (dest)->st_mode = (dest)->st_mode | S_IFBLK; \
     }                                               \
-    else if((src)->mode == ZOIDFS_FIFO)             \
+    else if((src)->type == ZOIDFS_FIFO)             \
     {                                               \
        (dest)->st_mode = (dest)->st_mode | S_IFIFO; \
-    }                                               \
-    else                                            \
-    {                                               \
-        (dest)->st_mode = 0;                        \
     }                                               \
     (dest)->st_uid = (src)->uid;                    \
     (dest)->st_gid = (src)->gid;                    \
     (dest)->st_size = (src)->size;                  \
     (dest)->st_blksize = (src)->blocksize;          \
     (dest)->st_nlink = (src)->nlink;                \
-    (dest)->st_mode = (src)->mode;                  \
     (dest)->st_atime = (src)->atime.seconds;        \
     (dest)->st_mtime = (src)->mtime.seconds;        \
     (dest)->st_ctime = (src)->ctime.seconds;        \
+    (dest)->st_ino = (src)->fileid;                 \
+    (dest)->st_dev = (src)->fsid;                   \
+} while(0);
+
+#define COPY_ZFS_SYSIO_SATTR(src, dest)             \
+do {                                                \
+    (dest)->st_mode = (src)->mode & 0777;           \
+    (dest)->st_uid = (src)->uid;                    \
+    (dest)->st_gid = (src)->gid;                    \
+    (dest)->st_size = (src)->size;                  \
+    (dest)->st_atime = (src)->atime.seconds;        \
+    (dest)->st_mtime = (src)->mtime.seconds;        \
+} while(0);
+
+#define COPY_SYSIO_ZFS_SATTR(src, dest)             \
+do {                                                \
+    (dest)->mask = ZOIDFS_ATTR_ALL;                 \
+    (dest)->mode = (src)->st_mode & 0777;           \
+    (dest)->uid = (src)->st_uid;                    \
+    (dest)->gid = (src)->st_gid;                    \
+    (dest)->size = (src)->st_size;                  \
+    (dest)->atime.seconds = (src)->st_atime;        \
+    (dest)->atime.nseconds = 0;                     \
+    (dest)->mtime.seconds = (src)->st_mtime;        \
+    (dest)->mtime.nseconds = 0;                     \
 } while(0);
 
 /*
@@ -870,8 +907,13 @@ static int iofwd_inop_open(struct pnode *pno, int flags, mode_t mode)
             }
             fd = err;
         }
-    } else
+    } 
+    else
+    {
+        SYSIO_IOFWD_FINFO("Found the libsysio ino for this file!");
         I_GET(ino);
+    }
+
     free(path);
     if (fd < 0)
     {
@@ -889,6 +931,7 @@ static int iofwd_inop_open(struct pnode *pno, int flags, mode_t mode)
         if (iino->ii_fd >= 0) {
             if ((iino->ii_oflags & O_RDWR) ||
                 (flags & (O_RDONLY|O_WRONLY|O_RDWR)) == O_RDONLY) {
+                SYSIO_IOFWD_FINFO("Break out of the fd init!");
                 break;
             }
         }
@@ -950,13 +993,6 @@ static int iofwd_inop_lookup(struct pnode *pno, struct inode **inop, struct inte
             *inop = NULL;
         }
     }
-    /*
-     * Otherwise, the file does not exist so set the inop to NULL
-     */
-    /*else
-    {
-        *inop = NULL;
-    }*/
 
     SYSIO_IOFWD_FEXIT();
 	return err;
@@ -977,6 +1013,7 @@ static int iofwd_inop_getattr(struct pnode *pno, struct intnl_stat *stbuf)
     zoidfs_attr_t resattr;
     zoidfs_handle_t fhandle;
 
+    /* get the path */
     path = _sysio_pb_path(pno->p_base, '/');
     if (!path)
     {
@@ -984,9 +1021,11 @@ static int iofwd_inop_getattr(struct pnode *pno, struct intnl_stat *stbuf)
         return -ENOMEM;
     }
 
+    /* get the file handle */
     err = zoidfs_lookup(NULL, NULL, path, &fhandle);
     if(err == ZFS_OK)
     {
+        /* get the attrs for the file handle */
         resattr.mask = ZOIDFS_ATTR_ALL; 
         err = zoidfs_getattr(&fhandle, &resattr);
         if(err == ZFS_OK)
@@ -994,6 +1033,8 @@ static int iofwd_inop_getattr(struct pnode *pno, struct intnl_stat *stbuf)
             COPY_ZFS_SYSIO_ATTR(&resattr, stbuf);
         }
     }
+
+    /* cleanup */
     free(path);
 
     SYSIO_IOFWD_FEXIT();
@@ -1006,6 +1047,42 @@ static int iofwd_inop_getattr(struct pnode *pno, struct intnl_stat *stbuf)
 static int iofwd_inop_setattr(struct pnode *pno, unsigned mask, struct intnl_stat *stbuf)
 {
     SYSIO_IOFWD_FENTER();
+
+    int err = 0;
+    char    *path;
+    struct inode *ino;
+    struct filesys *fs;
+    time_t  t;
+    zoidfs_attr_t attr;
+    zoidfs_sattr_t sattr;
+    zoidfs_handle_t fhandle;
+
+    /* get the path */
+    path = _sysio_pb_path(pno->p_base, '/');
+    if (!path)
+    {
+        SYSIO_IOFWD_FEXIT();
+        return -ENOMEM;
+    }
+
+    /* get the file handle */
+    err = zoidfs_lookup(NULL, NULL, path, &fhandle);
+    if(err == ZFS_OK)
+    {
+        /* set the attrs for the file handle */
+        COPY_SYSIO_ZFS_SATTR(stbuf, &sattr);
+        sattr.mask = mask; 
+        attr.mask = mask; 
+        err = zoidfs_setattr(&fhandle, &sattr, &attr);
+        if(err == ZFS_OK)
+        {
+            COPY_ZFS_SYSIO_ATTR(&attr, stbuf);
+        }
+    }
+
+    /* cleanup */
+    free(path);
+
     SYSIO_IOFWD_FEXIT();
 	return 0;
 }
@@ -1031,9 +1108,11 @@ static int iofwd_inop_mkdir(struct pnode *pno, mode_t mode)
     int err;
     zoidfs_sattr_t sattr;
 
+    /* set the mode in the zoidfs attribute */
     sattr.mask = ZOIDFS_ATTR_MODE;
     sattr.mode = 0777 & mode; 
 
+    /* get the full path */
     path = _sysio_pb_path(pno->p_base, '/');
     if (!path)
     {
@@ -1041,21 +1120,67 @@ static int iofwd_inop_mkdir(struct pnode *pno, mode_t mode)
         return -ENOMEM;
     }
 
+    /* invoke the zoidfs mkdir call */
     err = zoidfs_mkdir(NULL, NULL, path, &sattr, NULL);
-    
+
+    /* cleanup */    
     free(path);
+
     SYSIO_IOFWD_FEXIT();
     return err;
 }
 
 /*
- * zoidfs call for rmdir() 
+ * zoidfs call / mapping for posix rmdir() 
  */
 static int iofwd_inop_rmdir(struct pnode *pno)
 {
     SYSIO_IOFWD_FENTER();
+
+    char * path;
+    int err;
+    zoidfs_handle_t fhandle;
+    zoidfs_attr_t attr;
+
+    /* get the full path */
+    path = _sysio_pb_path(pno->p_base, '/');
+    if (!path)
+    {
+        SYSIO_IOFWD_FEXIT();
+        return -ENOMEM;
+    }
+
+    /* check that this is a directory... if not exit with an error */
+    err = zoidfs_lookup(NULL, NULL, path, &fhandle);
+    if(err != ZFS_OK)
+    {
+        SYSIO_IOFWD_FEXIT();
+        return err;
+    }
+
+    /* get the file attributes */
+    attr.mask = ZOIDFS_ATTR_MODE;
+    err = zoidfs_getattr(&fhandle, &attr);
+    if(err != ZFS_OK)
+    {
+        SYSIO_IOFWD_FEXIT();
+        return err;
+    } 
+
+    /* Is this a directory */
+    if(attr.type != ZOIDFS_DIR)
+    {
+        return ENOTDIR;
+    }
+
+    /* invoke the zoidfs remove call to remove the directory */
+    err = zoidfs_remove(NULL, NULL, path, NULL);
+    
+    /* cleanup */   
+    free(path);
+
     SYSIO_IOFWD_FEXIT();
-	return 0;
+	return err; 
 }
 
 /*
@@ -1064,8 +1189,32 @@ static int iofwd_inop_rmdir(struct pnode *pno)
 static int iofwd_inop_symlink(struct pnode *pno, const char *data)
 {
     SYSIO_IOFWD_FENTER();
+
+    char * path;
+    int err;
+    zoidfs_handle_t fhandle;
+    zoidfs_sattr_t sattr;
+
+    sattr.mask = 0;
+
+    /* get the full path */
+    path = _sysio_pb_path(pno->p_base, '/');
+    if (!path)
+    {
+        SYSIO_IOFWD_FEXIT();
+        return -ENOMEM;
+    }
+
+    /* invoke the zoidfs remove call to remove the directory */
+    SYSIO_IOFWD_FINFO("old = %s", data);
+    SYSIO_IOFWD_FINFO("new = %s", path);
+    err = zoidfs_symlink(NULL, NULL, data, NULL, NULL, path, &sattr, NULL, NULL);
+
+    /* cleanup */
+    free(path);
+
     SYSIO_IOFWD_FEXIT();
-	return 0;
+	return err;
 }
 
 /*
@@ -1074,6 +1223,29 @@ static int iofwd_inop_symlink(struct pnode *pno, const char *data)
 static int iofwd_inop_readlink(struct pnode *pno, char *buf, size_t bufsiz)
 {
     SYSIO_IOFWD_FENTER();
+
+    char * path;
+    int err;
+    zoidfs_handle_t fhandle;
+
+    /* get the full path */
+    path = _sysio_pb_path(pno->p_base, '/');
+    if (!path)
+    {
+        SYSIO_IOFWD_FEXIT();
+        return -ENOMEM;
+    }
+
+    err = zoidfs_lookup(NULL, NULL, path, &fhandle);
+    if(err == ZFS_OK)
+    {
+        /* run the zoidfs readlink() */
+        err = zoidfs_readlink(&fhandle, buf, bufsiz);
+    }
+
+    /* cleanup */
+    free(path);
+
     SYSIO_IOFWD_FEXIT();
 	return 0;
 }
@@ -1088,6 +1260,15 @@ static int iofwd_inop_close(struct pnode *pno)
     struct inode *ino;
     struct iofwd_inode *iino;
     int err;
+    char * path;
+
+    /* get the full path */
+    path = _sysio_pb_path(pno->p_base, '/');
+    if (!path)
+    {
+        SYSIO_IOFWD_FEXIT();
+        return -ENOMEM;
+    }
 
     ino = pno->p_base->pb_ino;
     assert(ino);
@@ -1101,11 +1282,18 @@ static int iofwd_inop_close(struct pnode *pno)
     assert(iino->ii_nopens);
     if (--iino->ii_nopens) 
     {
+        zoidfs_handle_t fhandle;
+
+        err = zoidfs_lookup(NULL, NULL, path, &fhandle);
         /*
          * Force a zoidfs commit to make sure all 
          * outstanding data buffers are flushed
          */
-        //zoidfs_commit();
+        zoidfs_commit(&fhandle);
+    
+        /* cleanup */
+        free(path);
+
         SYSIO_IOFWD_FEXIT();
         return 0;
     }
@@ -1113,6 +1301,9 @@ static int iofwd_inop_close(struct pnode *pno)
     iino->ii_fd = -1;
     iino->ii_resetfpos = 0;
     iino->ii_fpos = 0;
+
+    /* cleanup */
+    free(path);
 
     SYSIO_IOFWD_FEXIT();
 	return 0;
@@ -1124,8 +1315,34 @@ static int iofwd_inop_close(struct pnode *pno)
 static int iofwd_inop_link(struct pnode *old, struct pnode *new)
 {
     SYSIO_IOFWD_FENTER();
+
+    char * old_path, * new_path;
+    int err = 0;
+
+    /* get the path of the old file */
+    old_path = _sysio_pb_path(old->p_base, '/');
+    if (!old_path)
+    {
+        SYSIO_IOFWD_FEXIT();
+        return -ENOMEM;
+    }
+
+    /* get the path of the new file */
+    new_path = _sysio_pb_path(new->p_base, '/');
+    if (!new_path)
+    {
+        SYSIO_IOFWD_FEXIT();
+        return -ENOMEM;
+    }
+
+    err = zoidfs_link(NULL, NULL, old_path, NULL, NULL, new_path, NULL, NULL);
+
+    /* cleanup */
+    free(old_path);
+    free(new_path);
+
     SYSIO_IOFWD_FEXIT();
-	return 0;
+	return err;
 }
 
 /*
@@ -1192,8 +1409,64 @@ out:
 static int iofwd_inop_read(struct ioctx *ioctx)
 {
     SYSIO_IOFWD_FENTER();
+
+    int err = 0;
+    zoidfs_handle_t fhandle;
+    char * path;
+    void ** mem_starts;
+    size_t * mem_sizes;
+    uint64_t * file_starts;
+    uint64_t * file_sizes;
+    int i = 0;
+
+    /* get the full path of the file from the sysio pnode */
+    path = _sysio_pb_path(ioctx->ioctx_pno->p_base, '/');
+    if(!path)
+    {
+        SYSIO_IOFWD_FEXIT();
+        return ENOMEM;
+    }
+   
+    /* lookup the file by the full path to get the handle */ 
+    err = zoidfs_lookup(NULL, NULL, path, &fhandle);
+    if(err != ZFS_OK)
+    {
+        SYSIO_IOFWD_FEXIT();
+        return err;
+    }
+
+    /* allocate the zoidfs buffers */
+    mem_starts = (void **)malloc(sizeof(void *) * ioctx->ioctx_iovlen);
+    mem_sizes = (size_t *)malloc(sizeof(size_t) * ioctx->ioctx_iovlen);
+    file_starts = (uint64_t *)malloc(sizeof(uint64_t) * ioctx->ioctx_xtvlen);
+    file_sizes = (uint64_t *)malloc(sizeof(uint64_t) * ioctx->ioctx_xtvlen);
+ 
+    /* iovec data conversions */
+    for(i = 0 ; i < ioctx->ioctx_iovlen ; i+=1)
+    {
+        mem_starts[i] = (void *)ioctx->ioctx_iov[i].iov_base;
+        mem_sizes[i] = (size_t)ioctx->ioctx_iov[i].iov_len;
+    }
+
+    /* xtvec data conversions */
+    for(i = 0 ; i < ioctx->ioctx_xtvlen ; i+=1)
+    {
+        file_starts[i] = (uint64_t)ioctx->ioctx_xtv[i].xtv_off;
+        file_sizes[i] = (uint64_t)ioctx->ioctx_xtv[i].xtv_len;
+    }
+
+    /* invoke the zoidfs_read() */
+    err = zoidfs_read(&fhandle, ioctx->ioctx_iovlen, mem_starts, mem_sizes, ioctx->ioctx_xtvlen, file_starts, file_sizes);
+
+    /* cleanup */
+    free(mem_starts);
+    free(mem_sizes);
+    free(file_starts);
+    free(file_sizes);    
+    free(path);
+
     SYSIO_IOFWD_FEXIT();
-	return 0;
+	return err;
 }
 
 /*
@@ -1202,6 +1475,62 @@ static int iofwd_inop_read(struct ioctx *ioctx)
 static int iofwd_inop_write(struct ioctx *ioctx)
 {
     SYSIO_IOFWD_FENTER();
+
+    int err = 0;
+    zoidfs_handle_t fhandle;
+    char * path;
+    void ** mem_starts;
+    size_t * mem_sizes;
+    uint64_t * file_starts;
+    uint64_t * file_sizes;
+    int i = 0;
+
+    /* get the full path of the file from the sysio pnode */
+    path = _sysio_pb_path(ioctx->ioctx_pno->p_base, '/');
+    if(!path)
+    {
+        SYSIO_IOFWD_FEXIT();
+        return ENOMEM;
+    }
+
+    /* lookup the file by the full path to get the handle */
+    err = zoidfs_lookup(NULL, NULL, path, &fhandle);
+    if(err != ZFS_OK)
+    {
+        SYSIO_IOFWD_FEXIT();
+        return err;
+    }
+
+    /* allocate the zoidfs buffers */
+    mem_starts = (void **)malloc(sizeof(void *) * ioctx->ioctx_iovlen);
+    mem_sizes = (size_t *)malloc(sizeof(size_t) * ioctx->ioctx_iovlen);
+    file_starts = (uint64_t *)malloc(sizeof(uint64_t) * ioctx->ioctx_xtvlen);
+    file_sizes = (uint64_t *)malloc(sizeof(uint64_t) * ioctx->ioctx_xtvlen);
+
+    /* iovec data conversions */
+    for(i = 0 ; i < ioctx->ioctx_iovlen ; i+=1)
+    {
+        mem_starts[i] = (void *)ioctx->ioctx_iov[i].iov_base;
+        mem_sizes[i] = (size_t)ioctx->ioctx_iov[i].iov_len;
+    }
+
+    /* xtvec data conversions */
+    for(i = 0 ; i < ioctx->ioctx_xtvlen ; i+=1)
+    {
+        file_starts[i] = (uint64_t)ioctx->ioctx_xtv[i].xtv_off;
+        file_sizes[i] = (uint64_t)ioctx->ioctx_xtv[i].xtv_len;
+    }
+
+    /* invoke the zoidfs_read() */
+    err = zoidfs_write(&fhandle, ioctx->ioctx_iovlen, (const void **)mem_starts, mem_sizes, ioctx->ioctx_xtvlen, file_starts, file_sizes);
+
+    /* cleanup */
+    free(mem_starts);
+    free(mem_sizes);
+    free(file_starts);
+    free(file_sizes);
+    free(path);
+
     SYSIO_IOFWD_FEXIT();
 	return 0;
 }
@@ -1214,13 +1543,15 @@ static _SYSIO_OFF_T iofwd_inop_pos(struct pnode *pno, _SYSIO_OFF_T off)
 }
 
 /*
- * zoidfs call for lookups 
+ * zoidfs call to determine if the IO completed...
+ * no async IO support, so it's done when read()
+ * write() return. Always return 1. 
  */
 static int iofwd_inop_iodone(struct ioctx *ioctx)
 {
     SYSIO_IOFWD_FENTER();
     SYSIO_IOFWD_FEXIT();
-	return 0;
+	return 1;
 }
 
 /*
@@ -1236,15 +1567,57 @@ static int iofwd_inop_fcntl(struct pnode *pno, int cmd, va_list ap, int *rtn)
 static int iofwd_inop_sync(struct pnode *pno)
 {
     SYSIO_IOFWD_FENTER();
+    zoidfs_handle_t fhandle;
+    int err = 0;
+    char * path;
+
+    path = _sysio_pb_path(pno->p_base, '/');
+    if (!path)
+    {
+        SYSIO_IOFWD_FEXIT();
+        return ENOMEM;
+    }
+
+    err = zoidfs_lookup(NULL, NULL, path, &fhandle);
+    if(err != ZFS_OK)
+    {
+        free(path);
+        SYSIO_IOFWD_FEXIT();
+        return err;
+    }
+    err = zoidfs_commit(&fhandle);
+
+    free(path);
     SYSIO_IOFWD_FEXIT();
-	return 0;
+	return err;
 }
 
 static int iofwd_inop_datasync(struct pnode *pno)
 {
     SYSIO_IOFWD_FENTER();
+    zoidfs_handle_t fhandle;
+    int err = 0;
+    char * path;
+
+    path = _sysio_pb_path(pno->p_base, '/');
+    if (!path)
+    {
+        SYSIO_IOFWD_FEXIT();
+        return ENOMEM;
+    }
+
+    err = zoidfs_lookup(NULL, NULL, path, &fhandle);
+    if(err != ZFS_OK)
+    {
+        free(path);
+        SYSIO_IOFWD_FEXIT();
+        return err;
+    }
+    err = zoidfs_commit(&fhandle);
+
+    free(path);
     SYSIO_IOFWD_FEXIT();
-	return 0;
+	return err;
 }
 
 /*
@@ -1254,43 +1627,51 @@ static int iofwd_inop_ioctl(struct pnode *pno, unsigned long int request, va_lis
 {
     SYSIO_IOFWD_FENTER();
     SYSIO_IOFWD_FEXIT();
-	return 0;
+	return ENOTTY;
 }
 
+/* not supported by zoidfs */
 static int iofwd_inop_mknod(struct pnode *pno, mode_t mode, dev_t dev)
 {
     SYSIO_IOFWD_FENTER();
     SYSIO_IOFWD_FEXIT();
-	return 0;
+	return ENOSYS;
 }
 
 #ifdef _HAVE_STATVFS
-/*
- * zoidfs call for stavfs 
- */
+/* not supported */
 static int iofwd_inop_statvfs(struct pnode *pno, struct intnl_statvfs *buf)
 {
     SYSIO_IOFWD_FENTER();
     SYSIO_IOFWD_FEXIT();
-	return 0;
+	return ENOSYS;
 }
 
 #endif
+
+/*
+ * cleanup when the inop is gone
+ */
 static void iofwd_inop_gone(struct inode *ino)
 {
     SYSIO_IOFWD_FENTER();
+
+    /* sysio cleanup only */
+    free(ino->i_private);
+
     SYSIO_IOFWD_FEXIT();
 	return;
 }
 
-static void iofwd_fsop_gone(struct filesys *fs __IS_UNUSED)
+/*
+ * cleanup when the fsop is gone
+ */
+static void iofwd_fsop_gone(struct filesys * fs)
 {
-
     SYSIO_IOFWD_FENTER();
+
+    /* sysio cleanup only */
     free(fs->fs_private);
-    /*
-     * Do nothing. There is no private part maintained for the
-     * native file interface.
-     */
+
     SYSIO_IOFWD_FEXIT();
 }
