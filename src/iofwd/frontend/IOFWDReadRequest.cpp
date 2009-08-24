@@ -22,6 +22,10 @@ IOFWDReadRequest::~IOFWDReadRequest ()
       delete[] file_sizes_;
 }
 
+//
+// Possible optimizations: 
+//   * switch to hybrid stack/heap arrays for uint64_t arrays
+//
 const IOFWDReadRequest::ReqParam & IOFWDReadRequest::decodeParam ()
 {
    process (req_reader_, handle_);
