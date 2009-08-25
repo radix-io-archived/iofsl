@@ -1,10 +1,10 @@
 # Don't add cunit tests here, they get added conditionally below
 MODULE_APPS:= xdrspeed bmitest timertest forwarding iofwdreceive iofwdsend \
    smlinks smtest workqueue levelmatch iofwdlog regexfilter completion \
-   zoidfs_io zoidfs_md zoidfs_io_iofwd zoidfs_md_iofwd zoidfsapi_symlink_test \
-   zoidfsapi_link_test zoidfsapi_rename_test zoidfsapi_lookup_perm_test \
-   zoidfs_io_thread zoidfs_md_thread zoidfs_io_iofwd_thread \
-   zoidfs_md_iofwd_thread 
+   zoidfs-io zoidfs-md zoidfs-io-iofwd zoidfs-md-iofwd zoidfsapi-symlink-test \
+   zoidfsapi-link-test zoidfsapi-rename-test zoidfsapi-lookup-perm-test \
+   zoidfs-io-thread zoidfs-md-thread zoidfs-io-iofwd-thread \
+   zoidfs-md-iofwd-thread 
 
 MODULE_SOURCES_completion := completion.cpp
 ADDINTLIBS_completion := iofwdutil
@@ -39,41 +39,41 @@ ADDINTLIBS_iofwdreceive := iofwdlib iofwdutil
 MODULE_SOURCES_forwarding := forwarding.cpp
 ADDINTLIBS_forwarding := iofwdutil 
 
-MODULE_SOURCES_zoidfs_io := zoidfs-io.c 
-ADDINTLIBS_zoidfs_io := zoidfsutil zoidfsdispatch zoidfscutil
+MODULE_SOURCES_zoidfs-io := zoidfs-io.c 
+ADDINTLIBS_zoidfs-io := zoidfsutil zoidfsdispatch zoidfscutil
 
-MODULE_SOURCES_zoidfs_md := zoidfs-md.c
-ADDINTLIBS_zoidfs_md := zoidfsutil zoidfsdispatch zoidfscutil
+MODULE_SOURCES_zoidfs-md := zoidfs-md.c
+ADDINTLIBS_zoidfs-md := zoidfsutil zoidfsdispatch zoidfscutil
 
-MODULE_SOURCES_zoidfs_io_iofwd := zoidfs-io.c 
-ADDINTLIBS_zoidfs_io_iofwd := iofwdclient iofwdlib iofwdutil zoidfsutil zoidfsclient zoidfscutil
+MODULE_SOURCES_zoidfs-io-iofwd := zoidfs-io.c 
+ADDINTLIBS_zoidfs-io-iofwd := iofwdclient iofwdlib iofwdutil zoidfsutil zoidfsclient zoidfscutil
 
-MODULE_SOURCES_zoidfs_md_iofwd := zoidfs-md.c
-ADDINTLIBS_zoidfs_md_iofwd := iofwdclient iofwdlib iofwdutil zoidfsutil zoidfsclient zoidfscutil
+MODULE_SOURCES_zoidfs-md-iofwd := zoidfs-md.c
+ADDINTLIBS_zoidfs-md-iofwd := iofwdclient iofwdlib iofwdutil zoidfsutil zoidfsclient zoidfscutil
 
-MODULE_SOURCES_zoidfs_io_thread := zoidfs-io-thread.c 
-ADDINTLIBS_zoidfs_io_thread := zoidfsutil zoidfsdispatch  zoidfscutil
+MODULE_SOURCES_zoidfs-io-thread := zoidfs-io-thread.c 
+ADDINTLIBS_zoidfs-io-thread := zoidfsutil zoidfsdispatch  zoidfscutil
 
-MODULE_SOURCES_zoidfs_md_thread := zoidfs-md-thread.c
-ADDINTLIBS_zoidfs_md_thread := zoidfsutil zoidfsdispatch  zoidfscutil
+MODULE_SOURCES_zoidfs-md-thread := zoidfs-md-thread.c
+ADDINTLIBS_zoidfs-md-thread := zoidfsutil zoidfsdispatch  zoidfscutil
 
-MODULE_SOURCES_zoidfs_io_iofwd_thread := zoidfs-io-thread.c 
-ADDINTLIBS_zoidfs_io_iofwd_thread := iofwdclient iofwdlib iofwdutil zoidfsutil zoidfsclient zoidfscutil
+MODULE_SOURCES_zoidfs-io-iofwd-thread := zoidfs-io-thread.c 
+ADDINTLIBS_zoidfs-io-iofwd-thread := iofwdclient iofwdlib iofwdutil zoidfsutil zoidfsclient zoidfscutil
 
-MODULE_SOURCES_zoidfs_md_iofwd_thread := zoidfs-md-thread.c
-ADDINTLIBS_zoidfs_md_iofwd_thread := iofwdclient iofwdlib iofwdutil zoidfsutil zoidfsclient zoidfscutil
+MODULE_SOURCES_zoidfs-md-iofwd-thread := zoidfs-md-thread.c
+ADDINTLIBS_zoidfs-md-iofwd-thread := iofwdclient iofwdlib iofwdutil zoidfsutil zoidfsclient zoidfscutil
 
-MODULE_SOURCES_zoidfsapi_symlink_test := zoidfsapi-symlink-test.c
-ADDINTLIBS_zoidfsapi_symlink_test := iofwdclient iofwdlib iofwdutil zoidfsutil zoidfsclient zoidfscutil
+MODULE_SOURCES_zoidfsapi-symlink-test := zoidfsapi-symlink-test.c
+ADDINTLIBS_zoidfsapi-symlink-test := iofwdclient iofwdlib iofwdutil zoidfsutil zoidfsclient zoidfscutil
 
-MODULE_SOURCES_zoidfsapi_link_test := zoidfsapi-link-test.c
-ADDINTLIBS_zoidfsapi_link_test := iofwdclient iofwdlib iofwdutil zoidfsutil zoidfsclient zoidfscutil
+MODULE_SOURCES_zoidfsapi-link-test := zoidfsapi-link-test.c
+ADDINTLIBS_zoidfsapi-link-test := iofwdclient iofwdlib iofwdutil zoidfsutil zoidfsclient zoidfscutil
 
-MODULE_SOURCES_zoidfsapi_rename_test := zoidfsapi-rename-test.c
-ADDINTLIBS_zoidfsapi_rename_test := iofwdclient iofwdlib iofwdutil zoidfsutil zoidfsclient zoidfscutil
+MODULE_SOURCES_zoidfsapi-rename-test := zoidfsapi-rename-test.c
+ADDINTLIBS_zoidfsapi-rename-test := iofwdclient iofwdlib iofwdutil zoidfsutil zoidfsclient zoidfscutil
 
-MODULE_SOURCES_zoidfsapi_lookup_perm_test := zoidfsapi-lookup-perm-test.c 
-ADDINTLIBS_zoidfsapi_lookup_perm_test := iofwdclient iofwdlib iofwdutil zoidfsutil zoidfsclient zoidfscutil
+MODULE_SOURCES_zoidfsapi-lookup-perm-test := zoidfsapi-lookup-perm-test.c 
+ADDINTLIBS_zoidfsapi-lookup-perm-test := iofwdclient iofwdlib iofwdutil zoidfsutil zoidfsclient zoidfscutil
 
 MODULE_SOURCES_bmitest := $(addprefix bmi/, bmi.cpp)
 ADDINTLIBS_bmitest := iofwdutil
@@ -110,29 +110,29 @@ LIBS_dcache-unit := @CUNIT_LIBS@
 ADDINTLIBS_dcache-unit := c-util zoidfsdispatch zoidfscutil
 LDFLAGS_dcache-unit := @CUNIT_LDFLAGS@
 
-MODULE_APPS += zoidfs_md_cunit
-MODULE_SOURCES_zoidfs_md_cunit := zoidfs-md-cunit.c 
-ADDINTLIBS_zoidfs_md_cunit := iofwdclient iofwdlib iofwdutil zoidfsutil zoidfsclient zoidfscutil
-LDFLAGS_zoidfs_md_cunit := @CUNIT_LDFLAGS@ @CUNIT_LIBS@
-LIBS_zoidfs_md_cunit := @CUNIT_LIBS@
+MODULE_APPS += zoidfs-md-cunit
+MODULE_SOURCES_zoidfs-md-cunit := zoidfs-md-cunit.c 
+ADDINTLIBS_zoidfs-md-cunit := iofwdclient iofwdlib iofwdutil zoidfsutil zoidfsclient zoidfscutil
+LDFLAGS_zoidfs-md-cunit := @CUNIT_LDFLAGS@ @CUNIT_LIBS@
+LIBS_zoidfs-md-cunit := @CUNIT_LIBS@
 
-MODULE_APPS += zoidfs_md_cunit_local
-MODULE_SOURCES_zoidfs_md_cunit_local := zoidfs-md-cunit.c 
-ADDINTLIBS_zoidfs_md_cunit_local := iofwdclient iofwdlib iofwdutil zoidfsutil zoidfsdispatch zoidfscutil
-LDFLAGS_zoidfs_md_cunit_local := @CUNIT_LDFLAGS@ @CUNIT_LIBS@
-LIBS_zoidfs_md_cunit_local := @CUNIT_LIBS@
+MODULE_APPS += zoidfs-md-cunit-local
+MODULE_SOURCES_zoidfs-md-cunit-local := zoidfs-md-cunit.c 
+ADDINTLIBS_zoidfs-md-cunit-local := iofwdclient iofwdlib iofwdutil zoidfsutil zoidfsdispatch zoidfscutil
+LDFLAGS_zoidfs-md-cunit-local := @CUNIT_LDFLAGS@ @CUNIT_LIBS@
+LIBS_zoidfs_md-cunit-local := @CUNIT_LIBS@
 
-MODULE_APPS += zoidfs_io_cunit
-MODULE_SOURCES_zoidfs_io_cunit := zoidfs-io-cunit.c 
-ADDINTLIBS_zoidfs_io_cunit := iofwdclient iofwdlib iofwdutil zoidfsutil zoidfsclient zoidfscutil
-LDFLAGS_zoidfs_io_cunit := @CUNIT_LDFLAGS@ @CUNIT_LIBS@
-LIBS_zoidfs_io_cunit := @CUNIT_LIBS@
+MODULE_APPS += zoidfs-io-cunit
+MODULE_SOURCES_zoidfs-io-cunit := zoidfs-io-cunit.c 
+ADDINTLIBS_zoidfs-io-cunit := iofwdclient iofwdlib iofwdutil zoidfsutil zoidfsclient zoidfscutil
+LDFLAGS_zoidfs-io-cunit := @CUNIT_LDFLAGS@ @CUNIT_LIBS@
+LIBS_zoidfs-io-cunit := @CUNIT_LIBS@
 
-MODULE_APPS += zoidfs_io_cunit_local
-MODULE_SOURCES_zoidfs_io_cunit_local := zoidfs-io-cunit.c 
-ADDINTLIBS_zoidfs_io_cunit_local := iofwdclient iofwdlib iofwdutil zoidfsutil zoidfsdispatch zoidfscutil
-LDFLAGS_zoidfs_io_cunit_local := @CUNIT_LDFLAGS@ @CUNIT_LIBS@
-LIBS_zoidfs_io_cunit_local := @CUNIT_LIBS@
+MODULE_APPS += zoidfs-io-cunit-local
+MODULE_SOURCES_zoidfs-io-cunit-local := zoidfs-io-cunit.c 
+ADDINTLIBS_zoidfs-io-cunit-local := iofwdclient iofwdlib iofwdutil zoidfsutil zoidfsdispatch zoidfscutil
+LDFLAGS_zoidfs-io-cunit-local := @CUNIT_LDFLAGS@ @CUNIT_LIBS@
+LIBS_zoidfs-io-cunit-local := @CUNIT_LIBS@
 
 
 endif
