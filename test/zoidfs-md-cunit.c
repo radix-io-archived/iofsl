@@ -7,6 +7,7 @@
 #include <assert.h>
 #include <sys/time.h>
 #include <sys/types.h>
+#include <sys/stat.h>
 
 #include "zoidfs.h"
 #include "zoidfs-proto.h"
@@ -33,7 +34,7 @@ static char long_fullpath_dirpath[PATHSIZE], long_component_dirpath[PATHSIZE];
 /* basedir handle */
 static zoidfs_handle_t basedir_handle;
 
-static int total_file_count = 0;
+static size_t total_file_count = 0;
 
 /* setup the file paths */
 int init_path_names(char * testDir, char * mpt)
@@ -119,6 +120,8 @@ int testMKDIR(void)
     struct timeval now;
     zoidfs_sattr_t sattr;
     zoidfs_cache_hint_t parent_hint;
+    char p1[4096];
+    char p2[4096];
 
     /* set the attrs */
     sattr.mask = ZOIDFS_ATTR_SETABLE;
@@ -140,7 +143,6 @@ int testMKDIR(void)
     CU_ASSERT_NOT_EQUAL(ZFS_OK, zoidfs_mkdir(&basedir_handle, long_component_dirpath, NULL, &sattr, &parent_hint));
 
     /* create several subdirs using the component dir name */
-    char p1[4096];
     sprintf(p1, "%s/a", component_dirname); 
     CU_ASSERT(ZFS_OK == zoidfs_mkdir(&basedir_handle, p1, NULL, &sattr, &parent_hint));
     total_file_count += 3;
@@ -165,7 +167,6 @@ int testMKDIR(void)
     CU_ASSERT_NOT_EQUAL(ZFS_OK, zoidfs_mkdir(&basedir_handle, long_component_dirpath, NULL, &sattr, &parent_hint));
 
     /* create several subdirs using the fullpath dir name */
-    char p2[4096];
     sprintf(p2, "%s/a", fullpath_dirname); 
     CU_ASSERT(ZFS_OK == zoidfs_mkdir(NULL, NULL, p2, &sattr, &parent_hint));
     total_file_count += 3;
@@ -332,8 +333,10 @@ int testRENAME(void)
 
 int testREMOVE(void)
 {
-    /* rm several subdirs using the component dir name */
     char p1[4096];
+    char p2[4096];
+
+    /* rm several subdirs using the component dir name */
     sprintf(p1, "%s/a/b/c/d/e", component_dirname);
     CU_ASSERT(ZFS_OK == zoidfs_remove(&basedir_handle, p1, NULL, NULL));
     p1[strlen(p1) - 2] = '\0'; 
@@ -346,7 +349,6 @@ int testREMOVE(void)
     CU_ASSERT(ZFS_OK == zoidfs_remove(&basedir_handle, p1, NULL, NULL));
  
     /* rm several subdirs using the fullpath dir name */
-    char p2[4096];
     sprintf(p2, "%s/a/b/c/d/e", fullpath_dirname);
     CU_ASSERT(ZFS_OK == zoidfs_remove(NULL, NULL, p2, NULL));
     p2[strlen(p2) - 2] = '\0'; 
@@ -777,6 +779,7 @@ int clean_suite_dispatch_basic(void)
 int main(int argc, char ** argv)
 {
    CU_pSuite pSuite = NULL;
+   char testDir[256];
 
    if(argc < 2)
    {
@@ -785,7 +788,6 @@ int main(int argc, char ** argv)
    }
 
     /* setup test directory */
-    char testDir[256];
     sprintf(testDir, "%s/%s", argv[1], "zoidfs-test-dir");
     mkdir(testDir, 0755);
 
@@ -835,6 +837,6 @@ int main(int argc, char ** argv)
    CU_cleanup_registry();
 
    zoidfs_finalize();
-
+   rmdir(testDir);
    return CU_get_error();
 }
