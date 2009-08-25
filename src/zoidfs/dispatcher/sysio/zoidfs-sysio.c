@@ -1277,12 +1277,13 @@ static int zoidfs_sysio_link(const zoidfs_handle_t *from_parent_handle,
 	if(from_full_path)
 	{
         /* check the format of the path */
-        if(!zoidfs_sysio_valid_full_path(to_full_path))
+        if(!zoidfs_sysio_valid_full_path(from_full_path))
         {
             ZFSSYSIO_INFO("zoidfs_sysio_link: invalid from full path format.");
             ZFSSYSIO_TRACE_EXIT;
             return ZFSERR_OTHER;
         }
+        ZFSSYSIO_INFO("from = %s", from_full_path);
         where_from.fhida_path = from_full_path;
 		where_from.fhida_dir = &zoidfs_sysio_root_handle;
 	}
@@ -1304,6 +1305,7 @@ static int zoidfs_sysio_link(const zoidfs_handle_t *from_parent_handle,
             ZFSSYSIO_TRACE_EXIT;
             return ZFSERR_OTHER;
         }
+        ZFSSYSIO_INFO("to = %s", to_full_path);
         where_to.fhida_path = to_full_path;
 		where_to.fhida_dir = &zoidfs_sysio_root_handle;
 	}
@@ -1332,7 +1334,7 @@ static int zoidfs_sysio_link(const zoidfs_handle_t *from_parent_handle,
 	/*
 	 * Invoke the libsysio link call
 	 */
-	ret = SYSIO_INTERFACE_NAME(_zfs_sysio_fhi_link)(&where_to, &where_from);
+	ret = SYSIO_INTERFACE_NAME(_zfs_sysio_fhi_link)(&where_from, &where_to);
 	if (ret < 0) {
 		ZFSSYSIO_INFO("zoidfs_sysio_link: fhi_link() failed, code = %i.", ret);
 		ZFSSYSIO_PERROR("zoidfs_sysio_link");
@@ -1920,11 +1922,27 @@ static int zoidfs_sysio_init(void) {
     sysio_dispatcher_ref_count++;	
 	if(!sysio_dispatcher_initialized)
 	{
-		char * arg = NULL;
+		char arg[256];
 		int err = _sysio_init();
 		int mfs_key = 1;
 		int root_key = 2;
 		char * mfs = getenv("ZOIDFS_SYSIO_MOUNT");
+		char * sysio_driver = getenv("ZOIDFS_SYSIO_DRIVER");
+
+        if(!mfs)
+        {
+			ZFSSYSIO_INFO("zoidfs_sysio_init() failed, ZOIDFS_SYSIO_MOUNT env variable was not available");
+			ZFSSYSIO_TRACE_EXIT;
+			return err;
+        }
+
+        if(!sysio_driver)
+        {
+			ZFSSYSIO_INFO("zoidfs_sysio_init() failed, ZOIDFS_SYSIO_DRIVER env variable was not available");
+			ZFSSYSIO_TRACE_EXIT;
+			return err;
+        }
+
 		if (err)
 		{
 			ZFSSYSIO_INFO("zoidfs_sysio_init() failed");
@@ -1943,8 +1961,12 @@ static int zoidfs_sysio_init(void) {
 		/*
 		 * Setup the sysio namespace and mounts... setup native mount
 		 * at /
+         *
+         * sysio driver are set using the ZOIDFS_SYSIO_DRIVER env
+         * variable. Possible values include 'native', 'zoidfs', and 'lustre'.
+         *
 		 */
-		arg = "{mnt,dev=\"native:/\",dir=/,fl=2}";
+		sprintf(arg, "{mnt,dev=\"%s:/\",dir=/,fl=2}", sysio_driver);
 		err = _sysio_boot("namespace", arg);
 		if (err)
 		{
