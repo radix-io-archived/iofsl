@@ -777,8 +777,24 @@ int clean_suite_dispatch_basic(void)
  */
 int main(int argc, char ** argv)
 {
-   CU_pSuite pSuite = NULL;
-   char testDir[256];
+    CU_pSuite pSuite = NULL;
+    char testDir[256];
+    struct timeval now;
+    int err = 0;
+    zoidfs_sattr_t sattr;
+    zoidfs_cache_hint_t parent_hint;
+
+    /* set the attrs */
+    sattr.mask = ZOIDFS_ATTR_SETABLE;
+    sattr.mode = 0755;
+    sattr.uid = getuid();
+    sattr.gid = getgid();
+
+    gettimeofday(&now, NULL);
+    sattr.atime.seconds = now.tv_sec;
+    sattr.atime.nseconds = now.tv_usec;
+    sattr.mtime.seconds = now.tv_sec;
+    sattr.mtime.nseconds = now.tv_usec;
 
    if(argc < 2)
    {
@@ -787,10 +803,14 @@ int main(int argc, char ** argv)
    }
 
     /* setup test directory */
-    sprintf(testDir, "%s/%s", argv[1], "zoidfs-test-dir");
-    mkdir(testDir, 0755);
-
     zoidfs_init();
+    sprintf(testDir, "%s/%s", argv[1], "zoidfs-test-dir");
+    err = zoidfs_mkdir(NULL, NULL, testDir, &sattr, &parent_hint);
+    if(err != ZFS_OK)
+    {
+        fprintf(stderr, "ERROR: could not intialize remote test directory!\n");
+        return -1;
+    }
 
    /* setup path names for the tests */
    init_path_names("zoidfs-test-dir", argv[1]);
@@ -835,7 +855,13 @@ int main(int argc, char ** argv)
    CU_basic_run_tests();
    CU_cleanup_registry();
 
-   zoidfs_finalize();
-   rmdir(testDir);
-   return CU_get_error();
+    err = zoidfs_remove(NULL, NULL, testDir, NULL);
+    if(err != ZFS_OK)
+    {
+        fprintf(stderr, "ERROR: could not cleanup remote test directory!\n");
+        return -1;
+    }
+    zoidfs_finalize();
+
+    return CU_get_error();
 }
