@@ -13,6 +13,7 @@
 #include "iofwd_config.h"
 
 #define NAMESIZE 255
+#define PATHSIZE 4096
 
 #include "CUnit/Basic.h"
 
@@ -26,6 +27,8 @@ static char fullpath_dirname[NAMESIZE], component_dirname[NAMESIZE];
 static char fullpath_filename[NAMESIZE], component_filename[NAMESIZE];
 static char rename_fullpath_dirname[NAMESIZE], rename_component_dirname[NAMESIZE];
 static char rename_fullpath_filename[NAMESIZE], rename_component_filename[NAMESIZE];
+static char base_component_dirname[NAMESIZE], base_component_filename[NAMESIZE];
+static char long_fullpath_dirpath[PATHSIZE], long_component_dirpath[PATHSIZE];
 
 /* basedir handle */
 static zoidfs_handle_t basedir_handle;
@@ -33,29 +36,34 @@ static zoidfs_handle_t basedir_handle;
 static int total_file_count = 0;
 
 /* setup the file paths */
-int init_path_names(char * mpt)
+int init_path_names(char * testDir, char * mpt)
 {
-    snprintf(symlink_component_filename, NAMESIZE, "symlink_comp_file");
-    snprintf(symlink_component_dirname, NAMESIZE, "symlink_comp_dir");
-    snprintf(symlink_component_dirname_slash, NAMESIZE, "symlink_comp_dir/");
-    snprintf(symlink_fullpath_filename, NAMESIZE, "%s/symlink_full_file", mpt);
-    snprintf(symlink_fullpath_dirname, NAMESIZE, "%s/symlink_full_dir", mpt);
-    snprintf(symlink_fullpath_dirname_slash, NAMESIZE, "%s/symlink_full_dir/", mpt);
+    snprintf(symlink_component_filename, NAMESIZE, "%s/symlink_comp_file", testDir);
+    snprintf(symlink_component_dirname, NAMESIZE, "%s/symlink_comp_dir", testDir);
+    snprintf(symlink_component_dirname_slash, NAMESIZE, "%s/symlink_comp_dir/", testDir);
+    snprintf(symlink_fullpath_filename, NAMESIZE, "%s/%s/symlink_full_file", mpt, testDir);
+    snprintf(symlink_fullpath_dirname, NAMESIZE, "%s/%s/symlink_full_dir", mpt, testDir);
+    snprintf(symlink_fullpath_dirname_slash, NAMESIZE, "%s/%s/symlink_full_dir/", mpt, testDir);
 
-    snprintf(link_component_filename, NAMESIZE, "link_comp_file");
-    snprintf(link_component_dirname, NAMESIZE, "link_comp_dir");
-    snprintf(link_fullpath_filename, NAMESIZE, "%s/link_full_file", mpt);
-    snprintf(link_fullpath_dirname, NAMESIZE, "%s/link_full_dir", mpt);
+    snprintf(link_component_filename, NAMESIZE, "%s/link_comp_file", testDir);
+    snprintf(link_component_dirname, NAMESIZE, "%s/link_comp_dir", testDir);
+    snprintf(link_fullpath_filename, NAMESIZE, "%s/%s/link_full_file", mpt, testDir);
+    snprintf(link_fullpath_dirname, NAMESIZE, "%s/%s/link_full_dir", mpt, testDir);
 
-    snprintf(component_filename, NAMESIZE, "test-zoidfs-file-comp");
-    snprintf(component_dirname, NAMESIZE, "test-zoidfs-dir-comp");
-    snprintf(fullpath_filename, NAMESIZE, "%s/test-zoidfs-file-full", mpt);
-    snprintf(fullpath_dirname, NAMESIZE, "%s/test-zoidfs-dir-full", mpt);
+    snprintf(component_filename, NAMESIZE, "%s/test-zoidfs-file-comp", testDir);
+    snprintf(base_component_filename, NAMESIZE, "test-zoidfs-file-comp");
+    snprintf(component_dirname, NAMESIZE, "%s/test-zoidfs-dir-comp", testDir);
+    snprintf(base_component_dirname, NAMESIZE, "test-zoidfs-dir-comp");
+    snprintf(fullpath_filename, NAMESIZE, "%s/%s/test-zoidfs-file-full", mpt, testDir);
+    snprintf(fullpath_dirname, NAMESIZE, "%s/%s/test-zoidfs-dir-full", mpt, testDir);
 
-    snprintf(rename_component_filename, NAMESIZE, "test-zoidfs-file-comp-rename");
-    snprintf(rename_component_dirname, NAMESIZE, "test-zoidfs-dir-comp-rename");
-    snprintf(rename_fullpath_filename, NAMESIZE, "%s/test-zoidfs-file-full-rename", mpt);
-    snprintf(rename_fullpath_dirname, NAMESIZE, "%s/test-zoidfs-dir-full-rename", mpt);
+    snprintf(rename_component_filename, NAMESIZE, "%s/test-zoidfs-file-comp-rename", testDir);
+    snprintf(rename_component_dirname, NAMESIZE, "%s/test-zoidfs-dir-comp-rename", testDir);
+    snprintf(rename_fullpath_filename, NAMESIZE, "%s/%s/test-zoidfs-file-full-rename", mpt, testDir);
+    snprintf(rename_fullpath_dirname, NAMESIZE, "%s/%s/test-zoidfs-dir-full-rename", mpt, testDir);
+
+    snprintf(long_fullpath_dirpath, PATHSIZE, "%s/%s/a/b/c/d/e/f", mpt, testDir);
+    snprintf(long_component_dirpath, PATHSIZE, "%s/a/b/c/d/e/f", testDir);
 
     return 0;
 }
@@ -94,6 +102,7 @@ int testCREATE(void)
     CU_ASSERT(created == 0);
 
     /* create a file using the base handle and component name*/
+    fprintf(stderr, "%s\n", fullpath_filename);
     CU_ASSERT(ZFS_OK == zoidfs_create(NULL, NULL, fullpath_filename, &sattr, &fhandle, &created));
     CU_ASSERT(created == 1);
     total_file_count++;
@@ -127,9 +136,51 @@ int testMKDIR(void)
     CU_ASSERT(ZFS_OK == zoidfs_mkdir(&basedir_handle, component_dirname, NULL, &sattr, &parent_hint));
     total_file_count++;
 
+    /* try to create directories if the parents do not exist... this should fail */ 
+    CU_ASSERT_NOT_EQUAL(ZFS_OK, zoidfs_mkdir(&basedir_handle, long_component_dirpath, NULL, &sattr, &parent_hint));
+
+    /* create several subdirs using the component dir name */
+    char p1[4096];
+    sprintf(p1, "%s/a", component_dirname); 
+    CU_ASSERT(ZFS_OK == zoidfs_mkdir(&basedir_handle, p1, NULL, &sattr, &parent_hint));
+    total_file_count += 3;
+    sprintf(p1, "%s/b", p1); 
+    CU_ASSERT(ZFS_OK == zoidfs_mkdir(&basedir_handle, p1, NULL, &sattr, &parent_hint));
+    total_file_count += 3;
+    sprintf(p1, "%s/c", p1); 
+    CU_ASSERT(ZFS_OK == zoidfs_mkdir(&basedir_handle, p1, NULL, &sattr, &parent_hint));
+    total_file_count += 3;
+    sprintf(p1, "%s/d", p1); 
+    CU_ASSERT(ZFS_OK == zoidfs_mkdir(&basedir_handle, p1, NULL, &sattr, &parent_hint));
+    total_file_count += 3;
+    sprintf(p1, "%s/e", p1); 
+    CU_ASSERT(ZFS_OK == zoidfs_mkdir(&basedir_handle, p1, NULL, &sattr, &parent_hint));
+    total_file_count += 3;
+
     /* create a file using the base handle and component name*/
     CU_ASSERT(ZFS_OK == zoidfs_mkdir(NULL, NULL, fullpath_dirname, &sattr, &parent_hint));
     total_file_count++;
+
+    /* try to create directories if the parents do not exist... this should fail */ 
+    CU_ASSERT_NOT_EQUAL(ZFS_OK, zoidfs_mkdir(&basedir_handle, long_component_dirpath, NULL, &sattr, &parent_hint));
+
+    /* create several subdirs using the fullpath dir name */
+    char p2[4096];
+    sprintf(p2, "%s/a", fullpath_dirname); 
+    CU_ASSERT(ZFS_OK == zoidfs_mkdir(NULL, NULL, p2, &sattr, &parent_hint));
+    total_file_count += 3;
+    sprintf(p2, "%s/b", p2); 
+    CU_ASSERT(ZFS_OK == zoidfs_mkdir(NULL, NULL, p2, &sattr, &parent_hint));
+    total_file_count += 3;
+    sprintf(p2, "%s/c", p2); 
+    CU_ASSERT(ZFS_OK == zoidfs_mkdir(NULL, NULL, p2, &sattr, &parent_hint));
+    total_file_count += 3;
+    sprintf(p2, "%s/d", p2); 
+    CU_ASSERT(ZFS_OK == zoidfs_mkdir(NULL, NULL, p2, &sattr, &parent_hint));
+    total_file_count += 3;
+    sprintf(p2, "%s/e", p2); 
+    CU_ASSERT(ZFS_OK == zoidfs_mkdir(NULL, NULL, p2, &sattr, &parent_hint));
+    total_file_count += 3;
 
     return 0;
 }
@@ -152,7 +203,7 @@ int testSYMLINK(void)
     sattr.mtime.nseconds = now.tv_usec;
 
     /* create a file using the base handle and component name*/
-    CU_ASSERT(ZFS_OK == zoidfs_symlink(&basedir_handle, component_filename,
+    CU_ASSERT(ZFS_OK == zoidfs_symlink(&basedir_handle, base_component_filename,
              NULL, &basedir_handle, symlink_component_filename, NULL, &sattr,
              NULL, NULL));
     CU_ASSERT(ZFSERR_EXIST == zoidfs_symlink(&basedir_handle, component_filename,
@@ -161,7 +212,7 @@ int testSYMLINK(void)
     total_file_count++;
 
     /* create a file using the base handle and component name*/
-    CU_ASSERT(ZFS_OK == zoidfs_symlink(&basedir_handle, component_dirname,
+    CU_ASSERT(ZFS_OK == zoidfs_symlink(&basedir_handle, base_component_dirname,
              NULL, &basedir_handle, symlink_component_dirname, NULL, &sattr,
              NULL, NULL));
     CU_ASSERT(ZFSERR_EXIST == zoidfs_symlink(&basedir_handle, component_dirname,
@@ -281,6 +332,32 @@ int testRENAME(void)
 
 int testREMOVE(void)
 {
+    /* rm several subdirs using the component dir name */
+    char p1[4096];
+    sprintf(p1, "%s/a/b/c/d/e", component_dirname);
+    CU_ASSERT(ZFS_OK == zoidfs_remove(&basedir_handle, p1, NULL, NULL));
+    p1[strlen(p1) - 2] = '\0'; 
+    CU_ASSERT(ZFS_OK == zoidfs_remove(&basedir_handle, p1, NULL, NULL));
+    p1[strlen(p1) - 2] = '\0'; 
+    CU_ASSERT(ZFS_OK == zoidfs_remove(&basedir_handle, p1, NULL, NULL));
+    p1[strlen(p1) - 2] = '\0'; 
+    CU_ASSERT(ZFS_OK == zoidfs_remove(&basedir_handle, p1, NULL, NULL));
+    p1[strlen(p1) - 2] = '\0'; 
+    CU_ASSERT(ZFS_OK == zoidfs_remove(&basedir_handle, p1, NULL, NULL));
+ 
+    /* rm several subdirs using the fullpath dir name */
+    char p2[4096];
+    sprintf(p2, "%s/a/b/c/d/e", fullpath_dirname);
+    CU_ASSERT(ZFS_OK == zoidfs_remove(NULL, NULL, p2, NULL));
+    p2[strlen(p2) - 2] = '\0'; 
+    CU_ASSERT(ZFS_OK == zoidfs_remove(NULL, NULL, p2, NULL));
+    p2[strlen(p2) - 2] = '\0'; 
+    CU_ASSERT(ZFS_OK == zoidfs_remove(NULL, NULL, p2, NULL));
+    p2[strlen(p2) - 2] = '\0'; 
+    CU_ASSERT(ZFS_OK == zoidfs_remove(NULL, NULL, p2, NULL));
+    p2[strlen(p2) - 2] = '\0'; 
+    CU_ASSERT(ZFS_OK == zoidfs_remove(NULL, NULL, p2, NULL));
+ 
     CU_ASSERT(ZFS_OK == zoidfs_remove(&basedir_handle, component_filename, NULL, NULL));
     total_file_count--;
     CU_ASSERT(ZFS_OK == zoidfs_remove(&basedir_handle, component_dirname, NULL, NULL));
@@ -558,7 +635,7 @@ int testREADDIR(void)
     entries = malloc(entry_count * sizeof(zoidfs_dirent_t));
     memset(entries, 0, entry_count * sizeof(zoidfs_dirent_t));
     CU_ASSERT_EQUAL(ZFS_OK, zoidfs_readdir(&basedir_handle, cookie, &entry_count, entries, flags, NULL)); 
-    CU_ASSERT(total_file_count + 2 == entry_count); 
+    CU_ASSERT(total_file_count + 2 == entry_count);
     free(entries);
 
     cookie = 0;
@@ -707,10 +784,15 @@ int main(int argc, char ** argv)
     return -1;
    }
 
+    /* setup test directory */
+    char testDir[256];
+    sprintf(testDir, "%s/%s", argv[1], "zoidfs-test-dir");
+    mkdir(testDir, 0755);
+
     zoidfs_init();
 
    /* setup path names for the tests */
-   init_path_names(argv[1]);
+   init_path_names("zoidfs-test-dir", argv[1]);
 
    /* init the base handle for the mount point*/
    init_basedir_handle(argv[1]);
