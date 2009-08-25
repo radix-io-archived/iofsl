@@ -103,7 +103,6 @@ int testCREATE(void)
     CU_ASSERT(created == 0);
 
     /* create a file using the base handle and component name*/
-    fprintf(stderr, "%s\n", fullpath_filename);
     CU_ASSERT(ZFS_OK == zoidfs_create(NULL, NULL, fullpath_filename, &sattr, &fhandle, &created));
     CU_ASSERT(created == 1);
     total_file_count++;
