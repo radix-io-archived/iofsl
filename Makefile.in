@@ -313,24 +313,24 @@ libs: $(addprefix lib_, $(ARCHIVES))
 
 
 # Flex
-%.cxx: %.l
+%.cxx %.hh: %.l
 	$(Q) "  FLEX		$@"
 	$(E) $(FLEX) --header-file=$(patsubst %.cxx,%.hh,$@) -o $@ $<
 
 # Flex
-%.c: %.l
+%.c %.h: %.l
 	$(Q) "  FLEX		$@"
 	$(E) $(FLEX) --header-file=$(patsubst %.c,%.h,$@) -o $@ $<
 
 
 # Bison
-%.cxx: %.y
+%.cxx %.hh: %.y
 	$(Q) "  BISON		$@"
-	$(E) $(BISON) -d -o $@ $<
+	$(E) $(BISON) --defines=$(patsubst %.cxx,%.hh,$@) -o $(patsubst %.hh,%.cxx,$@)  $<
 
-%.c: %.y
+%.c %.h: %.y
 	$(Q) "  BISON		$@"
-	$(E) $(BISON) -d -o $@ $<
+	$(E) $(BISON) --defines=$(patsubst %.c,%.h,$@) -o $(patsubst %.h,%.c,$@)  $<
 
 
 ###############################################################
