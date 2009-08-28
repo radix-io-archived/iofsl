@@ -5,7 +5,8 @@ MODULE_SOURCES_c-util = \
 	sha1.c \
 	gencache.c \
 	hash-table.c \
-	env-parse.c
+	env-parse.c \
+	tools.c
 
 # Automatically add -I$(thismoduledir) to CPPFLAGS
 MODULE_CONTAINSINCLUDE := 1

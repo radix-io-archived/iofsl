@@ -13,4 +13,11 @@
 #define zfsmin(a,b) ((a)<(b) ? (a):(b))
 #define zfsmax(a,b) ((a)>(b) ? (a):(b))
 
+void always_assert_error (const char * expr, const char * file, int lineno);
+
+#define ALWAYS_ASSERT(a) if (!(a)) always_assert_error(#a,__FILE__, __LINE__);
+
+#define ARRAY_SIZEOF(a) (sizeof(a)/sizeof(a[0]))
+
+
 #endif /* CUTILS_TOOLS_H */
