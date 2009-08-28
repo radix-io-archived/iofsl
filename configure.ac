@@ -14,6 +14,9 @@ AC_PROG_CXXCPP
 
 AC_REQUIRE_CPP
 
+AX_PROG_BISON([],[AC_ERROR([No BISON can be found!])])
+AX_PROG_FLEX([],[AC_ERROR([No FLEX can be found!])])
+
 AC_LANG([C++])
 
 # Checks for header files.
