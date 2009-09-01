@@ -1811,6 +1811,7 @@ static int zoidfs_sysio_write(const zoidfs_handle_t *handle, size_t mem_count,
     iovs = (struct iovec *)malloc(sizeof(struct iovec) * mem_count);
     if(!iovs)
     {
+        iovs = NULL;
 		ZFSSYSIO_INFO("zoidfs_sysio_write: malloc() failed.");
 		ZFSSYSIO_PERROR("zoidfs_sysio_write");
         return -ENOMEM;
@@ -1819,6 +1820,7 @@ static int zoidfs_sysio_write(const zoidfs_handle_t *handle, size_t mem_count,
 	xtvs = (struct xtvec64 *)malloc(sizeof(struct xtvec64) * file_count);
     if(!xtvs)
     {
+        xtvs = NULL;
 		ZFSSYSIO_INFO("zoidfs_sysio_write: malloc() failed.");
 		ZFSSYSIO_PERROR("zoidfs_sysio_write");
         return -ENOMEM;
@@ -1827,26 +1829,21 @@ static int zoidfs_sysio_write(const zoidfs_handle_t *handle, size_t mem_count,
 	/*
 	 * setup the iovec (memory) data structure
 	 */
-    size_t tmemsize = 0;
+    ZFSSYSIO_INFO("mem_count = %lu\n", mem_count);
 	for(i = 0 ; i < mem_count ; i+=1)
 	{
 		iovs[i].iov_base = (void *)mem_starts[i];
 		iovs[i].iov_len = (size_t)mem_sizes[i];
-        tmemsize += mem_sizes[i];
-
-        int val = ((char *)iovs[i].iov_base)[0];
-		ZFSSYSIO_INFO("zoidfs_sysio_write: iov_base[%i] = %p, iov_len[%i] = %lu %i", i, iovs[i].iov_base, i, iovs[i].iov_len, val);
 	}
-	ZFSSYSIO_INFO("zoidfs_sysio_write: tmemsize = %lu", tmemsize);
 	
 	/*
 	 * setup the xtvec (file) data structure
 	 */
+    ZFSSYSIO_INFO("file_count = %lu\n", file_count);
 	for(i = 0 ; i < file_count ; i+=1)
 	{
 		xtvs[i].xtv_off = (__off64_t)file_starts[i];
 		xtvs[i].xtv_len = (size_t)file_sizes[i];
-		ZFSSYSIO_INFO("zoidfs_sysio_write: xtv_off[%i] = %lu, xtv_len[%i] = %lu", i, xtvs[i].xtv_off, i, xtvs[i].xtv_len);
 	}
 		
     /*
@@ -1950,7 +1947,23 @@ static int zoidfs_sysio_read(const zoidfs_handle_t *handle, size_t mem_count,
     }
 
 	iovs = (struct iovec *)malloc(sizeof(struct iovec) * mem_count);
+    if(!iovs)
+    {
+        iovs = NULL;
+		ZFSSYSIO_INFO("zoidfs_sysio_write: malloc() failed.");
+		ZFSSYSIO_PERROR("zoidfs_sysio_write");
+        return -ENOMEM;
+    }
+
 	xtvs = (struct xtvec64 *)malloc(sizeof(struct xtvec64) * file_count);
+    if(!xtvs)
+    {
+        xtvs = NULL;
+		ZFSSYSIO_INFO("zoidfs_sysio_write: malloc() failed.");
+		ZFSSYSIO_PERROR("zoidfs_sysio_write");
+        return -ENOMEM;
+    }
+
 	/*
 	 * setup the iovec (memory) data structure
 	 */
@@ -1958,7 +1971,6 @@ static int zoidfs_sysio_read(const zoidfs_handle_t *handle, size_t mem_count,
 	{
 		iovs[i].iov_base = (void *)mem_starts[i];
 		iovs[i].iov_len = (size_t)mem_sizes[i];
-		ZFSSYSIO_INFO("zoidfs_sysio_read: iov_base[%i] = %p, iov_len[%i] = %lu", i, iovs[i].iov_base, i, iovs[i].iov_len);
 	}
 	
 	/*
@@ -1968,7 +1980,6 @@ static int zoidfs_sysio_read(const zoidfs_handle_t *handle, size_t mem_count,
 	{
 		xtvs[i].xtv_off = (__off64_t)file_starts[i];
 		xtvs[i].xtv_len = (size_t)file_sizes[i];
-		ZFSSYSIO_INFO("zoidfs_sysio_read: xtv_off[%i] = %lu, xtv_len[%i] = %lu", i, xtvs[i].xtv_off, i, xtvs[i].xtv_len);
 	}
 		
     /*
@@ -1984,10 +1995,12 @@ static int zoidfs_sysio_read(const zoidfs_handle_t *handle, size_t mem_count,
         if(iovs)
         {	
             free(iovs);
+            iovs = NULL;
         }
         if(xtvs)
         {
 	        free(xtvs);
+            xtvs = NULL;
         }
 
 		ZFSSYSIO_TRACE_EXIT;
@@ -2012,11 +2025,13 @@ static int zoidfs_sysio_read(const zoidfs_handle_t *handle, size_t mem_count,
 
         if(iovs)
         {	
-            free(iovs); 
+            free(iovs);
+            iovs = NULL;
         }
         if(xtvs)
         {
 	        free(xtvs);
+            xtvs = NULL;
         }
 
 		ZFSSYSIO_TRACE_EXIT;
@@ -2028,10 +2043,12 @@ static int zoidfs_sysio_read(const zoidfs_handle_t *handle, size_t mem_count,
     if(iovs)
     {
 	    free(iovs);
+        iovs = NULL;
     }
     if(xtvs)
     {
 	    free(xtvs);
+        xtvs = NULL;
     }
 	
 	ZFSSYSIO_TRACE_EXIT;
