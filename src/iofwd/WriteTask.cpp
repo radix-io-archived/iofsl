@@ -120,14 +120,14 @@ iofwdutil::completion::CompletionID * WriteTask::execPipelineIO(const WriteReque
    } else {
       for (uint32_t i = st_file; i <= en_file; i++) {
          if (i == st_file) {
-            p_file_starts[i] = file_starts[i] + st_fileofs;
-            p_file_sizes[i] = file_sizes[i] - st_fileofs;
+            p_file_starts[i - st_file] = file_starts[i] + st_fileofs;
+            p_file_sizes[i - st_file] = file_sizes[i] - st_fileofs;
          } else if (i == en_file) {
-            p_file_starts[i] = file_starts[i];
-            p_file_sizes[i] = en_fileofs;
+            p_file_starts[i - st_file] = file_starts[i];
+            p_file_sizes[i - st_file] = en_fileofs;
          } else {
-            p_file_starts[i] = file_starts[i];
-            p_file_sizes[i] = file_sizes[i];
+            p_file_starts[i - st_file] = file_starts[i];
+            p_file_sizes[i - st_file] = file_sizes[i];
          }
       }
    }
