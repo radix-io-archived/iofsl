@@ -881,7 +881,7 @@ int zoidfs_lookup(const zoidfs_handle_t *parent_handle,
     if (full_path) {
         zoidfs_path_transfer_t fp_transfer;
         fp_transfer.data = (void *)full_path;
-        fp_transfer.len = ZOIDFS_PATH_MAX;
+        fp_transfer.len = ZOIDFS_PATH_MAX + 1;
         if ((ret = zoidfs_xdr_processor(ZFS_CSTRING_PATH_T, &fp_transfer, &send_msg.send_xdr)) != ZFS_OK) {
             
             goto lookup_cleanup;
@@ -889,7 +889,7 @@ int zoidfs_lookup(const zoidfs_handle_t *parent_handle,
     } else {
         zoidfs_name_transfer_t cn_transfer;
         cn_transfer.data = (void *)component_name;
-        cn_transfer.len = ZOIDFS_NAME_MAX;
+        cn_transfer.len = ZOIDFS_NAME_MAX + 1;
         if ((ret = zoidfs_xdr_processor(ZFS_HANDLE_T, (void *)parent_handle, &send_msg.send_xdr)) != ZFS_OK) {
             
             goto lookup_cleanup;
@@ -1020,7 +1020,7 @@ int zoidfs_remove(const zoidfs_handle_t *parent_handle,
     if (full_path) {
         zoidfs_path_transfer_t fp_transfer;
         fp_transfer.data = (void *)full_path;
-        fp_transfer.len = ZOIDFS_PATH_MAX;
+        fp_transfer.len = ZOIDFS_PATH_MAX + 1;
         if ((ret = zoidfs_xdr_processor(ZFS_CSTRING_PATH_T, &fp_transfer, &send_msg.send_xdr)) != ZFS_OK) {
             
             goto remove_cleanup; 
@@ -1028,7 +1028,7 @@ int zoidfs_remove(const zoidfs_handle_t *parent_handle,
     } else {
         zoidfs_name_transfer_t cn_transfer;
         cn_transfer.data = (void *)component_name;
-        cn_transfer.len = ZOIDFS_NAME_MAX;
+        cn_transfer.len = ZOIDFS_NAME_MAX + 1;
         if ((ret = zoidfs_xdr_processor(ZFS_HANDLE_T, (void *)parent_handle, &send_msg.send_xdr)) != ZFS_OK) {
             
             goto remove_cleanup; 
@@ -1231,7 +1231,7 @@ int zoidfs_create(const zoidfs_handle_t *parent_handle,
     if (full_path) {
         zoidfs_path_transfer_t fp_transfer;
         fp_transfer.data = (void *)full_path;
-        fp_transfer.len = ZOIDFS_PATH_MAX;
+        fp_transfer.len = ZOIDFS_PATH_MAX + 1;
         if ((ret = zoidfs_xdr_processor(ZFS_CSTRING_PATH_T, &fp_transfer, &send_msg.send_xdr)) != ZFS_OK) {
             
             goto create_cleanup;
@@ -1239,7 +1239,7 @@ int zoidfs_create(const zoidfs_handle_t *parent_handle,
     } else {
         zoidfs_name_transfer_t cn_transfer;
         cn_transfer.data = (void *)component_name;
-        cn_transfer.len = ZOIDFS_NAME_MAX;
+        cn_transfer.len = ZOIDFS_NAME_MAX + 1;
         if ((ret = zoidfs_xdr_processor(ZFS_HANDLE_T, (void *)parent_handle, &send_msg.send_xdr)) != ZFS_OK) {
             
             goto create_cleanup;
@@ -1401,7 +1401,7 @@ int zoidfs_rename(const zoidfs_handle_t *from_parent_handle,
     if (from_full_path) {
         zoidfs_path_transfer_t fp_transfer;
         fp_transfer.data = (void *)from_full_path;
-        fp_transfer.len = ZOIDFS_PATH_MAX;
+        fp_transfer.len =  ZOIDFS_PATH_MAX + 1;
         if ((ret = zoidfs_xdr_processor(ZFS_CSTRING_PATH_T, &fp_transfer, &send_msg.send_xdr)) != ZFS_OK) {
             
             goto rename_cleanup;
@@ -1409,7 +1409,7 @@ int zoidfs_rename(const zoidfs_handle_t *from_parent_handle,
     } else {
         zoidfs_name_transfer_t cn_transfer;
         cn_transfer.data = (void *)from_component_name;
-        cn_transfer.len = ZOIDFS_NAME_MAX;
+        cn_transfer.len = ZOIDFS_NAME_MAX + 1;
         if ((ret = zoidfs_xdr_processor(ZFS_HANDLE_T, (void *)from_parent_handle, &send_msg.send_xdr)) != ZFS_OK) {
             
             goto rename_cleanup;
@@ -1431,7 +1431,7 @@ int zoidfs_rename(const zoidfs_handle_t *from_parent_handle,
     if (to_full_path) {
         zoidfs_path_transfer_t fp_transfer;
         fp_transfer.data = (void *)to_full_path;
-        fp_transfer.len = ZOIDFS_PATH_MAX;
+        fp_transfer.len = ZOIDFS_PATH_MAX + 1;
         if ((ret = zoidfs_xdr_processor(ZFS_CSTRING_PATH_T, &fp_transfer, &send_msg.send_xdr)) != ZFS_OK) {
             
             goto rename_cleanup;
@@ -1439,7 +1439,7 @@ int zoidfs_rename(const zoidfs_handle_t *from_parent_handle,
     } else {
         zoidfs_name_transfer_t cn_transfer;
         cn_transfer.data = (void *)to_component_name;
-        cn_transfer.len = ZOIDFS_NAME_MAX;
+        cn_transfer.len = ZOIDFS_NAME_MAX + 1;
         if ((ret = zoidfs_xdr_processor(ZFS_HANDLE_T, (void *)to_parent_handle, &send_msg.send_xdr)) != ZFS_OK) {
             
             goto rename_cleanup;
@@ -1605,7 +1605,7 @@ int zoidfs_link(const zoidfs_handle_t *from_parent_handle,
     if (from_full_path) {
         zoidfs_path_transfer_t fp_transfer;
         fp_transfer.data = (void *)from_full_path;
-        fp_transfer.len = ZOIDFS_PATH_MAX;
+        fp_transfer.len = ZOIDFS_PATH_MAX + 1;
         if ((ret = zoidfs_xdr_processor(ZFS_CSTRING_PATH_T, &fp_transfer, &send_msg.send_xdr)) != ZFS_OK) {
             
             goto link_cleanup;
@@ -1613,7 +1613,7 @@ int zoidfs_link(const zoidfs_handle_t *from_parent_handle,
     } else {
         zoidfs_name_transfer_t cn_transfer;
         cn_transfer.data = (void *)from_component_name;
-        cn_transfer.len = ZOIDFS_NAME_MAX;
+        cn_transfer.len = ZOIDFS_NAME_MAX + 1;
         if ((ret = zoidfs_xdr_processor(ZFS_HANDLE_T, (void *)from_parent_handle, &send_msg.send_xdr)) != ZFS_OK) {
             
             goto link_cleanup;
@@ -1634,7 +1634,7 @@ int zoidfs_link(const zoidfs_handle_t *from_parent_handle,
     if (to_full_path) {
         zoidfs_path_transfer_t fp_transfer;
         fp_transfer.data = (void *)to_full_path;
-        fp_transfer.len = ZOIDFS_PATH_MAX;
+        fp_transfer.len = ZOIDFS_PATH_MAX + 1;
         if ((ret = zoidfs_xdr_processor(ZFS_CSTRING_PATH_T, &fp_transfer, &send_msg.send_xdr)) != ZFS_OK) {
             
             goto link_cleanup;
@@ -1642,7 +1642,7 @@ int zoidfs_link(const zoidfs_handle_t *from_parent_handle,
     } else {
         zoidfs_name_transfer_t cn_transfer;
         cn_transfer.data = (void *)to_component_name;
-        cn_transfer.len = ZOIDFS_NAME_MAX;
+        cn_transfer.len = ZOIDFS_NAME_MAX + 1;
         if ((ret = zoidfs_xdr_processor(ZFS_HANDLE_T, (void *)to_parent_handle, &send_msg.send_xdr)) != ZFS_OK) {
             
             goto link_cleanup;
@@ -1813,14 +1813,14 @@ int zoidfs_symlink(const zoidfs_handle_t *from_parent_handle,
     if (from_full_path) {
         zoidfs_path_transfer_t fp_transfer;
         fp_transfer.data = (void *)from_full_path;
-        fp_transfer.len = ZOIDFS_PATH_MAX;
+        fp_transfer.len = ZOIDFS_PATH_MAX + 1;
         if ((ret = zoidfs_xdr_processor(ZFS_CSTRING_PATH_T, &fp_transfer, &send_msg.send_xdr)) != ZFS_OK) {
             goto symlink_cleanup;
         }
     } else {
         zoidfs_name_transfer_t cn_transfer;
         cn_transfer.data = (void *)from_component_name;
-        cn_transfer.len = ZOIDFS_NAME_MAX;
+        cn_transfer.len = ZOIDFS_NAME_MAX + 1;
         if ((ret = zoidfs_xdr_processor(ZFS_HANDLE_T, (void *)from_parent_handle, &send_msg.send_xdr)) != ZFS_OK) {
             goto symlink_cleanup;
         }
@@ -1839,14 +1839,14 @@ int zoidfs_symlink(const zoidfs_handle_t *from_parent_handle,
     if (to_full_path) {
         zoidfs_path_transfer_t fp_transfer;
         fp_transfer.data = (void *)to_full_path;
-        fp_transfer.len = ZOIDFS_PATH_MAX;
+        fp_transfer.len = ZOIDFS_PATH_MAX + 1;
         if ((ret = zoidfs_xdr_processor(ZFS_CSTRING_PATH_T, &fp_transfer, &send_msg.send_xdr)) != ZFS_OK) {
             goto symlink_cleanup;
         }
     } else {
         zoidfs_name_transfer_t cn_transfer;
         cn_transfer.data = (void *)to_component_name;
-        cn_transfer.len = ZOIDFS_NAME_MAX;
+        cn_transfer.len = ZOIDFS_NAME_MAX + 1;
         if ((ret = zoidfs_xdr_processor(ZFS_HANDLE_T, (void *)to_parent_handle, &send_msg.send_xdr)) != ZFS_OK) {
             goto symlink_cleanup;
         }
@@ -1993,7 +1993,7 @@ int zoidfs_mkdir(const zoidfs_handle_t *parent_handle,
     if (full_path) {
         zoidfs_path_transfer_t fp_transfer;
         fp_transfer.data = (void *)full_path;
-        fp_transfer.len = ZOIDFS_PATH_MAX;
+        fp_transfer.len = ZOIDFS_PATH_MAX + 1;
         if ((ret = zoidfs_xdr_processor(ZFS_CSTRING_PATH_T, &fp_transfer, &send_msg.send_xdr)) != ZFS_OK) {
             
             goto mkdir_cleanup;
@@ -2001,7 +2001,7 @@ int zoidfs_mkdir(const zoidfs_handle_t *parent_handle,
     } else {
         zoidfs_name_transfer_t cn_transfer;
         cn_transfer.data = (void *)component_name;
-        cn_transfer.len = ZOIDFS_NAME_MAX;
+        cn_transfer.len = ZOIDFS_NAME_MAX + 1;
         if ((ret = zoidfs_xdr_processor(ZFS_HANDLE_T, (void *)parent_handle, &send_msg.send_xdr)) != ZFS_OK) {
             
             goto mkdir_cleanup;
