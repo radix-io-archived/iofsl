@@ -137,7 +137,13 @@ int zoidfs_readlink(const zoidfs_handle_t * handle,
     {
         return ZFSERR_INVAL;
     }
-    return handler->readlink(handle, buffer, buffer_length);
+
+    ret = handler->readlink(handle, buffer, buffer_length);
+
+    /* make sure buffer is null terminated */
+    buffer[buffer_length - 1] = '\0';
+
+    return ret;
 }
 
 int zoidfs_read(const zoidfs_handle_t * handle,
