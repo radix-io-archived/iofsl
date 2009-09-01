@@ -7,6 +7,7 @@
  * 
  */
 
+#include <sys/time.h>
 #include "zoidfs-sysio.h"
 
 /*
@@ -737,10 +738,13 @@ static int zoidfs_sysio_readlink(const zoidfs_handle_t *handle, char *buffer,
 	ZFSSYSIO_TRACE_ENTER;
 	
 	zoidfs_handle_to_sysio_handle(handle, &sysio_link_handle);
+
+    /* init the buffer to NULL chars */
+    memset(buffer, 0, buffer_length);
+
 	/*
 	 * Is this a link?
 	 */
-	
 	ret = SYSIO_INTERFACE_NAME(_zfs_sysio_fhi_getattr)(&sysio_link_handle, &stbuf);
 	if (ret) {
 		ZFSSYSIO_PERROR("fhi_getattr");
@@ -755,6 +759,9 @@ static int zoidfs_sysio_readlink(const zoidfs_handle_t *handle, char *buffer,
 			ZFSSYSIO_TRACE_EXIT;
 			return sysio_err_to_zfs_err(errno);
 		}
+
+        /* make the buffer NULL terminated */
+        buffer[buffer_length - 1] = '\0';
 	}
     else
     {
@@ -1030,6 +1037,8 @@ static int zoidfs_sysio_create(const zoidfs_handle_t *parent_handle,
 	
     int ret;
     struct file_handle_info_dirop_args where;
+    zoidfs_sattr_t local_sattr;
+    zoidfs_attr_t local_attr;
 
 	ZFSSYSIO_TRACE_ENTER;
 
@@ -1041,6 +1050,37 @@ static int zoidfs_sysio_create(const zoidfs_handle_t *parent_handle,
         ZFSSYSIO_INFO("zoidfs_create: Invalid path parameters.");
 		ZFSSYSIO_TRACE_EXIT;
         return sysio_err_to_zfs_err(errno);
+    }
+
+    /* If the mask is not set, populate with current values */
+    /* 
+        TODO: This should be improved... get uid / gid info from
+        the client, get the default mode / umask info from the 
+        the client...
+    */
+    if(!sattr->mask)
+    {
+        struct timeval now;
+        local_sattr.mask = ZOIDFS_ATTR_SETABLE;
+        local_sattr.mode = 0644;
+        local_sattr.uid = getuid();
+        local_sattr.gid = getgid();
+        gettimeofday(&now, NULL);
+        local_sattr.atime.seconds = now.tv_sec;
+        local_sattr.atime.nseconds = 0;
+        local_sattr.mtime.seconds = now.tv_sec;
+        local_sattr.mtime.nseconds = 0;
+    }
+    else
+    {
+        local_sattr.mask = sattr->mask;
+        local_sattr.mode = sattr->mode & 0777;
+        local_sattr.uid = sattr->uid;
+        local_sattr.gid = sattr->gid;
+        local_sattr.atime.seconds = sattr->atime.seconds;
+        local_sattr.atime.nseconds = 0;
+        local_sattr.mtime.seconds = sattr->mtime.seconds;
+        local_sattr.mtime.nseconds = 0;
     }
 
     if (full_path)
@@ -1072,7 +1112,7 @@ static int zoidfs_sysio_create(const zoidfs_handle_t *parent_handle,
         where.fhida_path = full_path;
 		where.fhida_dir = &zoidfs_sysio_root_handle;
 
-        ret = SYSIO_INTERFACE_NAME(_zfs_sysio_fhi_create)(&where, sattr->mode);
+        ret = SYSIO_INTERFACE_NAME(_zfs_sysio_fhi_create)(&where, local_sattr.mode);
         if (ret < 0) {
             ZFSSYSIO_INFO("zoidfs_sysio_create: fhi_create() failed, full path = %s.", where.fhida_path);
 			ZFSSYSIO_PERROR("zoidfs_sysio_create");
@@ -1093,6 +1133,17 @@ static int zoidfs_sysio_create(const zoidfs_handle_t *parent_handle,
 		}
 		sysio_handle_to_zoidfs_handle(&sysio_component_handle, handle);
 		
+        /*
+         * set the file attributes
+         */
+        ret = zoidfs_sysio_setattr(handle, &local_sattr, &local_attr);
+        if(ret != ZFS_OK)
+        {
+            ZFSSYSIO_INFO("zoidfs_sysio_create: zoidfs_sysio_setattr() failed");
+			ZFSSYSIO_PERROR("zoidfs_sysio_create");
+            return sysio_err_to_zfs_err(errno);
+        }
+
 	/*
 	 * Not the full path, so build the root handle
 	 */
@@ -1121,7 +1172,7 @@ static int zoidfs_sysio_create(const zoidfs_handle_t *parent_handle,
 		where.fhida_path = component_name;
 		where.fhida_dir = &sysio_parent_handle;
     
-		ret = SYSIO_INTERFACE_NAME(_zfs_sysio_fhi_create)(&where, sattr->mode);
+		ret = SYSIO_INTERFACE_NAME(_zfs_sysio_fhi_create)(&where, local_sattr.mode);
         if (ret < 0)
 		{
             ZFSSYSIO_INFO("zoidfs_sysio_create: fhi_create() failed, comp path = %s.", where.fhida_path);
@@ -1142,6 +1193,17 @@ static int zoidfs_sysio_create(const zoidfs_handle_t *parent_handle,
             return ZFS_OK;
 		}
 		sysio_handle_to_zoidfs_handle(&sysio_component_handle, handle);
+
+        /*
+         * set the file attributes
+         */
+        ret = zoidfs_sysio_setattr(handle, &local_sattr, &local_attr);
+        if(ret != ZFS_OK)
+        {
+            ZFSSYSIO_INFO("zoidfs_sysio_create: zoidfs_sysio_setattr() failed");
+			ZFSSYSIO_PERROR("zoidfs_sysio_create");
+            return sysio_err_to_zfs_err(errno);
+        }
     }
     *created = 1;
 	
@@ -1711,7 +1773,7 @@ static int zoidfs_sysio_resize(const zoidfs_handle_t *handle, uint64_t size)
 
 	ret = SYSIO_INTERFACE_NAME(_zfs_sysio_fhi_setattr)(&sysio_component_handle, &sattr);
 	if (ret < 0) {
-		ZFSSYSIO_INFO("zoidfs_sysio_resize: fhi_truncate() failed, code = %i.", ret);
+		ZFSSYSIO_INFO("zoidfs_sysio_resize: fhi_setattr() failed, code = %i.", ret);
 		ZFSSYSIO_PERROR("zoidfs_sysio_resize");
 		ZFSSYSIO_TRACE_EXIT;
 		return sysio_err_to_zfs_err(errno);
@@ -1731,22 +1793,51 @@ static int zoidfs_sysio_write(const zoidfs_handle_t *handle, size_t mem_count,
 	
 	int ret = 0;
 	unsigned int i = 0;
-	struct iovec * iovs = (struct iovec *)malloc(sizeof(struct iovec) * mem_count);
-	struct xtvec64 * xtvs = (struct xtvec64 *)malloc(sizeof(struct xtvec64) * mem_count);
+	struct iovec * iovs = NULL;
+	struct xtvec64 * xtvs = NULL;
 	static char sysio_component_handle_data[SYSIO_HANDLE_DATA_SIZE];
 	struct file_handle_info sysio_component_handle = {NULL, sysio_component_handle_data, SYSIO_HANDLE_DATA_SIZE};
 	ioid_t ioidp;
 	
 	ZFSSYSIO_TRACE_ENTER;
+
+    /* nothing in the memory buffers or the file buffers, no work to do */
+    if(mem_count == 0 || file_count == 0)
+    {
+		ZFSSYSIO_TRACE_EXIT;
+        return ZFS_OK;
+    }
+
+    iovs = (struct iovec *)malloc(sizeof(struct iovec) * mem_count);
+    if(!iovs)
+    {
+		ZFSSYSIO_INFO("zoidfs_sysio_write: malloc() failed.");
+		ZFSSYSIO_PERROR("zoidfs_sysio_write");
+        return -ENOMEM;
+    }
+
+	xtvs = (struct xtvec64 *)malloc(sizeof(struct xtvec64) * file_count);
+    if(!xtvs)
+    {
+		ZFSSYSIO_INFO("zoidfs_sysio_write: malloc() failed.");
+		ZFSSYSIO_PERROR("zoidfs_sysio_write");
+        return -ENOMEM;
+    }
 	
 	/*
 	 * setup the iovec (memory) data structure
 	 */
+    size_t tmemsize = 0;
 	for(i = 0 ; i < mem_count ; i+=1)
 	{
 		iovs[i].iov_base = (void *)mem_starts[i];
 		iovs[i].iov_len = (size_t)mem_sizes[i];
+        tmemsize += mem_sizes[i];
+
+        int val = ((char *)iovs[i].iov_base)[0];
+		ZFSSYSIO_INFO("zoidfs_sysio_write: iov_base[%i] = %p, iov_len[%i] = %lu %i", i, iovs[i].iov_base, i, iovs[i].iov_len, val);
 	}
+	ZFSSYSIO_INFO("zoidfs_sysio_write: tmemsize = %lu", tmemsize);
 	
 	/*
 	 * setup the xtvec (file) data structure
@@ -1755,32 +1846,60 @@ static int zoidfs_sysio_write(const zoidfs_handle_t *handle, size_t mem_count,
 	{
 		xtvs[i].xtv_off = (__off64_t)file_starts[i];
 		xtvs[i].xtv_len = (size_t)file_sizes[i];
+		ZFSSYSIO_INFO("zoidfs_sysio_write: xtv_off[%i] = %lu, xtv_len[%i] = %lu", i, xtvs[i].xtv_off, i, xtvs[i].xtv_len);
 	}
 		
     /*
      * Setup the file handle based on the libsysio handle and the file handle
      */
 	zoidfs_handle_to_sysio_handle(handle, &sysio_component_handle);
-	
+
 	ret = SYSIO_INTERFACE_NAME(_zfs_sysio_fhi_iwrite64x)(&sysio_component_handle, iovs, mem_count, xtvs, file_count, &ioidp);
 	if (ret < 0) {
 		ZFSSYSIO_INFO("zoidfs_sysio_write: fhi_iwrite64x() failed, code = %i.", ret);
 		ZFSSYSIO_PERROR("zoidfs_sysio_write");
 
-	    free(iovs);
-	    free(xtvs);
+        if(iovs)
+        {
+	        free(iovs);
+            iovs = NULL;
+        }
+        if(xtvs)
+        {
+	        free(xtvs);
+            xtvs = NULL;
+        }
 
 		ZFSSYSIO_TRACE_EXIT;
 		return sysio_err_to_zfs_err(errno);
 	}
-		
-	ret = SYSIO_INTERFACE_NAME(_zfs_sysio_fhi_iowait)(ioidp);
+
+    /* poll until IO is done */
+    do
+    {		
+	    ret = SYSIO_INTERFACE_NAME(_zfs_sysio_fhi_iodone)(ioidp);
+        if(ret == -EINVAL)
+        {
+		    ZFSSYSIO_INFO("zoidfs_sysio_write: fhi_iowait() failed.");
+		    ZFSSYSIO_TRACE_EXIT;
+            return sysio_err_to_zfs_err(-EINVAL);
+        }
+    }while(!ret);
+
 	if (ret < 0) {
 		ZFSSYSIO_INFO("zoidfs_sysio_write: fhi_iowait() failed, code = %i.", ret);
 		ZFSSYSIO_PERROR("zoidfs_sysio_write");
 
-	    free(iovs);
-	    free(xtvs);
+        if(iovs)
+        {
+	        free(iovs);
+            iovs = NULL;
+        }
+        if(xtvs)
+        {
+	        free(xtvs);
+            xtvs = NULL;
+        }
 
 		ZFSSYSIO_TRACE_EXIT;
 		return sysio_err_to_zfs_err(errno);
@@ -1788,8 +1907,16 @@ static int zoidfs_sysio_write(const zoidfs_handle_t *handle, size_t mem_count,
 	/*
 	 * Cleanup the data structures
 	 */
-	free(iovs);
-	free(xtvs);
+    if(iovs)
+    {
+	    free(iovs);
+        iovs = NULL;
+    }
+    if(xtvs)
+    {
+	    free(xtvs);
+        xtvs = NULL;
+    }
 	
 	ZFSSYSIO_TRACE_EXIT;
     return ZFS_OK;
@@ -1807,14 +1934,23 @@ static int zoidfs_sysio_read(const zoidfs_handle_t *handle, size_t mem_count,
 	
 	int ret = 0;
 	unsigned int i = 0;
-	struct iovec * iovs = (struct iovec *)malloc(sizeof(struct iovec) * mem_count);
-	struct xtvec64 * xtvs = (struct xtvec64 *)malloc(sizeof(struct xtvec64) * mem_count);
+	struct iovec * iovs = NULL;
+	struct xtvec64 * xtvs = NULL;
 	static char sysio_component_handle_data[SYSIO_HANDLE_DATA_SIZE];
 	struct file_handle_info sysio_component_handle = {NULL, sysio_component_handle_data, SYSIO_HANDLE_DATA_SIZE};
 	ioid_t ioidp;
 
 	ZFSSYSIO_TRACE_ENTER;
 	
+    /* nothing in the memory buffers or the file buffers, no work to do */
+    if(mem_count == 0 || file_count == 0)
+    {
+		ZFSSYSIO_TRACE_EXIT;
+        return ZFS_OK;
+    }
+
+	iovs = (struct iovec *)malloc(sizeof(struct iovec) * mem_count);
+	xtvs = (struct xtvec64 *)malloc(sizeof(struct xtvec64) * file_count);
 	/*
 	 * setup the iovec (memory) data structure
 	 */
@@ -1822,6 +1958,7 @@ static int zoidfs_sysio_read(const zoidfs_handle_t *handle, size_t mem_count,
 	{
 		iovs[i].iov_base = (void *)mem_starts[i];
 		iovs[i].iov_len = (size_t)mem_sizes[i];
+		ZFSSYSIO_INFO("zoidfs_sysio_read: iov_base[%i] = %p, iov_len[%i] = %lu", i, iovs[i].iov_base, i, iovs[i].iov_len);
 	}
 	
 	/*
@@ -1831,6 +1968,7 @@ static int zoidfs_sysio_read(const zoidfs_handle_t *handle, size_t mem_count,
 	{
 		xtvs[i].xtv_off = (__off64_t)file_starts[i];
 		xtvs[i].xtv_len = (size_t)file_sizes[i];
+		ZFSSYSIO_INFO("zoidfs_sysio_read: xtv_off[%i] = %lu, xtv_len[%i] = %lu", i, xtvs[i].xtv_off, i, xtvs[i].xtv_len);
 	}
 		
     /*
@@ -1842,21 +1980,44 @@ static int zoidfs_sysio_read(const zoidfs_handle_t *handle, size_t mem_count,
 	if (ret < 0) {
 		ZFSSYSIO_INFO("zoidfs_sysio_read: fhi_iread64x() failed, code = %i.", ret);
 		ZFSSYSIO_PERROR("zoidfs_sysio_read");
-	
-        free(iovs);
-	    free(xtvs);
+
+        if(iovs)
+        {	
+            free(iovs);
+        }
+        if(xtvs)
+        {
+	        free(xtvs);
+        }
 
 		ZFSSYSIO_TRACE_EXIT;
 		return sysio_err_to_zfs_err(errno);
 	}
 		
-	ret = SYSIO_INTERFACE_NAME(_zfs_sysio_fhi_iowait)(ioidp);
+    /* poll until IO is done */
+    do
+    {		
+	    ret = SYSIO_INTERFACE_NAME(_zfs_sysio_fhi_iodone)(ioidp);
+        if(ret == -EINVAL)
+        {
+		    ZFSSYSIO_INFO("zoidfs_sysio_read: fhi_iowait() failed.");
+		    ZFSSYSIO_TRACE_EXIT;
+            return sysio_err_to_zfs_err(-EINVAL);
+        }
+    }while(!ret);
+
 	if (ret < 0) {
 		ZFSSYSIO_INFO("zoidfs_sysio_read: fhi_iowait() failed, code = %i.", ret);
 		ZFSSYSIO_PERROR("zoidfs_sysio_write");
-	
-        free(iovs);
-	    free(xtvs);
+
+        if(iovs)
+        {	
+            free(iovs); 
+        }
+        if(xtvs)
+        {
+	        free(xtvs);
+        }
 
 		ZFSSYSIO_TRACE_EXIT;
 		return sysio_err_to_zfs_err(errno);
@@ -1864,8 +2025,14 @@ static int zoidfs_sysio_read(const zoidfs_handle_t *handle, size_t mem_count,
 	/*
 	 * Cleanup the data structures
 	 */
-	free(iovs);
-	free(xtvs);
+    if(iovs)
+    {
+	    free(iovs);
+    }
+    if(xtvs)
+    {
+	    free(xtvs);
+    }
 	
 	ZFSSYSIO_TRACE_EXIT;
     return ZFS_OK;
