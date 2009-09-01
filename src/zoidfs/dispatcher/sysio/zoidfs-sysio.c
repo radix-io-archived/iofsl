@@ -1829,7 +1829,6 @@ static int zoidfs_sysio_write(const zoidfs_handle_t *handle, size_t mem_count,
 	/*
 	 * setup the iovec (memory) data structure
 	 */
-    ZFSSYSIO_INFO("mem_count = %lu\n", mem_count);
 	for(i = 0 ; i < mem_count ; i+=1)
 	{
 		iovs[i].iov_base = (void *)mem_starts[i];
@@ -1839,7 +1838,6 @@ static int zoidfs_sysio_write(const zoidfs_handle_t *handle, size_t mem_count,
 	/*
 	 * setup the xtvec (file) data structure
 	 */
-    ZFSSYSIO_INFO("file_count = %lu\n", file_count);
 	for(i = 0 ; i < file_count ; i+=1)
 	{
 		xtvs[i].xtv_off = (__off64_t)file_starts[i];
