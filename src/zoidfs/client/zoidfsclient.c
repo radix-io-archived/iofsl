@@ -1354,27 +1354,27 @@ int zoidfs_rename(const zoidfs_handle_t *from_parent_handle,
     if (from_full_path) {
         from_null_param = 1;
         send_msg.sendbuflen += zoidfs_xdr_size_processor(ZFS_NULL_PARAM_T, &from_null_param) +
-                      XDRSIZE_CSTRING_PATH_T(from_full_path);
+                               XDRSIZE_CSTRING_PATH_T(from_full_path);
     } else {
         from_null_param = 0;
         send_msg.sendbuflen += zoidfs_xdr_size_processor(ZFS_NULL_PARAM_T, &from_null_param) +
-                      zoidfs_xdr_size_processor(ZFS_HANDLE_T, (void *)from_parent_handle) +
-                      XDRSIZE_CSTRING_NAME_T(from_component_name);
+                               zoidfs_xdr_size_processor(ZFS_HANDLE_T, (void *)from_parent_handle) +
+                               XDRSIZE_CSTRING_NAME_T(from_component_name);
     }
     if (to_full_path) {
         to_null_param = 1;
         send_msg.sendbuflen += zoidfs_xdr_size_processor(ZFS_NULL_PARAM_T, &to_null_param) +
-                      XDRSIZE_CSTRING_PATH_T(to_full_path);
+                               XDRSIZE_CSTRING_PATH_T(to_full_path);
     } else {
         to_null_param = 0;
         send_msg.sendbuflen += zoidfs_xdr_size_processor(ZFS_NULL_PARAM_T, &to_null_param) +
-                      zoidfs_xdr_size_processor(ZFS_HANDLE_T, (void *)to_parent_handle) +
-                      XDRSIZE_CSTRING_NAME_T(to_component_name);
+                               zoidfs_xdr_size_processor(ZFS_HANDLE_T, (void *)to_parent_handle) +
+                               XDRSIZE_CSTRING_NAME_T(to_component_name);
     }
 
     recv_msg.recvbuflen = zoidfs_xdr_size_processor(ZFS_OP_STATUS_T, &recv_msg.op_status) +
-                 zoidfs_xdr_size_processor(ZFS_CACHE_HINT_T, &hint) +
-                 zoidfs_xdr_size_processor(ZFS_CACHE_HINT_T, &hint);
+                          zoidfs_xdr_size_processor(ZFS_CACHE_HINT_T, &hint) +
+                          zoidfs_xdr_size_processor(ZFS_CACHE_HINT_T, &hint);
 
     ZOIDFS_SEND_ALLOC_BUFFER(send_msg);
     if (!send_msg.sendbuf) {
@@ -1558,27 +1558,27 @@ int zoidfs_link(const zoidfs_handle_t *from_parent_handle,
     if (from_full_path) {
         from_null_param = 1;
         send_msg.sendbuflen += zoidfs_xdr_size_processor(ZFS_NULL_PARAM_T, &from_null_param) +
-                      XDRSIZE_CSTRING_PATH_T(from_full_path); 
+                               XDRSIZE_CSTRING_PATH_T(from_full_path); 
     } else {
         from_null_param = 0;
         send_msg.sendbuflen += zoidfs_xdr_size_processor(ZFS_NULL_PARAM_T, &from_null_param) +
-                      zoidfs_xdr_size_processor(ZFS_HANDLE_T, (void *)from_parent_handle) +
-                      XDRSIZE_CSTRING_NAME_T(from_component_name);
+                               zoidfs_xdr_size_processor(ZFS_HANDLE_T, (void *)from_parent_handle) +
+                               XDRSIZE_CSTRING_NAME_T(from_component_name);
     }
     if (to_full_path) {
         to_null_param = 1;
         send_msg.sendbuflen += zoidfs_xdr_size_processor(ZFS_NULL_PARAM_T, &to_null_param) +
-                      XDRSIZE_CSTRING_PATH_T(to_full_path);
+                               XDRSIZE_CSTRING_PATH_T(to_full_path);
     } else {
         to_null_param = 0;
         send_msg.sendbuflen += zoidfs_xdr_size_processor(ZFS_NULL_PARAM_T, &to_null_param) +
-                      zoidfs_xdr_size_processor(ZFS_HANDLE_T, (void *)to_parent_handle) +
-                      XDRSIZE_CSTRING_NAME_T(to_component_name);
+                               zoidfs_xdr_size_processor(ZFS_HANDLE_T, (void *)to_parent_handle) +
+                               XDRSIZE_CSTRING_NAME_T(to_component_name);
     }
 
     recv_msg.recvbuflen = zoidfs_xdr_size_processor(ZFS_OP_STATUS_T, &recv_msg.op_status) +
-                 zoidfs_xdr_size_processor(ZFS_CACHE_HINT_T, &hint) +
-                 zoidfs_xdr_size_processor(ZFS_CACHE_HINT_T, &hint);
+                          zoidfs_xdr_size_processor(ZFS_CACHE_HINT_T, &hint) +
+                          zoidfs_xdr_size_processor(ZFS_CACHE_HINT_T, &hint);
 
     ZOIDFS_SEND_ALLOC_BUFFER(send_msg);
     if (!send_msg.sendbuf) {
@@ -1766,28 +1766,28 @@ int zoidfs_symlink(const zoidfs_handle_t *from_parent_handle,
     {
         from_null_param = 1;
         send_msg.sendbuflen += zoidfs_xdr_size_processor(ZFS_NULL_PARAM_T, &from_null_param) +
-                      XDRSIZE_CSTRING_PATH_T(from_full_path);
+                               XDRSIZE_CSTRING_PATH_T(from_full_path);
     } else {
         from_null_param = 0;
         send_msg.sendbuflen += zoidfs_xdr_size_processor(ZFS_NULL_PARAM_T, &from_null_param) +
-                      zoidfs_xdr_size_processor(ZFS_HANDLE_T, (void *)from_parent_handle) +
-                      XDRSIZE_CSTRING_NAME_T(from_component_name);
+                               zoidfs_xdr_size_processor(ZFS_HANDLE_T, (void *)from_parent_handle) +
+                               XDRSIZE_CSTRING_NAME_T(from_component_name);
     }
     if (to_full_path) {
         to_null_param = 1;
         send_msg.sendbuflen += zoidfs_xdr_size_processor(ZFS_NULL_PARAM_T, &to_null_param) +
-                      XDRSIZE_CSTRING_PATH_T(to_full_path);
+                               XDRSIZE_CSTRING_PATH_T(to_full_path);
     } else {
         to_null_param = 0;
         send_msg.sendbuflen += zoidfs_xdr_size_processor(ZFS_NULL_PARAM_T, &to_null_param) +
-                      zoidfs_xdr_size_processor(ZFS_HANDLE_T, (void *)to_parent_handle) +
-                      XDRSIZE_CSTRING_NAME_T(to_component_name);
+                               zoidfs_xdr_size_processor(ZFS_HANDLE_T, (void *)to_parent_handle) +
+                               XDRSIZE_CSTRING_NAME_T(to_component_name);
     }
 
     send_msg.sendbuflen += zoidfs_xdr_size_processor(ZFS_SATTR_T, (void *)sattr);
     recv_msg.recvbuflen = zoidfs_xdr_size_processor(ZFS_OP_STATUS_T, &recv_msg.op_status) +
-                 zoidfs_xdr_size_processor(ZFS_CACHE_HINT_T, &hint) + 
-                 zoidfs_xdr_size_processor(ZFS_CACHE_HINT_T, &hint);
+                          zoidfs_xdr_size_processor(ZFS_CACHE_HINT_T, &hint) + 
+                          zoidfs_xdr_size_processor(ZFS_CACHE_HINT_T, &hint);
 
     ZOIDFS_SEND_ALLOC_BUFFER(send_msg);
     if (!send_msg.sendbuf) {
@@ -1957,16 +1957,16 @@ int zoidfs_mkdir(const zoidfs_handle_t *parent_handle,
     if (full_path) {
         null_param = 1;
         send_msg.sendbuflen = zoidfs_xdr_size_processor(ZFS_OP_ID_T, &send_msg.zoidfs_op_id) +
-                     zoidfs_xdr_size_processor(ZFS_NULL_PARAM_T, &null_param) +
-                     XDRSIZE_CSTRING_PATH_T(full_path) +
-                     zoidfs_xdr_size_processor(ZFS_SATTR_T, (void *)sattr);
+                              zoidfs_xdr_size_processor(ZFS_NULL_PARAM_T, &null_param) +
+                              XDRSIZE_CSTRING_PATH_T(full_path) +
+                              zoidfs_xdr_size_processor(ZFS_SATTR_T, (void *)sattr);
     } else {
         null_param = 0;
         send_msg.sendbuflen = zoidfs_xdr_size_processor(ZFS_OP_ID_T, &send_msg.zoidfs_op_id) +
-                     zoidfs_xdr_size_processor(ZFS_NULL_PARAM_T, &null_param) +
-                     zoidfs_xdr_size_processor(ZFS_HANDLE_T, (void *)parent_handle) +
-                     XDRSIZE_CSTRING_NAME_T(component_name) +
-                     zoidfs_xdr_size_processor(ZFS_SATTR_T, (void *)sattr);
+                              zoidfs_xdr_size_processor(ZFS_NULL_PARAM_T, &null_param) +
+                              zoidfs_xdr_size_processor(ZFS_HANDLE_T, (void *)parent_handle) +
+                              XDRSIZE_CSTRING_NAME_T(component_name) +
+                              zoidfs_xdr_size_processor(ZFS_SATTR_T, (void *)sattr);
     }
 
     recv_msg.recvbuflen = zoidfs_xdr_size_processor(ZFS_OP_STATUS_T, &recv_msg.op_status) +
@@ -2082,7 +2082,6 @@ int zoidfs_readdir(const zoidfs_handle_t *parent_handle,
                    zoidfs_dirent_cookie_t cookie, size_t *entry_count_,
                    zoidfs_dirent_t *entries, uint32_t flags,
                    zoidfs_cache_hint_t *parent_hint) {
-    /* @TODO: put assert here checking there is no overflow */
     uint32_t entry_count = *entry_count_; /* workaround for 32bit */
     zoidfs_cache_hint_t hint;
     dirent_t_transfer trans; 
@@ -2098,20 +2097,23 @@ int zoidfs_readdir(const zoidfs_handle_t *parent_handle,
     * followed by an array of zoidfs_dirent_t followed by the
     * zoidfs_cache_hint_t */
 
+    /* checking there is no overflow... this needs to be improved */
+    assert(entry_count == *entry_count_);
+
     trans.count = &entry_count; 
     trans.entries = &entries; 
     trans.maxcount = entry_count; 
 
     recv_msg.recvbuflen = zoidfs_xdr_size_processor(ZFS_OP_STATUS_T, &recv_msg.op_status) +
-                 zoidfs_xdr_size_processor(ZFS_UINT32_T, &entry_count) +
-                 zoidfs_xdr_size_processor(ZFS_CACHE_HINT_T, &hint) +
-                 XDRSIZE_BUFFER_T(xdr_zoidfs_dirent_array_size (entry_count)); 
+                          zoidfs_xdr_size_processor(ZFS_UINT32_T, &entry_count) +
+                          zoidfs_xdr_size_processor(ZFS_CACHE_HINT_T, &hint) +
+                          XDRSIZE_BUFFER_T(xdr_zoidfs_dirent_array_size (entry_count)); 
 
     send_msg.sendbuflen = zoidfs_xdr_size_processor(ZFS_OP_ID_T, &send_msg.zoidfs_op_id) +
-                 zoidfs_xdr_size_processor(ZFS_HANDLE_T, (void *)parent_handle) +
-                 zoidfs_xdr_size_processor(ZFS_DIRENT_COOKIE_T, (void *)&cookie) +
-                 zoidfs_xdr_size_processor(ZFS_UINT32_T, &entry_count) +
-                 zoidfs_xdr_size_processor(ZFS_UINT32_T, &flags);
+                          zoidfs_xdr_size_processor(ZFS_HANDLE_T, (void *)parent_handle) +
+                          zoidfs_xdr_size_processor(ZFS_DIRENT_COOKIE_T, (void *)&cookie) +
+                          zoidfs_xdr_size_processor(ZFS_UINT32_T, &entry_count) +
+                          zoidfs_xdr_size_processor(ZFS_UINT32_T, &flags);
 
     ZOIDFS_SEND_ALLOC_BUFFER(send_msg);
     if (!send_msg.sendbuf) {
@@ -2229,8 +2231,8 @@ int zoidfs_resize(const zoidfs_handle_t *handle, uint64_t size) {
 
     recv_msg.recvbuflen = zoidfs_xdr_size_processor(ZFS_OP_STATUS_T, &recv_msg.op_status);
     send_msg.sendbuflen = zoidfs_xdr_size_processor(ZFS_OP_ID_T, &send_msg.zoidfs_op_id) +
-                 zoidfs_xdr_size_processor(ZFS_HANDLE_T, (void *)handle) +
-                 zoidfs_xdr_size_processor(ZFS_UINT64_T, &size);
+                          zoidfs_xdr_size_processor(ZFS_HANDLE_T, (void *)handle) +
+                          zoidfs_xdr_size_processor(ZFS_UINT64_T, &size);
 
     ZOIDFS_SEND_ALLOC_BUFFER(send_msg);
     if (!send_msg.sendbuf) {
@@ -2342,15 +2344,15 @@ int zoidfs_write(const zoidfs_handle_t *handle, size_t mem_count_,
         pipeline_size = PIPELINE_SIZE;
 
     recv_msg.recvbuflen = zoidfs_xdr_size_processor(ZFS_OP_STATUS_T, &recv_msg.op_status) +
-                 zoidfs_xdr_size_processor(ZFS_UINT64_ARRAY_T, &file_count);
+                          zoidfs_xdr_size_processor(ZFS_UINT64_ARRAY_T, &file_count);
     send_msg.sendbuflen = zoidfs_xdr_size_processor(ZFS_OP_ID_T, &send_msg.zoidfs_op_id) +
-                 zoidfs_xdr_size_processor(ZFS_HANDLE_T, (void *)handle) +
-                 zoidfs_xdr_size_processor(ZFS_UINT32_T, &mem_count) +
-                 zoidfs_xdr_size_processor(ZFS_UINT64_ARRAY_T, &mem_count) +
-                 zoidfs_xdr_size_processor(ZFS_UINT32_T, &file_count) +
-                 zoidfs_xdr_size_processor(ZFS_UINT64_ARRAY_T, &file_count) +
-                 zoidfs_xdr_size_processor(ZFS_UINT64_ARRAY_T, &file_count) +
-                 zoidfs_xdr_size_processor(ZFS_UINT64_T, &pipeline_size);
+                          zoidfs_xdr_size_processor(ZFS_HANDLE_T, (void *)handle) +
+                          zoidfs_xdr_size_processor(ZFS_UINT32_T, &mem_count) +
+                          zoidfs_xdr_size_processor(ZFS_UINT64_ARRAY_T, &mem_count) +
+                          zoidfs_xdr_size_processor(ZFS_UINT32_T, &file_count) +
+                          zoidfs_xdr_size_processor(ZFS_UINT64_ARRAY_T, &file_count) +
+                          zoidfs_xdr_size_processor(ZFS_UINT64_ARRAY_T, &file_count) +
+                          zoidfs_xdr_size_processor(ZFS_UINT64_T, &pipeline_size);
 
     ZOIDFS_SEND_ALLOC_BUFFER(send_msg);
     if (!send_msg.sendbuf) {
@@ -2603,15 +2605,15 @@ int zoidfs_read(const zoidfs_handle_t *handle, zoidfs_size_t mem_count_,
         pipeline_size = PIPELINE_SIZE;
 
     recv_msg.recvbuflen = zoidfs_xdr_size_processor(ZFS_OP_STATUS_T, &recv_msg.op_status) +
-                 zoidfs_xdr_size_processor(ZFS_UINT64_ARRAY_T, &file_count);
+                          zoidfs_xdr_size_processor(ZFS_UINT64_ARRAY_T, &file_count);
     send_msg.sendbuflen = zoidfs_xdr_size_processor(ZFS_OP_ID_T, &send_msg.zoidfs_op_id) +
-                 zoidfs_xdr_size_processor(ZFS_HANDLE_T, (void *)handle) +
-                 zoidfs_xdr_size_processor(ZFS_UINT32_T, &mem_count) +
-                 zoidfs_xdr_size_processor(ZFS_UINT64_ARRAY_T, &mem_count) +
-                 zoidfs_xdr_size_processor(ZFS_UINT32_T, &file_count) +
-                 zoidfs_xdr_size_processor(ZFS_UINT64_ARRAY_T, &file_count) +
-                 zoidfs_xdr_size_processor(ZFS_UINT64_ARRAY_T, &file_count) +
-                 zoidfs_xdr_size_processor(ZFS_UINT64_T, &pipeline_size);
+                          zoidfs_xdr_size_processor(ZFS_HANDLE_T, (void *)handle) +
+                          zoidfs_xdr_size_processor(ZFS_UINT32_T, &mem_count) +
+                          zoidfs_xdr_size_processor(ZFS_UINT64_ARRAY_T, &mem_count) +
+                          zoidfs_xdr_size_processor(ZFS_UINT32_T, &file_count) +
+                          zoidfs_xdr_size_processor(ZFS_UINT64_ARRAY_T, &file_count) +
+                          zoidfs_xdr_size_processor(ZFS_UINT64_ARRAY_T, &file_count) +
+                          zoidfs_xdr_size_processor(ZFS_UINT64_T, &pipeline_size);
 
     ZOIDFS_SEND_ALLOC_BUFFER(send_msg);
     if (!send_msg.sendbuf) {
