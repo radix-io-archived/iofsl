@@ -10,6 +10,7 @@
 #include <sys/stat.h>
 
 #include "zoidfs.h"
+#include "tools.h"
 #include "zoidfs-proto.h"
 #include "iofwd_config.h"
 
@@ -72,6 +73,12 @@ int init_path_names(char * testDir, char * mpt)
 int init_basedir_handle(char * mpt)
 {
     return zoidfs_lookup(NULL, NULL, mpt, &basedir_handle);
+}
+
+int testNULL(void)
+{
+    CU_ASSERT(ZFS_OK == zoidfs_null());
+    return 0;
 }
 
 int testCREATE(void)
@@ -395,6 +402,29 @@ int testLOOKUP(void)
     return 0;
 }
 
+int testCOMMIT(void)
+{
+    zoidfs_handle_t fhandle;
+
+    CU_ASSERT(ZFS_OK == zoidfs_lookup(&basedir_handle, component_filename, NULL, &fhandle));
+    CU_ASSERT(ZFS_OK == zoidfs_commit(&fhandle));
+    CU_ASSERT(ZFS_OK == zoidfs_lookup(&basedir_handle, component_dirname, NULL, &fhandle));
+    CU_ASSERT(ZFS_OK == zoidfs_commit(&fhandle));
+    CU_ASSERT(ZFS_OK == zoidfs_lookup(NULL, NULL, fullpath_filename, &fhandle));
+    CU_ASSERT(ZFS_OK == zoidfs_commit(&fhandle));
+    CU_ASSERT(ZFS_OK == zoidfs_lookup(NULL, NULL, fullpath_dirname, &fhandle));
+    CU_ASSERT(ZFS_OK == zoidfs_commit(&fhandle));
+    CU_ASSERT(ZFS_OK == zoidfs_lookup(&basedir_handle, symlink_component_filename, NULL, &fhandle));
+    CU_ASSERT(ZFS_OK == zoidfs_commit(&fhandle));
+    CU_ASSERT(ZFS_OK == zoidfs_lookup(&basedir_handle, symlink_component_dirname, NULL, &fhandle));
+    CU_ASSERT(ZFS_OK == zoidfs_commit(&fhandle));
+    CU_ASSERT(ZFS_OK == zoidfs_lookup(NULL, NULL, symlink_fullpath_filename, &fhandle));
+    CU_ASSERT(ZFS_OK == zoidfs_commit(&fhandle));
+    CU_ASSERT(ZFS_OK == zoidfs_lookup(NULL, NULL, symlink_fullpath_dirname, &fhandle));
+    CU_ASSERT(ZFS_OK == zoidfs_commit(&fhandle));
+
+    return 0;
+}
 int testGETATTR(void)
 {
     zoidfs_handle_t fhandle;
@@ -594,19 +624,33 @@ int testREADLINK(void)
 {
     zoidfs_handle_t fhandle;
     char buffer[4096];
+    char short_buffer[24];
     size_t buffer_length = 4096;
+    size_t short_buffer_length = 24;
 
     zoidfs_lookup(&basedir_handle, symlink_component_filename, NULL, &fhandle);
     CU_ASSERT(ZFS_OK == zoidfs_readlink(&fhandle, buffer, buffer_length));
+    CU_ASSERT(strncmp(base_component_filename, buffer, zfsmin(buffer_length, strlen(base_component_filename))) == 0);
+    CU_ASSERT(ZFS_OK == zoidfs_readlink(&fhandle, short_buffer, short_buffer_length));
+    CU_ASSERT(strncmp(base_component_filename, short_buffer, zfsmin(short_buffer_length, strlen(base_component_filename))) == 0);
 
     zoidfs_lookup(&basedir_handle, symlink_component_dirname, NULL, &fhandle);
     CU_ASSERT(ZFS_OK == zoidfs_readlink(&fhandle, buffer, buffer_length));
+    CU_ASSERT(strncmp(base_component_dirname, buffer, zfsmin(buffer_length, strlen(base_component_dirname))) == 0);
+    CU_ASSERT(ZFS_OK == zoidfs_readlink(&fhandle, short_buffer, short_buffer_length));
+    CU_ASSERT(strncmp(base_component_dirname, short_buffer, zfsmin(short_buffer_length, strlen(base_component_dirname))) == 0);
 
     zoidfs_lookup(NULL, NULL, symlink_fullpath_filename, &fhandle);
     CU_ASSERT(ZFS_OK == zoidfs_readlink(&fhandle, buffer, buffer_length));
+    CU_ASSERT(strncmp(fullpath_filename, buffer, zfsmin(buffer_length, strlen(fullpath_filename))) == 0);
+    CU_ASSERT(ZFS_OK == zoidfs_readlink(&fhandle, short_buffer, short_buffer_length));
+    CU_ASSERT(strncmp(fullpath_filename, short_buffer, zfsmin(short_buffer_length, strlen(fullpath_filename))) == 0);
 
     zoidfs_lookup(NULL, NULL, symlink_fullpath_dirname, &fhandle);
     CU_ASSERT(ZFS_OK == zoidfs_readlink(&fhandle, buffer, buffer_length));
+    CU_ASSERT(strncmp(fullpath_dirname, buffer, zfsmin(buffer_length, strlen(fullpath_filename))) == 0);
+    CU_ASSERT(ZFS_OK == zoidfs_readlink(&fhandle, short_buffer, short_buffer_length));
+    CU_ASSERT(strncmp(fullpath_dirname, short_buffer, zfsmin(short_buffer_length, strlen(fullpath_dirname))) == 0);
 
     zoidfs_lookup(&basedir_handle, component_filename, NULL, &fhandle);
     CU_ASSERT(ZFS_OK != zoidfs_readlink(&fhandle, buffer, buffer_length));
@@ -637,6 +681,13 @@ int testREADDIR(void)
     memset(entries, 0, entry_count * sizeof(zoidfs_dirent_t));
     CU_ASSERT_EQUAL(ZFS_OK, zoidfs_readdir(&basedir_handle, cookie, &entry_count, entries, flags, NULL)); 
     CU_ASSERT(total_file_count + 2 == entry_count);
+    free(entries);
+
+    cookie = 0;
+    entry_count = 1;
+    entries = malloc(entry_count * sizeof(zoidfs_dirent_t));
+    memset(entries, 0, entry_count * sizeof(zoidfs_dirent_t));
+    CU_ASSERT_EQUAL(ZFS_OK, zoidfs_readdir(&basedir_handle, cookie, &entry_count, entries, flags, NULL)); 
     free(entries);
 
     cookie = 0;
@@ -830,8 +881,8 @@ int main(int argc, char ** argv)
    }
 
    /* add the tests to the suite */
-   /* NOTE - ORDER IS IMPORTANT - MUST TEST fread() AFTER fprintf() */
    if (
+        (NULL == CU_add_test(pSuite, "test of zoidfs_null()", (CU_TestFunc) testNULL)) ||
         (NULL == CU_add_test(pSuite, "test of zoidfs_create()", (CU_TestFunc) testCREATE)) ||
         (NULL == CU_add_test(pSuite, "test of zoidfs_mkdir()", (CU_TestFunc) testMKDIR)) ||
         (NULL == CU_add_test(pSuite, "test of zoidfs_symlink()", (CU_TestFunc) testSYMLINK)) ||
@@ -843,6 +894,7 @@ int main(int argc, char ** argv)
         (NULL == CU_add_test(pSuite, "test of zoidfs_resize()", (CU_TestFunc) testRESIZE)) ||
         (NULL == CU_add_test(pSuite, "test of zoidfs_readdir()", (CU_TestFunc) testREADDIR)) ||
         (NULL == CU_add_test(pSuite, "test of zoidfs_readlink()", (CU_TestFunc) testREADLINK)) ||
+        (NULL == CU_add_test(pSuite, "test of zoidfs_commit()", (CU_TestFunc) testCOMMIT)) ||
         (NULL == CU_add_test(pSuite, "test of zoidfs_remove()", (CU_TestFunc) testREMOVE))
       )
    {
