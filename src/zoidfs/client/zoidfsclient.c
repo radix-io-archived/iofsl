@@ -2428,11 +2428,6 @@ int zoidfs_write(const zoidfs_handle_t *handle, size_t mem_count_,
     }
 
 
-    for(i = 0 ; i < mem_count ; i++)
-    {
-        fprintf(stderr, "write mem stats: %lu %p %lu\n", i, mem_starts[i], mem_sizes[i]);
-    }
-
     /* Wait for the response from the ION */
     ZOIDFS_RECV_ALLOC_BUFFER(recv_msg);
     if (!recv_msg.recvbuf) {
