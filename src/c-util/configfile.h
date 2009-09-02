@@ -72,6 +72,9 @@ typedef ConfigVTable * ConfigHandle;
 /* utility debug function: write config tree to stdout */
 void cf_dump (ConfigHandle cf);
 
+/* Compare two config trees: return true if equal, false if not */
+int cf_equal (ConfigHandle h1, ConfigHandle h2);
+
 static inline int cf_free (ConfigHandle cf)
 {
    cf->free (cf->data);
