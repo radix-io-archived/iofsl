@@ -6,6 +6,13 @@ MODULE_SOURCES_c-util = \
 	gencache.c \
 	hash-table.c \
 	env-parse.c \
+	configstore.c \
+	configstoreadapter.c \
+	txt_configfile.c \
+	configlex.c \
+	configparser.c  \
+	configglue.c \
+	configfile.c \
 	tools.c
 
 # Automatically add -I$(thismoduledir) to CPPFLAGS

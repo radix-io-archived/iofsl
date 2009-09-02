@@ -4,7 +4,10 @@ MODULE_APPS:= xdrspeed bmitest timertest forwarding iofwdreceive iofwdsend \
    zoidfs-io zoidfs-md zoidfs-io-iofwd zoidfs-md-iofwd zoidfsapi-symlink-test \
    zoidfsapi-link-test zoidfsapi-rename-test zoidfsapi-lookup-perm-test \
    zoidfs-io-thread zoidfs-md-thread zoidfs-io-iofwd-thread \
-   zoidfs-md-iofwd-thread 
+   zoidfs-md-iofwd-thread configparser
+
+MODULE_SOURCES_configparser := configparser.c
+ADDINTLIBS_configparser := c-util
 
 MODULE_SOURCES_completion := completion.cpp
 ADDINTLIBS_completion := iofwdutil
@@ -134,5 +137,8 @@ ADDINTLIBS_zoidfs-io-cunit-local := iofwdclient iofwdlib iofwdutil zoidfsutil zo
 LDFLAGS_zoidfs-io-cunit-local := @CUNIT_LDFLAGS@ @CUNIT_LIBS@
 LIBS_zoidfs-io-cunit-local := @CUNIT_LIBS@
 
+MODULE_APPS += configfile
+MODULE_SOURCES_configfile := configfile.c
+ADDINTLIBS_configfile := c-util
 
 endif
