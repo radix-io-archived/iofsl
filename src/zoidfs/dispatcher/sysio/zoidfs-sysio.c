@@ -10,6 +10,8 @@
 #include <sys/time.h>
 #include "zoidfs-sysio.h"
 
+#define SYSIO_WR_IO_CS
+#define SYSIO_RD_IO_CS
 /*
  * libsysio FHI function declarations externs for alternate symbol builds
  */
@@ -47,6 +49,12 @@ extern int _sysio_boot(char *, char *);
 static int sysio_dispatcher_initialized = 0;
 static int sysio_dispatcher_ref_count = 0;
 static pthread_mutex_t sysio_init_mutex = PTHREAD_MUTEX_INITIALIZER;
+#ifdef SYSIO_WR_IO_CS
+static pthread_mutex_t sysio_wr_io_mutex = PTHREAD_MUTEX_INITIALIZER;
+#endif
+#ifdef SYSIO_RD_IO_CS
+static pthread_mutex_t sysio_rd_io_mutex = PTHREAD_MUTEX_INITIALIZER;
+#endif
 
 /*
  * root zoidfs handle
@@ -1798,6 +1806,8 @@ static int zoidfs_sysio_write(const zoidfs_handle_t *handle, size_t mem_count,
 	static char sysio_component_handle_data[SYSIO_HANDLE_DATA_SIZE];
 	struct file_handle_info sysio_component_handle = {NULL, sysio_component_handle_data, SYSIO_HANDLE_DATA_SIZE};
 	ioid_t ioidp;
+    uint64_t total_size = 0;
+    uint64_t io_total_size = 0;
 	
 	ZFSSYSIO_TRACE_ENTER;
 
@@ -1842,12 +1852,18 @@ static int zoidfs_sysio_write(const zoidfs_handle_t *handle, size_t mem_count,
 	{
 		xtvs[i].xtv_off = (__off64_t)file_starts[i];
 		xtvs[i].xtv_len = (size_t)file_sizes[i];
+        total_size += xtvs[i].xtv_len;
 	}
 		
     /*
      * Setup the file handle based on the libsysio handle and the file handle
      */
 	zoidfs_handle_to_sysio_handle(handle, &sysio_component_handle);
+
+#ifdef SYSIO_WR_IO_CS
+    /* starting write io... lock the mutex */
+	pthread_mutex_lock(&sysio_wr_io_mutex);
+#endif
 
 	ret = SYSIO_INTERFACE_NAME(_zfs_sysio_fhi_iwrite64x)(&sysio_component_handle, iovs, mem_count, xtvs, file_count, &ioidp);
 	if (ret < 0) {
@@ -1865,40 +1881,34 @@ static int zoidfs_sysio_write(const zoidfs_handle_t *handle, size_t mem_count,
             xtvs = NULL;
         }
 
+#ifdef SYSIO_WR_IO_CS
+        /* make sure to unlock the mutex */
+	    pthread_mutex_unlock(&sysio_wr_io_mutex);
+#endif
+
 		ZFSSYSIO_TRACE_EXIT;
 		return sysio_err_to_zfs_err(errno);
 	}
 
     /* poll until IO is done */
     do
-    {		
-	    ret = SYSIO_INTERFACE_NAME(_zfs_sysio_fhi_iodone)(ioidp);
-        if(ret == -EINVAL)
+    {
+	    io_total_size = SYSIO_INTERFACE_NAME(_zfs_sysio_fhi_iowait)(ioidp);
+        if(total_size != io_total_size)
         {
-		    ZFSSYSIO_INFO("zoidfs_sysio_write: fhi_iowait() failed.");
-		    ZFSSYSIO_TRACE_EXIT;
-            return sysio_err_to_zfs_err(-EINVAL);
+		    ZFSSYSIO_INFO("zoidfs_sysio_write: io not done yet. %lu of %lu bytes completed.", io_total_size, total_size);
         }
-    }while(!ret);
-
-	if (ret < 0) {
-		ZFSSYSIO_INFO("zoidfs_sysio_write: fhi_iowait() failed, code = %i.", ret);
-		ZFSSYSIO_PERROR("zoidfs_sysio_write");
-
-        if(iovs)
+        if(io_total_size == (size_t)(-EWOULDBLOCK))
         {
-	        free(iovs);
-            iovs = NULL;
+		    ZFSSYSIO_INFO("zoidfs_sysio_write: io not done yet... blocking.");
         }
-        if(xtvs)
-        {
-	        free(xtvs);
-            xtvs = NULL;
-        }
+    }while(io_total_size == (size_t)(-EWOULDBLOCK) && io_total_size != total_size);
 
-		ZFSSYSIO_TRACE_EXIT;
-		return sysio_err_to_zfs_err(errno);
-	}
+#ifdef SYSIO_WR_IO_CS
+    /* done with the write io... unlock the mutex */
+	pthread_mutex_unlock(&sysio_wr_io_mutex);
+#endif
+
 	/*
 	 * Cleanup the data structures
 	 */
@@ -1934,6 +1944,8 @@ static int zoidfs_sysio_read(const zoidfs_handle_t *handle, size_t mem_count,
 	static char sysio_component_handle_data[SYSIO_HANDLE_DATA_SIZE];
 	struct file_handle_info sysio_component_handle = {NULL, sysio_component_handle_data, SYSIO_HANDLE_DATA_SIZE};
 	ioid_t ioidp;
+    uint64_t total_size = 0;
+    uint64_t io_total_size = 0;
 
 	ZFSSYSIO_TRACE_ENTER;
 	
@@ -1978,13 +1990,19 @@ static int zoidfs_sysio_read(const zoidfs_handle_t *handle, size_t mem_count,
 	{
 		xtvs[i].xtv_off = (__off64_t)file_starts[i];
 		xtvs[i].xtv_len = (size_t)file_sizes[i];
+        total_size += (xtvs[i].xtv_len);
 	}
 		
     /*
      * Setup the file handle based on the libsysio handle and the file handle
      */
 	zoidfs_handle_to_sysio_handle(handle, &sysio_component_handle);
-	
+
+#ifdef SYSIO_RD_IO_CS
+    /* starting read io... lock the mutex */
+	pthread_mutex_lock(&sysio_rd_io_mutex);
+#endif
+
 	ret = SYSIO_INTERFACE_NAME(_zfs_sysio_fhi_iread64x)(&sysio_component_handle, iovs, mem_count, xtvs, file_count, &ioidp);
 	if (ret < 0) {
 		ZFSSYSIO_INFO("zoidfs_sysio_read: fhi_iread64x() failed, code = %i.", ret);
@@ -2001,40 +2019,34 @@ static int zoidfs_sysio_read(const zoidfs_handle_t *handle, size_t mem_count,
             xtvs = NULL;
         }
 
+#ifdef SYSIO_RD_IO_CS
+        /* make sure to unlock the mutex */
+	    pthread_mutex_unlock(&sysio_rd_io_mutex);
+#endif
+
 		ZFSSYSIO_TRACE_EXIT;
 		return sysio_err_to_zfs_err(errno);
 	}
 		
     /* poll until IO is done */
     do
-    {		
-	    ret = SYSIO_INTERFACE_NAME(_zfs_sysio_fhi_iodone)(ioidp);
-        if(ret == -EINVAL)
+    {
+	    io_total_size = SYSIO_INTERFACE_NAME(_zfs_sysio_fhi_iowait)(ioidp);
+        if(total_size != io_total_size)
         {
-		    ZFSSYSIO_INFO("zoidfs_sysio_read: fhi_iowait() failed.");
-		    ZFSSYSIO_TRACE_EXIT;
-            return sysio_err_to_zfs_err(-EINVAL);
+            ZFSSYSIO_INFO("zoidfs_sysio_read: io not done yet. %lu of %lu bytes completed.", io_total_size, total_size);
         }
-    }while(!ret);
-
-	if (ret < 0) {
-		ZFSSYSIO_INFO("zoidfs_sysio_read: fhi_iowait() failed, code = %i.", ret);
-		ZFSSYSIO_PERROR("zoidfs_sysio_write");
-
-        if(iovs)
-        {	
-            free(iovs);
-            iovs = NULL;
-        }
-        if(xtvs)
+        if(io_total_size == (size_t)(-EWOULDBLOCK))
         {
-	        free(xtvs);
-            xtvs = NULL;
+            ZFSSYSIO_INFO("zoidfs_sysio_read: io not done yet... blocking.");
         }
+    }while(io_total_size == (size_t)(-EWOULDBLOCK) && io_total_size != total_size);
 
-		ZFSSYSIO_TRACE_EXIT;
-		return sysio_err_to_zfs_err(errno);
-	}
+#ifdef SYSIO_RD_IO_CS
+    /* done with the read io... unlock the mutex */
+	pthread_mutex_unlock(&sysio_rd_io_mutex);
+#endif
+
 	/*
 	 * Cleanup the data structures
 	 */
