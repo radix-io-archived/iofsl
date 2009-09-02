@@ -89,6 +89,12 @@ ADDINTLIBS_timertest := iofwdutil
 MODULE_SOURCES_xdrspeed := $(addprefix xdr/, xdrspeed.cpp)
 ADDINTLIBS_xdrspeed := iofwdutil
 
+
+MODULE_APPS += configfile
+MODULE_SOURCES_configfile := configfile.c
+ADDINTLIBS_configfile := c-util
+
+
 ifdef ENABLE_CUNIT
 
 # there are no per-app/file CPPFLAGS/CFLAGS yet...
@@ -136,9 +142,5 @@ MODULE_SOURCES_zoidfs-io-cunit-local := zoidfs-io-cunit.c
 ADDINTLIBS_zoidfs-io-cunit-local := iofwdclient iofwdlib iofwdutil zoidfsutil zoidfsdispatch zoidfscutil
 LDFLAGS_zoidfs-io-cunit-local := @CUNIT_LDFLAGS@ @CUNIT_LIBS@
 LIBS_zoidfs-io-cunit-local := @CUNIT_LIBS@
-
-MODULE_APPS += configfile
-MODULE_SOURCES_configfile := configfile.c
-ADDINTLIBS_configfile := c-util
 
 endif
