@@ -21,7 +21,7 @@ enum { SE_SECTION  = 1,
 
 typedef struct
 {
-   const char * name;
+   char * name;
    unsigned int type;
 } SectionEntry;
 
