@@ -2483,6 +2483,9 @@ static int zoidfs_write_pipeline(BMI_addr_t peer_addr, uint64_t pipeline_size,
     size_t i;
     uint64_t st = 0;
     uint64_t st_mem = 0;
+
+    /* TODO: st_memofs probably shouldn't be 64 bit but whatever the platform
+     * size_t is */
     uint64_t st_memofs = 0;
     uint64_t total_size = 0;
 
@@ -2544,7 +2547,7 @@ static int zoidfs_write_pipeline(BMI_addr_t peer_addr, uint64_t pipeline_size,
         st = en;
         st_mem = en_mem;
         st_memofs = en_memofs;
-        if (st_mem < list_count && size_list[st_mem] == st_memofs) {
+        if (st_mem < (uint64_t) list_count && (uint64_t) size_list[st_mem] == st_memofs) {
             st_mem++;
             st_memofs = 0;
         }
@@ -2803,7 +2806,7 @@ static int zoidfs_read_pipeline(BMI_addr_t peer_addr, uint64_t pipeline_size,
         st = en;
         st_mem = en_mem;
         st_memofs = en_memofs;
-        if (st_mem < list_count && size_list[st_mem] == st_memofs) {
+        if (st_mem < (uint64_t) list_count && (uint64_t) size_list[st_mem] == st_memofs) {
             st_mem++;
             st_memofs = 0;
         }
