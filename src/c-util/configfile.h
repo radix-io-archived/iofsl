@@ -69,7 +69,7 @@ typedef struct
 
 typedef ConfigVTable * ConfigHandle; 
 
-/* utility debug function */
+/* utility debug function: write config tree to stdout */
 void cf_dump (ConfigHandle cf);
 
 static inline int cf_free (ConfigHandle cf)
