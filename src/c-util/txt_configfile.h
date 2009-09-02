@@ -1,6 +1,7 @@
 #ifndef C_UTIL_TXTFILE_CONFIGFILE_H
 #define C_UTIL_TXTFILE_CONFIGFILE_H
 
+#include <stdio.h>
 #include "configfile.h"
 
 /**
@@ -9,5 +10,6 @@
 
 ConfigHandle txtfile_openConfig (const char * filename);
 
+void txtfile_writeConfig (ConfigHandle h, FILE * out);
 
 #endif
