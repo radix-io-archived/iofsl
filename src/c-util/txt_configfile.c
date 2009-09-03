@@ -72,7 +72,7 @@ static void dump_section (FILE * f, ConfigHandle h, SectionHandle s, unsigned in
                {
                   fprintf (f,"\"%s\" ", (ptrs[j] ? ptrs[j] : ""));
                   free (ptrs[j]);
-                  if (j < size)
+                  if ((j+1) < size)
                      fprintf (f,", ");
                }
                fprintf (f, ");\n");
@@ -89,19 +89,12 @@ void txtfile_writeConfig (ConfigHandle cf, FILE * f)
    dump_section (f, cf, ROOT_SECTION, 0);
 }
 
-
-ConfigHandle txtfile_openConfig (const char * filename)
+ConfigHandle txtfile_openStream (FILE * f)
 {
-   FILE  * f ;
    long size;
    ParserParams p; 
    yyscan_t scanner;
    int reject;
-
-
-   f = fopen (filename, "r");
-   if (!f)
-      return 0;
 
    /* get file size */
    fseek (f, 0, SEEK_END);
@@ -111,7 +104,7 @@ ConfigHandle txtfile_openConfig (const char * filename)
    fseek (f, 0, SEEK_SET);
    if (size > MAX_CONFIG_SIZE)
    {
-      fprintf (stderr, "Config file %s too large! Not parsing!\n", filename);
+      fprintf (stderr, "Config file too large! Not parsing!\n");
       ALWAYS_ASSERT(0 && "Config file too large!");
    }
 
@@ -121,8 +114,22 @@ ConfigHandle txtfile_openConfig (const char * filename)
    reject = cfgp_parse(scanner, &p);
    cfgp_lex_destroy (scanner);
 
+   return p.configfile;
+ }
+
+ConfigHandle txtfile_openConfig (const char * filename)
+{
+   FILE  * f;
+   ConfigHandle ret;
+
+   f = fopen (filename, "r");
+   if (!f)
+      return 0;
+
+   ret = txtfile_openStream (f);
+
    fclose (f);
 
-   return p.configfile;
+   return ret;
 }
 

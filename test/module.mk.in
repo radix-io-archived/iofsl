@@ -143,4 +143,11 @@ ADDINTLIBS_zoidfs-io-cunit-local := iofwdclient iofwdlib iofwdutil zoidfsutil zo
 LDFLAGS_zoidfs-io-cunit-local := @CUNIT_LDFLAGS@ @CUNIT_LIBS@
 LIBS_zoidfs-io-cunit-local := @CUNIT_LIBS@
 
+MODULE_APPS += configfile-cunit
+MODULE_SOURCES_configfile-cunit := configfile-cunit.c
+ADDINTLIBS_configfile-cunit := c-util
+LDFLAGS_configfile-cunit := @CUNIT_LDFLAGS@ @CUNIT_LIBS@
+LIBS_configfile-cunit := @CUNIT_LIBS@
+
+
 endif
