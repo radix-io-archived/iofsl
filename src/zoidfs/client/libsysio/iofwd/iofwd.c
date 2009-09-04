@@ -51,10 +51,34 @@
  * Debug and trace facilities
  */
 
-#define SYSIO_IOFWD_FENTER() fprintf(stderr, "%s, FILE=%s, LINE# = %i ENTER\n", __func__, __FILE__, __LINE__)
-#define SYSIO_IOFWD_FEXIT() fprintf(stderr, "%s, FILE=%s, LINE# = %i EXIT\n", __func__, __FILE__, __LINE__)
-#define SYSIO_IOFWD_FABORT() fprintf(stderr, "%s, FILE=%s, LINE# = %i ABORT\n", __func__, __FILE__, __LINE__)
-#define SYSIO_IOFWD_FINFO(...) {char __buffer[4096]; sprintf(__buffer, ##__VA_ARGS__); fprintf(stderr, "%s, FILE=%s, LINE# = %i INFO, %s\n", __func__, __FILE__, __LINE__, __buffer);}
+#ifdef DEBUG_SYSIO_IOFWD
+#define SYSIO_IOFWD_FENTER()                                                            \
+do{                                                                                     \
+    fprintf(stderr, "%s, FILE=%s, LINE# = %i ENTER\n", __func__, __FILE__, __LINE__);   \
+}while(0)
+
+#define SYSIO_IOFWD_FEXIT()                                                             \
+do{                                                                                     \
+    fprintf(stderr, "%s, FILE=%s, LINE# = %i EXIT\n", __func__, __FILE__, __LINE__)     \
+}while(0)
+
+#define SYSIO_IOFWD_FABORT()                                                            \
+do{                                                                                     \
+    fprintf(stderr, "%s, FILE=%s, LINE# = %i ABORT\n", __func__, __FILE__, __LINE__)    \
+}while(0)
+
+#define SYSIO_IOFWD_FINFO(...)                                                                          \
+do{                                                                                                     \
+    char __buffer[4096];                                                                                \
+    sprintf(__buffer, ##__VA_ARGS__);                                                                   \
+    fprintf(stderr, "%s, FILE=%s, LINE# = %i INFO, %s\n", __func__, __FILE__, __LINE__, __buffer);      \
+}while(0)
+#else
+#define SYSIO_IOFWD_FENTER()    /* not in debug mode... do nothing */
+#define SYSIO_IOFWD_FEXIT()     /* not in debug mode... do nothing */
+#define SYSIO_IOFWD_FABORT()    /* not in debug mode... do nothing */
+#define SYSIO_IOFWD_FINFO(...)     /* not in debug mode... do nothing */
+#endif
 
 int _iofwd_sysio_init();
 int _iofwd_sysio_drv_init_all();
@@ -189,6 +213,49 @@ int __attribute__((weak)) SYSIO_INTERFACE_NAME(mkdir)(const char * path, mode_t 
     return 0;
 }*/
 
+static inline int zfs_error_to_sysio_error(int val)
+{
+   if (val == 0)
+      return 0;
+   switch(val)
+   {
+      case ZFSERR_PERM:
+         return EPERM;
+      case ZFSERR_NOENT:
+         return ENOENT;
+      case ZFSERR_IO:
+         return EIO;
+      case ZFSERR_NXIO:
+         return ENXIO;
+      case ZFSERR_ACCES:
+         return EACCES;
+      case ZFSERR_EXIST:
+         return EEXIST;
+      case ZFSERR_NODEV:
+         return ENODEV;
+      case ZFSERR_NOTDIR:
+         return ENOTDIR;
+      case ZFSERR_ISDIR:
+         return EISDIR;
+      case ZFSERR_FBIG:
+         return EFBIG;
+      case ZFSERR_NOSPC:
+         return ENOSPC;
+      case ZFSERR_ROFS:
+         return EROFS;
+      case ZFSERR_NAMETOOLONG:
+         return ENAMETOOLONG;
+      case ZFSERR_NOTEMPTY:
+         return ENOTEMPTY;
+      case ZFSERR_DQUOT:
+         return EDQUOT;
+      case ZFSERR_STALE:
+         return ESTALE;
+      default:
+         return EINVAL;
+   }
+}
+
 /*
  * Internal library data structures
  */
@@ -235,7 +302,6 @@ struct iofwd_inode {
     zoidfs_handle_t handle;                     /* zoidfs handle */
 };
 
-#define _sysio_iofwd_stat intnl_stat
 #define SYSIO_COPY_STAT(src, dest) *(dest) = *(src) 
 
 #define SYSIO_PRINT_STAT(src) \
@@ -316,8 +382,8 @@ do {                                                \
     (dest)->mtime.nseconds = 0;                     \
     (dest)->ctime.seconds = (src)->st_ctime;        \
     (dest)->ctime.nseconds = 0;                     \
-    (dest)->fileid = (src)->st_ino;                             \
-    (dest)->fsid = (src)->st_dev;                               \
+    (dest)->fileid = (src)->st_ino;                 \
+    (dest)->fsid = (src)->st_dev;                   \
 } while(0);
 
 #define COPY_ZFS_SYSIO_ATTR(src, dest)              \
@@ -382,33 +448,57 @@ do {                                                \
     (dest)->mtime.nseconds = 0;                     \
 } while(0);
 
+static inline int iofwd_attrs_valid(struct iofwd_inode * iino, time_t t)
+{
+    return (iino->ii_attrtim && (t < iino->ii_attrtim));
+}
+
 /*
- * stat the path locally
+ * stat the file remotely
  */
 static int iofwd_stat(const char *path, struct inode *ino, time_t t, struct intnl_stat *buf)
 {
     SYSIO_IOFWD_FENTER();
     struct iofwd_inode *iino;
     int err;
-    struct _sysio_iofwd_stat stbuf;
+    struct intnl_stat stbuf;
+    zoidfs_handle_t fhandle;
+    zoidfs_attr_t attr;
 
     iino = ino ? I2II(ino) : NULL;
 
     if (path)
-        err = syscall(SYSIO_SYS_stat, path, &stbuf);
+    {
+        err = zoidfs_lookup(NULL, NULL, path, &fhandle);
+        if(err == ZFS_OK)
+        {
+            /* get the attrs for the file handle */
+            attr.mask = ZOIDFS_ATTR_ALL;
+            err = zoidfs_getattr(&fhandle, &attr);
+            if(err == ZFS_OK)
+            {
+                COPY_ZFS_SYSIO_ATTR(&attr, &stbuf);
+            }
+        }
+    }
     else if (iino && iino->ii_fd >= 0)
+    {
         err = syscall(SYSIO_SYS_fstat, iino->ii_fd, &stbuf);
+    }
     else
     {
         SYSIO_IOFWD_FABORT();
         abort();
     }
+
+    /* if error */
     if (err) {
         if (iino)
             iino->ii_attrtim = 0;
         SYSIO_IOFWD_FEXIT();
-        return -errno;
+        return -zfs_error_to_sysio_error(err);
     }
+
     if (iino) {
         iino->ii_attrtim = t;
         SYSIO_COPY_STAT(&stbuf, &ino->i_stbuf);
@@ -644,6 +734,11 @@ void __attribute__((constructor)) _iofwd_sysio_startup(void)
     extern int _sysio_boot(const char *, const char *);
 
     /*
+     * start zoidfs
+     */
+    zoidfs_init();
+
+    /*
      * sysio init
      */
     char * arg = NULL;
@@ -688,9 +783,8 @@ void __attribute__((constructor)) _iofwd_sysio_startup(void)
     }
 
     /*
-     * start zoidfs
+     * update the the parent stat struct
      */
-    zoidfs_init();
     SYSIO_IOFWD_FEXIT();
 }
 
@@ -820,6 +914,7 @@ static int iofwd_inop_open(struct pnode *pno, int flags, mode_t mode)
     struct inode *ino;
     int fd;
     char full_path[ZOIDFS_PATH_MAX];
+    int file_exists = 0;
 
     SYSIO_IOFWD_FENTER();
 
@@ -829,6 +924,14 @@ static int iofwd_inop_open(struct pnode *pno, int flags, mode_t mode)
     {
         SYSIO_IOFWD_FEXIT();
         return -ENOMEM;
+    }
+
+    if (flags & O_WRONLY) {
+        /*
+         * Promote write-only attempt to RW.
+         */
+        flags &= ~O_WRONLY;
+        flags |= O_RDWR;
     }
 
     /*
@@ -851,6 +954,7 @@ static int iofwd_inop_open(struct pnode *pno, int flags, mode_t mode)
                 SYSIO_IOFWD_FEXIT();
                 return 0;
             }
+            file_exists = 1;
         }
     }
 
@@ -858,7 +962,7 @@ static int iofwd_inop_open(struct pnode *pno, int flags, mode_t mode)
      * If truncate, lookup the file. If file exists, remove and recreate it. If file
      * does not exist, create it.
      */
-    if((flags & O_TRUNC) == O_TRUNC)
+    else if((flags & O_TRUNC) == O_TRUNC)
     {
         int created = 0;
         zoidfs_handle_t fhandle;
@@ -876,6 +980,15 @@ static int iofwd_inop_open(struct pnode *pno, int flags, mode_t mode)
         sattr.mask = ZOIDFS_ATTR_MODE;
         sattr.mode = 0777 & mode;            
         zoidfs_create(NULL, NULL, path, &sattr, &fhandle, &created);
+        file_exists = 1;
+    }
+    else
+    {
+        zoidfs_handle_t fhandle;
+        if(zoidfs_lookup(NULL, NULL, path, &fhandle) == ZFS_OK)
+        {
+            file_exists = 1;
+        }
     }
 
     /*
@@ -889,8 +1002,7 @@ static int iofwd_inop_open(struct pnode *pno, int flags, mode_t mode)
      * create the file if it does not exist.
      */ 
     ino = pno->p_base->pb_ino;
-    if (!ino) {
-        SYSIO_IOFWD_FINFO("Could not find the libsysio ino for this file, so create it!");
+    if (!ino && file_exists) {
         struct filesys *fs;
         int err;
 
@@ -910,7 +1022,6 @@ static int iofwd_inop_open(struct pnode *pno, int flags, mode_t mode)
     } 
     else
     {
-        SYSIO_IOFWD_FINFO("Found the libsysio ino for this file!");
         I_GET(ino);
     }
 
@@ -931,7 +1042,6 @@ static int iofwd_inop_open(struct pnode *pno, int flags, mode_t mode)
         if (iino->ii_fd >= 0) {
             if ((iino->ii_oflags & O_RDWR) ||
                 (flags & (O_RDONLY|O_WRONLY|O_RDWR)) == O_RDONLY) {
-                SYSIO_IOFWD_FINFO("Break out of the fd init!");
                 break;
             }
         }
@@ -960,9 +1070,7 @@ static int iofwd_inop_lookup(struct pnode *pno, struct inode **inop, struct inte
 {
     int err = 0;
     time_t t;
-    char fpbuffer[ZOIDFS_PATH_MAX];
-    char * full_path = (char *)fpbuffer;
-    zoidfs_handle_t zoidfs_handle;
+    char * full_path = NULL;
     struct filesys *fs;
     struct iofwd_inode * iino;
     struct ionode * ino;
@@ -971,18 +1079,18 @@ static int iofwd_inop_lookup(struct pnode *pno, struct inode **inop, struct inte
 
     t = _SYSIO_LOCAL_TIME();
 
-    /*
-     * get the full path and run zoidfs_lookup to see if the file exists
-     */
-    _sysio_p_path(pno, &full_path, ZOIDFS_PATH_MAX);
-    err = zoidfs_lookup(NULL, NULL, full_path, &zoidfs_handle);
+    *inop = pno->p_base->pb_ino;
 
-    /*
-     * If the file exists, register the file in the sysio namespace
-     */
-    //if(!err)
+    /* use cached values */
+    if(*inop && (path || !intnt || (intnt->int_opmask & INT_GETATTR) == 0) && iofwd_attrs_valid(I2II(*inop), t))
     {
-        *inop = pno->p_base->pb_ino;
+        SYSIO_IOFWD_FEXIT();
+        return 0;
+    }
+
+    full_path = _sysio_pb_path(pno->p_base, '/');
+    if(full_path)
+    {
         fs = pno->p_mount->mnt_fs;
         err = iofwd_ibind(fs, full_path, t + FS2IOFWDFS(fs)->iofwdfs_atimo, inop);
         /*
@@ -992,6 +1100,8 @@ static int iofwd_inop_lookup(struct pnode *pno, struct inode **inop, struct inte
         {
             *inop = NULL;
         }
+        free(full_path);
+        full_path = NULL;
     }
 
     SYSIO_IOFWD_FEXIT();
@@ -1206,8 +1316,6 @@ static int iofwd_inop_symlink(struct pnode *pno, const char *data)
     }
 
     /* invoke the zoidfs remove call to remove the directory */
-    SYSIO_IOFWD_FINFO("old = %s", data);
-    SYSIO_IOFWD_FINFO("new = %s", path);
     err = zoidfs_symlink(NULL, NULL, data, NULL, NULL, path, &sattr, NULL, NULL);
 
     /* cleanup */
@@ -1247,7 +1355,7 @@ static int iofwd_inop_readlink(struct pnode *pno, char *buf, size_t bufsiz)
     free(path);
 
     SYSIO_IOFWD_FEXIT();
-	return 0;
+	return bufsiz;
 }
 
 /*
