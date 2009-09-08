@@ -77,6 +77,9 @@ int cf_equal (ConfigHandle h1, ConfigHandle h2);
 
 static inline int cf_free (ConfigHandle cf)
 {
+   if (!cf)
+      return 1;
+
    cf->free (cf->data);
    free (cf);
    return 1;
