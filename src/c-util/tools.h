@@ -20,4 +20,10 @@ void always_assert_error (const char * expr, const char * file, int lineno);
 #define ARRAY_SIZEOF(a) (sizeof(a)/sizeof(a[0]))
 
 
+/**
+ * safe string copy function which will truncate the string but guarantees it
+ * is 0-terminated.
+ */
+char * safe_strncpy (char * buf, const char * source, unsigned int bufsize);
+
 #endif /* CUTILS_TOOLS_H */
