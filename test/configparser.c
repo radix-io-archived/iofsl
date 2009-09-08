@@ -18,6 +18,8 @@ int main()
 
   while(!feof(stdin))
   {
+     char buf[512];
+
     printf("enter a string to be parsed: \n");
 
     cfgp_lex_init_extra (&p, &scanner);
@@ -25,15 +27,15 @@ int main()
     cfgp_initparams (&p, cfsa_create (mcs_initroot ()));
 
     reject = cfgp_parse(scanner, &p);
-    if(reject)
+    if(!cfgp_parse_ok (&p, buf, sizeof(buf)))
     {
-      printf("rejected: %s \n", p.error_string);
-      free (p.error_string);
+      printf("rejected: %s \n",buf);
     }
     else
     {
       printf("accepted \n");
     }
+    cfgp_freeparams (&p);
 
     cf_free (p.configfile);
   }

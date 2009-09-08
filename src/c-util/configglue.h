@@ -21,17 +21,27 @@ typedef struct
             unsigned int maxsize;
    }; 
 
-   int                  error_code;
+   int                  parser_error_code;
 
    /* if error_code != 0 the user needs to free error_string */
-   char *         error_string;
+   char *               parser_error_string;
+   int                  lexer_error_code;
+   char *               lexer_error_string;
 } ParserParams;
 
 void cfgp_initparams (ParserParams * p, ConfigHandle h);
 
-int cfgp_parser_error (ParserParams * p, const char* str, const char *
-      lcoation); 
+/* Free private data (but not the ConfigHandle) */
+void cfgp_freeparams (ParserParams * p);
 
-int cfgp_lex_error (int lineno,const char * msg); 
+int cfgp_parser_error (ParserParams * p, const char* str, 
+      unsigned int l1, unsigned int c1, unsigned int l2, unsigned int c2);
+
+int cfgp_lex_error (ParserParams * p, int lineno, int colno, const char * msg); 
+
+/* Return true if parse and lex went ok; false otherwise, and puts
+ * error message in buf. Note: ConfigHandle might still contain the partial 
+ * parsed tree */
+int cfgp_parse_ok (const ParserParams * p, char * buf, int bufsize);
 
 #endif

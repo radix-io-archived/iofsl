@@ -95,10 +95,8 @@ ConfigHandle txtfile_openStream (FILE * f, char ** err)
    ParserParams p; 
    yyscan_t scanner;
    int reject;
+   char buf[512];
    
-   ALWAYS_ASSERT(err);
-   *err =0;
-
    /* get file size */
    fseek (f, 0, SEEK_END);
  
@@ -120,11 +118,22 @@ ConfigHandle txtfile_openStream (FILE * f, char ** err)
    /* either we have a valid confighandle or we have a parser error... */
    /* not true: we can have a partial config tree */
    // ALWAYS_ASSERT((p.error_code || p.configfile) && (!p.error_code || !p.configfile));
-   /* If ther parser failed we need to have an error code */
-   ALWAYS_ASSERT(!reject || p.error_code);
 
-   if (p.error_code)
-      *err = p.error_string;
+   /* If ther parser failed we need to have an error code */
+   ALWAYS_ASSERT(!reject || p.parser_error_code || p.lexer_error_code);
+
+   if (!cfgp_parse_ok (&p, buf, sizeof(buf)))
+   {
+      *err = strdup (buf);
+   }
+   else
+   {
+      ALWAYS_ASSERT(!p.parser_error_string);
+      ALWAYS_ASSERT(!p.lexer_error_string);
+      if (err) *err = 0;
+   }
+
+   cfgp_freeparams (&p);
 
    return p.configfile;
  }
