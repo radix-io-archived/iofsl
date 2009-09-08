@@ -315,22 +315,26 @@ libs: $(addprefix lib_, $(ARCHIVES))
 # Flex
 %.cxx %.hh: %.l
 	$(Q) "  FLEX		$@"
-	$(E) $(FLEX) --header-file=$(patsubst %.cxx,%.hh,$@) -o $@ $<
+	$(E) $(FLEX) --header-file=$(patsubst %.cxx,%.hh,$@) -o $@ $< \
+	   || ( $(RM) $(basename $@).hh $(basename $@).cxx)
 
 # Flex
 %.c %.h: %.l
 	$(Q) "  FLEX		$@"
-	$(E) $(FLEX) --header-file=$(patsubst %.c,%.h,$@) -o $@ $<
+	$(E) $(FLEX) --header-file=$(patsubst %.c,%.h,$@) -o $@ $< \
+	   || ( $(RM) $(basename $@).h $(basename $@).c)
 
 
 # Bison
 %.cxx %.hh: %.y
 	$(Q) "  BISON		$@"
-	$(E) $(BISON) --defines=$(patsubst %.cxx,%.hh,$@) -o $(patsubst %.hh,%.cxx,$@)  $<
+	$(E) $(BISON) --defines=$(patsubst %.cxx,%.hh,$@) -o $(patsubst %.hh,%.cxx,$@)  $< \
+	   || ( $(RM) $(basename $@).hh $(basename $@).cxx)
 
 %.c %.h: %.y
 	$(Q) "  BISON		$@"
-	$(E) $(BISON) --defines=$(patsubst %.c,%.h,$@) -o $(patsubst %.h,%.c,$@)  $<
+	$(E) $(BISON) --defines=$(patsubst %.c,%.h,$@) -o $(patsubst %.h,%.c,$@)  $< \
+	   || ( $(RM) $(basename $@).h $(basename $@).c)
 
 
 ###############################################################
