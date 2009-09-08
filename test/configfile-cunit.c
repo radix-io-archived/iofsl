@@ -24,21 +24,25 @@ static void clearfile (FILE * f)
 
 void dump_configfile (const char * filename)
 {
+   char * error;
    ConfigHandle h2 = 0;
-   ConfigHandle h1 = txtfile_openConfig (filename); 
+   ConfigHandle h1 = txtfile_openConfig (filename, &error);
 
    if (!h1)
    {
-      fprintf (stderr, "Error opening file %s!\n", filename);
-      return;
+      fprintf (stderr, "Error opening file %s: %s!\n", filename, error);
    }
+   CU_ASSERT_PTR_NOT_NULL(h1);
 
    /* dump to file */
    clearfile (tempfile);
    txtfile_writeConfig (h1, tempfile);
 
    rewind (tempfile);
-   h2 = txtfile_openStream (tempfile);
+   h2 = txtfile_openStream (tempfile, &error);
+   if (error)
+      fprintf (stderr, "Error opening config file: %s!\n", error);
+   CU_ASSERT_PTR_NOT_NULL(h2);
 
    CU_ASSERT_TRUE(cf_equal (h1, h2));
 

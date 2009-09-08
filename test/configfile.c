@@ -10,9 +10,9 @@
 
 static unsigned int opt_verbose;
 
-void dump_configfile (const char * filename)
+void dump_configfile (const char * filename, char ** err)
 {
-   ConfigHandle h = txtfile_openConfig (filename); 
+   ConfigHandle h = txtfile_openConfig (filename, err);
    if (!h)
    {
       fprintf (stderr, "Error opening file %s!\n", filename);
@@ -25,7 +25,6 @@ void dump_configfile (const char * filename)
 
 int main (int argc, char ** args)
 {
-
    int flags, opt;
    int nsecs, tfnd;
    int i;
@@ -52,10 +51,15 @@ int main (int argc, char ** args)
 
    for (i=optind; i<argc; ++i)
    {
-      dump_configfile (args[i]);
+      char * err =0;
+      dump_configfile (args[i], &err);
+      if (err)
+      {
+         fprintf (stderr, "Error dumping config file '%s': %s\n", 
+               args[i], err);
+         free (err);
+      }
    }
-
-   /* Other code omitted */
 
    exit(EXIT_SUCCESS);
 }

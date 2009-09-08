@@ -27,7 +27,8 @@ int main()
     reject = cfgp_parse(scanner, &p);
     if(reject)
     {
-      printf("rejected \n");
+      printf("rejected: %s \n", p.error_string);
+      free (p.error_string);
     }
     else
     {

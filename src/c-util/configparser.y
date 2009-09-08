@@ -55,7 +55,18 @@
 int cfgp_error (YYLTYPE * loc, yyscan_t * scanner, ParserParams * p, 
                         const char * msg)
 {
-   return cfgp_parser_error (msg);
+   char buf[255];
+   if (loc)
+   {
+        snprintf (buf, sizeof(buf), "line %i(->%i), column %i(->%i)",
+         loc->first_line, loc->last_line, loc->first_column,
+         loc->last_column);
+   }
+   else
+   {
+      safe_strncpy (buf, "(unknown location)", sizeof (buf));
+   }
+   return cfgp_parser_error (p, msg, buf);
 }
 
 

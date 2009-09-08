@@ -20,12 +20,11 @@
 
 #define CFGP_CHECKOVERFLOW 
 
-   // ALWAYS_ASSERT(yylval->curstringpos < sizeof(yylval->string_buf))
 
 %}
 
 
-%option reentrant stack noyywrap bison-locations
+%option reentrant stack noyywrap bison-locations yylineno
 %x COMMENT STRING_LITERAL COMMENT2
 %option prefix="cfgp_"
 %option bison-bridge

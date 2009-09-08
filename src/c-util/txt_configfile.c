@@ -89,12 +89,15 @@ void txtfile_writeConfig (ConfigHandle cf, FILE * f)
    dump_section (f, cf, ROOT_SECTION, 0);
 }
 
-ConfigHandle txtfile_openStream (FILE * f)
+ConfigHandle txtfile_openStream (FILE * f, char ** err)
 {
    long size;
    ParserParams p; 
    yyscan_t scanner;
    int reject;
+   
+   ALWAYS_ASSERT(err);
+   *err =0;
 
    /* get file size */
    fseek (f, 0, SEEK_END);
@@ -114,19 +117,34 @@ ConfigHandle txtfile_openStream (FILE * f)
    reject = cfgp_parse(scanner, &p);
    cfgp_lex_destroy (scanner);
 
+   /* either we have a valid confighandle or we have a parser error... */
+   /* not true: we can have a partial config tree */
+   // ALWAYS_ASSERT((p.error_code || p.configfile) && (!p.error_code || !p.configfile));
+   /* If ther parser failed we need to have an error code */
+   ALWAYS_ASSERT(!reject || p.error_code);
+
+   if (p.error_code)
+      *err = p.error_string;
+
    return p.configfile;
  }
 
-ConfigHandle txtfile_openConfig (const char * filename)
+ConfigHandle txtfile_openConfig (const char * filename, char ** error)
 {
    FILE  * f;
    ConfigHandle ret;
 
+
    f = fopen (filename, "r");
    if (!f)
+   {
+      char buf[255];
+      strerror_r (errno, buf, sizeof(buf));
+      *error = strdup (buf);
       return 0;
+   }
 
-   ret = txtfile_openStream (f);
+   ret = txtfile_openStream (f, error);
 
    fclose (f);
 
