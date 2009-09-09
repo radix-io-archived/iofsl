@@ -116,6 +116,10 @@ info:
 	@echo "Archives:      $(ARCHIVES)"
 	@echo "moduledirs:    $(SUBDIRS)"
 
+.PHONY: gitignore
+gitignore:
+	@echo $(foreach app,$(APPS), $(DIR_$(app))/$(app)) | tr -s " " "\n"
+	@echo $(foreach lib,$(ARCHIVES),$(LIBNAME_$(lib))) | tr -s " " "\n"
 
 .PHONY: doc documentation
 doc: documentation
