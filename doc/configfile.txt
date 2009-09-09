@@ -1,0 +1,29 @@
+The configuration file contains the following keys:
+
+
+/* The frontend handles incoming requests */
+frontend {
+
+   type = "bmi";
+
+
+}
+
+
+
+NOTE: Make 'log' subsection which can be used in multiple places together with 
+default setup routine which takes a log object and a subsection.
+
+i.e.:
+
+void configureLog (ConfigHandle handle, SectionHandle sub, 
+  IOFWDLog & log);
+
+frontend {
+   log {
+      default = "DEBUG";
+      ...
+   }
+}
+
+
