@@ -17,10 +17,13 @@ static int cfsa_getKey (void *  handle, SectionHandle section, const char * name
    if (!key)
       return -1;
 
-   if (bufsize <= 0)
-      return -1; 
 
    count = mcs_valuecount (key);
+   
+   /* if bufsize == 0 the user only wants to know the size and so we
+    * ignore buf */
+   if (bufsize == 0)
+      return count;
 
    if (count < 0)
       return count;

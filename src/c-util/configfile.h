@@ -30,7 +30,12 @@ typedef struct
 typedef struct
 {
    /* Returns number of characters in key or < 0 if an error occured 
-    * (such as key is missing) */
+    * (such as key is missing) 
+    *
+    * Calling this function with a NULL buf ptr and 0 bufsize will
+    * return the keysize, not including terminating 0.
+    *
+    * */
    int (*getKey) (void *  handle, SectionHandle section, const char * key,
          char * buf, size_t bufsize);
 
