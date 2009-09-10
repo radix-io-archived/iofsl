@@ -66,7 +66,9 @@ MODULE_SOURCES_iofwdutil = \
 		Timer.cpp TimeVal.cpp always_assert.cpp \
 		 ZException.cpp \
 		demangle.cpp IOFWDLog.cpp \
-		signals.cpp
+		signals.cpp \
+		ConfigFile.cpp \
+		ConfigContainer.cpp 
 
 MODULE_LDFLAGS_iofwdutil =  \
 	   $(BOOST_PROGRAM_OPTIONS_LDFLAGS) \
