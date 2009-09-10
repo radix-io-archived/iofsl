@@ -20,54 +20,55 @@ static void show_indent (FILE * f, unsigned int ind)
       fprintf (f, " "); 
 }
 
-
-static void dump_section (FILE * f, ConfigHandle h, SectionHandle s, unsigned int indent)
+static inline int mymin (int v1, int v2)
 {
-   unsigned int sectionsize;
-   size_t count;
-   unsigned int i;
+   return (v1 < v2 ?  v1 : v2);
+}
 
-   cf_getSectionSize (h, s, &sectionsize);
+static int dump_section (FILE * f, ConfigHandle h, SectionHandle s, unsigned
+      int indent);
 
-   count = sectionsize;
-  
-   SectionEntry entries[sectionsize];
-
-   cf_listSection (h, s, &entries[0], &count);
-   assert (sectionsize == count);
-
-   for (i=0; i<count; ++i)
+static int dump_entry (FILE * f, ConfigHandle h, SectionHandle s, 
+      unsigned int indent, const SectionEntry * entry)
+{
+   int ret = 1;
+   switch (entry->type)
    {
-      show_indent (f,indent);
-      switch (entries[i].type)
-      {
-         case SE_SECTION:
+      case SE_SECTION:
+         {
+            SectionHandle newsec;
+
+            fprintf (f, "%s { \n", entry->name);
+
+            ret = mymin(ret, cf_openSection (h, s, entry->name, &newsec));
+            if (ret >= 0) 
             {
-               SectionHandle newsec;
-
-               fprintf (f, "%s { \n", entries[i].name);
-
-               cf_openSection (h, s, entries[i].name, &newsec);
-               dump_section (f, h, newsec, indent + 2);
+               ret = mymin (dump_section (f, h, newsec, indent + 2), ret);
                show_indent (f, indent);
                fprintf (f, "}\n");
-               cf_closeSection (h, newsec);
-               break;
+               ret = mymin (ret, cf_closeSection (h, newsec));
             }
-         case SE_KEY:
+            break;
+         }
+      case SE_KEY:
+         {
+            char buf[255];
+            ret = mymin (ret, cf_getKey (h, s, entry->name, &buf[0], sizeof(buf)));
+            if (ret >= 0)
             {
-               char buf[255];
-               cf_getKey (h, s, entries[i].name, &buf[0], sizeof(buf));
-               fprintf (f, "%s = \"%s\";\n", entries[i].name, buf); 
-               break;
+                fprintf (f, "%s = \"%s\";\n", entry->name, buf); 
             }
-         case SE_MULTIKEY:
+            break;
+         }
+      case SE_MULTIKEY:
+         {
+            char ** ptrs;
+            size_t size;
+            size_t j;
+            ret = mymin (ret, cf_getMultiKey (h, s, entry->name, &ptrs, &size));
+            if (ret >= 0)
             {
-               char ** ptrs;
-               size_t size;
-               size_t j;
-               cf_getMultiKey (h, s, entries[i].name, &ptrs, &size);
-               fprintf (f,"%s = (", entries[i].name);
+               fprintf (f,"%s = (", entry->name);
                for (j=0; j<size; ++j)
                {
                   fprintf (f,"\"%s\" ", (ptrs[j] ? ptrs[j] : ""));
@@ -78,15 +79,66 @@ static void dump_section (FILE * f, ConfigHandle h, SectionHandle s, unsigned in
                fprintf (f, ");\n");
                free (ptrs);
             }
+         }
+   }
+   return ret;
+}
+
+static int dump_section (FILE * f, ConfigHandle h, SectionHandle s, unsigned
+      int indent)
+{
+   unsigned int sectionsize;
+   size_t count;
+   unsigned int i;
+   int ret = 1;
+   SectionEntry * entries = 0;
+
+   ret = mymin (ret, cf_getSectionSize (h, s, &sectionsize));
+   if (ret < 0)
+      return ret;
+
+   count = sectionsize;
+  
+   entries = malloc (sizeof (SectionEntry) * sectionsize);
+
+   ret = mymin(ret, cf_listSection (h, s, &entries[0], &count));
+
+   if (ret < 0)
+      goto fail;
+
+   ALWAYS_ASSERT (sectionsize == count);
+
+   for (i=0; i<count; ++i)
+   {
+      show_indent (f,indent);
+      if (ret >= 0)
+      {
+         ret = mymin (ret, dump_entry (f, h, s, indent, &entries[i]));
       }
       free ((void*)entries[i].name);
    }
+
+fail:
+   free (entries);
+   return ret;
 }
 
 
-void txtfile_writeConfig (ConfigHandle cf, FILE * f)
+int txtfile_writeConfig (ConfigHandle cf, FILE * f, char ** err)
 {
-   dump_section (f, cf, ROOT_SECTION, 0);
+   int ret;
+   ALWAYS_ASSERT(err);
+   ALWAYS_ASSERT(f);
+
+   *err = 0;
+
+   if ((ret = dump_section (f, cf, ROOT_SECTION, 0)) < 0)
+   {
+      *err = strdup ("Error accessing config tree!");
+      return ret;
+   }
+
+   return ret;
 }
 
 ConfigHandle txtfile_openStream (FILE * f, char ** err)
@@ -97,6 +149,10 @@ ConfigHandle txtfile_openStream (FILE * f, char ** err)
    int reject;
    char buf[512];
    
+   ALWAYS_ASSERT(err);
+
+   *err=0;
+
    /* get file size */
    fseek (f, 0, SEEK_END);
  
@@ -105,8 +161,8 @@ ConfigHandle txtfile_openStream (FILE * f, char ** err)
    fseek (f, 0, SEEK_SET);
    if (size > MAX_CONFIG_SIZE)
    {
-      fprintf (stderr, "Config file too large! Not parsing!\n");
-      ALWAYS_ASSERT(0 && "Config file too large!");
+      *err = strdup ("Config file too large! Not parsing!");
+      return 0;
    }
 
    cfgp_lex_init_extra (&p, &scanner);
@@ -121,6 +177,8 @@ ConfigHandle txtfile_openStream (FILE * f, char ** err)
 
    /* If ther parser failed we need to have an error code */
    ALWAYS_ASSERT(!reject || p.parser_error_code || p.lexer_error_code);
+   ALWAYS_ASSERT(!p.lexer_error_string || p.lexer_error_code);
+   ALWAYS_ASSERT(!p.parser_error_string || p.parser_error_code);
 
    if (!cfgp_parse_ok (&p, buf, sizeof(buf)))
    {

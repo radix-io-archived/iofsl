@@ -12,14 +12,33 @@ static unsigned int opt_verbose;
 
 void dump_configfile (const char * filename, char ** err)
 {
+   char * err2 =0;
+
    ConfigHandle h = txtfile_openConfig (filename, err);
    if (!h)
-   {
-      fprintf (stderr, "Error opening file %s!\n", filename);
       return;
+
+   if (*err)
+   {
+      fprintf (stderr, "NOTE: Error parsing file: %s. Output up to error follows.\n", 
+            *err);
    }
 
-   cf_dump (h);
+   /* no need to check for error, *err will indicate error
+    * and we always need to free h */
+   cf_dump (h, &err2);
+   if (err2)
+   {
+      fprintf (stderr, "Error dumping configtree: %s\n", err2);
+   }
+
+   if (*err && err2)
+   {
+      free (err2); err2=0;
+   }
+   if (!*err && err2)
+      *err = err2;
+
    cf_free (h);
 }
 

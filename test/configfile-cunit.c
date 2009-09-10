@@ -32,11 +32,17 @@ void dump_configfile (const char * filename)
    {
       fprintf (stderr, "Error opening file %s: %s!\n", filename, error);
    }
+   if (error)
+      fprintf (stderr, "Error reading config file %s: %s\n", filename, error);
+
+   CU_ASSERT_PTR_NULL(error);
    CU_ASSERT_PTR_NOT_NULL(h1);
 
    /* dump to file */
    clearfile (tempfile);
-   txtfile_writeConfig (h1, tempfile);
+   txtfile_writeConfig (h1, tempfile, &error);
+   if (error)
+      fprintf (stderr, "Error writing configfile to temp file: %s\n", error);
 
    rewind (tempfile);
    h2 = txtfile_openStream (tempfile, &error);

@@ -12,9 +12,10 @@ static int cfsa_getKey (void *  handle, SectionHandle section, const char * name
    int count;
    char * tmp;
    unsigned int dcount;
+   int ret = 1;
 
    if (!key)
-      return 0;
+      return -1;
 
    if (bufsize <= 0)
       return -1; 
@@ -22,28 +23,31 @@ static int cfsa_getKey (void *  handle, SectionHandle section, const char * name
    count = mcs_valuecount (key);
 
    if (count < 0)
-      return 0;
+      return count;
 
+   /* error because key is multival */
    if (count > 1)
-      return 0;
+      return -2;
 
    dcount = 1; 
    mcs_getvaluemultiple (key, &tmp, &dcount);
 
    if (!dcount)
    {
-      assert (buf);
+      ALWAYS_ASSERT (buf);
       *buf = 0;
+      ret = 0;
       /* tmp was not modified no need to free */
    }
    else
    {
+      ret = strlen (tmp);
       strncpy (buf, tmp, bufsize);
       if (bufsize > 0)
          buf[bufsize-1]=0;
       free (tmp);
    }
-   return 1;
+   return ret;
 }
 
 static int cfsa_getMultiKey (void * handle, SectionHandle section, const char *name,
@@ -56,12 +60,12 @@ static int cfsa_getMultiKey (void * handle, SectionHandle section, const char *n
 
    *e = 0; 
    if (!key)
-      return 0;
+      return -1;
 
    count = mcs_valuecount (key);
 
    if (count < 0)
-      return 0;
+      return -2;
 
    *buf = malloc (sizeof (char **) * count);
    dcount = count;
@@ -87,7 +91,7 @@ static int cfsa_listSection (void * handle, SectionHandle section,
    if (count < 0)
    {
       *maxentries = 0;
-      return 0;
+      return count;
    }
    
 
@@ -96,6 +100,8 @@ static int cfsa_listSection (void * handle, SectionHandle section,
       *maxentries = 0;
       return count;
    }
+
+   ret = count;
    
    out = malloc (sizeof(mcs_section_entry)* *maxentries);
 
@@ -103,7 +109,7 @@ static int cfsa_listSection (void * handle, SectionHandle section,
    if (count < 0)
    {
       *maxentries = 0;
-      ret = -1;
+      ret = count;
    }
    else
    {
@@ -120,7 +126,6 @@ static int cfsa_listSection (void * handle, SectionHandle section,
          }
       }
       *maxentries = count;
-      ret = count;
    }
    free (out);
 
@@ -133,7 +138,7 @@ static int cfsa_openSection (void * handle, SectionHandle section, const char *
    mcs_entry * e = mcs_findsubsection ((mcs_entry *) (section ? section : handle),
          sectionname);
    *newsection = e;
-   return (e != 0);
+   return (e != 0 ? 1 : -1);
 }
 
 static int cfsa_closeSection (void * UNUSED(handle), SectionHandle UNUSED(section))
@@ -153,7 +158,7 @@ static int cfsa_createSection (void * handle, SectionHandle section, const
 static int cfsa_createKey (void * handle, SectionHandle section, const char * key,
       const char ** data, unsigned int count)
 {
-   return (mcs_addkey ((mcs_entry *) (section ? section : handle), key, data, count) != 0);
+   return (mcs_addkey ((mcs_entry *) (section ? section : handle), key, data, count) != 0 ? 1 : -1);
 }
 
 static void cfsa_free (void * handle)
@@ -172,7 +177,7 @@ static int cfsa_getSectionSize (void * handle, SectionHandle section,
    }
    else
    {
-      return 0;
+      return c;
    }
 }
 

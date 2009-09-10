@@ -29,35 +29,43 @@ typedef struct
 
 typedef struct
 {
-   /* Returns number of characters retrieved or -1 if an error occured */
+   /* Returns number of characters in key or < 0 if an error occured 
+    * (such as key is missing) */
    int (*getKey) (void *  handle, SectionHandle section, const char * key,
          char * buf, size_t bufsize);
 
    /*
     * Reads list entries: after the function returns, buf will be set to 
     * a pointer pointing to an array of e char * pointers.
-    * Needs to be freed with free() (array + pointers) */
+    * Needs to be freed with free() (array + pointers) 
+    * Returns < 0 if error */
    int (*getMultiKey) (void * handle, SectionHandle section, const char * key,
          char *** buf, size_t * e);
    /*
-    * Returns number of entries returned in maxentries, retrieves at most
-    * maxentries (input val). 
+    * Outputs number of entries written in maxentries, retrieves at most
+    * maxentries (input val).
+    * Returns total number of entries in section. 
     */
    int (*listSection) (void * handle, SectionHandle section, 
          SectionEntry * entries, size_t * maxentries);
 
+   /* Returns -1 if failed, >=0 if ok */
    int (*openSection) (void * handle, SectionHandle section, const char *
          sectionname, SectionHandle * newsection);
 
-   /* Return the number of entries in a section */
+   /* Return the number of entries in a section in count,
+    * return code is <0 if error */
    int (*getSectionSize) (void * handle, SectionHandle section, unsigned int *
          count);
 
+   /* Returns < 0 if error */
    int (*closeSection) (void * handle, SectionHandle section);
 
+   /* Returns < 0 if error */
    int (*createSection) (void * handle, SectionHandle section, const
          char * name, SectionHandle * newsection);
 
+   /* Returns < 0 if error */
    int (*createKey) (void * handle, SectionHandle section, const char * key,
          const char ** data, unsigned int count); 
 
@@ -69,8 +77,11 @@ typedef struct
 
 typedef ConfigVTable * ConfigHandle; 
 
-/* utility debug function: write config tree to stdout */
-void cf_dump (ConfigHandle cf);
+/* utility debug function: write config tree to stdout;
+ * If all OK: ret >= 0, otherwise ret < 0 and *err is set
+ * to error message
+ * */
+int cf_dump (ConfigHandle cf, char ** err);
 
 /* Compare two config trees: return true if equal, false if not */
 int cf_equal (ConfigHandle h1, ConfigHandle h2);

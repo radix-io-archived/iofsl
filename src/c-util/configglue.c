@@ -60,6 +60,11 @@ void cfgp_freeparams (ParserParams * p)
 
 int cfgp_parse_ok (const ParserParams * p, char * buf, int bufsize)
 {
+   /* doublecheck that if an error string is present, the error code is also
+    * set */
+   ALWAYS_ASSERT(!p->lexer_error_string || p->lexer_error_code);
+   ALWAYS_ASSERT(!p->parser_error_string || p->parser_error_code);
+
    if (p->lexer_error_code)
    {
       safe_strncpy (buf, p->lexer_error_string, bufsize);

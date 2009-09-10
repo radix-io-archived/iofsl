@@ -8,10 +8,32 @@
  * ConfigFile implementation that stores data in a text file 
  */
 
+
+/**
+ * returns ConfigHandle, if all is OK *err is set to 0, 
+ * otherwise *err is set to a pointer to the error string 
+ * (which needs to be freed by the user)
+ * NOTE that even if an error occurred, a partial ConfigHandle tree
+ * can be returned.
+ */
 ConfigHandle txtfile_openConfig (const char * filename, char ** err);
 
+/**
+ * returns ConfigHandle, if all is OK *err is set to 0, 
+ * otherwise *err is set to a pointer to the error string 
+ * (which needs to be freed by the user)
+ * NOTE that even if an error occurred, a partial ConfigHandle tree
+ * can be returned.
+ */
 ConfigHandle txtfile_openStream (FILE * f, char ** err);
 
-void txtfile_writeConfig (ConfigHandle h, FILE * out);
+
+/**
+ * Write ConfigHandle to disk (in a format supported by _open).
+ * Returns >=0 if all went OK, < 0 otherwise in which 
+ * case *err is set to a pointer to an error string, which needs to be
+ * freed by the user.
+ */
+int txtfile_writeConfig (ConfigHandle h, FILE * out, char ** err);
 
 #endif
