@@ -1,4 +1,4 @@
-subsection {
+sub_-section {
    multikey2 = ();
    multikey3 = ("val1");
    multikey4 = ("val2", "val3");
