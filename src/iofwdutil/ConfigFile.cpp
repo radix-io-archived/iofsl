@@ -1,8 +1,34 @@
 #include "ConfigFile.hh"
 #include <boost/format.hpp>
+#include <boost/utility.hpp>
+
+// @TODO:
+//  get decent error codes in cf_getKey/... so we can differentiate
+//  between errors and missing keys.
+//
 
 namespace iofwdutil
 {
+
+/*ConfigFile::ConfigFile (const ConfigFile & other)
+{
+   // TODO: 
+   ALWAYS_ASSERT(false && "Need to make a deep copy of ConfigContainer");
+}
+
+ConfigFile & ConfigFile::operator = (const ConfigFile & other)
+{
+   if (boost::addressof (*this) == boost::addressof(other))
+      return *this;
+
+   // Free old configfile
+   configfile_.reset (0);
+   configsection_.reset (0);
+
+   ALWAYS_ASSERT(false && "need to make deep copy");
+
+   return *this;
+} */
 
 ConfigFile::ConfigFile (ConfigHandle handle)
    : configfile_ (new ConfigContainer (handle))
@@ -24,7 +50,7 @@ void ConfigFile::error (const std::string & strs) const
    // TODO: decent exception later
 
    // Make a copy because strs might disappear because of stack unwinding
-   throw std::string(strs);
+   throw strs;
 }
 
 ConfigFile ConfigFile::openSection (const char * name)
@@ -50,7 +76,7 @@ std::string ConfigFile::getKey (const char * name) const
          configsection_->getSection (), name, 0, 0);
 
    if (keysize < 0)
-      error (str(boost::format("Error in getkey '%s'") % name));
+      throw CFKeyMissingException (name);
 
    if (keysize == 0)
       return std::string ();
@@ -70,7 +96,7 @@ std::string ConfigFile::getKeyDefault (const char * name, const std::string & de
    {
       return getKey (name);
    }
-   catch (...)
+   catch (const CFKeyMissingException & e)
    {
       return def;
    }
@@ -87,7 +113,7 @@ std::vector<std::string> ConfigFile::getMultiKey (const char * name) const
             name, &data, &count
           ) < 0)
    {
-      error (str(boost::format("Error in cf_getMultiKey '%s'") % name ));
+      throw CFKeyMissingException (name);
    }
 
    std::vector<std::string> ret (count);

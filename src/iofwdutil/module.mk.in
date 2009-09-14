@@ -68,7 +68,8 @@ MODULE_SOURCES_iofwdutil = \
 		demangle.cpp IOFWDLog.cpp \
 		signals.cpp \
 		ConfigFile.cpp \
-		ConfigContainer.cpp 
+		ConfigContainer.cpp \
+		CFKeyMissingException.cpp
 
 MODULE_LDFLAGS_iofwdutil =  \
 	   $(BOOST_PROGRAM_OPTIONS_LDFLAGS) \
