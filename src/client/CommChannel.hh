@@ -103,8 +103,9 @@ namespace client
          }
 
          template<typename SENDREQ, typename RECEIVEREQ>
-         int afterExecuteOp(int opid, const SENDREQ & send, const RECEIVEREQ & recv)
+         int afterExecuteOp(int UNUSED(opid), const SENDREQ & UNUSED(send), const RECEIVEREQ & recv)
          {
+            /** Why is send/opid unused??? (TODO) */
             int ret;
 
             // All generic operations return a status code first 
