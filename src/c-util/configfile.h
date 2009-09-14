@@ -3,6 +3,12 @@
 
 #include <malloc.h>
 #include <stddef.h>  /* size_t */
+
+#ifdef __cpluscplus
+extern "C" {
+#endif
+
+
 /**
  * A config file is contains (possibly nested) sections, 
  * where each section groups entries. 
@@ -148,5 +154,9 @@ static inline int cf_createKey (ConfigHandle handle, SectionHandle section,
 {
    return handle->createKey (handle->data, section, key, data, count);
 }
+
+#ifdef __cplusplus
+} /* extern "C" */
+#endif
 
 #endif
