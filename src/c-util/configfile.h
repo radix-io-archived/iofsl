@@ -4,7 +4,7 @@
 #include <malloc.h>
 #include <stddef.h>  /* size_t */
 
-#ifdef __cpluscplus
+#ifdef __cplusplus
 extern "C" {
 #endif
 
