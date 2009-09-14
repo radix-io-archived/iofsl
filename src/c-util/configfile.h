@@ -92,7 +92,7 @@ typedef ConfigVTable * ConfigHandle;
  * If all OK: ret >= 0, otherwise ret < 0 and *err is set
  * to error message
  * */
-int cf_dump (ConfigHandle cf, char ** err);
+int cf_dump (ConfigHandle cf, SectionHandle h, char ** err);
 
 /* Compare two config trees: return true if equal, false if not */
 int cf_equal (ConfigHandle h1, ConfigHandle h2);

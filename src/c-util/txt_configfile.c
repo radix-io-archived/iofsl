@@ -124,7 +124,7 @@ fail:
 }
 
 
-int txtfile_writeConfig (ConfigHandle cf, FILE * f, char ** err)
+int txtfile_writeConfig (ConfigHandle cf, SectionHandle h, FILE * f, char ** err)
 {
    int ret;
    ALWAYS_ASSERT(err);
@@ -132,7 +132,7 @@ int txtfile_writeConfig (ConfigHandle cf, FILE * f, char ** err)
 
    *err = 0;
 
-   if ((ret = dump_section (f, cf, ROOT_SECTION, 0)) < 0)
+   if ((ret = dump_section (f, cf, h, 0)) < 0)
    {
       *err = strdup ("Error accessing config tree!");
       return ret;

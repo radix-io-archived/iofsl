@@ -40,7 +40,7 @@ void dump_configfile (const char * filename)
 
    /* dump to file */
    clearfile (tempfile);
-   txtfile_writeConfig (h1, tempfile, &error);
+   txtfile_writeConfig (h1, ROOT_SECTION, tempfile, &error);
    if (error)
       fprintf (stderr, "Error writing configfile to temp file: %s\n", error);
 

@@ -162,7 +162,7 @@ int cf_equal (ConfigHandle h1, ConfigHandle h2)
 }
 
 
-int cf_dump (ConfigHandle cf, char ** err)
+int cf_dump (ConfigHandle cf, SectionHandle h, char ** err)
 {
-   return txtfile_writeConfig (cf, stdout, err);
+   return txtfile_writeConfig (cf, h, stdout, err);
 }

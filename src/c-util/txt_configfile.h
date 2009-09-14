@@ -39,7 +39,7 @@ ConfigHandle txtfile_openStream (FILE * f, char ** err);
  * case *err is set to a pointer to an error string, which needs to be
  * freed by the user.
  */
-int txtfile_writeConfig (ConfigHandle h, FILE * out, char ** err);
+int txtfile_writeConfig (ConfigHandle h, SectionHandle h2, FILE * out, char ** err);
 
 #ifdef __cplusplus
 } /* extern "C"  */

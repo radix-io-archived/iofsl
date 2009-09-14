@@ -26,7 +26,7 @@ void dump_configfile (const char * filename, char ** err)
 
    /* no need to check for error, *err will indicate error
     * and we always need to free h */
-   cf_dump (h, &err2);
+   cf_dump (h, ROOT_SECTION, &err2);
    if (err2)
    {
       fprintf (stderr, "Error dumping configtree: %s\n", err2);
