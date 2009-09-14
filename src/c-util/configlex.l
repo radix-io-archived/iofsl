@@ -127,7 +127,7 @@ BACKSLASH     "\\"
         {
                 /* error, constant is out-of-bounds */
                 return cfgp_lex_error (yyextra, yylloc->last_line, yylloc->last_column,
-                   "Out of bounds \\0xx escape in string!\n");
+                   "Out of bounds \\0xx escape in string!");
         }
 
         yylval->string_buf[yylval->curstringpos++] = result;
@@ -217,11 +217,24 @@ BACKSLASH     "\\"
                         LOC_LINE_ADV(1);
                     }
 
+
+  /* we could try to return chars not matching any token to the parser and
+   * have parser generate a useful error; tried that, parser gives output:
+   *    syntax error, unexpected $undefined, expecting OPENSECTION or EQUAL_TOKEN
+   * while the lexer error gives:
+   *     lexer error (line 1, column 11): Unexpected character: ':'
+   */
+
+
 .                   { 
+                        char buf[256];
+                        snprintf (buf, sizeof(buf), "Unexpected character: '%c'", *yytext);
                         return cfgp_lex_error (yyextra, yylloc->last_line,
-                          yylloc->last_column, 
-                            "Unexpected character: '%c' (in column %i)!");
+                          yylloc->last_column, buf);
                     }
+
+  /* .                   { return (int) *yytext; }*/
+
 %%
 
 void cfgp_setfile (FILE * f, yyscan_t scanner)
