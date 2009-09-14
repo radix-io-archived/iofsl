@@ -1,8 +1,13 @@
 #ifndef C_UTIL_TXTFILE_CONFIGFILE_H
 #define C_UTIL_TXTFILE_CONFIGFILE_H
 
+
 #include <stdio.h>
 #include "configfile.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /**
  * ConfigFile implementation that stores data in a text file 
@@ -35,5 +40,9 @@ ConfigHandle txtfile_openStream (FILE * f, char ** err);
  * freed by the user.
  */
 int txtfile_writeConfig (ConfigHandle h, FILE * out, char ** err);
+
+#ifdef __cplusplus
+} /* extern "C"  */
+#endif
 
 #endif
