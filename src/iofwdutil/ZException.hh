@@ -14,6 +14,8 @@ namespace iofwdutil
    public:
       ZException ();
 
+      ZException (const std::string & s);
+
       void pushMsg (const std::string & msg); 
 
       virtual ~ZException (); 

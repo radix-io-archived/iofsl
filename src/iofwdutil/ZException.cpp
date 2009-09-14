@@ -12,6 +12,10 @@ namespace iofwdutil
 
    }
 
+   ZException::ZException (const std::string & s)
+   {
+      pushMsg (s);
+   }
 
    ZException::~ZException ()
    {
