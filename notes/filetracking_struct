@@ -1,0 +1,10 @@
+How to track file regions without creating bottlenecks:
+
+http://www.cs.tau.ac.il/~ohadrode/papers/btree_TOS.pdf
+http://www.cs.huji.ac.il/~orodeh/papers/LinuxFS_Workshop.pdf
+
+* btrees that support COW might be better lock-wise and support multiple trees modifying the tree simultanously.
+
+
+
+
