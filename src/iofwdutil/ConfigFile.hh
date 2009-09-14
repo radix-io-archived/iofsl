@@ -59,17 +59,23 @@ public:
 
    ~ConfigFile ();
 
+
+   void dumpToStdErr () const;
+
 protected:
    ConfigFile (const ConfigFile & parent, SectionHandle h);
 
    // Called to throw exception
    void error (const std::string & s) const;
 
+   ConfigHandle getConfigHandle () const;
+
+   SectionHandle getSectionHandle () const;
+
 protected:
    boost::intrusive_ptr<ConfigContainer> configfile_;
    boost::intrusive_ptr<ConfigContainer> configsection_;
 };
-
 
 
 template <typename T> 

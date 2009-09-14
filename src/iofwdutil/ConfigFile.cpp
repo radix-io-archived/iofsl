@@ -10,6 +10,32 @@
 namespace iofwdutil
 {
 
+ConfigHandle ConfigFile::getConfigHandle () const 
+{
+   return configfile_->getConfigFile ();
+}
+
+SectionHandle ConfigFile::getSectionHandle () const
+{
+   if (!configsection_)
+      return ROOT_SECTION;
+   return configsection_->getSection ();
+}
+
+void ConfigFile::dumpToStdErr () const
+{
+   char * err = 0;
+   if (cf_dump (
+            getConfigHandle (),
+            getSectionHandle (),
+            &err) < 0)
+   {
+      throw ZException (str(boost::format (
+                  "Error dumping config file: '%s'") % err));
+   }
+
+}
+
 /*ConfigFile::ConfigFile (const ConfigFile & other)
 {
    // TODO: 
@@ -37,7 +63,7 @@ ConfigFile::ConfigFile (ConfigHandle handle)
 
 ConfigFile::ConfigFile (const ConfigFile & parent, SectionHandle h)
    : configfile_ (parent.configfile_), 
-     configsection_ (new ConfigContainer (configfile_->getConfigFile(), h))
+     configsection_ (new ConfigContainer (parent.configfile_->getConfigFile(), h))
 {
 }
 
@@ -57,8 +83,8 @@ ConfigFile ConfigFile::openSection (const char * name)
 {
    SectionHandle newhandle;
 
-   if (cf_openSection (configfile_->getConfigFile(), 
-            configsection_->getSection (),
+   if (cf_openSection (getConfigHandle(), 
+            getSectionHandle(),
             name, &newhandle) < 0)
    {
       error (str(boost::format("Error opening section %s!") % name)); 
@@ -72,8 +98,8 @@ std::string ConfigFile::getKey (const char * name) const
    int keysize;
 
    // first try to get the size
-   keysize = cf_getKey (configfile_->getConfigFile (), 
-         configsection_->getSection (), name, 0, 0);
+   keysize = cf_getKey (getConfigHandle (), 
+         getSectionHandle(), name, 0, 0);
 
    if (keysize < 0)
       throw CFKeyMissingException (name);
@@ -82,8 +108,8 @@ std::string ConfigFile::getKey (const char * name) const
       return std::string ();
 
    std::vector<char> buf (keysize + 1);
-   keysize = cf_getKey (configfile_->getConfigFile (), 
-         configsection_->getSection (), name, &buf[0], buf.size());
+   keysize = cf_getKey (getConfigHandle (), 
+         getSectionHandle(), name, &buf[0], buf.size());
    ALWAYS_ASSERT(keysize > 0);
 
    return std::string (&buf[0]);
@@ -108,8 +134,8 @@ std::vector<std::string> ConfigFile::getMultiKey (const char * name) const
    size_t count;
 
    if (cf_getMultiKey (
-            configfile_->getConfigFile (), 
-            configsection_->getSection (),
+            getConfigHandle (), 
+            getSectionHandle(),
             name, &data, &count
           ) < 0)
    {
