@@ -13,6 +13,7 @@
 #include "zoidfs/util/zoidfs-wrapped.hh"
 #include "zoidfs/zoidfs-proto.h"
 #include "iofwdutil/IOFWDLog.hh"
+#include "iofwd/ConfigException.hh"
 
 #include "IOFWDNotImplementedRequest.hh"
 #include "IOFWDNullRequest.hh"
@@ -243,16 +244,21 @@ void IOFWDFrontend::init ()
 {
    ZLOG_DEBUG (log_, "Initializing BMI"); 
 
+   std::string ion = config_.getKeyDefault ("listen", "");
    char * ion_name = getenv("ZOIDFS_ION_NAME");
-   if (ion_name == NULL) {
+   if (ion_name)
+      ion = ion_name;
+
+   if (ion.empty())
+   {
      ZLOG_ERROR (log_, format("ZOIDFS_ION_NAME is empty"));
-     exit(-1);
+     throw ConfigException ("No ION_NAME specified!");
    }
 
    // IOFW uses bmi, so we need to supply init params here
-   ZLOG_INFO (log_, format("Server listening on %s") % ion_name); 
+   ZLOG_INFO (log_, format("Server listening on %s") % ion); 
    //BMI::setInitServer ("tcp://127.0.0.1:1234");
-   BMI::setInitServer (ion_name);
+   BMI::setInitServer (ion.c_str());
 
    // initialize BMI
    IOFW * o = new IOFW (*this, bmires_);
