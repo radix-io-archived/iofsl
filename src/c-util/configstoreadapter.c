@@ -20,17 +20,20 @@ static int cfsa_getKey (void *  handle, SectionHandle section, const char * name
 
    count = mcs_valuecount (key);
    
-   /* if bufsize == 0 the user only wants to know the size and so we
-    * ignore buf */
-   if (bufsize == 0)
-      return count;
-
    if (count < 0)
       return count;
 
    /* error because key is multival */
    if (count > 1)
       return -2;
+
+   /* if bufsize == 0 the user only wants to know the size and so we
+    * ignore buf */
+   if (bufsize == 0)
+   {
+      return mcs_getvaluesingle (key, 0, 0);
+   }
+
 
    dcount = 1; 
    mcs_getvaluemultiple (key, &tmp, &dcount);

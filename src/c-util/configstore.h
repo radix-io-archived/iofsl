@@ -50,7 +50,8 @@ int mcs_valuecount (const mcs_entry * e);
  * maxcount (output) the number of entries returned */
 int mcs_getvaluemultiple (const mcs_entry * e, char ** buf, unsigned int * maxcount);
 
-/* Retrieve single value for this key */
+/* Retrieve single value for this key; Returns number of characters in key
+ * value.  */
 int mcs_getvaluesingle (const mcs_entry * e, char * buf, unsigned int
       bufsize);
 

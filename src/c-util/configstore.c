@@ -222,26 +222,33 @@ int mcs_valuecount (const mcs_entry * e)
    return mcs_chaincount (e->child);
 }
 
+/*
+ * If buf & bufsize == 0, returns the length of the key value (without
+ * terminating 0) or < 0 if error.
+ * Returns len of key value without ending '\0'
+ */
 int mcs_getvaluesingle (const mcs_entry * e, char * buf, unsigned int bufsize)
 {
    if (e->is_section)
       return MCS_WRONGTYPE;
 
-   *buf = 0;
+   if (buf)
+      *buf = 0;
 
    if (!e->child)
-      return 0;
+      return -1;
 
    if (!e->child->value)
       return 0;
 
-   if (!bufsize)
-      return 0;
+   if (bufsize)
+   {
+      strncpy (buf, e->child->value, bufsize-1);
+      buf[bufsize-1] = 0;
+   }
 
-   strncpy (buf, e->child->value, bufsize-1);
-   buf[bufsize-1] = 0;
 
-   return 1;
+   return strlen (e->child->value);
 }
 
 /* Retrieve the values for this key */
@@ -306,6 +313,8 @@ mcs_entry * mcs_findsubsection (const mcs_entry * e, const char * name)
 mcs_entry * mcs_findkey (const mcs_entry * e, const char * name)
 {
    mcs_entry * ret = mcs_findchild (e, name);
+   if (!ret)
+      return 0;
    if (ret->is_section)
       return 0;
    return ret;
