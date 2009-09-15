@@ -5,7 +5,7 @@
 #include "frontend/IOFWDFrontend.hh"
 #include "iofwdutil/zlog/ZLogSource.hh"
 #include "iofwdutil/completion/BMIResource.hh"
-
+#include "iofwdutil/ConfigFile.hh"
 
 namespace iofwd
 {
@@ -22,7 +22,7 @@ class IOFWDMain
 {
 public:
 
-   IOFWDMain (bool notrap = false); 
+   IOFWDMain (bool notrap, const iofwdutil::ConfigFile & config_); 
 
    // Called to initialize the server
    void boot ();
@@ -42,6 +42,9 @@ protected:
 
    // If set, don't catch CTRL-C and don't protect threads from signals
    bool notrap_; 
+
+   // COnfig file
+   const iofwdutil::ConfigFile & config_;
 }; 
 
 //===========================================================================

@@ -128,7 +128,7 @@ int main (int argc, char ** args)
       }
 
 
-      iofwd::IOFWDMain main (opt_notrap); 
+      iofwd::IOFWDMain main (opt_notrap, config_); 
 
       ZLOG_INFO (mainlog, "Booting IOFWDMain..."); 
       main.boot (); 

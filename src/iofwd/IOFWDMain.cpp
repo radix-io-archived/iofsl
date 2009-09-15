@@ -10,8 +10,9 @@ namespace iofwd
 {
 //===========================================================================
 
-IOFWDMain::IOFWDMain (bool notrap)
-   : mainlog_ (IOFWDLog::getSource ()), notrap_(notrap)
+IOFWDMain::IOFWDMain (bool notrap, const iofwdutil::ConfigFile & co)
+   : mainlog_ (IOFWDLog::getSource ()), notrap_(notrap),
+     config_ (co)
 {
    // Make sure that we do have signals sent to a random thread
    disableAllSignals (notrap); 
@@ -26,7 +27,9 @@ void IOFWDMain::boot ()
 
    // Set handler for frontend
    requesthandler_.reset (new DefRequestHandler ()); 
-   frontend_->setHandler (requesthandler_.get()); 
+   frontend_->setHandler (requesthandler_.get());
+
+   frontend_->setConfig (config_.openSectionDefault ("frontend"));
 
    // Start frontend and begin accepting requests
    frontend_->run ();
