@@ -11,6 +11,7 @@ extern "C" {
 /* Create a new configfile interface backed by a configstore */
 ConfigHandle cfsa_create (mcs_entry * e);
 
+ConfigHandle cfsa_create_empty ();
 
 #ifdef __cplusplus
 } /* extern "C" */

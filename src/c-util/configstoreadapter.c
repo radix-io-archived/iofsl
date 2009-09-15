@@ -206,3 +206,8 @@ ConfigHandle cfsa_create (mcs_entry * e)
    newh->data = e;
    return newh; 
 }
+
+ConfigHandle cfsa_create_empty ()
+{
+   return cfsa_create (mcs_initroot ());
+}
