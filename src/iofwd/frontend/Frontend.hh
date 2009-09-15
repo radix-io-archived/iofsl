@@ -2,6 +2,7 @@
 #define IOFWD_FRONTEND_HH
 
 #include "iofwd/RequestHandler.hh"
+#include "iofwdutil/ConfigFile.hh"
 
 namespace iofwd
 {
@@ -21,6 +22,9 @@ class Frontend
 
       void setHandler (RequestHandler * handler); 
 
+
+      void setConfig (const iofwdutil::ConfigFile & c);
+
       /// Called just after frontend instance is created
       /// If initialization fails, an exception should be thrown.
       virtual void init () = 0;
@@ -36,6 +40,8 @@ class Frontend
 
    protected:
       RequestHandler * handler_; 
+
+      iofwdutil::ConfigFile config_;
 };
 
 //===========================================================================

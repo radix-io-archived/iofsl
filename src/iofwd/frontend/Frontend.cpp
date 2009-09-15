@@ -7,6 +7,11 @@ namespace iofwd
    {
 //===========================================================================
 
+void Frontend::setConfig (const iofwdutil::ConfigFile & c)
+{
+   config_ = c;
+}
+
 void Frontend::setHandler (RequestHandler * handler)
 {
    ALWAYS_ASSERT (handler); 
