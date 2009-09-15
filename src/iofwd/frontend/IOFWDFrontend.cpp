@@ -235,7 +235,8 @@ IOFWDFrontend::IOFWDFrontend (iofwdutil::completion::BMIResource & res)
 IOFWDFrontend::~IOFWDFrontend ()
 {
    ZLOG_INFO (log_, "Shutting down BMI..."); 
-   BMI::get().finalize (); 
+   if (BMI::isCreated ())
+      BMI::get().finalize (); 
 }
 
 void IOFWDFrontend::init ()
