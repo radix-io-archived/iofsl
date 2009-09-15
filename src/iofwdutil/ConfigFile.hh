@@ -23,18 +23,12 @@ class ConfigFile
 {
 public:
 
-   /**
-    * TODO: Fix copy / assignment 
-    *   not an issue right now since ConfigFile does not allow modifying the 
-    *   config tree.
-    */
-
-   /// Takes ownership of ConfigHandle 
+   /// Takes ownership of ConfigHandle; Should not be modified externally
    ConfigFile (ConfigHandle handle);
 
-/*   ConfigFile (const ConfigFile & other);
+   ConfigFile (const ConfigFile & other);
 
-   ConfigFile & operator = (const ConfigFile & other);*/
+   ConfigFile & operator = (const ConfigFile & other);
 
    /// Return a new ConfigFile object for the specified subsection
    ConfigFile openSection (const char * name);

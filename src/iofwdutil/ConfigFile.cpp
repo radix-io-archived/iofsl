@@ -36,10 +36,10 @@ void ConfigFile::dumpToStdErr () const
 
 }
 
-/*ConfigFile::ConfigFile (const ConfigFile & other)
+ConfigFile::ConfigFile (const ConfigFile & other)
+   : configfile_ (other.configfile_), 
+     configsection_ (other.configsection_)
 {
-   // TODO: 
-   ALWAYS_ASSERT(false && "Need to make a deep copy of ConfigContainer");
 }
 
 ConfigFile & ConfigFile::operator = (const ConfigFile & other)
@@ -51,10 +51,12 @@ ConfigFile & ConfigFile::operator = (const ConfigFile & other)
    configfile_.reset (0);
    configsection_.reset (0);
 
-   ALWAYS_ASSERT(false && "need to make deep copy");
+   /* no need to do deep copy, we do not support modifying config file */
+   configfile_ = other.configfile_;
+   configsection_ = other.configsection_;
 
    return *this;
-} */
+} 
 
 ConfigFile::ConfigFile (ConfigHandle handle)
    : configfile_ (new ConfigContainer (handle))
