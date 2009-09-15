@@ -1,6 +1,7 @@
 #include "ConfigFile.hh"
 #include <boost/format.hpp>
 #include <boost/utility.hpp>
+#include "c-util/configstoreadapter.h"
 
 // @TODO:
 //  get decent error codes in cf_getKey/... so we can differentiate
@@ -63,6 +64,11 @@ ConfigFile::ConfigFile (ConfigHandle handle)
 {
 }
 
+ConfigFile::ConfigFile ()
+{
+   configfile_.reset (new ConfigContainer (cfsa_create_empty ()));
+}
+
 ConfigFile::ConfigFile (const ConfigFile & parent, SectionHandle h)
    : configfile_ (parent.configfile_), 
      configsection_ (new ConfigContainer (parent.configfile_->getConfigFile(), h))
@@ -81,7 +87,19 @@ void ConfigFile::error (const std::string & strs) const
    throw strs;
 }
 
-ConfigFile ConfigFile::openSection (const char * name)
+ConfigFile ConfigFile::openSectionDefault (const char * name, const ConfigFile & def) const
+{
+   try
+   {
+      return openSection (name);
+   }
+   catch (const CFKeyMissingException & e)
+   {
+      return def;
+   }
+}
+
+ConfigFile ConfigFile::openSection (const char * name) const
 {
    SectionHandle newhandle;
 
@@ -89,7 +107,7 @@ ConfigFile ConfigFile::openSection (const char * name)
             getSectionHandle(),
             name, &newhandle) < 0)
    {
-      error (str(boost::format("Error opening section %s!") % name)); 
+      throw CFKeyMissingException (name);
    }
    return ConfigFile (*this, newhandle);
 }

@@ -28,10 +28,16 @@ public:
 
    ConfigFile (const ConfigFile & other);
 
+   ConfigFile ();
+
    ConfigFile & operator = (const ConfigFile & other);
 
    /// Return a new ConfigFile object for the specified subsection
-   ConfigFile openSection (const char * name);
+   ConfigFile openSection (const char * name) const;
+
+   /// Return new configfile for subsection, or def if section is missing
+   ConfigFile openSectionDefault (const char * name, const ConfigFile & def =
+         ConfigFile ()) const;
 
    /// Return key value, exception on error (such as missing)
    std::string getKey (const char * name) const;
