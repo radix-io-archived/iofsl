@@ -1,6 +1,10 @@
 #ifndef C_UTIL_CONFIGSTORE_H
 #define C_UTIL_CONFIGSTORE_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /*
  * Memory based storage for config file. 
  *
@@ -73,5 +77,10 @@ typedef struct
 /* returns number of entries written, or -1 on error */
 int mcs_listsection (const mcs_entry * a, mcs_section_entry * e, unsigned int
       entries);
+
+#ifdef __cplusplus
+} /* extern "C" */
+#endif
+
 
 #endif
