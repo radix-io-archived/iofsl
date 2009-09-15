@@ -1,0 +1,25 @@
+
+log { 
+  // By default, 2 sinks (stdout and stderr) are available
+  // as is the default filter ('default')
+  // Without additional config, all output goes to stderr
+  // with a default loglevel of INFO. 
+  // Note that the default loglevel can be changed by using
+  // the IOFWD_LOGLEVEL variable
+
+  loglevel = "INFO";
+
+  sinks = ( "tmpfile" );
+  filters = ( );
+
+  tmpfile { 
+     sinktype = "file";
+  }
+
+}
+
+
+frontend {
+  listen = "tcp://127.0.0.1:1234";
+
+}
