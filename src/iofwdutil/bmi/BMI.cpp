@@ -22,6 +22,8 @@ std::string     BMI::methodlist_;
 std::string     BMI::listen_; 
 int             BMI::flags_; 
 
+bool            BMI::created_  = false;
+
 
 static const char * string2ptr (const std::string & s)
 {

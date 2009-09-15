@@ -50,10 +50,14 @@ namespace iofwdutil
        */
       static void setInitClient (); 
 
+      static bool isCreated () 
+      { return created_; }; 
+
       static BMI & get ()
       {
          // NOTE: not thread safe
          static BMI singleton; 
+         created_ = true;
          BOOST_ASSERT (initparams_); 
          return singleton; 
       }
@@ -109,6 +113,8 @@ namespace iofwdutil
       static bool        initparams_; 
 
       bool active_; 
+
+      static bool created_;
 
    }; 
 
