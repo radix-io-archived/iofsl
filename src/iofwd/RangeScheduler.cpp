@@ -1,5 +1,6 @@
 #include "RangeScheduler.hh"
 #include "RequestScheduler.hh"
+#include "iofwdutil/tools.hh"
 
 #include <iostream>
 #include <cassert>
@@ -97,13 +98,13 @@ bool MergeRangeScheduler::io_dequeue(Range &r)
   return true;
 }
 
-void MergeRangeScheduler::deadline_enqueue(const Range& r)
+void MergeRangeScheduler::deadline_enqueue(const Range& UNUSED(r))
 {
   // TODO: implement
   return;
 }
 
-bool MergeRangeScheduler::deadline_dequeue(Range &r)
+bool MergeRangeScheduler::deadline_dequeue(Range & UNUSED(r))
 {
   // TODO: implement
   return false;
