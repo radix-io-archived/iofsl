@@ -1,5 +1,5 @@
 MODULE_ARCHIVES := spatial
-MODULE_SOURCES_spatial := Range.cpp Point.cpp RangeSet.cpp
+MODULE_SOURCES_spatial := Point.cpp
 
 
 

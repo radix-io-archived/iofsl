@@ -1,8 +1,6 @@
 #include "RangeSet.hh"
 
-using namespace std;
-
-namespace spatial
+namespace iofwd
 {
 //===========================================================================
 

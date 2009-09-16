@@ -1,14 +1,13 @@
-#ifndef SPATIAL_RANGESET_HH
-#define SPATIAL_RANGESET_HH
+#ifndef IOFWD_RANGESET_HH
+#define IOFWD_RANGESET_HH
 
-#include <stdio.h>
 #include <cassert>
 #include <set>
 #include <map>
 
 #include "Range.hh"
 
-namespace spatial
+namespace iofwd
 {
 //===========================================================================
 

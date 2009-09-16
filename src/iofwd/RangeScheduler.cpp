@@ -5,7 +5,6 @@
 #include <cassert>
 
 using namespace std;
-using namespace spatial;
 using namespace iofwd;
 
 namespace iofwd
@@ -36,7 +35,7 @@ bool FIFORangeScheduler::dequeue(Range& r)
 
 struct HandleQueue
 {
-  spatial::Range::RangeType type;
+  Range::RangeType type;
   const zoidfs::zoidfs_handle_t * handle;
   RangeSet * rs;
   int quantum;

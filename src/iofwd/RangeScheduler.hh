@@ -4,8 +4,8 @@
 #include <tr1/unordered_map>
 #include <deque>
 
-#include "spatial/Range.hh"
-#include "spatial/RangeSet.hh"
+#include "Range.hh"
+#include "RangeSet.hh"
 #include "zoidfs/zoidfs.h"
 
 namespace iofwd
@@ -20,9 +20,9 @@ class RangeScheduler
 public:
   RangeScheduler() {}
   virtual ~RangeScheduler() {}
-  virtual void enqueue(const spatial::Range& r) = 0;
+  virtual void enqueue(const Range& r) = 0;
   virtual bool empty() = 0;
-  virtual bool dequeue(spatial::Range& r) = 0;
+  virtual bool dequeue(Range& r) = 0;
 protected:
   RequestScheduler * sched_;
 };
@@ -33,11 +33,11 @@ class FIFORangeScheduler : public RangeScheduler
 public:
   FIFORangeScheduler() {}
   virtual ~FIFORangeScheduler() { q_.clear(); }
-  virtual void enqueue(const spatial::Range& r);
+  virtual void enqueue(const Range& r);
   virtual bool empty();
-  virtual bool dequeue(spatial::Range& r);
+  virtual bool dequeue(Range& r);
 protected:
-  std::deque<spatial::Range> q_;
+  std::deque<Range> q_;
 };
 
 // Handle-Based-Merge range scheduler
@@ -47,16 +47,16 @@ class MergeRangeScheduler : public RangeScheduler
 public:
   MergeRangeScheduler() : bytes_queued(0) {}
   virtual ~MergeRangeScheduler() {}
-  virtual void enqueue(const spatial::Range& r);
+  virtual void enqueue(const Range& r);
   virtual bool empty();
-  virtual bool dequeue(spatial::Range& r);
+  virtual bool dequeue(Range& r);
 
 private:
-  void io_enqueue(const spatial::Range &r);
-  bool io_dequeue(spatial::Range &r);
+  void io_enqueue(const Range &r);
+  bool io_dequeue(Range &r);
 
-  void deadline_enqueue(const spatial::Range &r);
-  bool deadline_dequeue(spatial::Range &r);
+  void deadline_enqueue(const Range &r);
+  bool deadline_dequeue(Range &r);
   
 private:
   std::deque<HandleQueue*> q_;

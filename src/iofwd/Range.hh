@@ -1,5 +1,5 @@
-#ifndef SPATIAL_RANGE_HH
-#define SPATIAL_RANGE_HH
+#ifndef IOFWD_RANGE_HH
+#define IOFWD_RANGE_HH
 
 #include <stdlib.h>
 #include <vector>
@@ -14,7 +14,7 @@ namespace iofwdutil
    }
 }
 
-namespace spatial
+namespace iofwd
 {
 //===========================================================================
 

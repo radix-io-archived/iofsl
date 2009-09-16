@@ -1,4 +1,7 @@
 MODULE_ARCHIVES := cache
-MODULE_SOURCES_cache := 
+MODULE_SOURCES_cache := \
+   	FileCache.cpp \
+	FileManager.cpp
+
 MODULE_CONTAINSINCLUDE := 0
 

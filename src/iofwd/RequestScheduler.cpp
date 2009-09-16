@@ -14,13 +14,12 @@
 #include "iofwd/ReadRequest.hh"
 #include "iofwd/RangeScheduler.hh"
 
-#include "spatial/Range.hh"
-#include "spatial/RangeSet.hh"
+#include "Range.hh"
+#include "RangeSet.hh"
 
 using namespace std;
 using namespace iofwdutil;
 using namespace iofwdutil::completion;
-using namespace spatial;
 
 namespace iofwd
 {
