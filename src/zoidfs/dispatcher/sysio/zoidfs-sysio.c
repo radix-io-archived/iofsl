@@ -524,6 +524,7 @@ static int zoidfs_sysio_getattr(const zoidfs_handle_t *handle, zoidfs_attr_t *at
     ret = SYSIO_INTERFACE_NAME(_zfs_sysio_fhi_getattr)(&sysio_handle, &stbuf);
     if (ret) {
         ZFSSYSIO_INFO("zoidfs_sysio_getattr: fhi_getattr() failed, code = %i.", ret);
+		ZFSSYSIO_PERROR("zoidfs_sysio_getattr");
 		ZFSSYSIO_TRACE_EXIT;
         return sysio_err_to_zfs_err(errno);
     }
@@ -1698,9 +1699,6 @@ static int zoidfs_sysio_readdir(const zoidfs_handle_t *parent_handle,
             else
             {
                 zoidfs_handle_t ehandle;
-                /*
-                 * lookup and save the handle
-                 */
                 zoidfs_lookup(parent_handle, dp->d_name, NULL, &ehandle);
 
                 /*
@@ -1715,6 +1713,7 @@ static int zoidfs_sysio_readdir(const zoidfs_handle_t *parent_handle,
              */
             strncpy(entries[i].name, dp->d_name, ZOIDFS_NAME_MAX + 1);
             entries[i].cookie = t_base;
+            /* ZFSSYSIO_INFO("dir ent name = %s cookie = %lu off = %lu reclen = %lu", entries[i].name, entries[i].cookie, dp->d_off, dp->d_reclen); */
 
             i++; 
             t_base += dp->d_reclen; 
@@ -1730,7 +1729,8 @@ static int zoidfs_sysio_readdir(const zoidfs_handle_t *parent_handle,
             break;
         }
 	}
-	
+
+    /* ZFSSYSIO_INFO("entries found = %i", *entry_count); */
 	if(cc < 0)
 	{
 		ZFSSYSIO_INFO("zoidfs_sysio_readdir: fhi_getdirents64() failed, code = %i", cc);
@@ -1778,6 +1778,8 @@ static int zoidfs_sysio_resize(const zoidfs_handle_t *handle, uint64_t size)
      */
     sattr.fhisattr_size = size;
     sattr.fhisattr_size_set = 1;
+
+    ZFSSYSIO_INFO("resize to %lu", size);
 
 	ret = SYSIO_INTERFACE_NAME(_zfs_sysio_fhi_setattr)(&sysio_component_handle, &sattr);
 	if (ret < 0) {
@@ -2117,10 +2119,11 @@ static int zoidfs_sysio_init(void) {
 	if(!sysio_dispatcher_initialized)
 	{
 		char arg[256];
-		int err = _sysio_init();
+        int err = 0;
 		int mfs_key = 1;
 		int root_key = 2;
 		char * mfs = getenv("ZOIDFS_SYSIO_MOUNT");
+		char * mfs_root = getenv("ZOIDFS_SYSIO_MOUNT_ROOT");
 		char * sysio_driver = getenv("ZOIDFS_SYSIO_DRIVER");
 
         if(!mfs)
@@ -2144,30 +2147,53 @@ static int zoidfs_sysio_init(void) {
 			return err;
 		}
 	
-		err = zoidfs_sysio_drv_init_all();
-		if (err)
-		{
-			ZFSSYSIO_INFO("zoidfs_sysio_init() failed");
-			ZFSSYSIO_TRACE_EXIT;
-			return err;
-		}
-	
 		/*
 		 * Setup the sysio namespace and mounts... setup native mount
 		 * at /
          *
          * sysio driver are set using the ZOIDFS_SYSIO_DRIVER env
-         * variable. Possible values include 'native', 'zoidfs', and 'lustre'.
+         * variable. Possible values include 'native', 'zoidfs', 'pvfs', and 'lustre'.
          *
 		 */
-		sprintf(arg, "{mnt,dev=\"%s:/\",dir=/,fl=2}", sysio_driver);
-		err = _sysio_boot("namespace", arg);
-		if (err)
-		{
-			ZFSSYSIO_INFO("zoidfs_sysio_init() failed");
-			ZFSSYSIO_TRACE_EXIT;
-			return err;
-		}
+
+        if(strcmp(sysio_driver, "pvfs") == 0)
+        {
+            if(!mfs_root)
+            {
+			    ZFSSYSIO_INFO("zoidfs_sysio_init() failed, ZOIDFS_SYSIO_MOUNT_ROOT env variable was not available");
+    			ZFSSYSIO_TRACE_EXIT;
+	    		return err;
+            }
+
+            start_pvfs_sysio_driver(mfs_root);
+        }
+        else
+        {
+            err = _sysio_init();
+            if(err)
+            {
+			    ZFSSYSIO_INFO("zoidfs_sysio_init() failed");
+    			ZFSSYSIO_TRACE_EXIT;
+	    		return err;
+            }
+
+		    err = zoidfs_sysio_drv_init_all();
+		    if (err)
+		    {
+			    ZFSSYSIO_INFO("zoidfs_sysio_init() failed");
+    			ZFSSYSIO_TRACE_EXIT;
+	    		return err;
+		    }
+	
+		    sprintf(arg, "{mnt,dev=\"%s:/\",dir=/,fl=2}", sysio_driver);
+		    err = _sysio_boot("namespace", arg);
+		    if (err)
+		    {
+			    ZFSSYSIO_INFO("zoidfs_sysio_init() failed");
+			    ZFSSYSIO_TRACE_EXIT;
+		    	return err;
+		    }
+        }
 	
 		/*
 		 * Export the root and mounted fs
