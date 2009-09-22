@@ -74,10 +74,10 @@ static struct file_handle_info zoidfs_sysio_mfs_handle = {NULL, zoidfs_sysio_mfs
  * zoidfs sysio trace and debug tools
  */
 
-/* 
-#define ZOIDFS_SYSIO_DEBUG
-#define ZFSSYSIO_TRACE_ENABLED
-*/
+ 
+/*#define ZOIDFS_SYSIO_DEBUG
+#define ZFSSYSIO_TRACE_ENABLED*/
+
 
 /*
  * print enter trace statement
@@ -2132,6 +2132,10 @@ static int zoidfs_sysio_init(void) {
 			ZFSSYSIO_TRACE_EXIT;
 			return err;
         }
+        else
+        {
+            ZFSSYSIO_INFO("mfs = %s", mfs);
+        }
 
         if(!sysio_driver)
         {
@@ -2139,14 +2143,11 @@ static int zoidfs_sysio_init(void) {
 			ZFSSYSIO_TRACE_EXIT;
 			return err;
         }
+        else
+        {
+            ZFSSYSIO_INFO("sysio_driver = %s", sysio_driver);
+        }
 
-		if (err)
-		{
-			ZFSSYSIO_INFO("zoidfs_sysio_init() failed");
-			ZFSSYSIO_TRACE_EXIT;
-			return err;
-		}
-	
 		/*
 		 * Setup the sysio namespace and mounts... setup native mount
 		 * at /
@@ -2158,14 +2159,20 @@ static int zoidfs_sysio_init(void) {
 
         if(strcmp(sysio_driver, "pvfs") == 0)
         {
+            extern void start_pvfs_sysio_driver(char * m, char * mr);
+
             if(!mfs_root)
             {
 			    ZFSSYSIO_INFO("zoidfs_sysio_init() failed, ZOIDFS_SYSIO_MOUNT_ROOT env variable was not available");
     			ZFSSYSIO_TRACE_EXIT;
 	    		return err;
             }
+            else
+            {
+                ZFSSYSIO_INFO("mfs_root = %s", mfs_root);
+            }
 
-            start_pvfs_sysio_driver(mfs_root);
+            start_pvfs_sysio_driver(mfs, mfs_root);
         }
         else
         {
@@ -2199,11 +2206,11 @@ static int zoidfs_sysio_init(void) {
 		 * Export the root and mounted fs
 		 */
 		strcpy(zoidfs_sysio_mfs_path, mfs);
-		err = zoidfs_sysio_export(&mfs_key, mfs, &zoidfs_sysio_mfs_handle);
-		err = zoidfs_sysio_rootof(&zoidfs_sysio_mfs_handle);
+		/*err = zoidfs_sysio_export(&mfs_key, mfs, &zoidfs_sysio_mfs_handle);
+		err = zoidfs_sysio_rootof(&zoidfs_sysio_mfs_handle);*/
 	
-		strcpy(zoidfs_sysio_root_path, "/");
-		err = zoidfs_sysio_export(&root_key, "/", &zoidfs_sysio_root_handle);
+		strcpy(zoidfs_sysio_root_path, mfs_root);
+		err = zoidfs_sysio_export(&root_key, mfs_root, &zoidfs_sysio_root_handle);
 		err = zoidfs_sysio_rootof(&zoidfs_sysio_root_handle);
 		
 		sysio_dispatcher_initialized = 1;
@@ -2234,7 +2241,7 @@ static int zoidfs_sysio_finalize(void) {
     if(sysio_dispatcher_initialized && sysio_dispatcher_ref_count == 1)
     {
 	    zoidfs_sysio_unexport(&zoidfs_sysio_root_handle);
-	    zoidfs_sysio_unexport(&zoidfs_sysio_mfs_handle);
+	    /* zoidfs_sysio_unexport(&zoidfs_sysio_mfs_handle); */
         _sysio_shutdown();
         sysio_dispatcher_initialized = 0;
     }
@@ -2266,6 +2273,8 @@ static int zoidfs_sysio_resolve_path(const char * local_path,
 		strncpy(fs_path, local_path, fs_path_max);
 		fs_path[fs_path_max - 1] = '\0';
 	}
+
+   ZFSSYSIO_INFO("fs_path = %s, local_path = %s", fs_path, local_path); 
 	/*
 	 * If the handle buffer is available, copy the correct handle
 	 */
