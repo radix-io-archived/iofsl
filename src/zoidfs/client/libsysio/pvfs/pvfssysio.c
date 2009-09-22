@@ -56,7 +56,7 @@
  */
 
 
-/* #define DEBUG_SYSIO_PVFS */
+//#define DEBUG_SYSIO_PVFS 
 #ifdef DEBUG_SYSIO_PVFS
 #define SYSIO_PVFS_FENTER()                                                             \
 do{                                                                                     \
@@ -462,7 +462,6 @@ void start_pvfs_sysio_driver(char * mp, char * pvfs_root)
 
     /* set the mps_root variable with the pvfs root mount point */
     memset(mps_root, 0, 4096);
-    SYSIO_PVFS_FINFO("pvfs_root = %s", pvfs_root);
     if(pvfs_root)
     {
         strcpy(mps_root, pvfs_root);
@@ -605,45 +604,32 @@ static int pvfs_stat(const char *path, struct inode *ino, time_t t, struct intnl
     memset(fs_path, 0, 4096);
 
     /* get the fs ids*/
+
+    /* if the full path is available, use the pvfs resolve path cmd */
     if(path)
     {
+        char path_expand[4096];
+
         memset(&ref, 0, sizeof(ref));
-        if(strncmp(path, mps_root, strlen(mps_root)) == 0)
-        {
-            err = PVFS_util_resolve(path, &fsid, fs_path, 4096);
-            if(err)
-            {
-                SYSIO_PVFS_FEXIT();
-                return -pvfs_error_to_sysio_error(err);
-            }
-            ref.fs_id = fsid;
-            ref.handle = 0;
-        }
-        else
-        {
-            char path_expand[4096];
-            memset(path_expand, 0, 4096);
-            if(path[0] == '/')
-            {
-                strcat(path_expand, mps_root);
-            }
-            else
-            {
-                strcat(path_expand, mps_root);
-            }
-            strcat(path_expand, path);
+        memset(path_expand, 0, 4096);
 
-            err = PVFS_util_resolve(path_expand, &fsid, fs_path, 4096);
-            if(err)
-            {
-                SYSIO_PVFS_FEXIT();
-                return -pvfs_error_to_sysio_error(err);
-            }
-            ref.fs_id = fsid;
-            ref.handle = 0;
+        /* if the path does not have the pvfs root, add it to the front of the path and resolve */
+        if(strncmp(path, mps_root, strlen(mps_root)) != 0)
+        {
+            strcat(path_expand, mps_root);
         }
+        strcat(path_expand, path);
+
+        /* resolve the path and setup the reference */
+        err = PVFS_util_resolve(path_expand, &fsid, fs_path, 4096);
+        if(err)
+        {
+            SYSIO_PVFS_FEXIT();
+            return -pvfs_error_to_sysio_error(err);
+        }
+        ref.fs_id = fsid;
+        ref.handle = 0;
     }
-
     /* if the inode is valid, don't lookup */
     if(pino && pino->pi_ref_set)
     {
@@ -689,6 +675,7 @@ static int pvfs_stat(const char *path, struct inode *ino, time_t t, struct intnl
 
     /* if error */
     if (err) {
+        /* invalidate attr time */
         if (pino)
         {
             pino->pi_attrtim = 0;
@@ -698,9 +685,11 @@ static int pvfs_stat(const char *path, struct inode *ino, time_t t, struct intnl
         return -pvfs_error_to_sysio_error(err);
     }
 
+    /* set the attr time to now */
     if (pino) {
         pino->pi_attrtim = t;
 
+        /* copy the attr if the buf is valid */
         if (buf)
             *buf = ino->i_stbuf;
         SYSIO_PVFS_FEXIT();
@@ -720,6 +709,7 @@ static int pvfs_stat(const char *path, struct inode *ino, time_t t, struct intnl
 }
 
 /*
+ * Create a new inode for the pvfs entry 
  */
 static struct inode * pvfs_i_new(struct filesys *fs, time_t expiration, struct intnl_stat *buf)
 {
@@ -849,22 +839,14 @@ static int pvfs_fsswop_mount(const char *source,
         goto error;
     }
 
-    /*
-     * Have path-node specified by the given source argument. Let the
-     * system finish the job, now.
-     */
-    static struct qstr noname = {NULL, 0, 0};
-    struct pnode_base * rootpb = _sysio_pb_new(&noname, NULL, rootino);
-    if (!rootpb)
-    {
-        err = -ENOMEM;
-        goto error;
-    }
-
+    /* mount it */
     err = _sysio_mounti(fs, rootino, flags, tocover, &mnt);
     if (!err) {
         *mntp = mnt;
     }
+    I_PUT(rootino);
+    pvfs_internal_mount = mnt;
+
     SYSIO_PVFS_FEXIT();
     return err;
 
@@ -1903,7 +1885,7 @@ static int pvfs_inop_symlink(struct pnode *pno, const char *data)
 
     /* get the sysio full paths */
     opath = _sysio_pb_path(pno->p_base, '/');
-    npath = data;
+    npath = (char *)data;
     if (!(opath && npath)) {
         err = -ENOMEM;
         goto cleanup;
