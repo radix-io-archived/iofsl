@@ -32,6 +32,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/uio.h>
+#include <dirent.h>
 
 #include "sysio.h"
 #include "xtio.h"
@@ -51,6 +52,8 @@
  * Debug and trace facilities
  */
 
+//#define DEBUG_SYSIO_IOFWD
+
 #ifdef DEBUG_SYSIO_IOFWD
 #define SYSIO_IOFWD_FENTER()                                                            \
 do{                                                                                     \
@@ -59,13 +62,19 @@ do{                                                                             
 
 #define SYSIO_IOFWD_FEXIT()                                                             \
 do{                                                                                     \
-    fprintf(stderr, "%s, FILE=%s, LINE# = %i EXIT\n", __func__, __FILE__, __LINE__)     \
+    fprintf(stderr, "%s, FILE=%s, LINE# = %i EXIT\n", __func__, __FILE__, __LINE__);    \
 }while(0)
 
 #define SYSIO_IOFWD_FABORT()                                                            \
 do{                                                                                     \
-    fprintf(stderr, "%s, FILE=%s, LINE# = %i ABORT\n", __func__, __FILE__, __LINE__)    \
+    fprintf(stderr, "%s, FILE=%s, LINE# = %i ABORT\n", __func__, __FILE__, __LINE__);   \
 }while(0)
+
+#else
+#define SYSIO_IOFWD_FENTER()    /* not in debug mode... do nothing */
+#define SYSIO_IOFWD_FEXIT()     /* not in debug mode... do nothing */
+#define SYSIO_IOFWD_FABORT()    /* not in debug mode... do nothing */
+#endif
 
 #define SYSIO_IOFWD_FINFO(...)                                                                          \
 do{                                                                                                     \
@@ -73,16 +82,11 @@ do{                                                                             
     sprintf(__buffer, ##__VA_ARGS__);                                                                   \
     fprintf(stderr, "%s, FILE=%s, LINE# = %i INFO, %s\n", __func__, __FILE__, __LINE__, __buffer);      \
 }while(0)
-#else
-#define SYSIO_IOFWD_FENTER()    /* not in debug mode... do nothing */
-#define SYSIO_IOFWD_FEXIT()     /* not in debug mode... do nothing */
-#define SYSIO_IOFWD_FABORT()    /* not in debug mode... do nothing */
-#define SYSIO_IOFWD_FINFO(...)     /* not in debug mode... do nothing */
-#endif
 
 int _iofwd_sysio_init();
 int _iofwd_sysio_drv_init_all();
-void __attribute__((constructor)) _iofwd_sysio_startup(void); /* Force the startup of the sysio iofwd driver before main() is invoked */
+//void __attribute__((constructor)) _iofwd_sysio_startup(void); /* Force the startup of the sysio iofwd driver before main() is invoked */
+void _iofwd_sysio_startup(void); /* Force the startup of the sysio iofwd driver before main() is invoked */
 
 static int iofwd_fsswop_mount(const char *source, unsigned flags, const void *data, struct pnode *tocover, struct mount **mntp);
 struct fssw_ops iofwd_fssw_ops = {iofwd_fsswop_mount};
@@ -291,7 +295,8 @@ struct iofwd_inode {
     unsigned
         ii_seekok       : 1,                    /* can seek? */
         ii_attrvalid        : 1,                /* cached attrs ok? */
-        ii_resetfpos        : 1;                /* reset fpos? */
+        ii_resetfpos        : 1,                /* reset fpos? */
+        ii_handlevalid      : 1;                /* is the handle valid? */
     struct iofwd_inode_identifier ii_ident;     /* unique identifier */
     struct file_identifier ii_fileid;           /* ditto */
     int ii_fd;                                  /* host fildes */
@@ -299,6 +304,7 @@ struct iofwd_inode {
     unsigned ii_nopens;                         /* soft ref count */
     _SYSIO_OFF_T ii_fpos;                       /* current pos */
     time_t  ii_attrtim;                         /* attrs expire time */
+    time_t  ii_handletim;                       /* handle expire time */
     zoidfs_handle_t handle;                     /* zoidfs handle */
 };
 
@@ -453,6 +459,13 @@ static inline int iofwd_attrs_valid(struct iofwd_inode * iino, time_t t)
     return (iino->ii_attrtim && (t < iino->ii_attrtim));
 }
 
+static inline int iofwd_handle_valid(struct iofwd_inode * iino, time_t t)
+{
+    if(iino)
+        return (iino->ii_handlevalid && iino->ii_handletim && (t < iino->ii_handletim));
+    return 0;
+}
+
 /*
  * stat the file remotely
  */
@@ -463,15 +476,29 @@ static int iofwd_stat(const char *path, struct inode *ino, time_t t, struct intn
     int err;
     struct intnl_stat stbuf;
     zoidfs_handle_t fhandle;
+    unsigned fhandle_set = 0;
     zoidfs_attr_t attr;
 
     iino = ino ? I2II(ino) : NULL;
 
-    if (path)
+    /* if the inode is valid, don't lookup */
+    if(iino && iofwd_handle_valid(iino, t))
+    {
+        attr.mask = ZOIDFS_ATTR_ALL;
+        err = zoidfs_getattr(&iino->handle, &attr);
+        if(err == ZFS_OK)
+        {
+            COPY_ZFS_SYSIO_ATTR(&attr, &stbuf);
+        }
+    }
+    /* if the path is set */
+    else if (path)
     {
         err = zoidfs_lookup(NULL, NULL, path, &fhandle);
         if(err == ZFS_OK)
         {
+            fhandle_set = 1;
+
             /* get the attrs for the file handle */
             attr.mask = ZOIDFS_ATTR_ALL;
             err = zoidfs_getattr(&fhandle, &attr);
@@ -480,10 +507,6 @@ static int iofwd_stat(const char *path, struct inode *ino, time_t t, struct intn
                 COPY_ZFS_SYSIO_ATTR(&attr, &stbuf);
             }
         }
-    }
-    else if (iino && iino->ii_fd >= 0)
-    {
-        err = syscall(SYSIO_SYS_fstat, iino->ii_fd, &stbuf);
     }
     else
     {
@@ -494,14 +517,24 @@ static int iofwd_stat(const char *path, struct inode *ino, time_t t, struct intn
     /* if error */
     if (err) {
         if (iino)
+        {
             iino->ii_attrtim = 0;
+            iino->ii_handletim = 0;
+        }
         SYSIO_IOFWD_FEXIT();
         return -zfs_error_to_sysio_error(err);
     }
 
     if (iino) {
         iino->ii_attrtim = t;
+        iino->ii_handletim = t;
         SYSIO_COPY_STAT(&stbuf, &ino->i_stbuf);
+
+        /* valid file handle? copy it into the inode */
+        if(fhandle_set)
+        {
+            memcpy(&iino->handle, &fhandle, sizeof(zoidfs_handle_t));
+        }
         if (buf)
             *buf = ino->i_stbuf;
         SYSIO_IOFWD_FEXIT();
@@ -549,6 +582,7 @@ static struct inode * iofwd_i_new(struct filesys *fs, time_t expiration, struct 
     iino->ii_nopens = 0;
     iino->ii_fpos = 0;
     iino->ii_attrtim = expiration;
+    iino->ii_handletim = 0;
     memset(&iino->handle, 0, sizeof(zoidfs_handle_t));
     ino = _sysio_i_new(fs, &iino->ii_fileid, buf, 0, &iofwd_i_ops, iino);
     if (!ino)
@@ -727,64 +761,67 @@ int _iofwd_sysio_drv_init_all()
  * function is refrenced in the main() program. This
  * includes overloaded IO syscalls
  */
-void __attribute__((constructor)) _iofwd_sysio_startup(void)
+//void __attribute__((constructor)) _iofwd_sysio_startup(void)
+void _iofwd_sysio_startup(void)
 {
     SYSIO_IOFWD_FENTER();
     extern int _sysio_init(void);
     extern int _sysio_boot(const char *, const char *);
 
+    char * driver = NULL;
+    driver = getenv("ZOIDFS_SYSIO_SERVER_DRIVER");
+    
     /*
      * start zoidfs
      */
-    zoidfs_init();
-
-    /*
-     * sysio init
-     */
-    char * arg = NULL;
-    int err = _sysio_init();
-    if (err)
+    if(driver == NULL)
     {
-        SYSIO_IOFWD_FEXIT();
-        return;
-    }
+        zoidfs_init();
 
-    /*
-     * init sysio drivers
-     */
-    err = _iofwd_sysio_drv_init_all();
-    if (err)
-    {
-        SYSIO_IOFWD_FEXIT();
-        return;
-    }
- 
-    /*
-     * init sysio iofwd device
-     */
-    err = _iofwd_sysio_init();
-    if (err)
-    {
-        SYSIO_IOFWD_FEXIT();
-        return;
-    }
+        /*
+         * sysio init
+         */
+        char * arg = NULL;
+        int err = _sysio_init();
+        if (err)
+        {
+            SYSIO_IOFWD_FEXIT();
+            return;
+        }
 
-    /*
-     * Setup the sysio namespace and mounts for zoidfs... setup iofwd mount
-     * at /
-     * ... boot 
-     */
-    arg = "{mnt,dev=\"zoidfs:/\",dir=/,fl=2}";
-    err = _sysio_boot("namespace", arg);
-    if (err)
-    {
-        SYSIO_IOFWD_FEXIT();
-        return;
-    }
+        /*
+         * init sysio drivers
+         */
+        err = _iofwd_sysio_drv_init_all();
+        if (err)
+        {
+            SYSIO_IOFWD_FEXIT();
+            return;
+        }
 
-    /*
-     * update the the parent stat struct
-     */
+        /*
+         * init sysio iofwd device
+         */
+        err = _iofwd_sysio_init();
+        if (err)
+        {
+            SYSIO_IOFWD_FEXIT();
+            return;
+        }
+
+        /*
+         * Setup the sysio namespace and mounts for zoidfs... setup iofwd mount
+         * at /
+         * ... boot 
+         */
+        arg = "{mnt,dev=\"zoidfs:/\",dir=/,fl=2}";
+        err = _sysio_boot("namespace", arg);
+        if (err)
+        {
+            SYSIO_IOFWD_FEXIT();
+            return;
+        }
+    }
     SYSIO_IOFWD_FEXIT();
 }
 
@@ -825,6 +862,7 @@ static int iofwd_i_invalid(struct inode *inop, struct intnl_stat *stat)
            (S_ISCHR((inop)->i_stbuf.st_mode) ||
             S_ISBLK((inop)->i_stbuf.st_mode)))) {
         iino->ii_attrtim = 0;           /* invalidate attrs */
+        iino->ii_handletim = 0;         /* invalidate handle */
         memset(&iino->handle, 0, sizeof(zoidfs_handle_t)); /* erase the handle data */
         SYSIO_IOFWD_FEXIT();
         return 1;
@@ -913,13 +951,14 @@ static int iofwd_inop_open(struct pnode *pno, int flags, mode_t mode)
     char    *path;
     struct inode *ino;
     int fd;
-    char full_path[ZOIDFS_PATH_MAX];
     int file_exists = 0;
+    int append_ii_fpos = 0;
+    zoidfs_handle_t fhandle;
+    int err = 0;
 
     SYSIO_IOFWD_FENTER();
 
     path = _sysio_pb_path(pno->p_base, '/');
-    memcpy(full_path, path, ZOIDFS_PATH_MAX);
     if (!path)
     {
         SYSIO_IOFWD_FEXIT();
@@ -934,61 +973,83 @@ static int iofwd_inop_open(struct pnode *pno, int flags, mode_t mode)
         flags |= O_RDWR;
     }
 
+    /* get the file handle and set exist flag */
+    if(zoidfs_lookup(NULL, NULL, path, &fhandle) == ZFS_OK)
+    {
+        file_exists = 1;
+    }
+
     /*
-     * If file create, lookup the file. If the file does not exist, 
-     * create it. If it does exist, do nothing.
+     * create the file
      */
     if((flags & O_CREAT) == O_CREAT)
     {
-        zoidfs_handle_t fhandle;
-        if(zoidfs_lookup(NULL, NULL, full_path, &fhandle) != ZFS_OK)
+        int created = 0;
+        zoidfs_sattr_t sattr;
+
+        sattr.mask = ZOIDFS_ATTR_MODE;
+        sattr.mode = 0777 & mode;
+        
+        if((flags & O_EXCL) == O_EXCL)
         {
-            int created = 0;
-            zoidfs_sattr_t sattr;
-
-            sattr.mask = ZOIDFS_ATTR_MODE;
-            sattr.mode = 0777 & mode;
-
-            if(zoidfs_create(NULL, NULL, full_path, &sattr, &fhandle, &created) != ZFS_OK)
+            /* if the O_CREATE | O_EXCL flag is violated, exit */
+            if(file_exists)
             {
                 SYSIO_IOFWD_FEXIT();
-                return 0;
+                return -zfs_error_to_sysio_error(ZFSERR_EXIST);
             }
-            file_exists = 1;
         }
+
+        if((err = zoidfs_create(NULL, NULL, path, &sattr, &fhandle, &created)) != ZFS_OK)
+        {
+            SYSIO_IOFWD_FEXIT();
+            return -zfs_error_to_sysio_error(err);
+        }
+        file_exists = 1;
     }
 
     /*
-     * If truncate, lookup the file. If file exists, remove and recreate it. If file
-     * does not exist, create it.
+     * resize the file to zero bytes if it exists
      */
-    else if((flags & O_TRUNC) == O_TRUNC)
+    if((flags & O_TRUNC) == O_TRUNC)
     {
-        int created = 0;
-        zoidfs_handle_t fhandle;
-        zoidfs_sattr_t sattr;
-
-        if(zoidfs_lookup(NULL, NULL, path, &fhandle) == ZFS_OK)
+        if((err = zoidfs_resize(&fhandle, 0)) != ZFS_OK)
         {
-            if(zoidfs_remove(NULL, NULL, path, NULL) != ZFS_OK)
-            {
-                SYSIO_IOFWD_FEXIT();
-                return 0;
-            }
+            SYSIO_IOFWD_FEXIT();
+            return -zfs_error_to_sysio_error(err);
         }
-
-        sattr.mask = ZOIDFS_ATTR_MODE;
-        sattr.mode = 0777 & mode;            
-        zoidfs_create(NULL, NULL, path, &sattr, &fhandle, &created);
         file_exists = 1;
     }
-    else
+    /*
+     * append to the file
+     */
+    if((flags & O_APPEND) == O_APPEND)
     {
+        zoidfs_attr_t attr;
         zoidfs_handle_t fhandle;
-        if(zoidfs_lookup(NULL, NULL, path, &fhandle) == ZFS_OK)
+
+        attr.mask = ZOIDFS_ATTR_SIZE;
+
+        /* can't append to a file that does not exist */
+        if(!file_exists)
         {
-            file_exists = 1;
+            SYSIO_IOFWD_FEXIT();
+            return -zfs_error_to_sysio_error(ZFSERR_NOENT);
         }
+        if((err = zoidfs_getattr(&fhandle, &attr)) != ZFS_OK)
+        {
+            SYSIO_IOFWD_FEXIT();
+            return -zfs_error_to_sysio_error(err);
+        }
+        append_ii_fpos = attr.size;
+        file_exists = 1; 
+    }
+
+    /* if file still does not exist, exit */
+    if(file_exists == 0) 
+    {
+        SYSIO_IOFWD_FEXIT();
+        return -zfs_error_to_sysio_error(ZFSERR_NOENT);
     }
 
     /*
@@ -1049,12 +1110,9 @@ static int iofwd_inop_open(struct pnode *pno, int flags, mode_t mode)
          * Invariant; First open. Must init.
          */
         iino->ii_resetfpos = 0;
-        iino->ii_fpos = 0;
+        iino->ii_fpos = append_ii_fpos;
         iino->ii_fd = fd;
-        /*
-         * Disable seeks... 
-         */
-        iino->ii_seekok = 0;
+        iino->ii_seekok = 1;
     } while (0);
 
     I_PUT(ino);
@@ -1082,7 +1140,7 @@ static int iofwd_inop_lookup(struct pnode *pno, struct inode **inop, struct inte
     *inop = pno->p_base->pb_ino;
 
     /* use cached values */
-    if(*inop && (path || !intnt || (intnt->int_opmask & INT_GETATTR) == 0) && iofwd_attrs_valid(I2II(*inop), t))
+    if(*inop && (path || !intnt || (intnt->int_opmask & INT_GETATTR) == 0) && iofwd_attrs_valid(I2II(*inop), t) && iofwd_handle_valid(I2II(*inop), t))
     {
         SYSIO_IOFWD_FEXIT();
         return 0;
@@ -1179,19 +1237,97 @@ static int iofwd_inop_setattr(struct pnode *pno, unsigned mask, struct intnl_sta
     err = zoidfs_lookup(NULL, NULL, path, &fhandle);
     if(err == ZFS_OK)
     {
-        /* set the attrs for the file handle */
-        COPY_SYSIO_ZFS_SATTR(stbuf, &sattr);
-        sattr.mask = mask; 
-        attr.mask = mask; 
-        err = zoidfs_setattr(&fhandle, &sattr, &attr);
-        if(err == ZFS_OK)
+
+        /* get the original file attributes */
+        sattr.mask = 0;
+
+        /* convert the sysio mask to zoidfs */
+        if(mask & SETATTR_MODE)
         {
-            COPY_ZFS_SYSIO_ATTR(&attr, stbuf);
+            sattr.mask = sattr.mask | ZOIDFS_ATTR_MODE;
+            sattr.mode = stbuf->st_mode & 0777;
         }
+        else
+        {
+            sattr.mode = 0;
+        }
+
+        if(mask & SETATTR_UID)
+        {
+            sattr.mask = sattr.mask | ZOIDFS_ATTR_UID;
+            sattr.uid = stbuf->st_uid;
+        }
+        else
+        {
+            sattr.uid = 0;
+        }
+    
+        if(mask & SETATTR_GID)
+        {
+            sattr.mask = sattr.mask | ZOIDFS_ATTR_GID;
+            sattr.uid = stbuf->st_gid;
+        }   
+        else
+        {
+            sattr.gid = 0;
+        }
+
+        if(mask & SETATTR_ATIME)
+        {
+            sattr.mask = sattr.mask | ZOIDFS_ATTR_ATIME;
+            sattr.atime.seconds = stbuf->st_atime;
+            sattr.atime.nseconds = 0;
+        }
+        else
+        {
+            sattr.atime.seconds = 0;
+            sattr.atime.nseconds = 0;
+        }
+
+        if(mask & SETATTR_MTIME)
+        {
+            sattr.mask = sattr.mask | ZOIDFS_ATTR_MTIME;
+            sattr.mtime.seconds = stbuf->st_mtime;
+            sattr.mtime.nseconds = 0;
+        }
+        else
+        {
+            sattr.mtime.seconds = 0;
+            sattr.mtime.nseconds = 0;
+        }
+
+        if(sattr.mask)
+        {
+            sattr.size = 0; /* only set the size using resize */
+            attr.mask = sattr.mask;
+            err = zoidfs_setattr(&fhandle, &sattr, &attr);
+            if(err != ZFS_OK)
+            {
+                SYSIO_IOFWD_FEXIT();
+                return zfs_error_to_sysio_error(err);
+            }
+        }
+
+        if (mask & SETATTR_LEN)
+        {
+            err = zoidfs_resize(&fhandle, stbuf->st_size);
+            if(err != ZFS_OK)
+            {
+                SYSIO_IOFWD_FEXIT();
+                return zfs_error_to_sysio_error(err);
+            }
+            attr.size = stbuf->st_size;
+            attr.mask = ZOIDFS_ATTR_SIZE;
+        }
+        COPY_ZFS_SYSIO_ATTR(&attr, stbuf);
     }
 
     /* cleanup */
-    free(path);
+    if(path)
+    {
+        free(path);
+        path = NULL;
+    }
 
     SYSIO_IOFWD_FEXIT();
 	return 0;
@@ -1202,9 +1338,145 @@ static int iofwd_inop_setattr(struct pnode *pno, unsigned mask, struct intnl_sta
  */
 static ssize_t iofwd_filldirentries(struct pnode *pno, _SYSIO_OFF_T *posp, char *buf, size_t nbytes)
 {
+    int err = 0;
+    zoidfs_handle_t dhandle;
+    zoidfs_dirent_cookie_t cookie = *posp;
+    size_t entry_count = nbytes / sizeof(struct dirent64); /*entry count is the max dirents that can fit in the user buffer */
+    const size_t max_entry_count = entry_count;
+    zoidfs_dirent_t * entries = NULL;
+    char * path = NULL;
+    struct dirent64 ** outdp = (struct dirent64 **)&buf;
+    int i = 0;
+
     SYSIO_IOFWD_FENTER();
+
+    /* get the directory handle */
+    path = _sysio_pb_path(pno->p_base, '/');
+    err = zoidfs_lookup(NULL, NULL, path, &dhandle);
+    if(err != ZFS_OK)
+    {
+        SYSIO_IOFWD_FEXIT();
+        return -zfs_error_to_sysio_error(err);
+    }
+
+    /* setup the internal buffers */
+    entries = malloc(entry_count * sizeof(zoidfs_dirent_t));
+    memset(entries, 0, entry_count * sizeof(zoidfs_dirent_t));
+
+    /* get the dir entries */
+    err = zoidfs_readdir(&dhandle, cookie, &entry_count, entries, 0, NULL);
+    SYSIO_IOFWD_FINFO("ec = %i", entry_count);
+    if(err != ZFS_OK)
+    {
+        SYSIO_IOFWD_FEXIT();
+        return -zfs_error_to_sysio_error(err);
+    }
+
+    /* set the directory pointer */
+    *posp = entries[entry_count - 1].cookie;
+
+    /* copy the data from the internal buffer to the user buffer */
+    uint64_t last_off = 0;
+    for(i = 0 ; i < entry_count ; i++)
+    {
+        SYSIO_IOFWD_FINFO("entry %i", i);
+        int nlen = strlen(entries[i].name);
+        int rlen = sizeof(*outdp[i]) - sizeof(outdp[i]->d_name) + nlen; /* number of unused bytes in the d_name field */
+        int nlen_unused = rlen;
+        int j = 0;
+
+        if (nbytes <= rlen)
+            break;
+        outdp[i]->d_ino = 0; /* don't know the inode number... set it to 0 */
+        //outdp[i]->d_off = entries[i].cookie;
+        outdp[i]->d_off = last_off;
+        outdp[i]->d_reclen = (((rlen + sizeof(long))) / sizeof(long)) * sizeof(long);
+        if (nbytes < outdp[i]->d_reclen)
+            outdp[i]->d_reclen = rlen + 1;
+        last_off = outdp[i]->d_reclen;
+
+        /* set the dirent type */
+#ifdef __USE_BSD
+        switch(entries[i].attr.type)
+        {
+            case ZOIDFS_INVAL:
+            {
+                outdp[i]->d_type = DT_UNKNOWN;
+                break;
+            }
+            case ZOIDFS_REG:
+            {
+                outdp[i]->d_type = DT_REG;
+                break;
+            }
+            case ZOIDFS_DIR:
+            {
+                outdp[i]->d_type = DT_DIR;
+                break;
+            }
+            case ZOIDFS_LNK:
+            {
+                outdp[i]->d_type = DT_LNK;
+                break;
+            }
+            case ZOIDFS_CHR:
+            {
+                outdp[i]->d_type = DT_CHR;
+                break;
+            }
+            case ZOIDFS_BLK:
+            {
+                outdp[i]->d_type = DT_BLK;
+                break;
+            }
+            case ZOIDFS_FIFO:
+            {
+                outdp[i]->d_type = DT_FIFO;
+                break;
+            }
+            case ZOIDFS_SOCK:
+            {
+                outdp[i]->d_type = DT_SOCK;
+                break;
+            }
+            default:
+            {
+                outdp[i]->d_type = DT_UNKNOWN;
+                break;
+            }
+        };
+#else
+        outdp[i]->d_type = 0;
+#endif
+
+        /* copy the file name */
+        memcpy(outdp[i]->d_name, entries[i].name, nlen);
+
+        /* null characters for rest of name string */
+        for(j = nlen ; j < nlen_unused ; j++)
+        {
+            outdp[i]->d_name[j] = '\0';
+        }
+
+        SYSIO_IOFWD_FINFO("off = %lu reclen = %lu name = %s", outdp[i]->d_off, outdp[i]->d_reclen, outdp[i]->d_name);
+        nbytes -= outdp[i]->d_reclen;
+    }
+
+    /* cleanup */
+    if(entries)
+    {
+        free(entries);
+        entries = NULL;
+    }
+    
+    if(path)
+    {
+        free(path);
+        path = NULL;
+    }
+
     SYSIO_IOFWD_FEXIT();
-	return 0;
+	return ((char *)outdp[i] - buf);
 }
 
 /*
@@ -1527,6 +1799,12 @@ static int iofwd_inop_read(struct ioctx *ioctx)
     uint64_t * file_sizes;
     int i = 0;
 
+    struct inode *ino;
+    struct iofwd_inode *iino;
+
+    ino = ioctx->ioctx_pno->p_base->pb_ino;
+    iino = I2II(ino);
+
     /* get the full path of the file from the sysio pnode */
     path = _sysio_pb_path(ioctx->ioctx_pno->p_base, '/');
     if(!path)
@@ -1557,14 +1835,26 @@ static int iofwd_inop_read(struct ioctx *ioctx)
     }
 
     /* xtvec data conversions */
+    uint64_t max_pos = 0;
     for(i = 0 ; i < ioctx->ioctx_xtvlen ; i+=1)
     {
-        file_starts[i] = (uint64_t)ioctx->ioctx_xtv[i].xtv_off;
+        file_starts[i] = (uint64_t)ioctx->ioctx_xtv[i].xtv_off + iino->ii_fpos;
         file_sizes[i] = (uint64_t)ioctx->ioctx_xtv[i].xtv_len;
+        SYSIO_IOFWD_FINFO("file_starts[%i] = %lu file_sizes[%i] = %lu", i, file_starts[i], i, file_sizes[i]);
+        if(file_starts[i] + file_sizes[i] > max_pos)
+        {
+            max_pos = file_starts[i] + file_sizes[i];
+        }
     }
 
     /* invoke the zoidfs_read() */
     err = zoidfs_read(&fhandle, ioctx->ioctx_iovlen, mem_starts, mem_sizes, ioctx->ioctx_xtvlen, file_starts, file_sizes);
+
+    /* update the file pointer */
+    if (!err)
+    {
+        iino->ii_fpos = max_pos;
+    }
 
     /* cleanup */
     free(mem_starts);
@@ -1592,6 +1882,12 @@ static int iofwd_inop_write(struct ioctx *ioctx)
     uint64_t * file_starts;
     uint64_t * file_sizes;
     int i = 0;
+
+    struct inode *ino;
+    struct iofwd_inode *iino;
+
+    ino = ioctx->ioctx_pno->p_base->pb_ino;
+    iino = I2II(ino);
 
     /* get the full path of the file from the sysio pnode */
     path = _sysio_pb_path(ioctx->ioctx_pno->p_base, '/');
@@ -1623,14 +1919,26 @@ static int iofwd_inop_write(struct ioctx *ioctx)
     }
 
     /* xtvec data conversions */
+    uint64_t max_pos = 0; 
     for(i = 0 ; i < ioctx->ioctx_xtvlen ; i+=1)
     {
-        file_starts[i] = (uint64_t)ioctx->ioctx_xtv[i].xtv_off;
+        file_starts[i] = (uint64_t)ioctx->ioctx_xtv[i].xtv_off + iino->ii_fpos;
         file_sizes[i] = (uint64_t)ioctx->ioctx_xtv[i].xtv_len;
+        if(file_starts[i] + file_sizes[i] > max_pos)
+        {
+            max_pos = file_starts[i] + file_sizes[i];
+        }
+        SYSIO_IOFWD_FINFO("file_starts[%i] = %lu file_sizes[%i] = %lu", i, file_starts[i], i, file_sizes[i]);
     }
 
     /* invoke the zoidfs_read() */
     err = zoidfs_write(&fhandle, ioctx->ioctx_iovlen, (const void **)mem_starts, mem_sizes, ioctx->ioctx_xtvlen, file_starts, file_sizes);
+
+    /* update the file pointer */
+    if (!err)
+    {
+        iino->ii_fpos = max_pos;
+    }
 
     /* cleanup */
     free(mem_starts);
