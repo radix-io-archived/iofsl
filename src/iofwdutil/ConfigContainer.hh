@@ -36,7 +36,7 @@ protected:
 };
 
 
-INTRUSIVE_PTR_HELPER(ConfigContainer);
+INTRUSIVE_PTR_HELPER(ConfigContainer)
 
 }
 
