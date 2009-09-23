@@ -125,6 +125,12 @@ ADDINTLIBS_zoidfs-md-cunit := iofwdclient iofwdlib iofwdutil zoidfsutil zoidfscl
 LDFLAGS_zoidfs-md-cunit := @CUNIT_LDFLAGS@ @CUNIT_LIBS@
 LIBS_zoidfs-md-cunit := @CUNIT_LIBS@
 
+MODULE_APPS += zoidfs-md-cunit-trace
+MODULE_SOURCES_zoidfs-md-cunit-trace := zoidfs-md-cunit.c 
+ADDINTLIBS_zoidfs-md-cunit-trace := iofwdclient iofwdlib iofwdutil zoidfsutil zoidfsclienttrace zoidfscutil
+LDFLAGS_zoidfs-md-cunit-trace := @CUNIT_LDFLAGS@ @CUNIT_LIBS@
+LIBS_zoidfs-md-cunit-trace := @CUNIT_LIBS@
+
 MODULE_APPS += zoidfs-md-cunit-local
 MODULE_SOURCES_zoidfs-md-cunit-local := zoidfs-md-cunit.c 
 ADDINTLIBS_zoidfs-md-cunit-local := iofwdclient iofwdlib iofwdutil zoidfsutil zoidfsdispatch zoidfscutil
