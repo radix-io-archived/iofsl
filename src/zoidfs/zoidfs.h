@@ -275,7 +275,6 @@ int zoidfs_link(const zoidfs_handle_t * from_parent_handle /* in:ptr:nullok */,
                 zoidfs_cache_hint_t * from_parent_hint /* out:ptr:nullok */,
                 zoidfs_cache_hint_t * to_parent_hint /* out:ptr:nullok */);
 
-
 int zoidfs_symlink(const zoidfs_handle_t * from_parent_handle /* in:ptr:nullok */,
                    const char * from_component_name /* in:str:nullok */,
                    const char * from_full_path /* in:str:nullok */,
@@ -309,6 +308,107 @@ int zoidfs_readdir(const zoidfs_handle_t * parent_handle /* in:ptr */,
                    zoidfs_cache_hint_t * parent_hint /* out:ptr:nullok */);
 
 int zoidfs_resize(const zoidfs_handle_t * handle /* in:ptr */,
+                  uint64_t size /* in:obj */);
+
+/* 
+ * zoidfs profile api
+ * Provides hooks for profile / instrumentation libs
+ * Similar to MPI profiling interface...
+ */
+int Pzoidfs_init(void);
+
+int Pzoidfs_finalize(void);
+
+int Pzoidfs_null(void);
+
+int Pzoidfs_getattr(const zoidfs_handle_t * handle /* in:ptr */,
+                   zoidfs_attr_t * attr /* inout:ptr */);
+
+int Pzoidfs_setattr(const zoidfs_handle_t * handle /* in:ptr */,
+                   const zoidfs_sattr_t * sattr /* in:ptr */,
+                   zoidfs_attr_t * attr /* inout:ptr:nullok */);
+
+int Pzoidfs_readlink(const zoidfs_handle_t * handle /* in:ptr */,
+                    char * buffer /* out:arr:size=+1 */,
+                    size_t buffer_length /* in:obj */);
+
+int Pzoidfs_lookup(const zoidfs_handle_t * parent_handle /* in:ptr:nullok */,
+                  const char * component_name /* in:str:nullok */,
+                  const char * full_path /* in:str:nullok */,
+                  zoidfs_handle_t * handle /* out:ptr */);
+
+int Pzoidfs_read(const zoidfs_handle_t * handle /* in:ptr */,
+                zoidfs_size_t mem_count /* in:obj */,
+                void * mem_starts[] /* out:arr2d:size=+1:zerocopy */,
+                const zoidfs_size_t mem_sizes[] /* in:arr:size=-2 */,
+                zoidfs_size_t file_count /* in:obj */,
+                const zoidfs_ofs_t file_starts[] /* in:arr:size=-1 */,
+                zoidfs_size_t file_sizes[] /* inout:arr:size=-2 */);
+
+int Pzoidfs_write(const zoidfs_handle_t * handle /* in:ptr */,
+                 zoidfs_size_t mem_count /* in:obj */,
+                 const void * mem_starts[] /* in:arr2d:size=+1:zerocopy */,
+                 const zoidfs_size_t mem_sizes[] /* in:arr:size=-2 */,
+                 zoidfs_size_t file_count /* in:obj */,
+                 const zoidfs_ofs_t file_starts[] /* in:arr:size=-1 */,
+                 zoidfs_size_t file_sizes[] /* inout:arr:size=-2 */);
+
+int Pzoidfs_commit(const zoidfs_handle_t * handle /* in:ptr */);
+
+int Pzoidfs_create(const zoidfs_handle_t * parent_handle /* in:ptr:nullok */,
+                  const char * component_name /* in:str:nullok */,
+                  const char * full_path /* in:str:nullok */,
+                  const zoidfs_sattr_t * attr /* in:ptr */,
+                  zoidfs_handle_t * handle /* out:ptr */,
+                  int * created /* out:ptr:nullok */);
+
+int Pzoidfs_remove(const zoidfs_handle_t * parent_handle /* in:ptr:nullok */,
+                  const char * component_name /* in:str:nullok */,
+                  const char * full_path /* in:str:nullok */,
+                  zoidfs_cache_hint_t * parent_hint /* out:ptr:nullok */);
+
+int Pzoidfs_rename(const zoidfs_handle_t * from_parent_handle /* in:ptr:nullok */,
+                  const char * from_component_name /* in:str:nullok */,
+                  const char * from_full_path /* in:str:nullok */,
+                  const zoidfs_handle_t * to_parent_handle /* in:ptr:nullok */,
+                  const char * to_component_name /* in:str:nullok */,
+                  const char * to_full_path /* in:str:nullok */,
+                  zoidfs_cache_hint_t * from_parent_hint /* out:ptr:nullok */,
+                  zoidfs_cache_hint_t * to_parent_hint /* out:ptr:nullok */);
+
+int Pzoidfs_link(const zoidfs_handle_t * from_parent_handle /* in:ptr:nullok */,
+                const char * from_component_name /* in:str:nullok */,
+                const char * from_full_path /* in:str:nullok */,
+                const zoidfs_handle_t * to_parent_handle /* in:ptr:nullok */,
+                const char * to_component_name /* in:str:nullok */,
+                const char * to_full_path /* in:str:nullok */,
+                zoidfs_cache_hint_t * from_parent_hint /* out:ptr:nullok */,
+                zoidfs_cache_hint_t * to_parent_hint /* out:ptr:nullok */);
+
+int Pzoidfs_symlink(const zoidfs_handle_t * from_parent_handle /* in:ptr:nullok */,
+                   const char * from_component_name /* in:str:nullok */,
+                   const char * from_full_path /* in:str:nullok */,
+                   const zoidfs_handle_t * to_parent_handle /* in:ptr:nullok */,
+                   const char * to_component_name /* in:str:nullok */,
+                   const char * to_full_path /* in:str:nullok */,
+                   const zoidfs_sattr_t * attr /* in:ptr */,
+                   zoidfs_cache_hint_t * from_parent_hint /* out:ptr:nullok */,
+                   zoidfs_cache_hint_t * to_parent_hint /* out:ptr:nullok */);
+
+int Pzoidfs_mkdir(const zoidfs_handle_t * parent_handle /* in:ptr:nullok */,
+                 const char * component_name /* in:str:nullok */,
+                 const char * full_path /* in:str:nullok */,
+                 const zoidfs_sattr_t * attr /* in:ptr */,
+                 zoidfs_cache_hint_t * parent_hint /* out:ptr:nullok */);
+
+int Pzoidfs_readdir(const zoidfs_handle_t * parent_handle /* in:ptr */,
+                   zoidfs_dirent_cookie_t cookie /* in:obj */,
+                   size_t * entry_count /* inout:ptr */,
+                   zoidfs_dirent_t * entries /* out:arr:size=-1 */,
+                   uint32_t flags /* in:obj */,
+                   zoidfs_cache_hint_t * parent_hint /* out:ptr:nullok */);
+
+int Pzoidfs_resize(const zoidfs_handle_t * handle /* in:ptr */,
                   uint64_t size /* in:obj */);
 
 
