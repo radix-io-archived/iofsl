@@ -57,7 +57,7 @@ ifdef DISPATCH_LIBSYSIO
         )
    CPPFLAGS += @SYSIO_CPPFLAGS@ -D_LARGEFILE64_SOURCE -DHAVE_POSIX_1003_READLINK -D__USE_LARGEFILE64
    CFLAGS += @SYSIO_CFLAGS@ -D_LARGEFILE64_SOURCE -DHAVE_POSIX_1003_READLINK -D__USE_LARGEFILE64
-   LDFLAGS += @SYSIO_LDFLAGS@ @SYSIO_LIBS@
+   LDFLAGS += @SYSIO_LDFLAGS@ @SYSIO_LIBS@ -L/home/copej/mac-copej/work/anl/mcs/iofwd-64bit/pvfs-2.8.1/lib -lpvfs2 -lcrypto
 endif
 
 # always build posix2 dispatcher
@@ -102,6 +102,18 @@ MODULE_SOURCES_zoidfsclient := $(addprefix client/, \
 	bmi_comm.c \
 	zoidfs_xdr.c \
    )
+
+#
+# ZoidFS API trace lib example
+#
+MODULE_ARCHIVES += zoidfsclienttrace
+MODULE_SOURCES_zoidfsclienttrace := $(addprefix client/, \
+    zoidfsclienttrace.c \
+    zoidfsclient.c \
+    bmi_comm.c \
+    zoidfs_xdr.c \
+    )
+ADDINTLIBS_zoidfsclienttrace += zoidfsclient
 
 # Automatically add -I$(thismoduledir) to CPPFLAGS
 MODULE_CONTAINSINCLUDE := 1
