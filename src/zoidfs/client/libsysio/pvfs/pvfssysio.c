@@ -1758,7 +1758,7 @@ static int pvfs_inop_link(struct pnode *old, struct pnode *new)
     /* PVFS2 does not support hard links */
 
     SYSIO_PVFS_FEXIT();
-	return 0;
+	return -EPERM;
 }
 
 /*
