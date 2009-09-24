@@ -64,13 +64,6 @@ static char zoidfs_sysio_root_handle_data[SYSIO_HANDLE_DATA_SIZE];
 static struct file_handle_info zoidfs_sysio_root_handle = {NULL, zoidfs_sysio_root_handle_data, SYSIO_HANDLE_DATA_SIZE};
 
 /*
- * user specified zoidfs handle and path
- */
-static char zoidfs_sysio_mfs_path[4096];
-static char zoidfs_sysio_mfs_handle_data[SYSIO_HANDLE_DATA_SIZE];
-static struct file_handle_info zoidfs_sysio_mfs_handle = {NULL, zoidfs_sysio_mfs_handle_data, SYSIO_HANDLE_DATA_SIZE};
-
-/*
  * zoidfs sysio trace and debug tools
  */
 
@@ -127,6 +120,20 @@ static struct file_handle_info zoidfs_sysio_mfs_handle = {NULL, zoidfs_sysio_mfs
 #ifndef  _ZOIDFS_SYSIO_THANDLE_BUFFER_SIZE
 #define  _ZOIDFS_SYSIO_THANDLE_BUFFER_SIZE (2 * ZOIDFS_HANDLE_PAYLOAD_SIZE + 1)
 #endif /*  _ZOIDFS_SYSIO_THANDLE_BUFFER_SIZE */
+
+static inline char * zoidfs_sysio_trim_root_path(const char * path)
+{
+    if(strncmp(path, zoidfs_sysio_root_path, strlen(zoidfs_sysio_root_path)) == 0)
+    {
+        /* if we are looking for the roor path */
+        if(strlen(path) == strlen(zoidfs_sysio_root_path))
+        {
+            return "/";
+        }
+        return (char *) &path[strlen(zoidfs_sysio_root_path)];
+    }
+    return (char *) path;
+}
 
 /*
  * Make sure that the full path is an absolute path
@@ -811,14 +818,22 @@ static int zoidfs_sysio_lookup(const zoidfs_handle_t *parent_handle,
     if (full_path) 
     {
 		int ret = 0;
+        char * full_path_trim = zoidfs_sysio_trim_root_path(full_path);
 		/*
 		 * sysio parent handle
 		 */
 		static char h_data[SYSIO_HANDLE_DATA_SIZE];
 		struct file_handle_info h = {NULL, h_data, SYSIO_HANDLE_DATA_SIZE};
+
+        if(!full_path_trim)
+        {
+            ZFSSYSIO_INFO("zoidfs_sysio_lookup: invalid full path.");
+            ZFSSYSIO_TRACE_EXIT;
+            return ZFSERR_OTHER;
+        }
 	
         /* check the format of the path */
-        if(!zoidfs_sysio_valid_full_path(full_path))
+        if(!zoidfs_sysio_valid_full_path(full_path_trim))
         {
             ZFSSYSIO_INFO("zoidfs_sysio_lookup: invalid full path format.");
             ZFSSYSIO_TRACE_EXIT;
@@ -828,7 +843,7 @@ static int zoidfs_sysio_lookup(const zoidfs_handle_t *parent_handle,
 		/*
 		 * Lookup the exported file info for the parent handle
 		 */
-		ret = SYSIO_INTERFACE_NAME(_zfs_sysio_fhi_lookup)(&zoidfs_sysio_root_handle, full_path, 0, &h);
+		ret = SYSIO_INTERFACE_NAME(_zfs_sysio_fhi_lookup)(&zoidfs_sysio_root_handle, full_path_trim, 0, &h);
 		if(ret < 0)
 		{
 			ZFSSYSIO_TRACE_EXIT;
@@ -899,6 +914,7 @@ static int zoidfs_sysio_remove(const zoidfs_handle_t *parent_handle,
 	static char sysio_fp_handle_data[SYSIO_HANDLE_DATA_SIZE];
 	struct file_handle_info sysio_fp_handle = {NULL, sysio_fp_handle_data, SYSIO_HANDLE_DATA_SIZE};
 	struct stat64 stbuf;
+    char * full_path_trim = NULL;
 
 	ZFSSYSIO_TRACE_ENTER;
 
@@ -915,16 +931,25 @@ static int zoidfs_sysio_remove(const zoidfs_handle_t *parent_handle,
 	if(full_path)
 	{
 		int ret = 0;
-		
+
+        full_path_trim = zoidfs_sysio_trim_root_path(full_path);
+
+        if(!full_path_trim)
+        {
+            ZFSSYSIO_INFO("zoidfs_sysio_lookup: invalid full path.");
+            ZFSSYSIO_TRACE_EXIT;
+            return ZFSERR_OTHER;
+        }
+	
         /* check the format of the path */
-        if(!zoidfs_sysio_valid_full_path(full_path))
+        if(!zoidfs_sysio_valid_full_path(full_path_trim))
         {
             ZFSSYSIO_INFO("zoidfs_sysio_remove: invalid full path format.");
             ZFSSYSIO_TRACE_EXIT;
             return ZFSERR_OTHER;
         }
 	
-		ret = SYSIO_INTERFACE_NAME(_zfs_sysio_fhi_lookup)(&zoidfs_sysio_root_handle, full_path, 0, &sysio_fp_handle);
+		ret = SYSIO_INTERFACE_NAME(_zfs_sysio_fhi_lookup)(&zoidfs_sysio_root_handle, full_path_trim, 0, &sysio_fp_handle);
 		if (ret < 0) {
 			ZFSSYSIO_PERROR("fhi_lookup");
 			
@@ -932,7 +957,7 @@ static int zoidfs_sysio_remove(const zoidfs_handle_t *parent_handle,
 			return sysio_err_to_zfs_err(errno);
 		}
 		if ((size_t )ret >= SYSIO_HANDLE_DATA_SIZE) {
-			ZFSSYSIO_INFO("%s: handle data too large", component_name);
+			ZFSSYSIO_INFO("%s: handle data too large", full_path);
 			
 			ZFSSYSIO_TRACE_EXIT;
 			return sysio_err_to_zfs_err(errno);
@@ -974,9 +999,9 @@ static int zoidfs_sysio_remove(const zoidfs_handle_t *parent_handle,
 	 */
 	if(S_ISDIR(stbuf.st_mode))
 	{
-		if (full_path)
+		if (full_path_trim)
 		{
-			where.fhida_path = full_path;
+			where.fhida_path = full_path_trim;
 			where.fhida_dir = &zoidfs_sysio_root_handle;
 		}
 		else {
@@ -998,9 +1023,9 @@ static int zoidfs_sysio_remove(const zoidfs_handle_t *parent_handle,
 	 */
 	else
 	{
-		if (full_path)
+		if (full_path_trim)
 		{
-			where.fhida_path = full_path;
+			where.fhida_path = full_path_trim;
 			where.fhida_dir = &zoidfs_sysio_root_handle;
 		}
 		else
@@ -1097,9 +1122,17 @@ static int zoidfs_sysio_create(const zoidfs_handle_t *parent_handle,
 		int ret = 0;
 		static char sysio_component_handle_data[SYSIO_HANDLE_DATA_SIZE];
 		struct file_handle_info sysio_component_handle = {NULL, sysio_component_handle_data, SYSIO_HANDLE_DATA_SIZE};
+        char * full_path_trim = zoidfs_sysio_trim_root_path(full_path);
+
+        if(!full_path_trim)
+        {
+            ZFSSYSIO_INFO("zoidfs_sysio_lookup: invalid full path.");
+            ZFSSYSIO_TRACE_EXIT;
+            return ZFSERR_OTHER;
+        }
 
         /* check the format of the path */
-        if(!zoidfs_sysio_valid_full_path(full_path))
+        if(!zoidfs_sysio_valid_full_path(full_path_trim))
         {
             ZFSSYSIO_INFO("zoidfs_sysio_create: invalid full path format.");
             ZFSSYSIO_TRACE_EXIT;
@@ -1109,7 +1142,7 @@ static int zoidfs_sysio_create(const zoidfs_handle_t *parent_handle,
 		/*
 		 * The file exists... don't create it and return the handle w/ created == 0 
 		 */
-		ret = SYSIO_INTERFACE_NAME(_zfs_sysio_fhi_lookup)(&zoidfs_sysio_root_handle, full_path, 0, &sysio_component_handle);
+		ret = SYSIO_INTERFACE_NAME(_zfs_sysio_fhi_lookup)(&zoidfs_sysio_root_handle, full_path_trim, 0, &sysio_component_handle);
 		if(ret >= 0)
 		{
             *created = 0;
@@ -1118,12 +1151,12 @@ static int zoidfs_sysio_create(const zoidfs_handle_t *parent_handle,
             return ZFS_OK;
 		}
 		
-        where.fhida_path = full_path;
+        where.fhida_path = full_path_trim;
 		where.fhida_dir = &zoidfs_sysio_root_handle;
 
         ret = SYSIO_INTERFACE_NAME(_zfs_sysio_fhi_create)(&where, local_sattr.mode);
         if (ret < 0) {
-            ZFSSYSIO_INFO("zoidfs_sysio_create: fhi_create() failed, full path = %s.", where.fhida_path);
+            ZFSSYSIO_INFO("zoidfs_sysio_create: fhi_create() failed, full path = %s.", full_path);
 			ZFSSYSIO_PERROR("zoidfs_sysio_create");
             *created = 0;
             return sysio_err_to_zfs_err(errno);
@@ -1132,7 +1165,7 @@ static int zoidfs_sysio_create(const zoidfs_handle_t *parent_handle,
 		/*
 		 * get the handle for the file just created
 		 */
-		ret = SYSIO_INTERFACE_NAME(_zfs_sysio_fhi_lookup)(&zoidfs_sysio_root_handle, full_path, 0, &sysio_component_handle);
+		ret = SYSIO_INTERFACE_NAME(_zfs_sysio_fhi_lookup)(&zoidfs_sysio_root_handle, full_path_trim, 0, &sysio_component_handle);
 		if(ret >= 0)
 		{
 			*created = 1;
@@ -1259,26 +1292,44 @@ static int zoidfs_sysio_rename(const zoidfs_handle_t *from_parent_handle,
 	 */
 	if(from_full_path)
 	{
+        char * from_full_path_trim = zoidfs_sysio_trim_root_path(from_full_path);
+
+        if(!from_full_path_trim)
+        {
+            ZFSSYSIO_INFO("zoidfs_sysio_rename: invalid full path.");
+            ZFSSYSIO_TRACE_EXIT;
+            return ZFSERR_OTHER;
+        }
+
         /* check the format of the path */
-        if(!zoidfs_sysio_valid_full_path(from_full_path))
+        if(!zoidfs_sysio_valid_full_path(from_full_path_trim))
         {
             ZFSSYSIO_INFO("zoidfs_sysio_rename: invalid from full path format.");
             ZFSSYSIO_TRACE_EXIT;
             return ZFSERR_OTHER;
         }
-        where_from.fhida_path = from_full_path;
+        where_from.fhida_path = from_full_path_trim;
 		where_from.fhida_dir = &zoidfs_sysio_root_handle;
 	}
 	if(to_full_path)
 	{
+        char * to_full_path_trim = zoidfs_sysio_trim_root_path(to_full_path);
+
+        if(!to_full_path_trim)
+        {
+            ZFSSYSIO_INFO("zoidfs_sysio_rename: invalid full path.");
+            ZFSSYSIO_TRACE_EXIT;
+            return ZFSERR_OTHER;
+        }
+
         /* check the format of the path */
-        if(!zoidfs_sysio_valid_full_path(to_full_path))
+        if(!zoidfs_sysio_valid_full_path(to_full_path_trim))
         {
             ZFSSYSIO_INFO("zoidfs_sysio_rename: invalid to full path format.");
             ZFSSYSIO_TRACE_EXIT;
             return ZFSERR_OTHER;
         }
-        where_to.fhida_path = to_full_path;
+        where_to.fhida_path = to_full_path_trim;
 		where_to.fhida_dir = &zoidfs_sysio_root_handle;
 	}
 	if(from_component_name)
@@ -1347,37 +1398,52 @@ static int zoidfs_sysio_link(const zoidfs_handle_t *from_parent_handle,
 	 */
 	if(from_full_path)
 	{
+        char * from_full_path_trim = zoidfs_sysio_trim_root_path(from_full_path);
+
+        if(!from_full_path_trim)
+        {
+            ZFSSYSIO_INFO("zoidfs_sysio_link: invalid full path.");
+            ZFSSYSIO_TRACE_EXIT;
+            return ZFSERR_OTHER;
+        }
+
         /* check the format of the path */
-        if(!zoidfs_sysio_valid_full_path(from_full_path))
+        if(!zoidfs_sysio_valid_full_path(from_full_path_trim))
         {
             ZFSSYSIO_INFO("zoidfs_sysio_link: invalid from full path format.");
             ZFSSYSIO_TRACE_EXIT;
             return ZFSERR_OTHER;
         }
-        ZFSSYSIO_INFO("from = %s", from_full_path);
-        where_from.fhida_path = from_full_path;
+        where_from.fhida_path = from_full_path_trim;
 		where_from.fhida_dir = &zoidfs_sysio_root_handle;
 	}
 	if(to_full_path)
 	{
+        char * to_full_path_trim = zoidfs_sysio_trim_root_path(to_full_path);
         zoidfs_handle_t fhandle;
 
+        if(!to_full_path_trim)
+        {
+            ZFSSYSIO_INFO("zoidfs_sysio_link: invalid full path.");
+            ZFSSYSIO_TRACE_EXIT;
+            return ZFSERR_OTHER;
+        }
+
         /* If the file exists, return an error */        
-        if(zoidfs_lookup(NULL, NULL, to_full_path, &fhandle) == ZFS_OK)
+        if(zoidfs_lookup(NULL, NULL, to_full_path_trim, &fhandle) == ZFS_OK)
         {
 		    ZFSSYSIO_INFO("zoidfs_sysio_link: target file already exists");
             return sysio_err_to_zfs_err(EEXIST);
         }
 
         /* check the format of the path */
-        if(!zoidfs_sysio_valid_full_path(to_full_path))
+        if(!zoidfs_sysio_valid_full_path(to_full_path_trim))
         {
             ZFSSYSIO_INFO("zoidfs_sysio_link: invalid to full path format.");
             ZFSSYSIO_TRACE_EXIT;
             return ZFSERR_OTHER;
         }
-        ZFSSYSIO_INFO("to = %s", to_full_path);
-        where_to.fhida_path = to_full_path;
+        where_to.fhida_path = to_full_path_trim;
 		where_to.fhida_dir = &zoidfs_sysio_root_handle;
 	}
 	if(from_component_name)
@@ -1460,24 +1526,32 @@ static int zoidfs_sysio_symlink(const zoidfs_handle_t *from_parent_handle,
 	if(to_full_path)
 	{
         zoidfs_handle_t fhandle;
+        char * to_full_path_trim = zoidfs_sysio_trim_root_path(to_full_path);
+
+        if(!to_full_path_trim)
+        {
+            ZFSSYSIO_INFO("zoidfs_sysio_symlink: invalid full path.");
+            ZFSSYSIO_TRACE_EXIT;
+            return ZFSERR_OTHER;
+        }
 
         /* If the file exists, return an error */        
-        if(zoidfs_lookup(NULL, NULL, to_full_path, &fhandle) == ZFS_OK)
+        if(zoidfs_lookup(NULL, NULL, to_full_path_trim, &fhandle) == ZFS_OK)
         {
 		    ZFSSYSIO_INFO("zoidfs_sysio_symlink: target file already exists");
             return sysio_err_to_zfs_err(EEXIST);
         }
 
         /* check the format of the path */
-        if(!zoidfs_sysio_valid_full_path(to_full_path))
+        if(!zoidfs_sysio_valid_full_path(to_full_path_trim))
         {
             ZFSSYSIO_INFO("zoidfs_sysio_symlink: invalid to full path format.");
             ZFSSYSIO_TRACE_EXIT;
             return ZFSERR_OTHER;
         }
-        where_to.fhida_path = to_full_path;
+        where_to.fhida_path = to_full_path_trim;
 		where_to.fhida_dir = &zoidfs_sysio_root_handle;
-		path_to = to_full_path;
+		path_to = to_full_path_trim;
 	}
 	if(to_component_name)
 	{
@@ -1497,16 +1571,25 @@ static int zoidfs_sysio_symlink(const zoidfs_handle_t *from_parent_handle,
 	}
 	if(from_full_path)
 	{
+        char * from_full_path_trim = zoidfs_sysio_trim_root_path(from_full_path);
+
+        if(!from_full_path_trim)
+        {
+            ZFSSYSIO_INFO("zoidfs_sysio_symlink: invalid full path.");
+            ZFSSYSIO_TRACE_EXIT;
+            return ZFSERR_OTHER;
+        }
+
         /* check the format of the path */
-        if(!zoidfs_sysio_valid_full_path(from_full_path))
+        if(!zoidfs_sysio_valid_full_path(from_full_path_trim))
         {
             ZFSSYSIO_INFO("zoidfs_sysio_symlink: invalid from full path format.");
             ZFSSYSIO_TRACE_EXIT;
             return ZFSERR_OTHER;
         }
-        where_from.fhida_path = from_full_path;
+        where_from.fhida_path = from_full_path_trim;
 		where_from.fhida_dir = &zoidfs_sysio_root_handle;
-		path_from = from_full_path;
+		path_from = from_full_path_trim;
 	}
 	if(from_component_name)
 	{
@@ -1557,20 +1640,28 @@ static int zoidfs_sysio_mkdir(const zoidfs_handle_t *parent_handle,
 
     if (full_path)
 	{
+        char * full_path_trim = zoidfs_sysio_trim_root_path(full_path);
 		/*
 		 * Assume the base path to export is "/"
 		 */
 		int ret = 0;
-		
+
+        if(!full_path_trim)
+        {
+            ZFSSYSIO_INFO("zoidfs_sysio_mkdir: invalid full path.");
+            ZFSSYSIO_TRACE_EXIT;
+            return ZFSERR_OTHER;
+        }
+	
         /* check the format of the path */
-        if(!zoidfs_sysio_valid_full_path(full_path))
+        if(!zoidfs_sysio_valid_full_path(full_path_trim))
         {
             ZFSSYSIO_INFO("zoidfs_sysio_mkdir: invalid full path format.");
             ZFSSYSIO_TRACE_EXIT;
             return ZFSERR_OTHER;
         }
 
-        where.fhida_path = full_path;
+        where.fhida_path = full_path_trim;
 		where.fhida_dir = &zoidfs_sysio_root_handle;
 
         ret = SYSIO_INTERFACE_NAME(_zfs_sysio_fhi_mkdir)(&where, sattr->mode);
@@ -2120,8 +2211,7 @@ static int zoidfs_sysio_init(void) {
 	{
 		char arg[256];
         int err = 0;
-		int mfs_key = 1;
-		int root_key = 2;
+		int root_key = 1;
 		char * mfs = getenv("ZOIDFS_SYSIO_MOUNT");
 		char * mfs_root = getenv("ZOIDFS_SYSIO_MOUNT_ROOT");
 		char * sysio_driver = getenv("ZOIDFS_SYSIO_DRIVER");
@@ -2132,20 +2222,12 @@ static int zoidfs_sysio_init(void) {
 			ZFSSYSIO_TRACE_EXIT;
 			return err;
         }
-        else
-        {
-            ZFSSYSIO_INFO("mfs = %s", mfs);
-        }
 
         if(!sysio_driver)
         {
 			ZFSSYSIO_INFO("zoidfs_sysio_init() failed, ZOIDFS_SYSIO_DRIVER env variable was not available");
 			ZFSSYSIO_TRACE_EXIT;
 			return err;
-        }
-        else
-        {
-            ZFSSYSIO_INFO("sysio_driver = %s", sysio_driver);
         }
 
 		/*
@@ -2166,10 +2248,6 @@ static int zoidfs_sysio_init(void) {
 			    ZFSSYSIO_INFO("zoidfs_sysio_init() failed, ZOIDFS_SYSIO_MOUNT_ROOT env variable was not available");
     			ZFSSYSIO_TRACE_EXIT;
 	    		return err;
-            }
-            else
-            {
-                ZFSSYSIO_INFO("mfs_root = %s", mfs_root);
             }
 
             start_pvfs_sysio_driver(mfs, mfs_root);
@@ -2201,13 +2279,6 @@ static int zoidfs_sysio_init(void) {
 		    	return err;
 		    }
         }
-	
-		/*
-		 * Export the root and mounted fs
-		 */
-		strcpy(zoidfs_sysio_mfs_path, mfs);
-		/*err = zoidfs_sysio_export(&mfs_key, mfs, &zoidfs_sysio_mfs_handle);
-		err = zoidfs_sysio_rootof(&zoidfs_sysio_mfs_handle);*/
 	
 		strcpy(zoidfs_sysio_root_path, mfs_root);
 		err = zoidfs_sysio_export(&root_key, mfs_root, &zoidfs_sysio_root_handle);
@@ -2241,7 +2312,6 @@ static int zoidfs_sysio_finalize(void) {
     if(sysio_dispatcher_initialized && sysio_dispatcher_ref_count == 1)
     {
 	    zoidfs_sysio_unexport(&zoidfs_sysio_root_handle);
-	    /* zoidfs_sysio_unexport(&zoidfs_sysio_mfs_handle); */
         _sysio_shutdown();
         sysio_dispatcher_initialized = 0;
     }
@@ -2274,7 +2344,6 @@ static int zoidfs_sysio_resolve_path(const char * local_path,
 		fs_path[fs_path_max - 1] = '\0';
 	}
 
-   ZFSSYSIO_INFO("fs_path = %s, local_path = %s", fs_path, local_path); 
 	/*
 	 * If the handle buffer is available, copy the correct handle
 	 */
