@@ -438,7 +438,7 @@ int zoidfs_sysio_export(int * key, char * base_path, struct file_handle_info * r
      */
     ret = SYSIO_INTERFACE_NAME(_zfs_sysio_fhi_export)(key, sizeof(*key), base_path, 0, &(root_handle->fhi_export));
     if (ret) {
-	    ZFSSYSIO_INFO("zoidfs_sysio_export: fhi_export() failed.");
+	    ZFSSYSIO_INFO("zoidfs_sysio_export: fhi_export() failed. key = %i, base_path = %s", *key, base_path);
 		ZFSSYSIO_TRACE_EXIT;
         return sysio_err_to_zfs_err(errno);
     }
@@ -488,7 +488,7 @@ int zoidfs_sysio_rootof(struct file_handle_info * root_handle)
      */
     ret = SYSIO_INTERFACE_NAME(_zfs_sysio_fhi_root_of)(root_handle->fhi_export, root_handle);
     if (ret < 0) {
-	ZFSSYSIO_INFO("zoidfs_libsysio_rootof: fhi_root_of() failed.");
+	ZFSSYSIO_INFO("zoidfs_sysio_rootof: fhi_root_of() failed.");
 		ZFSSYSIO_TRACE_EXIT;
         return sysio_err_to_zfs_err(errno);
     }
@@ -2252,7 +2252,7 @@ static int zoidfs_sysio_init(void) {
 
             start_pvfs_sysio_driver(mfs, mfs_root);
         }
-        else
+        else if(strcmp(sysio_driver, "native") == 0)
         {
             err = _sysio_init();
             if(err)
@@ -2270,7 +2270,7 @@ static int zoidfs_sysio_init(void) {
 	    		return err;
 		    }
 	
-		    sprintf(arg, "{mnt,dev=\"%s:/\",dir=/,fl=2}", sysio_driver);
+		    sprintf(arg, "{mnt,dev=\"%s:%s\",dir=%s,fl=2}", sysio_driver, mfs_root, mfs);
 		    err = _sysio_boot("namespace", arg);
 		    if (err)
 		    {
@@ -2279,10 +2279,24 @@ static int zoidfs_sysio_init(void) {
 		    	return err;
 		    }
         }
-	
+
+        /* export the root handle */	
 		strcpy(zoidfs_sysio_root_path, mfs_root);
-		err = zoidfs_sysio_export(&root_key, mfs_root, &zoidfs_sysio_root_handle);
+		err = zoidfs_sysio_export(&root_key, mfs, &zoidfs_sysio_root_handle);
+        if(err)
+        {
+			    ZFSSYSIO_INFO("zoidfs_sysio_init() failed: zoidfs_sysio_export() failed");
+			    ZFSSYSIO_TRACE_EXIT;
+		    	return err;
+        }
+
 		err = zoidfs_sysio_rootof(&zoidfs_sysio_root_handle);
+        if(err)
+        {
+			    ZFSSYSIO_INFO("zoidfs_sysio_init() failed: zoidfs_sysio_rootof() failed");
+			    ZFSSYSIO_TRACE_EXIT;
+		    	return err;
+        }
 		
 		sysio_dispatcher_initialized = 1;
 	}
