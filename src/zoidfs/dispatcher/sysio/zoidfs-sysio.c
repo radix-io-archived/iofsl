@@ -69,8 +69,8 @@ static char zfs_sysio_driver[32];
  */
 
  
-/*#define ZOIDFS_SYSIO_DEBUG
-#define ZFSSYSIO_TRACE_ENABLED*/
+//#define ZOIDFS_SYSIO_DEBUG
+//#define ZFSSYSIO_TRACE_ENABLED
 
 
 /*
@@ -543,7 +543,7 @@ static int zoidfs_sysio_getattr(const zoidfs_handle_t *handle, zoidfs_attr_t *at
 	 * and initialize the handle
 	 */ 
 	zoidfs_handle_to_sysio_handle(handle, &sysio_handle);
-	
+
 	/*
 	 * execute the sysio getattr call
 	 */
@@ -668,7 +668,10 @@ static int zoidfs_sysio_setattr(const zoidfs_handle_t *handle, const zoidfs_satt
 	 * and initialize the handle
 	 */ 
 	zoidfs_handle_to_sysio_handle(handle, &sysio_handle);
-	
+
+    /* erase the attr */	
+    memset(&sysio_sattr, 0, sizeof(sysio_sattr));
+
 	/*
 	 * Set the mode
 	 */
@@ -735,6 +738,7 @@ static int zoidfs_sysio_setattr(const zoidfs_handle_t *handle, const zoidfs_satt
 	 */
 	if(setAttrs)
 	{
+        
 		ret = SYSIO_INTERFACE_NAME(_zfs_sysio_fhi_setattr)(&sysio_handle, &sysio_sattr);
 		if (ret) {
 			ZFSSYSIO_INFO("zoidfs_sysio_setattr: fhi_setattr() failed.");
@@ -1880,6 +1884,9 @@ static int zoidfs_sysio_resize(const zoidfs_handle_t *handle, uint64_t size)
     struct file_handle_info_sattr sattr;
 
 	zoidfs_handle_to_sysio_handle(handle, &sysio_component_handle);
+
+    /* erase the attr */
+    memset(&sattr, 0, sizeof(sattr));
 
 	ZFSSYSIO_TRACE_ENTER;
 
