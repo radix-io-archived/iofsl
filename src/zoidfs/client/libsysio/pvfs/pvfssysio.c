@@ -56,7 +56,7 @@
  */
 
 
-//#define DEBUG_SYSIO_PVFS 
+#define DEBUG_SYSIO_PVFS 
 #ifdef DEBUG_SYSIO_PVFS
 #define SYSIO_PVFS_FENTER()                                                             \
 do{                                                                                     \
@@ -1498,7 +1498,7 @@ static int pvfs_inop_setattr(struct pnode *pno, unsigned mask, struct intnl_stat
 
     /* lookup the files in PVFS */
     err = PVFS_sys_lookup(ref.fs_id, fs_path, &creds,
-                       &lookup_resp, PVFS2_LOOKUP_LINK_NO_FOLLOW,
+                       &lookup_resp, PVFS2_LOOKUP_LINK_FOLLOW,
                         NULL);
     if(!err)
     {
@@ -1509,16 +1509,6 @@ static int pvfs_inop_setattr(struct pnode *pno, unsigned mask, struct intnl_stat
 
         if(mask & SETATTR_LEN)
         {
-            /* follow the link so that we can change the size of the orig file */
-            err = PVFS_sys_lookup(ref.fs_id, fs_path, &creds,
-                       &lookup_resp, PVFS2_LOOKUP_LINK_FOLLOW,
-                        NULL);
-            if(err < 0)
-            {
-                SYSIO_PVFS_FEXIT();
-                return -pvfs_error_to_sysio_error(err);
-            }
-
             /* change the file size */
             err = PVFS_sys_truncate(lookup_resp.ref, stbuf->st_size, &creds, NULL);
             if(err < 0)
@@ -1527,77 +1517,49 @@ static int pvfs_inop_setattr(struct pnode *pno, unsigned mask, struct intnl_stat
                 return -pvfs_error_to_sysio_error(err);
             }
         }
+        {
+            memset(&pattr, 0, sizeof(pattr));
+            /* convert the sysio mask to zoidfs */
+            if(mask & SETATTR_MODE)
+            {
+                pattr.mask = pattr.mask | PVFS_ATTR_SYS_PERM;
+                pattr.perms = stbuf->st_mode & 0777;
+                SYSIO_PVFS_FDEBUG("set mode: %o %o", pattr.perms, stbuf->st_mode & 0777);
+            }
+            if(mask & SETATTR_UID)
+            {
+                pattr.mask = pattr.mask | PVFS_ATTR_SYS_UID;
+                pattr.owner = stbuf->st_uid;
+                SYSIO_PVFS_FDEBUG("set gid: %i %i", pattr.owner, stbuf->st_uid);
+            }
+    
+            if(mask & SETATTR_GID)
+            {
+                pattr.mask = pattr.mask | PVFS_ATTR_SYS_GID;
+                pattr.group = stbuf->st_gid;
+                SYSIO_PVFS_FDEBUG("set gid: %i %i", pattr.group, stbuf->st_gid);
+            }
 
-        /* convert the sysio mask to zoidfs */
-        if(mask & SETATTR_MODE)
-        {
-            pattr.mask = pattr.mask | PVFS_ATTR_SYS_PERM;
-            pattr.perms = stbuf->st_mode & 0777;
-            SYSIO_PVFS_FDEBUG("set mode: %o %o", pattr.perms, stbuf->st_mode & 0777);
-        }
+            if(mask & SETATTR_ATIME)
+            {
+                pattr.mask = pattr.mask | PVFS_ATTR_SYS_ATIME;
+                pattr.atime = stbuf->st_atime;
+                SYSIO_PVFS_FDEBUG("set atime: %i %i", pattr.atime, stbuf->st_atime);
+            }
+    
+            if(mask & SETATTR_MTIME)
+            {
+                pattr.mask = pattr.mask | PVFS_ATTR_SYS_MTIME;
+                pattr.mtime = stbuf->st_mtime;
+                SYSIO_PVFS_FDEBUG("set mtime: %i %i", pattr.mtime, stbuf->st_mtime);
+            }
 
-        if(mask & SETATTR_UID)
-        {
-            pattr.mask = pattr.mask | PVFS_ATTR_SYS_UID;
-            pattr.owner = stbuf->st_uid;
-            SYSIO_PVFS_FDEBUG("set gid: %i %i", pattr.owner, stbuf->st_uid);
-        }
-
-        if(mask & SETATTR_GID)
-        {
-            pattr.mask = pattr.mask | PVFS_ATTR_SYS_GID;
-            pattr.group = stbuf->st_gid;
-            SYSIO_PVFS_FDEBUG("set gid: %i %i", pattr.group, stbuf->st_gid);
-        }
-
-        if(mask & SETATTR_ATIME)
-        {
-            pattr.mask = pattr.mask | PVFS_ATTR_SYS_ATIME;
-            pattr.atime = stbuf->st_atime;
-            SYSIO_PVFS_FDEBUG("set atime: %i %i", pattr.atime, stbuf->st_atime);
-        }
-
-        if(mask & SETATTR_MTIME)
-        {
-            pattr.mask = pattr.mask | PVFS_ATTR_SYS_MTIME;
-            pattr.mtime = stbuf->st_mtime;
-            SYSIO_PVFS_FDEBUG("set mtime: %i %i", pattr.mtime, stbuf->st_mtime);
-        }
-
-        err = PVFS_sys_setattr(lookup_resp.ref, pattr, &creds, NULL);
-        if(err)
-        {
-            SYSIO_PVFS_FEXIT();
-            return -pvfs_error_to_sysio_error(err);
-        }
-
-        PVFS_sysresp_getattr getattr_resp;
-        err = PVFS_sys_getattr(lookup_resp.ref, pattr.mask, &creds, &getattr_resp, NULL);
-        if(err)
-        {
-            SYSIO_PVFS_FEXIT();
-            return -pvfs_error_to_sysio_error(err);
-        }
-
-        if(pattr.mask & PVFS_ATTR_SYS_UID)
-        {
-            SYSIO_PVFS_FDEBUG("uid check: %i %i", pattr.owner, getattr_resp.attr.owner);
-        }
-        if(pattr.mask & PVFS_ATTR_SYS_GID)
-        {
-            SYSIO_PVFS_FDEBUG("gid check: %i %i", pattr.group, getattr_resp.attr.group);
-        }
-        if(pattr.mask & PVFS_ATTR_SYS_ATIME)
-        {
-            SYSIO_PVFS_FDEBUG("atime check: %i %i", pattr.atime, getattr_resp.attr.atime);
-        }
-        if(pattr.mask & PVFS_ATTR_SYS_MTIME)
-        {
-            SYSIO_PVFS_FDEBUG("mtime check: %i %i", pattr.mtime, getattr_resp.attr.mtime);
-        }
-        if(pattr.mask & PVFS_ATTR_SYS_PERM)
-        {
-            SYSIO_PVFS_FDEBUG("perm check: %o %o", pattr.perms, getattr_resp.attr.perms);
+            err = PVFS_sys_setattr(lookup_resp.ref, pattr, &creds, NULL);
+            if(err)
+            {
+                SYSIO_PVFS_FEXIT();
+                return -pvfs_error_to_sysio_error(err);
+            }
         }
 
         /* update the inode so that cached attrs are invalid */
