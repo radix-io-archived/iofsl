@@ -654,7 +654,7 @@ static int zoidfs_sysio_getattr(const zoidfs_handle_t *handle, zoidfs_attr_t *at
 static int zoidfs_sysio_setattr(const zoidfs_handle_t *handle, const zoidfs_sattr_t *sattr,
                    zoidfs_attr_t *attr) {
 	
-    int ret;
+    int ret = 0;
     struct file_handle_info_sattr sysio_sattr;
 
 	int setAttrs = 0;
@@ -1905,9 +1905,8 @@ static int zoidfs_sysio_resize(const zoidfs_handle_t *handle, uint64_t size)
     sattr.fhisattr_size = size;
     sattr.fhisattr_size_set = 1;
 
-    ZFSSYSIO_INFO("resize to %lu", size);
-
-	ret = SYSIO_INTERFACE_NAME(_zfs_sysio_fhi_setattr)(&sysio_component_handle, &sattr);
+    /* TODO: This does not work... causes ESTALE with pvfs and native libsysio drivers... */
+	/*ret = SYSIO_INTERFACE_NAME(_zfs_sysio_fhi_setattr)(&sysio_component_handle, &sattr);*/
 	if (ret < 0) {
 		ZFSSYSIO_INFO("zoidfs_sysio_resize: fhi_setattr() failed, code = %i.", ret);
 		ZFSSYSIO_PERROR("zoidfs_sysio_resize");
