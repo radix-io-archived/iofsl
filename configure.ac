@@ -141,6 +141,10 @@ dnl # for fuse
 use_fuse=1
 AX_FUSE([AC_DEFINE([HAVE_FUSE],[1],[Is fuse available])],
   [use_fuse=0])
+if test "${use_fuse}" == "1"; then
+    BUILD_FUSE_CLIENT=1
+    AX_MAKE_VAR([BUILD_FUSE_CLIENT])
+fi
 dnl AM_CONDITIONAL([BUILD_FUSE], [test "x${use_fuse}" == "x1"])
 AX_MAKE_VAR([FUSE_LIBS])
 AX_MAKE_VAR([FUSE_LDFLAGS])
