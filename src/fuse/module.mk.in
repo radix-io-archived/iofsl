@@ -1,13 +1,15 @@
-MODULE_APPS := fuseclient fusedispatch
+ifdef BUILD_FUSE_CLIENT
+    MODULE_APPS := fuseclient fusedispatch
 
-TMP_SOURCES := zoidfs-fuse.c 
+    TMP_SOURCES := zoidfs-fuse.c 
 
-MODULE_SOURCES_fuseclient := $(TMP_SOURCES)
-ADDINTLIBS_fuseclient := zoidfscutil zoidfsclient c-util
-MODULE_LDFLAGS_fuseclient := $(FUSE_LDFLAGS)
-LIBS_fuseclient := $(FUSE_LIBS)
+    MODULE_SOURCES_fuseclient := $(TMP_SOURCES)
+    ADDINTLIBS_fuseclient := zoidfscutil zoidfsclient c-util
+    MODULE_LDFLAGS_fuseclient := $(FUSE_LDFLAGS)
+    LIBS_fuseclient := $(FUSE_LIBS)
 
-MODULE_SOURCES_fusedispatch :=$(TMP_SOURCES)
-ADDINTLIBS_fusedispatch := zoidfscutil zoidfsdispatch c-util
-MODULE_LDFLAGS_fusedispatch := $(FUSE_LDFLAGS)
-LIBS_fusedispatch := $(FUSE_LIBS)
+    MODULE_SOURCES_fusedispatch :=$(TMP_SOURCES)
+    ADDINTLIBS_fusedispatch := zoidfscutil zoidfsdispatch c-util
+    MODULE_LDFLAGS_fusedispatch := $(FUSE_LDFLAGS)
+    LIBS_fusedispatch := $(FUSE_LIBS)
+endif
