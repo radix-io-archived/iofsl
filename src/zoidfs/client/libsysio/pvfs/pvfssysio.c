@@ -56,7 +56,7 @@
  */
 
 
-#define DEBUG_SYSIO_PVFS 
+//#define DEBUG_SYSIO_PVFS 
 #ifdef DEBUG_SYSIO_PVFS
 #define SYSIO_PVFS_FENTER()                                                             \
 do{                                                                                     \
@@ -1354,17 +1354,6 @@ static int pvfs_inop_lookup(struct pnode *pno, struct inode **inop, struct inten
     t = _SYSIO_LOCAL_TIME();
 
     *inop = pno->p_base->pb_ino;
-
-    if(pno)
-    {
-        char * fp = _sysio_pb_path(pno->p_base, '/');
-        free(fp);
-    }
-    else
-    {
-        SYSIO_PVFS_FINFO("unkown lookup!");
-    }
-
     /* use cached values */
     if(*inop && (path || !intnt || (intnt->int_opmask & INT_GETATTR) == 0) && pvfs_attrs_valid(I2PI(*inop), t))
     {   
@@ -1566,8 +1555,8 @@ static int pvfs_inop_setattr(struct pnode *pno, unsigned mask, struct intnl_stat
         ino = pno->p_base->pb_ino;
         assert(ino);
         pino = I2PI(ino);
-        pino->pi_attrvalid = 0;
-        pino->pi_attrtim = 0;
+        /*pino->pi_attrvalid = 0;
+        pino->pi_attrtim = 0;*/
     }
 
     /* cleanup */
