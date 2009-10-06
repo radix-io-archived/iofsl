@@ -111,6 +111,35 @@ class ZLog
 #endif
 
 
+/* 
+ * check if all logging is disabled... if so... redef all the logging commands 
+ * to empty commands 
+ */
+#ifdef ZLOG_DISABLE_ALL
+
+#undef ZLOG_ERROR(cl,txt)
+#define ZLOG_ERROR(cl,txt)
+
+#undef ZLOG_CRITICAL(cl,txt)
+#define ZLOG_CRITICAL(cl,txt)
+
+#undef ZLOG_WARN(cl,txt)
+#define ZLOG_WARN(cl,txt)
+
+#undef ZLOG_INFO(cl,txt)
+#define ZLOG_INFO(cl,txt)
+
+#undef ZLOG_DEBUG(cl,txt)
+#define ZLOG_DEBUG(cl,txt)
+
+#undef ZLOG_DEBUG_MORE(cl,txt)
+#define ZLOG_DEBUG_MORE(cl,txt)
+
+#undef ZLOG_DEBUG_EXTREME(cl,txt)
+#define ZLOG_DEBUG_EXTREME(cl,txt)
+
+#endif /* ZLOG_DISABLE_ALL */
+
 //==========================================================================
    }
 }
