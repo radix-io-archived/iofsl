@@ -4,6 +4,7 @@
  *
  * Jason Cope <copej@mcs.anl.gov>
  *    
+ * @TODO: fix explicit uint64_t -> zoidfs_file_ofs/size_t
  */
 
 #include "zoidfs/zoidfs.h"
@@ -311,8 +312,8 @@ int zoidfs_resize(const zoidfs_handle_t *handle, uint64_t size) {
  */
 int zoidfs_write(const zoidfs_handle_t *handle, size_t mem_count_,
                  const void *mem_starts[], const size_t mem_sizes_[],
-                 size_t file_count_, const uint64_t file_starts[],
-                 uint64_t file_sizes[]) {
+                 size_t file_count_, const zoidfs_file_ofs_t file_starts[],
+                 zoidfs_file_size_t file_sizes[]) {
     int ret = 0;
 
     zoidfs_write_call_count++;
@@ -328,10 +329,10 @@ int zoidfs_write(const zoidfs_handle_t *handle, size_t mem_count_,
  * zoidfs_read
  * This function implements the zoidfs read call.
  */
-int zoidfs_read(const zoidfs_handle_t *handle, zoidfs_size_t mem_count_,
-                void *mem_starts[], const zoidfs_size_t mem_sizes_[],
-                zoidfs_size_t file_count_, const zoidfs_ofs_t file_starts[],
-                zoidfs_size_t file_sizes[]) {
+int zoidfs_read(const zoidfs_handle_t *handle, size_t mem_count_,
+                void *mem_starts[], const size_t mem_sizes_[],
+                size_t file_count_, const zoidfs_file_ofs_t file_starts[],
+                zoidfs_file_size_t file_sizes[]) {
     int ret = 0;
 
     zoidfs_read_call_count++;

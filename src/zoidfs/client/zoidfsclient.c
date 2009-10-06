@@ -2795,10 +2795,10 @@ static int zoidfs_write_pipeline(BMI_addr_t peer_addr, uint64_t pipeline_size,
  * zoidfs_read
  * This function implements the zoidfs read call.
  */
-int zoidfs_read(const zoidfs_handle_t *handle, zoidfs_size_t mem_count_,
-                void *mem_starts[], const zoidfs_size_t mem_sizes_[],
-                zoidfs_size_t file_count_, const zoidfs_ofs_t file_starts[],
-                zoidfs_size_t file_sizes[]) {
+int zoidfs_read(const zoidfs_handle_t *handle, size_t mem_count_,
+                void *mem_starts[], const size_t mem_sizes_[],
+                size_t file_count_, const zoidfs_file_ofs_t file_starts[],
+                zoidfs_file_size_t file_sizes[]) {
     size_t i;
     uint32_t mem_count = mem_count_;
     bmi_size_t * mem_sizes = (bmi_size_t*)malloc(sizeof(bmi_size_t) * mem_count);

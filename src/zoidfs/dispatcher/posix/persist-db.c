@@ -317,7 +317,7 @@ static void * persist_db_mem_init (const char * initstr, int persist)
 
    /* associate index */
    persist_db_error(data->db->associate(data->db, NULL, 
-            data->dbindex, persist_db_getindexkey, DB_IMMUTABLE_KEY));
+            data->dbindex, persist_db_getindexkey, 0));
 
    /* seed random generator */ 
    persist_db_seed_random (); 
