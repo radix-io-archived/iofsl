@@ -107,10 +107,6 @@ static char zfs_sysio_driver[32];
         fprintf(stderr, "%s %s, ZOIDFS SYSIO DISPATCHER - DEBUG %s() %s:%i : %s\n", __DATE__, __TIME__, __func__, __FILE__, __LINE__, __buffer); \
     }while(0)
 
-#else
-#define ZFSSYSIO_DEBUG(...) /* trace disabled */
-#endif
-
 #define ZFSSYSIO_INFO(...) \
     do { \
         char __buffer[4096]; \
@@ -126,6 +122,13 @@ static char zfs_sysio_driver[32];
         sprintf(__buffer, ##__VA_ARGS__); \
         fprintf(stderr, "%s %s, ZOIDFS SYSIO DISPATCHER - ERROR %s() %s:%i : %s, %s\n", __DATE__, __TIME__, __func__, __FILE__, __LINE__, __buffer, __ebuffer); \
     }while(0)
+#else
+#define ZFSSYSIO_DEBUG(...) /* trace disabled */
+#define ZFSSYSIO_INFO(...) /* trace disabled */
+#define ZFSSYSIO_PERROR(...) /* trace disabled */
+
+#endif
+
 
 /* 
  * determine the static size of print storage buffers for the handles
@@ -869,7 +872,6 @@ static int zoidfs_sysio_lookup(const zoidfs_handle_t *parent_handle,
             return ZFSERR_OTHER;
         }
 
-        ZFSSYSIO_INFO("lookup: full_path = %s, full_path_trim = %s", full_path, full_path_trim);	
 		/*
 		 * Lookup the exported file info for the parent handle
 		 */
@@ -902,7 +904,6 @@ static int zoidfs_sysio_lookup(const zoidfs_handle_t *parent_handle,
 		struct file_handle_info sysio_component_handle = {NULL, sysio_component_handle_data, SYSIO_HANDLE_DATA_SIZE};
 		int ret = 0;
 		
-        ZFSSYSIO_INFO("lookup: component_name = %s", component_name);	
 		/*
 		 * Convert the zoidfs parent handle to the sysio handle
 		 */
@@ -1018,7 +1019,28 @@ static int zoidfs_sysio_remove(const zoidfs_handle_t *parent_handle,
 			return sysio_err_to_zfs_err(errno);
 		}
 	}
-	ret = SYSIO_INTERFACE_NAME(_zfs_sysio_fhi_getattr)(&sysio_fp_handle, &stbuf);
+
+    /* get the handle attrs... beware of STALE */
+    int stale_count = 0;
+    do
+    {
+	    ret = SYSIO_INTERFACE_NAME(_zfs_sysio_fhi_getattr)(&sysio_fp_handle, &stbuf);
+        /* if we got an ESTALE, attempt to revlaidate the handle */    
+        if(ret == ESTALE)
+        {
+            int _ret = 0;
+            _ret = SYSIO_INTERFACE_NAME(_zfs_sysio_fhi_lookup)(&sysio_parent_handle, component_name, 0, &sysio_fp_handle);
+            if(_ret != 0)
+            {
+			    ZFSSYSIO_PERROR("fhi_lookup");
+                ZFSSYSIO_INFO("fhi_lookup / handle revalidate failed: component_name = %s", component_name);
+			    ZFSSYSIO_TRACE_EXIT;
+			    return sysio_err_to_zfs_err(errno);
+            }
+        }
+        stale_count++;
+    }while((ret == ESTALE || ret == -ESTALE || errno == ESTALE || errno == -ESTALE) && stale_count <= 1);
+
 	if (ret) {
 		ZFSSYSIO_PERROR("fhi_getattr");
 		
@@ -1172,13 +1194,23 @@ static int zoidfs_sysio_create(const zoidfs_handle_t *parent_handle,
         }
 
 		/*
-		 * The file exists... don't create it and return the handle w/ created == 0 
+		 * The file exists... don't create it, set attrs, and return the handle w/ created == 0 
 		 */
 		ret = SYSIO_INTERFACE_NAME(_zfs_sysio_fhi_lookup)(&zoidfs_sysio_root_handle, full_path_trim, 0, &sysio_component_handle);
 		if(ret >= 0)
 		{
             *created = 0;
+
 			sysio_handle_to_zoidfs_handle(&sysio_component_handle, handle);
+
+            ret = zoidfs_sysio_setattr(handle, &local_sattr, &local_attr);
+            if(ret != ZFS_OK)
+            {
+                ZFSSYSIO_INFO("zoidfs_sysio_create: zoidfs_sysio_setattr() failed");
+                ZFSSYSIO_PERROR("zoidfs_sysio_create");
+                return sysio_err_to_zfs_err(errno);
+            }
+
 			ZFSSYSIO_TRACE_EXIT;
             return ZFS_OK;
 		}
@@ -1233,16 +1265,25 @@ static int zoidfs_sysio_create(const zoidfs_handle_t *parent_handle,
 		zoidfs_handle_to_sysio_handle(parent_handle, &sysio_parent_handle);
 		
 		/*
-		 * The file exists... don't create it and return a misc err code
+		 * The file exists... don't create it, set the attrs, and return a misc err code
 		 */
-		ret = SYSIO_INTERFACE_NAME(_zfs_sysio_fhi_lookup)(&sysio_parent_handle, component_name, 0, &sysio_component_handle);
+		/*ret = SYSIO_INTERFACE_NAME(_zfs_sysio_fhi_lookup)(&sysio_parent_handle, component_name, 0, &sysio_component_handle);
 		if(ret >= 0)
 		{
             *created = 0;
 			sysio_handle_to_zoidfs_handle(&sysio_component_handle, handle);
+
+            ret = zoidfs_sysio_setattr(handle, &local_sattr, &local_attr);
+            if(ret != ZFS_OK)
+            {
+                ZFSSYSIO_INFO("zoidfs_sysio_create: zoidfs_sysio_setattr() failed");
+                ZFSSYSIO_PERROR("zoidfs_sysio_create");
+                return sysio_err_to_zfs_err(errno);
+            }
+
 			ZFSSYSIO_TRACE_EXIT;
             return ZFS_OK;
-		}
+		}*/
 		where.fhida_path = component_name;
 		where.fhida_dir = &sysio_parent_handle;
     
@@ -1263,6 +1304,7 @@ static int zoidfs_sysio_create(const zoidfs_handle_t *parent_handle,
 		{
 			*created = 1;
 			sysio_handle_to_zoidfs_handle(&sysio_component_handle, handle);
+
 			ZFSSYSIO_TRACE_EXIT;
             return ZFS_OK;
 		}
@@ -1271,7 +1313,9 @@ static int zoidfs_sysio_create(const zoidfs_handle_t *parent_handle,
         /*
          * set the file attributes
          */
-        ret = zoidfs_sysio_setattr(handle, &local_sattr, &local_attr);
+        /* since we can't revalidate the parent handle, return ESTALE and do nothing */
+        //ret = zoidfs_sysio_setattr(handle, &local_sattr, &local_attr);
+        ret = 0;
         if(ret != ZFS_OK)
         {
             ZFSSYSIO_INFO("zoidfs_sysio_create: zoidfs_sysio_setattr() failed");
@@ -1537,8 +1581,8 @@ static int zoidfs_sysio_symlink(const zoidfs_handle_t *from_parent_handle,
 	struct file_handle_info sysio_to_parent_handle = {NULL, sysio_to_parent_handle_data, SYSIO_HANDLE_DATA_SIZE};
 	static char sysio_from_parent_handle_data[SYSIO_HANDLE_DATA_SIZE];
 	struct file_handle_info sysio_from_parent_handle = {NULL, sysio_from_parent_handle_data, SYSIO_HANDLE_DATA_SIZE};
-	const char * path_from;
-	const char * path_to;
+	const char * path_from = NULL;
+	const char * path_to = NULL;
 	
 	ZFSSYSIO_TRACE_ENTER;
 	
