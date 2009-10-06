@@ -23,8 +23,8 @@ static BMI_addr_t peer_addr;
 static bmi_context_id context;
 
 /* conditional compilation flags */
-#define USE_XDR_SIZE_CACHE
-#define ZFS_BMI_FASTMEMALLOC
+/*#define ZFS_USE_XDR_SIZE_CACHE
+#define ZFS_BMI_FASTMEMALLOC*/
 
 /*
  * profiling symbols for the zoidfs api
@@ -313,7 +313,7 @@ static inline unsigned int zoidfs_xdr_size_processor(zoidfs_msg_data_t data_t, c
     unsigned int size = 0; 
     if(data)
     {
-#ifdef USE_XDR_SIZE_CACHE
+#ifdef ZFS_USE_XDR_SIZE_CACHE
         size = zoidfs_xdr_size_cache[data_t];
 #else
         switch(data_t)
