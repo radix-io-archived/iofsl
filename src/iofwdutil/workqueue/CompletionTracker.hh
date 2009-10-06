@@ -3,6 +3,7 @@
 
 #include <boost/thread.hpp>
 #include <set>
+#include <vector>
 
 namespace iofwdutil
 {

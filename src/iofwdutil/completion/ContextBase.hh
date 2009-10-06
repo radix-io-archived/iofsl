@@ -2,6 +2,7 @@
 #define IOFWDUTIL_COMPLETION_CONTEXTBASE_HH
 
 
+#include <vector>
 #include <boost/thread.hpp>
 #include "CompletionID.hh"
 
