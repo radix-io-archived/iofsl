@@ -22,6 +22,10 @@ static char *ion_name;
 static BMI_addr_t peer_addr;
 static bmi_context_id context;
 
+/* conditional compilation flags */
+#define USE_XDR_SIZE_CACHE
+#define ZFS_BMI_FASTMEMALLOC
+
 /*
  * profiling symbols for the zoidfs api
  */
@@ -163,7 +167,10 @@ typedef enum
     ZFS_BUFFER_T = 14,
     ZFS_CSTRING_PATH_T = 15,
     ZFS_CSTRING_NAME_T = 16,
-    ZFS_DIRENT_TRANSFER_T = 17
+    ZFS_DIRENT_TRANSFER_T = 17,
+
+    /* end of enum */
+    ZFS_MSG_DATA_MAX = 18
 } zoidfs_msg_data_t;
 
 /* zoidfs data type wrappers for buffers and arrays */
@@ -200,82 +207,190 @@ typedef struct
 /*
  * xdr size processing for zoidfs messages
  */
-static inline unsigned int zoidfs_xdr_size_processor(zoidfs_msg_data_t data_t, void * data)
+
+
+static unsigned int zoidfs_xdr_size_cache[ZFS_MSG_DATA_MAX];
+
+static inline unsigned int zoidfs_xdr_size_processor_cache_init()
+{
+    zoidfs_msg_data_t i = 0;
+
+    /* init the cache */
+    for(i = 0 ; i < ZFS_MSG_DATA_MAX ; i++)
+    {
+        zoidfs_xdr_size_cache[i] = 0;
+
+        switch(i)
+        {
+            case ZFS_OP_ID_T:
+            {
+                zoidfs_op_id_t data;
+                zoidfs_xdr_size_cache[i] = xdr_sizeof((xdrproc_t)xdr_zoidfs_op_id_t, &data);
+                break;
+            }
+            case ZFS_OP_STATUS_T:
+            {
+                zoidfs_op_status_t data;
+                zoidfs_xdr_size_cache[i] = xdr_sizeof((xdrproc_t)xdr_zoidfs_op_status_t, &data);
+                break;
+            }
+            case ZFS_HANDLE_T:
+            {
+                zoidfs_handle_t data;
+                zoidfs_xdr_size_cache[i] = xdr_sizeof((xdrproc_t)xdr_zoidfs_handle_t, &data);
+                break;
+            }
+            case ZFS_ATTR_T:
+            {
+                zoidfs_attr_t data;
+                zoidfs_xdr_size_cache[i] = xdr_sizeof((xdrproc_t)xdr_zoidfs_attr_t, &data);
+                break;
+            }
+            case ZFS_SATTR_T:
+            {
+                zoidfs_sattr_t data;
+                zoidfs_xdr_size_cache[i] = xdr_sizeof((xdrproc_t)xdr_zoidfs_sattr_t, &data);
+                break;
+            }
+            case ZFS_NULL_PARAM_T:
+            {   
+                zoidfs_null_param_t data;
+                zoidfs_xdr_size_cache[i] = xdr_sizeof((xdrproc_t)xdr_zoidfs_null_param_t, &data);
+                break;
+            }
+            case ZFS_CACHE_HINT_T:
+            {
+                zoidfs_cache_hint_t data;
+                zoidfs_xdr_size_cache[i] = xdr_sizeof((xdrproc_t)xdr_zoidfs_cache_hint_t, &data);
+                break;
+            }
+            case ZFS_DIRENT_COOKIE_T:
+            {
+                zoidfs_dirent_cookie_t data;
+                zoidfs_xdr_size_cache[i] = xdr_sizeof((xdrproc_t)xdr_zoidfs_dirent_cookie_t, &data);
+                break;
+            }
+            case ZFS_UINT32_T:
+            {
+                uint32_t data;
+                zoidfs_xdr_size_cache[i] = xdr_sizeof((xdrproc_t)xdr_uint32_t, &data);
+                break;
+            }
+            case ZFS_UINT64_T:
+            {
+                uint64_t data;
+                zoidfs_xdr_size_cache[i] = xdr_sizeof((xdrproc_t)xdr_uint64_t, &data);
+                break;
+            }
+            case ZFS_UINT32_ARRAY_T:
+            {
+                zoidfs_xdr_size_cache[i] = 0;
+                break;
+            }
+            case ZFS_UINT64_ARRAY_T:
+            {
+                zoidfs_xdr_size_cache[i] = 0;
+                break;
+            }
+            case ZFS_INT_T:
+            {
+                int data;
+                zoidfs_xdr_size_cache[i] = xdr_sizeof((xdrproc_t)xdr_int, &data);
+                break;
+            }
+            default:
+            {
+                zoidfs_xdr_size_cache[i] = 0;
+            }
+        }
+    }
+
+    return 0;
+}
+
+static inline unsigned int zoidfs_xdr_size_processor(zoidfs_msg_data_t data_t, const void * data)
 {
     unsigned int size = 0; 
-    switch(data_t)
+    if(data)
     {
-        case ZFS_OP_ID_T:
+#ifdef USE_XDR_SIZE_CACHE
+        size = zoidfs_xdr_size_cache[data_t];
+#else
+        switch(data_t)
         {
-            size = xdr_sizeof((xdrproc_t)xdr_zoidfs_op_id_t, (zoidfs_op_id_t *)data);
-            break;
+            case ZFS_OP_ID_T:
+            {
+                size = xdr_sizeof((xdrproc_t)xdr_zoidfs_op_id_t, (zoidfs_op_id_t *)data);
+                break;
+            }
+            case ZFS_OP_STATUS_T:
+            {
+                size = xdr_sizeof((xdrproc_t)xdr_zoidfs_op_status_t, (zoidfs_op_status_t *)data);
+                break;
+            }
+            case ZFS_HANDLE_T:
+            {
+                size = xdr_sizeof((xdrproc_t)xdr_zoidfs_handle_t, (zoidfs_handle_t *)data);
+                break;
+            }
+            case ZFS_ATTR_T:
+            {
+                size = xdr_sizeof((xdrproc_t)xdr_zoidfs_attr_t, (zoidfs_sattr_t *)data);
+                break;
+            }
+            case ZFS_SATTR_T:
+            {
+                size = xdr_sizeof((xdrproc_t)xdr_zoidfs_sattr_t, (zoidfs_sattr_t *)data);
+                break;
+            }
+            case ZFS_NULL_PARAM_T:
+            {
+                size = xdr_sizeof((xdrproc_t)xdr_zoidfs_null_param_t, (zoidfs_null_param_t *)data);
+                break;
+            }
+            case ZFS_CACHE_HINT_T:
+            {
+                size = xdr_sizeof((xdrproc_t)xdr_zoidfs_cache_hint_t, (zoidfs_cache_hint_t *)data);
+                break;
+            }
+            case ZFS_DIRENT_COOKIE_T:
+            {
+                size = xdr_sizeof((xdrproc_t)xdr_zoidfs_dirent_cookie_t, (zoidfs_dirent_cookie_t *)data);
+                break;
+            }
+            case ZFS_UINT32_T:
+            {
+                size = xdr_sizeof((xdrproc_t)xdr_uint32_t, (uint32_t *)data);
+                break;
+            }
+            case ZFS_UINT64_T:
+            {
+                size = xdr_sizeof((xdrproc_t)xdr_uint64_t, (uint64_t *)data);
+                break;
+            }
+            case ZFS_UINT32_ARRAY_T:
+            {
+                size = sizeof(uint32_t) + (*(uint32_t *)data * (xdr_sizeof((xdrproc_t)xdr_uint32_t, (uint32_t *)data)));
+                break;
+            }
+            case ZFS_UINT64_ARRAY_T:
+            {
+                size = sizeof(uint32_t) + (*(uint32_t *)data * (xdr_sizeof((xdrproc_t)xdr_uint64_t, (uint32_t *)data)));
+                break;
+            }
+            case ZFS_INT_T:
+            {
+                size = xdr_sizeof((xdrproc_t)xdr_int, (int *)data);
+                break;
+            }
+            default:
+            {
+                fprintf(stderr, "%s(): processing error, unknown zoidfs data type, %s:%i.\n", __func__, __FILE__, __LINE__);
+                size = 0;
+                break;
+            }
         }
-        case ZFS_OP_STATUS_T:
-        {
-            size = xdr_sizeof((xdrproc_t)xdr_zoidfs_op_status_t, (zoidfs_op_status_t *)data);
-            break;
-        }
-        case ZFS_HANDLE_T:
-        {
-            size = xdr_sizeof((xdrproc_t)xdr_zoidfs_handle_t, (zoidfs_handle_t *)data);
-            break;
-        }
-        case ZFS_ATTR_T:
-        {
-            size = xdr_sizeof((xdrproc_t)xdr_zoidfs_attr_t, (zoidfs_sattr_t *)data);
-            break;
-        }
-        case ZFS_SATTR_T:
-        {
-            size = xdr_sizeof((xdrproc_t)xdr_zoidfs_sattr_t, (zoidfs_sattr_t *)data);
-            break;
-        }
-        case ZFS_NULL_PARAM_T:
-        {
-            size = xdr_sizeof((xdrproc_t)xdr_zoidfs_null_param_t, (zoidfs_null_param_t *)data);
-            break;
-        }
-        case ZFS_CACHE_HINT_T:
-        {
-            size = xdr_sizeof((xdrproc_t)xdr_zoidfs_cache_hint_t, (zoidfs_cache_hint_t *)data);
-            break;
-        }
-        case ZFS_DIRENT_COOKIE_T:
-        {
-            size = xdr_sizeof((xdrproc_t)xdr_zoidfs_dirent_cookie_t, (zoidfs_dirent_cookie_t *)data);
-            break;
-        }
-        case ZFS_UINT32_T:
-        {
-            size = xdr_sizeof((xdrproc_t)xdr_uint32_t, (uint32_t *)data);
-            break;
-        }
-        case ZFS_UINT64_T:
-        {
-            size = xdr_sizeof((xdrproc_t)xdr_uint64_t, (uint64_t *)data);
-            break;
-        }
-        case ZFS_UINT32_ARRAY_T:
-        {
-            size = sizeof(uint32_t) + (*(uint32_t *)data * (xdr_sizeof((xdrproc_t)xdr_uint32_t, (uint32_t *)data)));
-            break;
-        }
-        case ZFS_UINT64_ARRAY_T:
-        {
-            size = sizeof(uint32_t) + (*(uint32_t *)data * (xdr_sizeof((xdrproc_t)xdr_uint64_t, (uint32_t *)data)));
-            break;
-        }
-        case ZFS_INT_T:
-        {
-            size = xdr_sizeof((xdrproc_t)xdr_int, (int *)data);
-            break;
-        }
-        default:
-        {
-            fprintf(stderr, "%s(): processing error, unknown zoidfs data type, %s:%i.\n", __func__, __FILE__, __LINE__);
-            size = 0;
-            break;
-        }
+#endif
     }
     return size;
 }
@@ -497,6 +612,18 @@ do{                                         \
     (_msg).sendbuf = NULL;                  \
 }while(0)
 
+#ifdef ZFS_BMI_FASTMEMALLOC                
+#define ZOIDFS_RECV_MSG_DESTROY(_msg)       \
+do{                                         \
+    ZFS_XDR_DESTROY((_msg).recv_xdr);       \
+    if((_msg).recvbuf)                      \
+    {                                       \
+        (_msg).recvbuf = NULL;              \
+        (_msg).recvbuflen = 0;              \
+        (_msg).actual_size = 0;             \
+    }                                       \
+}while(0)
+#else
 #define ZOIDFS_RECV_MSG_DESTROY(_msg)       \
 do{                                         \
     ZFS_XDR_DESTROY((_msg).recv_xdr);       \
@@ -508,7 +635,19 @@ do{                                         \
         (_msg).actual_size = 0;             \
     }                                       \
 }while(0)
+#endif                                      
 
+#ifdef ZFS_BMI_FASTMEMALLOC                
+#define ZOIDFS_SEND_MSG_DESTROY(_msg)       \
+do{                                         \
+    ZFS_XDR_DESTROY((_msg).send_xdr);       \
+    if((_msg).sendbuf)                      \
+    {                                       \
+        (_msg).sendbuf = NULL;              \
+        (_msg).sendbuflen = 0;              \
+    }                                       \
+}while(0)
+#else
 #define ZOIDFS_SEND_MSG_DESTROY(_msg)       \
 do{                                         \
     ZFS_XDR_DESTROY((_msg).send_xdr);       \
@@ -519,15 +658,77 @@ do{                                         \
         (_msg).sendbuflen = 0;              \
     }                                       \
 }while(0)
+#endif
 
+
+/* reuse a static buffer */
+#ifdef ZFS_BMI_FASTMEMALLOC
+static void * zfs_bmi_client_sendbuf = NULL;
+static void * zfs_bmi_client_recvbuf = NULL;
+#define ZFS_BMI_CLIENT_SENDBUF_LEN 128 * 1024
+#define ZFS_BMI_CLIENT_RECVBUF_LEN 128 * 1024
+#define ZOIDFS_SEND_MSG_SET_BUFLEN(_msg, _val) (_msg).send_msg.sendbuflen = (_val)
+#define ZOIDFS_RECV_MSG_SET_BUFLEN(_msg, _val) (_msg).recv_msg.recvbuflen = (_val)
+#define ZOIDFS_SEND_ALLOC_BUFFER(_msg) (_msg).sendbuf = zfs_bmi_client_sendbuf
+#define ZOIDFS_RECV_ALLOC_BUFFER(_msg) (_msg).recvbuf = zfs_bmi_client_recvbuf
+/* allways alloc buffers */
+#else
 #define ZOIDFS_SEND_MSG_SET_BUFLEN(_msg, _val) (_msg).send_msg.sendbuflen = (_val)
 #define ZOIDFS_RECV_MSG_SET_BUFLEN(_msg, _val) (_msg).recv_msg.recvbuflen = (_val)
 #define ZOIDFS_SEND_ALLOC_BUFFER(_msg) (_msg).sendbuf = BMI_memalloc(peer_addr, (_msg).sendbuflen, BMI_SEND)
 #define ZOIDFS_RECV_ALLOC_BUFFER(_msg) (_msg).recvbuf = BMI_memalloc(peer_addr, (_msg).recvbuflen, BMI_RECV)
+#endif
+
 #define ZOIDFS_SEND_XDR_MEMCREATE(_msg) ZFS_XDRMEM_CREATE((_msg).send_xdr, (_msg).sendbuf, (_msg).sendbuflen, XDR_ENCODE)
 #define ZOIDFS_RECV_XDR_MEMCREATE(_msg) ZFS_XDRMEM_CREATE((_msg).recv_xdr, (_msg).recvbuf, (_msg).actual_size, XDR_DECODE)
+
+
 #define ZOIDFS_BMI_COMM_SENDU(_msg) bmi_comm_sendu(peer_addr, (_msg).sendbuf, (_msg).sendbuflen, (_msg).tag, context)
 #define ZOIDFS_BMI_COMM_RECV(_msg) bmi_comm_recv(peer_addr, (_msg).recvbuf, (_msg).recvbuflen, (_msg).tag, context, &(_msg).actual_size)
+
+/*struct zoidfs_bmi_buffer_pool_entry
+{
+    void * buffer;
+    uint32_t size;
+    uint8_t bmi_op;
+    uint8_t idle;
+    uint64_t last_acc_time;
+};
+
+static uint32_t bmi_buffer_pool_length = 0;
+
+void * zoidfs_bmi_buffer_pool_memalloc(uint32_t size)
+{
+    int i = 0;
+
+    for(i = 0 ; i < bmi_buffer_pool_length ; i++)
+    {
+        if(bmi_buffer_pool[i]->idle && bmi_buffer_pool[i]->bmi_op)
+        {
+            if(size == bmi_buffer_pool[i]->size)
+            {
+                bmi_buffer_pool[i]->idle = 0;
+                return bmi_buffer_pool 
+            }
+
+            if(last_acc_time < 10 + cur_time)
+            {
+            }
+        }
+    }
+
+    
+    return NULL;
+}
+
+int zoidfs_bmi_buffer_pool_cache()
+{
+}
+
+int zoidfs_bmi_buffer_pool_free()
+{
+}*/
+
 /*
  * zoidfs_null
  * This function implements a noop operation. The IOD returns a 1-byte message
@@ -2899,6 +3100,10 @@ static int zoidfs_read_pipeline(BMI_addr_t peer_addr, uint64_t pipeline_size,
 int zoidfs_init(void) {
     int ret;
 
+    /* get the values for the size cache */
+    zoidfs_xdr_size_processor_cache_init();
+
+
     assert(sizeof(size_t) == sizeof(unsigned long));
 
     /* Initialize BMI */
@@ -2927,9 +3132,26 @@ int zoidfs_init(void) {
     /* Perform an address lookup on the ION */
     ret = BMI_addr_lookup(&peer_addr, ion_name);
     if (ret < 0) {
-        fprintf(stderr, "zoidfs_init: BMI_addr_lookup() failed.\n");
+        fprintf(stderr, "zoidfs_init: BMI_addr_lookup() failed, ion_name = %s.\n", ion_name);
         exit(1);
     }
+
+    /* preallocate buffers */
+#ifdef ZFS_BMI_FASTMEMALLOC
+    zfs_bmi_client_sendbuf = BMI_memalloc(peer_addr, ZFS_BMI_CLIENT_SENDBUF_LEN, BMI_SEND);
+    if(!zfs_bmi_client_sendbuf)
+    {
+        fprintf(stderr, "zoidfs_init: could not allocate send buffer for fast mem alloc.\n");
+        exit(1);
+    }
+
+    zfs_bmi_client_recvbuf = BMI_memalloc(peer_addr, ZFS_BMI_CLIENT_RECVBUF_LEN, BMI_RECV);
+    if(!zfs_bmi_client_recvbuf)
+    {
+        fprintf(stderr, "zoidfs_init: could not allocate recv buffer for fast mem alloc.\n");
+        exit(1);
+    }
+#endif
 
     return 0;
 }
@@ -2941,6 +3163,20 @@ int zoidfs_init(void) {
 int zoidfs_finalize(void) {
     int ret;
 
+    /* cleanup buffers */
+#ifdef ZFS_BMI_FASTMEMALLOC
+    if(zfs_bmi_client_sendbuf)
+    {
+        free(zfs_bmi_client_sendbuf);
+        zfs_bmi_client_sendbuf = NULL;
+    }
+
+    if(zfs_bmi_client_recvbuf)
+    {
+        free(zfs_bmi_client_recvbuf);
+        zfs_bmi_client_recvbuf = NULL;
+    }
+#endif
     BMI_close_context(context);
 
     /* Finalize BMI */
