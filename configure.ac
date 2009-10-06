@@ -142,7 +142,7 @@ use_fuse=0
 AC_ARG_ENABLE([fuse],
               [AC_HELP_STRING([--enable-fuse],
                               [Enable FUSE ZoidFS client])],
-              [case "${enableval}" in 
+              [case "${enableval}" in
                   yes) use_fuse=1;;
                   no) use_fuse=0;;
                   *) AC_MSG_ERROR([bad value ${enableval} for
