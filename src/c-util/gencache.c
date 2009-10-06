@@ -89,6 +89,7 @@ gencache_handle gencache_init (const gencache_init_t * init)
    gencache_instance_t * gc = malloc (sizeof(gencache_instance_t));
 
    pthread_mutex_init (&gc->lock, 0); 
+   pthread_cond_init (&gc->cond, 0);
    gc->capacity = init->max_cache_size; 
    gc->count = 0; 
    gc->fn_key_free = init->fn_key_free; 
