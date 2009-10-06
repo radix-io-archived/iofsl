@@ -686,49 +686,6 @@ static void * zfs_bmi_client_recvbuf = NULL;
 #define ZOIDFS_BMI_COMM_SENDU(_msg) bmi_comm_sendu(peer_addr, (_msg).sendbuf, (_msg).sendbuflen, (_msg).tag, context)
 #define ZOIDFS_BMI_COMM_RECV(_msg) bmi_comm_recv(peer_addr, (_msg).recvbuf, (_msg).recvbuflen, (_msg).tag, context, &(_msg).actual_size)
 
-/*struct zoidfs_bmi_buffer_pool_entry
-{
-    void * buffer;
-    uint32_t size;
-    uint8_t bmi_op;
-    uint8_t idle;
-    uint64_t last_acc_time;
-};
-
-static uint32_t bmi_buffer_pool_length = 0;
-
-void * zoidfs_bmi_buffer_pool_memalloc(uint32_t size)
-{
-    int i = 0;
-
-    for(i = 0 ; i < bmi_buffer_pool_length ; i++)
-    {
-        if(bmi_buffer_pool[i]->idle && bmi_buffer_pool[i]->bmi_op)
-        {
-            if(size == bmi_buffer_pool[i]->size)
-            {
-                bmi_buffer_pool[i]->idle = 0;
-                return bmi_buffer_pool 
-            }
-
-            if(last_acc_time < 10 + cur_time)
-            {
-            }
-        }
-    }
-
-    
-    return NULL;
-}
-
-int zoidfs_bmi_buffer_pool_cache()
-{
-}
-
-int zoidfs_bmi_buffer_pool_free()
-{
-}*/
-
 /*
  * zoidfs_null
  * This function implements a noop operation. The IOD returns a 1-byte message
