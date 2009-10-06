@@ -119,6 +119,7 @@ int gencache_done (gencache_handle handle)
 
    pthread_mutex_unlock (&gc->lock); 
    pthread_mutex_destroy (&gc->lock); 
+   pthread_cond_destroy (&gc->cond);
    free (gc); 
 
    return 1; 
