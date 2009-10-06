@@ -1,6 +1,7 @@
 #ifndef IOFWD_BUFFER_POOL_HH
 #define IOFWD_BUFFER_POOL_HH
 
+#include <deque>
 #include <boost/thread.hpp>
 #include <iofwdutil/completion/CompletionID.hh>
 
