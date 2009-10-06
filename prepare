@@ -1,2 +1,8 @@
 aclocal -Im4 && autoreconf -fi -Im4
 
+#
+# HACK: touch the config deps... these will be overwritten
+#
+touch src/c-util/configparser.h
+touch src/c-util/configlex.h
+
