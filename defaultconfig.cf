@@ -20,6 +20,6 @@ log {
 
 
 frontend {
-  listen = "tcp://localhost:12345";
+  listen = "tcp://127.0.0.1:1234";
 
 }
