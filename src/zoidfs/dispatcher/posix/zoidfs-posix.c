@@ -484,7 +484,7 @@ static int zoidfs_posix_readlink(const zoidfs_handle_t *handle, char *buffer,
    /* null-terminate */
    /* because the posix function acts like 'read' (returns number of bytes
     * read) while the zoidfs func uses the return code to indicate success */
-   ALWAYS_ASSERT(ret < buffer_length);
+   ALWAYS_ASSERT((size_t) ret < (size_t) buffer_length);
 
    buffer[ret] = 0;
 
