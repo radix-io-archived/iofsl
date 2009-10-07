@@ -36,9 +36,12 @@ static zint_handler_t * zint_handlers[] =
 #ifdef HAVE_DISPATCHER_LIBSYSIO
     &sysio_handler,
 #endif /* HAVE_DISPATCHER_LIBSYSIO */
+#ifdef HAVE_DISPATCHER_POSIX2
+    &posix2_handler,
+#endif
 #ifdef HAVE_DISPATCHER_POSIX
     &posix_handler,
-#endif
+#endif /* HAVE_DISPATCHER_POSIX */
     &local_handler
 };
 
