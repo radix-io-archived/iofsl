@@ -31,10 +31,10 @@ ifdef DISPATCH_LIBSYSIO
    endif
 endif
 
-# always build posix2 dispatcher
-ifdef DISPATCH_POSIX2
-MODULE_SOURCES_zoidfsdispatch += $(addprefix dispatcher/posix2/,\
-				 zoidfs-posix2.c \
+# always build posix dispatcher
+ifdef DISPATCH_POSIX
+MODULE_SOURCES_zoidfsdispatch += $(addprefix dispatcher/posix/,\
+				 zoidfs-posix.c \
 				 fcache.c \
 				 dcache.c \
 				 )

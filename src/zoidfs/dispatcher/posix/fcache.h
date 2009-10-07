@@ -1,5 +1,5 @@
-#ifndef POSIX2_FCACHE_H
-#define POSIX2_FCACHE_H
+#ifndef POSIX_FCACHE_H
+#define POSIX_FCACHE_H
 
 #include "zoidfs.h"
 

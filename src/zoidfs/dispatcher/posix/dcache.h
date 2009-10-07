@@ -1,5 +1,5 @@
-#ifndef POSIX2_DCACHE_H
-#define POSIX2_DCACHE_H
+#ifndef POSIX_DCACHE_H
+#define POSIX_DCACHE_H
 
 #include "c-util/gencache.h"
 #include "zoidfs.h"

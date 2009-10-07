@@ -15,8 +15,8 @@
 #include "sysio/zoidfs-sysio.h"
 #endif
 
-#ifdef HAVE_DISPATCHER_POSIX2
-#include "posix2/zoidfs-posix2.h"
+#ifdef HAVE_DISPATCHER_POSIX
+#include "posix/zoidfs-posix.h"
 #endif
 
 #include "local/zoidfs-local.h"
@@ -36,8 +36,8 @@ static zint_handler_t * zint_handlers[] =
 #ifdef HAVE_DISPATCHER_LIBSYSIO
     &sysio_handler,
 #endif /* HAVE_DISPATCHER_LIBSYSIO */
-#ifdef HAVE_DISPATCHER_POSIX2
-    &posix2_handler,
+#ifdef HAVE_DISPATCHER_POSIX
+    &posix_handler,
 #endif
     &local_handler
 };

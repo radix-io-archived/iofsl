@@ -117,7 +117,7 @@ static void path_add (const char * dir, const char * comp, char * buf, int bufsi
 #ifndef NDEBUG
    if (strlen(dir)+strlen(comp) >= (size_t) bufsize)
    {
-      zoidfs_error ("%s", "Path too long in path_add (posix2)!");
+      zoidfs_error ("%s", "Path too long in path_add (posix)!");
       exit (1);
    }
 #endif
@@ -1234,7 +1234,7 @@ static int zoidfs_posix_resolve_path (const char * local_path,
    return ZFS_OK;
 }
 
-zint_handler_t posix2_handler = {
+zint_handler_t posix_handler = {
    zoidfs_posix_null,
    zoidfs_posix_getattr,
    zoidfs_posix_setattr,

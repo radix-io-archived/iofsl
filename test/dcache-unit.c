@@ -7,7 +7,7 @@
 #include <fcntl.h>
 #include "CUnit/Basic.h"
 #include "CUnit/CUnit.h"
-#include "src/zoidfs/dispatcher/posix2/dcache.h"
+#include "src/zoidfs/dispatcher/posix/dcache.h"
 #include "c-util/tools.h"
 
 /* number of items to add to the cache */ 

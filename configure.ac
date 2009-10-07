@@ -141,28 +141,28 @@ if test "${use_fuse}" == "1"; then
     AX_MAKE_VAR([FUSE_CFLAGS])
 fi
 
-AC_ARG_ENABLE([posix2],
-              [AC_HELP_STRING([--enable-posix2],
+AC_ARG_ENABLE([posix],
+              [AC_HELP_STRING([--enable-posix],
                               [Enable new POSIX zoidfs driver])],
               [case "${enableval}" in 
-                  yes) use_posix2=1;;
-                  no) use_posix2=0;;
+                  yes) use_posix=1;;
+                  no) use_posix=0;;
                   *) AC_MSG_ERROR([bad value ${enableval} for
-                                   --enable-posix2]) ;;
+                                   --enable-posix]) ;;
                esac],
-               [use_posix2=1])
+               [use_posix=1])
 
 
-DISPATCH_POSIX2=0
+DISPATCH_POSIX=0
 AC_MSG_CHECKING([If the POSIX dispatcher driver needs to be built])
-if test "${use_posix2}" == "1"; then
-   AC_DEFINE([HAVE_DISPATCHER_POSIX2],[1],[Build POSIX zoidfs dispatcher driver])
-   DISPATCH_POSIX2=1
+if test "${use_posix}" == "1"; then
+   AC_DEFINE([HAVE_DISPATCHER_POSIX],[1],[Build POSIX zoidfs dispatcher driver])
+   DISPATCH_POSIX=1
    AC_MSG_RESULT([yes])
 else
    AC_MSG_RESULT([no])
 fi
-AX_MAKE_VAR([DISPATCH_POSIX2])
+AX_MAKE_VAR([DISPATCH_POSIX])
 
 #
 # libsysio dispatcher build env setup
