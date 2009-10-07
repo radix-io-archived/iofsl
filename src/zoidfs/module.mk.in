@@ -8,38 +8,6 @@ MODULE_SOURCES_zoidfsdispatch := $(addprefix dispatcher/, \
 	zint-handler.c \
    )
 
-# If posix dispatcher plugin should be built
-ifdef DISPATCH_POSIX
-   ADDINTLIBS_zoidfsdispatch := zoidfscutil
-   MODULE_SOURCES_zoidfsdispatch += $(addprefix dispatcher/posix/, \
-        env-parse.c \
-        handlecache.c \
-        hash-table.c \
-        namecache.c \
-        persist.c \
-        set.c \
-        trie.c \
-        zoidfs-posix.c \
-   )
-   ifeq ($(MYSQL_OK),1)
-        #MODULE_SOURCES_zoidfsdispatch += dispatcher/posix/persist-mysql.c 
-        #MODULE_LDFLAGS_zoidfsdispatch += @MYSQL_LDFLAGS@
-        #MODULE_CPPFLAGS_zoidfsdispatch += @MYSQL_CPPFLAGS@
-        #MODULE_CFLAGS_zoidfsdispatch += @MYSQL_CFLAGS@
-	# Add to general cflags until makefile.in is fixed
-       MODULE_SOURCES_zoidfsdispatch += dispatcher/posix/persist-mysql.c 
-        MODULE_LDFLAGS_zoidfsdispatch += @MYSQL_LDFLAGS@
-        CPPFLAGS += @MYSQL_CPPFLAGS@
-        CFLAGS += @MYSQL_CFLAGS@
-   endif
-   ifeq ($(HAVE_DB),1)
-       MODULE_SOURCES_zoidfsdispatch += dispatcher/posix/persist-db.c
-       MODULE_LDFLAGS_zoidfsdispatch += @BDB_LDFLAGS@
-       CPPFLAGS += @BDB_CPPFLAGS@
-       CFLAGS += @BDB_CFLAGS@
-   endif
-endif
-
 # If PVFS dispatcher plugin shoudl be built
 ifdef DISPATCH_PVFS
    MODULE_SOURCES_zoidfsdispatch += $(addprefix dispatcher/pvfs/,\

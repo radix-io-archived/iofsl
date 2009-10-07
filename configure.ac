@@ -119,24 +119,6 @@ then
                    needs to be built])
 fi
 
-AC_ARG_WITH(db,
-           [AC_HELP_STRING([--with-db@<:@=DIR@:>@],
-                  [Location of installed DB package (default= /usr)])],
-           [AX_LIB_DB(${withval})],
-           [AX_LIB_DB("")])
-
-if test x${BDB_OK} == "x1" ; then
-   HAVE_DB=1
-else
-   HAVE_DB=
-fi
-
-AX_MAKE_VAR([HAVE_DB])
-AC_SUBST([HAVE_DB])
-AC_SUBST([BDB_CFLAGS])
-AC_SUBST([BDB_CPPFLAGS])
-AC_SUBST([BDB_LDFLAGS])
-
 dnl # for fuse
 use_fuse=0
 AC_ARG_ENABLE([fuse],
@@ -159,18 +141,6 @@ if test "${use_fuse}" == "1"; then
     AX_MAKE_VAR([FUSE_CFLAGS])
 fi
 
-dnl # mysql
-AX_LIB_MYSQL([MYSQL_OK=1])
-dnl AM_CONDITIONAL(HAVE_MYSQL,test x${MYSQL_OK} == x1)
-AC_SUBST([MYSQL_CFLAGS])
-AC_SUBST([MYSQL_CPPFLAGS])
-AC_SUBST([MYSQL_LDFLAGS_R])
-AX_MAKE_VAR([MYSQL_CFLAGS])
-AX_MAKE_VAR([MYSQL_CPPFLAGS])
-AX_MAKE_VAR([MYSQL_LDFLAGS_R])
-AX_MAKE_VAR([MYSQL_OK])
-
-
 AC_ARG_ENABLE([posix2],
               [AC_HELP_STRING([--enable-posix2],
                               [Enable new POSIX zoidfs driver])],
@@ -180,31 +150,19 @@ AC_ARG_ENABLE([posix2],
                   *) AC_MSG_ERROR([bad value ${enableval} for
                                    --enable-posix2]) ;;
                esac],
-               [use_posix2=0])
+               [use_posix2=1])
 
 
 DISPATCH_POSIX2=0
-AC_MSG_CHECKING([If the new POSIX dispatcher drivers needs to be built])
+AC_MSG_CHECKING([If the POSIX dispatcher driver needs to be built])
 if test "${use_posix2}" == "1"; then
-   AC_DEFINE([HAVE_DISPATCHER_POSIX2],[1],[Use new posix zoidfs driver])
+   AC_DEFINE([HAVE_DISPATCHER_POSIX2],[1],[Build POSIX zoidfs dispatcher driver])
    DISPATCH_POSIX2=1
    AC_MSG_RESULT([yes])
 else
    AC_MSG_RESULT([no])
 fi
 AX_MAKE_VAR([DISPATCH_POSIX2])
-
-
-AC_MSG_CHECKING([If the POSIX dispatcher driver needs to be built])
-DISPATCH_POSIX=0
-if test "x${BDB_OK}${MYSQL_OK}" -a "$use_posix2" == "0"; then
-   AC_DEFINE([HAVE_DISPATCHER_POSIX],[1],[Is posix dispatcher available])
-   DISPATCH_POSIX=1
-   AC_MSG_RESULT([yes])
-else
-   AC_MSG_RESULT([no])
-fi
-AX_MAKE_VAR([DISPATCH_POSIX])
 
 #
 # libsysio dispatcher build env setup
@@ -283,28 +241,6 @@ if test x${use_libsysio} == xtrue ; then
     LDFLAGS="${STLDFLAGS}"
     LIBS="${STLIBS}"
 fi
-
-dnl
-dnl Control behaviour of the zoidfs posix mapping
-dnl
-AC_ARG_ENABLE([stale],
-      [AC_HELP_STRING([--enable-stale],
-                [Allow the POSIX layer to return ESTALE])],
-      [case "${enableval}" in 
-         yes) use_stale=true;;
-         no)  use_stale=false;;
-         *)  AC_MSG_ERROR([bad value ${enableval} for --enable-stale]) ;;
-     esac],
-     [use_stale=false])
-AC_MSG_CHECKING([If the POSIX driver is is allowed to return ESTALE])
-if test x${use_stale} == xtrue ; then
-   AC_DEFINE([USE_ESTALE],[1],[If the API can use ESTALE])
-   AC_MSG_RESULT([yes])
-else
-   AC_MSG_RESULT([no])
-fi
-
-
 
 
 # check boost version
