@@ -257,6 +257,7 @@ static void zoidfs_path_fix (char * buf)
 static int handle2filename (const zoidfs_handle_t * handle,
       char * buf, int bufsize)
 {
+   assert(bufsize >= ZOIDFS_PATH_MAX);
    return filename_lookup (fcache, handle, buf, bufsize);
 }
 
@@ -288,7 +289,7 @@ static int zoidfs_simplify_path_mem (const zoidfs_handle_t * handle,
     * Don't have full path, need to lookup the path associated with zoidfs
     * handle
     */
-   ret = handle2filename (handle, buf, sizeof(buf));
+   ret = handle2filename (handle, buf, bufsize);
 
    /* Don't have the name: -> ESTALE */
    if (!ret)
