@@ -219,6 +219,11 @@ int zoidfs_lookup(const zoidfs_handle_t * parent_handle /* in:ptr:nullok */,
                   const char * full_path /* in:str:nullok */,
                   zoidfs_handle_t * handle /* out:ptr */);
 
+/**
+ * NOTE: buffer_length is the total buffer size, so at most 
+ * buffer_length-1 characters, followed by a NULL byte
+ * will be returned
+ */
 int zoidfs_readlink(const zoidfs_handle_t * handle /* in:ptr */,
                     char * buffer /* out:arr:size=+1 */,
                     size_t buffer_length /* in:obj */);

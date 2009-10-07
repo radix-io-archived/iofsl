@@ -464,6 +464,8 @@ static int zoidfs_posix_setattr(const zoidfs_handle_t *handle, const zoidfs_satt
 /*
  * zoidfs_readlink
  * This function reads a symbolic link.
+ *
+ * Buffer length is total buffer size.
  */
 static int zoidfs_posix_readlink(const zoidfs_handle_t *handle, char *buffer,
                     size_t buffer_length)
@@ -474,14 +476,18 @@ static int zoidfs_posix_readlink(const zoidfs_handle_t *handle, char *buffer,
    if (!handle2filename (handle, buf, sizeof(buf)))
       return ZFSERR_STALE;
 
-   ret = readlink (buf, buffer, buffer_length);
+   /* Buffer_length - 1 because we need to NULL-terminate */
+   ret = readlink (buf, buffer, buffer_length - 1);
    if (ret < 0)
       return errno2zfs (errno);
 
    /* null-terminate */
    /* because the posix function acts like 'read' (returns number of bytes
     * read) while the zoidfs func uses the return code to indicate success */
+   ALWAYS_ASSERT(ret < buffer_length);
+
    buffer[ret] = 0;
+
    return ZFS_OK;
 }
 
