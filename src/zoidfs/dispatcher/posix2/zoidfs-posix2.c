@@ -535,7 +535,7 @@ static int our_open (const char * filename, int *err)
 }
 
 
-static int our_create (const char * filename, int * err, int * created,
+/*static int our_create (const char * filename, int * err, int * created,
       const zoidfs_sattr_t * sattr)
 {
    int dummy;
@@ -546,7 +546,6 @@ static int our_create (const char * filename, int * err, int * created,
    if (sattr->mask & ZOIDFS_ATTR_MODE)
       posixmode = zoidfsmode_to_posix (sattr->mode);
 
-   /* allow NULL for created */
    if (!created)
       created = &dummy;
 
@@ -566,24 +565,24 @@ static int our_create (const char * filename, int * err, int * created,
 
       if (*err == EEXIST)
       {
-         /* File seems to exist already; Try to open */
+         // File seems to exist already; Try to open 
          fd = our_open (filename, err);
          if (fd < 0 && *err == ENOENT)
          {
-            /* strange: somebody removed in the mean time? */
+            // strange: somebody removed in the mean time? 
             zoidfs_debug ("File %s disappeared before we could open?? Retrying to create\n",
                   filename);
             continue;
          }
-         /* the file existed, so whatever reason our_open had for failing is
-          * good enough for us */
+         // the file existed, so whatever reason our_open had for failing is
+         // good enough for us 
          return fd;
       }
 
-      /* failed, but not because the file already existed: give up */
+      // failed, but not because the file already existed: give up 
       return fd;
    }
-}
+}*/
 
 
 /* Release obtained handle */
