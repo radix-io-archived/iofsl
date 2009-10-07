@@ -693,7 +693,7 @@ static void * zfs_bmi_client_recvbuf = NULL;
  *
  */
 int zoidfs_null(void) {
-    int ret;
+    int ret = ZFS_OK;
     zoidfs_send_msg_t send_msg;
     zoidfs_recv_msg_t recv_msg;
 
@@ -733,7 +733,7 @@ int zoidfs_null(void) {
     /* Wait for the response from the ION */
     ZOIDFS_RECV_ALLOC_BUFFER(recv_msg);
     if (!recv_msg.recvbuf) {
-        fprintf(stderr, "zoidfs_getattr: BMI_memalloc() failed.\n");
+        fprintf(stderr, "zoidfs_null: BMI_memalloc() failed.\n");
         ret = ZFSERR_XDR;
         goto null_cleanup;
     }
@@ -768,7 +768,7 @@ null_cleanup:
  * the ION.
  */
 int zoidfs_getattr(const zoidfs_handle_t *handle, zoidfs_attr_t *attr) {
-    int ret;
+    int ret = ZFS_OK;
     zoidfs_send_msg_t send_msg;
     zoidfs_recv_msg_t recv_msg;
 
@@ -857,7 +857,7 @@ getattr_cleanup:
 int zoidfs_setattr(const zoidfs_handle_t *handle, const zoidfs_sattr_t *sattr,
                    zoidfs_attr_t *attr) {
 
-    int ret;
+    int ret = ZFS_OK;
     zoidfs_send_msg_t send_msg;
     zoidfs_recv_msg_t recv_msg;
 
@@ -944,7 +944,7 @@ setattr_cleanup:
  */
 int zoidfs_readlink(const zoidfs_handle_t *handle, char *buffer,
                     size_t buffer_length) {
-    int ret;
+    int ret = ZFS_OK;
     uint64_t buffer_length_uint64_t = (uint64_t)buffer_length;
     zoidfs_send_msg_t send_msg;
     zoidfs_recv_msg_t recv_msg;
@@ -1055,7 +1055,7 @@ int zoidfs_lookup(const zoidfs_handle_t *parent_handle,
                   const char *component_name, const char *full_path,
                   zoidfs_handle_t *handle) {
     zoidfs_null_param_t null_param;
-    int ret;
+    int ret = ZFS_OK;
     zoidfs_send_msg_t send_msg;
     zoidfs_recv_msg_t recv_msg;
 
@@ -1186,7 +1186,7 @@ lookup_cleanup:
 int zoidfs_remove(const zoidfs_handle_t *parent_handle,
                   const char *component_name, const char *full_path,
                   zoidfs_cache_hint_t *parent_hint) {
-    int ret;
+    int ret = ZFS_OK;
     zoidfs_cache_hint_t hint;
     zoidfs_null_param_t null_param;
     zoidfs_send_msg_t send_msg;
@@ -1306,7 +1306,6 @@ int zoidfs_remove(const zoidfs_handle_t *parent_handle,
     }
 
 remove_cleanup:
-
     if(recv_msg.op_status != ZFS_OK)
     {
         ret = recv_msg.op_status;
@@ -1324,7 +1323,7 @@ remove_cleanup:
  * This function flushes the buffers associated with the file handle.
  */
 int zoidfs_commit(const zoidfs_handle_t *handle) {
-    int ret;
+    int ret = ZFS_OK;
     zoidfs_send_msg_t send_msg;
     zoidfs_recv_msg_t recv_msg;
 
@@ -1379,7 +1378,6 @@ int zoidfs_commit(const zoidfs_handle_t *handle) {
     }
 
 commit_cleanup:
-
     if(recv_msg.op_status != ZFS_OK)
     {
         ret = recv_msg.op_status;
@@ -1401,7 +1399,7 @@ int zoidfs_create(const zoidfs_handle_t *parent_handle,
                   const zoidfs_sattr_t *sattr, zoidfs_handle_t *handle,
                   int *created) {
     zoidfs_null_param_t null_param;
-    int ret;
+    int ret = ZFS_OK;
     zoidfs_send_msg_t send_msg;
     zoidfs_recv_msg_t recv_msg;
 
@@ -1529,7 +1527,6 @@ int zoidfs_create(const zoidfs_handle_t *parent_handle,
     }
 
 create_cleanup:
-    
     if(recv_msg.op_status != ZFS_OK)
     {
         ret = recv_msg.op_status;
@@ -1553,7 +1550,7 @@ int zoidfs_rename(const zoidfs_handle_t *from_parent_handle,
                   const char *to_full_path,
                   zoidfs_cache_hint_t *from_parent_hint,
                   zoidfs_cache_hint_t *to_parent_hint) {
-    int ret;
+    int ret = ZFS_OK;
     zoidfs_cache_hint_t hint;
     zoidfs_null_param_t from_null_param, to_null_param;
     zoidfs_send_msg_t send_msg;
@@ -1732,7 +1729,6 @@ int zoidfs_rename(const zoidfs_handle_t *from_parent_handle,
     }
 
 rename_cleanup:
-    
     if(recv_msg.op_status != ZFS_OK)
     {
         ret = recv_msg.op_status;
@@ -1759,7 +1755,7 @@ int zoidfs_link(const zoidfs_handle_t *from_parent_handle,
                 zoidfs_cache_hint_t *to_parent_hint) {
     zoidfs_cache_hint_t hint;
     zoidfs_null_param_t from_null_param, to_null_param;
-    int ret;
+    int ret = ZFS_OK;
     zoidfs_send_msg_t send_msg;
     zoidfs_recv_msg_t recv_msg;
 
@@ -1938,7 +1934,6 @@ int zoidfs_link(const zoidfs_handle_t *from_parent_handle,
     }
 
 link_cleanup:
-    
     if(recv_msg.op_status != ZFS_OK)
     {
         ret = recv_msg.op_status;
@@ -1966,7 +1961,7 @@ int zoidfs_symlink(const zoidfs_handle_t *from_parent_handle,
                    zoidfs_cache_hint_t *to_parent_hint) {
     zoidfs_cache_hint_t hint;
     zoidfs_null_param_t from_null_param, to_null_param;
-    int ret;
+    int ret = ZFS_OK;
     zoidfs_send_msg_t send_msg;
     zoidfs_recv_msg_t recv_msg;
 
@@ -2164,7 +2159,7 @@ int zoidfs_mkdir(const zoidfs_handle_t *parent_handle,
                  zoidfs_cache_hint_t *parent_hint) {
     zoidfs_cache_hint_t hint;
     zoidfs_null_param_t null_param;
-    int ret;
+    int ret = ZFS_OK;
     zoidfs_send_msg_t send_msg;
     zoidfs_recv_msg_t recv_msg;
 
@@ -2318,7 +2313,7 @@ int zoidfs_readdir(const zoidfs_handle_t *parent_handle,
     uint32_t entry_count = *entry_count_; /* workaround for 32bit */
     zoidfs_cache_hint_t hint;
     dirent_t_transfer trans; 
-    int ret;
+    int ret = ZFS_OK;
     zoidfs_send_msg_t send_msg;
     zoidfs_recv_msg_t recv_msg;
 
@@ -2454,7 +2449,7 @@ readdir_cleanup:
  * This function resizes the file associated with the file handle.
  */
 int zoidfs_resize(const zoidfs_handle_t *handle, uint64_t size) {
-    int ret;
+    int ret = ZFS_OK;
     zoidfs_send_msg_t send_msg;
     zoidfs_recv_msg_t recv_msg;
 
@@ -2514,7 +2509,7 @@ int zoidfs_resize(const zoidfs_handle_t *handle, uint64_t size) {
     }
 
 resize_cleanup:
-    
+   
     if(recv_msg.op_status != ZFS_OK)
     {
         ret = recv_msg.op_status;
@@ -2543,7 +2538,7 @@ int zoidfs_write(const zoidfs_handle_t *handle, size_t mem_count_,
     zoidfs_uint64_array_transfer_t mem_sizes_transfer;
     zoidfs_uint64_array_transfer_t file_starts_transfer;
     zoidfs_uint64_array_transfer_t file_sizes_transfer;
-    int ret;
+    int ret = ZFS_OK;
     zoidfs_send_msg_t send_msg;
     zoidfs_recv_msg_t recv_msg;
 
@@ -2712,7 +2707,7 @@ static int zoidfs_write_pipeline(BMI_addr_t peer_addr, uint64_t pipeline_size,
                                  const bmi_size_t size_list[], bmi_msg_tag_t tag,
                                  bmi_context_id context) {
     int np = 0;
-    int ret;
+    int ret = ZFS_OK;
     size_t i;
     uint64_t st = 0;
     uint64_t st_mem = 0;
@@ -2808,7 +2803,7 @@ int zoidfs_read(const zoidfs_handle_t *handle, size_t mem_count_,
     zoidfs_uint64_array_transfer_t mem_sizes_transfer;
     zoidfs_uint64_array_transfer_t file_starts_transfer;
     zoidfs_uint64_array_transfer_t file_sizes_transfer;
-    int ret;
+    int ret = ZFS_OK;
     zoidfs_send_msg_t send_msg;
     zoidfs_recv_msg_t recv_msg;
 
@@ -2976,7 +2971,7 @@ static int zoidfs_read_pipeline(BMI_addr_t peer_addr, uint64_t pipeline_size,
                                 const bmi_size_t size_list[], bmi_msg_tag_t tag,
                                 bmi_context_id context) {
     int np = 0;
-    int ret;
+    int ret = ZFS_OK;
     size_t i;
     uint64_t st = 0;
     uint64_t st_mem = 0;
@@ -3055,7 +3050,7 @@ static int zoidfs_read_pipeline(BMI_addr_t peer_addr, uint64_t pipeline_size,
  * Initialize the client subsystems.
  */
 int zoidfs_init(void) {
-    int ret;
+    int ret = ZFS_OK;
 
     /* get the values for the size cache */
     zoidfs_xdr_size_processor_cache_init();
@@ -3118,7 +3113,7 @@ int zoidfs_init(void) {
  * Finalize the client subsystems.
  */
 int zoidfs_finalize(void) {
-    int ret;
+    int ret = ZFS_OK;
 
     /* cleanup buffers */
 #ifdef ZFS_BMI_FASTMEMALLOC
