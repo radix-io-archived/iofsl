@@ -40,79 +40,31 @@ static size_t total_file_count = 0;
 /* setup the file paths */
 int init_path_names(char * testDir, char * mpt)
 {
-    int mptIsRoot =0;
-    if(mpt[0] == '/')
-    {
-        mptIsRoot = 1;
-    }
-
     snprintf(symlink_component_filename, NAMESIZE, "%s/symlink_comp_file", testDir);
     snprintf(symlink_component_dirname, NAMESIZE, "%s/symlink_comp_dir", testDir);
     snprintf(symlink_component_dirname_slash, NAMESIZE, "%s/symlink_comp_dir/", testDir);
-    if(!mptIsRoot)
-    {
-        snprintf(symlink_fullpath_filename, NAMESIZE, "%s/%s/symlink_full_file", mpt, testDir);
-        snprintf(symlink_fullpath_dirname, NAMESIZE, "%s/%s/symlink_full_dir", mpt, testDir);
-        snprintf(symlink_fullpath_dirname_slash, NAMESIZE, "%s/%s/symlink_full_dir/", mpt, testDir);
-    }
-    else
-    {
-        snprintf(symlink_fullpath_filename, NAMESIZE, "/%s/symlink_full_file", testDir);
-        snprintf(symlink_fullpath_dirname, NAMESIZE, "/%s/symlink_full_dir", testDir);
-        snprintf(symlink_fullpath_dirname_slash, NAMESIZE, "/%s/symlink_full_dir/", testDir);
-    }
+    snprintf(symlink_fullpath_filename, NAMESIZE, "%s/%s/symlink_full_file", mpt, testDir);
+    snprintf(symlink_fullpath_dirname, NAMESIZE, "%s/%s/symlink_full_dir", mpt, testDir);
+    snprintf(symlink_fullpath_dirname_slash, NAMESIZE, "%s/%s/symlink_full_dir/", mpt, testDir);
 
     snprintf(link_component_filename, NAMESIZE, "%s/link_comp_file", testDir);
     snprintf(link_component_dirname, NAMESIZE, "%s/link_comp_dir", testDir);
-
-    if(!mptIsRoot)
-    {
-        snprintf(link_fullpath_filename, NAMESIZE, "%s/%s/link_full_file", mpt, testDir);
-        snprintf(link_fullpath_dirname, NAMESIZE, "%s/%s/link_full_dir", mpt, testDir);
-    }
-    else
-    {
-        snprintf(link_fullpath_filename, NAMESIZE, "/%s/link_full_file", testDir);
-        snprintf(link_fullpath_dirname, NAMESIZE, "/%s/link_full_dir", testDir);
-    }
+    snprintf(link_fullpath_filename, NAMESIZE, "%s/%s/link_full_file", mpt, testDir);
+    snprintf(link_fullpath_dirname, NAMESIZE, "%s/%s/link_full_dir", mpt, testDir);
 
     snprintf(component_filename, NAMESIZE, "%s/test-zoidfs-file-comp", testDir);
     snprintf(base_component_filename, NAMESIZE, "test-zoidfs-file-comp");
     snprintf(component_dirname, NAMESIZE, "%s/test-zoidfs-dir-comp", testDir);
     snprintf(base_component_dirname, NAMESIZE, "test-zoidfs-dir-comp");
-
-    if(!mptIsRoot)
-    {
-        snprintf(fullpath_filename, NAMESIZE, "%s/%s/test-zoidfs-file-full", mpt, testDir);
-        snprintf(fullpath_dirname, NAMESIZE, "%s/%s/test-zoidfs-dir-full", mpt, testDir);
-    }
-    else
-    {
-        snprintf(fullpath_filename, NAMESIZE, "/%s/test-zoidfs-file-full", testDir);
-        snprintf(fullpath_dirname, NAMESIZE, "/%s/test-zoidfs-dir-full", testDir);
-    }
+    snprintf(fullpath_filename, NAMESIZE, "%s/%s/test-zoidfs-file-full", mpt, testDir);
+    snprintf(fullpath_dirname, NAMESIZE, "%s/%s/test-zoidfs-dir-full", mpt, testDir);
 
     snprintf(rename_component_filename, NAMESIZE, "%s/test-zoidfs-file-comp-rename", testDir);
     snprintf(rename_component_dirname, NAMESIZE, "%s/test-zoidfs-dir-comp-rename", testDir);
-    if(!mptIsRoot)
-    {
-        snprintf(rename_fullpath_filename, NAMESIZE, "%s/%s/test-zoidfs-file-full-rename", mpt, testDir);
-        snprintf(rename_fullpath_dirname, NAMESIZE, "%s/%s/test-zoidfs-dir-full-rename", mpt, testDir);
-    }
-    else
-    {
-        snprintf(rename_fullpath_filename, NAMESIZE, "/%s/test-zoidfs-file-full-rename", testDir);
-        snprintf(rename_fullpath_dirname, NAMESIZE, "/%s/test-zoidfs-dir-full-rename", testDir);
-    }
+    snprintf(rename_fullpath_filename, NAMESIZE, "%s/%s/test-zoidfs-file-full-rename", mpt, testDir);
+    snprintf(rename_fullpath_dirname, NAMESIZE, "%s/%s/test-zoidfs-dir-full-rename", mpt, testDir);
 
-    if(!mptIsRoot)
-    {
-        snprintf(long_fullpath_dirpath, PATHSIZE, "%s/%s/a/b/c/d/e/f", mpt, testDir);
-    }
-    else
-    {
-        snprintf(long_fullpath_dirpath, PATHSIZE, "/%s/a/b/c/d/e/f", testDir);
-    }
+    snprintf(long_fullpath_dirpath, PATHSIZE, "%s/%s/a/b/c/d/e/f", mpt, testDir);
     snprintf(long_component_dirpath, PATHSIZE, "%s/a/b/c/d/e/f", testDir);
 
     return 0;
