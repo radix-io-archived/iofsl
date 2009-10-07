@@ -4,19 +4,39 @@
 
 int env_parse_have_debug (const char * opt)
 {
+   int ret =0;
    const char * str;
-   const char * delim = ","; 
-   str = getenv ("ZOIDFS_POSIX_DEBUG"); 
+   const char * delim = ",";
+   const char * token;
+   char * nstr = 0;
+   char * saveptr;
+
+   str = getenv ("ZOIDFS_POSIX_DEBUG");
    if (!str)
-      return 0; 
-   char * saveptr; 
-   const char * token = strtok_r(str, delim, &saveptr); 
+   {
+      ret = 0;
+      goto cleanup;
+   }
+
+   nstr = strdup (str);
+
+   token = strtok_r(nstr, delim, &saveptr);
+
    if (token == 0)
-      return 0; 
+   {
+      ret = 0;
+      goto cleanup;
+   }
    do
    {
-      if (!strcmp (token, opt))
-         return 1; 
-   } while ((token = strtok_r(NULL, delim, &saveptr))); 
-   return 0; 
+      if (!strcasecmp (token, opt))
+      {
+         ret = 1;
+         goto cleanup;
+      }
+   } while ((token = strtok_r(NULL, delim, &saveptr)));
+
+cleanup:
+   free (nstr);
+   return ret;
 }
