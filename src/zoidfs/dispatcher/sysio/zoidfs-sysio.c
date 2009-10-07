@@ -23,6 +23,7 @@ extern int SYSIO_INTERFACE_NAME(_zfs_sysio_fhi_iodone)(ioid_t ioid);
 extern ssize_t SYSIO_INTERFACE_NAME(_zfs_sysio_fhi_iowait)(ioid_t ioid);
 extern int SYSIO_INTERFACE_NAME(_zfs_sysio_fhi_getattr)(struct file_handle_info *fhi, struct stat64 *buf);
 extern int SYSIO_INTERFACE_NAME(_zfs_sysio_fhi_setattr)(struct file_handle_info *fhi, struct file_handle_info_sattr *fhisattr);
+/*extern int SYSIO_INTERFACE_NAME(_zfs_sysio_fhi_truncate)(struct file_handle_info * fhi, off64_t size);*/
 extern ssize_t SYSIO_INTERFACE_NAME(_zfs_sysio_fhi_lookup)(struct file_handle_info *parent_fhi, const char *path, unsigned iopmask, struct file_handle_info *result);
 extern ssize_t SYSIO_INTERFACE_NAME(_zfs_sysio_fhi_readlink)(struct file_handle_info *fhi, char *buf, size_t bufsiz);
 extern int SYSIO_INTERFACE_NAME(_zfs_sysio_fhi_iread64x)(struct file_handle_info *fhi, const struct iovec *iov, size_t iov_count, const struct xtvec64 *xtv, size_t xtv_count, ioid_t *ioidp);
@@ -69,8 +70,8 @@ static char zfs_sysio_driver[32];
  */
 
  
-//#define ZOIDFS_SYSIO_DEBUG
-//#define ZFSSYSIO_TRACE_ENABLED
+/*#define ZFSSYSIO_DEBUG_ENABLED
+#define ZFSSYSIO_TRACE_ENABLED*/
 
 
 /*
@@ -1130,6 +1131,9 @@ static int zoidfs_sysio_create(const zoidfs_handle_t *parent_handle,
 
 	ZFSSYSIO_TRACE_ENTER;
 
+    memset(&local_sattr, 0, sizeof(local_sattr));
+    memset(&local_attr, 0, sizeof(local_attr));
+
     /*
      * Check for invalid path params. The caller should either specify the
      * full_path or specify the parent_handle AND the component_name.
@@ -1267,7 +1271,7 @@ static int zoidfs_sysio_create(const zoidfs_handle_t *parent_handle,
 		/*
 		 * The file exists... don't create it, set the attrs, and return a misc err code
 		 */
-		/*ret = SYSIO_INTERFACE_NAME(_zfs_sysio_fhi_lookup)(&sysio_parent_handle, component_name, 0, &sysio_component_handle);
+		ret = SYSIO_INTERFACE_NAME(_zfs_sysio_fhi_lookup)(&sysio_parent_handle, component_name, 0, &sysio_component_handle);
 		if(ret >= 0)
 		{
             *created = 0;
@@ -1283,7 +1287,7 @@ static int zoidfs_sysio_create(const zoidfs_handle_t *parent_handle,
 
 			ZFSSYSIO_TRACE_EXIT;
             return ZFS_OK;
-		}*/
+		}
 		where.fhida_path = component_name;
 		where.fhida_dir = &sysio_parent_handle;
     
@@ -1583,6 +1587,7 @@ static int zoidfs_sysio_symlink(const zoidfs_handle_t *from_parent_handle,
 	struct file_handle_info sysio_from_parent_handle = {NULL, sysio_from_parent_handle_data, SYSIO_HANDLE_DATA_SIZE};
 	const char * path_from = NULL;
 	const char * path_to = NULL;
+    char new_link_path[ZOIDFS_PATH_MAX];
 	
 	ZFSSYSIO_TRACE_ENTER;
 	
@@ -1663,9 +1668,10 @@ static int zoidfs_sysio_symlink(const zoidfs_handle_t *from_parent_handle,
             ZFSSYSIO_TRACE_EXIT;
             return ZFSERR_OTHER;
         }
-        where_from.fhida_path = from_full_path_trim;
+        sprintf(new_link_path, "%s%s", zoidfs_sysio_root_path, from_full_path_trim);
+        where_from.fhida_path = new_link_path;
 		where_from.fhida_dir = &zoidfs_sysio_root_handle;
-		path_from = from_full_path_trim;
+		path_from = new_link_path;
 	}
 	if(from_component_name)
 	{
@@ -1871,6 +1877,8 @@ static int zoidfs_sysio_readdir(const zoidfs_handle_t *parent_handle,
                 /*
                  * Get the handle attrs
                  */
+                memset(&attr, 0, sizeof(attr));
+                memset(&entries[i].attr, 0, sizeof(entries[i].attr));
                 attr.mask = ZOIDFS_ATTR_ALL;
                 zoidfs_getattr(&ehandle, &entries[i].attr);
             }
@@ -1922,43 +1930,52 @@ static int zoidfs_sysio_resize(const zoidfs_handle_t *handle, uint64_t size)
     /*
      * Setup the file handle based on the libsysio handle and the file handle
      */
-	static char sysio_component_handle_data[SYSIO_HANDLE_DATA_SIZE];
+
+    /* using the fho_truncate method */
+	/*static char sysio_component_handle_data[SYSIO_HANDLE_DATA_SIZE];
 	struct file_handle_info sysio_component_handle = {NULL, sysio_component_handle_data, SYSIO_HANDLE_DATA_SIZE};
     int ret = 0;
-    struct file_handle_info_sattr sattr;
-
-	zoidfs_handle_to_sysio_handle(handle, &sysio_component_handle);
-
-    /* erase the attr */
-    memset(&sattr, 0, sizeof(sattr));
 
 	ZFSSYSIO_TRACE_ENTER;
+	zoidfs_handle_to_sysio_handle(handle, &sysio_component_handle);
 
-    /*
-     * clear unused sattr atrributes
-     */
-    sattr.fhisattr_mode_set = 0;
-    sattr.fhisattr_uid_set = 0;
-    sattr.fhisattr_gid_set = 0;
-    sattr.fhisattr_mtime_set = 0;
-    sattr.fhisattr_atime_set = 0;
-
-    /*
-     * set the size of the file
-     */
-    sattr.fhisattr_size = size;
-    sattr.fhisattr_size_set = 1;
-
-    /* TODO: This does not work... causes ESTALE with pvfs and native libsysio drivers... */
-	/*ret = SYSIO_INTERFACE_NAME(_zfs_sysio_fhi_setattr)(&sysio_component_handle, &sattr);*/
-	if (ret < 0) {
-		ZFSSYSIO_INFO("zoidfs_sysio_resize: fhi_setattr() failed, code = %i.", ret);
+    ret = SYSIO_INTERFACE_NAME(_zfs_sysio_fhi_truncate)(&sysio_component_handle, size);
+    if(ret != ZFS_OK)
+    {
+		ZFSSYSIO_INFO("zoidfs_sysio_resize: fhi_truncate() failed, code = %i.", ret);
 		ZFSSYSIO_PERROR("zoidfs_sysio_resize");
 		ZFSSYSIO_TRACE_EXIT;
 		return sysio_err_to_zfs_err(errno);
-	}
+    }*/
+
+    /* using setattr method */
+    int ret = 0;
+    zoidfs_sattr_t sattr;
+    zoidfs_attr_t attr;
+
+    /* make sure the handle refers to a regular file */
+    memset(&attr, 0, sizeof(attr));
+    attr.mask = ZOIDFS_ATTR_MODE;
+
+    zoidfs_getattr(handle, &attr);
+
+    if(attr.type == ZOIDFS_REG)
+    {
+        memset(&sattr, 0, sizeof(sattr));
+        sattr.mask = ZOIDFS_ATTR_SIZE;
+        sattr.size = size;
+    
+        ret = zoidfs_sysio_setattr(handle, &sattr, NULL);
+    }
+    else
+    {
+		ZFSSYSIO_INFO("zoidfs_sysio_resize: fhi_setattr() failed, cannot set the size of a non-regular file");
+	    ZFSSYSIO_TRACE_EXIT;
+        return ZFSERR_INVAL;
+    }
+
 	ZFSSYSIO_TRACE_EXIT;
-    return ZFS_OK;
+    return ret;
 }
 
 /*
