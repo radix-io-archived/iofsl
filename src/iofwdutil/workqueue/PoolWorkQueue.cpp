@@ -130,7 +130,7 @@ void PoolWorkQueue::createThread ()
 
 iofwdutil::completion::CompletionID * PoolWorkQueue::queueWork (WorkItem * item)
 {
-   ZLOG_INFO(log_,format ("Adding work to queue (item %p)") % item); 
+   ZLOG_DEBUG(log_,format ("Adding work to queue (item %p)") % item);
    newItem (item); 
   
    iofwdutil::completion::WorkQueueCompletionID * id = new iofwdutil::completion::WorkQueueCompletionID ();

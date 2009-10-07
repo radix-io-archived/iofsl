@@ -21,7 +21,7 @@ namespace zoidfs
 
 //===========================================================================
 
-#define LOG(a) ZLOG_INFO(log_,a)
+#define LOG(a) ZLOG_DEBUG(log_,a)
 
 int LogAPI::init(void)
 {
