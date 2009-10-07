@@ -40,31 +40,79 @@ static size_t total_file_count = 0;
 /* setup the file paths */
 int init_path_names(char * testDir, char * mpt)
 {
+    int mptIsRoot =0;
+    if(mpt[0] == '/')
+    {
+        mptIsRoot = 1;
+    }
+
     snprintf(symlink_component_filename, NAMESIZE, "%s/symlink_comp_file", testDir);
     snprintf(symlink_component_dirname, NAMESIZE, "%s/symlink_comp_dir", testDir);
     snprintf(symlink_component_dirname_slash, NAMESIZE, "%s/symlink_comp_dir/", testDir);
-    snprintf(symlink_fullpath_filename, NAMESIZE, "%s/%s/symlink_full_file", mpt, testDir);
-    snprintf(symlink_fullpath_dirname, NAMESIZE, "%s/%s/symlink_full_dir", mpt, testDir);
-    snprintf(symlink_fullpath_dirname_slash, NAMESIZE, "%s/%s/symlink_full_dir/", mpt, testDir);
+    if(!mptIsRoot)
+    {
+        snprintf(symlink_fullpath_filename, NAMESIZE, "%s/%s/symlink_full_file", mpt, testDir);
+        snprintf(symlink_fullpath_dirname, NAMESIZE, "%s/%s/symlink_full_dir", mpt, testDir);
+        snprintf(symlink_fullpath_dirname_slash, NAMESIZE, "%s/%s/symlink_full_dir/", mpt, testDir);
+    }
+    else
+    {
+        snprintf(symlink_fullpath_filename, NAMESIZE, "/%s/symlink_full_file", testDir);
+        snprintf(symlink_fullpath_dirname, NAMESIZE, "/%s/symlink_full_dir", testDir);
+        snprintf(symlink_fullpath_dirname_slash, NAMESIZE, "/%s/symlink_full_dir/", testDir);
+    }
 
     snprintf(link_component_filename, NAMESIZE, "%s/link_comp_file", testDir);
     snprintf(link_component_dirname, NAMESIZE, "%s/link_comp_dir", testDir);
-    snprintf(link_fullpath_filename, NAMESIZE, "%s/%s/link_full_file", mpt, testDir);
-    snprintf(link_fullpath_dirname, NAMESIZE, "%s/%s/link_full_dir", mpt, testDir);
+
+    if(!mptIsRoot)
+    {
+        snprintf(link_fullpath_filename, NAMESIZE, "%s/%s/link_full_file", mpt, testDir);
+        snprintf(link_fullpath_dirname, NAMESIZE, "%s/%s/link_full_dir", mpt, testDir);
+    }
+    else
+    {
+        snprintf(link_fullpath_filename, NAMESIZE, "/%s/link_full_file", testDir);
+        snprintf(link_fullpath_dirname, NAMESIZE, "/%s/link_full_dir", testDir);
+    }
 
     snprintf(component_filename, NAMESIZE, "%s/test-zoidfs-file-comp", testDir);
     snprintf(base_component_filename, NAMESIZE, "test-zoidfs-file-comp");
     snprintf(component_dirname, NAMESIZE, "%s/test-zoidfs-dir-comp", testDir);
     snprintf(base_component_dirname, NAMESIZE, "test-zoidfs-dir-comp");
-    snprintf(fullpath_filename, NAMESIZE, "%s/%s/test-zoidfs-file-full", mpt, testDir);
-    snprintf(fullpath_dirname, NAMESIZE, "%s/%s/test-zoidfs-dir-full", mpt, testDir);
+
+    if(!mptIsRoot)
+    {
+        snprintf(fullpath_filename, NAMESIZE, "%s/%s/test-zoidfs-file-full", mpt, testDir);
+        snprintf(fullpath_dirname, NAMESIZE, "%s/%s/test-zoidfs-dir-full", mpt, testDir);
+    }
+    else
+    {
+        snprintf(fullpath_filename, NAMESIZE, "/%s/test-zoidfs-file-full", testDir);
+        snprintf(fullpath_dirname, NAMESIZE, "/%s/test-zoidfs-dir-full", testDir);
+    }
 
     snprintf(rename_component_filename, NAMESIZE, "%s/test-zoidfs-file-comp-rename", testDir);
     snprintf(rename_component_dirname, NAMESIZE, "%s/test-zoidfs-dir-comp-rename", testDir);
-    snprintf(rename_fullpath_filename, NAMESIZE, "%s/%s/test-zoidfs-file-full-rename", mpt, testDir);
-    snprintf(rename_fullpath_dirname, NAMESIZE, "%s/%s/test-zoidfs-dir-full-rename", mpt, testDir);
+    if(!mptIsRoot)
+    {
+        snprintf(rename_fullpath_filename, NAMESIZE, "%s/%s/test-zoidfs-file-full-rename", mpt, testDir);
+        snprintf(rename_fullpath_dirname, NAMESIZE, "%s/%s/test-zoidfs-dir-full-rename", mpt, testDir);
+    }
+    else
+    {
+        snprintf(rename_fullpath_filename, NAMESIZE, "/%s/test-zoidfs-file-full-rename", testDir);
+        snprintf(rename_fullpath_dirname, NAMESIZE, "/%s/test-zoidfs-dir-full-rename", testDir);
+    }
 
-    snprintf(long_fullpath_dirpath, PATHSIZE, "%s/%s/a/b/c/d/e/f", mpt, testDir);
+    if(!mptIsRoot)
+    {
+        snprintf(long_fullpath_dirpath, PATHSIZE, "%s/%s/a/b/c/d/e/f", mpt, testDir);
+    }
+    else
+    {
+        snprintf(long_fullpath_dirpath, PATHSIZE, "/%s/a/b/c/d/e/f", testDir);
+    }
     snprintf(long_component_dirpath, PATHSIZE, "%s/a/b/c/d/e/f", testDir);
 
     return 0;
@@ -87,6 +135,8 @@ int testCREATE(void)
     struct timeval now;
     zoidfs_sattr_t sattr;
     zoidfs_handle_t fhandle;
+
+    memset(&sattr, 0, sizeof(sattr));
 
     /* set the attrs */
     sattr.mask = ZOIDFS_ATTR_SETABLE;
@@ -128,6 +178,8 @@ int testMKDIR(void)
     zoidfs_cache_hint_t parent_hint;
     char p1[4096];
     char p2[4096];
+
+    memset(&sattr, 0, sizeof(sattr));
 
     /* set the attrs */
     sattr.mask = ZOIDFS_ATTR_SETABLE;
@@ -197,6 +249,8 @@ int testSYMLINK(void)
     struct timeval now;
     zoidfs_sattr_t sattr;
 
+    memset(&sattr, 0, sizeof(sattr));
+
     /* set the attrs */
     sattr.mask = ZOIDFS_ATTR_SETABLE;
     sattr.mode = 0755;
@@ -248,6 +302,8 @@ int testLINK(void)
 {
     struct timeval now;
     zoidfs_sattr_t sattr;
+
+    memset(&sattr, 0, sizeof(sattr));
 
     /* set the attrs */
     sattr.mask = ZOIDFS_ATTR_SETABLE;
@@ -342,6 +398,9 @@ int testREMOVE(void)
     char p1[4096];
     char p2[4096];
 
+    /* revalidate the basedir handle */
+    zoidfs_lookup(NULL, NULL, "/", &basedir_handle);
+
     /* rm several subdirs using the component dir name */
     sprintf(p1, "%s/a/b/c/d/e", component_dirname);
     CU_ASSERT(ZFS_OK == zoidfs_remove(&basedir_handle, p1, NULL, NULL));
@@ -429,6 +488,8 @@ int testGETATTR(void)
 {
     zoidfs_handle_t fhandle;
     zoidfs_attr_t gattr;
+
+    memset(&gattr, 0, sizeof(gattr));
 
     /* get all attributes for a regular file */
     gattr.mask = ZOIDFS_ATTR_ALL;
@@ -547,6 +608,8 @@ int testSETATTR(void)
     zoidfs_attr_t gattr;
     zoidfs_sattr_t sattr;
 
+    memset(&sattr, 0, sizeof(sattr));
+    memset(&gattr, 0, sizeof(gattr));
 #define SATTR_MASK_MODE_0644 \
 do{ \
     sattr.mask = ZOIDFS_ATTR_MODE; \
@@ -605,17 +668,37 @@ do{ \
     CU_ASSERT(ZFS_OK == zoidfs_setattr(&fhandle, &sattr, &gattr));
     CU_ASSERT(gattr.mode == 0755);
     
+    SATTR_MASK_MODE_0644;
+    ATTR_MASK_MODE;
     zoidfs_lookup(&basedir_handle, symlink_component_filename, NULL, &fhandle);
     CU_ASSERT_EQUAL(ZFS_OK, zoidfs_setattr(&fhandle, &sattr, &gattr));
+    SATTR_MASK_MODE_0755;
+    ATTR_MASK_MODE;
+    CU_ASSERT(ZFS_OK == zoidfs_setattr(&fhandle, &sattr, &gattr));
 
+    SATTR_MASK_MODE_0644;
+    ATTR_MASK_MODE;
     zoidfs_lookup(&basedir_handle, symlink_component_dirname, NULL, &fhandle);
     CU_ASSERT_EQUAL(ZFS_OK, zoidfs_setattr(&fhandle, &sattr, &gattr));
+    SATTR_MASK_MODE_0755;
+    ATTR_MASK_MODE;
+    CU_ASSERT(ZFS_OK == zoidfs_setattr(&fhandle, &sattr, &gattr));
 
+    SATTR_MASK_MODE_0644;
+    ATTR_MASK_MODE;
     zoidfs_lookup(NULL, NULL, symlink_fullpath_filename, &fhandle);
     CU_ASSERT_EQUAL(ZFS_OK, zoidfs_setattr(&fhandle, &sattr, &gattr));
+    SATTR_MASK_MODE_0755;
+    ATTR_MASK_MODE;
+    CU_ASSERT(ZFS_OK == zoidfs_setattr(&fhandle, &sattr, &gattr));
 
+    SATTR_MASK_MODE_0644;
+    ATTR_MASK_MODE;
     zoidfs_lookup(NULL, NULL, symlink_fullpath_dirname, &fhandle);
     CU_ASSERT_EQUAL(ZFS_OK, zoidfs_setattr(&fhandle, &sattr, &gattr));
+    SATTR_MASK_MODE_0755;
+    ATTR_MASK_MODE;
+    CU_ASSERT(ZFS_OK == zoidfs_setattr(&fhandle, &sattr, &gattr));
 
     return 0;
 }
@@ -773,6 +856,8 @@ int testRESIZE(void)
     zoidfs_attr_t gattr;
     unsigned int size; 
 
+    memset(&gattr, 0, sizeof(gattr));
+
     size = random () % 2048;
     gattr.mask = ZOIDFS_ATTR_ALL;
     zoidfs_lookup(&basedir_handle, component_filename, NULL, &fhandle);
@@ -796,14 +881,14 @@ int testRESIZE(void)
     CU_ASSERT_NOT_EQUAL(ZFS_OK, zoidfs_resize(&fhandle, size));
 
     zoidfs_lookup(&basedir_handle, symlink_component_filename, NULL, &fhandle);
-    CU_ASSERT_EQUAL(ZFS_OK, zoidfs_resize(&fhandle, size));
+    CU_ASSERT_NOT_EQUAL(ZFS_OK, zoidfs_resize(&fhandle, size));
 
     /* directory, should fail */
     zoidfs_lookup(&basedir_handle, symlink_component_dirname, NULL, &fhandle);
     CU_ASSERT_NOT_EQUAL(ZFS_OK, zoidfs_resize(&fhandle, size));
 
     zoidfs_lookup(NULL, NULL, symlink_fullpath_filename, &fhandle);
-    CU_ASSERT_EQUAL(ZFS_OK, zoidfs_resize(&fhandle, size));
+    CU_ASSERT_NOT_EQUAL(ZFS_OK, zoidfs_resize(&fhandle, size));
 
     /* directory, should fail */
     zoidfs_lookup(NULL, NULL, symlink_fullpath_dirname, &fhandle);
@@ -889,12 +974,12 @@ int main(int argc, char ** argv)
         (NULL == CU_add_test(pSuite, "test of zoidfs_link()", (CU_TestFunc) testLINK)) ||
         (NULL == CU_add_test(pSuite, "test of zoidfs_rename()", (CU_TestFunc) testRENAME)) ||
         (NULL == CU_add_test(pSuite, "test of zoidfs_lookup()", (CU_TestFunc) testLOOKUP)) ||
+        (NULL == CU_add_test(pSuite, "test of zoidfs_commit()", (CU_TestFunc) testCOMMIT)) ||
         (NULL == CU_add_test(pSuite, "test of zoidfs_getattr()", (CU_TestFunc) testGETATTR)) ||
         (NULL == CU_add_test(pSuite, "test of zoidfs_setattr()", (CU_TestFunc) testSETATTR)) ||
         (NULL == CU_add_test(pSuite, "test of zoidfs_resize()", (CU_TestFunc) testRESIZE)) ||
         (NULL == CU_add_test(pSuite, "test of zoidfs_readdir()", (CU_TestFunc) testREADDIR)) ||
         (NULL == CU_add_test(pSuite, "test of zoidfs_readlink()", (CU_TestFunc) testREADLINK)) ||
-        (NULL == CU_add_test(pSuite, "test of zoidfs_commit()", (CU_TestFunc) testCOMMIT)) ||
         (NULL == CU_add_test(pSuite, "test of zoidfs_remove()", (CU_TestFunc) testREMOVE))
       )
    {
