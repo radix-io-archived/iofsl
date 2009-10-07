@@ -1,8 +1,7 @@
 aclocal -Im4 && autoreconf -fi -Im4
 
 #
-# HACK: touch the config deps... these will be overwritten
+# HACK: run lex and yacc to make sure the .c and .h files exist 
 #
-touch src/c-util/configparser.h
-touch src/c-util/configlex.h
-
+flex --header-file=./src/c-util/configlex.h -o ./src/c-util/configlex.c ./src/c-util/configlex.l
+yacc --verbose --debug -d ./src/c-util/configparser.y -o ./src/c-util/configparser.c
