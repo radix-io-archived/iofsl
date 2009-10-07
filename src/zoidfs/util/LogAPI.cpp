@@ -71,8 +71,8 @@ int LogAPI::readlink(const zoidfs_handle_t * handle,
             size_t buffer_length)
 {
    LOG(format("zoidfs_readlink %s buf=%p len=%i") % handle2string(handle)
-         % buffer % buffer_length); 
-   return api_->readlink (handle, buffer, buffer_length); 
+         % (void*) buffer % buffer_length);
+   return api_->readlink (handle, buffer, buffer_length);
 }
 
 int LogAPI::read(const zoidfs_handle_t * handle,
