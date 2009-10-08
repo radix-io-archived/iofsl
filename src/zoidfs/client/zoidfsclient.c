@@ -208,7 +208,7 @@ typedef struct
  * xdr size processing for zoidfs messages
  */
 
-
+#ifdef ZFS_USE_XDR_SIZE_CACHE
 static unsigned int zoidfs_xdr_size_cache[ZFS_MSG_DATA_MAX];
 
 static inline unsigned int zoidfs_xdr_size_processor_cache_init()
@@ -307,6 +307,7 @@ static inline unsigned int zoidfs_xdr_size_processor_cache_init()
 
     return 0;
 }
+#endif
 
 static inline unsigned int zoidfs_xdr_size_processor(zoidfs_msg_data_t data_t, const void * data)
 {
@@ -2811,7 +2812,7 @@ int zoidfs_read(const zoidfs_handle_t *handle, size_t mem_count_,
     ZOIDFS_SEND_MSG_INIT(send_msg, ZOIDFS_PROTO_READ);
     ZOIDFS_RECV_MSG_INIT(recv_msg);
 
-    /* init the transfer array wrappers */ 
+    /* init the transfer array wrappers */
     mem_sizes_transfer.data = (void *)mem_sizes;
     mem_sizes_transfer.len = mem_count;
     file_starts_transfer.data = (void *)file_starts;
@@ -3052,9 +3053,10 @@ static int zoidfs_read_pipeline(BMI_addr_t peer_addr, uint64_t pipeline_size,
 int zoidfs_init(void) {
     int ret = ZFS_OK;
 
+#ifdef ZFS_USE_XDR_SIZE_CACHE
     /* get the values for the size cache */
     zoidfs_xdr_size_processor_cache_init();
-
+#endif
 
     assert(sizeof(size_t) == sizeof(unsigned long));
 
