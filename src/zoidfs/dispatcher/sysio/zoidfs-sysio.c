@@ -8,6 +8,7 @@
  */
 
 #include <sys/time.h>
+#include <assert.h>
 #include "zoidfs-sysio.h"
 
 #define SYSIO_WR_IO_CS
