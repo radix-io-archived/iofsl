@@ -705,24 +705,28 @@ int testREADLINK(void)
 int testREADDIR(void)
 {
     zoidfs_handle_t fhandle;
+    zoidfs_handle_t thandle;
     zoidfs_dirent_cookie_t cookie = 0;
     size_t entry_count = 32;
     zoidfs_dirent_t * entries;
     int flags = 0;
 
+    /* get the test directory we created in this program */
+    zoidfs_lookup(&basedir_handle, "zoidfs-test-dir", NULL, &thandle);
+
     cookie = 0;
     entry_count = 32;
     entries = malloc(entry_count * sizeof(zoidfs_dirent_t));
     memset(entries, 0, entry_count * sizeof(zoidfs_dirent_t));
-    CU_ASSERT_EQUAL(ZFS_OK, zoidfs_readdir(&basedir_handle, cookie, &entry_count, entries, flags, NULL)); 
-    CU_ASSERT(total_file_count + 2 == entry_count);
+    CU_ASSERT_EQUAL(ZFS_OK, zoidfs_readdir(&thandle, cookie, &entry_count, entries, flags, NULL)); 
+    CU_ASSERT(10 == entry_count); /* should be 10 entries... all files created in ./zoidfs-test-dir, ., and .. */
     free(entries);
 
     cookie = 0;
     entry_count = 1;
     entries = malloc(entry_count * sizeof(zoidfs_dirent_t));
     memset(entries, 0, entry_count * sizeof(zoidfs_dirent_t));
-    CU_ASSERT_EQUAL(ZFS_OK, zoidfs_readdir(&basedir_handle, cookie, &entry_count, entries, flags, NULL)); 
+    CU_ASSERT_EQUAL(ZFS_OK, zoidfs_readdir(&thandle, cookie, &entry_count, entries, flags, NULL)); 
     free(entries);
 
     cookie = 0;
@@ -731,7 +735,7 @@ int testREADDIR(void)
     memset(entries, 0, entry_count * sizeof(zoidfs_dirent_t));
     zoidfs_lookup(&basedir_handle, component_dirname, NULL, &fhandle);
     CU_ASSERT_EQUAL(ZFS_OK, zoidfs_readdir(&fhandle, cookie, &entry_count, entries, flags, NULL)); 
-    CU_ASSERT(2 == entry_count); 
+    CU_ASSERT(3 == entry_count); /* .., ., and a entries */ 
     free(entries);
     
     cookie = 0;
@@ -740,7 +744,7 @@ int testREADDIR(void)
     memset(entries, 0, entry_count * sizeof(zoidfs_dirent_t));
     zoidfs_lookup(NULL, NULL, fullpath_dirname, &fhandle);
     CU_ASSERT_EQUAL(ZFS_OK, zoidfs_readdir(&fhandle, cookie, &entry_count, entries, flags, NULL)); 
-    CU_ASSERT(2 == entry_count); 
+    CU_ASSERT(3 == entry_count); /* .., ., and a entries */ 
     free(entries);
     
     cookie = 0;
@@ -750,22 +754,26 @@ int testREADDIR(void)
     zoidfs_lookup(&basedir_handle, symlink_component_dirname, NULL, &fhandle);
     CU_ASSERT_NOT_EQUAL(ZFS_OK, zoidfs_readdir(&fhandle, cookie, &entry_count, entries, flags, NULL)); 
     free(entries);
-    
-    cookie = 0;
+   
+    /*
+     * Not sure how to handle these tests... do we follow symlinks or not?
+     */
+ 
+    /*cookie = 0;
     entry_count = 32;
     entries = malloc(entry_count * sizeof(zoidfs_dirent_t));
     memset(entries, 0, entry_count * sizeof(zoidfs_dirent_t));
     zoidfs_lookup(&basedir_handle, symlink_component_dirname_slash, NULL, &fhandle);
     CU_ASSERT_EQUAL(ZFS_OK, zoidfs_readdir(&fhandle, cookie, &entry_count, entries, flags, NULL)); 
-    free(entries);
+    free(entries);*/
 
-    cookie = 0;
+    /*cookie = 0;
     entry_count = 32;
     entries = malloc(entry_count * sizeof(zoidfs_dirent_t));
     memset(entries, 0, entry_count * sizeof(zoidfs_dirent_t));
     zoidfs_lookup(NULL, NULL, symlink_fullpath_dirname_slash, &fhandle);
     CU_ASSERT_EQUAL(ZFS_OK, zoidfs_readdir(&fhandle, cookie, &entry_count, entries, flags, NULL)); 
-    free(entries);
+    free(entries);*/
 
     cookie = 0;
     entry_count = 32;
