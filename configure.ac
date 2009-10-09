@@ -105,10 +105,10 @@ AC_ARG_WITH([mpi],[AS_HELP_STRING([--with-mpi@<:@=DIR@:>@],
                         [location of MPI library])],
                    [mpidir=$withval])
 if test "x$mpidir" != "x" ; then
-    CPPFLAGS="$CPPFLAGS -I${mpidir}/include"
-    CFLAGS="$CPPFLAGS -I${mpidir}/include"
-    LDFLAGS="$LDFLAGS -L${mpidir}/lib"
-    PATH="$PATH:${mpidir}/bin:${mpidir}/sbin"
+    MPI_CPPFLAGS="$CPPFLAGS -I${mpidir}/include"
+    MPI_CFLAGS="$CFLAGS -I${mpidir}/include"
+    MPI_LDFLAGS="$LDFLAGS -L${mpidir}/lib"
+    MPI_PATH="$PATH:${mpidir}/bin:${mpidir}/sbin"
     
     FOUNDLIBMPICH=1
     FOUNDLIBMPI=1
