@@ -32,13 +32,13 @@ endif
 
 if DISPATCH_POSIX
 src_zoidfs_libzoidfs_a_SOURCES += \
-src/zoidfs/dispatcher/posix//dcache.c \
-src/zoidfs/dispatcher/posix//fcache.c \
-src/zoidfs/dispatcher/posix//zoidfs-posix.c \
-src/zoidfs/dispatcher/posix//zoidfs-util.c \
-src/zoidfs/dispatcher/posix//dcache.h \
-src/zoidfs/dispatcher/posix//fcache.h \
-src/zoidfs/dispatcher/posix//zoidfs-posix.h \
-src/zoidfs/dispatcher/posix//zoidfs-util.h 
+src/zoidfs/dispatcher/posix/dcache.c \
+src/zoidfs/dispatcher/posix/fcache.c \
+src/zoidfs/dispatcher/posix/zoidfs-posix.c \
+src/zoidfs/dispatcher/posix/zoidfs-util.c \
+src/zoidfs/dispatcher/posix/dcache.h \
+src/zoidfs/dispatcher/posix/fcache.h \
+src/zoidfs/dispatcher/posix/zoidfs-posix.h \
+src/zoidfs/dispatcher/posix/zoidfs-util.h 
 endif
 
