@@ -692,7 +692,7 @@ static int zoidfs_sysio_setattr(const zoidfs_handle_t *handle, const zoidfs_satt
 	 */
 	if(sattr->mask & ZOIDFS_ATTR_UID)
 	{
-		sysio_sattr.fhisattr_uid = sattr->uid;
+		sysio_sattr.fhisattr_uid = getuid(); /*sattr->uid;*/
 		sysio_sattr.fhisattr_uid_set = 1;
 		setAttrs = 1;
 		ZFSSYSIO_DEBUG("zoidfs_sysio_setattr: set uid = %i",  sysio_sattr.fhisattr_uid);
@@ -702,7 +702,7 @@ static int zoidfs_sysio_setattr(const zoidfs_handle_t *handle, const zoidfs_satt
 	 */
 	if(sattr->mask & ZOIDFS_ATTR_GID)
 	{
-		sysio_sattr.fhisattr_gid = sattr->gid;
+		sysio_sattr.fhisattr_gid = getgid(); /*sattr->gid;*/
 		sysio_sattr.fhisattr_gid_set = 1;
 		setAttrs = 1;
 		ZFSSYSIO_DEBUG("zoidfs_sysio_setattr: set gid = %i",  sysio_sattr.fhisattr_gid);
