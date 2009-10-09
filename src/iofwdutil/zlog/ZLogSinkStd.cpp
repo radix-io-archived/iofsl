@@ -3,7 +3,7 @@
 #include "ZLogException.hh"
 #include "ZLogSinkStd.hh"
 
-using namespace boost; 
+using namespace boost;
 
 namespace iofwdutil
 {
@@ -26,9 +26,9 @@ void ZLogSinkStd::setOption (const std::string & name, const std::string &
    if (name == "filename")
    {
       throw ZLogException (str(format("Invalid option ('%s') for ZLogSinkStd")
-               % name)); 
+               % name));
    }
-   ZLogSinkFile::setOption (name, val); 
+   ZLogSinkFile::setOption (name, val);
 }
 
 void ZLogSinkStd::openFile ()

@@ -12,32 +12,32 @@ namespace iofwdutil
    {
 //===========================================================================
 
-class ZLog; 
+class ZLog;
 
 class ZLogSinkFile : public ZLogSink
 {
 public:
-   ZLogSinkFile (); 
+   ZLogSinkFile ();
 
    virtual void acceptData (int level, const ZLogSource & source, const
-         std::string & msg); 
+         std::string & msg);
 
-   virtual void initialize (); 
+   virtual void initialize ();
 
    virtual void setOption (const std::string & name, const std::string & val);
 
    virtual ~ZLogSinkFile ();
 
 protected:
-   virtual void openFile (); 
+   virtual void openFile ();
 
 protected:
 
    std::auto_ptr<std::ostream> output_;
-   std::string filename_; 
+   std::string filename_;
 
-   boost::mutex outputlock_; 
-}; 
+   boost::mutex outputlock_;
+};
 
 
 //===========================================================================

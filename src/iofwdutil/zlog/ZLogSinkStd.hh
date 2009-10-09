@@ -13,24 +13,24 @@ namespace iofwdutil
 /**
  * Sink that outputs to stdout / stderr
  */
-class ZLogSinkStd : public ZLogSinkFile 
+class ZLogSinkStd : public ZLogSinkFile
 {
 public:
 
-   ZLogSinkStd (); 
+   ZLogSinkStd ();
 
-   virtual ~ZLogSinkStd (); 
+   virtual ~ZLogSinkStd ();
 
    virtual void setOption (const std::string & name, const std::string & val);
 
 protected:
-   virtual void openFile (); 
+   virtual void openFile ();
 
 protected:
 
    /// If output goes to stderr or stdout
-   bool stderr_; 
-   
+   bool stderr_;
+
 };
 //===========================================================================
    }
