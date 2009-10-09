@@ -109,36 +109,37 @@ if test "x$mpidir" != "x" ; then
     CFLAGS="$CPPFLAGS -I${mpidir}/include"
     LDFLAGS="$LDFLAGS -L${mpidir}/lib"
     PATH="$PATH:${mpidir}/bin:${mpidir}/sbin"
-fi
-FOUNDLIBMPICH=1
-FOUNDLIBMPI=1
-AC_CHECK_LIB([mpich], [MPI_Init], ,[FOUNDLIBMPICH=0])
-AC_CHECK_LIB([mpi], [MPI_Init], , [FOUNDLIBMPI=0])
-if test "x${FOUNDLIBMPI}" == "x0" && test "x${FOUNDLIBMPICH}" == "x0" ; then
-    AC_MSG_ERROR([A usable mpi library was not found!])
-else
-    AC_SUBST([MPI_CFLAGS],["-I${mpidir}/include"])
-    AC_SUBST([MPI_CPPFLAGS],["-I${mpidir}/include"])
-    if test "x${FOUNDLIBMPI}" == "x1" ; then
-        AC_SUBST([MPI_LIBS],["-lmpi"])
-        AC_SUBST([MPI_LDFLAGS],["-L${mpidir}/lib -lmpi"])
-    else 
-        if test "x${FOUNDLIBMPICH}" == "x1" ; then
-            AC_SUBST([MPI_LIBS],["-lmpich"])
-            AC_SUBST([MPI_LDFLAGS],["-L${mpidir}/lib -lmpich"])
+    
+    FOUNDLIBMPICH=1
+    FOUNDLIBMPI=1
+    AC_CHECK_LIB([mpich], [MPI_Init], ,[FOUNDLIBMPICH=0])
+    AC_CHECK_LIB([mpi], [MPI_Init], , [FOUNDLIBMPI=0])
+    if test "x${FOUNDLIBMPI}" == "x0" && test "x${FOUNDLIBMPICH}" == "x0" ; then
+        AC_MSG_ERROR([A usable mpi library was not found!])
+    else
+        AC_SUBST([MPI_CFLAGS],["-I${mpidir}/include"])
+        AC_SUBST([MPI_CPPFLAGS],["-I${mpidir}/include"])
+        if test "x${FOUNDLIBMPI}" == "x1" ; then
+            AC_SUBST([MPI_LIBS],["-lmpi"])
+            AC_SUBST([MPI_LDFLAGS],["-L${mpidir}/lib -lmpi"])
+        else 
+            if test "x${FOUNDLIBMPICH}" == "x1" ; then
+                AC_SUBST([MPI_LIBS],["-lmpich"])
+                AC_SUBST([MPI_LDFLAGS],["-L${mpidir}/lib -lmpich"])
+            fi
         fi
     fi
-fi
 
-ENABLE_MPI=1
-AC_CHECK_HEADER([mpi.h],[ENABLE_MPI=1],[ENABLE_MPI=;])
-if test "x${ENABLE_MPI}" != "x1" ; then
-    AC_MSG_ERROR([mpi.h was not found!])
-fi
+    ENABLE_MPI=1
+    AC_CHECK_HEADER([mpi.h],[ENABLE_MPI=1],[ENABLE_MPI=;])
+    if test "x${ENABLE_MPI}" != "x1" ; then
+        AC_MSG_ERROR([mpi.h was not found!])
+    fi  
 
-AC_CHECK_PROG([MPICC],[mpicc],[${mpidir}/bin/mpicc],[mpicc not found])
-AC_CHECK_PROG([MPICPP],[mpic++],[${mpidir}/bin/mpic++],[mpic++ not found])
-AC_CHECK_PROG([MPICXX],[mpicxx],[${mpidir}/bin/mpicxx],[mpicxx not found])
+    AC_CHECK_PROG([MPICC],[mpicc],[${mpidir}/bin/mpicc],[mpicc not found])
+    AC_CHECK_PROG([MPICPP],[mpic++],[${mpidir}/bin/mpic++],[mpic++ not found])
+    AC_CHECK_PROG([MPICXX],[mpicxx],[${mpidir}/bin/mpicxx],[mpicxx not found])
+fi
 AC_LANG_POP
 AX_MAKE_VAR([ENABLE_MPI])
 
