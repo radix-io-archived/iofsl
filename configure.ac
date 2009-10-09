@@ -91,6 +91,35 @@ fi
 AX_MAKE_VAR([ENABLE_CUNIT])
 AX_MAKE_VAR([cunitdir])
 
+#
+# MPI
+#
+# Look for mpi.h, libmpich, libmpi, and
+# the mpi c and c++ compiler wrappers
+# 
+AC_LANG_PUSH([C])
+MPI_INCLUDE=
+MPI_LIBS=
+AC_ARG_WITH([mpi],[AS_HELP_STRING([--with-mpi@<:@=DIR@:>@], 
+                        [location of MPI library])],
+                   [mpidir=$withval])
+if test "x$mpidir" != "x" ; then
+    CPPFLAGS="$CPPFLAGS -I${mpidir}/include"
+    CFLAGS="$CPPFLAGS -I${mpidir}/include"
+    LDFLAGS="$LDFLAGS -L${mpidir}/lib"
+    PATH="$PATH:${mpidir}/bin:${mpidir}/sbin"
+fi
+AC_CHECK_LIB([mpich], [MPI_Init],,
+             [AC_MSG_WARN([Could not find usable libmpich])])
+AC_CHECK_LIB([mpi], [MPI_Init],,
+             [AC_MSG_WARN([Could not find libmpi])])
+AC_CHECK_HEADER_DEFINE([<mpi.h>],[MPI_COMM_WORLD],[],
+        AC_MSG_ERROR([MPI does not have MPI_COMM_WORLD]))
+AC_CHECK_PROG([MPICC],[mpicc],[${mpidir}/bin/mpicc],[mpicc not found])
+AC_CHECK_PROG([MPICPP],[mpic++],[${mpidir}/bin/mpic++],[mpic++ not found])
+AC_CHECK_PROG([MPICXX],[mpicxx],[${mpidir}/bin/mpicxx],[mpicxx not found])
+AC_LANG_POP
+
 # BMI
 AC_LANG_PUSH([C])
 BMI_INCLUDE=
