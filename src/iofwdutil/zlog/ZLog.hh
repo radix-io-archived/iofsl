@@ -117,25 +117,25 @@ class ZLog
  */
 #ifdef ZLOG_DISABLE_ALL
 
-#undef ZLOG_ERROR(cl,txt)
+#undef ZLOG_ERROR
 #define ZLOG_ERROR(cl,txt)
 
-#undef ZLOG_CRITICAL(cl,txt)
+#undef ZLOG_CRITICAL
 #define ZLOG_CRITICAL(cl,txt)
 
-#undef ZLOG_WARN(cl,txt)
+#undef ZLOG_WARN
 #define ZLOG_WARN(cl,txt)
 
-#undef ZLOG_INFO(cl,txt)
+#undef ZLOG_INFO
 #define ZLOG_INFO(cl,txt)
 
-#undef ZLOG_DEBUG(cl,txt)
+#undef ZLOG_DEBUG
 #define ZLOG_DEBUG(cl,txt)
 
-#undef ZLOG_DEBUG_MORE(cl,txt)
+#undef ZLOG_DEBUG_MORE
 #define ZLOG_DEBUG_MORE(cl,txt)
 
-#undef ZLOG_DEBUG_EXTREME(cl,txt)
+#undef ZLOG_DEBUG_EXTREME
 #define ZLOG_DEBUG_EXTREME(cl,txt)
 
 #endif /* ZLOG_DISABLE_ALL */
