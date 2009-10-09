@@ -33,7 +33,7 @@ protected:
 
 protected:
 
-   std::auto_ptr<std::ofstream> output_; 
+   std::auto_ptr<std::ostream> output_;
    std::string filename_; 
 
    boost::mutex outputlock_; 

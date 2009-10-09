@@ -33,12 +33,8 @@ void ZLogSinkStd::setOption (const std::string & name, const std::string &
 
 void ZLogSinkStd::openFile ()
 {
-   filename_ = (stderr_ ? "/dev/stderr" : "/dev/stdout"); 
-
-
-   ZLogSinkFile::openFile (); 
-   
-      output_->rdbuf()->pubsetbuf(0, 0);
+   output_.reset (new std::ostream (stderr_ ? std::cerr.rdbuf() : std::cout.rdbuf()));
+   output_->rdbuf()->pubsetbuf(0, 0);
 }
 //===========================================================================
    }
