@@ -1,0 +1,28 @@
+noinst_LIBRARIES += src/c-util/libc-util.a
+
+
+src_c_util_libc_util_a_SOURCES = \
+src/c-util/configfile.c \
+src/c-util/configfile.h \
+src/c-util/configglue.c \
+src/c-util/configglue.h \
+src/c-util/configlex.c \
+src/c-util/configlex.h \
+src/c-util/configparser.c \
+src/c-util/configparser.h \
+src/c-util/configstore.c \
+src/c-util/configstore.h \
+src/c-util/configstoreadapter.c \
+src/c-util/configstoreadapter.h \
+src/c-util/env-parse.c \
+src/c-util/env-parse.h \
+src/c-util/gencache.c \
+src/c-util/gencache.h \
+src/c-util/hash-table.c \
+src/c-util/hash-table.h \
+src/c-util/sha1.c \
+src/c-util/sha1.h \
+src/c-util/tools.c \
+src/c-util/tools.h \
+src/c-util/txt_configfile.c \
+src/c-util/txt_configfile.h

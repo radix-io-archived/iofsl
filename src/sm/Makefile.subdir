@@ -1,0 +1,4 @@
+noinst_LIBRARIES += src/sm/libsm.a
+src_sm_libsm_a_SOURCES = \
+	src/sm/SM.cpp \
+	src/sm/SM.hh

@@ -2,7 +2,7 @@
 #define ZOIDFS_POSIX_HANDLECACHE_H
 
 #include <stdint.h>
-#include "zoidfs.h"
+#include "zoidfs/zoidfs.h"
 
 /*
  * General cache; Expires least recently used item

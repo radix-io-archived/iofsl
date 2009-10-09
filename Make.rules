@@ -1,0 +1,13 @@
+
+#
+# flex & bison deps
+#
+%.c %.h: %.l
+	$(AM_V_GEN)$(LEX) --header-file=$(patsubst %.c,%.h,$@) -o $@ $< \
+	   || ( $(RM) $(basename $@).h $(basename $@).c ; exit 1) 
+
+%.c %.h: %.y
+	$(AM_V_GEN)$(YACC) --defines=$(patsubst %.c,%.h,$@) -o $(patsubst %.h,%.c,$@)  $< \
+	   || ( $(RM) $(basename $@).h $(basename $@).c ; exit 1)
+
+

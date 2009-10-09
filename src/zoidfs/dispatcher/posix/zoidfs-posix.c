@@ -21,8 +21,8 @@
 
 #include <pthread.h>
 
-#include "zoidfs.h"
-#include "zoidfs-util.h"
+#include "zoidfs/zoidfs.h"
+#include "zoidfs/util/zoidfs-c-util.h"
 #include "c-util/env-parse.h"
 #include "c-util/tools.h"
 #include "c-util/sha1.h"

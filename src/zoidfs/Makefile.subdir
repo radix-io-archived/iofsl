@@ -1,0 +1,7 @@
+# empty
+
+include_HEADERS = src/zoidfs/zoidfs.h
+
+noinst_HEADERS = \
+		 src/zoidfs/zoidfs-comm.h \
+		 src/zoidfs/zoidfs-proto.h

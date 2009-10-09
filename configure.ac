@@ -2,20 +2,32 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ(2.61)
-AC_INIT(FULL-PACKAGE-NAME, VERSION, BUG-REPORT-ADDRESS)
+AC_INIT([iofwd], [0.1], [dkimpe@mcs.anl.gov])
+
+AC_CANONICAL_SYSTEM
+AC_CANONICAL_HOST
+
+AM_INIT_AUTOMAKE([foreign subdir-objects])
+
+m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES([yes])])
+
 AC_CONFIG_SRCDIR([src/iofwd/iofwd.cpp])
 AC_CONFIG_HEADER([iofwd_config.h])
+
 
 
 # Checks for programs.
 AC_PROG_CC
 AC_PROG_CXX
 AC_PROG_CXXCPP
+AC_PROG_RANLIB
 
 AC_REQUIRE_CPP
 
-AX_PROG_BISON([],[AC_ERROR([No BISON can be found!])])
-AX_PROG_FLEX([],[AC_ERROR([No FLEX can be found!])])
+AX_PROG_BISON([],[AC_MSG_ERROR([No BISON can be found!])])
+AX_PROG_FLEX([],[AC_MSG_ERROR([No FLEX can be found!])])
+AC_SUBST([BISON])
+AC_SUBST([FLEX])
 
 AC_LANG([C++])
 
@@ -105,28 +117,27 @@ AC_ARG_WITH([mpi],[AS_HELP_STRING([--with-mpi@<:@=DIR@:>@],
                         [location of MPI library])],
                    [mpidir=$withval])
 if test "x$mpidir" != "x" ; then
-    MPI_CPPFLAGS="$CPPFLAGS -I${mpidir}/include"
-    MPI_CFLAGS="$CFLAGS -I${mpidir}/include"
-    MPI_LDFLAGS="$LDFLAGS -L${mpidir}/lib"
-    MPI_PATH="$PATH:${mpidir}/bin:${mpidir}/sbin"
-    
-    FOUNDLIBMPICH=1
-    FOUNDLIBMPI=1
-    AC_CHECK_LIB([mpich], [MPI_Init], ,[FOUNDLIBMPICH=0])
-    AC_CHECK_LIB([mpi], [MPI_Init], , [FOUNDLIBMPI=0])
-    if test "x${FOUNDLIBMPI}" == "x0" && test "x${FOUNDLIBMPICH}" == "x0" ; then
-        AC_MSG_ERROR([A usable mpi library was not found!])
-    else
-        AC_SUBST([MPI_CFLAGS],["-I${mpidir}/include"])
-        AC_SUBST([MPI_CPPFLAGS],["-I${mpidir}/include"])
-        if test "x${FOUNDLIBMPI}" == "x1" ; then
-            AC_SUBST([MPI_LIBS],["-lmpi"])
-            AC_SUBST([MPI_LDFLAGS],["-L${mpidir}/lib -lmpi"])
-        else
-            if test "x${FOUNDLIBMPICH}" == "x1" ; then
-                AC_SUBST([MPI_LIBS],["-lmpich"])
-                AC_SUBST([MPI_LDFLAGS],["-L${mpidir}/lib -lmpich"])
-            fi
+    CPPFLAGS="$CPPFLAGS -I${mpidir}/include"
+    CFLAGS="$CFLAGS -I${mpidir}/include"
+    LDFLAGS="$LDFLAGS -L${mpidir}/lib"
+    PATH="$PATH:${mpidir}/bin:${mpidir}/sbin"
+fi
+FOUNDLIBMPICH=1
+FOUNDLIBMPI=1
+AC_CHECK_LIB([mpich], [MPI_Init], ,[FOUNDLIBMPICH=0])
+AC_CHECK_LIB([mpi], [MPI_Init], , [FOUNDLIBMPI=0])
+if test "x${FOUNDLIBMPI}" == "x0" && test "x${FOUNDLIBMPICH}" == "x0" ; then
+    AC_MSG_ERROR([A usable mpi library was not found!])
+else
+    AC_SUBST([MPI_CFLAGS],["-I${mpidir}/include"])
+    AC_SUBST([MPI_CPPFLAGS],["-I${mpidir}/include"])
+    if test "x${FOUNDLIBMPI}" == "x1" ; then
+        AC_SUBST([MPI_LIBS],["-lmpi"])
+        AC_SUBST([MPI_LDFLAGS],["-L${mpidir}/lib -lmpi"])
+    else 
+        if test "x${FOUNDLIBMPICH}" == "x1" ; then
+            AC_SUBST([MPI_LIBS],["-lmpich"])
+            AC_SUBST([MPI_LDFLAGS],["-L${mpidir}/lib -lmpich"])
         fi
     fi
 
@@ -152,6 +163,7 @@ AC_ARG_WITH([bmi],[AS_HELP_STRING([--with-bmi@<:@=DIR@:>@],
                    [bmidir=$withval])
 if test "x$bmidir" != "x" ; then
     CPPFLAGS="$CPPFLAGS -I${bmidir}/include"
+    CXXCPPFLAGS="$CXXCPPFLAGS -I${bmidir}/include"
     LDFLAGS="$LDFLAGS -L${bmidir}/lib"
 fi
 AC_CHECK_LIB([bmi], [BMI_initialize],,
@@ -161,17 +173,22 @@ AC_CHECK_HEADER_DEFINE([<bmi.h>],[BMI_TCP_CHECK_UNEXPECTED],[],
         AC_MSG_ERROR([BMI does not have BMI_TCP_CHECK_UNEXPECTED]))
 AC_LANG_POP
 
-# Search for PVFS
+dnl
+dnl Search for PVFS 
+dnl 
 AX_LIB_PVFS2
 if test "A$PVFS2_OK" == "A1" ; 
 then
-        DISPATCH_PVFS=1
-        AX_MAKE_VAR([DISPATCH_PVFS])
         AC_DEFINE([HAVE_DISPATCHER_PVFS2],[1],[If the PVFS2 dispatcher module
                    needs to be built])
 fi
+AM_CONDITIONAL([DISPATCH_PVFS],[test "A${PVFS2_OK}" == "A1"])
 
+dnl
+dnl
 dnl # for fuse
+dnl Control building of FUSE client
+dnl 
 use_fuse=0
 AC_ARG_ENABLE([fuse],
               [AC_HELP_STRING([--enable-fuse],
@@ -184,15 +201,15 @@ AC_ARG_ENABLE([fuse],
                esac],
                [use_fuse=0])
 
-if test "${use_fuse}" == "1"; then
-    BUILD_FUSE_CLIENT=1
-    AX_MAKE_VAR([BUILD_FUSE_CLIENT])
-    AX_MAKE_VAR([FUSE_LIBS])
-    AX_MAKE_VAR([FUSE_LDFLAGS])
-    AX_MAKE_VAR([FUSE_CPPFLAGS])
-    AX_MAKE_VAR([FUSE_CFLAGS])
-fi
+AM_CONDITIONAL([BUILD_FUSE_CLIENT], [test ${use_fuse} == 1])
+AC_SUBST([FUSE_LIBS])
+AC_SUBST([FUSE_LDFLAGS])
+AC_SUBST([FUSE_CPPFLAGS])
+AC_SUBST([FUSE_CFLAGS])
 
+#
+#  Dispatcher POSIX driver control
+#
 AC_ARG_ENABLE([posix],
               [AC_HELP_STRING([--enable-posix],
                               [Enable new POSIX zoidfs driver])],
@@ -214,7 +231,7 @@ if test "${use_posix}" == "1"; then
 else
    AC_MSG_RESULT([no])
 fi
-AX_MAKE_VAR([DISPATCH_POSIX])
+AM_CONDITIONAL([DISPATCH_POSIX],[test ${use_posix} == 1])
 
 #
 # libsysio dispatcher build env setup
@@ -230,10 +247,12 @@ AC_ARG_WITH(libsysio,
               AC_SUBST([SYSIO_LIBS],["-lsysio"])
               AC_DEFINE([HAVE_DISPATCHER_LIBSYSIO],[1],[If libsysio is supported on target build platform])
               DISPATCH_LIBSYSIO=1
-              DISPATCH_POSIX=0
+              dnl DISPATCH_POSIX=0
+              dnl @TODO: disable posix before calling AM_CONDITIONAL(DISPATCH_POSIX, ...)
               use_libsysio=true
-              AX_MAKE_VAR([DISPATCH_LIBSYSIO])
 	fi)
+
+AM_CONDITIONAL([DISPATCH_LIBSYSIO],[test x${use_libsysio} == xtrue])
 
 if test x${use_libsysio} == xtrue ; then
     #
@@ -316,14 +335,15 @@ BOOST_THREADS
 BOOST_PROGRAM_OPTIONS
 BOOST_REGEX
 BOOST_DATE_TIME
-AX_MAKE_VAR([BOOST_PROGRAM_OPTIONS_LIBS])
-AX_MAKE_VAR([BOOST_PROGRAM_OPTIONS_LDFLAGS])
-AX_MAKE_VAR([BOOST_THREAD_LIBS])
-AX_MAKE_VAR([BOOST_THREAD_LDFLAGS])
-AX_MAKE_VAR([BOOST_REGEX_LIBS])
-AX_MAKE_VAR([BOOST_REGEX_LDFLAGS])
-AX_MAKE_VAR([BOOST_DATE_TIME_LIBS])
-AX_MAKE_VAR([BOOST_DATE_TIME_LDFLAGS])
+AC_SUBST([BOOST_PROGRAM_OPTIONS_LIBS])
+AC_SUBST([BOOST_PROGRAM_OPTIONS_LDFLAGS])
+AC_SUBST([BOOST_THREAD_LIBS])
+AC_SUBST([BOOST_THREAD_LDFLAGS])
+AC_SUBST([BOOST_REGEX_LIBS])
+AC_SUBST([BOOST_REGEX_LDFLAGS])
+AC_SUBST([BOOST_DATE_TIME_LIBS])
+AC_SUBST([BOOST_DATE_TIME_LDFLAGS])
+
 
 #m4_pattern_allow(BOOST_THREAD_LDFLAGS)
 CPPFLAGS="${CPPFLAGS} ${BOOST_CPPFLAGS}"
@@ -357,20 +377,6 @@ AX_OUTPUT_MAKE_VARS
 
 AC_CONFIG_FILES([
                  Makefile
-                 src/spatial/module.mk
-                 src/sm/module.mk
-                 src/iofwdevent/module.mk
-                 src/iofwd/module.mk
-                 src/iofwdutil/module.mk
-                 src/metacache/module.mk
-                 src/cache/module.mk
-                 src/taskmon/module.mk
-                 src/zoidfs/module.mk
-                 src/fuse/module.mk
-                 src/client/module.mk
-                 src/c-util/module.mk
-                 test/module.mk
-                 sandbox/module.mk
                  ])
 
 AC_OUTPUT

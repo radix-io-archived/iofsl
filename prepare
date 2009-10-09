@@ -1,7 +1,2 @@
 aclocal -Im4 && autoreconf -fi -Im4
 
-#
-# HACK: run lex and yacc to make sure the .c and .h files exist 
-#
-flex --header-file=./src/c-util/configlex.h -o ./src/c-util/configlex.c ./src/c-util/configlex.l
-yacc --verbose --debug -d ./src/c-util/configparser.y -o ./src/c-util/configparser.c

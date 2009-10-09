@@ -2,7 +2,7 @@
 #define POSIX_DCACHE_H
 
 #include "c-util/gencache.h"
-#include "zoidfs.h"
+#include "zoidfs/zoidfs.h"
 
 typedef int dcache_fdtype;
 

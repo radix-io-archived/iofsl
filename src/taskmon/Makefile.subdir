@@ -1,0 +1,9 @@
+noinst_LIBRARIES += src/taskmon/libtaskmon.a
+
+src_taskmon_libtaskmon_a_SOURCES = \
+src/taskmon/BMITasks.hh \
+src/taskmon/Task.cpp \
+src/taskmon/Task.hh \
+src/taskmon/TaskGenerator.hh \
+src/taskmon/TaskMonitor.cpp \
+src/taskmon/TaskMonitor.hh

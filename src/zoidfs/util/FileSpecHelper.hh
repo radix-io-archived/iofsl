@@ -3,7 +3,7 @@
 
 #include "zoidfs-wrapped.hh"
 #include "zoidfs-xdr.hh"
-#include "zoidfs-proto.h"
+#include "zoidfs/zoidfs-proto.h"
 #include "iofwdutil/xdr/XDRWrappers.hh"
 
 namespace iofwdutil

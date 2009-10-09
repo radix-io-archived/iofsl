@@ -1,0 +1,124 @@
+bin_PROGRAMS += src/iofwd/iofwd
+
+src_iofwd_iofwd_LDFLAGS = \
+	@BOOST_PROGRAM_OPTIONS_LDFLAGS@ \
+	@BOOST_DATE_TIME_LDFLAGS@ \
+	@BOOST_REGEX_LDFLAGS@ \
+	@BOOST_THREAD_LDFLAGS@
+
+src_iofwd_iofwd_LDADD = \
+	src/zoidfs/libzoidfs-util.a \
+	src/zoidfs/libzoidfs.a \
+	src/iofwdutil/libiofwdutil.a \
+	src/c-util/libc-util.a \
+	@BOOST_PROGRAM_OPTIONS_LIBS@ \
+	@BOOST_DATE_TIME_LIBS@ \
+	@BOOST_THREAD_LIBS@ \
+	@BOOST_REGEX_LIBS@
+
+src_iofwd_iofwd_SOURCES = \
+src/iofwd/BufferPool.cpp \
+src/iofwd/DefRequestHandler.cpp \
+src/iofwd/DefRequestItem.cpp \
+src/iofwd/IOFWDMain.cpp \
+src/iofwd/Range.cpp \
+src/iofwd/RangeScheduler.cpp \
+src/iofwd/RangeSet.cpp \
+src/iofwd/ReadTask.cpp \
+src/iofwd/Request.cpp \
+src/iofwd/RequestHandler.cpp \
+src/iofwd/RequestScheduler.cpp \
+src/iofwd/Task.cpp \
+src/iofwd/ThreadTasks.cpp \
+src/iofwd/WriteTask.cpp \
+src/iofwd/iofwd.cpp \
+src/iofwd/BufferPool.hh \
+src/iofwd/CommitRequest.hh \
+src/iofwd/CommitTask.hh \
+src/iofwd/ConfigException.hh \
+src/iofwd/CreateRequest.hh \
+src/iofwd/CreateTask.hh \
+src/iofwd/DefRequestHandler.hh \
+src/iofwd/DefRequestItem.hh \
+src/iofwd/GetAttrRequest.hh \
+src/iofwd/GetAttrTask.hh \
+src/iofwd/IOFWDMain.hh \
+src/iofwd/LinkRequest.hh \
+src/iofwd/LinkTask.hh \
+src/iofwd/LookupRequest.hh \
+src/iofwd/LookupTask.hh \
+src/iofwd/MkdirRequest.hh \
+src/iofwd/MkdirTask.hh \
+src/iofwd/NotImplementedRequest.hh \
+src/iofwd/NotImplementedTask.hh \
+src/iofwd/NullRequest.hh \
+src/iofwd/NullRequestSM.hh \
+src/iofwd/NullTask.hh \
+src/iofwd/Range.hh \
+src/iofwd/RangeScheduler.hh \
+src/iofwd/RangeSet.hh \
+src/iofwd/ReadDirRequest.hh \
+src/iofwd/ReadDirTask.hh \
+src/iofwd/ReadLinkRequest.hh \
+src/iofwd/ReadLinkTask.hh \
+src/iofwd/ReadRequest.hh \
+src/iofwd/ReadTask.hh \
+src/iofwd/RemoveRequest.hh \
+src/iofwd/RemoveTask.hh \
+src/iofwd/RenameRequest.hh \
+src/iofwd/RenameTask.hh \
+src/iofwd/Request.hh \
+src/iofwd/RequestHandler.hh \
+src/iofwd/RequestScheduler.hh \
+src/iofwd/ResizeRequest.hh \
+src/iofwd/ResizeTask.hh \
+src/iofwd/SetAttrRequest.hh \
+src/iofwd/SetAttrTask.hh \
+src/iofwd/SymLinkRequest.hh \
+src/iofwd/SymLinkTask.hh \
+src/iofwd/Task.hh \
+src/iofwd/TaskHelper.hh \
+src/iofwd/ThreadTasks.hh \
+src/iofwd/WriteRequest.hh \
+src/iofwd/WriteTask.hh \
+\
+src/iofwd/frontend/Frontend.cpp \
+src/iofwd/frontend/IOFWDCommitRequest.cpp \
+src/iofwd/frontend/IOFWDCreateRequest.cpp \
+src/iofwd/frontend/IOFWDFrontend.cpp \
+src/iofwd/frontend/IOFWDGetAttrRequest.cpp \
+src/iofwd/frontend/IOFWDLinkRequest.cpp \
+src/iofwd/frontend/IOFWDLookupRequest.cpp \
+src/iofwd/frontend/IOFWDMkdirRequest.cpp \
+src/iofwd/frontend/IOFWDNotImplementedRequest.cpp \
+src/iofwd/frontend/IOFWDNullRequest.cpp \
+src/iofwd/frontend/IOFWDReadDirRequest.cpp \
+src/iofwd/frontend/IOFWDReadLinkRequest.cpp \
+src/iofwd/frontend/IOFWDReadRequest.cpp \
+src/iofwd/frontend/IOFWDRemoveRequest.cpp \
+src/iofwd/frontend/IOFWDRenameRequest.cpp \
+src/iofwd/frontend/IOFWDRequest.cpp \
+src/iofwd/frontend/IOFWDResizeRequest.cpp \
+src/iofwd/frontend/IOFWDSetAttrRequest.cpp \
+src/iofwd/frontend/IOFWDSymLinkRequest.cpp \
+src/iofwd/frontend/IOFWDWriteRequest.cpp \
+src/iofwd/frontend/Frontend.hh \
+src/iofwd/frontend/IOFWDCommitRequest.hh \
+src/iofwd/frontend/IOFWDCreateRequest.hh \
+src/iofwd/frontend/IOFWDFrontend.hh \
+src/iofwd/frontend/IOFWDGetAttrRequest.hh \
+src/iofwd/frontend/IOFWDLinkRequest.hh \
+src/iofwd/frontend/IOFWDLookupRequest.hh \
+src/iofwd/frontend/IOFWDMkdirRequest.hh \
+src/iofwd/frontend/IOFWDNotImplementedRequest.hh \
+src/iofwd/frontend/IOFWDNullRequest.hh \
+src/iofwd/frontend/IOFWDReadDirRequest.hh \
+src/iofwd/frontend/IOFWDReadLinkRequest.hh \
+src/iofwd/frontend/IOFWDReadRequest.hh \
+src/iofwd/frontend/IOFWDRemoveRequest.hh \
+src/iofwd/frontend/IOFWDRenameRequest.hh \
+src/iofwd/frontend/IOFWDRequest.hh \
+src/iofwd/frontend/IOFWDResizeRequest.hh \
+src/iofwd/frontend/IOFWDSetAttrRequest.hh \
+src/iofwd/frontend/IOFWDSymLinkRequest.hh \
+src/iofwd/frontend/IOFWDWriteRequest.hh

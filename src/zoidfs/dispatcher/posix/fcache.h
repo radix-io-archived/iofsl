@@ -1,7 +1,7 @@
 #ifndef POSIX_FCACHE_H
 #define POSIX_FCACHE_H
 
-#include "zoidfs.h"
+#include "zoidfs/zoidfs.h"
 
 /* ======================== Filename cache ================================ */
 

@@ -1,0 +1,26 @@
+if BUILD_FUSE_CLIENT
+
+# TODO
+
+#bin_PROGRAMS += src/fuse/fuseclient
+#src_fuse_fuseclient_CPPFLAGS = $(AM_CPPFLAGS) @FUSE_CPPFLAGS@
+#src_fuse_fuseclient_LDFLAGS = @FUSE_LDFLAGS@
+#src_fuse_fuseclient_SOURCES = src/fuse/zoidfs-fuse.c
+#src_fuse_fuseclient_LDADD = \
+#		src/zoidfs/c-util/libzoidfsc-util.a \
+#		src/zoidfs/client/libzoidfsclient.a \
+#		src/c-util/libc-util.a @FUSE_LIBS@
+
+#bin_PROGRAMS += src/fuse/fusedispatch
+#src_fuse_fusedispatch_CPPFLAGS = $(AM_CPPFLAGS) @FUSE_CPPFLAGS@
+#src_fuse_fusedispatch_LDFLAGS = @FUSE_LDFLAGS@
+#src_fuse_fusedispatch_SOURCES = src/fuse/zoidfs-fuse.c
+#src_fuse_fusedispatch_LDADD = \
+#		src/zoidfs/c-util/libzoidfsc-util.a \
+#		src/zoidfs/dispatcher/libzoidfsdispatch.a \
+#		src/c-util/libc-util.a @FUSE_LIBS@
+
+
+
+
+endif

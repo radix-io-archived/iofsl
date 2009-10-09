@@ -1,0 +1,9 @@
+noinst_PROGRAMS += sandbox/recordparam
+sandbox_recordparam_SOURCES = sandbox/recordparam.cpp
+
+noinst_PROGRAMS += sandbox/regex
+sandbox_regex_SOURCES = sandbox/regex.cpp
+
+sandbox_regex_LDFLAGS := @BOOST_REGEX_LDFLAGS@
+sandbox_regex_LDADD := @BOOST_REGEX_LIBS@
+

@@ -1,0 +1,6 @@
+noinst_LIBRARIES += src/metacache/libmetacache.a
+
+src_metacache_libmetacache_a_SOURCES = \
+	src/metacache/metacache.c \
+	src/metacache/metacache.h
+

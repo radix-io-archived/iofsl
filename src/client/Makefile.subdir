@@ -1,0 +1,7 @@
+noinst_LIBRARIES += src/client/libiofwdclient.a
+
+src_client_libiofwdclient_a_SOURCES = \
+src/client/CommChannel.cpp \
+src/client/CommChannel.hh \
+src/client/IOFWDClient.cpp \
+src/client/IOFWDClient.hh

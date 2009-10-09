@@ -1,0 +1,21 @@
+lib_LIBRARIES += src/zoidfs/libzoidfs-util.a
+
+src_zoidfs_libzoidfs_util_a_SOURCES = \
+src/zoidfs/util/zoidfs-c-util.h \
+src/zoidfs/util/zoidfs-c-util.c \
+src/zoidfs/util/LogAPI.cpp \
+src/zoidfs/util/NullAPI.cpp \
+src/zoidfs/util/ZoidFSAPI.cpp \
+src/zoidfs/util/ZoidFSAsyncAPI.cpp \
+src/zoidfs/util/ZoidFSSync.cpp \
+src/zoidfs/util/zoidfs-util.cpp \
+src/zoidfs/util/FileSpecHelper.hh \
+src/zoidfs/util/LogAPI.hh \
+src/zoidfs/util/NullAPI.hh \
+src/zoidfs/util/ThreadPool.hh \
+src/zoidfs/util/ZoidFSAPI.hh \
+src/zoidfs/util/ZoidFSAsyncAPI.hh \
+src/zoidfs/util/ZoidFSSync.hh \
+src/zoidfs/util/zoidfs-util.hh \
+src/zoidfs/util/zoidfs-wrapped.hh \
+src/zoidfs/util/zoidfs-xdr.hh 
