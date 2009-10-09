@@ -1,0 +1,4 @@
+lib_LIBRARIES += src/zoidfs/libzoidfsprofile.a
+
+src_zoidfs_libzoidfsprofile_a_SOURCES = \
+	src/zoidfs/profiler/zoidfsclienttrace.c
