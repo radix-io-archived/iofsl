@@ -1184,13 +1184,17 @@ static int zoidfs_sysio_create(const zoidfs_handle_t *parent_handle,
     {
         local_sattr.mask = sattr->mask;
         local_sattr.mode = sattr->mode & 0777;
-        local_sattr.uid = sattr->uid;
-        local_sattr.gid = sattr->gid;
+        local_sattr.uid = getuid(); /*sattr->uid;*/ /* io server uid */
+        local_sattr.gid = getgid(); /*sattr->gid;*/ /* io server gid */ 
         local_sattr.atime.seconds = sattr->atime.seconds;
         local_sattr.atime.nseconds = 0;
         local_sattr.mtime.seconds = sattr->mtime.seconds;
         local_sattr.mtime.nseconds = 0;
+
     }
+    /* we do not support root:root IO */
+    assert(local_sattr.uid != 0);
+    assert(local_sattr.gid != 0);
 
     if (full_path)
 	{
