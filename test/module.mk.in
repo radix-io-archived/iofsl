@@ -75,8 +75,58 @@ ADDINTLIBS_zoidfsapi-link-test := iofwdclient iofwdlib iofwdutil zoidfsutil zoid
 MODULE_SOURCES_zoidfsapi-rename-test := zoidfsapi-rename-test.c
 ADDINTLIBS_zoidfsapi-rename-test := iofwdclient iofwdlib iofwdutil zoidfsutil zoidfsclient zoidfscutil
 
-MODULE_SOURCES_zoidfsapi-lookup-perm-test := zoidfsapi-lookup-perm-test.c 
+MODULE_SOURCES_zoidfsapi-lookup-perm-test := zoidfsapi-lookup-perm-test.c
 ADDINTLIBS_zoidfsapi-lookup-perm-test := iofwdclient iofwdlib iofwdutil zoidfsutil zoidfsclient zoidfscutil
+
+ifdef ENABLE_MPI
+    MODULE_APPS += zoidfs-creat-thput
+    MODULE_SOURCES_zoidfs-creat-thput := $(addprefix zoidfs-microbenchmarks/, creat-thput.c)
+    LDFLAGS_zoidfs-creat-thput := $(MPI_LDFLAGS)
+    CPPFLAGS_zoidfs-creat-thput := $(MPI_CPPFLAGS)
+    CFLAGS_zoidfs-creat-thput := $(MPI_CFLAGS)
+    LIBS_zoidfs-creat-thput := $(MPI_LIBS)
+    ADDINTLIBS_zoidfs-creat-thput := iofwdclient iofwdlib iofwdutil zoidfsutil zoidfsclient zoidfscutil
+
+    MODULE_APPS += zoidfs-remove-thput
+    MODULE_SOURCES_zoidfs-remove-thput := $(addprefix zoidfs-microbenchmarks/, remove-thput.c)
+    LDFLAGS_zoidfs-remove-thput := $(MPI_LDFLAGS)
+    CPPFLAGS_zoidfs-remove-thput := $(MPI_CPPFLAGS)
+    CFLAGS_zoidfs-remove-thput := $(MPI_CFLAGS)
+    LIBS_zoidfs-remove-thput := $(MPI_LIBS)
+    ADDINTLIBS_zoidfs-remove-thput := iofwdclient iofwdlib iofwdutil zoidfsutil zoidfsclient zoidfscutil
+
+    MODULE_APPS += zoidfs-mkdir-thput
+    MODULE_SOURCES_zoidfs-mkdir-thput := $(addprefix zoidfs-microbenchmarks/, mkdir-thput.c)
+    LDFLAGS_zoidfs-mkdir-thput := $(MPI_LDFLAGS)
+    CPPFLAGS_zoidfs-mkdir-thput := $(MPI_CPPFLAGS)
+    CFLAGS_zoidfs-mkdir-thput := $(MPI_CFLAGS)
+    LIBS_zoidfs-mkdir-thput := $(MPI_LIBS)
+    ADDINTLIBS_zoidfs-mkdir-thput := iofwdclient iofwdlib iofwdutil zoidfsutil zoidfsclient zoidfscutil
+
+    MODULE_APPS += zoidfs-null-thput
+    MODULE_SOURCES_zoidfs-null-thput := $(addprefix zoidfs-microbenchmarks/, null-thput.c)
+    LDFLAGS_zoidfs-null-thput := $(MPI_LDFLAGS)
+    CPPFLAGS_zoidfs-null-thput := $(MPI_CPPFLAGS)
+    CFLAGS_zoidfs-null-thput := $(MPI_CFLAGS)
+    LIBS_zoidfs-null-thput := $(MPI_LIBS)
+    ADDINTLIBS_zoidfs-null-thput := iofwdclient iofwdlib iofwdutil zoidfsutil zoidfsclient zoidfscutil
+
+    MODULE_APPS += zoidfs-getattr-thput
+    MODULE_SOURCES_zoidfs-getattr-thput := $(addprefix zoidfs-microbenchmarks/, getattr-thput.c)
+    LDFLAGS_zoidfs-getattr-thput := $(MPI_LDFLAGS)
+    CPPFLAGS_zoidfs-getattr-thput := $(MPI_CPPFLAGS)
+    CFLAGS_zoidfs-getattr-thput := $(MPI_CFLAGS)
+    LIBS_zoidfs-getattr-thput := $(MPI_LIBS)
+    ADDINTLIBS_zoidfs-getattr-thput := iofwdclient iofwdlib iofwdutil zoidfsutil zoidfsclient zoidfscutil
+
+    MODULE_APPS += zoidfs-setattr-thput
+    MODULE_SOURCES_zoidfs-setattr-thput := $(addprefix zoidfs-microbenchmarks/, setattr-thput.c)
+    LDFLAGS_zoidfs-setattr-thput := $(MPI_LDFLAGS)
+    CPPFLAGS_zoidfs-setattr-thput := $(MPI_CPPFLAGS)
+    CFLAGS_zoidfs-setattr-thput := $(MPI_CFLAGS)
+    LIBS_zoidfs-setattr-thput := $(MPI_LIBS)
+    ADDINTLIBS_zoidfs-setattr-thput := iofwdclient iofwdlib iofwdutil zoidfsutil zoidfsclient zoidfscutil
+endif
 
 MODULE_SOURCES_bmitest := $(addprefix bmi/, bmi.cpp)
 ADDINTLIBS_bmitest := iofwdutil
