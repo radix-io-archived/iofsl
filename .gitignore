@@ -54,6 +54,13 @@ test/zoidfsapi-link-test
 test/zoidfsapi-lookup-perm-test
 test/zoidfsapi-rename-test
 test/zoidfsapi-symlink-test
+test/zoidfs-creat-thput
+test/zoidfs-getattr-thput
+test/zoidfs-md-cunit-trace
+test/zoidfs-mkdir-thput
+test/zoidfs-null-thput
+test/zoidfs-remove-thput
+test/zoidfs-setattr-thput
 src/c-util/libc-util.a
 src/cache/libcache.a
 src/client/libiofwdclient.a
