@@ -122,7 +122,7 @@ if test "x$mpidir" != "x" ; then
         if test "x${FOUNDLIBMPI}" == "x1" ; then
             AC_SUBST([MPI_LIBS],["-lmpi"])
             AC_SUBST([MPI_LDFLAGS],["-L${mpidir}/lib -lmpi"])
-        else 
+        else
             if test "x${FOUNDLIBMPICH}" == "x1" ; then
                 AC_SUBST([MPI_LIBS],["-lmpich"])
                 AC_SUBST([MPI_LDFLAGS],["-L${mpidir}/lib -lmpich"])
@@ -134,7 +134,7 @@ if test "x$mpidir" != "x" ; then
     AC_CHECK_HEADER([mpi.h],[ENABLE_MPI=1],[ENABLE_MPI=;])
     if test "x${ENABLE_MPI}" != "x1" ; then
         AC_MSG_ERROR([mpi.h was not found!])
-    fi  
+    fi
 
     AC_CHECK_PROG([MPICC],[mpicc],[${mpidir}/bin/mpicc],[mpicc not found])
     AC_CHECK_PROG([MPICPP],[mpic++],[${mpidir}/bin/mpic++],[mpic++ not found])
