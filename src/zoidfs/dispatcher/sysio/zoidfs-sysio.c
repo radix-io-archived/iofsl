@@ -802,7 +802,9 @@ static int zoidfs_sysio_readlink(const zoidfs_handle_t *handle, char *buffer,
 	}
 
 	if (S_ISLNK(stbuf.st_mode)) {
-		ret = SYSIO_INTERFACE_NAME(_zfs_sysio_fhi_readlink)(&sysio_link_handle, buffer, buffer_length);
+        char intnl_buffer[ZOIDFS_PATH_MAX];
+        int intnl_buffer_length = ZOIDFS_PATH_MAX + 1; 
+		ret = SYSIO_INTERFACE_NAME(_zfs_sysio_fhi_readlink)(&sysio_link_handle, intnl_buffer, intnl_buffer_length);
 		if (ret < 0) {
 			ZFSSYSIO_PERROR("readlink");
 			ZFSSYSIO_TRACE_EXIT;
@@ -810,7 +812,20 @@ static int zoidfs_sysio_readlink(const zoidfs_handle_t *handle, char *buffer,
 		}
 
         /* make the buffer NULL terminated */
-        buffer[buffer_length - 1] = '\0';
+        intnl_buffer[intnl_buffer_length - 1] = '\0';
+
+        /* if the root mount point is included on the return path, remove the mnt pt */
+        if(strncmp(intnl_buffer, zoidfs_sysio_root_path, strlen(zoidfs_sysio_root_path)) == 0)
+        {
+            char * _t_buffer = strdup(intnl_buffer);
+            strcpy(intnl_buffer, &_t_buffer[strlen(zoidfs_sysio_root_path)]);
+            intnl_buffer[intnl_buffer_length - 1 ] = '\0';
+            free(_t_buffer);
+        }
+
+        /* copy intnl_buffer into the user buffer */
+        memset(buffer, 0, buffer_length);
+        strcpy(buffer, intnl_buffer);
 	}
     else
     {
