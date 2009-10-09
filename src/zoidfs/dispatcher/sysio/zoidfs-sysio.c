@@ -804,6 +804,9 @@ static int zoidfs_sysio_readlink(const zoidfs_handle_t *handle, char *buffer,
 	if (S_ISLNK(stbuf.st_mode)) {
         char intnl_buffer[ZOIDFS_PATH_MAX];
         int intnl_buffer_length = ZOIDFS_PATH_MAX + 1; 
+
+        memset(intnl_buffer, 0, intnl_buffer_length);
+
 		ret = SYSIO_INTERFACE_NAME(_zfs_sysio_fhi_readlink)(&sysio_link_handle, intnl_buffer, intnl_buffer_length);
 		if (ret < 0) {
 			ZFSSYSIO_PERROR("readlink");
@@ -825,7 +828,7 @@ static int zoidfs_sysio_readlink(const zoidfs_handle_t *handle, char *buffer,
 
         /* copy intnl_buffer into the user buffer */
         memset(buffer, 0, buffer_length);
-        strcpy(buffer, intnl_buffer);
+        strncpy(buffer, intnl_buffer, zfsmin(strlen(intnl_buffer), buffer_length));
 	}
     else
     {
@@ -1881,6 +1884,8 @@ static int zoidfs_sysio_readdir(const zoidfs_handle_t *parent_handle,
                 /*
                  * Get the handle attrs
                  */
+                memset(&attr, 0, sizeof(attr));
+                memset(&entries[i].attr, 0, sizeof(entries[i].attr));
                 attr.mask = ZOIDFS_ATTR_ALL;
                 zoidfs_getattr(&entries[i].handle, &entries[i].attr);
             }
@@ -1903,7 +1908,6 @@ static int zoidfs_sysio_readdir(const zoidfs_handle_t *parent_handle,
              */
             strncpy(entries[i].name, dp->d_name, ZOIDFS_NAME_MAX + 1);
             entries[i].cookie = t_base;
-            /* ZFSSYSIO_INFO("dir ent name = %s cookie = %lu off = %lu reclen = %lu", entries[i].name, entries[i].cookie, dp->d_off, dp->d_reclen); */
 
             i++; 
             t_base += dp->d_reclen; 
@@ -1920,7 +1924,6 @@ static int zoidfs_sysio_readdir(const zoidfs_handle_t *parent_handle,
         }
 	}
 
-    /* ZFSSYSIO_INFO("entries found = %i", *entry_count); */
 	if(cc < 0)
 	{
 		ZFSSYSIO_INFO("zoidfs_sysio_readdir: fhi_getdirents64() failed, code = %i", cc);
