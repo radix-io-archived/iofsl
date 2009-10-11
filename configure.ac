@@ -141,13 +141,6 @@ fi
 AX_MAKE_VAR([ENABLE_CUNIT])
 AX_MAKE_VAR([cunitdir])
 
-#
-# MPI
-#
-# Look for mpi.h, libmpich, libmpi, and
-# the mpi c and c++ compiler wrappers
-#
-
 # BMI
 AC_LANG_PUSH([C])
 BMI_INCLUDE=
