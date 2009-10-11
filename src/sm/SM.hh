@@ -35,6 +35,19 @@
 // for debugging
 #include <iostream>
 
+
+/**
+ * TODO:
+ *    evaluate this and boost::FiniteChart based on
+ *
+ *       * are states templates or not (ease of use)
+ *       * exception handling (and resource leaks)
+ *       * can state machines reuse collections of states / be nested
+ *       * how easy is it to deliver events to the state machine.
+ *          (also: deal with non-blocking resources / resources that 
+ *            complete immediately)
+ */
+
 using namespace std; 
 
 
