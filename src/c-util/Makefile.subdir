@@ -1,5 +1,12 @@
 noinst_LIBRARIES += src/c-util/libc-util.a
 
+.PHONY: maintainer-clean-local
+maintainer-clean-local::
+	-rm -f src/c-util/configparser.c
+	-rm -f src/c-util/configparser.h
+	-rm -f src/c-util/configlex.c
+	-rm -f src/c-util/configlex.h
+
 src_c_util_libc_util_a_SOURCES = \
 src/c-util/configfile.c \
 src/c-util/configfile.h \
