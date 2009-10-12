@@ -22,7 +22,6 @@ src/zoidfs/dispatcher/pvfs/zoidfs-pvfs2.h
 endif
 
 if DISPATCH_LIBSYSIO
-   # TODO: move these defines into @ SYSIO_xxxx @ 
 src_zoidfs_libzoidfs_a_CPPFLAGS += @SYSIO_CPPFLAGS@
 src_zoidfs_libzoidfs_a_CFLAGS += @SYSIO_CFLAGS@
 src_zoidfs_libzoidfs_a_SOURCES += \
