@@ -24,6 +24,45 @@ AC_PROG_RANLIB
 
 AC_REQUIRE_CPP
 
+ENABLE_MPI=
+ORIG_CC=
+ORIG_CPP=
+ORIG_CXX=
+AC_ARG_WITH([mpi],[AS_HELP_STRING([--with-mpi@<:@=DIR@:>@], 
+                        [location of MPI library])],
+                   [mpidir=$withval])
+
+# search for mpi compilers and overide the normal compilers
+# if mpi compilers are found
+#
+# if the mpi flag is specifed but the mpi compilers are not found
+# ... abort
+if test "x${mpidir}" != "x" ; then
+    AC_CHECK_PROG([MPICC],[mpicc],[${mpidir}/bin/mpicc],[0], [${mpidir}/bin])
+    if test "x$MPICC" != "x0" ; then
+        ORIG_CC="${CC}"
+        CC="${mpidir}/bin/mpicc"
+    else
+        AC_MSG_ERROR([Could not locate mpicc!])
+    fi
+    AC_CHECK_PROG([MPICPP],[mpic++],[${mpidir}/bin/mpic++],[0], [${mpidir}/bin])
+    if test "x$MPICPP" != "x0" ; then
+        ORIG_CPP="${CPP}"
+        CPP="${mpidir}/bin/mpicpp"
+    else
+        AC_MSG_ERROR([Could not locate mpic++!])
+    fi
+    AC_CHECK_PROG([MPICXX],[mpicxx],[${mpidir}/bin/mpicxx],[0], [${mpidir}/bin])
+    if test "x$MPICXX" != "x0" ; then
+        ORIG_CXX="${CXX}"
+        CXX="${mpidir}/bin/mpicxx"
+    else
+        AC_MSG_ERROR([Could not locate mpicxx!])
+    fi
+    ENABLE_MPI=1
+fi
+AX_MAKE_VAR([ENABLE_MPI])
+
 AX_PROG_BISON([],[AC_MSG_ERROR([No BISON can be found!])])
 AX_PROG_FLEX([],[AC_MSG_ERROR([No FLEX can be found!])])
 AC_SUBST([BISON])
@@ -39,7 +78,6 @@ AC_CHECK_HEADERS([stdlib.h string.h unistd.h execinfo.h])
 dnl For fuse
 dnl Add this before checking the size of size_t / ssize_t
 AX_ADD_DEFINE([_FILE_OFFSET_BITS=64])
-
 
 # Checks for typedefs, structures, and compiler characteristics.
 AC_C_CONST
@@ -109,50 +147,6 @@ AX_MAKE_VAR([cunitdir])
 # Look for mpi.h, libmpich, libmpi, and
 # the mpi c and c++ compiler wrappers
 #
-ENABLE_MPI= 
-AC_LANG_PUSH([C])
-MPI_INCLUDE=
-MPI_LIBS=
-AC_ARG_WITH([mpi],[AS_HELP_STRING([--with-mpi@<:@=DIR@:>@], 
-                        [location of MPI library])],
-                   [mpidir=$withval])
-if test "x$mpidir" != "x" ; then
-    CPPFLAGS="$CPPFLAGS -I${mpidir}/include"
-    CFLAGS="$CFLAGS -I${mpidir}/include"
-    LDFLAGS="$LDFLAGS -L${mpidir}/lib"
-    PATH="$PATH:${mpidir}/bin:${mpidir}/sbin"
-fi
-FOUNDLIBMPICH=1
-FOUNDLIBMPI=1
-AC_CHECK_LIB([mpich], [MPI_Init], ,[FOUNDLIBMPICH=0])
-AC_CHECK_LIB([mpi], [MPI_Init], , [FOUNDLIBMPI=0])
-if test "x${FOUNDLIBMPI}" == "x0" && test "x${FOUNDLIBMPICH}" == "x0" ; then
-    AC_MSG_ERROR([A usable mpi library was not found!])
-else
-    AC_SUBST([MPI_CFLAGS],["-I${mpidir}/include"])
-    AC_SUBST([MPI_CPPFLAGS],["-I${mpidir}/include"])
-    if test "x${FOUNDLIBMPI}" == "x1" ; then
-        AC_SUBST([MPI_LIBS],["-lmpi"])
-        AC_SUBST([MPI_LDFLAGS],["-L${mpidir}/lib -lmpi"])
-    else 
-        if test "x${FOUNDLIBMPICH}" == "x1" ; then
-            AC_SUBST([MPI_LIBS],["-lmpich"])
-            AC_SUBST([MPI_LDFLAGS],["-L${mpidir}/lib -lmpich"])
-        fi
-    fi
-
-    ENABLE_MPI=1
-    AC_CHECK_HEADER([mpi.h],[ENABLE_MPI=1],[ENABLE_MPI=;])
-    if test "x${ENABLE_MPI}" != "x1" ; then
-        AC_MSG_ERROR([mpi.h was not found!])
-    fi
-
-    AC_CHECK_PROG([MPICC],[mpicc],[${mpidir}/bin/mpicc],[mpicc not found])
-    AC_CHECK_PROG([MPICPP],[mpic++],[${mpidir}/bin/mpic++],[mpic++ not found])
-    AC_CHECK_PROG([MPICXX],[mpicxx],[${mpidir}/bin/mpicxx],[mpicxx not found])
-fi
-AC_LANG_POP
-AX_MAKE_VAR([ENABLE_MPI])
 
 # BMI
 AC_LANG_PUSH([C])
@@ -242,8 +236,8 @@ AC_ARG_WITH(libsysio,
 [  --with-libsysio@<:@=DIR@:>@  Location of installed libsysio package],
        if test "x$withval" != "x" ; then
               AC_SUBST([SYSIO_LDFLAGS],["-L${withval}/lib"])
-              AC_SUBST([SYSIO_CFLAGS],["-I${withval}/include -I${withval}/misc"])
-              AC_SUBST([SYSIO_CPPFLAGS],["-I${withval}/include -I${withval}/misc"])
+              AC_SUBST([SYSIO_CFLAGS],["-I${withval}/include -I${withval}/misc -D_LARGEFILE64_SOURCE -DHAVE_POSIX_1003_READLINK -D__USE_LARGEFILE64"])
+              AC_SUBST([SYSIO_CPPFLAGS],["-I${withval}/include -I${withval}/misc -D_LARGEFILE64_SOURCE -DHAVE_POSIX_1003_READLINK -D__USE_LARGEFILE64"])
               AC_SUBST([SYSIO_LIBS],["-lsysio"])
               AC_DEFINE([HAVE_DISPATCHER_LIBSYSIO],[1],[If libsysio is supported on target build platform])
               DISPATCH_LIBSYSIO=1
