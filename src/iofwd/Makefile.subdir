@@ -4,7 +4,9 @@ src_iofwd_iofwd_LDFLAGS = \
 	@BOOST_PROGRAM_OPTIONS_LDFLAGS@ \
 	@BOOST_DATE_TIME_LDFLAGS@ \
 	@BOOST_REGEX_LDFLAGS@ \
-	@BOOST_THREAD_LDFLAGS@
+	@BOOST_THREAD_LDFLAGS@ \
+    @SYSIO_LDFLAGS@ \
+    @PVFS2_LDFLAGS@
 
 src_iofwd_iofwd_LDADD = \
 	src/zoidfs/libzoidfs-util.a \
@@ -14,7 +16,9 @@ src_iofwd_iofwd_LDADD = \
 	@BOOST_PROGRAM_OPTIONS_LIBS@ \
 	@BOOST_DATE_TIME_LIBS@ \
 	@BOOST_THREAD_LIBS@ \
-	@BOOST_REGEX_LIBS@
+	@BOOST_REGEX_LIBS@ \
+    @SYSIO_LIBS@ \
+    @PVFS2_LIBS@
 
 src_iofwd_iofwd_SOURCES = \
 src/iofwd/BufferPool.cpp \
