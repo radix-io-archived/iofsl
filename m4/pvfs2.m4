@@ -35,13 +35,16 @@ then
      fi
    else
      PVFS2_LDFLAGS="`${pvfs2_config} --static-libs`"
+     PVFS2_LIBS="`${pvfs2_config} --libs`"
      PVFS2_CFLAGS="`${pvfs2_config} --cflags`"
 
      OLDCFLAGS="$CFLAGS"
      OLDCPPFLAGS="$CPPFLAGS"
      OLDLDFLAGS="$LDFLAGS"
+     OLDLIBS="$LIBS"
      CFLAGS="$CPPFLAGS $PVFS2_CFLAGS"
      LDFLAGS="$LDFLAGS $PVFS2_LDFLAGS"
+     LIBS="$LIBS $PVFS2_LIBSS"
      AC_CHECK_LIB([pvfs2], [PVFS_sys_readdir],[pvfs2_ok=1],[pvfs2_ok=0])
      if test "x${pvfs2_ok}" != "x1" 
      then
@@ -51,6 +54,7 @@ then
         fi
         PVFS2_CPPFLAGS=""
         PVFS2_LDFLAGS=""
+        PVFS2_LIBS=""
         PVFS2_CFLAGS=""
      else
         AC_DEFINE([HAVE_PVFS2],[1],[If PVFS2 support should be enabled])
@@ -58,10 +62,12 @@ then
      fi
      CPPFLAGS="$OLDCPPFLAGS"
      LDFLAGS="$OLDLDFLAGS"
+     LIBS="$OLDLIBS"
      CFLAGS="$OLDCFLAGS"
    fi
 fi
 AC_SUBST([PVFS2_LDFLAGS])
+AC_SUBST([PVFS2_LIBS])
 AC_SUBST([PVFS2_CPPFLAGS])
 AC_SUBST([PVFS2_CFLAGS])
 ])
