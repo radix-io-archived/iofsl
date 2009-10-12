@@ -118,6 +118,7 @@ then
     LDFLAGS="-L${cunitdir}/lib"
     CPPFLAGS="-I${cunitdir}/include"
     CFLAGS="-I${cunitdir}/include"
+    LIBS="-lcunit"
   fi
   ENABLE_CUNIT=1
   AC_CHECK_HEADER([CUnit/Basic.h], [], [ENABLE_CUNIT=;])
@@ -159,6 +160,15 @@ AC_CHECK_LIB([bmi], [BMI_initialize],,
 AC_CHECK_HEADER_DEFINE([<bmi.h>],[BMI_TCP_CHECK_UNEXPECTED],[],
         AC_MSG_ERROR([BMI does not have BMI_TCP_CHECK_UNEXPECTED]))
 AC_LANG_POP
+
+#
+# dispatcher flags
+#  collect the cflags, ldflags, and libs flags for each dispatcher
+#
+ZFS_DISPATCHER_CFLAGS=
+ZFS_DISPATCHER_CPPFLAGS=
+ZFS_DISPATCHER_LDFLAGS=
+ZFS_DISPATCHER_LIBS=
 
 dnl
 dnl Search for PVFS 
@@ -292,6 +302,14 @@ if test x${use_libsysio} == xtrue ; then
     AC_CHECK_SIZEOF([size_t])
 
     #
+    # Add sysio flags to the dispatcher set of flags
+    #
+    ZFS_DISPATCHER_CFLAGS="${ZFS_DISPATCHER_CFLAGS} ${SYSIO_CFLAGS} -D_LARGEFILE64_SOURCE -DHAVE_POSIX_1003_READLINK -D__USE_LARGEFILE64"
+    ZFS_DISPATCHER_CPPFLAGS="${ZFS_DISPATCHER_CPPFLAGS} ${SYSIO_CPPFLAGS} -D_LARGEFILE64_SOURCE -DHAVE_POSIX_1003_READLINK -D__USE_LARGEFILE64"
+    ZFS_DISPATCHER_LDFLAGS="${ZFS_DISPATCHER_LDFLAGS} ${SYSIO_LDFLAGS}"
+    ZFS_DISPATCHER_LIBS="${ZFS_DISPATCHER_LIBS} -lsysio"
+
+    #
     # Reset the flags
     #
     CPPFLAGS="${STCPPFLAGS}"
@@ -300,6 +318,13 @@ if test x${use_libsysio} == xtrue ; then
     LIBS="${STLIBS}"
 fi
 
+#
+# save the ZFS_DISPATCHER flags
+#
+AC_SUBST([ZFS_DISPATCHER_CFLAGS])
+AC_SUBST([ZFS_DISPATCHER_CPPFLAGS])
+AC_SUBST([ZFS_DISPATCHER_LDFLAGS])
+AC_SUBST([ZFS_DISPATCHER_LIBS])
 
 # check boost version
 
