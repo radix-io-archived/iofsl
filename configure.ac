@@ -2,7 +2,7 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ(2.61)
-AC_INIT([iofwd], [0.1], [dkimpe@mcs.anl.gov])
+AC_INIT([iofwd], [0.1], [Submit trouble tickets at http://trac.mcs.anl.gov/projects/iofsl/newticket], [], [http://trac.mcs.anl.gov/projects/iofsl/wiki])
 
 AC_CANONICAL_SYSTEM
 AC_CANONICAL_HOST
