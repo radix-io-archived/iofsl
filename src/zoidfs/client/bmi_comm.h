@@ -4,6 +4,7 @@
  * wrapper functions to create synchronous send/recv calls.
  *
  * Nawab Ali <alin@cse.ohio-state.edu>
+ * Jason Cope <copej@mcs.anl.gov>
  */
 
 #ifndef _BMI_COMM_H_
@@ -19,10 +20,11 @@
 #define MAX_IDLE_TIME 10
 #define ION_ENV "ZOIDFS_ION_NAME"
 
+/* sync ZoidFS BMI wrappers */
 int bmi_comm_send(BMI_addr_t, const void *, bmi_size_t, bmi_msg_tag_t,
                   bmi_context_id);
 int bmi_comm_recv(BMI_addr_t, void *, bmi_size_t, bmi_msg_tag_t,
-                  bmi_context_id, bmi_size_t * actual_size );
+                  bmi_context_id, bmi_size_t * actual_size);
 int bmi_comm_sendu(BMI_addr_t, const void *, bmi_size_t, bmi_msg_tag_t,
                    bmi_context_id);
 int bmi_comm_recvu(BMI_addr_t *, void **, bmi_size_t *, bmi_msg_tag_t *);
@@ -32,6 +34,17 @@ int bmi_comm_send_list(BMI_addr_t,
 int bmi_comm_recv_list(BMI_addr_t,
                        size_t, void *const *buffer_list, const bmi_size_t *,
                        bmi_msg_tag_t, bmi_context_id);
+
+/* async ZoidFS BMI wrappers */
+int bmi_comm_isend(BMI_addr_t peer_addr, const void *buffer, bmi_size_t buflen,
+                  bmi_msg_tag_t tag, bmi_context_id context, bmi_op_id_t * op_id);
+int bmi_comm_isend_wait(bmi_op_id_t op_id, bmi_size_t buflen, bmi_size_t * actual_size, bmi_context_id context);
+int bmi_comm_irecv(BMI_addr_t peer_addr, void *buffer, bmi_size_t buflen,
+                  bmi_msg_tag_t tag, bmi_context_id context, bmi_size_t * actual_size, bmi_op_id_t * op_id);
+int bmi_comm_irecv_wait(bmi_op_id_t op_id, bmi_size_t * actual_size, bmi_context_id context);
+int bmi_comm_isendu_wait(bmi_size_t buflen, bmi_context_id context, bmi_op_id_t op_id);
+int bmi_comm_isendu(BMI_addr_t peer_addr, const void *buffer, bmi_size_t buflen,
+                   bmi_msg_tag_t tag, bmi_context_id context, bmi_op_id_t * op_id);
 
 #endif /* _BMI_COMM_H_ */
 
