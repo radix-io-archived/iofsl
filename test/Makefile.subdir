@@ -1,0 +1,21 @@
+bin_PROGRAMS += test/zoidfs-md-cunit
+
+test_zoidfs_md_cunit_LDADD = \
+	src/zoidfs/libzoidfs-util.a \
+	src/zoidfs/libzoidfs.a \
+	src/iofwdutil/libiofwdutil.a \
+	src/c-util/libc-util.a \
+    @ZFS_DISPATCHER_LIBS@ \
+    @CUNIT_LIBS@
+
+test_zoidfs_md_cunit_LDFLAGS = \
+    @ZFS_DISPATCHER_LDFLAGS@ \
+    @CUNIT_LDFLAGS@
+
+test_zoidfs_md_cunit_CFLAGS = \
+    -I./src/zoidfs            \
+    -I./src/c-util            \
+    @ZFS_DISPATCHER_CFLAGS@ \
+    @CUNIT_CFLAGS@ 
+
+test_zoidfs_md_cunit_SOURCES = test/zoidfs-md-cunit.c
