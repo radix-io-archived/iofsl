@@ -1,4 +1,0 @@
-MODULE_ARCHIVES := taskmon
-MODULE_SOURCES_taskmon := TaskMonitor.cpp Task.cpp
-
-

@@ -1,4 +1,0 @@
-MODULE_ARCHIVES := iofwdclient
-
-MODULE_SOURCES_iofwdclient := IOFWDClient.cpp CommChannel.cpp
-

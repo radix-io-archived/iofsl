@@ -1,7 +1,0 @@
-MODULE_APPS := recordparam regex
-
-MODULE_SOURCES_recordparam := recordparam.cpp
-MODULE_SOURCES_regex := regex.cpp
-LDFLAGS_regex := $(BOOST_REGEX_LDFLAGS)
-LIBS_regex := $(BOOST_REGEX_LIBS)
-
