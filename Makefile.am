@@ -5,10 +5,6 @@ lib_LIBRARIES =
 
 CPPFLAGS+=-I$(top_srcdir)/src
 
-# make sure that we can regenerate the config parser... rm the old files
-CLEANFILES=src/c-util/configparser.c src/c-util/configparser.h src/c-util/configlex.c src/c-util/configlex.h \
-            src/c-util/configparser.output
-
 # extra build rules
 include Make.rules
 

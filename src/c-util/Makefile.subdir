@@ -1,13 +1,5 @@
 noinst_LIBRARIES += src/c-util/libc-util.a
 
-#
-# generate the config parser using lex and yacc
-#
-src_c_util_configlex_h_SOURCES = src/c-util/configlex.l
-src_c_util_configlex_c_SOURCES = src/c-util/configlex.l
-src_c_util_configparser_h_SOURCES = src/c-util/configparser.y
-src_c_util_configparser_c_SOURCES = src/c-util/configparser.y
-
 src_c_util_libc_util_a_SOURCES = \
 src/c-util/configfile.c \
 src/c-util/configfile.h \
