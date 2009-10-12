@@ -125,3 +125,4 @@ src/zoidfs/profiler/.deps/
 src/zoidfs/profiler/.dirstamp
 src/zoidfs/util/.deps/
 src/zoidfs/util/.dirstamp
+src/c-util/configparser.output
