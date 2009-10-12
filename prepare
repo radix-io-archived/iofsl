@@ -1,9 +1,3 @@
 #!/bin/bash
 
-if [ -f configure ]
-then
-    rm -f ./configure
-fi
-
-aclocal -Im4 && autoconf -f -i -Im4
-
+autoreconf -fi -Im4
