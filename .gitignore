@@ -9,11 +9,9 @@ iofwd_config.h
 tags
 aclocal.m4
 doeconfig.sh
-*.d
 .todo
 *.o
 *.a
-*.mk
 test/bmitest
 test/completion
 test/configfile
@@ -125,4 +123,3 @@ src/zoidfs/profiler/.deps/
 src/zoidfs/profiler/.dirstamp
 src/zoidfs/util/.deps/
 src/zoidfs/util/.dirstamp
-src/c-util/configparser.output
