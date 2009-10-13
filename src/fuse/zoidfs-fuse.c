@@ -16,7 +16,7 @@
 
 #include "c-util/tools.h"
 #include "zoidfs/zoidfs.h"
-#include "zoidfs/c-util/zoidfs-util.h"
+#include "zoidfs/util/zoidfs-c-util.h"
 
 #define ZFUSE_DIRENTRY_COUNT 128
 #define ZFUSE_INITIAL_HANDLES 16

@@ -178,12 +178,12 @@ then
 fi
 AM_CONDITIONAL([DISPATCH_PVFS],[test "A${PVFS2_OK}" == "A1"])
 
-dnl
-dnl
-dnl # for fuse
+dnl =========================================================================
+dnl      FUSE client
+dnl =========================================================================
+
 dnl Control building of FUSE client
-dnl 
-use_fuse=0
+
 AC_ARG_ENABLE([fuse],
               [AC_HELP_STRING([--enable-fuse],
                               [Enable FUSE ZoidFS client])],
@@ -193,17 +193,31 @@ AC_ARG_ENABLE([fuse],
                   *) AC_MSG_ERROR([bad value ${enableval} for
                                    --enable-fuse]) ;;
                esac],
-               [use_fuse=0])
+               [use_fuse=a])
 
-AM_CONDITIONAL([BUILD_FUSE_CLIENT], [test ${use_fuse} == 1])
+# unless the user disabled fuse support, try to locate fuse and use it.
+if test "x${use_fuse}" != "x0" ; then
+   AX_FUSE([found_fuse=1], [found_fuse=0])
+else
+   found_fuse=0
+   AC_MSG_NOTICE([FUSE support disabled by the user (--disable-fuse)])
+fi
+
+if test "x${use_fuse}" == "x1" -a "x${found_fuse}" != "x1" ; then
+   AC_MSG_ERROR([FUSE support requested but could not locate FUSE!])
+fi
+
+AM_CONDITIONAL([HAVE_FUSE], [test ${found_fuse} == 1])
 AC_SUBST([FUSE_LIBS])
 AC_SUBST([FUSE_LDFLAGS])
 AC_SUBST([FUSE_CPPFLAGS])
 AC_SUBST([FUSE_CFLAGS])
 
-#
-#  Dispatcher POSIX driver control
-#
+
+dnl =========================================================================
+dnl     Dispatcher POSIX driver control
+dnl =========================================================================
+
 AC_ARG_ENABLE([posix],
               [AC_HELP_STRING([--enable-posix],
                               [Enable new POSIX zoidfs driver])],
@@ -227,10 +241,14 @@ else
 fi
 AM_CONDITIONAL([DISPATCH_POSIX],[test ${use_posix} == 1])
 
-#
+dnl =========================================================================
+dnl    SYSIO
+dnl =========================================================================
+
 # libsysio dispatcher build env setup
-# Determine is sysio is available and where it is located if it is in a non-standard location
-#
+# Determine is sysio is available and where it is located if it is in a
+# non-standard location
+
 use_libsysio=false
 AC_ARG_WITH(libsysio,
 [  --with-libsysio@<:@=DIR@:>@  Location of installed libsysio package],
@@ -320,6 +338,11 @@ AC_SUBST([ZFS_DISPATCHER_CPPFLAGS])
 AC_SUBST([ZFS_DISPATCHER_LDFLAGS])
 AC_SUBST([ZFS_DISPATCHER_LIBS])
 
+
+dnl =========================================================================
+dnl    BOOST
+dnl =========================================================================
+
 # boost m4 macros rely on libtool to set libext.
 # We don't want libtool so we compute it ourselves.
 AX_FINDLIBEXT
@@ -339,14 +362,9 @@ AC_SUBST([BOOST_REGEX_LDFLAGS])
 AC_SUBST([BOOST_DATE_TIME_LIBS])
 AC_SUBST([BOOST_DATE_TIME_LDFLAGS])
 
-
-#m4_pattern_allow(BOOST_THREAD_LDFLAGS)
-CPPFLAGS="${CPPFLAGS} ${BOOST_CPPFLAGS}"
-#LIBS="${LIBS} ${BOOST_THREAD_LIBS}"
-
-dnl 
-dnl  OPTIONS
-dnl
+dnl =========================================================================
+dnl  Valgrind
+dnl =========================================================================
 
 AC_ARG_ENABLE([valgrind], AS_HELP_STRING([--enable-valgrind], 
                                          [Try harder to be valgrind-clean]),
@@ -359,6 +377,12 @@ if test ${VALGRIND_SAFE} == "1"; then
 else
    AC_MSG_RESULT([no])
 fi
+
+
+
+dnl =========================================================================
+dnl =========================================================================
+dnl =========================================================================
 
 AC_CONFIG_FILES([
                  Makefile
