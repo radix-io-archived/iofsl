@@ -60,8 +60,11 @@ if test "x${mpidir}" != "x" ; then
     fi
     ENABLE_MPI=1
 fi
-AX_MAKE_VAR([ENABLE_MPI])
+AM_CONDITIONAL([HAVE_MPI],[test "x${ENABLE_MPI}" == "x1"])
 
+dnl
+dnl Flex/bison
+dnl
 AX_PROG_BISON([],[AC_MSG_ERROR([No BISON can be found!])])
 AX_PROG_FLEX([],[AC_MSG_ERROR([No FLEX can be found!])])
 AC_SUBST([BISON])
@@ -73,10 +76,6 @@ AC_LANG([C++])
 AC_HEADER_STDC
 AC_CHECK_HEADERS([stdlib.h string.h unistd.h execinfo.h])
 
-
-dnl For fuse
-dnl Add this before checking the size of size_t / ssize_t
-AX_ADD_DEFINE([_FILE_OFFSET_BITS=64])
 
 # Checks for typedefs, structures, and compiler characteristics.
 AC_C_CONST
@@ -138,8 +137,7 @@ then
   LIBS="${ORIG_LIBS}"
   CFLAGS="${ORIG_CFLAGS}"
 fi
-AX_MAKE_VAR([ENABLE_CUNIT])
-AX_MAKE_VAR([cunitdir])
+AM_CONDITIONAL([HAVE_CUNIT],[test "x${ENABLE_CUNIT}" == "x1"])
 
 # BMI
 AC_LANG_PUSH([C])
@@ -325,22 +323,11 @@ AC_SUBST([ZFS_DISPATCHER_CPPFLAGS])
 AC_SUBST([ZFS_DISPATCHER_LDFLAGS])
 AC_SUBST([ZFS_DISPATCHER_LIBS])
 
+# boost m4 macros rely on libtool to set libext.
+# We don't want libtool so we compute it ourselves.
+AX_FINDLIBEXT
+
 # check boost version
-
-MINE_FINDLIBEXT
-
-dnl AC_CANONICAL_SYSTEM
-dnl AC_CANONICAL_HOST
-dnl test -z "$host" && AC_MSG_ERROR([host variable is empty??])
-dnl host_os=`echo "$host" | sed 's/^\([^-]*\)-\([^-]*\)-\(.*\)$/\3/'`
-dnl libext=a
-dnl case "$host_os" in
-dnl   cygwin* | mingw* | pw32* | cegcc*)
-dnl     libext=lib
-dnl     ;;
-dnl esac
-
-
 BOOST_REQUIRE([1.34.1])
 BOOST_THREADS
 BOOST_PROGRAM_OPTIONS
@@ -360,20 +347,12 @@ AC_SUBST([BOOST_DATE_TIME_LDFLAGS])
 CPPFLAGS="${CPPFLAGS} ${BOOST_CPPFLAGS}"
 #LIBS="${LIBS} ${BOOST_THREAD_LIBS}"
 
-# for fuse
-dnl AC_SYS_LARGEFILE 
-dnl PKG_CHECK_MODULES(FUSE, [fuse],,exit)
-dnl CFLAGS="$CFLAGS $FUSE_CFLAGS"
-dnlCPPFLAGS="$CPPFLAGS $FUSE_CFLAGS"
-dnl LDFLAGS="$LDFLAGS $FUSE_LIBS"
-
 dnl 
 dnl  OPTIONS
 dnl
 
 AC_ARG_ENABLE([valgrind], AS_HELP_STRING([--enable-valgrind], 
                                          [Try harder to be valgrind-clean]),
-                                 dnl  [AX_ADD_DEFINE([VALGRIND_SAFE])])
     [AC_DEFINE([VALGRIND_SAFE],[1],[Clear memory to avoid valgrind warnings])
      VALGRIND_SAFE=1],
      [VALGRIND_SAFE=0])
@@ -383,8 +362,6 @@ if test ${VALGRIND_SAFE} == "1"; then
 else
    AC_MSG_RESULT([no])
 fi
-
-AX_OUTPUT_MAKE_VARS
 
 AC_CONFIG_FILES([
                  Makefile
