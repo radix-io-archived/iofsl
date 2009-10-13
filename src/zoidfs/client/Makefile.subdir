@@ -1,0 +1,11 @@
+lib_LIBRARIES += src/zoidfs/libzoidfsclient.a
+
+src_zoidfs_libzoidfsclient_a_CPPFLAGS = $(AM_CPPFLAGS)
+src_zoidfs_libzoidfsclient_a_CFLAGS = $(AM_CFLAGS)
+
+src_zoidfs_libzoidfsclient_a_SOURCES = \
+src/zoidfs/client/bmi_comm.h \
+src/zoidfs/client/bmi_comm.c \
+src/zoidfs/client/zoidfs_xdr.h \
+src/zoidfs/client/zoidfs_xdr.c \
+src/zoidfs/client/zoidfsclient.c
