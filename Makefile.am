@@ -2,7 +2,7 @@ bin_PROGRAMS =
 noinst_LIBRARIES =
 noinst_PROGRAMS =
 lib_LIBRARIES =
-BUILD_SOURCES =
+#BUILD_SOURCES =
 
 CPPFLAGS+=-I$(top_srcdir)/src
 
