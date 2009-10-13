@@ -723,8 +723,7 @@ int zoidfs_null(void) {
         goto null_cleanup;
     }
 
-#ifdef ZFS_USE_ASYNC_BMI_COMM
-    /* post the async recv here */
+#ifdef ZFS_USE_NB_BMI_COMM
     ret = ZOIDFS_BMI_COMM_IRECV(recv_msg);
 #endif
 
@@ -749,16 +748,14 @@ int zoidfs_null(void) {
      * Send the encoded function parameters to the ION daemon using an
      * unexpected BMI message.
      */
-#ifdef ZFS_USE_ASYNC_BMI_COMM
-    /* post async send here */
+#ifdef ZFS_USE_NB_BMI_COMM
     ret = ZOIDFS_BMI_COMM_ISENDU(send_msg);
     send_msg.bmi_comp_id = ret;
 #else
     ret = ZOIDFS_BMI_COMM_SENDU(send_msg);
 #endif
 
-#ifdef ZFS_USE_ASYNC_BMI_COMM
-    /* wait here for bmi async recv */
+#ifdef ZFS_USE_NB_BMI_COMM
     ret = ZOIDFS_BMI_COMM_IRECV_WAIT(recv_msg);
 #else
     ret = ZOIDFS_BMI_COMM_RECV(recv_msg);
@@ -771,8 +768,7 @@ int zoidfs_null(void) {
         goto null_cleanup;
     }
 
-#ifdef ZFS_USE_ASYNC_BMI_COMM
-    /* wait here for the async send to complete */
+#ifdef ZFS_USE_NB_BMI_COMM
     if(send_msg.bmi_comp_id == 0)
     {
         ret = ZOIDFS_BMI_COMM_ISENDU_WAIT(send_msg);
@@ -824,8 +820,7 @@ int zoidfs_getattr(const zoidfs_handle_t *handle, zoidfs_attr_t *attr) {
         goto getattr_cleanup;
     }
 
-#ifdef ZFS_USE_ASYNC_BMI_COMM
-    /* post async recv here */
+#ifdef ZFS_USE_NB_BMI_COMM
     ret = ZOIDFS_BMI_COMM_IRECV(recv_msg);
 #endif
 
@@ -854,8 +849,7 @@ int zoidfs_getattr(const zoidfs_handle_t *handle, zoidfs_attr_t *attr) {
      * Send the encoded function parameters to the ION daemon using an
      * unexpected BMI message.
      */
-#ifdef ZFS_USE_ASYNC_BMI_COMM
-    /* post async send here */
+#ifdef ZFS_USE_NB_BMI_COMM
     ret = ZOIDFS_BMI_COMM_ISENDU(send_msg);
     send_msg.bmi_comp_id = ret;
 #else
@@ -863,8 +857,7 @@ int zoidfs_getattr(const zoidfs_handle_t *handle, zoidfs_attr_t *attr) {
 #endif
 
     /* Do a BMI receive in recvbuf */
-#ifdef ZFS_USE_ASYNC_BMI_COMM
-    /* wait for async recv here */
+#ifdef ZFS_USE_NB_BMI_COMM
     ret = ZOIDFS_BMI_COMM_IRECV_WAIT(recv_msg);
 #else
     ret = ZOIDFS_BMI_COMM_RECV(recv_msg);
@@ -883,8 +876,7 @@ int zoidfs_getattr(const zoidfs_handle_t *handle, zoidfs_attr_t *attr) {
             goto getattr_cleanup;
         }
     }
-#ifdef ZFS_USE_ASYNC_BMI_COMM
-    /* wait for async send here */
+#ifdef ZFS_USE_NB_BMI_COMM
     if(send_msg.bmi_comp_id == 0)
     {
         ret = ZOIDFS_BMI_COMM_ISENDU_WAIT(send_msg);
@@ -934,7 +926,7 @@ int zoidfs_setattr(const zoidfs_handle_t *handle, const zoidfs_sattr_t *sattr,
         goto setattr_cleanup;
     }
 
-#ifdef ZFS_USE_ASYNC_BMI_COMM
+#ifdef ZFS_USE_NB_BMI_COMM
     ret = ZOIDFS_BMI_COMM_IRECV(recv_msg);
 #endif
 
@@ -965,14 +957,14 @@ int zoidfs_setattr(const zoidfs_handle_t *handle, const zoidfs_sattr_t *sattr,
      * Send the encoded function parameters to the ION daemon using an
      * unexpected BMI message.
      */
-#ifdef ZFS_USE_ASYNC_BMI_COMM
+#ifdef ZFS_USE_NB_BMI_COMM
     ret = ZOIDFS_BMI_COMM_ISENDU(send_msg);
     send_msg.bmi_comp_id = ret;
 #else
     ret = ZOIDFS_BMI_COMM_SENDU(send_msg);
 #endif
 
-#ifdef ZFS_USE_ASYNC_BMI_COMM
+#ifdef ZFS_USE_NB_BMI_COMM
     ret = ZOIDFS_BMI_COMM_IRECV_WAIT(recv_msg);
 #else
     ret = ZOIDFS_BMI_COMM_RECV(recv_msg);
@@ -994,7 +986,7 @@ int zoidfs_setattr(const zoidfs_handle_t *handle, const zoidfs_sattr_t *sattr,
         }
     }
 
-#ifdef ZFS_USE_ASYNC_BMI_COMM
+#ifdef ZFS_USE_NB_BMI_COMM
     if(send_msg.bmi_comp_id == 0)
     {
         ret = ZOIDFS_BMI_COMM_ISENDU_WAIT(send_msg);
@@ -1050,7 +1042,7 @@ int zoidfs_readlink(const zoidfs_handle_t *handle, char *buffer,
         goto readlink_cleanup;
     }
 
-#ifdef ZFS_USE_ASYNC_BMI_COMM
+#ifdef ZFS_USE_NB_BMI_COMM
     ret = ZOIDFS_BMI_COMM_IRECV(recv_msg);
 #endif
 
@@ -1080,7 +1072,7 @@ int zoidfs_readlink(const zoidfs_handle_t *handle, char *buffer,
      * Send the encoded function parameters to the ION daemon using an
      * unexpected BMI message.
      */
-#ifdef ZFS_USE_ASYNC_BMI_COMM
+#ifdef ZFS_USE_NB_BMI_COMM
     ret = ZOIDFS_BMI_COMM_ISENDU(send_msg);
     send_msg.bmi_comp_id = ret;
 #else
@@ -1088,7 +1080,7 @@ int zoidfs_readlink(const zoidfs_handle_t *handle, char *buffer,
 #endif
 
     /* Do a BMI receive in recvbuf */
-#ifdef ZFS_USE_ASYNC_BMI_COMM
+#ifdef ZFS_USE_NB_BMI_COMM
     ret = ZOIDFS_BMI_COMM_IRECV_WAIT(recv_msg);
 #else
     ret = ZOIDFS_BMI_COMM_RECV(recv_msg);
@@ -1115,7 +1107,7 @@ int zoidfs_readlink(const zoidfs_handle_t *handle, char *buffer,
         memcpy(buffer, intl_buffer, intl_buffer_length_uint64_t - 1);
     }
 
-#ifdef ZFS_USE_ASYNC_BMI_COMM
+#ifdef ZFS_USE_NB_BMI_COMM
     if(send_msg.bmi_comp_id == 0)
     {
         ret = ZOIDFS_BMI_COMM_ISENDU_WAIT(send_msg);
@@ -1197,7 +1189,7 @@ int zoidfs_lookup(const zoidfs_handle_t *parent_handle,
         goto lookup_cleanup;
     }
 
-#ifdef ZFS_USE_ASYNC_BMI_COMM
+#ifdef ZFS_USE_NB_BMI_COMM
     ret = ZOIDFS_BMI_COMM_IRECV(recv_msg);
 #endif
 
@@ -1245,7 +1237,7 @@ int zoidfs_lookup(const zoidfs_handle_t *parent_handle,
      * Send the encoded function parameters to the ION daemon using an
      * unexpected BMI message.
      */
-#ifdef ZFS_USE_ASYNC_BMI_COMM
+#ifdef ZFS_USE_NB_BMI_COMM
     ret = ZOIDFS_BMI_COMM_ISENDU(send_msg);
     send_msg.bmi_comp_id = ret;
 #else
@@ -1253,7 +1245,7 @@ int zoidfs_lookup(const zoidfs_handle_t *parent_handle,
 #endif
 
     /* Do a BMI receive in recvbuf */
-#ifdef ZFS_USE_ASYNC_BMI_COMM
+#ifdef ZFS_USE_NB_BMI_COMM
     ret = ZOIDFS_BMI_COMM_IRECV_WAIT(recv_msg);
 #else
     ret = ZOIDFS_BMI_COMM_RECV(recv_msg);
@@ -1274,7 +1266,7 @@ int zoidfs_lookup(const zoidfs_handle_t *parent_handle,
         }
     }
 
-#ifdef ZFS_USE_ASYNC_BMI_COMM
+#ifdef ZFS_USE_NB_BMI_COMM
     if(send_msg.bmi_comp_id == 0)
     {
         ret = ZOIDFS_BMI_COMM_ISENDU_WAIT(send_msg);
@@ -1356,7 +1348,7 @@ int zoidfs_remove(const zoidfs_handle_t *parent_handle,
         goto remove_cleanup;
     }
 
-#ifdef ZFS_USE_ASYNC_BMI_COMM
+#ifdef ZFS_USE_NB_BMI_COMM
     ret = ZOIDFS_BMI_COMM_IRECV(recv_msg);
 #endif
 
@@ -1404,7 +1396,7 @@ int zoidfs_remove(const zoidfs_handle_t *parent_handle,
      * Send the encoded function parameters to the ION daemon using an
      * unexpected BMI message.
      */
-#ifdef ZFS_USE_ASYNC_BMI_COMM
+#ifdef ZFS_USE_NB_BMI_COMM
     ret = ZOIDFS_BMI_COMM_ISENDU(send_msg);
     send_msg.bmi_comp_id = ret;
 #else
@@ -1412,7 +1404,7 @@ int zoidfs_remove(const zoidfs_handle_t *parent_handle,
 #endif
 
     /* Do a BMI receive in recvbuf */
-#ifdef ZFS_USE_ASYNC_BMI_COMM
+#ifdef ZFS_USE_NB_BMI_COMM
     ret = ZOIDFS_BMI_COMM_IRECV_WAIT(recv_msg);
 #else
     ret = ZOIDFS_BMI_COMM_RECV(recv_msg);
@@ -1434,7 +1426,7 @@ int zoidfs_remove(const zoidfs_handle_t *parent_handle,
         }
     }
 
-#ifdef ZFS_USE_ASYNC_BMI_COMM
+#ifdef ZFS_USE_NB_BMI_COMM
     if(send_msg.bmi_comp_id == 0)
     {
         ret = ZOIDFS_BMI_COMM_ISENDU_WAIT(send_msg);
@@ -1479,7 +1471,7 @@ int zoidfs_commit(const zoidfs_handle_t *handle) {
         goto commit_cleanup;
     }
 
-#ifdef ZFS_USE_ASYNC_BMI_COMM
+#ifdef ZFS_USE_NB_BMI_COMM
     ret = ZOIDFS_BMI_COMM_IRECV(recv_msg);
 #endif
 
@@ -1505,7 +1497,7 @@ int zoidfs_commit(const zoidfs_handle_t *handle) {
      * Send the encoded function parameters to the ION daemon using an
      * unexpected BMI message.
      */
-#ifdef ZFS_USE_ASYNC_BMI_COMM
+#ifdef ZFS_USE_NB_BMI_COMM
     ret = ZOIDFS_BMI_COMM_ISENDU(send_msg);
     send_msg.bmi_comp_id = ret;
 #else
@@ -1513,7 +1505,7 @@ int zoidfs_commit(const zoidfs_handle_t *handle) {
 #endif
 
     /* Do a BMI receive in recvbuf */
-#ifdef ZFS_USE_ASYNC_BMI_COMM
+#ifdef ZFS_USE_NB_BMI_COMM
     ret = ZOIDFS_BMI_COMM_IRECV_WAIT(recv_msg);
 #else
     ret = ZOIDFS_BMI_COMM_RECV(recv_msg);
@@ -1526,7 +1518,7 @@ int zoidfs_commit(const zoidfs_handle_t *handle) {
         goto commit_cleanup;
     }
 
-#ifdef ZFS_USE_ASYNC_BMI_COMM
+#ifdef ZFS_USE_NB_BMI_COMM
     if(send_msg.bmi_comp_id == 0)
     {
         ret = ZOIDFS_BMI_COMM_ISENDU_WAIT(send_msg);
@@ -1605,7 +1597,7 @@ int zoidfs_create(const zoidfs_handle_t *parent_handle,
         goto create_cleanup;
     }
 
-#ifdef ZFS_USE_ASYNC_BMI_COMM
+#ifdef ZFS_USE_NB_BMI_COMM
     ret = ZOIDFS_BMI_COMM_IRECV(recv_msg); 
 #endif
 
@@ -1658,7 +1650,7 @@ int zoidfs_create(const zoidfs_handle_t *parent_handle,
      * Send the encoded function parameters to the ION daemon using an
      * unexpected BMI message.
      */
-#ifdef ZFS_USE_ASYNC_BMI_COMM
+#ifdef ZFS_USE_NB_BMI_COMM
     ret = ZOIDFS_BMI_COMM_ISENDU(send_msg);
     send_msg.bmi_comp_id = ret;
 #else
@@ -1666,7 +1658,7 @@ int zoidfs_create(const zoidfs_handle_t *parent_handle,
 #endif
 
     /* Do a BMI receive in recvbuf */
-#ifdef ZFS_USE_ASYNC_BMI_COMM
+#ifdef ZFS_USE_NB_BMI_COMM
     ret = ZOIDFS_BMI_COMM_IRECV_WAIT(recv_msg);
 #else
     ret = ZOIDFS_BMI_COMM_RECV(recv_msg);
@@ -1695,7 +1687,7 @@ int zoidfs_create(const zoidfs_handle_t *parent_handle,
         }
     }
 
-#ifdef ZFS_USE_ASYNC_BMI_COMM
+#ifdef ZFS_USE_NB_BMI_COMM
     if(send_msg.bmi_comp_id == 0)
     {
         ret = ZOIDFS_BMI_COMM_ISENDU_WAIT(send_msg);
@@ -1790,7 +1782,7 @@ int zoidfs_rename(const zoidfs_handle_t *from_parent_handle,
         goto rename_cleanup;
     }
 
-#ifdef ZFS_USE_ASYNC_BMI_COMM
+#ifdef ZFS_USE_NB_BMI_COMM
     ret = ZOIDFS_BMI_COMM_IRECV(recv_msg);
 #endif
 
@@ -1873,7 +1865,7 @@ int zoidfs_rename(const zoidfs_handle_t *from_parent_handle,
      * Send the encoded function parameters to the ION daemon using an
      * unexpected BMI message.
      */
-#ifdef ZFS_USE_ASYNC_BMI_COMM
+#ifdef ZFS_USE_NB_BMI_COMM
     ret = ZOIDFS_BMI_COMM_ISENDU(send_msg);
     send_msg.bmi_comp_id = ret;
 #else
@@ -1881,7 +1873,7 @@ int zoidfs_rename(const zoidfs_handle_t *from_parent_handle,
 #endif
 
     /* Do a BMI receive in recvbuf */
-#ifdef ZFS_USE_ASYNC_BMI_COMM
+#ifdef ZFS_USE_NB_BMI_COMM
     ret = ZOIDFS_BMI_COMM_IRECV_WAIT(recv_msg);
 #else
     ret = ZOIDFS_BMI_COMM_RECV(recv_msg);
@@ -1917,7 +1909,7 @@ int zoidfs_rename(const zoidfs_handle_t *from_parent_handle,
         }
     }
 
-#ifdef ZFS_USE_ASYNC_BMI_COMM
+#ifdef ZFS_USE_NB_BMI_COMM
     if(send_msg.bmi_comp_id == 0)
     {
         ret = ZOIDFS_BMI_COMM_ISENDU_WAIT(send_msg);
@@ -2013,7 +2005,7 @@ int zoidfs_link(const zoidfs_handle_t *from_parent_handle,
         goto link_cleanup;
     }
 
-#ifdef ZFS_USE_ASYNC_BMI_COMM
+#ifdef ZFS_USE_NB_BMI_COMM
     ret = ZOIDFS_BMI_COMM_IRECV(recv_msg);
 #endif
 
@@ -2094,7 +2086,7 @@ int zoidfs_link(const zoidfs_handle_t *from_parent_handle,
      * Send the encoded function parameters to the ION daemon using an
      * unexpected BMI message.
      */
-#ifdef ZFS_USE_ASYNC_BMI_COMM
+#ifdef ZFS_USE_NB_BMI_COMM
     ret = ZOIDFS_BMI_COMM_ISENDU(send_msg);
     send_msg.bmi_comp_id = ret;
 #else
@@ -2102,7 +2094,7 @@ int zoidfs_link(const zoidfs_handle_t *from_parent_handle,
 #endif
 
     /* Do a BMI receive in recvbuf */
-#ifdef ZFS_USE_ASYNC_BMI_COMM
+#ifdef ZFS_USE_NB_BMI_COMM
     ret = ZOIDFS_BMI_COMM_IRECV_WAIT(recv_msg);
 #else
     ret = ZOIDFS_BMI_COMM_RECV(recv_msg);
@@ -2142,7 +2134,7 @@ int zoidfs_link(const zoidfs_handle_t *from_parent_handle,
 
     }
 
-#ifdef ZFS_USE_ASYNC_BMI_COMM
+#ifdef ZFS_USE_NB_BMI_COMM
     if(send_msg.bmi_comp_id == 0)
     {
         ret = ZOIDFS_BMI_COMM_ISENDU_WAIT(send_msg);
@@ -2241,7 +2233,7 @@ int zoidfs_symlink(const zoidfs_handle_t *from_parent_handle,
         goto symlink_cleanup;
     }
 
-#ifdef ZFS_USE_ASYNC_BMI_COMM
+#ifdef ZFS_USE_NB_BMI_COMM
     ret = ZOIDFS_BMI_COMM_IRECV(recv_msg);
 #endif
 
@@ -2318,7 +2310,7 @@ int zoidfs_symlink(const zoidfs_handle_t *from_parent_handle,
      * Send the encoded function parameters to the ION daemon using an
      * unexpected BMI message.
      */
-#ifdef ZFS_USE_ASYNC_BMI_COMM
+#ifdef ZFS_USE_NB_BMI_COMM
     ret = ZOIDFS_BMI_COMM_ISENDU(send_msg);
     send_msg.bmi_comp_id = ret;
 #else
@@ -2326,7 +2318,7 @@ int zoidfs_symlink(const zoidfs_handle_t *from_parent_handle,
 #endif
 
     /* Do a BMI receive in recvbuf */
-#ifdef ZFS_USE_ASYNC_BMI_COMM
+#ifdef ZFS_USE_NB_BMI_COMM
     ret = ZOIDFS_BMI_COMM_IRECV_WAIT(recv_msg);
 #else
     ret = ZOIDFS_BMI_COMM_RECV(recv_msg);
@@ -2365,7 +2357,7 @@ int zoidfs_symlink(const zoidfs_handle_t *from_parent_handle,
         }
     }
 
-#ifdef ZFS_USE_ASYNC_BMI_COMM
+#ifdef ZFS_USE_NB_BMI_COMM
     if(send_msg.bmi_comp_id == 0)
     {
         ret = ZOIDFS_BMI_COMM_ISENDU_WAIT(send_msg);
@@ -2444,7 +2436,7 @@ int zoidfs_mkdir(const zoidfs_handle_t *parent_handle,
         goto mkdir_cleanup;
     }
 
-#ifdef ZFS_USE_ASYNC_BMI_COMM
+#ifdef ZFS_USE_NB_BMI_COMM
     ret = ZOIDFS_BMI_COMM_IRECV(recv_msg);
 #endif
 
@@ -2497,7 +2489,7 @@ int zoidfs_mkdir(const zoidfs_handle_t *parent_handle,
      * Send the encoded function parameters to the ION daemon using an
      * unexpected BMI message.
      */
-#ifdef ZFS_USE_ASYNC_BMI_COMM
+#ifdef ZFS_USE_NB_BMI_COMM
     ret = ZOIDFS_BMI_COMM_ISENDU(send_msg);
     send_msg.bmi_comp_id = ret;
 #else
@@ -2505,7 +2497,7 @@ int zoidfs_mkdir(const zoidfs_handle_t *parent_handle,
 #endif
 
     /* Do a BMI receive in recvbuf */
-#ifdef ZFS_USE_ASYNC_BMI_COMM
+#ifdef ZFS_USE_NB_BMI_COMM
     ret = ZOIDFS_BMI_COMM_IRECV_WAIT(recv_msg);
 #else
     ret = ZOIDFS_BMI_COMM_RECV(recv_msg);
@@ -2535,7 +2527,7 @@ int zoidfs_mkdir(const zoidfs_handle_t *parent_handle,
         }
     }
 
-#ifdef ZFS_USE_ASYNC_BMI_COMM
+#ifdef ZFS_USE_NB_BMI_COMM
     if(send_msg.bmi_comp_id == 0)
     {
         ret = ZOIDFS_BMI_COMM_ISENDU_WAIT(send_msg);
@@ -2607,7 +2599,7 @@ int zoidfs_readdir(const zoidfs_handle_t *parent_handle,
         goto readdir_cleanup;
     }
 
-#ifdef ZFS_USE_ASYNC_BMI_COMM
+#ifdef ZFS_USE_NB_BMI_COMM
     ret = ZOIDFS_BMI_COMM_IRECV(recv_msg);
 #endif
 
@@ -2645,7 +2637,7 @@ int zoidfs_readdir(const zoidfs_handle_t *parent_handle,
      * Send the encoded function parameters to the ION daemon using an
      * unexpected BMI message.
      */
-#ifdef ZFS_USE_ASYNC_BMI_COMM
+#ifdef ZFS_USE_NB_BMI_COMM
     ret = ZOIDFS_BMI_COMM_ISENDU(send_msg);
     send_msg.bmi_comp_id = ret;
 #else
@@ -2653,7 +2645,7 @@ int zoidfs_readdir(const zoidfs_handle_t *parent_handle,
 #endif
 
     /* Do a BMI receive in recvbuf */
-#ifdef ZFS_USE_ASYNC_BMI_COMM
+#ifdef ZFS_USE_NB_BMI_COMM
     ret = ZOIDFS_BMI_COMM_IRECV_WAIT(recv_msg);
 #else
     ret = ZOIDFS_BMI_COMM_RECV(recv_msg);
@@ -2699,7 +2691,7 @@ int zoidfs_readdir(const zoidfs_handle_t *parent_handle,
     /* set the number of entries found by readdir() */
     *entry_count_ = entry_count;
 
-#ifdef ZFS_USE_ASYNC_BMI_COMM
+#ifdef ZFS_USE_NB_BMI_COMM
     if(send_msg.bmi_comp_id == 0)
     {
         ret = ZOIDFS_BMI_COMM_ISENDU_WAIT(send_msg);
@@ -2746,7 +2738,7 @@ int zoidfs_resize(const zoidfs_handle_t *handle, uint64_t size) {
         goto resize_cleanup;
     }
 
-#ifdef ZFS_USE_ASYNC_BMI_COMM
+#ifdef ZFS_USE_NB_BMI_COMM
     ret = ZOIDFS_BMI_COMM_IRECV(recv_msg);
 #endif
 
@@ -2776,7 +2768,7 @@ int zoidfs_resize(const zoidfs_handle_t *handle, uint64_t size) {
      * Send the encoded function parameters to the ION daemon using an
      * unexpected BMI message.
      */
-#ifdef ZFS_USE_ASYNC_BMI_COMM
+#ifdef ZFS_USE_NB_BMI_COMM
     ret = ZOIDFS_BMI_COMM_ISENDU(send_msg);
     send_msg.bmi_comp_id = ret;
 #else
@@ -2784,7 +2776,7 @@ int zoidfs_resize(const zoidfs_handle_t *handle, uint64_t size) {
 #endif
 
     /* Do a BMI receive in recvbuf */
-#ifdef ZFS_USE_ASYNC_BMI_COMM
+#ifdef ZFS_USE_NB_BMI_COMM
     ret = ZOIDFS_BMI_COMM_IRECV_WAIT(recv_msg);
 #else
     ret = ZOIDFS_BMI_COMM_RECV(recv_msg);
@@ -2797,7 +2789,7 @@ int zoidfs_resize(const zoidfs_handle_t *handle, uint64_t size) {
         goto resize_cleanup;
     }
 
-#ifdef ZFS_USE_ASYNC_BMI_COMM
+#ifdef ZFS_USE_NB_BMI_COMM
     if(send_msg.bmi_comp_id == 0)
     {
         ret = ZOIDFS_BMI_COMM_ISENDU_WAIT(send_msg);

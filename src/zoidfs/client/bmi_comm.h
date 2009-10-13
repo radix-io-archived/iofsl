@@ -20,7 +20,7 @@
 #define MAX_IDLE_TIME 10
 #define ION_ENV "ZOIDFS_ION_NAME"
 
-/* sync ZoidFS BMI wrappers */
+/* blocking ZoidFS BMI wrappers */
 int bmi_comm_send(BMI_addr_t, const void *, bmi_size_t, bmi_msg_tag_t,
                   bmi_context_id);
 int bmi_comm_recv(BMI_addr_t, void *, bmi_size_t, bmi_msg_tag_t,
@@ -35,7 +35,7 @@ int bmi_comm_recv_list(BMI_addr_t,
                        size_t, void *const *buffer_list, const bmi_size_t *,
                        bmi_msg_tag_t, bmi_context_id);
 
-/* async ZoidFS BMI wrappers */
+/* nonblocking ZoidFS BMI wrappers */
 int bmi_comm_isend(BMI_addr_t peer_addr, const void *buffer, bmi_size_t buflen,
                   bmi_msg_tag_t tag, bmi_context_id context, bmi_op_id_t * op_id);
 int bmi_comm_isend_wait(bmi_op_id_t op_id, bmi_size_t buflen, bmi_size_t * actual_size, bmi_context_id context);
