@@ -212,7 +212,11 @@ int bmi_comm_isendu(BMI_addr_t peer_addr, const void *buffer, bmi_size_t buflen,
         exit(1);
     }
 
-    return 0;
+    /* immediate bmi completion detected */
+    if(ret == 1)
+        return 1;
+    else
+        return 0;
 }
 
 int bmi_comm_isendu_wait(bmi_size_t buflen, bmi_context_id context, bmi_op_id_t op_id)
