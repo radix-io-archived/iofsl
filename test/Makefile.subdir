@@ -2,7 +2,7 @@ bin_PROGRAMS += test/zoidfs-md-cunit
 
 test_zoidfs_md_cunit_LDADD = \
 	src/zoidfs/libzoidfs-util.a \
-	src/zoidfs/libzoidfs.a \
+	src/zoidfs/libzoidfsclient.a \
 	src/iofwdutil/libiofwdutil.a \
 	src/c-util/libc-util.a \
     @ZFS_DISPATCHER_LIBS@ \
