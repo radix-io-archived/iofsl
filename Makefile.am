@@ -4,7 +4,7 @@ noinst_PROGRAMS =
 lib_LIBRARIES =
 #BUILD_SOURCES =
 
-CPPFLAGS+=-I$(top_srcdir)/src
+AM_CPPFLAGS=-I$(top_srcdir)/src
 
 # extra build rules
 include Make.rules
