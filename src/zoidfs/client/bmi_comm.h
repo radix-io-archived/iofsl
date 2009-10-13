@@ -42,9 +42,9 @@ int bmi_comm_isend_wait(bmi_op_id_t op_id, bmi_size_t buflen, bmi_size_t * actua
 int bmi_comm_irecv(BMI_addr_t peer_addr, void *buffer, bmi_size_t buflen,
                   bmi_msg_tag_t tag, bmi_context_id context, bmi_size_t * actual_size, bmi_op_id_t * op_id);
 int bmi_comm_irecv_wait(bmi_op_id_t op_id, bmi_size_t * actual_size, bmi_context_id context);
-int bmi_comm_isendu_wait(bmi_size_t buflen, bmi_context_id context, bmi_op_id_t op_id);
 int bmi_comm_isendu(BMI_addr_t peer_addr, const void *buffer, bmi_size_t buflen,
                    bmi_msg_tag_t tag, bmi_context_id context, bmi_op_id_t * op_id);
+int bmi_comm_isendu_wait(bmi_size_t buflen, bmi_context_id context, bmi_op_id_t op_id);
 
 #endif /* _BMI_COMM_H_ */
 
