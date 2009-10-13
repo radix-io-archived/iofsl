@@ -292,7 +292,8 @@ int bmi_comm_send_list(BMI_addr_t peer_addr, size_t list_count,
                        const void *const *buffers, const bmi_size_t *buflens,
                        bmi_msg_tag_t tag, bmi_context_id context) {
     bmi_op_id_t op_id;
-    int ret, i, outcount;
+    int ret, outcount;
+    size_t i;
     bmi_size_t total_size, actual_size;
     bmi_error_code_t error_code;
 
@@ -338,9 +339,10 @@ int bmi_comm_recv_list(BMI_addr_t peer_addr, size_t list_count,
                        bmi_msg_tag_t tag, bmi_context_id context)
 {
     bmi_op_id_t op_id;
-    int ret, i, outcount;
+    int ret, outcount;
     bmi_size_t total_size, actual_size;
     bmi_error_code_t error_code;
+    size_t i;
 
     total_size = 0;
     for (i = 0; i < list_count; i++)
