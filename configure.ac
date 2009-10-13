@@ -4,6 +4,7 @@
 AC_PREREQ(2.61)
 AC_INIT([iofwd], [0.1], [Submit trouble tickets at http://trac.mcs.anl.gov/projects/iofsl/newticket], [], [http://trac.mcs.anl.gov/projects/iofsl/wiki])
 
+AC_CANONICAL_TARGET
 AC_CANONICAL_SYSTEM
 AC_CANONICAL_HOST
 
@@ -13,8 +14,6 @@ m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES([yes])])
 
 AC_CONFIG_SRCDIR([src/iofwd/iofwd.cpp])
 AC_CONFIG_HEADER([iofwd_config.h])
-
-
 
 # Checks for programs.
 AC_PROG_CC
