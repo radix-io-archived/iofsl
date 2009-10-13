@@ -125,3 +125,7 @@ src/zoidfs/util/.deps/
 src/zoidfs/util/.dirstamp
 src/fuse/.deps/
 Makefile.in
+src/zoidfs/client/.deps/
+src/zoidfs/client/.dirstamp
+test/.deps/
+test/.dirstamp
