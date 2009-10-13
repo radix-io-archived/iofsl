@@ -1,5 +1,25 @@
 lib_LIBRARIES += src/zoidfs/libzoidfs-util.a
 
+src_zoidfs_libzoidfs_util_a_CPPFLAGS = \
+    @BOOST_CPPFLAGS@                   \
+    -I./src/zoidfs                     \
+    -I./src
+
+src_zoidfs_libzoidfs_util_a_CFLAGS =   \
+    @BOOST_CPPFLAGS@                   \
+    -I./src/zoidfs                     \
+    -I./src
+
+src_zoidfs_libzoidfs_util_a_LIBLDFLAGS = \
+    @BOOST_PROGRAM_OPTIONS_LDFLAGS@ \
+    @BOOST_DATE_TIME_LDFLAGS@ \
+    @BOOST_REGEX_LDFLAGS@ \
+    @BOOST_THREAD_LDFLAGS@ \
+    @BOOST_PROGRAM_OPTIONS_LIBS@ \
+    @BOOST_DATE_TIME_LIBS@ \
+    @BOOST_THREAD_LIBS@ \
+    @BOOST_REGEX_LIBS@
+
 src_zoidfs_libzoidfs_util_a_SOURCES = \
 src/zoidfs/util/zoidfs-c-util.h \
 src/zoidfs/util/zoidfs-c-util.c \

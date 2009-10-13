@@ -1,12 +1,5 @@
 bin_PROGRAMS += src/iofwd/iofwd
 
-src_iofwd_iofwd_LDFLAGS = \
-	@BOOST_PROGRAM_OPTIONS_LDFLAGS@ \
-	@BOOST_DATE_TIME_LDFLAGS@ \
-	@BOOST_REGEX_LDFLAGS@ \
-	@BOOST_THREAD_LDFLAGS@ \
-    @ZFS_DISPATCHER_LDFLAGS@
-
 src_iofwd_iofwd_LDADD = \
 	src/zoidfs/libzoidfs-util.a \
 	src/zoidfs/libzoidfs.a \
@@ -17,6 +10,27 @@ src_iofwd_iofwd_LDADD = \
 	@BOOST_THREAD_LIBS@ \
 	@BOOST_REGEX_LIBS@ \
     @ZFS_DISPATCHER_LIBS@
+
+src_iofwd_iofwd_CPPFLAGS = \
+    @BOOST_CPPFLAGS@                   \
+    -I./src/zoidfs                     \
+    -I./src
+
+src_iofwd_iofwd_CFLAGS =   \
+    @BOOST_CPPFLAGS@                   \
+    -I./src/zoidfs                     \
+    -I./src
+
+src_iofwd_iofwd_LDFLAGS = \
+    @BOOST_PROGRAM_OPTIONS_LDFLAGS@ \
+    @BOOST_DATE_TIME_LDFLAGS@ \
+    @BOOST_REGEX_LDFLAGS@ \
+    @BOOST_THREAD_LDFLAGS@ \
+    @BOOST_PROGRAM_OPTIONS_LIBS@ \
+    @BOOST_DATE_TIME_LIBS@ \
+    @BOOST_THREAD_LIBS@ \
+    @BOOST_REGEX_LIBS@ \
+    @ZFS_DISPATCHER_LDFLAGS@
 
 src_iofwd_iofwd_SOURCES = \
 src/iofwd/BufferPool.cpp \
