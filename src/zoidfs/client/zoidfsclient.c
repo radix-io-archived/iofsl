@@ -3053,10 +3053,6 @@ write_cleanup:
     ZOIDFS_RECV_MSG_DESTROY(recv_msg);
     ZOIDFS_SEND_MSG_DESTROY(send_msg);
 
-    /*if(mem_sizes)
-    {
-        free(mem_sizes);
-    }*/
     return ret;
 }
 
@@ -3148,17 +3144,14 @@ static int zoidfs_write_pipeline(BMI_addr_t peer_addr, uint64_t pipeline_size,
  * zoidfs_read
  * This function implements the zoidfs read call.
  */
-int zoidfs_read(const zoidfs_handle_t *handle, size_t mem_count_,
-                void *mem_starts[], const size_t mem_sizes_[],
-                size_t file_count_, const zoidfs_file_ofs_t file_starts[],
+int zoidfs_read(const zoidfs_handle_t *handle, size_t mem_count,
+                void *mem_starts[], const size_t mem_sizes[],
+                size_t file_count, const zoidfs_file_ofs_t file_starts[],
                 zoidfs_file_size_t file_sizes[]) {
     size_t i;
-    uint32_t mem_count = mem_count_;
-    bmi_size_t * mem_sizes = (bmi_size_t*)malloc(sizeof(bmi_size_t) * mem_count);
-    uint32_t file_count = file_count_;
     uint64_t pipeline_size = 0;
     size_t total_size = 0;
-    zoidfs_uint64_array_transfer_t mem_sizes_transfer;
+    zoidfs_size_t_array_transfer_t mem_sizes_transfer;
     zoidfs_uint64_array_transfer_t file_starts_transfer;
     zoidfs_uint64_array_transfer_t file_sizes_transfer;
     int ret = ZFS_OK;
@@ -3184,10 +3177,9 @@ int zoidfs_read(const zoidfs_handle_t *handle, size_t mem_count_,
         goto read_cleanup;
     }
 
-    for (i = 0; i < mem_count_; i++) {
-        total_size += mem_sizes_[i];
-        mem_sizes[i] = (bmi_size_t)mem_sizes_[i];
-        if (mem_sizes_[i] > ZOIDFS_BUFFER_MAX)
+    for (i = 0; i < mem_count; i++) {
+        total_size += mem_sizes[i];
+        if (mem_sizes[i] > ZOIDFS_BUFFER_MAX)
             pipeline_size = PIPELINE_SIZE;
     }
     if (total_size >= PIPELINE_SIZE)
@@ -3197,9 +3189,9 @@ int zoidfs_read(const zoidfs_handle_t *handle, size_t mem_count_,
                           zoidfs_xdr_size_processor(ZFS_UINT64_ARRAY_T, &file_count);
     send_msg.sendbuflen = zoidfs_xdr_size_processor(ZFS_OP_ID_T, &send_msg.zoidfs_op_id) +
                           zoidfs_xdr_size_processor(ZFS_HANDLE_T, (void *)handle) +
-                          zoidfs_xdr_size_processor(ZFS_UINT32_T, &mem_count) +
-                          zoidfs_xdr_size_processor(ZFS_UINT64_ARRAY_T, &mem_count) +
-                          zoidfs_xdr_size_processor(ZFS_UINT32_T, &file_count) +
+                          zoidfs_xdr_size_processor(ZFS_SIZE_T, &mem_count) +
+                          zoidfs_xdr_size_processor(ZFS_SIZE_T_ARRAY_T, &mem_count) +
+                          zoidfs_xdr_size_processor(ZFS_SIZE_T, &file_count) +
                           zoidfs_xdr_size_processor(ZFS_UINT64_ARRAY_T, &file_count) +
                           zoidfs_xdr_size_processor(ZFS_UINT64_ARRAY_T, &file_count) +
                           zoidfs_xdr_size_processor(ZFS_UINT64_T, &pipeline_size);
@@ -3224,16 +3216,16 @@ int zoidfs_read(const zoidfs_handle_t *handle, size_t mem_count_,
         
         goto read_cleanup;
     }
-    if ((ret = zoidfs_xdr_processor(ZFS_UINT32_T, &mem_count, &send_msg.send_xdr)) != ZFS_OK) {
+    if ((ret = zoidfs_xdr_processor(ZFS_SIZE_T, &mem_count, &send_msg.send_xdr)) != ZFS_OK) {
         
         goto read_cleanup;
     }
-    if((ret = zoidfs_xdr_processor(ZFS_UINT64_ARRAY_T, &mem_sizes_transfer, &send_msg.send_xdr)) != ZFS_OK)
+    if((ret = zoidfs_xdr_processor(ZFS_SIZE_T_ARRAY_T, &mem_sizes_transfer, &send_msg.send_xdr)) != ZFS_OK)
     {
         
         goto read_cleanup;
     }
-    if ((ret = zoidfs_xdr_processor(ZFS_UINT32_T, &file_count, &send_msg.send_xdr)) != ZFS_OK)
+    if ((ret = zoidfs_xdr_processor(ZFS_SIZE_T, &file_count, &send_msg.send_xdr)) != ZFS_OK)
     {
         
         goto read_cleanup;
@@ -3307,12 +3299,6 @@ int zoidfs_read(const zoidfs_handle_t *handle, size_t mem_count_,
 
 read_cleanup:
 
-    /* free the temp mem_sizes array */
-    if(mem_sizes)
-    {
-        free(mem_sizes);
-    }
-        
     if(recv_msg.op_status != ZFS_OK)
     {
         ret = recv_msg.op_status;
