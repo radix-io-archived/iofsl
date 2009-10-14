@@ -734,13 +734,17 @@ do{                                         \
 }while(0)
 #endif
 
+/* pipline config */
+#ifndef PIPELINE_SIZE
+#define PIPELINE_SIZE (1024UL * 1024 * 8)
+#endif
 
 /* reuse a static buffer */
 #ifdef ZFS_BMI_FASTMEMALLOC
 static void * zfs_bmi_client_sendbuf = NULL;
 static void * zfs_bmi_client_recvbuf = NULL;
-#define ZFS_BMI_CLIENT_SENDBUF_LEN 128 * 1024
-#define ZFS_BMI_CLIENT_RECVBUF_LEN 128 * 1024
+#define ZFS_BMI_CLIENT_SENDBUF_LEN PIPELINE_SIZE 
+#define ZFS_BMI_CLIENT_RECVBUF_LEN PIPELINE_SIZE 
 #define ZOIDFS_SEND_MSG_SET_BUFLEN(_msg, _val) (_msg).send_msg.sendbuflen = (_val)
 #define ZOIDFS_RECV_MSG_SET_BUFLEN(_msg, _val) (_msg).recv_msg.recvbuflen = (_val)
 #define ZOIDFS_SEND_ALLOC_BUFFER(_msg) (_msg).sendbuf = zfs_bmi_client_sendbuf
@@ -757,6 +761,9 @@ static void * zfs_bmi_client_recvbuf = NULL;
 #define ZOIDFS_RECV_XDR_MEMCREATE(_msg) ZFS_XDRMEM_CREATE((_msg).recv_xdr, (_msg).recvbuf, (_msg).actual_size, XDR_DECODE)
 
 
+#define ZOIDFS_BMI_COMM_SEND(_msg) bmi_comm_send(peer_addr, (_msg).sendbuf, (_msg).sendbuflen, (_msg).tag, context)
+#define ZOIDFS_BMI_COMM_ISEND(_msg) bmi_comm_isend(peer_addr, (_msg).sendbuf, (_msg).sendbuflen, (_msg).tag, context, &((_msg).bmi_op_id))
+#define ZOIDFS_BMI_COMM_ISEND_WAIT(_msg) bmi_comm_isend_wait((_msg).bmi_op_id, (_msg).sendbuflen, context)
 #define ZOIDFS_BMI_COMM_SENDU(_msg) bmi_comm_sendu(peer_addr, (_msg).sendbuf, (_msg).sendbuflen, (_msg).tag, context)
 #define ZOIDFS_BMI_COMM_ISENDU(_msg) bmi_comm_isendu(peer_addr, (_msg).sendbuf, (_msg).sendbuflen, (_msg).tag, context, &((_msg).bmi_op_id))
 #define ZOIDFS_BMI_COMM_ISENDU_WAIT(_msg) bmi_comm_isendu_wait((_msg).sendbuflen, context, (_msg).bmi_op_id)
@@ -764,10 +771,6 @@ static void * zfs_bmi_client_recvbuf = NULL;
 #define ZOIDFS_BMI_COMM_IRECV(_msg) bmi_comm_irecv(peer_addr, (_msg).recvbuf, (_msg).recvbuflen, (_msg).tag, context, &(_msg).actual_size, &((_msg).bmi_op_id))
 #define ZOIDFS_BMI_COMM_IRECV_WAIT(_msg) bmi_comm_irecv_wait((_msg).bmi_op_id, &(_msg).actual_size, context)
 
-/* pipline config */
-#ifndef PIPELINE_SIZE
-#define PIPELINE_SIZE (1024UL * 1024 * 8)
-#endif
 
 /*
  * zoidfs_null
@@ -2940,6 +2943,19 @@ int zoidfs_write(const zoidfs_handle_t *handle, size_t mem_count,
                           zoidfs_xdr_size_processor(ZFS_UINT64_ARRAY_T, &file_count) +
                           zoidfs_xdr_size_processor(ZFS_UINT64_T, &pipeline_size);
 
+    /* Wait for the response from the ION */
+    ZOIDFS_RECV_ALLOC_BUFFER(recv_msg);
+    if (!recv_msg.recvbuf) {
+        fprintf(stderr, "zoidfs_write: BMI_memalloc() failed.\n");
+        ret = ZFSERR_MISC;
+        goto write_cleanup;
+    }
+
+#if 0
+//#ifdef ZFS_USE_NB_BMI_COMM
+    ret = ZOIDFS_BMI_COMM_IRECV(recv_msg);
+#endif 
+
     ZOIDFS_SEND_ALLOC_BUFFER(send_msg);
     if (!send_msg.sendbuf) {
         fprintf(stderr, "zoidfs_write: BMI_memalloc() failed.\n");
@@ -3015,16 +3031,12 @@ int zoidfs_write(const zoidfs_handle_t *handle, size_t mem_count,
                                     send_msg.tag, context);
     }
 
-
-    /* Wait for the response from the ION */
-    ZOIDFS_RECV_ALLOC_BUFFER(recv_msg);
-    if (!recv_msg.recvbuf) {
-        fprintf(stderr, "zoidfs_write: BMI_memalloc() failed.\n");
-        ret = ZFSERR_MISC;
-        goto write_cleanup;
-    }
-
+#if 0
+//#ifdef ZFS_USE_NB_BMI_COMM
+    ret = ZOIDFS_BMI_COMM_IRECV_WAIT(recv_msg);
+#else
     ret = ZOIDFS_BMI_COMM_RECV(recv_msg);
+#endif
 
     /* Decode the ION response */
     ZOIDFS_RECV_XDR_MEMCREATE(recv_msg);
@@ -3196,6 +3208,19 @@ int zoidfs_read(const zoidfs_handle_t *handle, size_t mem_count,
                           zoidfs_xdr_size_processor(ZFS_UINT64_ARRAY_T, &file_count) +
                           zoidfs_xdr_size_processor(ZFS_UINT64_T, &pipeline_size);
 
+    /* Wait for the response from the ION */
+    ZOIDFS_RECV_ALLOC_BUFFER(recv_msg);
+    if (!recv_msg.recvbuf) {
+        fprintf(stderr, "zoidfs_read: BMI_memalloc() failed.\n");
+        ret = ZFSERR_MISC;
+        goto read_cleanup;
+    }
+
+#if 0
+//#ifdef ZFS_USE_NB_BMI_COMM
+    ret = ZOIDFS_BMI_COMM_IRECV(recv_msg);
+#endif
+
     ZOIDFS_SEND_ALLOC_BUFFER(send_msg);
     if (!send_msg.sendbuf) {
         fprintf(stderr, "zoidfs_read: BMI_memalloc() failed.\n");
@@ -3271,15 +3296,12 @@ int zoidfs_read(const zoidfs_handle_t *handle, size_t mem_count,
                                    recv_msg.tag, context);
     }
 
-    /* Wait for the response from the ION */
-    ZOIDFS_RECV_ALLOC_BUFFER(recv_msg);
-    if (!recv_msg.recvbuf) {
-        fprintf(stderr, "zoidfs_read: BMI_memalloc() failed.\n");
-        ret = ZFSERR_MISC;
-        goto read_cleanup;
-    }
-
+#if 0
+//#ifdef ZFS_USE_NB_BMI_COMM
+    ret = ZOIDFS_BMI_COMM_IRECV_WAIT(recv_msg);
+#else
     ret = ZOIDFS_BMI_COMM_RECV(recv_msg);
+#endif
 
     /* Decode the ION response */
     ZOIDFS_RECV_XDR_MEMCREATE(recv_msg);
