@@ -50,7 +50,7 @@ const IOFWDWriteRequest::ReqParam & IOFWDWriteRequest::decodeParam ()
      delete[] mem_sizes_;
      mem_sizes_ = new size_t[file_count_];
      uint64_t cur = 0;
-     for (uint32_t i = 0; i < file_count_; i++) {
+     for (size_t i = 0; i < file_count_; i++) {
        mem_starts_[i] = mem_ + cur;
        mem_sizes_[i] = file_sizes_[i];
        cur += file_sizes_[i];
