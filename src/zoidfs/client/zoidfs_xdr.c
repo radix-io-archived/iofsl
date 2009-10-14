@@ -8,6 +8,7 @@
  * Dries Kimpe <dkimpe@mcs.anl.gov> 
  */
 
+#include "iofwd_config.h"
 #include "zoidfs_xdr.h"
 
 
@@ -38,6 +39,19 @@ bool_t xdr_zoidfs_op_id_t(XDR *xdrs, zoidfs_op_id_t *op_id) {
  */
 bool_t xdr_zoidfs_null_param_t(XDR *xdrs, zoidfs_null_param_t *null_param) {
     return(xdr_int32_t(xdrs, null_param));
+}
+
+/*
+ * Encode / decode size_t values
+ */
+bool_t xdr_size_t(XDR *xdrs, size_t * sizet) {
+#if SIZEOF_SIZE_T == 8
+    uint64_t _st = *sizet;
+    return(xdr_uint64_t(xdrs, &_st));
+#else
+    uint32_t _st = *sizet;
+    return(xdr_uint32_t(xdrs, &_st));
+#endif
 }
 
 bool_t xdr_string_helper (XDR * xdr, string_transfer * t)
