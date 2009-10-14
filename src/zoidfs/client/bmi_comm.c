@@ -62,19 +62,20 @@ int bmi_comm_isend(BMI_addr_t peer_addr, const void *buffer, bmi_size_t buflen,
         exit(1);
     }
     
-    return 0;
+    return ret ? 1 : 0;
 }
 
 /*
  * zoidfs wrapper for BMI_test to complement a BMI_post_send... includes error handling
  */
-int bmi_comm_isend_wait(bmi_op_id_t op_id, bmi_size_t buflen, bmi_size_t * actual_size, bmi_context_id context)
+int bmi_comm_isend_wait(bmi_op_id_t op_id, bmi_size_t buflen, bmi_context_id context)
 {
     int ret = 0, outcount = 0;
+    bmi_size_t actual_size = 0;
     bmi_error_code_t error_code;
 
     do {
-        ret = BMI_test(op_id, &outcount, &error_code, actual_size, NULL, MAX_IDLE_TIME, context);
+        ret = BMI_test(op_id, &outcount, &error_code, &actual_size, NULL, MAX_IDLE_TIME, context);
     } while (ret == 0 && outcount == 0);
 
     if (ret < 0 || error_code != 0)
@@ -83,9 +84,9 @@ int bmi_comm_isend_wait(bmi_op_id_t op_id, bmi_size_t buflen, bmi_size_t * actua
         exit(1);
     }
 
-    if (*actual_size != buflen)
+    if (actual_size != buflen)
     {
-        fprintf(stderr, "bmi_comm_wait: Expected %ld but received %lu\n", buflen, *actual_size);
+        fprintf(stderr, "bmi_comm_wait: Expected %ld but received %lu\n", buflen, actual_size);
         exit(1);
     }
     return 0;
@@ -213,10 +214,7 @@ int bmi_comm_isendu(BMI_addr_t peer_addr, const void *buffer, bmi_size_t buflen,
     }
 
     /* immediate bmi completion detected */
-    if(ret == 1)
-        return 1;
-    else
-        return 0;
+    return ret ? 1 : 0;
 }
 
 int bmi_comm_isendu_wait(bmi_size_t buflen, bmi_context_id context, bmi_op_id_t op_id)
