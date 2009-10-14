@@ -31,7 +31,7 @@ const IOFWDReadRequest::ReqParam & IOFWDReadRequest::decodeParam ()
    process (req_reader_, handle_);
 
    process (req_reader_, mem_count_);
-   mem_sizes_ = new uint64_t[mem_count_];
+   mem_sizes_ = new size_t[mem_count_];
    process (req_reader_, iofwdutil::xdr::XDRVarArray(mem_sizes_, mem_count_));
 
    process (req_reader_, file_count_);
@@ -52,9 +52,9 @@ const IOFWDReadRequest::ReqParam & IOFWDReadRequest::decodeParam ()
      mem_count_ = file_count_;
      mem_starts_ = new char*[file_count_];
      delete[] mem_sizes_;
-     mem_sizes_ = new uint64_t[file_count_];
+     mem_sizes_ = new size_t[file_count_];
      uint64_t cur = 0;
-     for (uint32_t i = 0; i < file_count_; i++) {
+     for (size_t i = 0; i < file_count_; i++) {
        mem_starts_[i] = mem_ + cur;
        mem_sizes_[i] = file_sizes_[i];
        cur += file_sizes_[i];

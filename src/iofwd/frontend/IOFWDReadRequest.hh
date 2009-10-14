@@ -39,11 +39,11 @@ private:
    ReqParam param_;
 
    zoidfs::zoidfs_handle_t handle_;
-   uint32_t mem_count_;
+   size_t mem_count_;
    char * mem_;
    char ** mem_starts_;
-   uint64_t * mem_sizes_;
-   uint32_t file_count_;
+   size_t * mem_sizes_;
+   size_t file_count_;
    uint64_t * file_starts_;
    uint64_t * file_sizes_;
    uint64_t pipeline_size_;
