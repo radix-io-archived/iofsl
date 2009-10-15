@@ -445,7 +445,7 @@ static inline unsigned int zoidfs_xdr_size_processor(zoidfs_msg_data_t data_t, c
             }
             case ZFS_FILE_OFS_T:
             {
-                size = xdr_sizeof((xdrproc_t)xdr_file_ofs_t, (zoidfs_file_ofs_t *)data);
+                size = xdr_sizeof((xdrproc_t)xdr_zoidfs_file_ofs_t, (zoidfs_file_ofs_t *)data);
                 break;
             }
             case ZFS_UINT32_ARRAY_T:
@@ -465,7 +465,7 @@ static inline unsigned int zoidfs_xdr_size_processor(zoidfs_msg_data_t data_t, c
             }
             case ZFS_FILE_OFS_ARRAY_T:
             {
-                size = sizeof(uint32_t) + (*(zoidfs_file_ofs_t *)data * (xdr_sizeof((xdrproc_t)xdr_uint64_t, (zoidfs_file_ofs_t *)data)));
+                size = sizeof(uint32_t) + (*(zoidfs_file_ofs_t *)data * (xdr_sizeof((xdrproc_t)xdr_zoidfs_file_ofs_t, (zoidfs_file_ofs_t *)data)));
                 break;
             }
             case ZFS_INT_T:
