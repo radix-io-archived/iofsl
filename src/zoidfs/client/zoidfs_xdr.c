@@ -41,6 +41,11 @@ bool_t xdr_zoidfs_null_param_t(XDR *xdrs, zoidfs_null_param_t *null_param) {
     return(xdr_int32_t(xdrs, null_param));
 }
 
+/* encode the zoidfs_file_ofs_t value */
+bool_t xdr_zoidfs_file_ofs_t(XDR *xdrs, zoidfs_file_ofs_t * fo) {
+    return(xdr_uint64_t(xdrs, fo));
+}
+
 /*
  * Encode / decode size_t values
  */
