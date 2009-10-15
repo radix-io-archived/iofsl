@@ -136,14 +136,14 @@ static int gen_tag(void)
     return pthread_self();
 }
 
-static int zoidfs_write_pipeline(BMI_addr_t peer_addr, uint64_t pipeline_size,
+static int zoidfs_write_pipeline(BMI_addr_t peer_addr, size_t pipeline_size,
                                  size_t list_count, const void ** buf_list,
                                  const bmi_size_t size_list[], bmi_msg_tag_t tag,
-                                 bmi_context_id context);
-static int zoidfs_read_pipeline(BMI_addr_t peer_addr, uint64_t pipeline_size,
+                                 bmi_context_id context, bmi_size_t total_size);
+static int zoidfs_read_pipeline(BMI_addr_t peer_addr, size_t pipeline_size,
                                 size_t list_count, void ** buf_list,
                                 const bmi_size_t size_list[], bmi_msg_tag_t tag,
-                                bmi_context_id context);
+                                bmi_context_id context, bmi_size_t total_size);
 
 /* 
  * zoidfs message data types
@@ -151,28 +151,30 @@ static int zoidfs_read_pipeline(BMI_addr_t peer_addr, uint64_t pipeline_size,
  */
 typedef enum
 {
-    ZFS_OP_ID_T = 1,
-    ZFS_OP_STATUS_T = 2,
-    ZFS_HANDLE_T = 3,
-    ZFS_ATTR_T = 4,
-    ZFS_SATTR_T = 5,
-    ZFS_NULL_PARAM_T = 6,
-    ZFS_CACHE_HINT_T = 7,
-    ZFS_DIRENT_COOKIE_T = 8,
-    ZFS_UINT32_T = 9,
-    ZFS_SIZE_T = 10,
-    ZFS_UINT64_T = 11,
+    ZFS_OP_ID_T = 0,
+    ZFS_OP_STATUS_T = 1,
+    ZFS_HANDLE_T = 2,
+    ZFS_ATTR_T = 3,
+    ZFS_SATTR_T = 4,
+    ZFS_NULL_PARAM_T = 5,
+    ZFS_CACHE_HINT_T = 6,
+    ZFS_DIRENT_COOKIE_T = 7,
+    ZFS_UINT32_T = 8,
+    ZFS_SIZE_T = 9,
+    ZFS_UINT64_T = 10,
+    ZFS_FILE_OFS_T = 11,
     ZFS_UINT32_ARRAY_T = 12,
     ZFS_SIZE_T_ARRAY_T = 13,
     ZFS_UINT64_ARRAY_T = 14,
-    ZFS_INT_T = 15,
-    ZFS_BUFFER_T = 16,
-    ZFS_CSTRING_PATH_T = 17,
-    ZFS_CSTRING_NAME_T = 18,
-    ZFS_DIRENT_TRANSFER_T = 19,
+    ZFS_FILE_OFS_ARRAY_T = 15,
+    ZFS_INT_T = 16,
+    ZFS_BUFFER_T = 17,
+    ZFS_CSTRING_PATH_T = 18,
+    ZFS_CSTRING_NAME_T = 19,
+    ZFS_DIRENT_TRANSFER_T = 20,
 
     /* end of enum */
-    ZFS_MSG_DATA_MAX = 20
+    ZFS_MSG_DATA_MAX = 21
 } zoidfs_msg_data_t;
 
 /* zoidfs data type wrappers for buffers and arrays */
@@ -205,6 +207,12 @@ typedef struct
     uint64_t * data;
     unsigned int len; 
 } zoidfs_uint64_array_transfer_t;
+
+typedef struct
+{
+    zoidfs_file_ofs_t * data;
+    unsigned int len; 
+} zoidfs_file_ofs_array_transfer_t;
 
 typedef struct
 {
@@ -296,6 +304,12 @@ static inline unsigned int zoidfs_xdr_size_processor_cache_init()
                 zoidfs_xdr_size_cache[i] = xdr_sizeof((xdrproc_t)xdr_uint64_t, &data);
                 break;
             }
+            case ZFS_FILE_OFS_T:
+            {
+                zoidfs_file_ofs_t data;
+                zoidfs_xdr_size_cache[i] = xdr_sizeof((xdrproc_t)xdr_zoidfs_file_ofs_t, &data);
+                break;
+            }
             case ZFS_UINT32_ARRAY_T:
             {
                 zoidfs_xdr_size_cache[i] = 0;
@@ -307,6 +321,11 @@ static inline unsigned int zoidfs_xdr_size_processor_cache_init()
                 break;
             }
             case ZFS_UINT64_ARRAY_T:
+            {
+                zoidfs_xdr_size_cache[i] = 0;
+                break;
+            }
+            case ZFS_FILE_OFS_ARRAY_T:
             {
                 zoidfs_xdr_size_cache[i] = 0;
                 break;
@@ -338,19 +357,28 @@ static inline unsigned int zoidfs_xdr_size_processor(zoidfs_msg_data_t data_t, c
         {
             case ZFS_UINT32_ARRAY_T:
             {
-                size = sizeof(uint32_t) + (*(uint32_t *)data * (xdr_sizeof((xdrproc_t)xdr_uint32_t, (uint32_t *)data)));
+                /*size = sizeof(uint32_t) + (*(uint32_t *)data * (xdr_sizeof((xdrproc_t)xdr_uint32_t, (uint32_t *)data)));*/
+                size = sizeof(uint32_t) + (*(size_t *)data * zoidfs_xdr_size_cache[ZFS_UINT32_T]);
                 break;
             }
             case ZFS_SIZE_T_ARRAY_T:
             {
-                size = sizeof(uint32_t) + (*(size_t *)data * (xdr_sizeof((xdrproc_t)xdr_size_t, (size_t *)data)));
+                /*size = sizeof(uint32_t) + (*(size_t *)data * (xdr_sizeof((xdrproc_t)xdr_size_t, (size_t *)data)));*/
+                size = sizeof(uint32_t) + (*(size_t *)data * zoidfs_xdr_size_cache[ZFS_SIZE_T]);
                 break;
             }
             case ZFS_UINT64_ARRAY_T:
             {
-                size = sizeof(uint32_t) + (*(uint64_t *)data * (xdr_sizeof((xdrproc_t)xdr_uint64_t, (uint64_t *)data)));
+                /*size = sizeof(uint32_t) + (*(uint64_t *)data * (xdr_sizeof((xdrproc_t)xdr_uint64_t, (uint64_t *)data)));*/
+                size = sizeof(uint32_t) + (*(size_t *)data * zoidfs_xdr_size_cache[ZFS_UINT64_T]);
                 break;
             }
+            case ZFS_FILE_OFS_ARRAY_T:
+            {
+                size = sizeof(uint32_t) + (*(size_t *)data * zoidfs_xdr_size_cache[ZFS_FILE_OFS_T]);
+                break;
+            }
+
             default:
             {
                 size = zoidfs_xdr_size_cache[data_t];
@@ -415,9 +443,14 @@ static inline unsigned int zoidfs_xdr_size_processor(zoidfs_msg_data_t data_t, c
                 size = xdr_sizeof((xdrproc_t)xdr_uint64_t, (uint64_t *)data);
                 break;
             }
+            case ZFS_FILE_OFS_T:
+            {
+                size = xdr_sizeof((xdrproc_t)xdr_file_ofs_t, (zoidfs_file_ofs_t *)data);
+                break;
+            }
             case ZFS_UINT32_ARRAY_T:
             {
-                size = sizeof(uint32_t) + (*(uint32_t *)data * (xdr_sizeof((xdrproc_t)xdr_uint32_t, (uint32_t *)data)));
+                size = sizeof(uint32_t) + (*(size_t *)data * (xdr_sizeof((xdrproc_t)xdr_uint32_t, (uint32_t *)data)));
                 break;
             }
             case ZFS_SIZE_T_ARRAY_T:
@@ -427,7 +460,12 @@ static inline unsigned int zoidfs_xdr_size_processor(zoidfs_msg_data_t data_t, c
             }
             case ZFS_UINT64_ARRAY_T:
             {
-                size = sizeof(uint32_t) + (*(uint32_t *)data * (xdr_sizeof((xdrproc_t)xdr_uint64_t, (uint32_t *)data)));
+                size = sizeof(uint32_t) + (*(size_t *)data * (xdr_sizeof((xdrproc_t)xdr_uint64_t, (uint64_t *)data)));
+                break;
+            }
+            case ZFS_FILE_OFS_ARRAY_T:
+            {
+                size = sizeof(uint32_t) + (*(zoidfs_file_ofs_t *)data * (xdr_sizeof((xdrproc_t)xdr_uint64_t, (zoidfs_file_ofs_t *)data)));
                 break;
             }
             case ZFS_INT_T:
@@ -555,6 +593,15 @@ static inline int zoidfs_xdr_processor(zoidfs_msg_data_t data_t, void * data, zo
             }
             break;
         }
+        case ZFS_FILE_OFS_T:
+        {
+            if (!xdr_zoidfs_file_ofs_t(ZFS_XDRSTREAM((xdr)), data))
+            {
+                fprintf(stderr, "%s(): xdr_zoidfs_file_ofs_t() failed, %s:%i.\n", __func__, __FILE__, __LINE__);
+                ret = ZFSERR_XDR;
+            }
+            break;
+        }
         case ZFS_INT_T:
         {
             if (!xdr_int(ZFS_XDRSTREAM((xdr)), data))
@@ -597,6 +644,16 @@ static inline int zoidfs_xdr_processor(zoidfs_msg_data_t data_t, void * data, zo
         {
             zoidfs_uint64_array_transfer_t * _data = (zoidfs_uint64_array_transfer_t *)data;
             if (!xdr_array(ZFS_XDRSTREAM(xdr), (char **)&_data->data, (unsigned int *)&_data->len, (unsigned int)_data->len, sizeof(uint64_t), (xdrproc_t)xdr_uint64_t))
+            {
+                fprintf(stderr, "%s(): xdr_array() failed, %s:%i.\n", __func__, __FILE__, __LINE__);
+                ret = ZFSERR_XDR;
+            }
+            break;
+        }
+        case ZFS_FILE_OFS_ARRAY_T:
+        {
+            zoidfs_file_ofs_array_transfer_t * _data = (zoidfs_file_ofs_array_transfer_t *)data;
+            if (!xdr_array(ZFS_XDRSTREAM(xdr), (char **)&_data->data, (unsigned int *)&_data->len, (unsigned int)_data->len, sizeof(uint64_t), (xdrproc_t)xdr_zoidfs_file_ofs_t))
             {
                 fprintf(stderr, "%s(): xdr_array() failed, %s:%i.\n", __func__, __FILE__, __LINE__);
                 ret = ZFSERR_XDR;
@@ -736,7 +793,7 @@ do{                                         \
 
 /* pipline config */
 #ifndef PIPELINE_SIZE
-#define PIPELINE_SIZE (1024UL * 1024 * 8)
+#define PIPELINE_SIZE (1024 * 1024 * 8)
 #endif
 
 /* reuse a static buffer */
@@ -2893,17 +2950,18 @@ resize_cleanup:
  */
 int zoidfs_write(const zoidfs_handle_t *handle, size_t mem_count,
                  const void *mem_starts[], const size_t mem_sizes[],
-                 size_t file_count, const uint64_t file_starts[],
-                 uint64_t file_sizes[]) {
+                 size_t file_count, const zoidfs_file_ofs_t file_starts[],
+                 zoidfs_file_ofs_t file_sizes[]) {
     size_t i;
-    uint64_t pipeline_size = 0;
-    size_t total_size = 0;
+    size_t pipeline_size = 0;
+    bmi_size_t total_size = 0;
     zoidfs_size_t_array_transfer_t mem_sizes_transfer;
-    zoidfs_uint64_array_transfer_t file_starts_transfer;
-    zoidfs_uint64_array_transfer_t file_sizes_transfer;
+    zoidfs_file_ofs_array_transfer_t file_starts_transfer;
+    zoidfs_file_ofs_array_transfer_t file_sizes_transfer;
     int ret = ZFS_OK;
     zoidfs_send_msg_t send_msg;
     zoidfs_recv_msg_t recv_msg;
+    bmi_size_t * bmi_mem_sizes = NULL;
 
     /* init the zoidfs xdr data */
     ZOIDFS_SEND_MSG_INIT(send_msg, ZOIDFS_PROTO_WRITE);
@@ -2924,14 +2982,45 @@ int zoidfs_write(const zoidfs_handle_t *handle, size_t mem_count,
         goto write_cleanup;
     }
 
-    for (i = 0; i < mem_count; i++) {
-        total_size += mem_sizes[i];
-        if (mem_sizes[i] > ZOIDFS_BUFFER_MAX)
-            pipeline_size = PIPELINE_SIZE;
-    }
-    if (total_size >= PIPELINE_SIZE)
-        pipeline_size = PIPELINE_SIZE;
+    /* 
+     * if we have a list of mem to write, alloc a buffer of bmi_mem_sizes
+     * fill it, compute the total mem size, and determine if pipeline is applicable
+     */
+    if(mem_count > 1)
+    {
+        bmi_mem_sizes = (bmi_size_t *)malloc(sizeof(bmi_size_t) * mem_count);
 
+        for (i = 0; i < mem_count; i++)
+        {
+            bmi_mem_sizes[i] = (bmi_size_t)mem_sizes[i];
+            total_size += bmi_mem_sizes[i];
+            if (mem_sizes[i] > ZOIDFS_BUFFER_MAX)
+                pipeline_size = PIPELINE_SIZE;
+        }
+    }
+    else
+    {
+        total_size = (bmi_size_t)mem_sizes[0];
+    }
+
+    /* 
+     * if the total size is greater than the pipeline size, set the pipeline size
+     * and setup the memory size buffer for pipeline mode 
+     */
+    if (total_size >= PIPELINE_SIZE)
+    {
+        pipeline_size = PIPELINE_SIZE;
+        if(!bmi_mem_sizes)
+        {
+            bmi_mem_sizes = (bmi_size_t *)malloc(sizeof(bmi_size_t) * mem_count);
+            for (i = 0; i < mem_count; i++)
+            {
+                bmi_mem_sizes[i] = (bmi_size_t)mem_sizes[i];
+            }
+        }
+    }
+
+    /* compute the size of the messages */
     recv_msg.recvbuflen = zoidfs_xdr_size_processor(ZFS_OP_STATUS_T, &recv_msg.op_status) +
                           zoidfs_xdr_size_processor(ZFS_UINT64_ARRAY_T, &file_count);
     send_msg.sendbuflen = zoidfs_xdr_size_processor(ZFS_OP_ID_T, &send_msg.zoidfs_op_id) +
@@ -2939,9 +3028,9 @@ int zoidfs_write(const zoidfs_handle_t *handle, size_t mem_count,
                           zoidfs_xdr_size_processor(ZFS_SIZE_T, &mem_count) +
                           zoidfs_xdr_size_processor(ZFS_SIZE_T_ARRAY_T, &mem_count) +
                           zoidfs_xdr_size_processor(ZFS_SIZE_T, &file_count) +
-                          zoidfs_xdr_size_processor(ZFS_UINT64_ARRAY_T, &file_count) +
-                          zoidfs_xdr_size_processor(ZFS_UINT64_ARRAY_T, &file_count) +
-                          zoidfs_xdr_size_processor(ZFS_UINT64_T, &pipeline_size);
+                          zoidfs_xdr_size_processor(ZFS_FILE_OFS_ARRAY_T, &file_count) +
+                          zoidfs_xdr_size_processor(ZFS_FILE_OFS_ARRAY_T, &file_count) +
+                          zoidfs_xdr_size_processor(ZFS_SIZE_T, &pipeline_size);
 
     /* Wait for the response from the ION */
     ZOIDFS_RECV_ALLOC_BUFFER(recv_msg);
@@ -3021,14 +3110,14 @@ int zoidfs_write(const zoidfs_handle_t *handle, size_t mem_count,
         } else {
             /* Strided writes */
             ret = bmi_comm_send_list(peer_addr,
-                                     mem_count, mem_starts, mem_sizes, send_msg.tag,
-                                     context);
+                                     mem_count, mem_starts, bmi_mem_sizes, send_msg.tag,
+                                     context, total_size);
         }
     } else {
         /* Pipelining */
         ret = zoidfs_write_pipeline(peer_addr, pipeline_size,
-                                    mem_count, mem_starts, mem_sizes,
-                                    send_msg.tag, context);
+                                    mem_count, mem_starts, bmi_mem_sizes,
+                                    send_msg.tag, context, total_size);
     }
 
 #if 0
@@ -3056,7 +3145,12 @@ int zoidfs_write(const zoidfs_handle_t *handle, size_t mem_count,
     }
 
 write_cleanup:
-    
+   
+    if(bmi_mem_sizes)
+    {
+        free(bmi_mem_sizes);
+    }
+ 
     if(recv_msg.op_status != ZFS_OK)
     {
         ret = recv_msg.op_status;
@@ -3068,87 +3162,111 @@ write_cleanup:
     return ret;
 }
 
-static int zoidfs_write_pipeline(BMI_addr_t peer_addr, uint64_t pipeline_size,
+static int zoidfs_write_pipeline(BMI_addr_t peer_addr, size_t pipeline_size,
                                  size_t list_count, const void ** buf_list,
-                                 const bmi_size_t size_list[], bmi_msg_tag_t tag,
-                                 bmi_context_id context) {
+                                 const bmi_size_t bmi_size_list[], bmi_msg_tag_t tag,
+                                 bmi_context_id context, bmi_size_t total_size) {
     int np = 0;
     int ret = ZFS_OK;
-    size_t i;
-    uint64_t st = 0;
-    uint64_t st_mem = 0;
+    bmi_size_t i;
+    bmi_size_t bmi_pipeline_size = (bmi_size_t)pipeline_size;
+    bmi_size_t start = 0;
+    bmi_size_t start_mem = 0;
+    bmi_size_t start_mem_ofs = 0;
+    bmi_size_t bmi_list_count = (bmi_size_t)list_count;
 
-    /* TODO: st_memofs probably shouldn't be 64 bit but whatever the platform
-     * size_t is */
-    uint64_t st_memofs = 0;
-    uint64_t total_size = 0;
-
-    for (i = 0; i < list_count; i++)
-        total_size += size_list[i];
-
-    while (st < total_size) {
-        uint64_t en = 0;
-        uint64_t en_mem = 0;
-        uint64_t en_memofs = 0;
-        size_t p_list_count = 0;
+    while (start < total_size) 
+    {
+        bmi_size_t end = 0;
+        bmi_size_t end_mem = 0;
+        bmi_size_t end_mem_ofs = 0;
+        bmi_size_t p_list_count = 0;
         const char ** p_buf_list = NULL;
         bmi_size_t * p_size_list = NULL;
-        for (i = 0; i < list_count; i++) {
-            if (st + pipeline_size <= en + size_list[i]) {
-                en_mem = i;
-                en_memofs = st + pipeline_size - en;
-                en += en_memofs;
+
+        /* compute the contents of the next request */
+        for (i = 0; i < bmi_list_count; i++)
+        {
+            /* if the element will exceed the pipeline size 
+                ... exit the loop */
+            if (start + bmi_pipeline_size <= end + bmi_size_list[i])
+            {
+                end_mem = i;
+                end_mem_ofs = start + bmi_pipeline_size - end;
+                end += end_mem_ofs;
                 break;
             }
-            en += size_list[i];
-            if (i == list_count -1) {
-                en_mem = i;
-                en_memofs = size_list[i];
+
+            /* include this element on the buffer */
+            end += bmi_size_list[i];
+
+            /* if this is the last element in the list */
+            if (i == bmi_list_count -1)
+            {
+                end_mem = i;
+                end_mem_ofs = bmi_size_list[i];
             }
         }
+
         /* create next request */
-        p_list_count = en_mem + 1 - st_mem;
+        p_list_count = end_mem + 1 - start_mem;
         p_buf_list = (const char**)malloc(sizeof(char*) * p_list_count);
-        p_size_list = (bmi_size_t*)malloc(sizeof(size_t) * p_list_count);
-        if (st_mem == en_mem) {
-            p_buf_list[0] = ((const char*)buf_list[st_mem]) + st_memofs;
-            assert(en_memofs > st_memofs);
-            p_size_list[0] = en_memofs - st_memofs;
-        } else {
-            for (i = st_mem; i <= en_mem; i++) {
-                if (i == st_mem) {
-                    p_buf_list[i] = ((const char*)buf_list[i]) + st_memofs;
-                    p_size_list[i] = size_list[i] - st_memofs;
-                } else if (i == en_mem) {
+        p_size_list = (bmi_size_t*)malloc(sizeof(bmi_size_t) * p_list_count);
+        bmi_size_t p_total_size = 0;
+
+        /* if only one buffer to send, treat as a partial*/
+        if (start_mem == end_mem) 
+        {
+            p_buf_list[0] = ((const char*)buf_list[start_mem]) + start_mem_ofs;
+            assert(end_mem_ofs > start_mem_ofs);
+            p_size_list[0] = end_mem_ofs - start_mem_ofs;
+            p_total_size += p_size_list[0];
+        } 
+        else 
+        {
+            /* if there are multiple buffers, for each buffer */
+            for (i = start_mem; i <= end_mem; i++)
+            {
+                /* if this is the first buffer, account for a partial buffer */
+                if (i == start_mem)
+                {
+                    p_buf_list[i] = ((const char*)buf_list[i]) + start_mem_ofs;
+                    p_size_list[i] = bmi_size_list[i] - start_mem_ofs;
+                }
+                /* if this is the last buffer, account for a partial */
+                else if (i == end_mem)
+                {
                     p_buf_list[i] = (const char*)buf_list[i];
-                    p_size_list[i] = en_memofs;
-                } else {
+                    p_size_list[i] = end_mem_ofs;
+                }
+                /* treat all other buffers as complete and seperate */
+                else
+                {
                     p_buf_list[i] = (const char*)buf_list[i];
-                    p_size_list[i] = size_list[i];
+                    p_size_list[i] = bmi_size_list[i];
                 }
                 assert(p_size_list[i] > 0);
+                p_total_size += p_size_list[i];
             }
         }
-        /* send it */
-        {
-            size_t p_total_size = 0;
-            for (i = 0; i < p_list_count; i++) p_total_size += p_size_list[i];
-            /* assert(p_total_size == min(pipeline_size, total_size -st)); */
-            ret = bmi_comm_send_list(peer_addr, p_list_count, (const void**)p_buf_list,
-                                     p_size_list, tag, context);
-        }
+
+        /* send the data */
+        ret = bmi_comm_send_list(peer_addr, p_list_count, (const void**)p_buf_list,
+                                     p_size_list, tag, context, p_total_size);
+
         /* next */
-        st = en;
-        st_mem = en_mem;
-        st_memofs = en_memofs;
-        if (st_mem < (uint64_t) list_count && (uint64_t) size_list[st_mem] == st_memofs) {
-            st_mem++;
-            st_memofs = 0;
+        start = end;
+        start_mem = end_mem;
+        start_mem_ofs = end_mem_ofs;
+        if (start_mem < bmi_list_count && bmi_size_list[start_mem] == start_mem_ofs) {
+            start_mem++;
+            start_mem_ofs = 0;
         }
         free(p_buf_list);
         free(p_size_list);
         np++;
     }
+
     return 0;
 }
 
@@ -3161,14 +3279,15 @@ int zoidfs_read(const zoidfs_handle_t *handle, size_t mem_count,
                 size_t file_count, const zoidfs_file_ofs_t file_starts[],
                 zoidfs_file_size_t file_sizes[]) {
     size_t i;
-    uint64_t pipeline_size = 0;
+    size_t pipeline_size = 0;
     size_t total_size = 0;
     zoidfs_size_t_array_transfer_t mem_sizes_transfer;
-    zoidfs_uint64_array_transfer_t file_starts_transfer;
-    zoidfs_uint64_array_transfer_t file_sizes_transfer;
+    zoidfs_file_ofs_array_transfer_t file_starts_transfer;
+    zoidfs_file_ofs_array_transfer_t file_sizes_transfer;
     int ret = ZFS_OK;
     zoidfs_send_msg_t send_msg;
     zoidfs_recv_msg_t recv_msg;
+    bmi_size_t * bmi_mem_sizes = NULL;
 
     /* init the zoidfs xdr data */
     ZOIDFS_SEND_MSG_INIT(send_msg, ZOIDFS_PROTO_READ);
@@ -3189,13 +3308,43 @@ int zoidfs_read(const zoidfs_handle_t *handle, size_t mem_count,
         goto read_cleanup;
     }
 
-    for (i = 0; i < mem_count; i++) {
-        total_size += mem_sizes[i];
-        if (mem_sizes[i] > ZOIDFS_BUFFER_MAX)
-            pipeline_size = PIPELINE_SIZE;
+    /* 
+     * if we have a list of mem to write, alloc a buffer of bmi_mem_sizes
+     * fill it, compute the total mem size, and determine if pipeline is applicable
+     */
+    if(mem_count > 1)
+    {
+        bmi_mem_sizes = (bmi_size_t *)malloc(sizeof(bmi_size_t) * mem_count);
+
+        for (i = 0; i < mem_count; i++)
+        {
+            bmi_mem_sizes[i] = (bmi_size_t)mem_sizes[i];
+            total_size += bmi_mem_sizes[i];
+            if (mem_sizes[i] > ZOIDFS_BUFFER_MAX)
+                pipeline_size = PIPELINE_SIZE;
+        }
     }
+    else
+    {
+        total_size = (bmi_size_t)mem_sizes[0];
+    }
+
+    /* 
+     * if the total size is greater than the pipeline size, set the pipeline size
+     * and setup the memory size buffer for pipeline mode 
+     */
     if (total_size >= PIPELINE_SIZE)
+    {
         pipeline_size = PIPELINE_SIZE;
+        if(!bmi_mem_sizes)
+        {
+            bmi_mem_sizes = (bmi_size_t *)malloc(sizeof(bmi_size_t) * mem_count);
+            for (i = 0; i < mem_count; i++)
+            {
+                bmi_mem_sizes[i] = (bmi_size_t)mem_sizes[i];
+            }
+        }
+    }
 
     recv_msg.recvbuflen = zoidfs_xdr_size_processor(ZFS_OP_STATUS_T, &recv_msg.op_status) +
                           zoidfs_xdr_size_processor(ZFS_UINT64_ARRAY_T, &file_count);
@@ -3204,9 +3353,9 @@ int zoidfs_read(const zoidfs_handle_t *handle, size_t mem_count,
                           zoidfs_xdr_size_processor(ZFS_SIZE_T, &mem_count) +
                           zoidfs_xdr_size_processor(ZFS_SIZE_T_ARRAY_T, &mem_count) +
                           zoidfs_xdr_size_processor(ZFS_SIZE_T, &file_count) +
-                          zoidfs_xdr_size_processor(ZFS_UINT64_ARRAY_T, &file_count) +
-                          zoidfs_xdr_size_processor(ZFS_UINT64_ARRAY_T, &file_count) +
-                          zoidfs_xdr_size_processor(ZFS_UINT64_T, &pipeline_size);
+                          zoidfs_xdr_size_processor(ZFS_FILE_OFS_ARRAY_T, &file_count) +
+                          zoidfs_xdr_size_processor(ZFS_FILE_OFS_ARRAY_T, &file_count) +
+                          zoidfs_xdr_size_processor(ZFS_SIZE_T, &pipeline_size);
 
     /* Wait for the response from the ION */
     ZOIDFS_RECV_ALLOC_BUFFER(recv_msg);
@@ -3286,14 +3435,14 @@ int zoidfs_read(const zoidfs_handle_t *handle, size_t mem_count,
         } else {
             /* Strided reads */
             ret = bmi_comm_recv_list(peer_addr, mem_count,
-                                     mem_starts, mem_sizes,
-                                     recv_msg.tag, context);
+                                     mem_starts, bmi_mem_sizes,
+                                     recv_msg.tag, context, total_size);
         }
     } else {
         /* Pipelining */
         ret = zoidfs_read_pipeline(peer_addr, pipeline_size,
-                                   mem_count, mem_starts, mem_sizes,
-                                   recv_msg.tag, context);
+                                   mem_count, mem_starts, bmi_mem_sizes,
+                                   recv_msg.tag, context, total_size);
     }
 
 #if 0
@@ -3321,6 +3470,11 @@ int zoidfs_read(const zoidfs_handle_t *handle, size_t mem_count,
 
 read_cleanup:
 
+    if(bmi_mem_sizes)
+    {
+        free(bmi_mem_sizes);
+    }
+
     if(recv_msg.op_status != ZFS_OK)
     {
         ret = recv_msg.op_status;
@@ -3332,77 +3486,104 @@ read_cleanup:
     return ret;
 }
 
-static int zoidfs_read_pipeline(BMI_addr_t peer_addr, uint64_t pipeline_size,
+static int zoidfs_read_pipeline(BMI_addr_t peer_addr, size_t pipeline_size,
                                 size_t list_count, void ** buf_list,
-                                const bmi_size_t size_list[], bmi_msg_tag_t tag,
-                                bmi_context_id context) {
+                                const bmi_size_t bmi_size_list[], bmi_msg_tag_t tag,
+                                bmi_context_id context, bmi_size_t total_size) {
     int np = 0;
     int ret = ZFS_OK;
-    size_t i;
-    uint64_t st = 0;
-    uint64_t st_mem = 0;
-    uint64_t st_memofs = 0;
-    uint64_t total_size = 0;
-    for (i = 0; i < list_count; i++)
-        total_size += size_list[i];
-    while (st < total_size) {
-        uint64_t en = 0;
-        uint64_t en_mem = 0;
-        uint64_t en_memofs = 0;
-        size_t p_list_count = 0;
+    bmi_size_t i;
+    bmi_size_t start = 0;
+    bmi_size_t start_mem = 0;
+    bmi_size_t start_mem_ofs = 0;
+    bmi_size_t bmi_list_count = (bmi_size_t)list_count;
+    bmi_size_t bmi_pipeline_size = (bmi_size_t)pipeline_size;
+
+    /* while there is still unrecv data */
+    while (start < total_size)
+    {
+        bmi_size_t end = 0;
+        bmi_size_t end_mem = 0;
+        bmi_size_t end_mem_ofs = 0;
+        bmi_size_t p_list_count = 0;
         char ** p_buf_list = NULL;
         bmi_size_t * p_size_list = NULL;
-        for (i = 0; i < list_count; i++) {
-            if (st + pipeline_size <= en + size_list[i]) {
-                en_mem = i;
-                en_memofs = st + pipeline_size - en;
-                en += en_memofs;
+
+        /* assemble the next buffer */
+        for (i = 0; i < bmi_list_count; i++)
+        {
+           
+            /* grab a segment of the buffer since it exceeds the pipeline size */ 
+            if (start + bmi_pipeline_size <= end + bmi_size_list[i])
+            {
+                end_mem = i;
+                end_mem_ofs = start + pipeline_size - end;
+                end += end_mem_ofs;
                 break;
             }
-            en += size_list[i];
-            if (i == list_count -1) {
-                en_mem = i;
-                en_memofs = size_list[i];
+            
+            /* add the whole segment to the buffer */
+            end += bmi_size_list[i];
+
+            /* if this is the last buffer, update end mem */
+            if (i == bmi_list_count -1) {
+                end_mem = i;
+                end_mem_ofs = bmi_size_list[i];
             }
         }
+
         /* create next request */
-        p_list_count = en_mem + 1 - st_mem;
+        p_list_count = end_mem + 1 - start_mem;
         p_buf_list = (char**)malloc(sizeof(char*) * p_list_count);
         p_size_list = (bmi_size_t*)malloc(sizeof(size_t) * p_list_count);
-        if (st_mem == en_mem) {
-            p_buf_list[0] = ((char*)buf_list[st_mem]) + st_memofs;
-            assert(en_memofs > st_memofs);
-            p_size_list[0] = en_memofs - st_memofs;
-        } else {
-            for (i = st_mem; i <= en_mem; i++) {
-                if (i == st_mem) {
-                    p_buf_list[i] = ((char*)buf_list[i]) + st_memofs;
-                    p_size_list[i] = size_list[i] - st_memofs;
-                } else if (i == en_mem) {
+        bmi_size_t p_total_size = 0;
+
+        /* if there is only one buffer, account for a partial buffer case */
+        if (start_mem == end_mem)
+        {
+            p_buf_list[0] = ((char*)buf_list[start_mem]) + start_mem_ofs;
+            assert(end_mem_ofs > start_mem_ofs);
+            p_size_list[0] = end_mem_ofs - start_mem_ofs;
+            p_total_size += p_size_list[0];
+        }
+        else
+        {
+            /* for each buffer */
+            for (i = start_mem; i <= end_mem; i++)
+            {
+                /* for the first buffer account for a partial */
+                if (i == start_mem)
+                {
+                    p_buf_list[i] = ((char*)buf_list[i]) + start_mem_ofs;
+                    p_size_list[i] = bmi_size_list[i] - start_mem_ofs;
+                }
+                /* for the last buffer account for a partial */
+                else if (i == end_mem)
+                {
                     p_buf_list[i] = (char*)buf_list[i];
-                    p_size_list[i] = en_memofs;
-                } else {
+                    p_size_list[i] = end_mem_ofs;
+                }
+                /* for the other buffers, treat as whole buffers */
+                else
+                {
                     p_buf_list[i] = (char*)buf_list[i];
-                    p_size_list[i] = size_list[i];
+                    p_size_list[i] = bmi_size_list[i];
                 }
                 assert(p_size_list[i] > 0);
+                p_total_size += p_size_list[i];
             }
         }
-        /* recv */
-        {
-            size_t p_total_size = 0;
-            for (i = 0; i < p_list_count; i++) p_total_size += p_size_list[i];
-            /* assert(p_total_size == std::min(pipeline_size, total_size -st)); */
-            ret = bmi_comm_recv_list(peer_addr, p_list_count, (void**)p_buf_list,
-                                     p_size_list, tag, context);
-        }
+
+        /* recv the data */
+        ret = bmi_comm_recv_list(peer_addr, p_list_count, (void**)p_buf_list,
+                                     p_size_list, tag, context, p_total_size);
         /* next */
-        st = en;
-        st_mem = en_mem;
-        st_memofs = en_memofs;
-        if (st_mem < (uint64_t) list_count && (uint64_t) size_list[st_mem] == st_memofs) {
-            st_mem++;
-            st_memofs = 0;
+        start = end;
+        start_mem = end_mem;
+        start_mem_ofs = end_mem_ofs;
+        if (start_mem < bmi_list_count && bmi_size_list[start_mem] == start_mem_ofs) {
+            start_mem++;
+            start_mem_ofs = 0;
         }
         free(p_buf_list);
         free(p_size_list);
