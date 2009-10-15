@@ -30,10 +30,10 @@ int bmi_comm_sendu(BMI_addr_t, const void *, bmi_size_t, bmi_msg_tag_t,
 int bmi_comm_recvu(BMI_addr_t *, void **, bmi_size_t *, bmi_msg_tag_t *);
 int bmi_comm_send_list(BMI_addr_t,
                        size_t, const void *const *buffer_list,
-                       const bmi_size_t *, bmi_msg_tag_t, bmi_context_id);
+                       const bmi_size_t *, bmi_msg_tag_t, bmi_context_id, bmi_size_t total_size);
 int bmi_comm_recv_list(BMI_addr_t,
                        size_t, void *const *buffer_list, const bmi_size_t *,
-                       bmi_msg_tag_t, bmi_context_id);
+                       bmi_msg_tag_t, bmi_context_id, bmi_size_t total_size);
 
 /* nonblocking ZoidFS BMI wrappers */
 int bmi_comm_isend(BMI_addr_t peer_addr, const void *buffer, bmi_size_t buflen,

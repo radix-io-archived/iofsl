@@ -288,16 +288,11 @@ int bmi_comm_recvu(BMI_addr_t *peer_addr, void **recvbuf,
  */
 int bmi_comm_send_list(BMI_addr_t peer_addr, size_t list_count,
                        const void *const *buffers, const bmi_size_t *buflens,
-                       bmi_msg_tag_t tag, bmi_context_id context) {
+                       bmi_msg_tag_t tag, bmi_context_id context, bmi_size_t total_size) {
     bmi_op_id_t op_id;
     int ret, outcount;
-    size_t i;
-    bmi_size_t total_size, actual_size;
+    bmi_size_t actual_size;
     bmi_error_code_t error_code;
-
-    total_size = 0;
-    for (i = 0; i < list_count; i++)
-        total_size += buflens[i];
 
     /* Post the BMI send requests and wait for its completion */
     ret = BMI_post_send_list(&op_id, peer_addr, buffers, buflens,
@@ -334,17 +329,12 @@ int bmi_comm_send_list(BMI_addr_t peer_addr, size_t list_count,
  */
 int bmi_comm_recv_list(BMI_addr_t peer_addr, size_t list_count,
                        void *const * buffers, const bmi_size_t *buflens,
-                       bmi_msg_tag_t tag, bmi_context_id context)
+                       bmi_msg_tag_t tag, bmi_context_id context, bmi_size_t total_size)
 {
     bmi_op_id_t op_id;
     int ret, outcount;
-    bmi_size_t total_size, actual_size;
+    bmi_size_t actual_size;
     bmi_error_code_t error_code;
-    size_t i;
-
-    total_size = 0;
-    for (i = 0; i < list_count; i++)
-        total_size += buflens[i];
 
     /* Post the BMI recv request and wait for its completion */
     ret = BMI_post_recv_list(&op_id, peer_addr, buffers, buflens, list_count,
