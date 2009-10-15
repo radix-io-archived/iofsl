@@ -44,9 +44,9 @@ private:
    char ** mem_starts_;
    size_t * mem_sizes_;
    size_t file_count_;
-   uint64_t * file_starts_;
-   uint64_t * file_sizes_;
-   uint64_t pipeline_size_;
+   zoidfs::zoidfs_file_ofs_t * file_starts_;
+   zoidfs::zoidfs_file_ofs_t * file_sizes_;
+   size_t pipeline_size_;
 }; 
 
 //===========================================================================
