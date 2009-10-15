@@ -23,6 +23,12 @@ namespace zoidfs
 
 class ZoidFSAPI;
 
+/**
+ * @TODO:
+ *    this is wrong. There should be a ZoidFSAsyncAPI, implementing ALL the
+ *    functions asynchronous and a default implementation, which uses the
+ *    workqueue and calls a ZoidFSAPI interface using blocking threads.
+ */
 class ZoidFSAsyncAPI
 {
 public:
