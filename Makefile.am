@@ -15,7 +15,6 @@ include $(top_srcdir)/src/sm/Makefile.subdir
 include $(top_srcdir)/src/iofwdevent/Makefile.subdir
 include $(top_srcdir)/src/iofwd/Makefile.subdir
 include $(top_srcdir)/src/iofwdutil/Makefile.subdir
-include $(top_srcdir)/src/metacache/Makefile.subdir
 include $(top_srcdir)/src/cache/Makefile.subdir
 include $(top_srcdir)/src/taskmon/Makefile.subdir
 include $(top_srcdir)/src/zoidfs/Makefile.subdir
