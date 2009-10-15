@@ -3,6 +3,7 @@ noinst_LIBRARIES =
 noinst_PROGRAMS =
 lib_LIBRARIES =
 #BUILD_SOURCES =
+noinst_HEADERS =
 
 AM_CPPFLAGS=-I$(top_srcdir)/src
 
