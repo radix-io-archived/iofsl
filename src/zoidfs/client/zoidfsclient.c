@@ -714,6 +714,14 @@ typedef struct
 
 typedef struct
 {
+    bmi_size_t sendbuflen;
+    bmi_msg_tag_t tag;
+    bmi_op_id_t bmi_op_id;
+    int bmi_comp_id;
+} zoidfs_send_msg_data_t;
+
+typedef struct
+{
     zoidfs_xdr_t recv_xdr;
     void * recvbuf;
     bmi_size_t recvbuflen;
@@ -723,6 +731,14 @@ typedef struct
 
     zoidfs_op_status_t op_status;
 } zoidfs_recv_msg_t;
+
+typedef struct
+{
+    bmi_size_t recvbuflen;
+    bmi_msg_tag_t tag;
+    bmi_size_t actual_size;
+    bmi_op_id_t bmi_op_id;
+} zoidfs_recv_msg_data_t;
 
 #define ZOIDFS_RECV_MSG_INIT(_msg)      \
 do{                                     \
@@ -741,6 +757,21 @@ do{                                         \
     (_msg).tag = gen_tag();                 \
     (_msg).sendbuflen = 0;                  \
     (_msg).sendbuf = NULL;                  \
+}while(0)
+
+#define ZOIDFS_RECV_MSG_DATA_INIT(_msg)      \
+do{                                     \
+    (_msg).tag = gen_tag();             \
+    (_msg).recvbuflen = 0;                  \
+    (_msg).actual_size = 0;             \
+}while(0)
+
+#define ZOIDFS_SEND_MSG_DATA_INIT(_msg)  \
+do{                                         \
+    (_msg).tag = gen_tag();                 \
+    (_msg).bmi_op_id = 0;                   \
+    (_msg).bmi_comp_id = 0;                 \
+    (_msg).sendbuflen = 0;                  \
 }while(0)
 
 #ifdef ZFS_BMI_FASTMEMALLOC                
@@ -2960,11 +2991,13 @@ int zoidfs_write(const zoidfs_handle_t *handle, size_t mem_count,
     zoidfs_file_ofs_array_transfer_t file_sizes_transfer;
     int ret = ZFS_OK;
     zoidfs_send_msg_t send_msg;
+    zoidfs_send_msg_data_t send_msg_data;
     zoidfs_recv_msg_t recv_msg;
     bmi_size_t * bmi_mem_sizes = NULL;
 
     /* init the zoidfs xdr data */
     ZOIDFS_SEND_MSG_INIT(send_msg, ZOIDFS_PROTO_WRITE);
+    ZOIDFS_SEND_MSG_DATA_INIT(send_msg_data);
     ZOIDFS_RECV_MSG_INIT(recv_msg);
 
     /* init the transfer array wrappers */ 
@@ -2979,6 +3012,37 @@ int zoidfs_write(const zoidfs_handle_t *handle, size_t mem_count,
     if(file_count == 0 || mem_count == 0)
     {
         ret = ZFS_OK;
+        goto write_cleanup;
+    }
+
+    /* compute the size of the messages */
+    recv_msg.recvbuflen = zoidfs_xdr_size_processor(ZFS_OP_STATUS_T, &recv_msg.op_status) +
+                          zoidfs_xdr_size_processor(ZFS_UINT64_ARRAY_T, &file_count);
+    send_msg.sendbuflen = zoidfs_xdr_size_processor(ZFS_OP_ID_T, &send_msg.zoidfs_op_id) +
+                          zoidfs_xdr_size_processor(ZFS_HANDLE_T, (void *)handle) +
+                          zoidfs_xdr_size_processor(ZFS_SIZE_T, &mem_count) +
+                          zoidfs_xdr_size_processor(ZFS_SIZE_T_ARRAY_T, &mem_count) +
+                          zoidfs_xdr_size_processor(ZFS_SIZE_T, &file_count) +
+                          zoidfs_xdr_size_processor(ZFS_FILE_OFS_ARRAY_T, &file_count) +
+                          zoidfs_xdr_size_processor(ZFS_FILE_OFS_ARRAY_T, &file_count) +
+                          zoidfs_xdr_size_processor(ZFS_SIZE_T, &pipeline_size);
+
+    /* Wait for the response from the ION */
+    ZOIDFS_RECV_ALLOC_BUFFER(recv_msg);
+    if (!recv_msg.recvbuf) {
+        fprintf(stderr, "zoidfs_write: BMI_memalloc() failed.\n");
+        ret = ZFSERR_MISC;
+        goto write_cleanup;
+    }
+
+#ifdef ZFS_USE_NB_BMI_COMM
+    ret = ZOIDFS_BMI_COMM_IRECV(recv_msg);
+#endif
+
+    ZOIDFS_SEND_ALLOC_BUFFER(send_msg);
+    if (!send_msg.sendbuf) {
+        fprintf(stderr, "zoidfs_write: BMI_memalloc() failed.\n");
+        ret = ZFSERR_MISC;
         goto write_cleanup;
     }
 
@@ -3018,38 +3082,6 @@ int zoidfs_write(const zoidfs_handle_t *handle, size_t mem_count,
                 bmi_mem_sizes[i] = (bmi_size_t)mem_sizes[i];
             }
         }
-    }
-
-    /* compute the size of the messages */
-    recv_msg.recvbuflen = zoidfs_xdr_size_processor(ZFS_OP_STATUS_T, &recv_msg.op_status) +
-                          zoidfs_xdr_size_processor(ZFS_UINT64_ARRAY_T, &file_count);
-    send_msg.sendbuflen = zoidfs_xdr_size_processor(ZFS_OP_ID_T, &send_msg.zoidfs_op_id) +
-                          zoidfs_xdr_size_processor(ZFS_HANDLE_T, (void *)handle) +
-                          zoidfs_xdr_size_processor(ZFS_SIZE_T, &mem_count) +
-                          zoidfs_xdr_size_processor(ZFS_SIZE_T_ARRAY_T, &mem_count) +
-                          zoidfs_xdr_size_processor(ZFS_SIZE_T, &file_count) +
-                          zoidfs_xdr_size_processor(ZFS_FILE_OFS_ARRAY_T, &file_count) +
-                          zoidfs_xdr_size_processor(ZFS_FILE_OFS_ARRAY_T, &file_count) +
-                          zoidfs_xdr_size_processor(ZFS_SIZE_T, &pipeline_size);
-
-    /* Wait for the response from the ION */
-    ZOIDFS_RECV_ALLOC_BUFFER(recv_msg);
-    if (!recv_msg.recvbuf) {
-        fprintf(stderr, "zoidfs_write: BMI_memalloc() failed.\n");
-        ret = ZFSERR_MISC;
-        goto write_cleanup;
-    }
-
-#if 0
-//#ifdef ZFS_USE_NB_BMI_COMM
-    ret = ZOIDFS_BMI_COMM_IRECV(recv_msg);
-#endif 
-
-    ZOIDFS_SEND_ALLOC_BUFFER(send_msg);
-    if (!send_msg.sendbuf) {
-        fprintf(stderr, "zoidfs_write: BMI_memalloc() failed.\n");
-        ret = ZFSERR_MISC;
-        goto write_cleanup;
     }
 
     /*
@@ -3105,13 +3137,28 @@ int zoidfs_write(const zoidfs_handle_t *handle, size_t mem_count,
         /* No Pipelining */
         if (mem_count == 1) {
             /* Contiguous write */
+#ifdef ZFS_USE_NB_BMI_COMM
+            send_msg_data.sendbuflen = mem_sizes[0];
+            ret = bmi_comm_isend(peer_addr, mem_starts[0], mem_sizes[0],
+                                send_msg_data.tag, context, &send_msg_data.bmi_op_id);
+            send_msg_data.bmi_comp_id = ret;
+#else
             ret = bmi_comm_send(peer_addr, mem_starts[0], mem_sizes[0],
-                                send_msg.tag, context);
+                                send_msg_data.tag, context);
+#endif
         } else {
+#ifdef ZFS_USE_NB_BMI_COMM
             /* Strided writes */
+            send_msg_data.sendbuflen = total_size;
+            ret = bmi_comm_isend_list(peer_addr,
+                                     mem_count, mem_starts, bmi_mem_sizes, send_msg.tag,
+                                     context, total_size, &send_msg_data.bmi_op_id);
+            send_msg_data.bmi_comp_id = ret;
+#else
             ret = bmi_comm_send_list(peer_addr,
                                      mem_count, mem_starts, bmi_mem_sizes, send_msg.tag,
                                      context, total_size);
+#endif
         }
     } else {
         /* Pipelining */
@@ -3120,8 +3167,7 @@ int zoidfs_write(const zoidfs_handle_t *handle, size_t mem_count,
                                     send_msg.tag, context, total_size);
     }
 
-#if 0
-//#ifdef ZFS_USE_NB_BMI_COMM
+#ifdef ZFS_USE_NB_BMI_COMM
     ret = ZOIDFS_BMI_COMM_IRECV_WAIT(recv_msg);
 #else
     ret = ZOIDFS_BMI_COMM_RECV(recv_msg);
@@ -3143,6 +3189,30 @@ int zoidfs_write(const zoidfs_handle_t *handle, size_t mem_count,
             goto write_cleanup;
         }
     }
+
+    /* non blocking IO cleanup block */
+#ifdef ZFS_USE_NB_BMI_COMM
+    if(pipeline_size == 0)
+    {
+        if(mem_count == 1)
+        {
+            if(send_msg_data.bmi_comp_id == 0)
+            {
+                ret = bmi_comm_isend_wait(send_msg_data.bmi_op_id, send_msg_data.sendbuflen, context);
+            }
+        }
+        else
+        {
+            if(send_msg_data.bmi_comp_id == 0)
+            {
+                ret = bmi_comm_isend_list_wait(send_msg_data.bmi_op_id, context, send_msg_data.sendbuflen);
+            }
+        }
+    }
+    else
+    {
+    }
+#endif
 
 write_cleanup:
    
