@@ -3079,17 +3079,17 @@ int zoidfs_write(const zoidfs_handle_t *handle, size_t mem_count,
         
         goto write_cleanup;
     }
-    if((ret = zoidfs_xdr_processor(ZFS_UINT64_ARRAY_T, &file_starts_transfer, &send_msg.send_xdr)) != ZFS_OK)
+    if((ret = zoidfs_xdr_processor(ZFS_FILE_OFS_ARRAY_T, &file_starts_transfer, &send_msg.send_xdr)) != ZFS_OK)
     {  
         
         goto write_cleanup;
     }
-    if((ret = zoidfs_xdr_processor(ZFS_UINT64_ARRAY_T, &file_sizes_transfer, &send_msg.send_xdr)) != ZFS_OK)
+    if((ret = zoidfs_xdr_processor(ZFS_FILE_OFS_ARRAY_T, &file_sizes_transfer, &send_msg.send_xdr)) != ZFS_OK)
     {
         
         goto write_cleanup;
     }
-    if ((ret = zoidfs_xdr_processor(ZFS_UINT64_T, &pipeline_size, &send_msg.send_xdr)) != ZFS_OK) {
+    if ((ret = zoidfs_xdr_processor(ZFS_SIZE_T, &pipeline_size, &send_msg.send_xdr)) != ZFS_OK) {
         
         goto write_cleanup;
     }
@@ -3137,7 +3137,7 @@ int zoidfs_write(const zoidfs_handle_t *handle, size_t mem_count,
     {
         file_sizes_transfer.data = (void *)file_sizes;
         file_sizes_transfer.len = file_count;
-        if((ret = zoidfs_xdr_processor(ZFS_UINT64_ARRAY_T, &file_sizes_transfer, &recv_msg.recv_xdr)) != ZFS_OK)
+        if((ret = zoidfs_xdr_processor(ZFS_FILE_OFS_ARRAY_T, &file_sizes_transfer, &recv_msg.recv_xdr)) != ZFS_OK)
         {
             
             goto write_cleanup;
@@ -3404,17 +3404,17 @@ int zoidfs_read(const zoidfs_handle_t *handle, size_t mem_count,
         
         goto read_cleanup;
     }
-    if((ret = zoidfs_xdr_processor(ZFS_UINT64_ARRAY_T, &file_starts_transfer, &send_msg.send_xdr)) != ZFS_OK)
+    if((ret = zoidfs_xdr_processor(ZFS_FILE_OFS_ARRAY_T, &file_starts_transfer, &send_msg.send_xdr)) != ZFS_OK)
     {
         
         goto read_cleanup;
     }
-    if((ret = zoidfs_xdr_processor(ZFS_UINT64_ARRAY_T, &file_sizes_transfer, &send_msg.send_xdr)) != ZFS_OK)
+    if((ret = zoidfs_xdr_processor(ZFS_FILE_OFS_ARRAY_T, &file_sizes_transfer, &send_msg.send_xdr)) != ZFS_OK)
     {
         
         goto read_cleanup;
     }
-    if ((ret = zoidfs_xdr_processor(ZFS_UINT64_T, &pipeline_size, &send_msg.send_xdr)) != ZFS_OK) {
+    if ((ret = zoidfs_xdr_processor(ZFS_SIZE_T, &pipeline_size, &send_msg.send_xdr)) != ZFS_OK) {
         
         goto read_cleanup;
     }
@@ -3462,7 +3462,7 @@ int zoidfs_read(const zoidfs_handle_t *handle, size_t mem_count,
     {
         file_sizes_transfer.data = (void *)file_sizes;
         file_sizes_transfer.len = file_count;
-        if((ret = zoidfs_xdr_processor(ZFS_UINT64_ARRAY_T, &file_sizes_transfer, &recv_msg.recv_xdr)) != ZFS_OK)
+        if((ret = zoidfs_xdr_processor(ZFS_FILE_OFS_ARRAY_T, &file_sizes_transfer, &recv_msg.recv_xdr)) != ZFS_OK)
         {
             goto read_cleanup;
         }
