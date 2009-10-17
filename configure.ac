@@ -193,7 +193,7 @@ AC_ARG_ENABLE([fuse],
                   *) AC_MSG_ERROR([bad value ${enableval} for
                                    --enable-fuse]) ;;
                esac],
-               [use_fuse=a])
+               [use_fuse=1])
 
 # unless the user disabled fuse support, try to locate fuse and use it.
 if test "x${use_fuse}" != "x0" ; then
