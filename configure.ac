@@ -65,11 +65,33 @@ AM_CONDITIONAL([HAVE_MPI],[test "x${ENABLE_MPI}" == "x1"])
 dnl
 dnl Conditional client / server build args
 dnl
+AC_MSG_CHECKING(if IOFWD server should be built)
 AC_ARG_ENABLE([iofwd-server],
               [AS_HELP_STRING([--disable-iofwd-server], [Do not build the IOFWD server and supporting libraries.])])
+if test "x${enable_iofwd-client}" == "xyes" ; then
+   AC_MSG_RESULT(yes) 
+else 
+    if test "x${enable_iofwd-client}" == "xno" ; then
+        AC_MSG_RESULT(no)
+    else
+        AC_MSG_RESULT(auto)
+    fi 
+fi
 AM_CONDITIONAL([BUILD_IOFWD_SERVER], [test "x${enableval}" != "xno"])
+
+AC_MSG_CHECKING(if IOFWD client should be built)
 AC_ARG_ENABLE([iofwd-client],
               [AS_HELP_STRING([--disable-iofwd-client], [Do not build the IOFWD client and supporting libraries.])])
+if test "x${enable_iofwd-client}" == "xyes" ; then
+   AC_MSG_RESULT(yes) 
+else
+    if test "x${enable_iofwd-client}" == "xno" ; then
+        AC_MSG_RESULT(no)
+    else
+        AC_MSG_RESULT(auto)
+    fi 
+fi
+
 AM_CONDITIONAL([BUILD_IOFWD_CLIENT], [test "x${enableval}" != "xno"])
 
 dnl
@@ -194,16 +216,23 @@ dnl =========================================================================
 
 dnl Control building of FUSE client
 
-AC_ARG_ENABLE([fuse],
-              [AC_HELP_STRING([--enable-fuse],
-                              [Enable FUSE ZoidFS client])],
-              [case "${enableval}" in
-                  yes) use_fuse=1;;
-                  no) use_fuse=0;;
-                  *) AC_MSG_ERROR([bad value ${enableval} for
-                                   --enable-fuse]) ;;
-               esac],
-               [use_fuse=1])
+AC_MSG_CHECKING(if FUSE client support enabled)
+AC_ARG_ENABLE([fuse], [AC_HELP_STRING([--disable-fuse], [Disable FUSE ZoidFS client])])
+case "${enable_fuse}" in
+    yes) use_fuse=1;;
+    no) use_fuse=0;;
+    '') use_fuse=a;;
+    *) AC_MSG_ERROR([bad value ${enableval} for --disable-fuse])
+esac
+if test "x${use_fuse}" == "x0" ; then
+        AC_MSG_RESULT(no)
+else
+    if test "x${use_fuse}" == "x1" ; then
+        AC_MSG_RESULT(yes)
+    else
+        AC_MSG_RESULT(auto)
+    fi
+fi
 
 # unless the user disabled fuse support, try to locate fuse and use it.
 if test "x${use_fuse}" != "x0" ; then
