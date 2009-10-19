@@ -1,3 +1,4 @@
+if BUILD_IOFWD_CLIENT
 noinst_LIBRARIES += src/client/libiofwdclient.a
 
 src_client_libiofwdclient_a_CPPFLAGS = \
@@ -25,3 +26,4 @@ src/client/CommChannel.cpp \
 src/client/CommChannel.hh \
 src/client/IOFWDClient.cpp \
 src/client/IOFWDClient.hh
+endif

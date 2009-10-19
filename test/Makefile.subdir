@@ -1,3 +1,4 @@
+if BUILD_IOFWD_CLIENT
 #
 # unit tests build rules
 #
@@ -139,4 +140,6 @@ test_zoidfs_microbenchmarks_mkdir_thput_local_SOURCES = test/zoidfs-microbenchma
 test_zoidfs_microbenchmarks_mkdir_thput_local_LDADD = src/zoidfs/libzoidfs.a ${test_microbenchmarks_ldadd}
 test_zoidfs_microbenchmarks_mkdir_thput_local_LDFLAGS = ${test_microbenchmarks_ldflags}
 test_zoidfs_microbenchmarks_mkdir_thput_local_CFLAGS = ${test_microbenchmarks_cflags}
+endif
+
 endif
