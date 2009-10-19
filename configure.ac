@@ -67,10 +67,10 @@ dnl Conditional client / server build args
 dnl
 AC_ARG_ENABLE([iofwd-server],
               [AS_HELP_STRING([--disable-iofwd-server], [Do not build the IOFWD server and supporting libraries.])])
-AM_CONDITIONAL([BUILD_IOFWD_SERVER], [test "x${enableval}" != "xno"]) 
+AM_CONDITIONAL([BUILD_IOFWD_SERVER], [test "x${enableval}" != "xno"])
 AC_ARG_ENABLE([iofwd-client],
               [AS_HELP_STRING([--disable-iofwd-client], [Do not build the IOFWD client and supporting libraries.])])
-AM_CONDITIONAL([BUILD_IOFWD_CLIENT], [test "x${enableval}" != "xno"]) 
+AM_CONDITIONAL([BUILD_IOFWD_CLIENT], [test "x${enableval}" != "xno"])
 
 dnl
 dnl Flex/bison
