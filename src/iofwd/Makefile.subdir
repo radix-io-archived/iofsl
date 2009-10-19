@@ -1,3 +1,5 @@
+if BUILD_IOFWD_SERVER
+
 bin_PROGRAMS += src/iofwd/iofwd
 
 src_iofwd_iofwd_LDADD = \
@@ -138,3 +140,5 @@ src/iofwd/frontend/IOFWDResizeRequest.hh \
 src/iofwd/frontend/IOFWDSetAttrRequest.hh \
 src/iofwd/frontend/IOFWDSymLinkRequest.hh \
 src/iofwd/frontend/IOFWDWriteRequest.hh
+
+endif
