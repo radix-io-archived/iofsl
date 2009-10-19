@@ -45,7 +45,10 @@ int bmi_comm_irecv_wait(bmi_op_id_t op_id, bmi_size_t * actual_size, bmi_context
 int bmi_comm_isendu(BMI_addr_t peer_addr, const void *buffer, bmi_size_t buflen,
                    bmi_msg_tag_t tag, bmi_context_id context, bmi_op_id_t * op_id);
 int bmi_comm_isendu_wait(bmi_size_t buflen, bmi_context_id context, bmi_op_id_t op_id);
-
+int bmi_comm_isend_list(BMI_addr_t peer_addr, size_t list_count, const void *const *buffers, const bmi_size_t *buflens, bmi_msg_tag_t tag, bmi_context_id context, bmi_size_t total_size, bmi_op_id_t * op_id);
+int bmi_comm_isend_list_wait(bmi_op_id_t op_id, bmi_context_id context, bmi_size_t total_size);
+int bmi_comm_irecv_list(BMI_addr_t peer_addr, size_t list_count, void *const * buffers, const bmi_size_t *buflens, bmi_msg_tag_t tag, bmi_context_id context, bmi_size_t total_size, bmi_size_t * actual_size, bmi_op_id_t * op_id);
+int bmi_comm_irecv_list_wait(bmi_op_id_t op_id, bmi_context_id context, bmi_size_t * actual_size);
 #endif /* _BMI_COMM_H_ */
 
 /*
