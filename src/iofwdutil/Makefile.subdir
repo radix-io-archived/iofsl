@@ -2,13 +2,13 @@ noinst_LIBRARIES += src/iofwdutil/libiofwdutil.a
 
 src_iofwdutil_libiofwdutil_a_CPPFLAGS = \
     @BOOST_CPPFLAGS@                   \
-    -I./src/zoidfs                     \
-    -I./src
+    -I$(top_srcdir)/src/zoidfs                     \
+    -I$(top_srcdir)/src
 
 src_iofwdutil_libiofwdutil_a_CFLAGS =   \
     @BOOST_CPPFLAGS@                   \
-    -I./src/zoidfs                     \
-    -I./src
+    -I$(top_srcdir)/src/zoidfs                     \
+    -I$(top_srcdir)/src
 
 src_iofwdutil_libiofwdutil_a_LIBLDFLAGS = \
     @BOOST_PROGRAM_OPTIONS_LDFLAGS@ \
