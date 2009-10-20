@@ -1,9 +1,3 @@
 noinst_LIBRARIES += src/iofwdevent/libiofwdevent.a
 
-src_iofwdevent_libiofwdevent_a_SOURCES = \
-src/iofwdevent/Event.cpp \
-src/iofwdevent/Event.hh \
-src/iofwdevent/EventManager.cpp \
-src/iofwdevent/EventManager.hh \
-src/iofwdevent/EventSource.cpp \
-src/iofwdevent/EventSource.hh
+src_iofwdevent_libiofwdevent_a_SOURCES = 
