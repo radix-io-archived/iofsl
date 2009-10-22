@@ -2,7 +2,7 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ(2.61)
-AC_INIT([iofwd], [0.1], [Submit trouble tickets at http://trac.mcs.anl.gov/projects/iofsl/newticket], [], [http://trac.mcs.anl.gov/projects/iofsl/wiki])
+AC_INIT([iofwd],[0.1],[Submit trouble tickets at http://trac.mcs.anl.gov/projects/iofsl/newticket],[],[http://trac.mcs.anl.gov/projects/iofsl/wiki])
 
 AC_CANONICAL_TARGET
 AC_CANONICAL_SYSTEM
@@ -13,7 +13,7 @@ AM_INIT_AUTOMAKE([foreign subdir-objects])
 m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES([yes])])
 
 AC_CONFIG_SRCDIR([src/iofwd/iofwd.cpp])
-AC_CONFIG_HEADER([iofwd_config.h])
+AC_CONFIG_HEADERS([iofwd_config.h])
 
 # Checks for programs.
 AC_PROG_CC
@@ -217,7 +217,7 @@ dnl =========================================================================
 dnl Control building of FUSE client
 
 AC_MSG_CHECKING(if FUSE client support enabled)
-AC_ARG_ENABLE([fuse], [AC_HELP_STRING([--disable-fuse], [Disable FUSE ZoidFS client])])
+AC_ARG_ENABLE([fuse], [AS_HELP_STRING([--disable-fuse],[Disable FUSE ZoidFS client])])
 case "${enable_fuse}" in
     yes) use_fuse=1;;
     no) use_fuse=0;;
@@ -258,8 +258,7 @@ dnl     Dispatcher POSIX driver control
 dnl =========================================================================
 
 AC_ARG_ENABLE([posix],
-              [AC_HELP_STRING([--enable-posix],
-                              [Enable new POSIX zoidfs driver])],
+              [AS_HELP_STRING([--enable-posix],[Enable new POSIX zoidfs driver])],
               [case "${enableval}" in 
                   yes) use_posix=1;;
                   no) use_posix=0;;
