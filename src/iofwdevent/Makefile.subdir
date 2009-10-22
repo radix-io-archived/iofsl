@@ -1,3 +1,11 @@
 noinst_LIBRARIES += src/iofwdevent/libiofwdevent.a
 
-src_iofwdevent_libiofwdevent_a_SOURCES = 
+src_iofwdevent_libiofwdevent_a_SOURCES = \
+src/iofwdevent/Resource.cpp \
+src/iofwdevent/Resource.hh \
+src/iofwdevent/ResourceOp.hh \
+src/iofwdevent/ResourceOp.cpp \
+src/iofwdevent/BMIResource.hh \
+src/iofwdevent/BMIResource.cpp \
+src/iofwdevent/TimerResource.hh \
+src/iofwdevent/TimerResource.cpp
