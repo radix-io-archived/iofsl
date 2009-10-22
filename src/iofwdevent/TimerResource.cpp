@@ -83,6 +83,7 @@ void TimerResource::start ()
 
    // Launch thread
    
+   shutdown_ = false;
    boost::thread newthread (boost::bind (&TimerResource::threadMain,this));
    workerthread_.swap (newthread);
    running_ = true;
@@ -93,8 +94,8 @@ void TimerResource::stop ()
    ALWAYS_ASSERT(running_);
    
    shutdown_ = true;
+   workercond_.notify_all ();
    workerthread_.join ();
-
    running_ = false;
 
    // There should be no contention on this lock now
@@ -115,6 +116,7 @@ void TimerResource::stop ()
          ALWAYS_ASSERT(false && "cancel() should not throw");
       }
    }
+
 }
 //===========================================================================
 }
