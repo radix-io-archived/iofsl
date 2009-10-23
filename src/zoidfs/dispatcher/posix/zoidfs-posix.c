@@ -1,6 +1,8 @@
 
 
+#ifndef _LARGEFILE64_SOURCE
 #define _LARGEFILE64_SOURCE
+#endif
 
 /* for pread/pwrite */
 #define _XOPEN_SOURCE 500
