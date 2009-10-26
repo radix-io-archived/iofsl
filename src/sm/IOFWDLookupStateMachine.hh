@@ -1,9 +1,12 @@
 #ifndef __SRC_SM_IOFWDLOOKUPSTATEMACHINE_HH__
 #define __SRC_SM_IOFWDLOOKUPSTATEMACHINE_HH__
 
+#include <memory>
+
 #include "IOFWDStateMachine.hh"
 #include "IOFWDState.hh"
 #include "IOFWDStateEvents.hh"
+#include "IOFWDExceptionTranslator.hh"
 
 /* States */
 struct IOFWDLookupInitState;
@@ -13,24 +16,33 @@ struct IOFWDLookupCleanupState;
 struct IOFWDLookupErrorState;
 
 /* State Machine */
-struct IOFWDLookupStateMachine;
+struct IOFWDLookupAsyncStateMachine;
 
 /* state machine ops */
 struct IOFWDStateMachineOps;
- 
-struct IOFWDLookupStateMachineManager : IOFWDStateMachineManager< IOFWDLookupStateMachine >
+
+/* this function is for testing / demo purposes only !!! */
+void buggy_user_code()
+{
+    throw std::runtime_error("exception from user code");
+} 
+
+/* state machine manager / interface for lookup operations */
+struct IOFWDLookupStateMachine : IOFWDStateMachine< IOFWDLookupAsyncStateMachine >
 {
     public:
         /* create the event scheduler and processor */
-        IOFWDLookupStateMachineManager()
+        IOFWDLookupStateMachine(bool trace) : IOFWDStateMachine< IOFWDLookupAsyncStateMachine >(trace)
         {
         }
 
         /* Terminate the scheduler and event processor */
-        ~IOFWDLookupStateMachineManager()
+        ~IOFWDLookupStateMachine()
         {
         }
 };
+
+struct IOFWDLookupMonitorState;
 
 /*
  * The state machine for a Lookup request
@@ -40,15 +52,16 @@ struct IOFWDLookupStateMachineManager : IOFWDStateMachineManager< IOFWDLookupSta
  *
  * We provide one method, run(), that must be implemented by each state of this state machine.
  */
-struct IOFWDLookupStateMachine : boost::statechart::asynchronous_state_machine< IOFWDLookupStateMachine, IOFWDLookupInitState >
+struct IOFWDLookupAsyncStateMachine : boost::statechart::asynchronous_state_machine< IOFWDLookupAsyncStateMachine, IOFWDLookupInitState, boost::statechart::fifo_scheduler< >, std::allocator< void >, IOFWDExceptionTranslator< > >
 {
     public:
-        IOFWDLookupStateMachine(my_context ctx) : my_base(ctx)
+        IOFWDLookupAsyncStateMachine(my_context ctx) : my_base(ctx)
         {
         }
 
-        ~IOFWDLookupStateMachine()
+        ~IOFWDLookupAsyncStateMachine()
         {
+            this->terminate();
         }
 
         void run() const
@@ -61,12 +74,13 @@ struct IOFWDLookupStateMachine : boost::statechart::asynchronous_state_machine< 
 /*
  *
  */
-struct IOFWDLookupInitState : IOFWDState< IOFWDLookupInitState, IOFWDLookupStateMachine >
+struct IOFWDLookupInitState : IOFWDState< IOFWDLookupInitState, IOFWDLookupAsyncStateMachine >
 {
     public:
         /* events that will transition the machine out of this state */
         typedef boost::mpl::list <
                 boost::statechart::custom_reaction< IOFWDSuccessEvent >,
+                boost::statechart::custom_reaction< boost::statechart::exception_thrown >,
                 boost::statechart::custom_reaction< IOFWDErrorEvent >
         > reactions;
 
@@ -89,26 +103,62 @@ struct IOFWDLookupInitState : IOFWDState< IOFWDLookupInitState, IOFWDLookupState
         /*
          * Event handlers
          */ 
-        boost::statechart::result react (const IOFWDSuccessEvent &)
+        boost::statechart::result react (const IOFWDSuccessEvent & e)
         {
+            // if tracing, print the transistion
+            if(e.traceEnabled())
+            {
+                std::cout << "IOFWDLookupInitState -> IOFWDLookupRunOpState" << std::endl;
+            }
+
+            /* this is for testing / demo only */
+            buggy_user_code();
+
             // advance to the RunOp state
             return transit<IOFWDLookupRunOpState>();
         }
 
-        boost::statechart::result react (const IOFWDErrorEvent &)
+        boost::statechart::result react (const IOFWDErrorEvent & e)
         {
+            // if tracing, print the transistion
+            if(e.traceEnabled())
+            {
+                std::cout << "IOFWDLookupInitState -> IOFWDLookupErrorState" << std::endl;
+            }
+
             // advance to the RunOp state
             return transit<IOFWDLookupErrorState>();
         }
+
+        boost::statechart::result react (const boost::statechart::exception_thrown &)
+        {
+            std::cout << "IOFWDLookupInitState : exception detected" << std::endl;
+            try
+            {
+                throw;
+            }
+            catch(const std::runtime_error &)
+            {
+                std::cout << "IOFWDLookupInitState : exception handled" << std::endl;
+                std::cout << "IOFWDLookupInitState -> IOFWDLookupRunOpState" << std::endl;
+                return transit<IOFWDLookupRunOpState>();
+            }
+            catch(...)
+            {
+                std::cout << "IOFWDLookupInitState : could not handle exception. fowarding to outer state..." << std::endl;
+                return forward_event();
+            }
+        }
 };
 
-struct IOFWDLookupRunOpState : IOFWDState< IOFWDLookupRunOpState, IOFWDLookupStateMachine >
+struct IOFWDLookupRunOpState : IOFWDState< IOFWDLookupRunOpState, IOFWDLookupAsyncStateMachine >
 {
     public:
         /* events that will transition the machine out of this state */
         typedef boost::mpl::list <
                 boost::statechart::custom_reaction< IOFWDSuccessEvent >,
                 boost::statechart::custom_reaction< IOFWDRetryEvent >,
+                boost::statechart::custom_reaction< boost::statechart::exception_thrown >,
                 boost::statechart::custom_reaction< IOFWDErrorEvent >
         > reactions;
 
@@ -131,31 +181,55 @@ struct IOFWDLookupRunOpState : IOFWDState< IOFWDLookupRunOpState, IOFWDLookupSta
         /*
          * Event handlers
          */
-        boost::statechart::result react (const IOFWDSuccessEvent &)
+        boost::statechart::result react (const IOFWDSuccessEvent & e)
         {
+            // if tracing, print the transistion
+            if(e.traceEnabled())
+            {
+                std::cout << "IOFWDLookupRunOpState -> IOFWDLookupMsgWaitState" << std::endl;
+            }
+
             // advance to the RunOp state
             return transit<IOFWDLookupMsgWaitState>();
         }
 
-        boost::statechart::result react (const IOFWDErrorEvent &)
+        boost::statechart::result react (const IOFWDErrorEvent & e)
         {
+            // if tracing, print the transistion
+            if(e.traceEnabled())
+            {
+                std::cout << "IOFWDLookupRunOpState -> IOFWDLookupRetryState" << std::endl;
+            }
+
             // advance to the RunOp state
             return transit<IOFWDLookupErrorState>();
         }
 
-        boost::statechart::result react (const IOFWDRetryEvent &)
+        boost::statechart::result react (const IOFWDRetryEvent & e)
         {
+            // if tracing, print the transistion
+            if(e.traceEnabled())
+            {
+                std::cout << "IOFWDLookupRunOpState -> IOFWDLookupRetryState" << std::endl;
+            }
+
             return transit<IOFWDLookupRunOpState>();
         }
 
+        boost::statechart::result react (const boost::statechart::exception_thrown &)
+        {
+                std::cout << "IOFWDLookupInitState : Exception Thrown" << std::endl;
+                return discard_event();
+        }
 };
 
-struct IOFWDLookupMsgWaitState : IOFWDState< IOFWDLookupMsgWaitState, IOFWDLookupStateMachine >
+struct IOFWDLookupMsgWaitState : IOFWDState< IOFWDLookupMsgWaitState, IOFWDLookupAsyncStateMachine >
 {
     public:
         /* events that will transition the machine out of this state */
         typedef boost::mpl::list <
                 boost::statechart::custom_reaction< IOFWDSuccessEvent >,
+                boost::statechart::custom_reaction< boost::statechart::exception_thrown >,
                 boost::statechart::custom_reaction< IOFWDErrorEvent >
         > reactions;
 
@@ -175,25 +249,44 @@ struct IOFWDLookupMsgWaitState : IOFWDState< IOFWDLookupMsgWaitState, IOFWDLooku
         /*
          * Event handlers
          */
-        boost::statechart::result react (const IOFWDSuccessEvent &)
+        boost::statechart::result react (const IOFWDSuccessEvent & e)
         {
+            // if tracing, print the transistion
+            if(e.traceEnabled())
+            {
+                std::cout << "IOFWDLookupMsgWaitState -> IOFWDLookupCleanupState" << std::endl;
+            }
+
             // advance to the RunOp state
-            return transit<IOFWDLookupMsgWaitState>();
+            return transit<IOFWDLookupCleanupState>();
         }
 
-        boost::statechart::result react (const IOFWDErrorEvent &)
+        boost::statechart::result react (const IOFWDErrorEvent & e)
         {
+            // if tracing, print the transistion
+            if(e.traceEnabled())
+            {
+                std::cout << "IOFWDLookupMsgWaitState -> IOFWDLookupErrorState" << std::endl;
+            }
+
             // advance to the RunOp state
             return transit<IOFWDLookupErrorState>();
         }
+
+        boost::statechart::result react (const boost::statechart::exception_thrown &)
+        {
+                std::cout << "IOFWDLookupInitState : Exception Thrown" << std::endl;
+                return discard_event();
+        }
 };
 
-struct IOFWDLookupCleanupState : IOFWDState< IOFWDLookupCleanupState, IOFWDLookupStateMachine >
+struct IOFWDLookupCleanupState : IOFWDState< IOFWDLookupCleanupState, IOFWDLookupAsyncStateMachine >
 {
     public:
         /* events that will transition the machine out of this state */
         typedef boost::mpl::list <
                 boost::statechart::custom_reaction< IOFWDSuccessEvent >,
+                boost::statechart::custom_reaction< boost::statechart::exception_thrown >,
                 boost::statechart::custom_reaction< IOFWDErrorEvent >
         > reactions;
 
@@ -213,25 +306,46 @@ struct IOFWDLookupCleanupState : IOFWDState< IOFWDLookupCleanupState, IOFWDLooku
         /*
          * Event handlers
          */
-        boost::statechart::result react (const IOFWDSuccessEvent &)
+        boost::statechart::result react (const IOFWDSuccessEvent & e)
         {
-            // advance to the RunOp state
-            return transit<IOFWDLookupMsgWaitState>();
+            // if tracing, print the transistion
+            if(e.traceEnabled())
+            {
+                std::cout << "IOFWDLookupCleanupState -> DONE" << std::endl;
+            }
+
+            // terminate
+            outermost_context_type & machine = outermost_context();
+            machine.my_scheduler().terminate();
+            return discard_event();
         }
 
-        boost::statechart::result react (const IOFWDErrorEvent &)
+        boost::statechart::result react (const IOFWDErrorEvent & e)
         {
+            // if tracing, print the transistion
+            if(e.traceEnabled())
+            {
+                std::cout << "IOFWDLookupCleanupState -> IOFWDLookupErrorState" << std::endl;
+            }
+
             // advance to the RunOp state
             return transit<IOFWDLookupErrorState>();
         }
+
+        boost::statechart::result react (const boost::statechart::exception_thrown &)
+        {
+                std::cout << "IOFWDLookupInitState : Exception Thrown" << std::endl;
+                return discard_event();
+        }
 };
 
-struct IOFWDLookupErrorState : IOFWDState< IOFWDLookupErrorState, IOFWDLookupStateMachine >
+struct IOFWDLookupErrorState : IOFWDState< IOFWDLookupErrorState, IOFWDLookupAsyncStateMachine >
 {
     public:
         /* events that will transition the machine out of this state */
         typedef boost::mpl::list <
                 boost::statechart::custom_reaction< IOFWDSuccessEvent >,
+                boost::statechart::custom_reaction< boost::statechart::exception_thrown >,
                 boost::statechart::custom_reaction< IOFWDErrorEvent >
         > reactions;
 
@@ -251,16 +365,38 @@ struct IOFWDLookupErrorState : IOFWDState< IOFWDLookupErrorState, IOFWDLookupSta
         /*
          * Event handlers
          */
-        boost::statechart::result react (const IOFWDSuccessEvent &)
+        boost::statechart::result react (const IOFWDSuccessEvent & e)
         {
-            // advance to the RunOp state
-            return transit<IOFWDLookupMsgWaitState>();
+            // if tracing, print the transistion
+            if(e.traceEnabled())
+            {
+                std::cout << "IOFWDLookupErrorState -> DONE" << std::endl;
+            }
+
+            // terminate
+            outermost_context_type & machine = outermost_context();
+            machine.my_scheduler().terminate();
+            return discard_event();
         }
 
-        boost::statechart::result react (const IOFWDErrorEvent &)
+        boost::statechart::result react (const IOFWDErrorEvent & e)
         {
-            // advance to the RunOp state
-            return transit<IOFWDLookupErrorState>();
+            // if tracing, print the transistion
+            if(e.traceEnabled())
+            {
+                std::cout << "IOFWDLookupErrorState -> DONE" << std::endl;
+            }
+
+            // terminate
+            outermost_context_type & machine = outermost_context();
+            machine.my_scheduler().terminate();
+            return discard_event();
+        }
+
+        boost::statechart::result react (const boost::statechart::exception_thrown &)
+        {
+                std::cout << "IOFWDLookupInitState : Exception Thrown" << std::endl;
+                return discard_event();
         }
 };
 
