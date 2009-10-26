@@ -1,24 +1,11 @@
 noinst_LIBRARIES += src/sm/libsm.a
 
-src_sm_libsm_a_CPPFLAGS = \
-    @BOOST_CPPFLAGS@                   \
-    -I$(top_srcdir)/src/zoidfs                     \
-    -I$(top_srcdir)/src
-
-src_sm_libsm_a_CFLAGS =   \
-    @BOOST_CPPFLAGS@                   \
-    -I$(top_srcdir)/src/zoidfs                     \
-    -I$(top_srcdir)/src
-
 src_sm_libsm_a_LIBLDFLAGS = \
-    @BOOST_PROGRAM_OPTIONS_LDFLAGS@ \
-    @BOOST_DATE_TIME_LDFLAGS@ \
-    @BOOST_REGEX_LDFLAGS@ \
-    @BOOST_THREAD_LDFLAGS@ \
-    @BOOST_PROGRAM_OPTIONS_LIBS@ \
-    @BOOST_DATE_TIME_LIBS@ \
-    @BOOST_THREAD_LIBS@ \
-    @BOOST_REGEX_LIBS@
+    @BOOST_LDFLAGS@ \
+    @BOOST_PROGRAM_OPTIONS_LIB@ \
+    @BOOST_DATE_TIME_LIB@ \
+    @BOOST_THREAD_LIB@ \
+    @BOOST_REGEX_LIB@
 
 src_sm_libsm_a_SOURCES = \
 	src/sm/SM.cpp \

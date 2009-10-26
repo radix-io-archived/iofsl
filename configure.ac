@@ -8,7 +8,7 @@ AC_CANONICAL_TARGET
 AC_CANONICAL_SYSTEM
 AC_CANONICAL_HOST
 
-AM_INIT_AUTOMAKE([foreign subdir-objects])
+AM_INIT_AUTOMAKE([foreign subdir-objects -Wall color-tests])
 
 m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES([yes])])
 
@@ -17,6 +17,7 @@ AC_CONFIG_HEADERS([iofwd_config.h])
 
 # Checks for programs.
 AC_PROG_CC
+AM_PROG_CC_C_O
 AC_PROG_CXX
 AC_PROG_CXXCPP
 AC_PROG_RANLIB
@@ -291,15 +292,19 @@ use_libsysio=false
 AC_ARG_WITH(libsysio,
 [  --with-libsysio@<:@=DIR@:>@  Location of installed libsysio package],
        if test "x$withval" != "x" ; then
-              AC_SUBST([SYSIO_LDFLAGS],["-L${withval}/lib"])
-              AC_SUBST([SYSIO_CFLAGS],["-I${withval}/include -I${withval}/misc -D_LARGEFILE64_SOURCE -DHAVE_POSIX_1003_READLINK -D__USE_LARGEFILE64"])
-              AC_SUBST([SYSIO_CPPFLAGS],["-I${withval}/include -I${withval}/misc -D_LARGEFILE64_SOURCE -DHAVE_POSIX_1003_READLINK -D__USE_LARGEFILE64"])
-              AC_SUBST([SYSIO_LIBS],["-lsysio"])
-              AC_DEFINE([HAVE_DISPATCHER_LIBSYSIO],[1],[If libsysio is supported on target build platform])
-              DISPATCH_LIBSYSIO=1
-              dnl DISPATCH_POSIX=0
-              dnl @TODO: disable posix before calling AM_CONDITIONAL(DISPATCH_POSIX, ...)
-              use_libsysio=true
+          SYSIO_LDFLAGS="-L${withval}/lib"
+          SYSIO_CFLAGS=
+          SYSIO_CPPFLAGS="-I${withval}/include -I${withval}/misc"
+          SYSIO_LIBS="-lsysio"
+          AC_SUBST([SYSIO_LDFLAGS])
+          AC_SUBST([SYSIO_CFLAGS])
+          AC_SUBST([SYSIO_CPPFLAGS])
+          AC_SUBST([SYSIO_LIBS])
+          AC_DEFINE([HAVE_DISPATCHER_LIBSYSIO],[1],[If libsysio is supported on target build platform])
+          DISPATCH_LIBSYSIO=1
+          dnl DISPATCH_POSIX=0
+          dnl @TODO: disable posix before calling AM_CONDITIONAL(DISPATCH_POSIX, ...)
+          use_libsysio=true
 	fi)
 
 AM_CONDITIONAL([DISPATCH_LIBSYSIO],[test x${use_libsysio} == xtrue])
@@ -313,8 +318,10 @@ if test x${use_libsysio} == xtrue ; then
     STLDFLAGS="${LDFLAGS}"
     STLIBS="${LIBS}"
 
-    CPPFLAGS="${CPPFLAGS} ${SYSIO_CPPFLAGS} -D_LARGEFILE64_SOURCE -DHAVE_POSIX_1003_READLINK -D__USE_LARGEFILE64"
-    CFLAGS="${CFLAGS} ${SYSIO_CFLAGS} -D_LARGEFILE64_SOURCE -DHAVE_POSIX_1003_READLINK -D__USE_LARGEFILE64"
+    SYSIO_CPPFLAGS="${SYSIO_CPPFLAGS} -D_LARGEFILE64_SOURCE -DHAVE_POSIX_1003_READLINK -D__USE_LARGEFILE64"
+
+    CPPFLAGS="${CPPFLAGS} ${SYSIO_CPPFLAGS}"
+    CFLAGS="${CFLAGS} ${SYSIO_CFLAGS}"
     LDFLAGS="${LDFLAGS} ${SYSIO_LDFLAGS}"
     LIBS="${LIBS}"
 
@@ -366,7 +373,7 @@ fi
 #
 # save the ZFS_DISPATCHER flags
 #
-ZFS_DISPATCHER_CFLAGS="${SYSIO_CFLAGS} -D_LARGEFILE64_SOURCE -DHAVE_POSIX_1003_READLINK -D__USE_LARGEFILE64 ${PVFS2_CFLAGS}"
+ZFS_DISPATCHER_CFLAGS="${SYSIO_CFLAGS} ${PVFS2_CFLAGS}"
 ZFS_DISPATCHER_CPPFLAGS="${SYSIO_CPPFLAGS} -D_LARGEFILE64_SOURCE -DHAVE_POSIX_1003_READLINK -D__USE_LARGEFILE64 ${PVFS2_CPPFLAGS}"
 ZFS_DISPATCHER_LDFLAGS="${SYSIO_LDFLAGS} ${PVFS2_LDFLAGS}"
 ZFS_DISPATCHER_LIBS="${SYSIO_LIBS} ${PVFS2_LIBS} ${SYSIO_LIBS}"
@@ -386,22 +393,15 @@ dnl =========================================================================
 AX_FINDLIBEXT
 
 # check boost version
-BOOST_REQUIRE([1.34.1])
-BOOST_THREADS
-BOOST_PROGRAM_OPTIONS
-BOOST_REGEX
-BOOST_DATE_TIME
-BOOST_TEST
-AC_SUBST([BOOST_PROGRAM_OPTIONS_LIBS])
-AC_SUBST([BOOST_PROGRAM_OPTIONS_LDFLAGS])
-AC_SUBST([BOOST_THREAD_LIBS])
-AC_SUBST([BOOST_THREAD_LDFLAGS])
-AC_SUBST([BOOST_REGEX_LIBS])
-AC_SUBST([BOOST_REGEX_LDFLAGS])
-AC_SUBST([BOOST_DATE_TIME_LIBS])
-AC_SUBST([BOOST_DATE_TIME_LDFLAGS])
-AC_SUBST([BOOST_TEST_LIBS])
-AC_SUBST([BOOST_TEST_LDFLAGS])
+# macro defines BOOST_CPPFLAGS, BOOST_LDFLAGS 
+# and BOOST_THREAD_LIB, BOOST_REGEX_LIB, ...
+# is already subst
+AX_BOOST_BASE([1.34.1])
+AX_BOOST_THREAD
+AX_BOOST_PROGRAM_OPTIONS
+AX_BOOST_REGEX
+AX_BOOST_DATE_TIME
+AX_BOOST_UNIT_TEST_FRAMEWORK
 
 dnl =========================================================================
 dnl  Valgrind

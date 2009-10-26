@@ -1,34 +1,17 @@
+
+sandbox_ldflags = $(AM_LDFLAGS) \
+    @BOOST_LDFLAGS@ \
+    @BOOST_PROGRAM_OPTIONS_LIB@ \
+    @BOOST_DATE_TIME_LIB@ \
+    @BOOST_THREAD_LIB@ \
+    @BOOST_REGEX_LIB@
+
 noinst_PROGRAMS += sandbox/recordparam
-
-sandbox_cppflags = \
-    @BOOST_CPPFLAGS@                   \
-    -I./src/zoidfs                     \
-    -I./src
-
-sandbox_cflags =   \
-    @BOOST_CPPFLAGS@                   \
-    -I./src/zoidfs                     \
-    -I./src
-
-sandbox_ldflags = \
-    @BOOST_PROGRAM_OPTIONS_LDFLAGS@ \
-    @BOOST_DATE_TIME_LDFLAGS@ \
-    @BOOST_REGEX_LDFLAGS@ \
-    @BOOST_THREAD_LDFLAGS@ \
-    @BOOST_PROGRAM_OPTIONS_LIBS@ \
-    @BOOST_DATE_TIME_LIBS@ \
-    @BOOST_THREAD_LIBS@ \
-    @BOOST_REGEX_LIBS@
-
 sandbox_recordparam_SOURCES = sandbox/recordparam.cpp
-sandbox_recordparam_CPPFLAGS := ${sandbox_cppflags} 
-sandbox_recordparam_LDFLAGS := ${sandbox_ldflags} 
+sandbox_recordparam_LDFLAGS = $(sandbox_ldflags)
 
 noinst_PROGRAMS += sandbox/regex
 sandbox_regex_SOURCES = sandbox/regex.cpp
-sandbox_regex_CPPFLAGS := ${sandbox_cppflags} 
-sandbox_regex_LDFLAGS := ${sandbox_ldflags} 
+sandbox_regex_LDFLAGS = $(sandbox_ldflags) 
 
-#sandbox_regex_LDFLAGS := @BOOST_REGEX_LDFLAGS@
-#sandbox_regex_LDADD := @BOOST_REGEX_LIBS@
 

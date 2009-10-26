@@ -1,9 +1,6 @@
 if BUILD_IOFWD_CLIENT
 lib_LIBRARIES += src/zoidfs/libzoidfsclient.a
 
-src_zoidfs_libzoidfsclient_a_CPPFLAGS = $(AM_CPPFLAGS)
-src_zoidfs_libzoidfsclient_a_CFLAGS = $(AM_CFLAGS)
-
 src_zoidfs_libzoidfsclient_a_SOURCES = \
 src/zoidfs/client/bmi_comm.h \
 src/zoidfs/client/bmi_comm.c \

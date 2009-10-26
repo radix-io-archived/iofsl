@@ -9,9 +9,9 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 
-#include "zoidfs.h"
-#include "tools.h"
-#include "zoidfs-proto.h"
+#include "zoidfs/zoidfs.h"
+#include "c-util/tools.h"
+#include "zoidfs/zoidfs-proto.h"
 #include "iofwd_config.h"
 
 #define NAMESIZE 255

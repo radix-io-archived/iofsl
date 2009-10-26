@@ -4,8 +4,19 @@ noinst_PROGRAMS =
 lib_LIBRARIES =
 #BUILD_SOURCES =
 noinst_HEADERS =
+TESTS =
+check_PROGRAMS = 
 
-AM_CPPFLAGS=-I$(top_srcdir)/src
+AM_CPPFLAGS = -I$(top_srcdir)/src \
+	      -I$(top_srcdir)/src/iofwdutil \
+	      -I$(top_srcdir)/src/zoidfs \
+	      @BOOST_CPPFLAGS@ \
+	      @FUSE_CPPFLAGS@ \
+	      @ZFS_DISPATCHER_CPPFLAGS@
+	    
+AM_CFLAGS = @FUSE_CFLAGS@ @ZFS_DISPATCHER_CFLAGS@
+
+AM_CXXFLAGS = $(AM_CFLAGS)
 
 # extra build rules
 include Make.rules

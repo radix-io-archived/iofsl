@@ -11,3 +11,8 @@
 	   || ( $(RM) $(basename $@).h $(basename $@).c ; exit 1)
 
 
+#
+# Easy way to build unit tests without running them
+# 
+.phony: tests
+tests: $(check_PROGRAMS)

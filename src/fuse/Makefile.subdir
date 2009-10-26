@@ -1,7 +1,6 @@
 if HAVE_FUSE
 
 bin_PROGRAMS += src/fuse/fuseclient
-src_fuse_fuseclient_CFLAGS = $(AM_CFLAGS) @FUSE_CFLAGS@
 src_fuse_fuseclient_LDFLAGS = $(AM_LDFLAGS) @FUSE_LDFLAGS@
 src_fuse_fuseclient_SOURCES = src/fuse/zoidfs-fuse.c
 src_fuse_fuseclient_LDADD = \
