@@ -54,4 +54,5 @@ src_sm_libiofwdsm_a_SOURCES =           \
 	src/sm/IOFWDState.hh                \
 	src/sm/IOFWDStateEvents.hh          \
 	src/sm/IOFWDStateMachine.hh         \
-	src/sm/IOFWDExceptionTranslator.hh
+	src/sm/IOFWDExceptionTranslator.hh  \
+	src/sm/IOFWDLookupStateMachine.hh
