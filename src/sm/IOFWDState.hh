@@ -16,7 +16,7 @@
 
 #include "IOFWDStateEvents.hh"
 
-/* 
+/*
  * IOFWDStateMachineOps - the base operations for the IOFWD state machine
  */
 struct IOFWDStateMachineOps

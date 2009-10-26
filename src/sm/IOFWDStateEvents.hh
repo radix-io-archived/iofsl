@@ -67,7 +67,7 @@ struct IOFWDErrorEvent : IOFWDEvent
         ~IOFWDErrorEvent()
         {
         }
-        
+       
         int getReturnCode()
         {
             return ret_;
@@ -90,12 +90,12 @@ struct IOFWDTerminateEvent : IOFWDEvent
         IOFWDTerminateEvent()
         {
         }
-        
+       
         ~IOFWDTerminateEvent()
         {
         }
 };
- 
+
 /* Event for transition to an EXCEPTION handling state... recovery possible, maybe */
 struct IOFWDExceptionEvent : IOFWDEvent
 {
@@ -122,4 +122,4 @@ struct IOFWDRetryEvent : IOFWDEvent
         }
 };
 
-#endif 
+#endif

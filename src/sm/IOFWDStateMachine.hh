@@ -52,7 +52,7 @@ struct IOFWDStateMachine
     protected:
         boost::statechart::fifo_scheduler<> scheduler_;
         boost::statechart::fifo_scheduler<>::processor_handle ph_;
-    
+   
         bool trace_;
 };
 
@@ -73,7 +73,7 @@ struct IOFWDAsyncStateMachine : boost::statechart::asynchronous_state_machine< I
                                                                             StateExceptionTrans >
 {
     public:
-        virtual void run(); 
+        virtual void run();
 };
 
 #endif

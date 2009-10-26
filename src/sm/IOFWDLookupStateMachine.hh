@@ -25,7 +25,7 @@ struct IOFWDStateMachineOps;
 void buggy_user_code()
 {
     throw std::runtime_error("exception from user code");
-} 
+}
 
 /* state machine manager / interface for lookup operations */
 struct IOFWDLookupStateMachine : IOFWDStateMachine< IOFWDLookupAsyncStateMachine >
@@ -99,10 +99,10 @@ struct IOFWDLookupInitState : IOFWDState< IOFWDLookupInitState, IOFWDLookupAsync
             // do nothing for now
             return;
         }
-       
+      
         /*
          * Event handlers
-         */ 
+         */
         boost::statechart::result react (const IOFWDSuccessEvent & e)
         {
             // if tracing, print the transistion
