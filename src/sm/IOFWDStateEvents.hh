@@ -9,7 +9,7 @@
 struct IOFWDEvent : boost::statechart::event< IOFWDEvent >
 {
     public:
-        IOFWDEvent() : op_code(0), op_id(0)
+        IOFWDEvent() : op_code(0), op_id(0), trace_(false)
         {
         }
 
@@ -27,9 +27,20 @@ struct IOFWDEvent : boost::statechart::event< IOFWDEvent >
             return op_id;
         }
 
+        void enableTrace(bool trace)
+        {
+            trace_ = trace;
+        }
+
+        bool traceEnabled() const
+        {
+            return trace_;
+        }
+
     protected:
         int op_code; // what type of operation is this event associated with
         int op_id;   // what instance of this operation is this event associated with
+        bool trace_;
 };
 
 /* Event for transition to a SUCCESS state */
