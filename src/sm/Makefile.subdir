@@ -2,13 +2,13 @@ noinst_LIBRARIES += src/sm/libsm.a
 
 src_sm_libsm_a_CPPFLAGS = \
     @BOOST_CPPFLAGS@                   \
-    -I./src/zoidfs                     \
-    -I./src
+    -I$(top_srcdir)/src/zoidfs                     \
+    -I$(top_srcdir)/src
 
 src_sm_libsm_a_CFLAGS =   \
     @BOOST_CPPFLAGS@                   \
-    -I./src/zoidfs                     \
-    -I./src
+    -I$(top_srcdir)/src/zoidfs                     \
+    -I$(top_srcdir)/src
 
 src_sm_libsm_a_LIBLDFLAGS = \
     @BOOST_PROGRAM_OPTIONS_LDFLAGS@ \
@@ -31,13 +31,13 @@ noinst_LIBRARIES += src/sm/libiofwdsm.a
 
 src_sm_libiofwdsm_a_CPPFLAGS =          \
     @BOOST_CPPFLAGS@                    \
-    -I./src/zoidfs                      \
-    -I./src
+    -I$(top_srcdir)/src/zoidfs                      \
+    -I$(top_srcdir)/src
 
 src_sm_libiofwdsm_a_CFLAGS =            \
     @BOOST_CPPFLAGS@                    \
-    -I./src/zoidfs                      \
-    -I./src
+    -I$(top_srcdir)/src/zoidfs                      \
+    -I$(top_srcdir)/src
 
 src_sm_libiofwdsm_a_LIBLDFLAGS =        \
     @BOOST_PROGRAM_OPTIONS_LDFLAGS@     \
