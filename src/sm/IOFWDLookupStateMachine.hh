@@ -3,10 +3,10 @@
 
 #include <memory>
 
-#include "IOFWDStateMachine.hh"
-#include "IOFWDState.hh"
-#include "IOFWDStateEvents.hh"
-#include "IOFWDExceptionTranslator.hh"
+#include "sm/IOFWDStateMachine.hh"
+#include "sm/IOFWDState.hh"
+#include "sm/IOFWDStateEvents.hh"
+#include "sm/IOFWDExceptionTranslator.hh"
 
 /* States */
 struct IOFWDLookupInitState;

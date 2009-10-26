@@ -15,8 +15,8 @@
 
 #include <memory>
 
-#include "IOFWDState.hh"
-#include "IOFWDStateEvents.hh"
+#include "sm/IOFWDState.hh"
+#include "sm/IOFWDStateEvents.hh"
 
 /* IOFWD State Machine interface */
 template< class IOFWDStateMachineType >

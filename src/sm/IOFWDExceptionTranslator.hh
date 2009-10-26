@@ -12,7 +12,7 @@
 #include <boost/statechart/detail/constructor.hpp>
 #include <boost/statechart/detail/avoid_unused_warning.hpp>
 
-#include "IOFWDStateEvents.hh"
+#include "sm/IOFWDStateEvents.hh"
 
 #include <iostream>
 

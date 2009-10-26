@@ -14,7 +14,7 @@
 #include <boost/statechart/asynchronous_state_machine.hpp>
 #include <boost/statechart/state_machine.hpp>
 
-#include "IOFWDStateEvents.hh"
+#include "sm/IOFWDStateEvents.hh"
 
 /*
  * IOFWDStateMachineOps - the base operations for the IOFWD state machine
