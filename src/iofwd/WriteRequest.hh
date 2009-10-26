@@ -14,13 +14,13 @@ public:
   typedef struct
   {
      zoidfs::zoidfs_handle_t * handle;
-     uint32_t mem_count;
+     size_t mem_count;
      char ** mem_starts;
-     uint64_t * mem_sizes;
-     uint32_t file_count;
-     uint64_t * file_starts;
-     uint64_t * file_sizes;
-     uint64_t pipeline_size;
+     size_t * mem_sizes;
+     size_t file_count;
+     zoidfs::zoidfs_file_ofs_t * file_starts;
+     zoidfs::zoidfs_file_ofs_t * file_sizes;
+     size_t pipeline_size;
   } ReqParam;
 
   WriteRequest (int opid)
