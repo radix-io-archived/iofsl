@@ -24,7 +24,7 @@
 #include <errno.h>
 #include <pthread.h>
 
-#include "zoidfs.h"
+#include "zoidfs/zoidfs.h"
 #include "c-util/tools.h"
 
 #if defined(SYSIO_LABEL_NAMES)
@@ -34,7 +34,8 @@
 #include "xtio.h"
 #include "fhi.h"
 
-#include "../zint-handler.h"
+#include "zoidfs/dispatcher/zint-handler.h"
+
 #include "iofwd_config.h" /* Need this for the SIZEOF defines */
 
 /*

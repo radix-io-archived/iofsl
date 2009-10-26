@@ -11,6 +11,8 @@
 #include <assert.h>
 #include "zoidfs-sysio.h"
 
+#include "zoidfs/dispatcher/zint-handler.h"
+
 #define SYSIO_WR_IO_CS
 #define SYSIO_RD_IO_CS
 /*
