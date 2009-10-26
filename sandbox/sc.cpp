@@ -24,7 +24,7 @@ struct s1 : boost::statechart::simple_state<s1, SM, s2>
             std::cout << "start s1!" << std::endl;
             count_ = 0;
         }
-    
+   
         int getCount() const
         {
             return count_;
@@ -109,4 +109,4 @@ int main()
     mySM.process_event( EV2() );
     mySM.process_event( EV3() );
     return 0;
-} 
+}

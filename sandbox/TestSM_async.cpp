@@ -35,7 +35,7 @@ struct Test_Exception : boost::statechart::event< Test_Exception >
         ~Test_Exception()
         {
             std::cout << __FUNCTION__ << std::endl;
-        }       
+        }      
 };
 
 struct Test_Retry : boost::statechart::event< Test_Retry > {};
@@ -59,7 +59,7 @@ struct TestSM : boost::statechart::asynchronous_state_machine<TestSM, Test_InitS
         {
             state_cast< const IGetCurrentState & >().GetCurrentState();
         }
-    
+   
         void run() const
         {
             state_cast< const IGetCurrentState & >().run();
@@ -67,7 +67,7 @@ struct TestSM : boost::statechart::asynchronous_state_machine<TestSM, Test_InitS
 
         int getStateReturnCode() const
         {
-            return state_cast< const IGetCurrentState & >().getStateReturnCode();  
+            return state_cast< const IGetCurrentState & >().getStateReturnCode(); 
         }
 };
 
@@ -78,13 +78,13 @@ struct Test_InitState : IGetCurrentState, boost::statechart::simple_state<Test_I
 
         /* specify the possible transitions for this state
          *
-         * Success => Test_RunOpState 
+         * Success => Test_RunOpState
          * Error   => Test_ErrorState
          */
         typedef boost::mpl::list <
                 boost::statechart::custom_reaction< Test_Terminate >,
-                boost::statechart::custom_reaction< Test_Success >, 
-                boost::statechart::transition< Test_Error, Test_ErrorState > 
+                boost::statechart::custom_reaction< Test_Success >,
+                boost::statechart::transition< Test_Error, Test_ErrorState >
         > reactions;
 
         Test_InitState()
@@ -151,13 +151,13 @@ struct Test_RunOpState : IGetCurrentState, boost::statechart::state<Test_RunOpSt
     public:
         /* specify the possible transitions for this state
          *
-         * Success => Test_CleanupState 
+         * Success => Test_CleanupState
          * Error   => Test_ErrorState
          */
         typedef boost::mpl::list <
                 boost::statechart::termination< Test_Terminate >,
                 boost::statechart::transition<Test_Success, Test_CleanupState>,
-                boost::statechart::transition<Test_Error, Test_ErrorState> 
+                boost::statechart::transition<Test_Error, Test_ErrorState>
         > reactions;
 
         Test_RunOpState(my_context ctx) : my_base( ctx )
@@ -194,14 +194,14 @@ struct Test_CleanupState : IGetCurrentState, boost::statechart::state<Test_Clean
     public:
         /* specify the possible transitions for this state
          *
-         * Success => Terminal state of the state machine 
+         * Success => Terminal state of the state machine
          * Error   => Test_ErrorState
          */
 
         typedef boost::mpl::list <
                 boost::statechart::custom_reaction< Test_Terminate >,
-                boost::statechart::custom_reaction< Test_Success >, 
-                boost::statechart::transition< Test_Error, Test_ErrorState > 
+                boost::statechart::custom_reaction< Test_Success >,
+                boost::statechart::transition< Test_Error, Test_ErrorState >
         > reactions;
 
         Test_CleanupState(my_context ctx) : my_base( ctx )
@@ -311,4 +311,4 @@ int main()
     ot2.join();
 
     return 0;
-} 
+}
