@@ -13,6 +13,7 @@ maintainer-clean-local::
 #		 src/c-util/configlex.c 
 
 src/c-util/configlex.c: src/c-util/configparser.h
+src/c-util/configlex.c: src/c-util/configlex.h
 
 src_c_util_libc_util_a_SOURCES = \
 src/c-util/configfile.c \
