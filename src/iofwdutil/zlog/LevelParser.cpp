@@ -1,7 +1,8 @@
 #include "LevelParser.hh"
 
-using namespace boost::spirit; 
-using namespace phoenix; 
+using namespace ourspirit;
+using namespace ourphoenix;
+
 namespace iofwdutil
 {
    namespace zlog

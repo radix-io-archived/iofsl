@@ -1,17 +1,7 @@
+#include "iofwdutil/boost-spirit.hh"
+
 #include <boost/format.hpp>
 #include <boost/lambda/lambda.hpp>
-#include <boost/spirit/core.hpp>
-#include <boost/spirit/symbols.hpp>
-#include <boost/spirit/attribute.hpp>
-#include <boost/spirit/phoenix/binders.hpp>
-#include <boost/spirit/actor/push_back_actor.hpp>
-#include <boost/spirit/actor/assign_actor.hpp>
-#include <boost/spirit/phoenix/primitives.hpp>
-#include <boost/spirit/phoenix/operators.hpp>
-#include <boost/spirit/phoenix/functions.hpp>
-#include <boost/spirit/phoenix/casts.hpp>
-#include <boost/spirit/utility/chset.hpp>
-
 
 #include <algorithm>
 #include <iostream>
@@ -25,10 +15,10 @@
 #include "iofwdutil/zlog/ZLogDefaultFilter.hh"
 #include "iofwdutil/zlog/LevelParser.hh"
 
-using namespace iofwdutil::zlog; 
-using namespace boost::spirit;
-using namespace phoenix; 
-using namespace boost; 
+using namespace iofwdutil::zlog;
+using namespace ourspirit;
+using namespace ourphoenix;
+using namespace boost;
 
 namespace iofwdutil
 {
@@ -90,7 +80,7 @@ public:
    {
    }
 
-   struct myclosure : boost::spirit::closure<myclosure, unsigned int,
+   struct myclosure : ourspirit::closure<myclosure, unsigned int,
    std::string> 
    {
       member1 level;
@@ -136,7 +126,7 @@ public:
                        ] >> ':' ) 
                       | eps_p[bind(&LevelStrParser::clearName)(entry_.name,arg1,arg2)]
                      )
-                      >> level_p[entry_.level = phoenix::arg1]
+                      >> level_p[entry_.level = ourphoenix::arg1]
                  )[bind(&LevelStrParser::addEntry)(self, entry_.level, entry_.name)]
                ; 
 

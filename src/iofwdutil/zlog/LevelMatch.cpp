@@ -1,14 +1,9 @@
 
-#include <boost/spirit/core.hpp>
-#include <boost/spirit/symbols.hpp>
-#include <boost/spirit/attribute.hpp>
+#include "iofwdutil/boost-spirit.hh"
 
-#include <boost/spirit/phoenix/binders.hpp>
 
 #include <boost/lambda/lambda.hpp>
-
 #include <boost/format.hpp>
-
 #include <algorithm>
 
 #include "iofwdutil/zlog/ZLog.hh"
@@ -20,8 +15,8 @@
 
 using namespace iofwdutil::zlog;
 
-using namespace boost::spirit;
-using namespace phoenix; 
+using namespace ourspirit;
+using namespace ourphoenix;
 
 
 namespace iofwdutil
@@ -38,7 +33,7 @@ namespace
    
 typedef enum { LT = 0, GT, LTEQ, GTEQ, EQ } CompTypes;
 
-struct OpParser : boost ::spirit::symbols<int>
+struct OpParser : ourspirit::symbols<int>
 {
    OpParser ()
    {
@@ -51,7 +46,7 @@ struct OpParser : boost ::spirit::symbols<int>
 };
 
 /*
-struct LevelParser : boost::spirit::symbols<unsigned int>
+struct LevelParser : ourspirit::symbols<unsigned int>
 {
    LevelParser()
    {
@@ -71,14 +66,14 @@ public:
    {
    }
 
-   struct level_closure : boost::spirit::closure<level_closure,unsigned int>
+   struct level_closure : ourspirit::closure<level_closure,unsigned int>
    {
       member1 value;
    };
 
 
    struct compentry_closure :
-      boost::spirit::closure<compentry_closure,int,unsigned int>
+      ourspirit::closure<compentry_closure,int,unsigned int>
    {
       member1 comptype;
       member2 limit; 

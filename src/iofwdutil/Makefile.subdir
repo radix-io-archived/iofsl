@@ -6,7 +6,7 @@ src_iofwdutil_libiofwdutil_a_LIBLDFLAGS = \
     @BOOST_PROGRAM_OPTIONS_LIB@ \
     @BOOST_DATE_TIME_LIB@ \
     @BOOST_THREAD_LIB@ \
-    @BOOST_REGEX_LIB@
+    @BOOST_REGEX_LIB@ 
 
 
 src_iofwdutil_libiofwdutil_a_SOURCES = \
@@ -131,4 +131,5 @@ src/iofwdutil/ZException.cpp \
 src/iofwdutil/always_assert.cpp \
 src/iofwdutil/backtrace.cpp \
 src/iofwdutil/demangle.cpp \
-src/iofwdutil/signals.cpp
+src/iofwdutil/signals.cpp \
+src/iofwdutil/boost-spirit.hh

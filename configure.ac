@@ -403,6 +403,8 @@ AX_BOOST_REGEX
 AX_BOOST_DATE_TIME
 AX_BOOST_UNIT_TEST_FRAMEWORK
 
+AX_BOOST_SPIRIT_OLD
+
 dnl =========================================================================
 dnl  Valgrind
 dnl =========================================================================
