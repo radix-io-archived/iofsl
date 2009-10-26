@@ -3605,7 +3605,7 @@ static int zoidfs_read_pipeline(BMI_addr_t peer_addr, size_t pipeline_size,
         /* create next request */
         p_list_count = end_mem + 1 - start_mem;
         p_buf_list = (char**)malloc(sizeof(char*) * p_list_count);
-        p_size_list = (bmi_size_t*)malloc(sizeof(size_t) * p_list_count);
+        p_size_list = (bmi_size_t*)malloc(sizeof(bmi_size_t) * p_list_count);
         bmi_size_t p_total_size = 0;
 
         /* if there is only one buffer, account for a partial buffer case */
