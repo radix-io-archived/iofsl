@@ -10,6 +10,9 @@
 #include <boost/statechart/detail/node_state.hpp>
 #include <boost/statechart/detail/constructor.hpp>
 #include <boost/statechart/detail/memory.hpp>
+#include <boost/statechart/termination.hpp>
+#include <boost/statechart/asynchronous_state_machine.hpp>
+#include <boost/statechart/state_machine.hpp>
 
 #include "IOFWDStateEvents.hh"
 
