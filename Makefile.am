@@ -13,7 +13,8 @@ AM_CPPFLAGS = -I$(top_srcdir)/src \
 	      @BOOST_CPPFLAGS@ \
 	      @FUSE_CPPFLAGS@ \
 	      @ZFS_DISPATCHER_CPPFLAGS@ \
-	      @BMI_CPPFLAGS@
+	      @BMI_CPPFLAGS@ \
+          @CUNIT_CPPFLAGS@
 	    
 AM_CFLAGS = @FUSE_CFLAGS@ @ZFS_DISPATCHER_CFLAGS@
 
