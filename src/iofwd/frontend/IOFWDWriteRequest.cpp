@@ -1,6 +1,7 @@
 #include "IOFWDWriteRequest.hh"
 #include "iofwdutil/bmi/BMIOp.hh"
 #include "zoidfs/zoidfs-proto.h"
+#include "iofwd_config.h"
 
 namespace iofwd
 {
@@ -20,6 +21,8 @@ IOFWDWriteRequest::~IOFWDWriteRequest ()
       delete[] file_starts_;
    if (file_sizes_)
       delete[] file_sizes_;
+   if (bmi_mem_sizes_)
+      delete[] bmi_mem_sizes_;
 }
 
 const IOFWDWriteRequest::ReqParam & IOFWDWriteRequest::decodeParam ()
@@ -49,10 +52,16 @@ const IOFWDWriteRequest::ReqParam & IOFWDWriteRequest::decodeParam ()
      mem_starts_ = new char*[file_count_];
      delete[] mem_sizes_;
      mem_sizes_ = new size_t[file_count_];
+#if SIZEOF_SIZE_T != SIZEOF_BMI_SIZE_T
+     bmi_mem_sizes_ = new bmi_size_t[file_count_];
+#endif
      size_t cur = 0;
      for (size_t i = 0; i < file_count_; i++) {
        mem_starts_[i] = mem_ + cur;
        mem_sizes_[i] = file_sizes_[i];
+#if SIZEOF_SIZE_T != SIZEOF_BMI_SIZE_T
+       bmi_mem_sizes_[i] = file_sizes_[i];
+#endif
        cur += file_sizes_[i];
      }
    }
@@ -75,8 +84,13 @@ iofwdutil::completion::CompletionID * IOFWDWriteRequest::recvBuffers ()
       total_size += mem_sizes_[i];
 
    iofwdutil::completion::BMICompletionID * id = new iofwdutil::completion::BMICompletionID ();
+#if SIZEOF_SIZE_T == SIZEOF_BMI_SIZE_T
    bmires_.postReceiveList (id, addr_, (void* const*)mem_starts_, (const bmi_size_t*)mem_sizes_,
                             mem_count_, total_size, BMI_EXT_ALLOC, tag_, 0);
+#else
+   bmires_.postReceiveList (id, addr_, (void* const*)mem_starts_, (const bmi_size_t*)bmi_mem_sizes_,
+                            mem_count_, total_size, BMI_EXT_ALLOC, tag_, 0);
+#endif
    return id;
 }
 
