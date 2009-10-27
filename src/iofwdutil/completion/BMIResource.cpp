@@ -114,7 +114,9 @@ void BMIResource::wait (CompletionID * id)
 
    int outcount = 0;
    do {
-     outcount = testInternal (id, std::numeric_limits<int>::max());
+     /* Tuned down the max idle time to 10ms instead of MAX_INT */ 
+     /* outcount = testInternal (id, std::numeric_limits<int>::max()); */
+     outcount = testInternal (id, 10);
    } while (outcount == 0);
 
    {
