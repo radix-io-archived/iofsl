@@ -211,6 +211,10 @@ AC_SUBST([BMI_CPPFLAGS])
 AC_SUBST([BMI_LDFLAGS])
 AC_SUBST([BMI_LIBS])
 
+# Check for differences in size_t and bmi_size_t
+AC_CHECK_SIZEOF([size_t])
+AC_CHECK_SIZEOF([int64_t]) # bmi_size_t equivalent
+
 #
 # dispatcher flags
 #  collect the cflags, ldflags, and libs flags for each dispatcher
@@ -379,7 +383,6 @@ if test x${use_libsysio} == xtrue ; then
     #
     AC_CHECK_SIZEOF([struct file_handle_info_export *])
     AC_CHECK_SIZEOF([uint8_t])
-    AC_CHECK_SIZEOF([size_t])
 
     #
     # Reset the flags
