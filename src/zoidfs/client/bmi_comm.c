@@ -407,7 +407,7 @@ int bmi_comm_irecv_list(BMI_addr_t peer_addr, size_t list_count,
     int ret;
 
     /* Post the BMI recv request and wait for its completion */
-    ret = BMI_post_recv_list(&op_id, peer_addr, buffers, buflens, list_count,
+    ret = BMI_post_recv_list(op_id, peer_addr, buffers, buflens, list_count,
                              total_size, actual_size, BMI_PRE_ALLOC,
                              tag, NULL, context, NULL);
     if (ret < 0)
