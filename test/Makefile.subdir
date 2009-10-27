@@ -11,17 +11,19 @@ test_unit_tests_ldadd =          \
 	src/iofwdutil/libiofwdutil.a \
 	src/c-util/libc-util.a       \
     @CUNIT_LIBS@                 \
-    @ZFS_DISPATCHER_LIBS@
+    @ZFS_DISPATCHER_LIBS@ \
+    @BMI_LIBS@
 
 test_unit_tests_ldflags =        \
     @CUNIT_LDFLAGS@              \
-    @ZFS_DISPATCHER_LDFLAGS@
+    @ZFS_DISPATCHER_LDFLAGS@     \
+    @BMI_LDFLAGS@
 
 bin_PROGRAMS += test/unit-tests/zoidfs-md-cunit test/unit-tests/zoidfs-md-cunit-local test/unit-tests/zoidfs-io-cunit \
 test/unit-tests/zoidfs-io-cunit-local
 
 test_unit_tests_zoidfs_md_cunit_SOURCES = test/unit-tests/zoidfs-md-cunit.c
-test_unit_tests_zoidfs_md_cunit_LDADD = ${test_unit_tests_ldadd} src/zoidfs/libzoidfsclient.a
+test_unit_tests_zoidfs_md_cunit_LDADD = src/zoidfs/libzoidfsclient.a ${test_unit_tests_ldadd}
 test_unit_tests_zoidfs_md_cunit_LDFLAGS = ${test_unit_tests_ldflags}
  
 test_unit_tests_zoidfs_md_cunit_local_SOURCES = test/unit-tests/zoidfs-md-cunit.c
@@ -29,7 +31,7 @@ test_unit_tests_zoidfs_md_cunit_local_LDADD = src/zoidfs/libzoidfs.a ${test_unit
 test_unit_tests_zoidfs_md_cunit_local_LDFLAGS = ${test_unit_tests_ldflags}
 
 test_unit_tests_zoidfs_io_cunit_SOURCES = test/unit-tests/zoidfs-io-cunit.c
-test_unit_tests_zoidfs_io_cunit_LDADD = ${test_unit_tests_ldadd} src/zoidfs/libzoidfsclient.a
+test_unit_tests_zoidfs_io_cunit_LDADD =  src/zoidfs/libzoidfsclient.a ${test_unit_tests_ldadd}
 test_unit_tests_zoidfs_io_cunit_LDFLAGS = ${test_unit_tests_ldflags}
  
 test_unit_tests_zoidfs_io_cunit_local_SOURCES = test/unit-tests/zoidfs-io-cunit.c
@@ -47,10 +49,10 @@ test_microbenchmarks_ldadd =     \
     src/zoidfs/libzoidfs-util.a  \
     src/iofwdutil/libiofwdutil.a \
     src/c-util/libc-util.a       \
-    @ZFS_DISPATCHER_LIBS@
+    @ZFS_DISPATCHER_LIBS@ @BMI_LIBS@
 
 test_microbenchmarks_ldflags =   \
-    @ZFS_DISPATCHER_LDFLAGS@
+    @ZFS_DISPATCHER_LDFLAGS@ @BMI_LDFLAGS@
 
 bin_PROGRAMS += test/zoidfs-microbenchmarks/creat-thput test/zoidfs-microbenchmarks/creat-thput-local \
 test/zoidfs-microbenchmarks/mkdir-thput test/zoidfs-microbenchmarks/mkdir-thput-local test/zoidfs-microbenchmarks/lookup-thput \

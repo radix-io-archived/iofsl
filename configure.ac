@@ -172,24 +172,44 @@ then
 fi
 AM_CONDITIONAL([HAVE_CUNIT],[test "x${ENABLE_CUNIT}" == "x1"])
 
-# BMI
-AC_LANG_PUSH([C])
-BMI_INCLUDE=
+# ===========================================================================
+# ====== BMI ================================================================
+# ===========================================================================
+
+BMI_CPPFLAGS=
 BMI_LIBS=
+BMI_LDFLAGS=
+
 AC_ARG_WITH([bmi],[AS_HELP_STRING([--with-bmi@<:@=DIR@:>@], 
                         [location of BMI library])],
                    [bmidir=$withval])
+   
+
 if test "x$bmidir" != "x" ; then
-    CPPFLAGS="$CPPFLAGS -I${bmidir}/include"
-    CXXCPPFLAGS="$CXXCPPFLAGS -I${bmidir}/include"
-    LDFLAGS="$LDFLAGS -L${bmidir}/lib"
+   BMI_CPPFLAGS="-I${bmidir}/include"
+   BMI_LIBS="-lbmi"
+   BMI_LDFLAGS="-L${bmidir}/lib"
 fi
-AC_CHECK_LIB([bmi], [BMI_initialize],,
+    
+OLDCPPFLAGS="$CPPFLAGS"
+OLDLDFLAGS="$LDFLAGS"
+CPPFLAGS="$CPPFLAGS $BMI_CPPFLAGS"
+LDFLAGS="$LDFLAGS $BMI_LDFLAGS"
+
+AC_LANG_PUSH([C])
+AC_CHECK_LIB([bmi], [BMI_initialize],[BMI_LIBS="-lbmi"],
              [AC_MSG_ERROR([Could not find usable bmi library!])])
 # check that is is recent enough to have BMI_TCP_CHECK_UNEXPECTED
 AC_CHECK_HEADER_DEFINE([<bmi.h>],[BMI_TCP_CHECK_UNEXPECTED],[],
         AC_MSG_ERROR([BMI does not have BMI_TCP_CHECK_UNEXPECTED]))
 AC_LANG_POP
+
+CPPFLAGS="$OLDCPPFLAGS"
+LDFLAGS="$OLDLDFLAGS"
+
+AC_SUBST([BMI_CPPFLAGS])
+AC_SUBST([BMI_LDFLAGS])
+AC_SUBST([BMI_LIBS])
 
 #
 # dispatcher flags

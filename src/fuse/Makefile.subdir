@@ -1,11 +1,11 @@
 if HAVE_FUSE
 
 bin_PROGRAMS += src/fuse/fuseclient
-src_fuse_fuseclient_LDFLAGS = $(AM_LDFLAGS) @FUSE_LDFLAGS@
+src_fuse_fuseclient_LDFLAGS = $(AM_LDFLAGS) @FUSE_LDFLAGS@ @BMI_LDFLAGS@
 src_fuse_fuseclient_SOURCES = src/fuse/zoidfs-fuse.c
 src_fuse_fuseclient_LDADD = \
 		src/zoidfs/libzoidfs-util.a \
 		src/zoidfs/libzoidfsclient.a \
-		src/c-util/libc-util.a @FUSE_LIBS@
+		src/c-util/libc-util.a @FUSE_LIBS@ @BMI_LIBS@
 
 endif

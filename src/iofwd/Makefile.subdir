@@ -11,11 +11,13 @@ src_iofwd_iofwd_LDADD = \
 	@BOOST_DATE_TIME_LIB@ \
 	@BOOST_THREAD_LIB@ \
 	@BOOST_REGEX_LIB@ \
-    @ZFS_DISPATCHER_LIBS@
+    @ZFS_DISPATCHER_LIBS@ \
+    @BMI_LIBS@
 
 src_iofwd_iofwd_LDFLAGS = \
     @BOOST_LDFLAGS@ \
-    @ZFS_DISPATCHER_LDFLAGS@
+    @ZFS_DISPATCHER_LDFLAGS@ \
+    @BMI_LDFLAGS@
 
 src_iofwd_iofwd_SOURCES = \
 src/iofwd/BufferPool.cpp \
