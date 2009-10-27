@@ -14,4 +14,23 @@ noinst_PROGRAMS += sandbox/regex
 sandbox_regex_SOURCES = sandbox/regex.cpp
 sandbox_regex_LDFLAGS = $(sandbox_ldflags) 
 
+noinst_PROGRAMS += sandbox/sc
+sandbox_sc_SOURCES = sandbox/sc.cpp
+sandbox_sc_CPPFLAGS := ${sandbox_cppflags} 
+sandbox_sc_LDFLAGS := ${sandbox_ldflags} 
 
+noinst_PROGRAMS += sandbox/TestSM
+sandbox_TestSM_SOURCES = sandbox/TestSM.cpp
+sandbox_TestSM_CPPFLAGS := ${sandbox_cppflags} 
+sandbox_TestSM_LDFLAGS := ${sandbox_ldflags} 
+
+noinst_PROGRAMS += sandbox/TestSM_async
+sandbox_TestSM_async_SOURCES = sandbox/TestSM_async.cpp
+sandbox_TestSM_async_CPPFLAGS := ${sandbox_cppflags} 
+sandbox_TestSM_async_LDFLAGS := ${sandbox_ldflags} 
+
+noinst_PROGRAMS += sandbox/LookupSMTest
+sandbox_LookupSMTest_SOURCES = sandbox/LookupSMTest.cpp
+sandbox_LookupSMTest_CPPFLAGS := ${sandbox_cppflags} -I./src/sm 
+sandbox_LookupSMTest_LDFLAGS := ${sandbox_ldflags} -L./src/sm 
+sandbox_LookupSMTest_LDADD := -liofwdsm 
