@@ -60,59 +60,59 @@ test/zoidfs-microbenchmarks/lookup-thput-local test/zoidfs-microbenchmarks/getat
 test/zoidfs-microbenchmarks/setattr-thput test/zoidfs-microbenchmarks/setattr-thput-local test/zoidfs-microbenchmarks/remove-thput \
 test/zoidfs-microbenchmarks/remove-thput-local test/zoidfs-microbenchmarks/null-thput test/zoidfs-microbenchmarks/null-thput-local
 
-test_zoidfs_microbenchmarks_creat_thput_SOURCES = test/zoidfs-microbenchmarks/creat-thput.c
+test_zoidfs_microbenchmarks_creat_thput_SOURCES = test/zoidfs-microbenchmarks/creat-thput.c test/zoidfs-microbenchmarks/thput.h
 test_zoidfs_microbenchmarks_creat_thput_LDADD = src/zoidfs/libzoidfsclient.a ${test_microbenchmarks_ldadd}
 test_zoidfs_microbenchmarks_creat_thput_LDFLAGS = ${test_microbenchmarks_ldflags}
  
-test_zoidfs_microbenchmarks_creat_thput_local_SOURCES = test/zoidfs-microbenchmarks/creat-thput.c
+test_zoidfs_microbenchmarks_creat_thput_local_SOURCES = test/zoidfs-microbenchmarks/creat-thput.c test/zoidfs-microbenchmarks/thput.h
 test_zoidfs_microbenchmarks_creat_thput_local_LDADD = src/zoidfs/libzoidfs.a ${test_microbenchmarks_ldadd}
 test_zoidfs_microbenchmarks_creat_thput_local_LDFLAGS = ${test_microbenchmarks_ldflags}
  
-test_zoidfs_microbenchmarks_null_thput_SOURCES = test/zoidfs-microbenchmarks/null-thput.c
+test_zoidfs_microbenchmarks_null_thput_SOURCES = test/zoidfs-microbenchmarks/null-thput.c test/zoidfs-microbenchmarks/thput.h
 test_zoidfs_microbenchmarks_null_thput_LDADD = src/zoidfs/libzoidfsclient.a ${test_microbenchmarks_ldadd}
 test_zoidfs_microbenchmarks_null_thput_LDFLAGS = ${test_microbenchmarks_ldflags}
  
-test_zoidfs_microbenchmarks_null_thput_local_SOURCES = test/zoidfs-microbenchmarks/null-thput.c
+test_zoidfs_microbenchmarks_null_thput_local_SOURCES = test/zoidfs-microbenchmarks/null-thput.c test/zoidfs-microbenchmarks/thput.h
 test_zoidfs_microbenchmarks_null_thput_local_LDADD = src/zoidfs/libzoidfs.a ${test_microbenchmarks_ldadd}
 test_zoidfs_microbenchmarks_null_thput_local_LDFLAGS = ${test_microbenchmarks_ldflags}
  
-test_zoidfs_microbenchmarks_remove_thput_SOURCES = test/zoidfs-microbenchmarks/remove-thput.c
+test_zoidfs_microbenchmarks_remove_thput_SOURCES = test/zoidfs-microbenchmarks/remove-thput.c test/zoidfs-microbenchmarks/thput.h
 test_zoidfs_microbenchmarks_remove_thput_LDADD = src/zoidfs/libzoidfsclient.a ${test_microbenchmarks_ldadd}
 test_zoidfs_microbenchmarks_remove_thput_LDFLAGS = ${test_microbenchmarks_ldflags}
  
-test_zoidfs_microbenchmarks_remove_thput_local_SOURCES = test/zoidfs-microbenchmarks/remove-thput.c
+test_zoidfs_microbenchmarks_remove_thput_local_SOURCES = test/zoidfs-microbenchmarks/remove-thput.c test/zoidfs-microbenchmarks/thput.h
 test_zoidfs_microbenchmarks_remove_thput_local_LDADD = src/zoidfs/libzoidfs.a ${test_microbenchmarks_ldadd}
 test_zoidfs_microbenchmarks_remove_thput_local_LDFLAGS = ${test_microbenchmarks_ldflags}
  
-test_zoidfs_microbenchmarks_lookup_thput_SOURCES = test/zoidfs-microbenchmarks/lookup-thput.c
+test_zoidfs_microbenchmarks_lookup_thput_SOURCES = test/zoidfs-microbenchmarks/lookup-thput.c test/zoidfs-microbenchmarks/thput.h
 test_zoidfs_microbenchmarks_lookup_thput_LDADD = src/zoidfs/libzoidfsclient.a ${test_microbenchmarks_ldadd}
 test_zoidfs_microbenchmarks_lookup_thput_LDFLAGS = ${test_microbenchmarks_ldflags}
  
-test_zoidfs_microbenchmarks_lookup_thput_local_SOURCES = test/zoidfs-microbenchmarks/lookup-thput.c
+test_zoidfs_microbenchmarks_lookup_thput_local_SOURCES = test/zoidfs-microbenchmarks/lookup-thput.c test/zoidfs-microbenchmarks/thput.h
 test_zoidfs_microbenchmarks_lookup_thput_local_LDADD = src/zoidfs/libzoidfs.a ${test_microbenchmarks_ldadd}
 test_zoidfs_microbenchmarks_lookup_thput_local_LDFLAGS = ${test_microbenchmarks_ldflags}
 
-test_zoidfs_microbenchmarks_getattr_thput_SOURCES = test/zoidfs-microbenchmarks/getattr-thput.c
+test_zoidfs_microbenchmarks_getattr_thput_SOURCES = test/zoidfs-microbenchmarks/getattr-thput.c test/zoidfs-microbenchmarks/thput.h
 test_zoidfs_microbenchmarks_getattr_thput_LDADD = src/zoidfs/libzoidfsclient.a ${test_microbenchmarks_ldadd}
 test_zoidfs_microbenchmarks_getattr_thput_LDFLAGS = ${test_microbenchmarks_ldflags}
  
-test_zoidfs_microbenchmarks_getattr_thput_local_SOURCES = test/zoidfs-microbenchmarks/getattr-thput.c
+test_zoidfs_microbenchmarks_getattr_thput_local_SOURCES = test/zoidfs-microbenchmarks/getattr-thput.c test/zoidfs-microbenchmarks/thput.h
 test_zoidfs_microbenchmarks_getattr_thput_local_LDADD = src/zoidfs/libzoidfs.a ${test_microbenchmarks_ldadd}
 test_zoidfs_microbenchmarks_getattr_thput_local_LDFLAGS = ${test_microbenchmarks_ldflags}
  
-test_zoidfs_microbenchmarks_setattr_thput_SOURCES = test/zoidfs-microbenchmarks/setattr-thput.c
+test_zoidfs_microbenchmarks_setattr_thput_SOURCES = test/zoidfs-microbenchmarks/setattr-thput.c test/zoidfs-microbenchmarks/thput.h
 test_zoidfs_microbenchmarks_setattr_thput_LDADD = src/zoidfs/libzoidfsclient.a ${test_microbenchmarks_ldadd}
 test_zoidfs_microbenchmarks_setattr_thput_LDFLAGS = ${test_microbenchmarks_ldflags}
  
-test_zoidfs_microbenchmarks_setattr_thput_local_SOURCES = test/zoidfs-microbenchmarks/setattr-thput.c
+test_zoidfs_microbenchmarks_setattr_thput_local_SOURCES = test/zoidfs-microbenchmarks/setattr-thput.c test/zoidfs-microbenchmarks/thput.h
 test_zoidfs_microbenchmarks_setattr_thput_local_LDADD = src/zoidfs/libzoidfs.a ${test_microbenchmarks_ldadd}
 test_zoidfs_microbenchmarks_setattr_thput_local_LDFLAGS = ${test_microbenchmarks_ldflags}
  
-test_zoidfs_microbenchmarks_mkdir_thput_SOURCES = test/zoidfs-microbenchmarks/mkdir-thput.c
+test_zoidfs_microbenchmarks_mkdir_thput_SOURCES = test/zoidfs-microbenchmarks/mkdir-thput.c test/zoidfs-microbenchmarks/thput.h
 test_zoidfs_microbenchmarks_mkdir_thput_LDADD = src/zoidfs/libzoidfsclient.a ${test_microbenchmarks_ldadd}
 test_zoidfs_microbenchmarks_mkdir_thput_LDFLAGS = ${test_microbenchmarks_ldflags}
  
-test_zoidfs_microbenchmarks_mkdir_thput_local_SOURCES = test/zoidfs-microbenchmarks/mkdir-thput.c
+test_zoidfs_microbenchmarks_mkdir_thput_local_SOURCES = test/zoidfs-microbenchmarks/mkdir-thput.c test/zoidfs-microbenchmarks/thput.h
 test_zoidfs_microbenchmarks_mkdir_thput_local_LDADD = src/zoidfs/libzoidfs.a ${test_microbenchmarks_ldadd}
 test_zoidfs_microbenchmarks_mkdir_thput_local_LDFLAGS = ${test_microbenchmarks_ldflags}
 endif
