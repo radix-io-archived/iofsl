@@ -1,0 +1,11 @@
+TESTS += test/boost/timerresource
+
+check_PROGRAMS += test/boost/timerresource
+test_boost_timerresource_SOURCES = test/boost/timerresource.cpp test/boost/singlecompletion.cpp
+test_boost_timerresource_LDFLAGS = $(BOOST_LDFLAGS)
+test_boost_timerresource_LDADD = \
+				 src/iofwdevent/libiofwdevent.a \
+				 src/iofwdutil/libiofwdutil.a \
+				 $(BOOST_UNIT_TEST_FRAMEWORK_LIB) \
+				 $(BOOST_THREAD_LIB) \
+				 $(BOOST_REGEX_LIB)

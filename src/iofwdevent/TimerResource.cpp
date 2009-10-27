@@ -70,6 +70,9 @@ void TimerResource::threadMain ()
          l.lock ();
       }
 
+      if (shutdown_)
+         break;
+
       if (queue_.size ())
          workercond_.timed_wait (l, peekNext ());
       else
