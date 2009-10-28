@@ -4,7 +4,10 @@
 #define BOOST_TEST_DYN_LINK
 #include <boost/test/unit_test.hpp>
 
+#include <iostream>
 #include <csignal>
+
+using namespace std;
 
 using namespace boost::unit_test;
 
@@ -27,6 +30,7 @@ struct SetVal : public iofwdevent::ResourceOp
 
 BOOST_AUTO_TEST_CASE( StartStopTest )
 {
+   cout << "Running timer test" << endl;
    iofwdevent::TimerResource r;
 
    r.start ();
@@ -48,6 +52,7 @@ BOOST_AUTO_TEST_CASE( StartStopTest )
    BOOST_CHECK_MESSAGE( val == 2, "Timer fired out of order");
 
    r.stop ();
+   cout << "Timer test completed..." << endl;
 }
 
 

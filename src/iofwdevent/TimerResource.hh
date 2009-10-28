@@ -5,17 +5,18 @@
 #include <queue>
 #include <csignal>
 #include <boost/pool/object_pool.hpp>
-#include "Resource.hh"
 #include <boost/thread/thread_time.hpp>
+
 #include "iofwdutil/assert.hh"
 #include "ResourceOp.hh"
-
+#include "Resource.hh"
+#include "ThreadedResource.hh"
 
 namespace iofwdevent
 {
 //===========================================================================
 
-class TimerResource
+class TimerResource : public ThreadedResource
 {
 public:
    TimerResource ();
@@ -25,9 +26,9 @@ public:
    void createTimer (ResourceOp * id, unsigned int mstimeout);
 
 
+   // Need to override stop to be able to wake the thread when waiting
+   // for a timer in order to shut it down.
    virtual void stop ();
-
-   virtual void start ();
 
 protected:
    struct TimerEntry
@@ -77,14 +78,7 @@ protected:
    // Protects priority queue
    boost::mutex lock_;
 
-   /// Notify the worker thread it needs to shut down.
-   sig_atomic_t  shutdown_;
-
-   bool running_;
-
-   boost::thread workerthread_;
-
-   boost::condition_variable workercond_;
+   boost::condition_variable notify_;
 };
 
 

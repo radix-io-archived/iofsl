@@ -12,25 +12,23 @@ namespace iofwdevent
 //==========================================================================
 
 TimerResource::TimerResource ()
-   : queue_(comp_), shutdown_(false), running_(false)
+   : queue_(comp_)
 {
 }
 
 TimerResource::~TimerResource ()
 {
-   ALWAYS_ASSERT(!running_);
    ALWAYS_ASSERT(!queue_.size());
 }
 
 void TimerResource::createTimer (ResourceOp * id, unsigned int mstimeout)
 {
    // If we are shutting down, refuse new blocking events
-   if (shutdown_ || !running_)
+   if (!isRunning() || needShutdown ())
       throw ResourceInactiveException ();
 
    // Add entry, and see if this alarm occurs before first alarm.
    // If so, wake the alarm thread.
-  
    TimerEntry * e = mempool_.construct (id, 
         boost::get_system_time() + millisec (mstimeout));
 
@@ -45,14 +43,14 @@ void TimerResource::createTimer (ResourceOp * id, unsigned int mstimeout)
    }
 
    if (wake)
-      workercond_.notify_one ();
+      notify_.notify_one ();
 }
 
 
 void TimerResource::threadMain ()
 {
-   boost::unique_lock<boost::mutex> l (lock_);
-   while (!shutdown_)
+   boost::mutex::scoped_lock l (lock_);
+   while (!needShutdown ())
    {
       while (queue_.size () && peekNext () <= boost::get_system_time ())
       {
@@ -70,36 +68,34 @@ void TimerResource::threadMain ()
          l.lock ();
       }
 
-      if (shutdown_)
+      if (needShutdown ())
          break;
 
+      // Race condition here.
+      //   if worker thread checks needShutdown () and then is preempted
+      //   while the main thread sets shutdown_ and signals the condition
+      //   variable while the worker thread is not waiting on it.
+      //   It will subsequently go to sleep and remain sleeping.
+      //
+      //   Solution: wake up every second if there is no work.
+      //
       if (queue_.size ())
-         workercond_.timed_wait (l, peekNext ());
+         notify_.timed_wait (l, peekNext ());
       else
-         workercond_.wait (l);
+         notify_.timed_wait (l, boost::posix_time::seconds(1));
    }
-}
-
-void TimerResource::start ()
-{
-   ALWAYS_ASSERT(!running_);
-
-   // Launch thread
-   
-   shutdown_ = false;
-   boost::thread newthread (boost::bind (&TimerResource::threadMain,this));
-   workerthread_.swap (newthread);
-   running_ = true;
 }
 
 void TimerResource::stop ()
 {
-   ALWAYS_ASSERT(running_);
-   
-   shutdown_ = true;
-   workercond_.notify_all ();
-   workerthread_.join ();
-   running_ = false;
+   // Notify thread it needs to finish work
+   signalStop ();
+
+   // Make sure to wake it (in case it is waiting for a timer)
+   notify_.notify_one ();
+
+   // Wait until it stops
+   waitStop ();
 
    // There should be no contention on this lock now
    boost::unique_lock<boost::mutex> l (lock_, boost::try_to_lock_t ());
@@ -119,8 +115,8 @@ void TimerResource::stop ()
          ALWAYS_ASSERT(false && "cancel() should not throw");
       }
    }
-
 }
+
 //===========================================================================
 }
 
