@@ -1,19 +1,15 @@
-#include "iofwdevent/TimerResource.hh"
-
-#define BOOST_TEST_MODULE TimerResource test
-#define BOOST_TEST_DYN_LINK
 #include <boost/test/unit_test.hpp>
-
-#include <iostream>
 #include <csignal>
 
-using namespace std;
+#include "iofwdevent/TimerResource.hh"
 
 using namespace boost::unit_test;
 
+BOOST_AUTO_TEST_SUITE( timerresource)
+
 struct SetVal : public iofwdevent::ResourceOp
 {
-   SetVal (sig_atomic_t * p, sig_atomic_t v) 
+   SetVal (sig_atomic_t * p, sig_atomic_t v)
       : val(p), dest(v)
    {
    }
@@ -30,7 +26,7 @@ struct SetVal : public iofwdevent::ResourceOp
 
 BOOST_AUTO_TEST_CASE( StartStopTest )
 {
-   cout << "Running timer test" << endl;
+   BOOST_TEST_MESSAGE("Running timer test");
    iofwdevent::TimerResource r;
 
    r.start ();
@@ -42,9 +38,9 @@ BOOST_AUTO_TEST_CASE( StartStopTest )
    r.createTimer (&v, 10);
 
    while (!val) {}
-   
+
    BOOST_CHECK_MESSAGE( val == 1, "Timer fired out of order");
-   
+
    r.createTimer (&v2, 20);
 
    while (val == 1) {}
@@ -52,7 +48,8 @@ BOOST_AUTO_TEST_CASE( StartStopTest )
    BOOST_CHECK_MESSAGE( val == 2, "Timer fired out of order");
 
    r.stop ();
-   cout << "Timer test completed..." << endl;
+   BOOST_TEST_MESSAGE( "Timer test completed..." );
 }
 
+BOOST_AUTO_TEST_SUITE_END()
 
