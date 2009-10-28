@@ -28,5 +28,5 @@ sandbox_TestSM_async_LDFLAGS := ${sandbox_ldflags}
 
 noinst_PROGRAMS += sandbox/LookupSMTest
 sandbox_LookupSMTest_SOURCES = sandbox/LookupSMTest.cpp
-sandbox_LookupSMTest_LDFLAGS := ${sandbox_ldflags} -L$(top_srcdir)/src/sm 
-sandbox_LookupSMTest_LDADD := $(top_srcdir)/src/sm/libiofwdsm.a
+sandbox_LookupSMTest_LDFLAGS := ${sandbox_ldflags}
+sandbox_LookupSMTest_LDADD := $(top_builddir)/src/sm/libiofwdsm.a
