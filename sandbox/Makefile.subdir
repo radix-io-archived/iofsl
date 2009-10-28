@@ -12,21 +12,23 @@ sandbox_recordparam_LDFLAGS = $(sandbox_ldflags)
 
 noinst_PROGRAMS += sandbox/regex
 sandbox_regex_SOURCES = sandbox/regex.cpp
-sandbox_regex_LDFLAGS = $(sandbox_ldflags) 
+sandbox_regex_LDFLAGS = $(sandbox_ldflags)
 
 noinst_PROGRAMS += sandbox/sc
 sandbox_sc_SOURCES = sandbox/sc.cpp
-sandbox_sc_LDFLAGS := ${sandbox_ldflags} 
+sandbox_sc_LDFLAGS = ${sandbox_ldflags}
 
 noinst_PROGRAMS += sandbox/TestSM
 sandbox_TestSM_SOURCES = sandbox/TestSM.cpp
-sandbox_TestSM_LDFLAGS := ${sandbox_ldflags} 
+sandbox_TestSM_LDFLAGS = ${sandbox_ldflags}
 
 noinst_PROGRAMS += sandbox/TestSM_async
 sandbox_TestSM_async_SOURCES = sandbox/TestSM_async.cpp
-sandbox_TestSM_async_LDFLAGS := ${sandbox_ldflags} 
+sandbox_TestSM_async_LDFLAGS = ${sandbox_ldflags}
+
+# Note: := should not be used, is GNU make
 
 noinst_PROGRAMS += sandbox/LookupSMTest
 sandbox_LookupSMTest_SOURCES = sandbox/LookupSMTest.cpp
-sandbox_LookupSMTest_LDFLAGS := ${sandbox_ldflags}
-sandbox_LookupSMTest_LDADD := $(top_builddir)/src/sm/libiofwdsm.a
+sandbox_LookupSMTest_LDFLAGS = ${sandbox_ldflags}
+sandbox_LookupSMTest_LDADD = $(top_builddir)/src/sm/libiofwdsm.a
