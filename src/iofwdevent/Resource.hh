@@ -16,6 +16,7 @@ public:
    virtual void start () = 0;
 
    /// Prepare shutdown resource. Returns when shutdown complete
+   /// No more requests will be completed after stop() returns.
    virtual void stop () = 0;
 
    virtual ~Resource ();
