@@ -1,3 +1,5 @@
+#include <boost/bind.hpp>
+
 #include "iofwdutil/assert.hh"
 #include "ThreadedResource.hh"
 

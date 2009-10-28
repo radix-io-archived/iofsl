@@ -29,7 +29,7 @@ void TimerResource::createTimer (ResourceOp * id, unsigned int mstimeout)
 
    // Add entry, and see if this alarm occurs before first alarm.
    // If so, wake the alarm thread.
-   TimerEntry * e = mempool_.construct (id, 
+   TimerEntry * e = mempool_.construct (id,
         boost::get_system_time() + millisec (mstimeout));
 
    bool wake = false;
@@ -82,7 +82,8 @@ void TimerResource::threadMain ()
       if (queue_.size ())
          notify_.timed_wait (l, peekNext ());
       else
-         notify_.timed_wait (l, boost::posix_time::seconds(1));
+         notify_.timed_wait (l, (boost::get_system_time() +
+                  boost::posix_time::seconds(1)));
    }
 }
 
