@@ -1,7 +1,7 @@
 #include <iostream>
 
-#include "IOFWDLookupStateMachine.hh"
-#include "IOFWDStateEvents.hh"
+#include "sm/IOFWDLookupStateMachine.hh"
+#include "sm/IOFWDStateEvents.hh"
 
 /* small driver using libiofwdsm */
 int main()
