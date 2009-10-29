@@ -840,17 +840,19 @@ int testRESIZE(void)
     zoidfs_lookup(NULL, NULL, fullpath_dirname, &fhandle);
     CU_ASSERT_NOT_EQUAL(ZFS_OK, zoidfs_resize(&fhandle, size));
 
+    /* symlink to a file, should pass */
     zoidfs_lookup(&basedir_handle, symlink_component_filename, NULL, &fhandle);
-    CU_ASSERT_NOT_EQUAL(ZFS_OK, zoidfs_resize(&fhandle, size));
+    CU_ASSERT_EQUAL(ZFS_OK, zoidfs_resize(&fhandle, size));
 
-    /* directory, should fail */
+    /* symlink directory, should fail */
     zoidfs_lookup(&basedir_handle, symlink_component_dirname, NULL, &fhandle);
     CU_ASSERT_NOT_EQUAL(ZFS_OK, zoidfs_resize(&fhandle, size));
 
+    /* symlink to a file, should pass */
     zoidfs_lookup(NULL, NULL, symlink_fullpath_filename, &fhandle);
-    CU_ASSERT_NOT_EQUAL(ZFS_OK, zoidfs_resize(&fhandle, size));
+    CU_ASSERT_EQUAL(ZFS_OK, zoidfs_resize(&fhandle, size));
 
-    /* directory, should fail */
+    /* symlink directory, should fail */
     zoidfs_lookup(NULL, NULL, symlink_fullpath_dirname, &fhandle);
     CU_ASSERT_NOT_EQUAL(ZFS_OK, zoidfs_resize(&fhandle, size));
 
