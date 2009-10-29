@@ -23,6 +23,8 @@ namespace iofwdevent
 
          virtual void stop ();
 
+         virtual bool started () const;
+
       protected:
 
          void threadStart ();

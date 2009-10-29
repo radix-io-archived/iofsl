@@ -7,6 +7,11 @@ namespace iofwdevent
 {
 //===========================================================================
 
+   bool ThreadedResource::started () const
+   {
+      return running_;
+   }
+
    void ThreadedResource::threadStart ()
    {
       while (!shutdown_)

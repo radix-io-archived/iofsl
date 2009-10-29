@@ -19,6 +19,11 @@ public:
    /// No more requests will be completed after stop() returns.
    virtual void stop () = 0;
 
+   /**
+    * Return true if the resource has been started already.
+    */
+   virtual bool started () const = 0;
+
    virtual ~Resource ();
 
 };
