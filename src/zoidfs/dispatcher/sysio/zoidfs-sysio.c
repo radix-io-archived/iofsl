@@ -1943,7 +1943,6 @@ static int zoidfs_sysio_readdir(const zoidfs_handle_t *parent_handle,
     return ZFS_OK;
 }
 
-
 /*
  * zoidfs_resize
  * This function resizes the file associated with the file handle.
@@ -1983,7 +1982,7 @@ static int zoidfs_sysio_resize(const zoidfs_handle_t *handle, uint64_t size)
 
     zoidfs_getattr(handle, &attr);
 
-    if(attr.type == ZOIDFS_REG)
+    if(attr.type == ZOIDFS_REG || attr.type == ZOIDFS_LNK)
     {
         memset(&sattr, 0, sizeof(sattr));
         sattr.mask = ZOIDFS_ATTR_SIZE;
