@@ -224,7 +224,7 @@ void zoidfstime_to_timeval (const zoidfs_time_t * t1, struct timeval * t2)
 /**
  * Go over the path and remove extra / in the path
  */
-static void zoidfs_path_fix (char * buf)
+static void zoidfs_path_fix_link (char * buf)
 {
    const char * readptr = buf;
    char * writeptr = buf;
@@ -243,13 +243,33 @@ static void zoidfs_path_fix (char * buf)
       writeptr++;
    }
 
-   /* if the last character is a /, remove it
-    * unless it is also the first character */
-   if (last && (writeptr - buf) != 1)
-      --writeptr;
-
    /* terminate */
    *writeptr = 0;
+}
+
+/*
+ * Like zoidfs_path_fix, but also remove / at the end.
+ */
+static void zoidfs_path_fix (char * buf)
+{
+   size_t len;
+   zoidfs_path_fix_link (buf);
+
+   len = strlen (buf);
+   
+   /*
+    * This interferes with symlinks
+    */
+   
+   /* if the last character is a /, remove it
+    * unless it is also the first character */
+
+   if (len <= 1)
+      return;
+
+   if (buf[len-1]=='/')
+      buf[len-1] = 0;
+
 }
 
 /*
@@ -694,6 +714,12 @@ int filename2handle (const struct stat * s, const char * buf, zoidfs_handle_t * 
  * zoidfs_lookup
  * This function returns the file handle associated with the given file or
  * directory name.
+ *
+ * Note: zoidfs_lookup cannot remove a trailing '/' from the path /if the path
+ * points to a symbolic link which points to a directory/!
+ *
+ * In other words, for a symbolic link a/b/c to a directory, a/b/c/ en a/b/c 
+ * have different zoidfs handles.
  */
 static int zoidfs_posix_lookup(const zoidfs_handle_t *parent_handle,
                   const char *component_name, const char *full_path,
