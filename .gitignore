@@ -27,6 +27,7 @@ sandbox/LookupSM_async
 sandbox/TestSM
 sandbox/TestSM_async
 sandbox/sc
+sandbox/zoidfs-hints
 src/fuse/fuseclient
 src/fuse/fusedispatch
 src/iofwd/iofwd
