@@ -5,24 +5,27 @@ namespace iofwdevent
 {
 //===========================================================================
 
+   void BMIResource::start ()
+   {
+      BMI_open_context (&context_);
+      ThreadedResource::start ();
+   }
+
+   void BMIResource::stop ()
+   {
+      ThreadedResource::stop ();
+      BMI_close_context (context_);
+   }
+
    BMIResource::~BMIResource ()
    {
-      BMI_close_context (context_);
    }
 
    BMIResource::BMIResource ()
       : mempool_ (sizeof(BMIEntry))
    {
-      BMI_open_context (&context_);
    }
-   
-   void BMIResource::stop ()
-   {
-      ThreadedResource::stop ();
 
-      // currently there is no way to cancel all BMI requests of a certain
-      // context. 
-   }
 
    void BMIResource::handleBMIError (ResourceOp * UNUSED(u), int UNUSED(bmiret))
    {

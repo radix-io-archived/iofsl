@@ -33,8 +33,9 @@ namespace iofwdevent
 
          virtual ~BMIResource ();
 
-         virtual void stop ();
+         virtual void start ();
 
+         virtual void stop ();
 
       protected:
          // Note: don't store objects in here, mempool doesn't
@@ -76,6 +77,7 @@ namespace iofwdevent
           * CHeck for normal BMI errors not associated with requests
           */
          inline void checkBMI (int ret) { ALWAYS_ASSERT(ret >= 0); };
+
 
       public:
 
