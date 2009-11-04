@@ -366,7 +366,7 @@ static int zoidfs_posix_null(void)
  * This function retrieves the attributes associated with the file handle from
  * the ION.
  */
-static int zoidfs_posix_getattr(const zoidfs_handle_t *handle, zoidfs_attr_t *attr)
+static int zoidfs_posix_getattr(const zoidfs_handle_t *handle, zoidfs_attr_t *attr, zoidfs_op_hint_t * UNUSED(op_hint))
 {
    /* we could go for the fstat instead but that would open lots of files
     * without need */
@@ -416,7 +416,7 @@ static int zoidfs_posix_getattr(const zoidfs_handle_t *handle, zoidfs_attr_t *at
  * This function sets the attributes associated with the file handle.
  */
 static int zoidfs_posix_setattr(const zoidfs_handle_t *handle, const zoidfs_sattr_t *sattr,
-                   zoidfs_attr_t * rattr)
+                   zoidfs_attr_t * rattr, zoidfs_op_hint_t * op_hint)
 {
    char buf[ZOIDFS_PATH_MAX];
 
@@ -455,7 +455,7 @@ static int zoidfs_posix_setattr(const zoidfs_handle_t *handle, const zoidfs_satt
 
    if (rattr->mask & ZOIDFS_ATTR_ALL)
    {
-      int ret = zoidfs_getattr (handle, rattr);
+      int ret = zoidfs_getattr (handle, rattr, op_hint);
       if (ret != ZFS_OK)
          return ret;
    }
@@ -471,7 +471,7 @@ static int zoidfs_posix_setattr(const zoidfs_handle_t *handle, const zoidfs_satt
  * Buffer length is total buffer size.
  */
 static int zoidfs_posix_readlink(const zoidfs_handle_t *handle, char *buffer,
-                    size_t buffer_length)
+                    size_t buffer_length, zoidfs_op_hint_t * UNUSED(op_hint))
 {
    char buf[ZOIDFS_PATH_MAX];
    int ret;
@@ -697,7 +697,7 @@ int filename2handle (const struct stat * s, const char * buf, zoidfs_handle_t * 
  */
 static int zoidfs_posix_lookup(const zoidfs_handle_t *parent_handle,
                   const char *component_name, const char *full_path,
-                  zoidfs_handle_t * handle)
+                  zoidfs_handle_t * handle, zoidfs_op_hint_t * UNUSED(op_hint))
 {
    char newpath[ZOIDFS_PATH_MAX];
    struct stat s;
@@ -729,7 +729,7 @@ static int zoidfs_posix_lookup(const zoidfs_handle_t *parent_handle,
 static int zoidfs_posix_create(const zoidfs_handle_t *parent_handle,
                   const char *component_name, const char *full_path,
                   const zoidfs_sattr_t *sattr, zoidfs_handle_t *handle,
-                  int *created)
+                  int *created, zoidfs_op_hint_t * UNUSED(op_hint))
 {
    char newpath[ZOIDFS_PATH_MAX];
    int file;
@@ -780,7 +780,7 @@ static int zoidfs_posix_create(const zoidfs_handle_t *parent_handle,
  */
 static int zoidfs_posix_remove(const zoidfs_handle_t *parent_handle,
                   const char *component_name, const char *full_path,
-                  zoidfs_cache_hint_t * UNUSED(parent_hint))
+                  zoidfs_cache_hint_t * UNUSED(parent_hint), zoidfs_op_hint_t * UNUSED(op_hint))
 {
    char tmpbuf[ZOIDFS_PATH_MAX];
    const char * path = zoidfs_simplify_path (parent_handle, component_name,
@@ -811,7 +811,7 @@ static int zoidfs_posix_remove(const zoidfs_handle_t *parent_handle,
  * zoidfs_commit
  * This function flushes the buffers associated with the file handle.
  */
-static int zoidfs_posix_commit(const zoidfs_handle_t * UNUSED(handle))
+static int zoidfs_posix_commit(const zoidfs_handle_t * UNUSED(handle), zoidfs_op_hint_t * UNUSED(op_hint))
 {
    /* file descriptor interface is not buffered... */
    return ZFS_OK;
@@ -832,7 +832,8 @@ static int zoidfs_posix_rename(const zoidfs_handle_t *from_parent_handle,
                   const char *to_component_name,
                   const char *to_full_path,
                   zoidfs_cache_hint_t * UNUSED(from_parent_hint),
-                  zoidfs_cache_hint_t * UNUSED(to_parent_hint))
+                  zoidfs_cache_hint_t * UNUSED(to_parent_hint),
+                  zoidfs_op_hint_t * UNUSED(op_hint))
 {
    char p1[ZOIDFS_PATH_MAX];
    char p2[ZOIDFS_PATH_MAX];
@@ -864,7 +865,8 @@ static int zoidfs_posix_symlink(const zoidfs_handle_t *from_parent_handle,
                    const char *to_component_name,
                    const char *to_full_path, const zoidfs_sattr_t * UNUSED(sattr),
                    zoidfs_cache_hint_t * UNUSED(from_parent_hint),
-                   zoidfs_cache_hint_t * UNUSED(to_parent_hint))
+                   zoidfs_cache_hint_t * UNUSED(to_parent_hint),
+                   zoidfs_op_hint_t * UNUSED(op_hint))
 {
    char p1[ZOIDFS_PATH_MAX];
    char p2[ZOIDFS_PATH_MAX];
@@ -894,7 +896,8 @@ static int zoidfs_posix_link(const zoidfs_handle_t * from_parent_handle /* in:pt
                    const char * to_component_name /* in:str:nullok */,
                    const char * to_full_path /* in:str:nullok */,
                    zoidfs_cache_hint_t * UNUSED(from_parent_hint) /* out:ptr:nullok */,
-                   zoidfs_cache_hint_t * UNUSED(to_parent_hint) /* out:ptr:nullok */)
+                   zoidfs_cache_hint_t * UNUSED(to_parent_hint) /* out:ptr:nullok */,
+                   zoidfs_op_hint_t * UNUSED(op_hint))
 {
    char p1[ZOIDFS_PATH_MAX];
    char p2[ZOIDFS_PATH_MAX];
@@ -925,7 +928,8 @@ static int zoidfs_posix_link(const zoidfs_handle_t * from_parent_handle /* in:pt
 static int zoidfs_posix_mkdir(const zoidfs_handle_t *parent_handle,
                  const char *component_name, const char *full_path,
                  const zoidfs_sattr_t *sattr,
-                 zoidfs_cache_hint_t * UNUSED(parent_hint))
+                 zoidfs_cache_hint_t * UNUSED(parent_hint),
+                 zoidfs_op_hint_t * UNUSED(op_hint))
 {
    char tmpbuf[ZOIDFS_PATH_MAX];
    int mode;
@@ -954,7 +958,7 @@ static int zoidfs_posix_readdir(const zoidfs_handle_t * handle,
                    zoidfs_dirent_cookie_t cookie, size_t *entry_count,
                    zoidfs_dirent_t *entries,
                    uint32_t flags,
-                   zoidfs_cache_hint_t * UNUSED(parent_hint))
+                   zoidfs_cache_hint_t * UNUSED(parent_hint), zoidfs_op_hint_t * op_hint)
 {
    char buf[ZOIDFS_PATH_MAX];
    char fullbuf[ZOIDFS_PATH_MAX];
@@ -1012,7 +1016,7 @@ static int zoidfs_posix_readdir(const zoidfs_handle_t * handle,
 
       if (flags & ZOIDFS_ATTR_ALL)
       {
-         int ret = zoidfs_getattr (&entries[ok].handle, &entries[ok].attr);
+         int ret = zoidfs_getattr (&entries[ok].handle, &entries[ok].attr, op_hint);
          if (ret != ZFS_OK)
          {
             free (e);
@@ -1036,7 +1040,7 @@ static int zoidfs_posix_readdir(const zoidfs_handle_t * handle,
  * zoidfs_resize
  * This function resizes the file associated with the file handle.
  */
-static int zoidfs_posix_resize(const zoidfs_handle_t *handle, uint64_t size)
+static int zoidfs_posix_resize(const zoidfs_handle_t *handle, uint64_t size, zoidfs_op_hint_t * UNUSED(op_hint))
 {
    char buf[ZOIDFS_PATH_MAX];
 
@@ -1062,7 +1066,8 @@ static inline int safewrite (int fd, const void * buf, size_t count,
 static inline int zoidfs_generic_access (const zoidfs_handle_t *handle, int mem_count,
                  void *mem_starts[], const size_t mem_sizes[],
                  int file_count, const uint64_t file_starts[],
-                 uint64_t file_sizes[], int write)
+                 uint64_t file_sizes[], int write,
+                 zoidfs_op_hint_t * UNUSED(op_hint))
 {
    int err;
    int file;
@@ -1130,10 +1135,10 @@ static inline int zoidfs_generic_access (const zoidfs_handle_t *handle, int mem_
 static int zoidfs_posix_write(const zoidfs_handle_t *handle, size_t mem_count,
                  const void *mem_starts[], const size_t mem_sizes[],
                  size_t file_count, const uint64_t file_starts[],
-                 uint64_t file_sizes[])
+                 uint64_t file_sizes[], zoidfs_op_hint_t * op_hint)
 {
     return zoidfs_generic_access (handle, mem_count,
-          (void ** ) mem_starts, mem_sizes, file_count, file_starts, file_sizes, 1);
+          (void ** ) mem_starts, mem_sizes, file_count, file_starts, file_sizes, 1, op_hint);
 }
 
 
@@ -1143,10 +1148,10 @@ static int zoidfs_posix_write(const zoidfs_handle_t *handle, size_t mem_count,
  */
 static int zoidfs_posix_read(const zoidfs_handle_t *handle, size_t mem_count,
                 void *mem_starts[], const size_t mem_sizes[], size_t file_count,
-                const uint64_t file_starts[], uint64_t file_sizes[])
+                const uint64_t file_starts[], uint64_t file_sizes[], zoidfs_op_hint_t * op_hint)
 {
     return zoidfs_generic_access (handle, mem_count,
-          mem_starts, mem_sizes, file_count, file_starts, file_sizes, 0);
+          mem_starts, mem_sizes, file_count, file_starts, file_sizes, 0, op_hint);
 }
 
 
