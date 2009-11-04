@@ -1,5 +1,4 @@
-
-#include <errno.h>`
+#include <errno.h>
 #include "zoidfs/zoidfs.h"
 #include "../zint-handler.h"
 #include "c-util/tools.h"
@@ -165,8 +164,7 @@ static int zint_local_resolve_path(const char * UNUSED(local_path),
                             char * UNUSED(fs_path),
                             int UNUSED(fs_path_max),
                             zoidfs_handle_t * UNUSED(newhandle),
-                            int * UNUSED(usenew),
-                            zoidfs_op_hint_t * UNUSED(op_hint))
+                            int * UNUSED(usenew))
 {
     return ZFSERR_NOENT;
 }

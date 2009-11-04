@@ -1191,7 +1191,7 @@ static int zint_pvfs2_readdir(const zoidfs_handle_t * parent_handle,
 }
 
 static int zint_pvfs2_resize(const zoidfs_handle_t * handle, uint64_t size,
-                      zoidfs_op_hint_t * op_hint)
+                      zoidfs_op_hint_t * UNUSED(op_hint))
 {
     int ret;
     PVFS_object_ref ref;
