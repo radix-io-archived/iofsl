@@ -13,6 +13,7 @@
 
 #include <stdint.h>
 #include <stddef.h>
+//#include <zoidfs/hints/zoidfs-hints.h>
 
 #ifdef __cplusplus
 /*
@@ -145,6 +146,42 @@ typedef struct
     zoidfs_dirent_cookie_t cookie;
 } zoidfs_dirent_t;
 
+/*
+ * hint data structures
+ */
+
+/* type of data stored in the hint */
+typedef enum
+{
+    ZOIDFS_HINT_TYPE_CHAR = 0,
+    ZOIDFS_HINT_TYPE_INT = 1,
+    ZOIDFS_HINT_TYPE_DOUBLE = 2,
+
+    /* max number of hint types */
+    ZOIDFS_HINT_TYPE_MAX = 3
+} zoidfs_op_hint_type_t;
+
+/* node in the hint linked list */
+typedef struct zoidfs_op_hint_s
+{
+    char * key;
+    char * value;
+    int value_len;
+    struct zoidfs_op_hint_s * next;
+    zoidfs_op_hint_type_t type;
+    void (*encode)(char **pptr, void *value);
+    void (*decode)(char **pptr, void *value);
+} zoidfs_op_hint_t;
+
+/* flag for no hints */
+#define ZOIDFS_NO_OP_HINT NULL
+
+/* zoidfs hint helper flags */
+#define ZOIDFS_HINTS_NONE 0
+#define ZOIDFS_HINTS_ZC (1 << 0)
+#define ZOIDFS_HINTS_REUSE_HINT (1 << 1)
+#define ZOIDFS_HINTS_REUSE_KEY (1 << 2)
+
 /**
  * XXX: These need to be sorted by severity
  */
@@ -202,7 +239,8 @@ int zoidfs_null(void);
  *     Other fields are ignored on input.
  */
 int zoidfs_getattr(const zoidfs_handle_t * handle /* in:ptr */,
-                   zoidfs_attr_t * attr /* inout:ptr */);
+                   zoidfs_attr_t * attr /* inout:ptr */,
+                   zoidfs_op_hint_t * op_hint /* inout:ptr:nullok */);
 
 /*
  * NOTE: 
@@ -212,12 +250,14 @@ int zoidfs_getattr(const zoidfs_handle_t * handle /* in:ptr */,
  */
 int zoidfs_setattr(const zoidfs_handle_t * handle /* in:ptr */,
                    const zoidfs_sattr_t * sattr /* in:ptr */,
-                   zoidfs_attr_t * attr /* inout:ptr:nullok */);
+                   zoidfs_attr_t * attr /* inout:ptr:nullok */,
+                   zoidfs_op_hint_t * op_hint /* inout:ptr:nullok */);
 
 int zoidfs_lookup(const zoidfs_handle_t * parent_handle /* in:ptr:nullok */,
                   const char * component_name /* in:str:nullok */,
                   const char * full_path /* in:str:nullok */,
-                  zoidfs_handle_t * handle /* out:ptr */);
+                  zoidfs_handle_t * handle /* out:ptr */,
+                  zoidfs_op_hint_t * op_hint /* inout:ptr:nullok */);
 
 /**
  * NOTE: buffer_length is the total buffer size, so at most 
@@ -226,7 +266,8 @@ int zoidfs_lookup(const zoidfs_handle_t * parent_handle /* in:ptr:nullok */,
  */
 int zoidfs_readlink(const zoidfs_handle_t * handle /* in:ptr */,
                     char * buffer /* out:arr:size=+1 */,
-                    size_t buffer_length /* in:obj */);
+                    size_t buffer_length /* in:obj */,
+                    zoidfs_op_hint_t * op_hint /* inout:ptr:nullok */);
 
 int zoidfs_read(const zoidfs_handle_t * handle /* in:ptr */,
                 size_t mem_count /* in:obj */,
@@ -234,7 +275,8 @@ int zoidfs_read(const zoidfs_handle_t * handle /* in:ptr */,
                 const size_t mem_sizes[] /* in:arr:size=-2 */,
                 size_t file_count /* in:obj */,
                 const zoidfs_file_ofs_t file_starts[] /* in:arr:size=-1 */,
-                zoidfs_file_size_t file_sizes[] /* inout:arr:size=-2 */);
+                zoidfs_file_size_t file_sizes[] /* inout:arr:size=-2 */,
+                zoidfs_op_hint_t * op_hint /* inout:ptr:nullok */);
 
 int zoidfs_write(const zoidfs_handle_t * handle /* in:ptr */,
                  size_t mem_count /* in:obj */,
@@ -242,9 +284,11 @@ int zoidfs_write(const zoidfs_handle_t * handle /* in:ptr */,
                  const size_t mem_sizes[] /* in:arr:size=-2 */,
                  size_t file_count /* in:obj */,
                  const zoidfs_file_ofs_t file_starts[] /* in:arr:size=-1 */,
-                 zoidfs_file_size_t file_sizes[] /* inout:arr:size=-2 */);
+                 zoidfs_file_size_t file_sizes[] /* inout:arr:size=-2 */,
+                 zoidfs_op_hint_t * op_hint /* inout:ptr:nullok */);
 
-int zoidfs_commit(const zoidfs_handle_t * handle /* in:ptr */);
+int zoidfs_commit(const zoidfs_handle_t * handle /* in:ptr */,
+                  zoidfs_op_hint_t * op_hint /* inout:ptr:nullok */);
 
 /**
  * NOTE: if the file already exists zoidfs_create will lookup the handle 
@@ -255,12 +299,14 @@ int zoidfs_create(const zoidfs_handle_t * parent_handle /* in:ptr:nullok */,
                   const char * full_path /* in:str:nullok */,
                   const zoidfs_sattr_t * attr /* in:ptr */,
                   zoidfs_handle_t * handle /* out:ptr */,
-                  int * created /* out:ptr:nullok */);
+                  int * created /* out:ptr:nullok */,
+                  zoidfs_op_hint_t * op_hint /* inout:ptr:nullok */);
 
 int zoidfs_remove(const zoidfs_handle_t * parent_handle /* in:ptr:nullok */,
                   const char * component_name /* in:str:nullok */,
                   const char * full_path /* in:str:nullok */,
-                  zoidfs_cache_hint_t * parent_hint /* out:ptr:nullok */);
+                  zoidfs_cache_hint_t * parent_hint /* out:ptr:nullok */,
+                  zoidfs_op_hint_t * op_hint /* inout:ptr:nullok */);
 
 int zoidfs_rename(const zoidfs_handle_t * from_parent_handle /* in:ptr:nullok */,
                   const char * from_component_name /* in:str:nullok */,
@@ -269,7 +315,8 @@ int zoidfs_rename(const zoidfs_handle_t * from_parent_handle /* in:ptr:nullok */
                   const char * to_component_name /* in:str:nullok */,
                   const char * to_full_path /* in:str:nullok */,
                   zoidfs_cache_hint_t * from_parent_hint /* out:ptr:nullok */,
-                  zoidfs_cache_hint_t * to_parent_hint /* out:ptr:nullok */);
+                  zoidfs_cache_hint_t * to_parent_hint /* out:ptr:nullok */,
+                  zoidfs_op_hint_t * op_hint /* inout:ptr:nullok */);
 
 int zoidfs_link(const zoidfs_handle_t * from_parent_handle /* in:ptr:nullok */,
                 const char * from_component_name /* in:str:nullok */,
@@ -278,7 +325,8 @@ int zoidfs_link(const zoidfs_handle_t * from_parent_handle /* in:ptr:nullok */,
                 const char * to_component_name /* in:str:nullok */,
                 const char * to_full_path /* in:str:nullok */,
                 zoidfs_cache_hint_t * from_parent_hint /* out:ptr:nullok */,
-                zoidfs_cache_hint_t * to_parent_hint /* out:ptr:nullok */);
+                zoidfs_cache_hint_t * to_parent_hint /* out:ptr:nullok */,
+                zoidfs_op_hint_t * op_hint /* inout:ptr:nullok */);
 
 int zoidfs_symlink(const zoidfs_handle_t * from_parent_handle /* in:ptr:nullok */,
                    const char * from_component_name /* in:str:nullok */,
@@ -288,13 +336,15 @@ int zoidfs_symlink(const zoidfs_handle_t * from_parent_handle /* in:ptr:nullok *
                    const char * to_full_path /* in:str:nullok */,
                    const zoidfs_sattr_t * attr /* in:ptr */,
                    zoidfs_cache_hint_t * from_parent_hint /* out:ptr:nullok */,
-                   zoidfs_cache_hint_t * to_parent_hint /* out:ptr:nullok */);
+                   zoidfs_cache_hint_t * to_parent_hint /* out:ptr:nullok */,
+                   zoidfs_op_hint_t * op_hint /* inout:ptr:nullok */);
 
 int zoidfs_mkdir(const zoidfs_handle_t * parent_handle /* in:ptr:nullok */,
                  const char * component_name /* in:str:nullok */,
                  const char * full_path /* in:str:nullok */,
                  const zoidfs_sattr_t * attr /* in:ptr */,
-                 zoidfs_cache_hint_t * parent_hint /* out:ptr:nullok */);
+                 zoidfs_cache_hint_t * parent_hint /* out:ptr:nullok */,
+                 zoidfs_op_hint_t * op_hint /* inout:ptr:nullok */);
 
 /**
  * NOTE: 
@@ -310,10 +360,12 @@ int zoidfs_readdir(const zoidfs_handle_t * parent_handle /* in:ptr */,
                    size_t * entry_count /* inout:ptr */,
                    zoidfs_dirent_t * entries /* out:arr:size=-1 */,
                    uint32_t flags /* in:obj */,
-                   zoidfs_cache_hint_t * parent_hint /* out:ptr:nullok */);
+                   zoidfs_cache_hint_t * parent_hint /* out:ptr:nullok */,
+                   zoidfs_op_hint_t * op_hint /* inout:ptr:nullok */);
 
 int zoidfs_resize(const zoidfs_handle_t * handle /* in:ptr */,
-                  uint64_t size /* in:obj */);
+                  uint64_t size /* in:obj */,
+                  zoidfs_op_hint_t * op_hint /* inout:ptr:nullok */);
 
 /* 
  * zoidfs profile api
@@ -327,20 +379,24 @@ int Pzoidfs_finalize(void);
 int Pzoidfs_null(void);
 
 int Pzoidfs_getattr(const zoidfs_handle_t * handle /* in:ptr */,
-                   zoidfs_attr_t * attr /* inout:ptr */);
+                   zoidfs_attr_t * attr /* inout:ptr */,
+                   zoidfs_op_hint_t * op_hint /* inout:ptr:nullok */);
 
 int Pzoidfs_setattr(const zoidfs_handle_t * handle /* in:ptr */,
                    const zoidfs_sattr_t * sattr /* in:ptr */,
-                   zoidfs_attr_t * attr /* inout:ptr:nullok */);
+                   zoidfs_attr_t * attr /* inout:ptr:nullok */,
+                   zoidfs_op_hint_t * op_hint /* inout:ptr:nullok */);
 
 int Pzoidfs_readlink(const zoidfs_handle_t * handle /* in:ptr */,
                     char * buffer /* out:arr:size=+1 */,
-                    size_t buffer_length /* in:obj */);
+                    size_t buffer_length /* in:obj */,
+                    zoidfs_op_hint_t * op_hint /* inout:ptr:nullok */);
 
 int Pzoidfs_lookup(const zoidfs_handle_t * parent_handle /* in:ptr:nullok */,
                   const char * component_name /* in:str:nullok */,
                   const char * full_path /* in:str:nullok */,
-                  zoidfs_handle_t * handle /* out:ptr */);
+                  zoidfs_handle_t * handle /* out:ptr */,
+                  zoidfs_op_hint_t * op_hint /* inout:ptr:nullok */);
 
 int Pzoidfs_read(const zoidfs_handle_t * handle /* in:ptr */,
                 size_t mem_count /* in:obj */,
@@ -348,7 +404,8 @@ int Pzoidfs_read(const zoidfs_handle_t * handle /* in:ptr */,
                 const size_t mem_sizes[] /* in:arr:size=-2 */,
                 size_t file_count /* in:obj */,
                 const zoidfs_file_ofs_t file_starts[] /* in:arr:size=-1 */,
-                zoidfs_file_size_t file_sizes[] /* inout:arr:size=-2 */);
+                zoidfs_file_size_t file_sizes[] /* inout:arr:size=-2 */,
+                zoidfs_op_hint_t * op_hint /* inout:ptr:nullok */);
 
 int Pzoidfs_write(const zoidfs_handle_t * handle /* in:ptr */,
                  size_t mem_count /* in:obj */,
@@ -356,21 +413,25 @@ int Pzoidfs_write(const zoidfs_handle_t * handle /* in:ptr */,
                  const size_t mem_sizes[] /* in:arr:size=-2 */,
                  size_t file_count /* in:obj */,
                  const zoidfs_file_ofs_t file_starts[] /* in:arr:size=-1 */,
-                 zoidfs_file_size_t file_sizes[] /* inout:arr:size=-2 */);
+                 zoidfs_file_size_t file_sizes[] /* inout:arr:size=-2 */,
+                 zoidfs_op_hint_t * op_hint /* inout:ptr:nullok */);
 
-int Pzoidfs_commit(const zoidfs_handle_t * handle /* in:ptr */);
+int Pzoidfs_commit(const zoidfs_handle_t * handle /* in:ptr */,
+                   zoidfs_op_hint_t * op_hint /* inout:ptr:nullok */);
 
 int Pzoidfs_create(const zoidfs_handle_t * parent_handle /* in:ptr:nullok */,
                   const char * component_name /* in:str:nullok */,
                   const char * full_path /* in:str:nullok */,
                   const zoidfs_sattr_t * attr /* in:ptr */,
                   zoidfs_handle_t * handle /* out:ptr */,
-                  int * created /* out:ptr:nullok */);
+                  int * created /* out:ptr:nullok */,
+                  zoidfs_op_hint_t * op_hint /* inout:ptr:nullok */);
 
 int Pzoidfs_remove(const zoidfs_handle_t * parent_handle /* in:ptr:nullok */,
                   const char * component_name /* in:str:nullok */,
                   const char * full_path /* in:str:nullok */,
-                  zoidfs_cache_hint_t * parent_hint /* out:ptr:nullok */);
+                  zoidfs_cache_hint_t * parent_hint /* out:ptr:nullok */,
+                  zoidfs_op_hint_t * op_hint /* inout:ptr:nullok */);
 
 int Pzoidfs_rename(const zoidfs_handle_t * from_parent_handle /* in:ptr:nullok */,
                   const char * from_component_name /* in:str:nullok */,
@@ -379,7 +440,8 @@ int Pzoidfs_rename(const zoidfs_handle_t * from_parent_handle /* in:ptr:nullok *
                   const char * to_component_name /* in:str:nullok */,
                   const char * to_full_path /* in:str:nullok */,
                   zoidfs_cache_hint_t * from_parent_hint /* out:ptr:nullok */,
-                  zoidfs_cache_hint_t * to_parent_hint /* out:ptr:nullok */);
+                  zoidfs_cache_hint_t * to_parent_hint /* out:ptr:nullok */,
+                  zoidfs_op_hint_t * op_hint /* inout:ptr:nullok */);
 
 int Pzoidfs_link(const zoidfs_handle_t * from_parent_handle /* in:ptr:nullok */,
                 const char * from_component_name /* in:str:nullok */,
@@ -388,7 +450,8 @@ int Pzoidfs_link(const zoidfs_handle_t * from_parent_handle /* in:ptr:nullok */,
                 const char * to_component_name /* in:str:nullok */,
                 const char * to_full_path /* in:str:nullok */,
                 zoidfs_cache_hint_t * from_parent_hint /* out:ptr:nullok */,
-                zoidfs_cache_hint_t * to_parent_hint /* out:ptr:nullok */);
+                zoidfs_cache_hint_t * to_parent_hint /* out:ptr:nullok */,
+                zoidfs_op_hint_t * op_hint /* inout:ptr:nullok */);
 
 int Pzoidfs_symlink(const zoidfs_handle_t * from_parent_handle /* in:ptr:nullok */,
                    const char * from_component_name /* in:str:nullok */,
@@ -398,23 +461,27 @@ int Pzoidfs_symlink(const zoidfs_handle_t * from_parent_handle /* in:ptr:nullok 
                    const char * to_full_path /* in:str:nullok */,
                    const zoidfs_sattr_t * attr /* in:ptr */,
                    zoidfs_cache_hint_t * from_parent_hint /* out:ptr:nullok */,
-                   zoidfs_cache_hint_t * to_parent_hint /* out:ptr:nullok */);
+                   zoidfs_cache_hint_t * to_parent_hint /* out:ptr:nullok */,
+                   zoidfs_op_hint_t * op_hint /* inout:ptr:nullok */);
 
 int Pzoidfs_mkdir(const zoidfs_handle_t * parent_handle /* in:ptr:nullok */,
                  const char * component_name /* in:str:nullok */,
                  const char * full_path /* in:str:nullok */,
                  const zoidfs_sattr_t * attr /* in:ptr */,
-                 zoidfs_cache_hint_t * parent_hint /* out:ptr:nullok */);
+                 zoidfs_cache_hint_t * parent_hint /* out:ptr:nullok */,
+                 zoidfs_op_hint_t * op_hint /* inout:ptr:nullok */);
 
 int Pzoidfs_readdir(const zoidfs_handle_t * parent_handle /* in:ptr */,
                    zoidfs_dirent_cookie_t cookie /* in:obj */,
                    size_t * entry_count /* inout:ptr */,
                    zoidfs_dirent_t * entries /* out:arr:size=-1 */,
                    uint32_t flags /* in:obj */,
-                   zoidfs_cache_hint_t * parent_hint /* out:ptr:nullok */);
+                   zoidfs_cache_hint_t * parent_hint /* out:ptr:nullok */,
+                   zoidfs_op_hint_t * op_hint /* inout:ptr:nullok */);
 
 int Pzoidfs_resize(const zoidfs_handle_t * handle /* in:ptr */,
-                  uint64_t size /* in:obj */);
+                  uint64_t size /* in:obj */,
+                  zoidfs_op_hint_t * op_hint /* inout:ptr:nullok */);
 
 
 #ifdef __cplusplus
