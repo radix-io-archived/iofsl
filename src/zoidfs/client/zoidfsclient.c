@@ -11,7 +11,7 @@
 #include <bmi.h>
 #include "zoidfs/zoidfs.h"
 #include "bmi_comm.h"
-#include "mpi_comm.h"
+/*#include "mpi_comm.h"*/
 #include "zoidfs_xdr.h"
 #include "zoidfs/zoidfs-proto.h"
 #include "zoidfs/hints/zoidfs-hints.h"
