@@ -10,7 +10,7 @@
 
 #include "iofwd_config.h"
 #include "zoidfs_xdr.h"
-
+#include "zoidfs/hints/zoidfs-hints.h"
 
 /* round up to next multiple of 4 */
 
@@ -194,6 +194,36 @@ bool_t xdr_zoidfs_cache_hint_t(XDR *xdrs, zoidfs_cache_hint_t *hint) {
     return(ret);
 }
 
+/*
+ * zdr_zoidfs_op_hint_t
+ * Encode / decode zoidfs_op_hint_t using XDR
+ */
+bool_t xdr_zoidfs_op_hint_element_t(XDR *xdrs, zoidfs_op_hint_t *hint) {
+    bool_t ret;
+    char * key = &hint->key[0]; 
+    char * value = &hint->value[0]; 
+    int value_len = hint->value_len;
+    int key_len = strlen(key) + 1;
+    
+    ret = xdr_int(xdrs, &key_len); 
+    ret = ret && xdr_string(xdrs, &key, key_len);
+    ret = ret && xdr_int(xdrs, &value_len); 
+    ret = ret && xdr_string(xdrs, &value, value_len);
+
+    return(ret);
+}
+
+bool_t xdr_zoidfs_op_hint_t(XDR *xdrs, zoidfs_op_hint_t ** hint) {
+    bool_t ret = 1;
+    int hint_size = zoidfs_hint_num_elements(hint);
+    int i = 0;
+    for(i = 0 ; i < hint_size ; i++)
+    {
+        zoidfs_op_hint_t * cur_hint = zoidfs_hint_index(hint, i);
+        ret = ret && xdr_zoidfs_op_hint_element_t(xdrs, cur_hint); 
+    }
+    return ret;
+}
 
 /*
  * xdr_zoidfs_sattr_t

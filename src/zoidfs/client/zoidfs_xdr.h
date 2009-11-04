@@ -16,6 +16,7 @@
 #include<sys/time.h>
 
 #include "zoidfs/zoidfs.h"
+#include "zoidfs/hints/zoidfs-hints.h"
 #include "zoidfs/zoidfs-proto.h"
 
 
@@ -45,6 +46,8 @@ bool_t xdr_zoidfs_handle_t(XDR *, const zoidfs_handle_t *);
 bool_t xdr_zoidfs_dirent_t(XDR *, zoidfs_dirent_t *);
 bool_t xdr_zoidfs_attr_type_t(XDR *, zoidfs_attr_type_t *);
 bool_t xdr_zoidfs_cache_hint_t(XDR *, zoidfs_cache_hint_t *);
+bool_t xdr_zoidfs_op_hint_t(XDR *, zoidfs_op_hint_t **);
+bool_t xdr_zoidfs_op_hint_element_t(XDR *, zoidfs_op_hint_t *);
 bool_t xdr_zoidfs_null_param_t(XDR *, zoidfs_null_param_t *);
 bool_t xdr_size_t(XDR *, size_t *);
 bool_t xdr_zoidfs_file_ofs_t(XDR *, zoidfs_file_ofs_t *);
