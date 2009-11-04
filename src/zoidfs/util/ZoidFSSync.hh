@@ -20,20 +20,24 @@ public:
       virtual inline int null(void) ;
 
       virtual inline int getattr(const zoidfs_handle_t * handle,
-            zoidfs_attr_t * attr) ;
+            zoidfs_attr_t * attr,
+            zoidfs_op_hint_t * op_hint) ;
 
       virtual inline int setattr(const zoidfs_handle_t * handle,
             const zoidfs_sattr_t * sattr,
-            zoidfs_attr_t * attr) ;
+            zoidfs_attr_t * attri,
+            zoidfs_op_hint_t * op_hint) ;
 
       virtual inline int lookup(const zoidfs_handle_t * parent_handle,
             const char * component_name,
             const char * full_path,
-            zoidfs_handle_t * handle) ;
+            zoidfs_handle_t * handle,
+            zoidfs_op_hint_t * op_hint) ;
 
       virtual inline int readlink(const zoidfs_handle_t * handle,
             char * buffer,
-            size_t buffer_length) ;
+            size_t buffer_length,
+            zoidfs_op_hint_t * op_hint) ;
 
       virtual inline int read(const zoidfs_handle_t * handle,
             size_t mem_count,
@@ -41,7 +45,8 @@ public:
             const size_t mem_sizes[],
             size_t file_count,
             const uint64_t file_starts[],
-            uint64_t file_sizes[]) ;
+            uint64_t file_sizes[],
+            zoidfs_op_hint_t * op_hint) ;
 
       virtual inline int write(const zoidfs_handle_t * handle,
             size_t mem_count,
@@ -49,21 +54,25 @@ public:
             const size_t mem_sizes[],
             size_t file_count,
             const uint64_t file_starts[],
-            uint64_t file_sizes[]) ;
+            uint64_t file_sizes[],
+            zoidfs_op_hint_t * op_hint) ;
 
-      virtual inline int commit(const zoidfs_handle_t * handle) ;
+      virtual inline int commit(const zoidfs_handle_t * handle,
+            zoidfs_op_hint_t * op_hint) ;
 
       virtual inline int create(const zoidfs_handle_t * parent_handle,
             const char * component_name,
             const char * full_path,
             const zoidfs_sattr_t * attr,
             zoidfs_handle_t * handle,
-            int * created) ;
+            int * created,
+            zoidfs_op_hint_t * op_hint) ;
 
       virtual inline int remove(const zoidfs_handle_t * parent_handle,
             const char * component_name,
             const char * full_path,
-            zoidfs_cache_hint_t * parent_hint) ;
+            zoidfs_cache_hint_t * parent_hint,
+            zoidfs_op_hint_t * op_hint) ;
 
       virtual inline int rename(const zoidfs_handle_t * from_parent_handle,
             const char * from_component_name,
@@ -72,7 +81,8 @@ public:
             const char * to_component_name,
             const char * to_full_path,
             zoidfs_cache_hint_t * from_parent_hint,
-            zoidfs_cache_hint_t * to_parent_hint) ;
+            zoidfs_cache_hint_t * to_parent_hint,
+            zoidfs_op_hint_t * op_hint) ;
 
       virtual inline int link(const zoidfs_handle_t * from_parent_handle,
             const char * from_component_name,
@@ -81,7 +91,8 @@ public:
             const char * to_component_name,
             const char * to_full_path,
             zoidfs_cache_hint_t * from_parent_hint,
-            zoidfs_cache_hint_t * to_parent_hint) ;
+            zoidfs_cache_hint_t * to_parent_hint,
+            zoidfs_op_hint_t * op_hint) ;
 
 
       virtual inline int symlink(const zoidfs_handle_t * from_parent_handle,
@@ -92,23 +103,27 @@ public:
             const char * to_full_path,
             const zoidfs_sattr_t * attr,
             zoidfs_cache_hint_t * from_parent_hint,
-            zoidfs_cache_hint_t * to_parent_hint) ;
+            zoidfs_cache_hint_t * to_parent_hint,
+            zoidfs_op_hint_t * op_hint) ;
 
       virtual inline int mkdir(const zoidfs_handle_t * parent_handle,
             const char * component_name,
             const char * full_path,
             const zoidfs_sattr_t * attr,
-            zoidfs_cache_hint_t * parent_hint) ;
+            zoidfs_cache_hint_t * parent_hint,
+            zoidfs_op_hint_t * op_hint) ;
 
       virtual inline int readdir(const zoidfs_handle_t * parent_handle,
             zoidfs_dirent_cookie_t cookie,
             size_t * entry_count,
             zoidfs_dirent_t * entries,
             uint32_t flags,
-            zoidfs_cache_hint_t * parent_hint) ;
+            zoidfs_cache_hint_t * parent_hint,
+            zoidfs_op_hint_t * op_hint) ;
 
       virtual inline int resize(const zoidfs_handle_t * handle,
-            uint64_t size) ; 
+            uint64_t size,
+            zoidfs_op_hint_t * op_hint) ; 
 
 
    virtual ~ZoidFSSync (); 
@@ -132,33 +147,37 @@ inline int ZoidFSSync::null(void)
 }
 
 inline int ZoidFSSync::getattr(const zoidfs_handle_t * handle,
-   zoidfs_attr_t * attr) 
+   zoidfs_attr_t * attr,
+   zoidfs_op_hint_t * op_hint) 
 {
-   return zoidfs::zoidfs_getattr (handle, attr); 
+   return zoidfs::zoidfs_getattr (handle, attr, op_hint); 
 }
 
 inline int ZoidFSSync::setattr(const zoidfs_handle_t * handle,
    const zoidfs_sattr_t * sattr,
-   zoidfs_attr_t * attr)
+   zoidfs_attr_t * attr,
+   zoidfs_op_hint_t * op_hint)
 {
-   return zoidfs::zoidfs_setattr (handle, sattr, attr); 
+   return zoidfs::zoidfs_setattr (handle, sattr, attr, op_hint); 
 }
 
 
 inline int ZoidFSSync::lookup(const zoidfs_handle_t * parent_handle,
    const char * component_name,
    const char * full_path,
-   zoidfs_handle_t * handle)
+   zoidfs_handle_t * handle,
+   zoidfs_op_hint_t * op_hint)
 {
    return zoidfs::zoidfs_lookup (parent_handle, component_name, full_path,
-         handle); 
+         handle, op_hint); 
 }
 
 inline int ZoidFSSync::readlink(const zoidfs_handle_t * handle,
    char * buffer,
-   size_t buffer_length) 
+   size_t buffer_length,
+   zoidfs_op_hint_t * op_hint) 
 {
-   return zoidfs::zoidfs_readlink (handle, buffer, buffer_length); 
+   return zoidfs::zoidfs_readlink (handle, buffer, buffer_length, op_hint); 
 }
 
 inline int ZoidFSSync::read(const zoidfs_handle_t * handle,
@@ -167,10 +186,11 @@ inline int ZoidFSSync::read(const zoidfs_handle_t * handle,
    const size_t mem_sizes[],
    size_t file_count,
    const uint64_t file_starts[],
-   uint64_t file_sizes[]) 
+   uint64_t file_sizes[],
+   zoidfs_op_hint_t * op_hint) 
 {
    return zoidfs::zoidfs_read (handle, mem_count, mem_starts, mem_sizes,
-         file_count, file_starts, file_sizes); 
+         file_count, file_starts, file_sizes, op_hint); 
 }
 
 inline int ZoidFSSync::write(const zoidfs_handle_t * handle,
@@ -179,15 +199,17 @@ inline int ZoidFSSync::write(const zoidfs_handle_t * handle,
    const size_t mem_sizes[],
    size_t file_count,
    const uint64_t file_starts[],
-   uint64_t file_sizes[]) 
+   uint64_t file_sizes[],
+   zoidfs_op_hint_t * op_hint) 
 {
    return zoidfs::zoidfs_write (handle, mem_count, mem_starts,
-         mem_sizes, file_count, file_starts, file_sizes); 
+         mem_sizes, file_count, file_starts, file_sizes, op_hint); 
 }
 
-inline int ZoidFSSync::commit(const zoidfs_handle_t * handle)
+inline int ZoidFSSync::commit(const zoidfs_handle_t * handle,
+   zoidfs_op_hint_t * op_hint)
 {
-   return zoidfs::zoidfs_commit (handle); 
+   return zoidfs::zoidfs_commit (handle, op_hint); 
 }
 
 inline int ZoidFSSync::create(const zoidfs_handle_t * parent_handle,
@@ -195,19 +217,21 @@ inline int ZoidFSSync::create(const zoidfs_handle_t * parent_handle,
    const char * full_path,
    const zoidfs_sattr_t * attr,
    zoidfs_handle_t * handle,
-   int * created)
+   int * created,
+   zoidfs_op_hint_t * op_hint)
 {
    return zoidfs::zoidfs_create (parent_handle, component_name,
-         full_path, attr, handle, created); 
+         full_path, attr, handle, created, op_hint); 
 }
 
 inline int ZoidFSSync::remove(const zoidfs_handle_t * parent_handle,
    const char * component_name,
    const char * full_path,
-   zoidfs_cache_hint_t * parent_hint) 
+   zoidfs_cache_hint_t * parent_hint,
+   zoidfs_op_hint_t * op_hint) 
 {
    return zoidfs::zoidfs_remove (parent_handle, component_name, full_path,
-         parent_hint); 
+         parent_hint, op_hint); 
 }
 
 inline int ZoidFSSync::rename(const zoidfs_handle_t * from_parent_handle,
@@ -217,11 +241,12 @@ inline int ZoidFSSync::rename(const zoidfs_handle_t * from_parent_handle,
    const char * to_component_name,
    const char * to_full_path,
    zoidfs_cache_hint_t * from_parent_hint,
-   zoidfs_cache_hint_t * to_parent_hint)
+   zoidfs_cache_hint_t * to_parent_hint,
+   zoidfs_op_hint_t * op_hint)
 {
    return zoidfs::zoidfs_rename (from_parent_handle, from_component_name, 
          from_full_path, to_parent_handle, to_component_name, to_full_path,
-         from_parent_hint, to_parent_hint); 
+         from_parent_hint, to_parent_hint, op_hint); 
 }
 
 inline int ZoidFSSync::link(const zoidfs_handle_t * from_parent_handle,
@@ -231,12 +256,13 @@ inline int ZoidFSSync::link(const zoidfs_handle_t * from_parent_handle,
    const char * to_component_name,
    const char * to_full_path,
    zoidfs_cache_hint_t * from_parent_hint,
-   zoidfs_cache_hint_t * to_parent_hint)
+   zoidfs_cache_hint_t * to_parent_hint,
+   zoidfs_op_hint_t * op_hint)
 {
    return zoidfs::zoidfs_link (from_parent_handle, 
          from_component_name, from_full_path,
          to_parent_handle, to_component_name, to_full_path, from_parent_hint,
-         to_parent_hint); 
+         to_parent_hint, op_hint); 
 }
 
 
@@ -248,22 +274,24 @@ inline int ZoidFSSync::symlink(const zoidfs_handle_t * from_parent_handle,
    const char * to_full_path,
    const zoidfs_sattr_t * attr,
    zoidfs_cache_hint_t * from_parent_hint,
-   zoidfs_cache_hint_t * to_parent_hint)
+   zoidfs_cache_hint_t * to_parent_hint,
+   zoidfs_op_hint_t * op_hint)
 {
    return zoidfs::zoidfs_symlink (from_parent_handle,
          from_component_name, from_full_path, to_parent_handle,
          to_component_name, to_full_path, attr, from_parent_hint,
-         to_parent_hint); 
+         to_parent_hint, op_hint); 
 }
 
 inline int ZoidFSSync::mkdir(const zoidfs_handle_t * parent_handle,
    const char * component_name,
    const char * full_path,
    const zoidfs_sattr_t * attr,
-   zoidfs_cache_hint_t * parent_hint)
+   zoidfs_cache_hint_t * parent_hint,
+   zoidfs_op_hint_t * op_hint)
 {
    return zoidfs::zoidfs_mkdir (parent_handle, component_name, 
-         full_path, attr, parent_hint); 
+         full_path, attr, parent_hint, op_hint); 
 
 }
 
@@ -272,16 +300,18 @@ inline int ZoidFSSync::readdir(const zoidfs_handle_t * parent_handle,
    size_t * entry_count,
    zoidfs_dirent_t * entries,
    uint32_t flags,
-   zoidfs_cache_hint_t * parent_hint)
+   zoidfs_cache_hint_t * parent_hint,
+   zoidfs_op_hint_t * op_hint)
 {
    return zoidfs::zoidfs_readdir (parent_handle, cookie, 
-         entry_count, entries, flags, parent_hint); 
+         entry_count, entries, flags, parent_hint, op_hint); 
 }
 
 inline int ZoidFSSync::resize(const zoidfs_handle_t * handle,
-   uint64_t size) 
+   uint64_t size,
+   zoidfs_op_hint_t * op_hint) 
 {
-   return zoidfs::zoidfs_resize (handle, size); 
+   return zoidfs::zoidfs_resize (handle, size, op_hint); 
 }
 
 

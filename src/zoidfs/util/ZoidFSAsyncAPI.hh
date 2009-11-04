@@ -48,7 +48,8 @@ public:
       const size_t mem_sizes[],
       size_t file_count,
       const uint64_t file_starts[],
-      uint64_t file_sizes[]);
+      uint64_t file_sizes[],
+      zoidfs_op_hint_t * op_hint);
 
    iofwdutil::completion::CompletionID * async_read(
       const zoidfs_handle_t * handle,
@@ -57,7 +58,8 @@ public:
       const size_t mem_sizes[],
       size_t file_count,
       const uint64_t file_starts[],
-      uint64_t file_sizes[]);
+      uint64_t file_sizes[],
+      zoidfs_op_hint_t * op_hint);
 
 protected:
    LogAPI fallback_; 

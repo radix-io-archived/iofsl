@@ -30,7 +30,8 @@ namespace zoidfs
          { return ZFS_OK; } 
 
          virtual int getattr(const zoidfs_handle_t * ,
-               zoidfs_attr_t * )
+               zoidfs_attr_t *,
+               zoidfs_op_hint_t * )
          { return ZFS_OK; }
 
          virtual int setattr(const zoidfs_handle_t * ,

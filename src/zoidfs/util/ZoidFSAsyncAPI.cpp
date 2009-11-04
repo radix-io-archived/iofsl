@@ -30,15 +30,16 @@ public:
       const size_t * mem_sizes,
       size_t file_count,
       const uint64_t * file_starts,
-      uint64_t * file_sizes)
+      uint64_t * file_sizes,
+      zoidfs_op_hint_t * op_hint)
       : api_(api), handle_(handle),
         mem_count_(mem_count), mem_starts_(mem_starts), mem_sizes_(mem_sizes),
-        file_count_(file_count), file_starts_(file_starts), file_sizes_(file_sizes)
+        file_count_(file_count), file_starts_(file_starts), file_sizes_(file_sizes), op_hint_(op_hint)
    {}
    virtual ~AsyncWriteTask() {};
    void doWork() {
       api_->write (handle_, mem_count_, mem_starts_, mem_sizes_,
-         file_count_, file_starts_, file_sizes_);
+         file_count_, file_starts_, file_sizes_, op_hint_);
    }
 private:
    ZoidFSAPI * api_;
@@ -48,7 +49,8 @@ private:
    const size_t * mem_sizes_;
    size_t file_count_;
    const uint64_t * file_starts_;
-   uint64_t * file_sizes_;   
+   uint64_t * file_sizes_;
+   zoidfs_op_hint_t * op_hint_;
 };
 
 class AsyncReadTask : public iofwdutil::workqueue::WorkItem
@@ -61,15 +63,16 @@ public:
       const size_t * mem_sizes,
       size_t file_count,
       const uint64_t * file_starts,
-      uint64_t * file_sizes)
+      uint64_t * file_sizes,
+      zoidfs_op_hint_t * op_hint)
       : api_(api), handle_(handle),
         mem_count_(mem_count), mem_starts_(mem_starts), mem_sizes_(mem_sizes),
-        file_count_(file_count), file_starts_(file_starts), file_sizes_(file_sizes)
+        file_count_(file_count), file_starts_(file_starts), file_sizes_(file_sizes), op_hint_(op_hint)
    {}
    virtual ~AsyncReadTask() {};
    void doWork() {
       api_->read (handle_, mem_count_, mem_starts_, mem_sizes_,
-         file_count_, file_starts_, file_sizes_);
+         file_count_, file_starts_, file_sizes_, op_hint_);
    }
 private:
    ZoidFSAPI * api_;
@@ -79,7 +82,8 @@ private:
    const size_t * mem_sizes_;
    size_t file_count_;
    const uint64_t * file_starts_;
-   uint64_t * file_sizes_;   
+   uint64_t * file_sizes_;
+   zoidfs_op_hint_t * op_hint_;
 };
 
 }
@@ -101,10 +105,11 @@ iofwdutil::completion::CompletionID * ZoidFSAsyncAPI::async_write(
    const size_t mem_sizes[],
    size_t file_count,
    const uint64_t file_starts[],
-   uint64_t file_sizes[])
+   uint64_t file_sizes[],
+   zoidfs_op_hint_t * op_hint)
 {
    AsyncWriteTask * task = new AsyncWriteTask (api_, handle,
-      mem_count, mem_starts, mem_sizes, file_count, file_starts, file_sizes);
+      mem_count, mem_starts, mem_sizes, file_count, file_starts, file_sizes, op_hint);
    return q_->queueWork (task);
 }
 
@@ -115,10 +120,11 @@ iofwdutil::completion::CompletionID * ZoidFSAsyncAPI::async_read(
    const size_t mem_sizes[],
    size_t file_count,
    const uint64_t file_starts[],
-   uint64_t file_sizes[])
+   uint64_t file_sizes[],
+   zoidfs_op_hint_t * op_hint)
 {
    AsyncReadTask * task = new AsyncReadTask (api_, handle,
-      mem_count, mem_starts, mem_sizes, file_count, file_starts, file_sizes);
+      mem_count, mem_starts, mem_sizes, file_count, file_starts, file_sizes, op_hint);
    return q_->queueWork (task);
 }
 
