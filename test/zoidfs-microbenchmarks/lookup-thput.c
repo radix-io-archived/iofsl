@@ -13,7 +13,7 @@
 
 #include "mpi.h"
 #include "thput.h"
-#include "zoidfs.h"
+#include "zoidfs/zoidfs.h"
 
 #define OP1 0
 #define OP2 1
@@ -129,7 +129,7 @@ int main(int argc, char **argv) {
         fatal_perror(argv[0], "zoidfs_init() failed.\n");
     }
 
-    ret = zoidfs_lookup(NULL, NULL, argv[1], &basedir_handle);
+    ret = zoidfs_lookup(NULL, NULL, argv[1], &basedir_handle, ZOIDFS_NO_OP_HINT);
     if(ret != ZFS_OK) {
         fatal_perror(argv[0], "zoidfs_lookup() failed.\n");
     }
@@ -164,7 +164,7 @@ int main(int argc, char **argv) {
             do
             {
                 ret = zoidfs_create(&basedir_handle, entry_name, NULL, &sattr,
-                                &handle, &created);
+                                &handle, &created, ZOIDFS_NO_OP_HINT);
                 if(ret == ZFSERR_STALE)
                 {
                     inc_estale_count(OP1);
@@ -172,7 +172,7 @@ int main(int argc, char **argv) {
                     /* lookup the base handle again since we got a stale... */
                     int _ret = 0;
                     memset(&basedir_handle, 0, sizeof(basedir_handle));
-                    _ret = zoidfs_lookup(NULL, NULL, argv[1], &basedir_handle);
+                    _ret = zoidfs_lookup(NULL, NULL, argv[1], &basedir_handle, ZOIDFS_NO_OP_HINT);
                     if(_ret != ZFS_OK) {
                         fatal_perror(argv[0], "ESTALE zoidfs_lookup() / basedir handle revlaidate failed.\n");
                     }
@@ -199,7 +199,7 @@ int main(int argc, char **argv) {
             /* lookup the files and watch out for ESTALE */
             do
             {
-                ret = zoidfs_lookup(&basedir_handle, entry_name, NULL, &handle);
+                ret = zoidfs_lookup(&basedir_handle, entry_name, NULL, &handle, ZOIDFS_NO_OP_HINT);
                 if(ret == ZFSERR_STALE)
                 {
                     inc_estale_count(OP2);
@@ -207,7 +207,7 @@ int main(int argc, char **argv) {
                     /* lookup the base handle again since we got a stale... */
                     int _ret = 0;
                     memset(&basedir_handle, 0, sizeof(basedir_handle));
-                    _ret = zoidfs_lookup(NULL, NULL, argv[1], &basedir_handle);
+                    _ret = zoidfs_lookup(NULL, NULL, argv[1], &basedir_handle, ZOIDFS_NO_OP_HINT);
                     if(_ret != ZFS_OK) {
                         fatal_perror(argv[0], "ESTALE zoidfs_lookup() / basedir handle revlaidate failed.\n");
                     }
@@ -234,7 +234,7 @@ int main(int argc, char **argv) {
             /* remove the files and watch out for ESTALE */
             do
             {
-                ret = zoidfs_remove(&basedir_handle, entry_name, NULL, NULL);
+                ret = zoidfs_remove(&basedir_handle, entry_name, NULL, NULL, ZOIDFS_NO_OP_HINT);
                 if(ret == ZFSERR_STALE)
                 {
                     inc_estale_count(OP3);
@@ -242,7 +242,7 @@ int main(int argc, char **argv) {
                     /* lookup the base handle again since we got a stale... */
                     int _ret = 0;
                     memset(&basedir_handle, 0, sizeof(basedir_handle));
-                    _ret = zoidfs_lookup(NULL, NULL, argv[1], &basedir_handle);
+                    _ret = zoidfs_lookup(NULL, NULL, argv[1], &basedir_handle, ZOIDFS_NO_OP_HINT);
                     if(_ret != ZFS_OK) {
                         fatal_perror(argv[0], "ESTALE zoidfs_lookup() / basedir handle revlaidate failed.\n");
                     }

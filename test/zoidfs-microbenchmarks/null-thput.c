@@ -13,7 +13,7 @@
 
 #include "mpi.h"
 #include "thput.h"
-#include "zoidfs.h"
+#include "zoidfs/zoidfs.h"
 
 static void __attribute__((noreturn)) usage(char *progname) {
     fprintf(stderr, "Usage: %s <PVFS dir>\n", progname);
