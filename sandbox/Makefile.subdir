@@ -49,16 +49,16 @@ sandbox_zoidfs_hints_SOURCES = sandbox/zoidfs-hints.c
 sandbox_zoidfs_hints_LDFLAGS = ${sandbox_ldflags}
 sandbox_zoidfs_hints_LDADD = $(top_builddir)/src/zoidfs/libzoidfshints.a $(top_builddir)/src/zoidfs/libzoidfsclient.a ${sandbox_ldadd}
 
-if HAVE_MPI
-noinst_PROGRAMS += sandbox/mpi-server
-sandbox_mpi_server_SOURCES = sandbox/mpi-server.c
-sandbox_mpi_server_CFLAGS = -I./src/zoidfs/client
-sandbox_mpi_server_LDFLAGS = -L./src/zoidfs
-sandbox_mpi_server_LDADD = -lzoidfsclient
-
-noinst_PROGRAMS += sandbox/mpi-client
-sandbox_mpi_client_SOURCES = sandbox/mpi-client.c
-sandbox_mpi_client_CFLAGS = -I./src/zoidfs/client
-sandbox_mpi_client_LDFLAGS = -L./src/zoidfs
-sandbox_mpi_client_LDADD = -lzoidfsclient
-endif
+#if HAVE_MPI
+#noinst_PROGRAMS += sandbox/mpi-server
+#sandbox_mpi_server_SOURCES = sandbox/mpi-server.c
+#sandbox_mpi_server_CFLAGS = -I./src/zoidfs/client
+#sandbox_mpi_server_LDFLAGS = -L./src/zoidfs
+#sandbox_mpi_server_LDADD = -lzoidfsclient
+#
+#noinst_PROGRAMS += sandbox/mpi-client
+#sandbox_mpi_client_SOURCES = sandbox/mpi-client.c
+#sandbox_mpi_client_CFLAGS = -I./src/zoidfs/client
+#sandbox_mpi_client_LDFLAGS = -L./src/zoidfs
+#sandbox_mpi_client_LDADD = -lzoidfsclient
+#endif
