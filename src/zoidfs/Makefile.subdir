@@ -7,6 +7,7 @@ noinst_HEADERS += \
 		 src/zoidfs/zoidfs-proto.h
 
 
+include $(top_srcdir)/src/zoidfs/hints/Makefile.subdir
 include $(top_srcdir)/src/zoidfs/util/Makefile.subdir
 include $(top_srcdir)/src/zoidfs/dispatcher/Makefile.subdir
 include $(top_srcdir)/src/zoidfs/client/Makefile.subdir

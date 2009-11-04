@@ -1,0 +1,6 @@
+lib_LIBRARIES += src/zoidfs/libzoidfshints.a
+
+src_zoidfs_libzoidfshints_a_SOURCES = \
+src/zoidfs/hints/zoidfs-hints.h \
+src/zoidfs/hints/zoidfs-hints.c
+
