@@ -7,4 +7,13 @@ src/zoidfs/client/bmi_comm.c \
 src/zoidfs/client/zoidfs_xdr.h \
 src/zoidfs/client/zoidfs_xdr.c \
 src/zoidfs/client/zoidfsclient.c
+
+#src_zoidfs_libzoidfsclient_a_LIBADD = \
+#    ${top_builddir}/src/zoidfs/libzoidfshints.a
+
+#if HAVE_MPI
+#src_zoidfs_libzoidfsclient_a_SOURCES += \
+#src/zoidfs/client/mpi_comm.h \
+#src/zoidfs/client/mpi_comm.c
+#endif
 endif
