@@ -24,7 +24,7 @@ public:
    void run ()
    {
       const CommitRequest::ReqParam & p = request_.decodeParam ();
-      int ret = api_->commit (p.handle);
+      int ret = api_->commit (p.handle, p.op_hint);
       request_.setReturnCode (ret);
       std::auto_ptr<iofwdutil::completion::CompletionID> id (request_.reply ());
       id->wait ();

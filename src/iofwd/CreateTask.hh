@@ -27,7 +27,7 @@ public:
        zoidfs::zoidfs_handle_t handle;
        int created;
        int ret = api_->create (p.parent_handle, p.component_name,
-                               p.full_path, p.attr, &handle, &created);
+                               p.full_path, p.attr, &handle, &created, p.op_hint);
        request_.setReturnCode (ret);
        std::auto_ptr<iofwdutil::completion::CompletionID> id (request_.reply ( (ret  == zoidfs::ZFS_OK ? &handle : 0), created));
        id->wait ();

@@ -28,7 +28,7 @@ public:
        zoidfs::zoidfs_cache_hint_t to_parent_hint;
        int ret = api_->symlink (p.from_parent_handle, p.from_component_name, p.from_full_path,
                                 p.to_parent_handle, p.to_component_name, p.to_full_path,
-                                p.sattr, &from_parent_hint, &to_parent_hint);
+                                p.sattr, &from_parent_hint, &to_parent_hint, p.op_hint);
        request_.setReturnCode (ret); 
        std::auto_ptr<iofwdutil::completion::CompletionID> id (request_.reply ( &from_parent_hint, &to_parent_hint ));
        id->wait ();

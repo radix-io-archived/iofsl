@@ -24,7 +24,7 @@ public:
    void run ()
    {
        const GetAttrRequest::ReqParam & p = request_.decodeParam ();
-       int ret = api_->getattr (p.handle, p.attr);
+       int ret = api_->getattr (p.handle, p.attr, p.op_hint);
        request_.setReturnCode (ret);
        std::auto_ptr<iofwdutil::completion::CompletionID> id (request_.reply ( (ret  == zoidfs::ZFS_OK ? p.attr : 0)));
        id->wait ();

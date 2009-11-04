@@ -24,7 +24,7 @@ public:
    void run ()
    {
       const ResizeRequest::ReqParam & p = request_.decodeParam ();
-      int ret = api_->resize (p.handle, p.size);
+      int ret = api_->resize (p.handle, p.size, p.op_hint);
       request_.setReturnCode (ret);
       std::auto_ptr<iofwdutil::completion::CompletionID> id (request_.reply ());
       id->wait ();

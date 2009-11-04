@@ -60,7 +60,7 @@ void WriteTask::runNormalMode(const WriteRequest::ReqParam & p)
    std::auto_ptr<iofwdutil::completion::CompletionID> io_id (sched_->enqueueWrite (
       p.handle, (size_t)p.mem_count,
       (const void**)p.mem_starts, tmp_mem_sizes,
-      p.file_starts, p.file_sizes));
+      p.file_starts, p.file_sizes, p.op_hint));
    io_id->wait ();
    int ret = zoidfs::ZFS_OK;
    request_.setReturnCode (ret);
@@ -143,7 +143,7 @@ iofwdutil::completion::CompletionID * WriteTask::execPipelineIO(const WriteReque
    }
    iofwdutil::completion::CompletionID * id = sched_->enqueueWrite (
       p.handle, p_file_count, (const void**)mem_starts, mem_sizes,
-      p_file_starts, p_file_sizes);
+      p_file_starts, p_file_sizes, p.op_hint);
    /*
    iofwdutil::completion::CompletionID * id = async_api_->async_write (
       p.handle, p_file_count, (const void**)mem_starts, mem_sizes,

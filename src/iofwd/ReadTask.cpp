@@ -58,7 +58,7 @@ void ReadTask::runNormalMode(const ReadRequest::ReqParam & p)
    std::auto_ptr<iofwdutil::completion::CompletionID> io_id (sched_->enqueueRead (
       p.handle, (size_t)p.mem_count,
       (void**)p.mem_starts, tmp_mem_sizes,
-      p.file_starts, p.file_sizes));
+      p.file_starts, p.file_sizes, p.op_hint));
    io_id->wait ();
    int ret = zoidfs::ZFS_OK;
    request_.setReturnCode (ret);
@@ -144,7 +144,7 @@ iofwdutil::completion::CompletionID * ReadTask::execPipelineIO(const ReadRequest
    }
    iofwdutil::completion::CompletionID * id = sched_->enqueueRead (
       p.handle, p_file_count, (void**)mem_starts, mem_sizes,
-      p_file_starts, p_file_sizes);
+      p_file_starts, p_file_sizes, p.op_hint);
    /*
    iofwdutil::completion::CompletionID * id = async_api_->async_read (
       p.handle, p_file_count, (void**)mem_starts, mem_sizes,

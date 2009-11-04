@@ -27,7 +27,7 @@ public:
        zoidfs::zoidfs_cache_hint_t parent_hint;
        size_t entry_count = p.entry_count;
        int ret = api_->readdir (p.handle, p.cookie, &entry_count,
-                                p.entries, p.flags, &parent_hint);
+                                p.entries, p.flags, &parent_hint, p.op_hint);
        request_.setReturnCode (ret); 
        std::auto_ptr<iofwdutil::completion::CompletionID> id (request_.reply (entry_count, p.entries, &parent_hint));
        id->wait ();
