@@ -367,14 +367,16 @@ static int zint_pvfs2_null(void)
 static int zint_pvfs2_lookup(const zoidfs_handle_t * parent_handle,
                       const char * component_name,
                       const char * full_path,
-                      zoidfs_handle_t * handle);
+                      zoidfs_handle_t * handle,
+                      zoidfs_op_hint_t * op_hint);
 
 static int zint_pvfs2_create(const zoidfs_handle_t * parent_handle,
                       const char * component_name,
                       const char * full_path,
                       const zoidfs_sattr_t * sattr,
                       zoidfs_handle_t * handle,
-                      int * created)
+                      int * created,
+                      zoidfs_op_hint_t * op_hint)
 {
     int ret;
     PVFS_object_ref ref;
@@ -436,7 +438,7 @@ static int zint_pvfs2_create(const zoidfs_handle_t * parent_handle,
             *created = 0;
 
             return zint_pvfs2_lookup(parent_handle, component_name,
-                                     full_path, handle);
+                                     full_path, handle, op_hint);
         }
         else
         {
@@ -453,7 +455,8 @@ static int zint_pvfs2_create(const zoidfs_handle_t * parent_handle,
     return ZFS_OK;
 }
 
-static int zint_pvfs2_getattr(const zoidfs_handle_t * handle, zoidfs_attr_t * attr)
+static int zint_pvfs2_getattr(const zoidfs_handle_t * handle, zoidfs_attr_t * attr,
+                      zoidfs_op_hint_t * UNUSED(op_hint))
 {
     int ret;
     PVFS_credentials creds;
@@ -480,7 +483,8 @@ static int zint_pvfs2_getattr(const zoidfs_handle_t * handle, zoidfs_attr_t * at
 
 static int zint_pvfs2_setattr(const zoidfs_handle_t * handle,
                        const zoidfs_sattr_t * sattr,
-                       zoidfs_attr_t * attr)
+                       zoidfs_attr_t * attr,
+                       zoidfs_op_hint_t * UNUSED(op_hint))
 {
     int ret;
     PVFS_credentials creds;
@@ -520,7 +524,8 @@ static int zint_pvfs2_setattr(const zoidfs_handle_t * handle,
 static int zint_pvfs2_lookup(const zoidfs_handle_t * parent_handle,
                       const char * component_name,
                       const char * full_path,
-                      zoidfs_handle_t * handle)
+                      zoidfs_handle_t * handle,
+                      zoidfs_op_hint_t * UNUSED(op_hint))
 {
     int res;
     PVFS_object_ref ref;
@@ -555,7 +560,8 @@ static int zint_pvfs2_lookup(const zoidfs_handle_t * parent_handle,
 
 static int zint_pvfs2_readlink(const zoidfs_handle_t * handle,
                         char * buffer,
-                        size_t buffer_length)
+                        size_t buffer_length,
+                        zoidfs_op_hint_t * UNUSED(op_hint))
 {
     int ret;
     uint32_t mask;
@@ -587,7 +593,8 @@ static int zint_pvfs2_io(const zoidfs_handle_t * handle,
                          const uint64_t file_starts[],
                          uint64_t file_sizes[],
                          enum PVFS_io_type type,
-                         PVFS_sysresp_io *io_resp);
+                         PVFS_sysresp_io *io_resp,
+                         zoidfs_op_hint_t * op_hint);
 
 static int zint_pvfs2_write(const zoidfs_handle_t * handle,
                      size_t mem_count,
@@ -595,14 +602,15 @@ static int zint_pvfs2_write(const zoidfs_handle_t * handle,
                      const size_t mem_sizes[],
                      size_t file_count,
                      const uint64_t file_starts[],
-                     uint64_t file_sizes[])
+                     uint64_t file_sizes[],
+                     zoidfs_op_hint_t * op_hint)
 {
     int ret;
     PVFS_sysresp_io write_resp;
 
     ret = zint_pvfs2_io(handle, mem_count, mem_starts, mem_sizes,
                         file_count, file_starts, file_sizes,
-                        PVFS_IO_WRITE, &write_resp);
+                        PVFS_IO_WRITE, &write_resp, op_hint);
     return ret;
 }
 
@@ -612,7 +620,8 @@ static int zint_pvfs2_read(const zoidfs_handle_t * handle,
                     const size_t mem_sizes[],
                     size_t file_count,
                     const uint64_t file_starts[],
-                    uint64_t file_sizes[])
+                    uint64_t file_sizes[],
+                    zoidfs_op_hint_t * op_hint)
 {
     int ret;
     size_t total;
@@ -622,7 +631,7 @@ static int zint_pvfs2_read(const zoidfs_handle_t * handle,
     ret = zint_pvfs2_io(handle, mem_count,
                         (const void **)mem_starts, mem_sizes,
                         file_count, file_starts, file_sizes,
-                        PVFS_IO_READ, &read_resp);
+                        PVFS_IO_READ, &read_resp, op_hint);
     if(ret != ZFS_OK)
     {
         return ret;
@@ -657,7 +666,8 @@ static int zint_pvfs2_io(const zoidfs_handle_t * handle,
                          const uint64_t file_starts[],
                          uint64_t file_sizes[],
                          enum PVFS_io_type type,
-                         PVFS_sysresp_io *io_resp)
+                         PVFS_sysresp_io *io_resp,
+                         zoidfs_op_hint_t * UNUSED(op_hint))
 {
     int ret;
     unsigned int i;
@@ -768,7 +778,8 @@ error_pvfs:
     return zint_pvfs2_output_error(ret);
 }
 
-static int zint_pvfs2_commit(const zoidfs_handle_t * handle)
+static int zint_pvfs2_commit(const zoidfs_handle_t * handle,
+                      zoidfs_op_hint_t * UNUSED(op_hint))
 {
     int ret;
     PVFS_object_ref ref;
@@ -789,7 +800,8 @@ static int zint_pvfs2_commit(const zoidfs_handle_t * handle)
 static int zint_pvfs2_remove(const zoidfs_handle_t * parent_handle,
                       const char * component_name,
                       const char * full_path,
-                      zoidfs_cache_hint_t * UNUSED(parent_hint))
+                      zoidfs_cache_hint_t * UNUSED(parent_hint),
+                      zoidfs_op_hint_t * UNUSED(op_hint))
 {
     int ret;
     PVFS_object_ref ref;
@@ -845,7 +857,8 @@ static int zint_pvfs2_rename(const zoidfs_handle_t * from_parent_handle,
                       const char * to_component_name,
                       const char * to_full_path,
                       zoidfs_cache_hint_t * UNUSED(from_parent_hint),
-                      zoidfs_cache_hint_t * UNUSED(to_parent_hint))
+                      zoidfs_cache_hint_t * UNUSED(to_parent_hint),
+                      zoidfs_op_hint_t * UNUSED(op_hint))
 {
     int ret;
     PVFS_credentials creds;
@@ -968,7 +981,8 @@ static int zint_pvfs2_link(const zoidfs_handle_t * UNUSED(from_parent_handle),
                     const char * UNUSED(to_component_name),
                     const char * UNUSED(to_full_path),
                     zoidfs_cache_hint_t * UNUSED(from_parent_hint),
-                    zoidfs_cache_hint_t * UNUSED(to_parent_hint))
+                    zoidfs_cache_hint_t * UNUSED(to_parent_hint),
+                    zoidfs_op_hint_t * UNUSED(op_hint))
 {
     /* PVFS2 does not support hardlinks.  */
     return ZFSERR_NOTIMPL;
@@ -982,7 +996,8 @@ static int zint_pvfs2_symlink(const zoidfs_handle_t * from_parent_handle,
                        const char * to_full_path,
                        const zoidfs_sattr_t * attr,
                        zoidfs_cache_hint_t * UNUSED(from_parent_hint),
-                       zoidfs_cache_hint_t * UNUSED(to_parent_hint))
+                       zoidfs_cache_hint_t * UNUSED(to_parent_hint),
+                       zoidfs_op_hint_t * UNUSED(op_hint))
 {
     int ret;
     PVFS_sys_attr pattr;
@@ -1052,7 +1067,8 @@ static int zint_pvfs2_mkdir(const zoidfs_handle_t * parent_handle,
                      const char * component_name,
                      const char * full_path,
                      const zoidfs_sattr_t * attr,
-                     zoidfs_cache_hint_t * UNUSED(parent_hint))
+                     zoidfs_cache_hint_t * UNUSED(parent_hint),
+                     zoidfs_op_hint_t * UNUSED(op_hint))
 {
     int ret;
     PVFS_object_ref ref;
@@ -1112,7 +1128,8 @@ static int zint_pvfs2_readdir(const zoidfs_handle_t * parent_handle,
                        size_t * entry_count,
                        zoidfs_dirent_t * entries,
                        uint32_t flags,
-                       zoidfs_cache_hint_t * UNUSED(parent_hint))
+                       zoidfs_cache_hint_t * UNUSED(parent_hint),
+                       zoidfs_op_hint_t * UNUSED(op_hint))
 {
     int ret;
     size_t i;
@@ -1173,7 +1190,8 @@ static int zint_pvfs2_readdir(const zoidfs_handle_t * parent_handle,
     return ZFS_OK;
 }
 
-static int zint_pvfs2_resize(const zoidfs_handle_t * handle, uint64_t size)
+static int zint_pvfs2_resize(const zoidfs_handle_t * handle, uint64_t size,
+                      zoidfs_op_hint_t * op_hint)
 {
     int ret;
     PVFS_object_ref ref;
