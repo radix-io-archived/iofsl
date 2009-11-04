@@ -535,7 +535,7 @@ int zoidfs_sysio_rootof(struct file_handle_info * root_handle)
  * zoidfs_getattr
  * This function retrieves the attributes associated with the file handle.
  */
-static int zoidfs_sysio_getattr(const zoidfs_handle_t *handle, zoidfs_attr_t *attr)
+static int zoidfs_sysio_getattr(const zoidfs_handle_t *handle, zoidfs_attr_t *attr, zoidfs_op_hint_t * UNUSED(op_hint))
 {
     int ret;
     struct stat64 stbuf;
@@ -659,7 +659,7 @@ static int zoidfs_sysio_getattr(const zoidfs_handle_t *handle, zoidfs_attr_t *at
  * This function sets the attributes associated with the file handle.
  */
 static int zoidfs_sysio_setattr(const zoidfs_handle_t *handle, const zoidfs_sattr_t *sattr,
-                   zoidfs_attr_t *attr) {
+                   zoidfs_attr_t *attr, zoidfs_op_hint_t * op_hint) {
 	
     int ret = 0;
     struct file_handle_info_sattr sysio_sattr;
@@ -761,7 +761,7 @@ static int zoidfs_sysio_setattr(const zoidfs_handle_t *handle, const zoidfs_satt
 	 */
     if(attr)
     {
-	    ret = zoidfs_sysio_getattr(handle, attr);
+	    ret = zoidfs_sysio_getattr(handle, attr, op_hint);
 	    if (ret != ZFS_OK) 
         {
 		    ZFSSYSIO_INFO("zoidfs_sysio_setattr: fhi_getattr() failed.");
@@ -780,7 +780,7 @@ static int zoidfs_sysio_setattr(const zoidfs_handle_t *handle, const zoidfs_satt
  * This function reads a symbolic link.
  */
 static int zoidfs_sysio_readlink(const zoidfs_handle_t *handle, char *buffer,
-                    size_t buffer_length) {
+                    size_t buffer_length, zoidfs_op_hint_t * UNUSED(op_hint)) {
 	
     int ret;
 	struct stat64 stbuf;
@@ -851,7 +851,7 @@ static int zoidfs_sysio_readlink(const zoidfs_handle_t *handle, char *buffer,
  */
 static int zoidfs_sysio_lookup(const zoidfs_handle_t *parent_handle,
                   const char *component_name, const char *full_path,
-                  zoidfs_handle_t *handle) {
+                  zoidfs_handle_t *handle, zoidfs_op_hint_t * UNUSED(op_hint)) {
 
 	ZFSSYSIO_TRACE_ENTER;
 
@@ -959,7 +959,7 @@ static int zoidfs_sysio_lookup(const zoidfs_handle_t *parent_handle,
  */
 static int zoidfs_sysio_remove(const zoidfs_handle_t *parent_handle,
                   const char *component_name, const char *full_path,
-                  zoidfs_cache_hint_t * UNUSED(parent_hint)) {
+                  zoidfs_cache_hint_t * UNUSED(parent_hint), zoidfs_op_hint_t * UNUSED(op_hint)) {
     int ret;
     static char sysio_parent_handle_data[SYSIO_HANDLE_DATA_SIZE];
     struct file_handle_info sysio_parent_handle = {NULL, sysio_parent_handle_data, SYSIO_HANDLE_DATA_SIZE};
@@ -1128,7 +1128,7 @@ static int zoidfs_sysio_remove(const zoidfs_handle_t *parent_handle,
  * zoidfs_commit
  * This function flushes the buffers associated with the file handle.
  */
-static int zoidfs_sysio_commit(const zoidfs_handle_t * UNUSED(handle)) {
+static int zoidfs_sysio_commit(const zoidfs_handle_t * UNUSED(handle), zoidfs_op_hint_t * UNUSED(op_hint)) {
 	ZFSSYSIO_TRACE_ENTER;
 	ZFSSYSIO_TRACE_EXIT;
     return ZFS_OK;
@@ -1142,7 +1142,7 @@ static int zoidfs_sysio_commit(const zoidfs_handle_t * UNUSED(handle)) {
 static int zoidfs_sysio_create(const zoidfs_handle_t *parent_handle,
                   const char *component_name, const char *full_path,
                   const zoidfs_sattr_t *sattr, zoidfs_handle_t *handle,
-                  int *created) {
+                  int *created, zoidfs_op_hint_t * op_hint) {
 	
     int ret;
     struct file_handle_info_dirop_args where;
@@ -1231,7 +1231,7 @@ static int zoidfs_sysio_create(const zoidfs_handle_t *parent_handle,
 
 			sysio_handle_to_zoidfs_handle(&sysio_component_handle, handle);
 
-            ret = zoidfs_sysio_setattr(handle, &local_sattr, &local_attr);
+            ret = zoidfs_sysio_setattr(handle, &local_sattr, &local_attr, op_hint);
             if(ret != ZFS_OK)
             {
                 ZFSSYSIO_INFO("zoidfs_sysio_create: zoidfs_sysio_setattr() failed");
@@ -1270,7 +1270,7 @@ static int zoidfs_sysio_create(const zoidfs_handle_t *parent_handle,
         /*
          * set the file attributes
          */
-        ret = zoidfs_sysio_setattr(handle, &local_sattr, &local_attr);
+        ret = zoidfs_sysio_setattr(handle, &local_sattr, &local_attr, op_hint);
         if(ret != ZFS_OK)
         {
             ZFSSYSIO_INFO("zoidfs_sysio_create: zoidfs_sysio_setattr() failed");
@@ -1301,7 +1301,7 @@ static int zoidfs_sysio_create(const zoidfs_handle_t *parent_handle,
             *created = 0;
 			sysio_handle_to_zoidfs_handle(&sysio_component_handle, handle);
 
-            ret = zoidfs_sysio_setattr(handle, &local_sattr, &local_attr);
+            ret = zoidfs_sysio_setattr(handle, &local_sattr, &local_attr, op_hint);
             if(ret != ZFS_OK)
             {
                 ZFSSYSIO_INFO("zoidfs_sysio_create: zoidfs_sysio_setattr() failed");
@@ -1369,7 +1369,7 @@ static int zoidfs_sysio_rename(const zoidfs_handle_t *from_parent_handle,
                   const char *to_component_name,
                   const char *to_full_path,
                   zoidfs_cache_hint_t * UNUSED(from_parent_hint),
-                  zoidfs_cache_hint_t * UNUSED(to_parent_hint)) {
+                  zoidfs_cache_hint_t * UNUSED(to_parent_hint), zoidfs_op_hint_t * UNUSED(op_hint)) {
 	
     int ret;
     struct file_handle_info_dirop_args where_to;
@@ -1476,7 +1476,8 @@ static int zoidfs_sysio_link(const zoidfs_handle_t *from_parent_handle,
                 const char *to_component_name,
                 const char *to_full_path,
                 zoidfs_cache_hint_t * UNUSED(from_parent_hint),
-                zoidfs_cache_hint_t * UNUSED(to_parent_hint)) {
+                zoidfs_cache_hint_t * UNUSED(to_parent_hint),
+                zoidfs_op_hint_t * op_hint) {
 	
     int ret;
     struct file_handle_info_dirop_args where_to;
@@ -1534,7 +1535,7 @@ static int zoidfs_sysio_link(const zoidfs_handle_t *from_parent_handle,
         }
 
         /* If the file exists, return an error */        
-        if(zoidfs_lookup(NULL, NULL, to_full_path, &fhandle) == ZFS_OK)
+        if(zoidfs_lookup(NULL, NULL, to_full_path, &fhandle, op_hint) == ZFS_OK)
         {
 		    ZFSSYSIO_INFO("zoidfs_sysio_link: target file already exists");
             return sysio_err_to_zfs_err(EEXIST);
@@ -1561,7 +1562,7 @@ static int zoidfs_sysio_link(const zoidfs_handle_t *from_parent_handle,
         zoidfs_handle_t fhandle;
 
         /* If the file exists, return an error */        
-        if(zoidfs_lookup(to_parent_handle, to_component_name, NULL, &fhandle) == ZFS_OK)
+        if(zoidfs_lookup(to_parent_handle, to_component_name, NULL, &fhandle, op_hint) == ZFS_OK)
         {
 		    ZFSSYSIO_INFO("zoidfs_sysio_link: target file already exists");
             return sysio_err_to_zfs_err(EEXIST);
@@ -1600,7 +1601,8 @@ static int zoidfs_sysio_symlink(const zoidfs_handle_t *from_parent_handle,
                    const char *to_full_path,
                    const zoidfs_sattr_t * UNUSED(sattr),
                    zoidfs_cache_hint_t * UNUSED(from_parent_hint),
-                   zoidfs_cache_hint_t * UNUSED(to_parent_hint)) {
+                   zoidfs_cache_hint_t * UNUSED(to_parent_hint),
+                   zoidfs_op_hint_t * op_hint) {
 	
     int ret;
     struct file_handle_info_dirop_args where_to;
@@ -1641,7 +1643,7 @@ static int zoidfs_sysio_symlink(const zoidfs_handle_t *from_parent_handle,
         }
 
         /* If the file exists, return an error */        
-        if(zoidfs_lookup(NULL, NULL, to_full_path, &fhandle) == ZFS_OK)
+        if(zoidfs_lookup(NULL, NULL, to_full_path, &fhandle, op_hint) == ZFS_OK)
         {
 		    ZFSSYSIO_INFO("zoidfs_sysio_symlink: target file already exists");
             return sysio_err_to_zfs_err(EEXIST);
@@ -1663,7 +1665,7 @@ static int zoidfs_sysio_symlink(const zoidfs_handle_t *from_parent_handle,
         zoidfs_handle_t fhandle;
 
         /* If the file exists, return an error */        
-        if(zoidfs_lookup(to_parent_handle, to_component_name, NULL, &fhandle) == ZFS_OK)
+        if(zoidfs_lookup(to_parent_handle, to_component_name, NULL, &fhandle, op_hint) == ZFS_OK)
         {
 		    ZFSSYSIO_INFO("zoidfs_sysio_symlink: target file already exists");
             return sysio_err_to_zfs_err(EEXIST);
@@ -1727,7 +1729,7 @@ static int zoidfs_sysio_symlink(const zoidfs_handle_t *from_parent_handle,
 static int zoidfs_sysio_mkdir(const zoidfs_handle_t *parent_handle,
                  const char *component_name, const char *full_path,
                  const zoidfs_sattr_t *sattr,
-                 zoidfs_cache_hint_t * UNUSED(parent_hint)) {
+                 zoidfs_cache_hint_t * UNUSED(parent_hint), zoidfs_op_hint_t * UNUSED(op_hint)) {
 	
     int ret;
     struct file_handle_info_dirop_args where;
@@ -1815,7 +1817,7 @@ static int zoidfs_sysio_mkdir(const zoidfs_handle_t *parent_handle,
 static int zoidfs_sysio_readdir(const zoidfs_handle_t *parent_handle,
                    zoidfs_dirent_cookie_t cookie, size_t *entry_count,
                    zoidfs_dirent_t * entries, uint32_t flags,
-                   zoidfs_cache_hint_t * UNUSED(parent_hint)) {
+                   zoidfs_cache_hint_t * UNUSED(parent_hint), zoidfs_op_hint_t * op_hint) {
 
     struct stat64 stbuf;
 	static char sysio_parent_handle_data[SYSIO_HANDLE_DATA_SIZE];
@@ -1885,7 +1887,7 @@ static int zoidfs_sysio_readdir(const zoidfs_handle_t *parent_handle,
                 /*
                  * lookup and save the handle
                  */
-                zoidfs_lookup(parent_handle, dp->d_name, NULL, &entries[i].handle);
+                zoidfs_lookup(parent_handle, dp->d_name, NULL, &entries[i].handle, op_hint);
 
                 /*
                  * Get the handle attrs
@@ -1893,12 +1895,12 @@ static int zoidfs_sysio_readdir(const zoidfs_handle_t *parent_handle,
                 memset(&attr, 0, sizeof(attr));
                 memset(&entries[i].attr, 0, sizeof(entries[i].attr));
                 attr.mask = ZOIDFS_ATTR_ALL;
-                zoidfs_getattr(&entries[i].handle, &entries[i].attr);
+                zoidfs_getattr(&entries[i].handle, &entries[i].attr, op_hint);
             }
             else
             {
                 zoidfs_handle_t ehandle;
-                zoidfs_lookup(parent_handle, dp->d_name, NULL, &ehandle);
+                zoidfs_lookup(parent_handle, dp->d_name, NULL, &ehandle, op_hint);
 
                 /*
                  * Get the handle attrs
@@ -1906,7 +1908,7 @@ static int zoidfs_sysio_readdir(const zoidfs_handle_t *parent_handle,
                 memset(&attr, 0, sizeof(attr));
                 memset(&entries[i].attr, 0, sizeof(entries[i].attr));
                 attr.mask = ZOIDFS_ATTR_ALL;
-                zoidfs_getattr(&ehandle, &entries[i].attr);
+                zoidfs_getattr(&ehandle, &entries[i].attr, op_hint);
             }
 
             /*
@@ -1947,7 +1949,7 @@ static int zoidfs_sysio_readdir(const zoidfs_handle_t *parent_handle,
  * zoidfs_resize
  * This function resizes the file associated with the file handle.
  */
-static int zoidfs_sysio_resize(const zoidfs_handle_t *handle, uint64_t size)
+static int zoidfs_sysio_resize(const zoidfs_handle_t *handle, uint64_t size, zoidfs_op_hint_t * op_hint)
 {
 	
     /*
@@ -1980,7 +1982,7 @@ static int zoidfs_sysio_resize(const zoidfs_handle_t *handle, uint64_t size)
     memset(&attr, 0, sizeof(attr));
     attr.mask = ZOIDFS_ATTR_MODE;
 
-    zoidfs_getattr(handle, &attr);
+    zoidfs_getattr(handle, &attr, op_hint);
 
     if(attr.type == ZOIDFS_REG || attr.type == ZOIDFS_LNK)
     {
@@ -1988,7 +1990,7 @@ static int zoidfs_sysio_resize(const zoidfs_handle_t *handle, uint64_t size)
         sattr.mask = ZOIDFS_ATTR_SIZE;
         sattr.size = size;
     
-        ret = zoidfs_sysio_setattr(handle, &sattr, NULL);
+        ret = zoidfs_sysio_setattr(handle, &sattr, NULL, op_hint);
     }
     else
     {
@@ -2008,7 +2010,7 @@ static int zoidfs_sysio_resize(const zoidfs_handle_t *handle, uint64_t size)
 static int zoidfs_sysio_write(const zoidfs_handle_t *handle, size_t mem_count,
                  const void *mem_starts[], const size_t mem_sizes[],
                  size_t file_count, const uint64_t file_starts[],
-                 uint64_t file_sizes[]) {
+                 uint64_t file_sizes[], zoidfs_op_hint_t * UNUSED(op_hint)) {
 	
 	int ret = 0;
 	unsigned int i = 0;
@@ -2146,7 +2148,7 @@ static int zoidfs_sysio_write(const zoidfs_handle_t *handle, size_t mem_count,
 static int zoidfs_sysio_read(const zoidfs_handle_t *handle, size_t mem_count,
                 void *mem_starts[], const size_t mem_sizes[],
                 size_t file_count, const uint64_t file_starts[],
-                uint64_t file_sizes[]) {
+                uint64_t file_sizes[], zoidfs_op_hint_t * UNUSED(op_hint)) {
 	
 	int ret = 0;
 	unsigned int i = 0;
