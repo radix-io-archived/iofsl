@@ -23,6 +23,10 @@ IOFWDReadRequest::~IOFWDReadRequest ()
       delete[] file_sizes_;
    if (bmi_mem_sizes_)
       delete[] bmi_mem_sizes_;
+   if(op_hint_)
+   {
+      zoidfs::util::ZoidFSHintDestroy(&op_hint_);
+   }
 }
 
 //
@@ -44,6 +48,7 @@ const IOFWDReadRequest::ReqParam & IOFWDReadRequest::decodeParam ()
    process (req_reader_, iofwdutil::xdr::XDRVarArray(file_sizes_, file_count_));
 
    process (req_reader_, pipeline_size_);
+   decodeOpHint (&op_hint_);
 
    // allocate buffer for normal mode
    if (pipeline_size_ == 0) {
@@ -78,6 +83,14 @@ const IOFWDReadRequest::ReqParam & IOFWDReadRequest::decodeParam ()
    param_.file_starts = file_starts_;
    param_.file_sizes = file_sizes_;
    param_.pipeline_size = pipeline_size_;
+   if(op_hint_)
+   {
+      param_.op_hint = op_hint_;
+   }
+   else
+   {
+      param_.op_hint = NULL;
+   }
    return param_;
 }
 

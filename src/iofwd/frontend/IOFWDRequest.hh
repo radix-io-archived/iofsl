@@ -12,6 +12,7 @@
 #include "iofwdutil/xdr/XDRWriter.hh"
 #include "iofwdutil/xdr/XDRSizeProcessor.hh"
 #include "zoidfs/util/FileSpecHelper.hh"
+#include "zoidfs/util/OpHintHelper.hh"
 
 #include "zoidfs/util/zoidfs-wrapped.hh"
 
@@ -59,6 +60,11 @@ protected:
       memset(info.component_name, 0, ZOIDFS_NAME_MAX);
       process(req_reader_, iofwdutil::xdr::FileSpecHelper (&info.parent_handle,
               info.component_name, info.full_path));
+   }
+
+   void decodeOpHint (zoidfs::zoidfs_op_hint_t ** op_hint)
+   {
+     process(req_reader_, iofwdutil::xdr::OpHintHelper ((const zoidfs::zoidfs_op_hint_t **) op_hint));
    }
 
 

@@ -19,7 +19,7 @@ class IOFWDLinkRequest
 public:
    IOFWDLinkRequest (iofwdutil::bmi::BMIContext & bmi, int opid, const BMI_unexpected_info & info,
          iofwdutil::completion::BMIResource & res)
-      : IOFWDRequest (bmi, info,res), LinkRequest (opid)
+      : IOFWDRequest (bmi, info,res), LinkRequest (opid), op_hint_(NULL)
    {
    }
 
@@ -35,6 +35,7 @@ protected:
    FileInfo from_info_;
    FileInfo to_info_;
    zoidfs::zoidfs_sattr_t sattr_;
+   zoidfs::zoidfs_op_hint_t * op_hint_;
 };
 
 //===========================================================================

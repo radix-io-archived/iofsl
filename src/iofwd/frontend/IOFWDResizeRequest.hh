@@ -17,7 +17,7 @@ class IOFWDResizeRequest
 public:
    IOFWDResizeRequest (iofwdutil::bmi::BMIContext & bmi, int opid, const BMI_unexpected_info & info,
          iofwdutil::completion::BMIResource & res)
-      : ResizeRequest(opid), IOFWDRequest (bmi, info, res)
+      : ResizeRequest(opid), IOFWDRequest (bmi, info, res), op_hint_(NULL)
    {
    }
 
@@ -31,6 +31,7 @@ protected:
    ReqParam param_;
    zoidfs::zoidfs_handle_t handle_;
    uint64_t size_;
+   zoidfs::zoidfs_op_hint_t * op_hint_;
 };
 
 //===========================================================================

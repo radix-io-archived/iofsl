@@ -20,7 +20,7 @@ public:
       : IOFWDRequest (bmi, info,res), ReadRequest (opid),
         mem_count_ (0), mem_ (NULL), mem_starts_ (NULL), mem_sizes_ (NULL), bmi_mem_sizes_ (NULL),
         file_count_ (0), file_starts_ (NULL), file_sizes_ (NULL),
-        pipeline_size_ (0)
+        pipeline_size_ (0), op_hint_(NULL)
    {
    }
    virtual ~IOFWDReadRequest ();
@@ -48,6 +48,7 @@ private:
    zoidfs::zoidfs_file_ofs_t * file_starts_;
    zoidfs::zoidfs_file_ofs_t * file_sizes_;
    size_t pipeline_size_;
+   zoidfs::zoidfs_op_hint_t * op_hint_;
 }; 
 
 //===========================================================================

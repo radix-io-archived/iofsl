@@ -19,7 +19,7 @@ class IOFWDLookupRequest
 public:
    IOFWDLookupRequest (iofwdutil::bmi::BMIContext & bmi, int opid, const BMI_unexpected_info & info,
          iofwdutil::completion::BMIResource & res)
-      : IOFWDRequest (bmi, info,res), LookupRequest (opid)
+      : IOFWDRequest (bmi, info,res), LookupRequest (opid), op_hint_(NULL)
    {
    }
 
@@ -32,7 +32,8 @@ public:
    
 protected:
    ReqParam param_; 
-   FileInfo info_; 
+   FileInfo info_;
+   zoidfs::zoidfs_op_hint_t * op_hint_; 
 }; 
 
 //===========================================================================

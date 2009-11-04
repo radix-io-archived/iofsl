@@ -18,7 +18,7 @@ class IOFWDReadDirRequest
 public:
    IOFWDReadDirRequest (iofwdutil::bmi::BMIContext & bmi, int opid, const BMI_unexpected_info & info,
          iofwdutil::completion::BMIResource & res)
-      : IOFWDRequest (bmi, info,res), ReadDirRequest (opid), entries_ (NULL)
+      : IOFWDRequest (bmi, info,res), ReadDirRequest (opid), entries_ (NULL), op_hint_(NULL)
    {
    }
 
@@ -38,6 +38,7 @@ protected:
    uint32_t entry_count_;
    zoidfs::zoidfs_dirent_t * entries_;
    uint32_t flags_;
+   zoidfs::zoidfs_op_hint_t * op_hint_;
 };
 
 //===========================================================================

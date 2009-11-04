@@ -19,7 +19,7 @@ class IOFWDMkdirRequest
 public:
    IOFWDMkdirRequest (iofwdutil::bmi::BMIContext & bmi, int opid, const BMI_unexpected_info & info,
          iofwdutil::completion::BMIResource & res)
-      : IOFWDRequest (bmi, info,res), MkdirRequest (opid)
+      : IOFWDRequest (bmi, info,res), MkdirRequest (opid), op_hint_(NULL)
    {
    }
 
@@ -34,6 +34,7 @@ protected:
    ReqParam param_;
    FileInfo info_;
    zoidfs::zoidfs_sattr_t sattr_;
+   zoidfs::zoidfs_op_hint_t * op_hint_;
 };
 
 //===========================================================================

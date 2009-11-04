@@ -18,7 +18,7 @@ class IOFWDCreateRequest
 public:
    IOFWDCreateRequest (iofwdutil::bmi::BMIContext & bmi, int opid, const BMI_unexpected_info & info,
          iofwdutil::completion::BMIResource & res)
-      : IOFWDRequest (bmi, info,res), CreateRequest (opid)
+      : IOFWDRequest (bmi, info,res), CreateRequest (opid), op_hint_(NULL)
    {
    }
 
@@ -32,6 +32,7 @@ protected:
    ReqParam param_;
    FileInfo info_;
    zoidfs::zoidfs_sattr_t attr_;
+   zoidfs::zoidfs_op_hint_t * op_hint_;
 };
 
 //===========================================================================

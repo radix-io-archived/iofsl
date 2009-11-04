@@ -19,7 +19,7 @@ class IOFWDRenameRequest
 public:
    IOFWDRenameRequest (iofwdutil::bmi::BMIContext & bmi, int opid, const BMI_unexpected_info & info,
          iofwdutil::completion::BMIResource & res)
-      : IOFWDRequest (bmi, info,res), RenameRequest (opid)
+      : IOFWDRequest (bmi, info,res), RenameRequest (opid), op_hint_(NULL)
    {
    }
 
@@ -34,6 +34,7 @@ protected:
    ReqParam param_; 
    FileInfo from_info_;
    FileInfo to_info_;
+   zoidfs::zoidfs_op_hint_t * op_hint_;
 }; 
 
 //===========================================================================

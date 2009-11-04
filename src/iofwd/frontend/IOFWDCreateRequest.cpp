@@ -11,6 +11,8 @@ const IOFWDCreateRequest::ReqParam & IOFWDCreateRequest::decodeParam ()
 {
    decodeFileSpec (info_);
    process (req_reader_, attr_);
+   decodeOpHint (&op_hint_);
+
    if (info_.full_path[0])
    {
       param_.full_path = info_.full_path;
@@ -22,6 +24,14 @@ const IOFWDCreateRequest::ReqParam & IOFWDCreateRequest::decodeParam ()
       param_.full_path = 0;
       param_.parent_handle = &info_.parent_handle ;
       param_.component_name = info_.component_name;
+   }
+   if(op_hint_)
+   {
+      param_.op_hint = op_hint_;
+   }
+   else
+   {
+      param_.op_hint = NULL;
    }
    param_.attr = &attr_;
    return param_;
@@ -44,6 +54,10 @@ const IOFWDCreateRequest::ReqParam & IOFWDCreateRequest::decodeParam ()
 
 IOFWDCreateRequest::~IOFWDCreateRequest ()
 {
+    if(op_hint_)
+    {
+        zoidfs::util::ZoidFSHintDestroy(&op_hint_);
+    }
 }
 
 

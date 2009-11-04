@@ -18,7 +18,7 @@ class IOFWDGetAttrRequest
 public:
    IOFWDGetAttrRequest (iofwdutil::bmi::BMIContext & bmi, int opid, const BMI_unexpected_info & info,
          iofwdutil::completion::BMIResource & res)
-      : IOFWDRequest (bmi, info, res), GetAttrRequest (opid)
+      : IOFWDRequest (bmi, info, res), GetAttrRequest (opid), op_hint_(NULL)
    {
    }
    virtual ~IOFWDGetAttrRequest ();
@@ -31,6 +31,7 @@ protected:
 
    zoidfs::zoidfs_handle_t handle_;
    zoidfs::zoidfs_attr_t attr_;
+   zoidfs::zoidfs_op_hint_t * op_hint_;
 };
 
 //===========================================================================

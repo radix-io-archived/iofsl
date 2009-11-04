@@ -9,7 +9,8 @@ namespace iofwd
 
 const IOFWDLookupRequest::ReqParam & IOFWDLookupRequest::decodeParam () 
 {
-   decodeFileSpec (info_); 
+   decodeFileSpec (info_);
+   decodeOpHint (&op_hint_);
    if (info_.full_path[0])
    {
       param_.full_path = info_.full_path; 
@@ -21,6 +22,14 @@ const IOFWDLookupRequest::ReqParam & IOFWDLookupRequest::decodeParam ()
       param_.full_path = 0; 
       param_.parent_handle = &info_.parent_handle ;
       param_.component_name = info_.component_name; 
+   }
+   if(op_hint_)
+   {
+      param_.op_hint = op_hint_;
+   }
+   else
+   {
+      param_.op_hint = NULL;
    }
    return param_; 
 }
@@ -42,6 +51,10 @@ iofwdutil::completion::CompletionID * IOFWDLookupRequest::reply (const zoidfs::z
 
 IOFWDLookupRequest::~IOFWDLookupRequest ()
 {
+    if(op_hint_)
+    {
+        zoidfs::util::ZoidFSHintDestroy(&op_hint_);
+    }
 }
 
 
