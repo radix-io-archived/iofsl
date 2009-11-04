@@ -7,6 +7,9 @@ src_zoidfs_libzoidfs_util_a_LIBLDFLAGS = \
     @BOOST_THREAD_LIB@ \
     @BOOST_REGEX_LIB@
 
+#src_zoidfs_libzoidfs_util_a_LIBADD = \
+#    ${top_builddir}/src/zoidfs/libzoidfshints.a
+
 src_zoidfs_libzoidfs_util_a_SOURCES = \
 src/zoidfs/util/zoidfs-c-util.h \
 src/zoidfs/util/zoidfs-c-util.c \
@@ -17,6 +20,7 @@ src/zoidfs/util/ZoidFSAsyncAPI.cpp \
 src/zoidfs/util/ZoidFSSync.cpp \
 src/zoidfs/util/zoidfs-util.cpp \
 src/zoidfs/util/FileSpecHelper.hh \
+src/zoidfs/util/OpHintHelper.hh \
 src/zoidfs/util/LogAPI.hh \
 src/zoidfs/util/NullAPI.hh \
 src/zoidfs/util/ThreadPool.hh \
@@ -25,4 +29,6 @@ src/zoidfs/util/ZoidFSAsyncAPI.hh \
 src/zoidfs/util/ZoidFSSync.hh \
 src/zoidfs/util/zoidfs-util.hh \
 src/zoidfs/util/zoidfs-wrapped.hh \
+src/zoidfs/util/ZoidFSHints.hh \
+src/zoidfs/util/ZoidFSHints.cpp \
 src/zoidfs/util/zoidfs-xdr.hh 
