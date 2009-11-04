@@ -16,6 +16,7 @@ public:
    {
      zoidfs::zoidfs_handle_t * handle;
      zoidfs::zoidfs_attr_t * attr;
+     zoidfs::zoidfs_op_hint_t * op_hint;
    } ReqParam;
 
    GetAttrRequest (int opid) 

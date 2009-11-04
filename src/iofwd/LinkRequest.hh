@@ -22,6 +22,7 @@ public:
       char * to_full_path;
       zoidfs::zoidfs_handle_t * to_parent_handle;
       char * to_component_name;
+      zoidfs::zoidfs_op_hint_t * op_hint;
    } ReqParam;
 
    LinkRequest (int opid) :

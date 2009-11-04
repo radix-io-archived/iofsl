@@ -15,6 +15,7 @@ public:
    typedef struct
    {
       zoidfs::zoidfs_handle_t * handle;
+      zoidfs::zoidfs_op_hint_t * op_hint;
    } ReqParam;
 
    CommitRequest (int opid) : Request (opid)

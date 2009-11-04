@@ -18,6 +18,7 @@ public:
       char *              full_path;
       zoidfs::zoidfs_handle_t *   parent_handle; 
       char *              component_name; 
+      zoidfs::zoidfs_op_hint_t * op_hint;
    } ReqParam; 
 
    LookupRequest (int opid) : 

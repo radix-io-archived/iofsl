@@ -20,6 +20,7 @@ public:
       uint32_t entry_count;
       zoidfs::zoidfs_dirent_t * entries;
       uint32_t flags;
+      zoidfs::zoidfs_op_hint_t * op_hint;
    } ReqParam; 
 
    ReadDirRequest (int opid) : 

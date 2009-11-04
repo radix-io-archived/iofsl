@@ -22,6 +22,7 @@ public:
       zoidfs::zoidfs_file_ofs_t * file_starts;
       zoidfs::zoidfs_file_ofs_t * file_sizes;
       size_t pipeline_size;
+      zoidfs::zoidfs_op_hint_t * op_hint;
    } ReqParam;
 
    ReadRequest (int opid)
