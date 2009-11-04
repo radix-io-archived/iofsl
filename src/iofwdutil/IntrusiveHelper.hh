@@ -13,7 +13,7 @@ namespace iofwdutil
  * and add the macro INTRUSIVE_PTR_HELPER(yourclassname);
  * in the class header.
  *
- * Voila. You can use your class with the boost intrusive shared pointer.
+ * Now you can use your class with the boost intrusive shared pointer.
  */
 class IntrusiveHelper  
 {
