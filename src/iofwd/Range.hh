@@ -34,6 +34,7 @@ public:
   char * buf;
   uint64_t st;
   uint64_t en;
+  zoidfs::zoidfs_op_hint_t * op_hint;
 
   // If this Range is composed of some ranges, this variable
   // holds child ranges.
