@@ -11,8 +11,10 @@
 #include <bmi.h>
 #include "zoidfs/zoidfs.h"
 #include "bmi_comm.h"
+#include "mpi_comm.h"
 #include "zoidfs_xdr.h"
 #include "zoidfs/zoidfs-proto.h"
+#include "zoidfs/hints/zoidfs-hints.h"
 
 #include "c-util/tools.h"
 #include <assert.h>
@@ -172,9 +174,10 @@ typedef enum
     ZFS_CSTRING_PATH_T = 18,
     ZFS_CSTRING_NAME_T = 19,
     ZFS_DIRENT_TRANSFER_T = 20,
+    ZFS_OP_HINT_T = 21,
 
     /* end of enum */
-    ZFS_MSG_DATA_MAX = 21
+    ZFS_MSG_DATA_MAX = 22
 } zoidfs_msg_data_t;
 
 /* zoidfs data type wrappers for buffers and arrays */
@@ -330,6 +333,10 @@ static inline unsigned int zoidfs_xdr_size_processor_cache_init()
                 zoidfs_xdr_size_cache[i] = 0;
                 break;
             }
+            case ZFS_OP_HINT_T:
+            {
+                zoidfs_xdr_size_cache[i] = 0;
+            }
             case ZFS_INT_T:
             {
                 int data;
@@ -378,7 +385,11 @@ static inline unsigned int zoidfs_xdr_size_processor(zoidfs_msg_data_t data_t, c
                 size = sizeof(uint32_t) + (*(size_t *)data * zoidfs_xdr_size_cache[ZFS_FILE_OFS_T]);
                 break;
             }
-
+            case ZFS_OP_HINT_T:
+            {
+                size = xdr_sizeof((xdrproc_t)xdr_zoidfs_op_hint_t, (zoidfs_op_hint_t **)data);
+                break;
+            }
             default:
             {
                 size = zoidfs_xdr_size_cache[data_t];
@@ -426,6 +437,11 @@ static inline unsigned int zoidfs_xdr_size_processor(zoidfs_msg_data_t data_t, c
             case ZFS_DIRENT_COOKIE_T:
             {
                 size = xdr_sizeof((xdrproc_t)xdr_zoidfs_dirent_cookie_t, (zoidfs_dirent_cookie_t *)data);
+                break;
+            }
+            case ZFS_OP_HINT_T:
+            {
+                size = xdr_sizeof((xdrproc_t)xdr_zoidfs_op_hint_t, (zoidfs_op_hint_t **)data);
                 break;
             }
             case ZFS_UINT32_T:
@@ -562,6 +578,15 @@ static inline int zoidfs_xdr_processor(zoidfs_msg_data_t data_t, void * data, zo
             if (!xdr_zoidfs_dirent_cookie_t(ZFS_XDRSTREAM((xdr)), data))
             {
                 fprintf(stderr, "%s(): xdr_zoidfs_dirent_cookie_t() failed, %s:%i.\n", __func__, __FILE__, __LINE__);
+                ret = ZFSERR_XDR;
+            }
+            break;
+        }
+        case ZFS_OP_HINT_T:
+        {
+            if (!xdr_zoidfs_op_hint_t(ZFS_XDRSTREAM((xdr)), data))
+            {
+                fprintf(stderr, "%s(): xdr_zoidfs_op_hint_t() failed, %s:%i.\n", __func__, __FILE__, __LINE__);
                 ret = ZFSERR_XDR;
             }
             break;
@@ -822,6 +847,59 @@ do{                                         \
 }while(0)
 #endif
 
+int zoidfs_xdr_encode_hint(zoidfs_send_msg_t * send_msg, zoidfs_op_hint_t * op_hint)
+{
+    zoidfs_null_param_t valid_hint = 0;
+    int ret = ZFS_OK;
+    if(op_hint)
+    {
+        int size = zoidfs_hint_num_elements(&op_hint);
+        valid_hint = 1;
+        if((ret = zoidfs_xdr_processor(ZFS_NULL_PARAM_T, &valid_hint, &send_msg->send_xdr)) != ZFS_OK)
+        {
+            return ret;
+        }
+        if((ret = zoidfs_xdr_processor(ZFS_INT_T, &size, &send_msg->send_xdr)) != ZFS_OK)
+        {
+            return ret;
+        }
+        if((ret = zoidfs_xdr_processor(ZFS_OP_HINT_T, &op_hint, &send_msg->send_xdr)) != ZFS_OK)
+        {
+            return ret;
+        }
+    }
+    else
+    {
+        valid_hint = 0;
+        if((ret = zoidfs_xdr_processor(ZFS_NULL_PARAM_T, &valid_hint, &send_msg->send_xdr)) != ZFS_OK)
+        {
+            return ret;
+        }
+    }
+
+    return ret;
+}
+
+int zoidfs_xdr_hint_size(zoidfs_op_hint_t * op_hint)
+{
+    int size = 0; 
+    zoidfs_null_param_t valid_hint = 0;
+    if(op_hint)
+    {
+        valid_hint = 1;
+        size += zoidfs_xdr_size_processor(ZFS_NULL_PARAM_T, &valid_hint) +
+                zoidfs_xdr_size_processor(ZFS_INT_T, &size) +
+                zoidfs_xdr_size_processor(ZFS_OP_HINT_T, &op_hint);
+    }
+    else
+    {
+        valid_hint = 0;
+        size += zoidfs_xdr_size_processor(ZFS_NULL_PARAM_T, &valid_hint);
+    }
+
+    return size;
+}
+
 /* pipline config */
 #ifndef PIPELINE_SIZE
 #define PIPELINE_SIZE (1024 * 1024 * 8)
@@ -960,7 +1038,7 @@ null_cleanup:
  * This function retrieves the attributes associated with the file handle from
  * the ION.
  */
-int zoidfs_getattr(const zoidfs_handle_t *handle, zoidfs_attr_t *attr) {
+int zoidfs_getattr(const zoidfs_handle_t *handle, zoidfs_attr_t *attr, zoidfs_op_hint_t * op_hint) {
     int ret = ZFS_OK;
     zoidfs_send_msg_t send_msg;
     zoidfs_recv_msg_t recv_msg;
@@ -972,7 +1050,8 @@ int zoidfs_getattr(const zoidfs_handle_t *handle, zoidfs_attr_t *attr) {
     /* calculate the send buffer size */
     send_msg.sendbuflen = zoidfs_xdr_size_processor(ZFS_OP_ID_T, &send_msg.zoidfs_op_id) +
                           zoidfs_xdr_size_processor(ZFS_HANDLE_T, (void *)handle) +
-                          zoidfs_xdr_size_processor(ZFS_ATTR_T, attr);
+                          zoidfs_xdr_size_processor(ZFS_ATTR_T, attr) +
+                          zoidfs_xdr_hint_size(op_hint);
 
     /* calculate the recv buffer size */
     recv_msg.recvbuflen = zoidfs_xdr_size_processor(ZFS_OP_STATUS_T, &recv_msg.op_status) +
@@ -1008,6 +1087,9 @@ int zoidfs_getattr(const zoidfs_handle_t *handle, zoidfs_attr_t *attr) {
         goto getattr_cleanup;
     }
     if((ret = zoidfs_xdr_processor(ZFS_ATTR_T, attr, &send_msg.send_xdr)) != ZFS_OK) {
+        goto getattr_cleanup;
+    }
+    if((ret = zoidfs_xdr_encode_hint(&send_msg, op_hint)) != ZFS_OK) {
         goto getattr_cleanup;
     }
 
@@ -1068,7 +1150,8 @@ getattr_cleanup:
  * This function sets the attributes associated with the file handle.
  */
 int zoidfs_setattr(const zoidfs_handle_t *handle, const zoidfs_sattr_t *sattr,
-                   zoidfs_attr_t *attr) {
+                   zoidfs_attr_t *attr,
+                   zoidfs_op_hint_t * op_hint) {
 
     int ret = ZFS_OK;
     zoidfs_send_msg_t send_msg;
@@ -1083,7 +1166,8 @@ int zoidfs_setattr(const zoidfs_handle_t *handle, const zoidfs_sattr_t *sattr,
     send_msg.sendbuflen = zoidfs_xdr_size_processor(ZFS_OP_ID_T, &send_msg.zoidfs_op_id) +
                           zoidfs_xdr_size_processor(ZFS_HANDLE_T, (void *)handle) +
                           zoidfs_xdr_size_processor(ZFS_SATTR_T, (void *)sattr) +
-                          zoidfs_xdr_size_processor(ZFS_ATTR_T, attr);
+                          zoidfs_xdr_size_processor(ZFS_ATTR_T, attr) +
+                          zoidfs_xdr_hint_size(op_hint);
 
     /* Wait for the response from the ION */
     ZOIDFS_RECV_ALLOC_BUFFER(recv_msg);
@@ -1116,6 +1200,9 @@ int zoidfs_setattr(const zoidfs_handle_t *handle, const zoidfs_sattr_t *sattr,
         goto setattr_cleanup;
     }
     if ((ret = zoidfs_xdr_processor(ZFS_ATTR_T, attr, &send_msg.send_xdr)) != ZFS_OK) {
+        goto setattr_cleanup;
+    }
+    if((ret = zoidfs_xdr_encode_hint(&send_msg, op_hint)) != ZFS_OK) {
         goto setattr_cleanup;
     }
 
@@ -1176,7 +1263,8 @@ setattr_cleanup:
  * This function reads a symbolic link.
  */
 int zoidfs_readlink(const zoidfs_handle_t *handle, char *buffer,
-                    size_t buffer_length) {
+                    size_t buffer_length,
+                   zoidfs_op_hint_t * op_hint) {
     int ret = ZFS_OK;
     uint64_t buffer_length_uint64_t = (uint64_t)buffer_length;
     zoidfs_send_msg_t send_msg;
@@ -1195,7 +1283,8 @@ int zoidfs_readlink(const zoidfs_handle_t *handle, char *buffer,
 
     send_msg.sendbuflen = zoidfs_xdr_size_processor(ZFS_OP_ID_T, &send_msg.zoidfs_op_id) +
                           zoidfs_xdr_size_processor(ZFS_HANDLE_T, (void *)handle) +
-                          zoidfs_xdr_size_processor(ZFS_UINT64_T, &buffer_length_uint64_t);
+                          zoidfs_xdr_size_processor(ZFS_UINT64_T, &buffer_length_uint64_t) +
+                          zoidfs_xdr_hint_size(op_hint);;
 
     recv_msg.recvbuflen = zoidfs_xdr_size_processor(ZFS_OP_STATUS_T, &recv_msg.op_status) +
                           XDRSIZE_BUFFER_T(intl_buffer_length_uint64_t);
@@ -1231,6 +1320,9 @@ int zoidfs_readlink(const zoidfs_handle_t *handle, char *buffer,
     }
     if ((ret = zoidfs_xdr_processor(ZFS_UINT64_T, &intl_buffer_length_uint64_t, &send_msg.send_xdr)) != ZFS_OK) {
         
+        goto readlink_cleanup;
+    }
+    if((ret = zoidfs_xdr_encode_hint(&send_msg, op_hint)) != ZFS_OK) {
         goto readlink_cleanup;
     }
 
@@ -1307,7 +1399,8 @@ readlink_cleanup:
  */
 int zoidfs_lookup(const zoidfs_handle_t *parent_handle,
                   const char *component_name, const char *full_path,
-                  zoidfs_handle_t *handle) {
+                  zoidfs_handle_t *handle,
+                   zoidfs_op_hint_t * op_hint) {
     zoidfs_null_param_t null_param;
     int ret = ZFS_OK;
     zoidfs_send_msg_t send_msg;
@@ -1344,6 +1437,7 @@ int zoidfs_lookup(const zoidfs_handle_t *parent_handle,
                               zoidfs_xdr_size_processor(ZFS_HANDLE_T, (void *)parent_handle) +
                               XDRSIZE_CSTRING_NAME_T(component_name);
     }
+    send_msg.sendbuflen += zoidfs_xdr_hint_size(op_hint);
     recv_msg.recvbuflen = zoidfs_xdr_size_processor(ZFS_OP_STATUS_T, &recv_msg.op_status) +
                           zoidfs_xdr_size_processor(ZFS_HANDLE_T, handle);
 
@@ -1397,6 +1491,9 @@ int zoidfs_lookup(const zoidfs_handle_t *parent_handle,
             
             goto lookup_cleanup;
         }
+    }
+    if((ret = zoidfs_xdr_encode_hint(&send_msg, op_hint)) != ZFS_OK) {
+        goto lookup_cleanup;
     }
 
     /*
@@ -1459,7 +1556,8 @@ lookup_cleanup:
  */
 int zoidfs_remove(const zoidfs_handle_t *parent_handle,
                   const char *component_name, const char *full_path,
-                  zoidfs_cache_hint_t *parent_hint) {
+                  zoidfs_cache_hint_t *parent_hint,
+                   zoidfs_op_hint_t * op_hint) {
     int ret = ZFS_OK;
     zoidfs_cache_hint_t hint;
     zoidfs_null_param_t null_param;
@@ -1497,6 +1595,7 @@ int zoidfs_remove(const zoidfs_handle_t *parent_handle,
                               zoidfs_xdr_size_processor(ZFS_HANDLE_T, (void *)parent_handle) +
                               XDRSIZE_CSTRING_NAME_T(component_name);
     }
+    send_msg.sendbuflen += zoidfs_xdr_hint_size(op_hint);
 
     if (parent_hint) {
         recv_msg.recvbuflen = zoidfs_xdr_size_processor(ZFS_OP_STATUS_T, &recv_msg.op_status) +
@@ -1557,6 +1656,9 @@ int zoidfs_remove(const zoidfs_handle_t *parent_handle,
             goto remove_cleanup; 
         }
     }
+    if((ret = zoidfs_xdr_encode_hint(&send_msg, op_hint)) != ZFS_OK) {
+        goto remove_cleanup;
+    }
 
     /*
      * Send the encoded function parameters to the ION daemon using an
@@ -1616,7 +1718,8 @@ remove_cleanup:
  * zoidfs_commit
  * This function flushes the buffers associated with the file handle.
  */
-int zoidfs_commit(const zoidfs_handle_t *handle) {
+int zoidfs_commit(const zoidfs_handle_t *handle,
+                   zoidfs_op_hint_t * op_hint) {
     int ret = ZFS_OK;
     zoidfs_send_msg_t send_msg;
     zoidfs_recv_msg_t recv_msg;
@@ -1627,7 +1730,8 @@ int zoidfs_commit(const zoidfs_handle_t *handle) {
 
     recv_msg.recvbuflen = zoidfs_xdr_size_processor(ZFS_OP_STATUS_T, &recv_msg.op_status);
     send_msg.sendbuflen = zoidfs_xdr_size_processor(ZFS_OP_ID_T, &send_msg.zoidfs_op_id) +
-                          zoidfs_xdr_size_processor(ZFS_HANDLE_T, (void *)handle);
+                          zoidfs_xdr_size_processor(ZFS_HANDLE_T, (void *)handle) +
+                          zoidfs_xdr_hint_size(op_hint);;
 
     /* Wait for the response from the ION */
     ZOIDFS_RECV_ALLOC_BUFFER(recv_msg);
@@ -1656,6 +1760,9 @@ int zoidfs_commit(const zoidfs_handle_t *handle) {
     }
     if ((ret = zoidfs_xdr_processor(ZFS_HANDLE_T, (void *)handle, &send_msg.send_xdr)) != ZFS_OK) {
         
+        goto commit_cleanup;
+    }
+    if((ret = zoidfs_xdr_encode_hint(&send_msg, op_hint)) != ZFS_OK) {
         goto commit_cleanup;
     }
 
@@ -1711,7 +1818,8 @@ commit_cleanup:
 int zoidfs_create(const zoidfs_handle_t *parent_handle,
                   const char *component_name, const char *full_path,
                   const zoidfs_sattr_t *sattr, zoidfs_handle_t *handle,
-                  int *created) {
+                  int *created,
+                   zoidfs_op_hint_t * op_hint) {
     zoidfs_null_param_t null_param;
     int ret = ZFS_OK;
     zoidfs_send_msg_t send_msg;
@@ -1750,7 +1858,7 @@ int zoidfs_create(const zoidfs_handle_t *parent_handle,
                               XDRSIZE_CSTRING_NAME_T(component_name) +
                               zoidfs_xdr_size_processor(ZFS_SATTR_T, (void *)sattr);
     }
-
+    send_msg.sendbuflen += zoidfs_xdr_hint_size(op_hint);
     recv_msg.recvbuflen = zoidfs_xdr_size_processor(ZFS_OP_STATUS_T, &recv_msg.op_status) +
                           zoidfs_xdr_size_processor(ZFS_HANDLE_T, (void *)handle) +
                           zoidfs_xdr_size_processor(ZFS_INT_T, created);
@@ -1809,6 +1917,9 @@ int zoidfs_create(const zoidfs_handle_t *parent_handle,
 
     if ((zoidfs_xdr_processor(ZFS_SATTR_T, (void *)sattr, &send_msg.send_xdr)) != ZFS_OK) {
         
+        goto create_cleanup;
+    }
+    if((ret = zoidfs_xdr_encode_hint(&send_msg, op_hint)) != ZFS_OK) {
         goto create_cleanup;
     }
 
@@ -1883,7 +1994,8 @@ int zoidfs_rename(const zoidfs_handle_t *from_parent_handle,
                   const char *to_component_name,
                   const char *to_full_path,
                   zoidfs_cache_hint_t *from_parent_hint,
-                  zoidfs_cache_hint_t *to_parent_hint) {
+                  zoidfs_cache_hint_t *to_parent_hint,
+                   zoidfs_op_hint_t * op_hint) {
     int ret = ZFS_OK;
     zoidfs_cache_hint_t hint;
     zoidfs_null_param_t from_null_param, to_null_param;
@@ -1935,7 +2047,7 @@ int zoidfs_rename(const zoidfs_handle_t *from_parent_handle,
                                zoidfs_xdr_size_processor(ZFS_HANDLE_T, (void *)to_parent_handle) +
                                XDRSIZE_CSTRING_NAME_T(to_component_name);
     }
-
+    send_msg.sendbuflen += zoidfs_xdr_hint_size(op_hint);
     recv_msg.recvbuflen = zoidfs_xdr_size_processor(ZFS_OP_STATUS_T, &recv_msg.op_status) +
                           zoidfs_xdr_size_processor(ZFS_CACHE_HINT_T, &hint) +
                           zoidfs_xdr_size_processor(ZFS_CACHE_HINT_T, &hint);
@@ -2026,6 +2138,9 @@ int zoidfs_rename(const zoidfs_handle_t *from_parent_handle,
             goto rename_cleanup;
         }
     }
+    if((ret = zoidfs_xdr_encode_hint(&send_msg, op_hint)) != ZFS_OK) {
+        goto rename_cleanup;
+    }
 
     /*
      * Send the encoded function parameters to the ION daemon using an
@@ -2106,7 +2221,8 @@ int zoidfs_link(const zoidfs_handle_t *from_parent_handle,
                 const char *to_component_name,
                 const char *to_full_path,
                 zoidfs_cache_hint_t *from_parent_hint,
-                zoidfs_cache_hint_t *to_parent_hint) {
+                zoidfs_cache_hint_t *to_parent_hint,
+                   zoidfs_op_hint_t * op_hint) {
     zoidfs_cache_hint_t hint;
     zoidfs_null_param_t from_null_param, to_null_param;
     int ret = ZFS_OK;
@@ -2158,7 +2274,7 @@ int zoidfs_link(const zoidfs_handle_t *from_parent_handle,
                                zoidfs_xdr_size_processor(ZFS_HANDLE_T, (void *)to_parent_handle) +
                                XDRSIZE_CSTRING_NAME_T(to_component_name);
     }
-
+    send_msg.sendbuflen += zoidfs_xdr_hint_size(op_hint);
     recv_msg.recvbuflen = zoidfs_xdr_size_processor(ZFS_OP_STATUS_T, &recv_msg.op_status) +
                           zoidfs_xdr_size_processor(ZFS_CACHE_HINT_T, &hint) +
                           zoidfs_xdr_size_processor(ZFS_CACHE_HINT_T, &hint);
@@ -2247,6 +2363,9 @@ int zoidfs_link(const zoidfs_handle_t *from_parent_handle,
             goto link_cleanup;
         }
     }
+    if((ret = zoidfs_xdr_encode_hint(&send_msg, op_hint)) != ZFS_OK) {
+        goto link_cleanup;
+    }
 
     /*
      * Send the encoded function parameters to the ION daemon using an
@@ -2332,7 +2451,8 @@ int zoidfs_symlink(const zoidfs_handle_t *from_parent_handle,
                    const char *to_full_path,
                    const zoidfs_sattr_t *sattr,
                    zoidfs_cache_hint_t *from_parent_hint,
-                   zoidfs_cache_hint_t *to_parent_hint) {
+                   zoidfs_cache_hint_t *to_parent_hint,
+                   zoidfs_op_hint_t * op_hint) {
     zoidfs_cache_hint_t hint;
     zoidfs_null_param_t from_null_param, to_null_param;
     int ret = ZFS_OK;
@@ -2386,7 +2506,9 @@ int zoidfs_symlink(const zoidfs_handle_t *from_parent_handle,
                                XDRSIZE_CSTRING_NAME_T(to_component_name);
     }
 
-    send_msg.sendbuflen += zoidfs_xdr_size_processor(ZFS_SATTR_T, (void *)sattr);
+    send_msg.sendbuflen += zoidfs_xdr_size_processor(ZFS_SATTR_T, (void *)sattr) +
+                          zoidfs_xdr_hint_size(op_hint);
+
     recv_msg.recvbuflen = zoidfs_xdr_size_processor(ZFS_OP_STATUS_T, &recv_msg.op_status) +
                           zoidfs_xdr_size_processor(ZFS_CACHE_HINT_T, &hint) + 
                           zoidfs_xdr_size_processor(ZFS_CACHE_HINT_T, &hint);
@@ -2471,6 +2593,9 @@ int zoidfs_symlink(const zoidfs_handle_t *from_parent_handle,
     if ((ret = zoidfs_xdr_processor(ZFS_SATTR_T, (void *)sattr, &send_msg.send_xdr)) != ZFS_OK) {
         goto symlink_cleanup;
     }
+    if((ret = zoidfs_xdr_encode_hint(&send_msg, op_hint)) != ZFS_OK) {
+        goto symlink_cleanup;
+    }
 
     /*
      * Send the encoded function parameters to the ION daemon using an
@@ -2550,7 +2675,8 @@ symlink_cleanup:
 int zoidfs_mkdir(const zoidfs_handle_t *parent_handle,
                  const char *component_name, const char *full_path,
                  const zoidfs_sattr_t *sattr,
-                 zoidfs_cache_hint_t *parent_hint) {
+                 zoidfs_cache_hint_t *parent_hint,
+                 zoidfs_op_hint_t * op_hint) {
     zoidfs_cache_hint_t hint;
     zoidfs_null_param_t null_param;
     int ret = ZFS_OK;
@@ -2590,7 +2716,7 @@ int zoidfs_mkdir(const zoidfs_handle_t *parent_handle,
                               XDRSIZE_CSTRING_NAME_T(component_name) +
                               zoidfs_xdr_size_processor(ZFS_SATTR_T, (void *)sattr);
     }
-
+    send_msg.sendbuflen += zoidfs_xdr_hint_size(op_hint);
     recv_msg.recvbuflen = zoidfs_xdr_size_processor(ZFS_OP_STATUS_T, &recv_msg.op_status) +
                  zoidfs_xdr_size_processor(ZFS_CACHE_HINT_T, &hint);
 
@@ -2648,6 +2774,9 @@ int zoidfs_mkdir(const zoidfs_handle_t *parent_handle,
 
     if ((ret = zoidfs_xdr_processor(ZFS_SATTR_T, (void *)sattr, &send_msg.send_xdr)) != ZFS_OK) {
         
+        goto mkdir_cleanup;
+    }
+    if((ret = zoidfs_xdr_encode_hint(&send_msg, op_hint)) != ZFS_OK) {
         goto mkdir_cleanup;
     }
 
@@ -2723,7 +2852,8 @@ mkdir_cleanup:
 int zoidfs_readdir(const zoidfs_handle_t *parent_handle,
                    zoidfs_dirent_cookie_t cookie, size_t *entry_count_,
                    zoidfs_dirent_t *entries, uint32_t flags,
-                   zoidfs_cache_hint_t *parent_hint) {
+                   zoidfs_cache_hint_t *parent_hint,
+                   zoidfs_op_hint_t * op_hint) {
     uint32_t entry_count = *entry_count_; /* workaround for 32bit */
     zoidfs_cache_hint_t hint;
     dirent_t_transfer trans; 
@@ -2755,7 +2885,8 @@ int zoidfs_readdir(const zoidfs_handle_t *parent_handle,
                           zoidfs_xdr_size_processor(ZFS_HANDLE_T, (void *)parent_handle) +
                           zoidfs_xdr_size_processor(ZFS_DIRENT_COOKIE_T, (void *)&cookie) +
                           zoidfs_xdr_size_processor(ZFS_UINT32_T, &entry_count) +
-                          zoidfs_xdr_size_processor(ZFS_UINT32_T, &flags);
+                          zoidfs_xdr_size_processor(ZFS_UINT32_T, &flags) +
+                          zoidfs_xdr_hint_size(op_hint);
 
     /* Wait for the response from the ION */
     ZOIDFS_RECV_ALLOC_BUFFER(recv_msg);
@@ -2796,6 +2927,9 @@ int zoidfs_readdir(const zoidfs_handle_t *parent_handle,
     }
     if ((ret = zoidfs_xdr_processor(ZFS_UINT32_T, &flags, &send_msg.send_xdr)) != ZFS_OK) {
         
+        goto readdir_cleanup;
+    }
+    if((ret = zoidfs_xdr_encode_hint(&send_msg, op_hint)) != ZFS_OK) {
         goto readdir_cleanup;
     }
 
@@ -2882,7 +3016,8 @@ readdir_cleanup:
  * zoidfs_resize
  * This function resizes the file associated with the file handle.
  */
-int zoidfs_resize(const zoidfs_handle_t *handle, uint64_t size) {
+int zoidfs_resize(const zoidfs_handle_t *handle, uint64_t size,
+                   zoidfs_op_hint_t * op_hint) {
     int ret = ZFS_OK;
     zoidfs_send_msg_t send_msg;
     zoidfs_recv_msg_t recv_msg;
@@ -2894,7 +3029,8 @@ int zoidfs_resize(const zoidfs_handle_t *handle, uint64_t size) {
     recv_msg.recvbuflen = zoidfs_xdr_size_processor(ZFS_OP_STATUS_T, &recv_msg.op_status);
     send_msg.sendbuflen = zoidfs_xdr_size_processor(ZFS_OP_ID_T, &send_msg.zoidfs_op_id) +
                           zoidfs_xdr_size_processor(ZFS_HANDLE_T, (void *)handle) +
-                          zoidfs_xdr_size_processor(ZFS_UINT64_T, &size);
+                          zoidfs_xdr_size_processor(ZFS_UINT64_T, &size) +
+                          zoidfs_xdr_hint_size(op_hint);
 
     /* Wait for the response from the ION */
     ZOIDFS_RECV_ALLOC_BUFFER(recv_msg);
@@ -2927,6 +3063,9 @@ int zoidfs_resize(const zoidfs_handle_t *handle, uint64_t size) {
     }
     if ((ret = zoidfs_xdr_processor(ZFS_UINT64_T, &size, &send_msg.send_xdr)) != ZFS_OK) {
         
+        goto resize_cleanup;
+    }
+    if((ret = zoidfs_xdr_encode_hint(&send_msg, op_hint)) != ZFS_OK) {
         goto resize_cleanup;
     }
 
@@ -2982,7 +3121,8 @@ resize_cleanup:
 int zoidfs_write(const zoidfs_handle_t *handle, size_t mem_count,
                  const void *mem_starts[], const size_t mem_sizes[],
                  size_t file_count, const zoidfs_file_ofs_t file_starts[],
-                 zoidfs_file_ofs_t file_sizes[]) {
+                 zoidfs_file_ofs_t file_sizes[],
+                   zoidfs_op_hint_t * op_hint) {
     size_t i;
     size_t pipeline_size = 0;
     bmi_size_t total_size = 0;
@@ -3025,7 +3165,8 @@ int zoidfs_write(const zoidfs_handle_t *handle, size_t mem_count,
                           zoidfs_xdr_size_processor(ZFS_SIZE_T, &file_count) +
                           zoidfs_xdr_size_processor(ZFS_FILE_OFS_ARRAY_T, &file_count) +
                           zoidfs_xdr_size_processor(ZFS_FILE_OFS_ARRAY_T, &file_count) +
-                          zoidfs_xdr_size_processor(ZFS_SIZE_T, &pipeline_size);
+                          zoidfs_xdr_size_processor(ZFS_SIZE_T, &pipeline_size) +
+                          zoidfs_xdr_hint_size(op_hint);
 
     /* Wait for the response from the ION */
     ZOIDFS_RECV_ALLOC_BUFFER(recv_msg);
@@ -3123,6 +3264,9 @@ int zoidfs_write(const zoidfs_handle_t *handle, size_t mem_count,
     }
     if ((ret = zoidfs_xdr_processor(ZFS_SIZE_T, &pipeline_size, &send_msg.send_xdr)) != ZFS_OK) {
         
+        goto write_cleanup;
+    }
+    if((ret = zoidfs_xdr_encode_hint(&send_msg, op_hint)) != ZFS_OK) {
         goto write_cleanup;
     }
 
@@ -3347,7 +3491,8 @@ static int zoidfs_write_pipeline(BMI_addr_t peer_addr, size_t pipeline_size,
 int zoidfs_read(const zoidfs_handle_t *handle, size_t mem_count,
                 void *mem_starts[], const size_t mem_sizes[],
                 size_t file_count, const zoidfs_file_ofs_t file_starts[],
-                zoidfs_file_size_t file_sizes[]) {
+                zoidfs_file_size_t file_sizes[],
+                   zoidfs_op_hint_t * op_hint) {
     size_t i;
     size_t pipeline_size = 0;
     size_t total_size = 0;
@@ -3425,7 +3570,8 @@ int zoidfs_read(const zoidfs_handle_t *handle, size_t mem_count,
                           zoidfs_xdr_size_processor(ZFS_SIZE_T, &file_count) +
                           zoidfs_xdr_size_processor(ZFS_FILE_OFS_ARRAY_T, &file_count) +
                           zoidfs_xdr_size_processor(ZFS_FILE_OFS_ARRAY_T, &file_count) +
-                          zoidfs_xdr_size_processor(ZFS_SIZE_T, &pipeline_size);
+                          zoidfs_xdr_size_processor(ZFS_SIZE_T, &pipeline_size) +
+                          zoidfs_xdr_hint_size(op_hint);
 
     /* Wait for the response from the ION */
     ZOIDFS_RECV_ALLOC_BUFFER(recv_msg);
@@ -3486,6 +3632,9 @@ int zoidfs_read(const zoidfs_handle_t *handle, size_t mem_count,
     }
     if ((ret = zoidfs_xdr_processor(ZFS_SIZE_T, &pipeline_size, &send_msg.send_xdr)) != ZFS_OK) {
         
+        goto read_cleanup;
+    }
+    if((ret = zoidfs_xdr_encode_hint(&send_msg, op_hint)) != ZFS_OK) {
         goto read_cleanup;
     }
 
