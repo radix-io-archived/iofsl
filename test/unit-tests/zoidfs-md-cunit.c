@@ -72,7 +72,7 @@ int init_path_names(char * testDir, char * mpt)
 
 int init_basedir_handle(char * mpt)
 {
-    return zoidfs_lookup(NULL, NULL, mpt, &basedir_handle);
+    return zoidfs_lookup(NULL, NULL, mpt, &basedir_handle, ZOIDFS_NO_OP_HINT);
 }
 
 int testNULL(void)
@@ -103,21 +103,21 @@ int testCREATE(void)
     sattr.mtime.nseconds = now.tv_usec;
 
     /* create a file using the base handle and component name*/
-    CU_ASSERT(ZFS_OK == zoidfs_create(&basedir_handle, component_filename, NULL, &sattr, &fhandle, &created));
+    CU_ASSERT(ZFS_OK == zoidfs_create(&basedir_handle, component_filename, NULL, &sattr, &fhandle, &created, ZOIDFS_NO_OP_HINT));
     CU_ASSERT(created == 1);
     total_file_count++;
 
     /* file already exists, create should equal 0 */
-    CU_ASSERT(ZFS_OK == zoidfs_create(&basedir_handle, component_filename, NULL, &sattr, &fhandle, &created));
+    CU_ASSERT(ZFS_OK == zoidfs_create(&basedir_handle, component_filename, NULL, &sattr, &fhandle, &created, ZOIDFS_NO_OP_HINT));
     CU_ASSERT(created == 0);
 
     /* create a file using the base handle and component name*/
-    CU_ASSERT(ZFS_OK == zoidfs_create(NULL, NULL, fullpath_filename, &sattr, &fhandle, &created));
+    CU_ASSERT(ZFS_OK == zoidfs_create(NULL, NULL, fullpath_filename, &sattr, &fhandle, &created, ZOIDFS_NO_OP_HINT));
     CU_ASSERT(created == 1);
     total_file_count++;
 
     /* file already exists, create should equal 0 */
-    CU_ASSERT(ZFS_OK == zoidfs_create(NULL, NULL, fullpath_filename, &sattr, &fhandle, &created));
+    CU_ASSERT(ZFS_OK == zoidfs_create(NULL, NULL, fullpath_filename, &sattr, &fhandle, &created, ZOIDFS_NO_OP_HINT));
     CU_ASSERT(created == 0);
 
     return 0;
@@ -146,51 +146,51 @@ int testMKDIR(void)
     sattr.mtime.nseconds = now.tv_usec;
 
     /* create a file using the base handle and component name*/
-    CU_ASSERT(ZFS_OK == zoidfs_mkdir(&basedir_handle, component_dirname, NULL, &sattr, &parent_hint));
+    CU_ASSERT(ZFS_OK == zoidfs_mkdir(&basedir_handle, component_dirname, NULL, &sattr, &parent_hint, ZOIDFS_NO_OP_HINT));
     total_file_count++;
 
     /* try to create directories if the parents do not exist... this should fail */ 
-    CU_ASSERT_NOT_EQUAL(ZFS_OK, zoidfs_mkdir(&basedir_handle, long_component_dirpath, NULL, &sattr, &parent_hint));
+    CU_ASSERT_NOT_EQUAL(ZFS_OK, zoidfs_mkdir(&basedir_handle, long_component_dirpath, NULL, &sattr, &parent_hint, ZOIDFS_NO_OP_HINT));
 
     /* create several subdirs using the component dir name */
     sprintf(p1, "%s/a", component_dirname); 
-    CU_ASSERT(ZFS_OK == zoidfs_mkdir(&basedir_handle, p1, NULL, &sattr, &parent_hint));
+    CU_ASSERT(ZFS_OK == zoidfs_mkdir(&basedir_handle, p1, NULL, &sattr, &parent_hint, ZOIDFS_NO_OP_HINT));
     total_file_count += 3;
     sprintf(p1, "%s/b", p1); 
-    CU_ASSERT(ZFS_OK == zoidfs_mkdir(&basedir_handle, p1, NULL, &sattr, &parent_hint));
+    CU_ASSERT(ZFS_OK == zoidfs_mkdir(&basedir_handle, p1, NULL, &sattr, &parent_hint, ZOIDFS_NO_OP_HINT));
     total_file_count += 3;
     sprintf(p1, "%s/c", p1); 
-    CU_ASSERT(ZFS_OK == zoidfs_mkdir(&basedir_handle, p1, NULL, &sattr, &parent_hint));
+    CU_ASSERT(ZFS_OK == zoidfs_mkdir(&basedir_handle, p1, NULL, &sattr, &parent_hint, ZOIDFS_NO_OP_HINT));
     total_file_count += 3;
     sprintf(p1, "%s/d", p1); 
-    CU_ASSERT(ZFS_OK == zoidfs_mkdir(&basedir_handle, p1, NULL, &sattr, &parent_hint));
+    CU_ASSERT(ZFS_OK == zoidfs_mkdir(&basedir_handle, p1, NULL, &sattr, &parent_hint, ZOIDFS_NO_OP_HINT));
     total_file_count += 3;
     sprintf(p1, "%s/e", p1); 
-    CU_ASSERT(ZFS_OK == zoidfs_mkdir(&basedir_handle, p1, NULL, &sattr, &parent_hint));
+    CU_ASSERT(ZFS_OK == zoidfs_mkdir(&basedir_handle, p1, NULL, &sattr, &parent_hint, ZOIDFS_NO_OP_HINT));
     total_file_count += 3;
 
     /* create a file using the base handle and component name*/
-    CU_ASSERT(ZFS_OK == zoidfs_mkdir(NULL, NULL, fullpath_dirname, &sattr, &parent_hint));
+    CU_ASSERT(ZFS_OK == zoidfs_mkdir(NULL, NULL, fullpath_dirname, &sattr, &parent_hint, ZOIDFS_NO_OP_HINT));
     total_file_count++;
 
     /* try to create directories if the parents do not exist... this should fail */ 
-    CU_ASSERT_NOT_EQUAL(ZFS_OK, zoidfs_mkdir(&basedir_handle, long_component_dirpath, NULL, &sattr, &parent_hint));
+    CU_ASSERT_NOT_EQUAL(ZFS_OK, zoidfs_mkdir(&basedir_handle, long_component_dirpath, NULL, &sattr, &parent_hint, ZOIDFS_NO_OP_HINT));
 
     /* create several subdirs using the fullpath dir name */
     sprintf(p2, "%s/a", fullpath_dirname); 
-    CU_ASSERT(ZFS_OK == zoidfs_mkdir(NULL, NULL, p2, &sattr, &parent_hint));
+    CU_ASSERT(ZFS_OK == zoidfs_mkdir(NULL, NULL, p2, &sattr, &parent_hint, ZOIDFS_NO_OP_HINT));
     total_file_count += 3;
     sprintf(p2, "%s/b", p2); 
-    CU_ASSERT(ZFS_OK == zoidfs_mkdir(NULL, NULL, p2, &sattr, &parent_hint));
+    CU_ASSERT(ZFS_OK == zoidfs_mkdir(NULL, NULL, p2, &sattr, &parent_hint, ZOIDFS_NO_OP_HINT));
     total_file_count += 3;
     sprintf(p2, "%s/c", p2); 
-    CU_ASSERT(ZFS_OK == zoidfs_mkdir(NULL, NULL, p2, &sattr, &parent_hint));
+    CU_ASSERT(ZFS_OK == zoidfs_mkdir(NULL, NULL, p2, &sattr, &parent_hint, ZOIDFS_NO_OP_HINT));
     total_file_count += 3;
     sprintf(p2, "%s/d", p2); 
-    CU_ASSERT(ZFS_OK == zoidfs_mkdir(NULL, NULL, p2, &sattr, &parent_hint));
+    CU_ASSERT(ZFS_OK == zoidfs_mkdir(NULL, NULL, p2, &sattr, &parent_hint, ZOIDFS_NO_OP_HINT));
     total_file_count += 3;
     sprintf(p2, "%s/e", p2); 
-    CU_ASSERT(ZFS_OK == zoidfs_mkdir(NULL, NULL, p2, &sattr, &parent_hint));
+    CU_ASSERT(ZFS_OK == zoidfs_mkdir(NULL, NULL, p2, &sattr, &parent_hint, ZOIDFS_NO_OP_HINT));
     total_file_count += 3;
 
     return 0;
@@ -218,33 +218,33 @@ int testSYMLINK(void)
     /* create a file using the base handle and component name*/
     CU_ASSERT(ZFS_OK == zoidfs_symlink(&basedir_handle, base_component_filename,
              NULL, &basedir_handle, symlink_component_filename, NULL, &sattr,
-             NULL, NULL));
+             NULL, NULL, ZOIDFS_NO_OP_HINT));
     CU_ASSERT(ZFSERR_EXIST == zoidfs_symlink(&basedir_handle, component_filename,
              NULL, &basedir_handle, symlink_component_filename, NULL, &sattr,
-             NULL, NULL));
+             NULL, NULL, ZOIDFS_NO_OP_HINT));
     total_file_count++;
 
     /* create a file using the base handle and component name*/
     CU_ASSERT(ZFS_OK == zoidfs_symlink(&basedir_handle, base_component_dirname,
              NULL, &basedir_handle, symlink_component_dirname, NULL, &sattr,
-             NULL, NULL));
+             NULL, NULL, ZOIDFS_NO_OP_HINT));
     CU_ASSERT(ZFSERR_EXIST == zoidfs_symlink(&basedir_handle, component_dirname,
              NULL, &basedir_handle, symlink_component_dirname, NULL, &sattr,
-             NULL, NULL));
+             NULL, NULL, ZOIDFS_NO_OP_HINT));
     total_file_count++;
 
     /* create a file using the base handle and component name*/
     CU_ASSERT(ZFS_OK == zoidfs_symlink(NULL, NULL, fullpath_filename, NULL,
-             NULL, symlink_fullpath_filename, &sattr, NULL, NULL));
+             NULL, symlink_fullpath_filename, &sattr, NULL, NULL, ZOIDFS_NO_OP_HINT));
     CU_ASSERT(ZFSERR_EXIST == zoidfs_symlink(NULL, NULL, fullpath_filename, NULL,
-             NULL, symlink_fullpath_filename, &sattr, NULL, NULL));
+             NULL, symlink_fullpath_filename, &sattr, NULL, NULL, ZOIDFS_NO_OP_HINT));
     total_file_count++;
 
     /* create a file using the base handle and component name*/
     CU_ASSERT(ZFS_OK == zoidfs_symlink(NULL, NULL, fullpath_dirname, NULL,
-             NULL, symlink_fullpath_dirname, &sattr, NULL, NULL));
+             NULL, symlink_fullpath_dirname, &sattr, NULL, NULL, ZOIDFS_NO_OP_HINT));
     CU_ASSERT(ZFSERR_EXIST == zoidfs_symlink(NULL, NULL, fullpath_dirname, NULL,
-             NULL, symlink_fullpath_dirname, &sattr, NULL, NULL));
+             NULL, symlink_fullpath_dirname, &sattr, NULL, NULL, ZOIDFS_NO_OP_HINT));
     total_file_count++;
 
     return 0;
@@ -270,44 +270,44 @@ int testLINK(void)
     sattr.mtime.nseconds = now.tv_usec;
 
     /* Remove files in case they already exist; Ignore possible errors */
-    zoidfs_remove(&basedir_handle, link_component_filename, NULL, NULL); 
-    zoidfs_remove(NULL, NULL, link_fullpath_filename, NULL);
+    zoidfs_remove(&basedir_handle, link_component_filename, NULL, NULL, ZOIDFS_NO_OP_HINT); 
+    zoidfs_remove(NULL, NULL, link_fullpath_filename, NULL, ZOIDFS_NO_OP_HINT);
 
     /* create a file using the base handle and component name*/
     CU_ASSERT_EQUAL(ZFS_OK, zoidfs_link(&basedir_handle, component_filename,
              NULL, &basedir_handle, link_component_filename, NULL, NULL,
-             NULL)); 
+             NULL, ZOIDFS_NO_OP_HINT)); 
     
     CU_ASSERT_EQUAL(ZFSERR_EXIST,
              zoidfs_link(&basedir_handle, component_filename, NULL,
-                &basedir_handle, link_component_filename, NULL, NULL, NULL));
+                &basedir_handle, link_component_filename, NULL, NULL, NULL, ZOIDFS_NO_OP_HINT));
     total_file_count++;
 
     /* create a file using the base handle and component name*/
     CU_ASSERT_NOT_EQUAL(ZFS_OK, zoidfs_link(&basedir_handle,
              component_dirname, NULL, &basedir_handle, link_component_dirname,
-             NULL, NULL, NULL));
+             NULL, NULL, NULL, ZOIDFS_NO_OP_HINT));
 
     /* create a file using the base handle and component name*/
     CU_ASSERT_EQUAL(ZFS_OK, zoidfs_link(NULL, NULL, fullpath_filename, NULL,
-             NULL, link_fullpath_filename, NULL, NULL));
+             NULL, link_fullpath_filename, NULL, NULL, ZOIDFS_NO_OP_HINT));
     CU_ASSERT_EQUAL(ZFSERR_EXIST, zoidfs_link(NULL, NULL, fullpath_filename,
-             NULL, NULL, link_fullpath_filename, NULL, NULL));
+             NULL, NULL, link_fullpath_filename, NULL, NULL, ZOIDFS_NO_OP_HINT));
     total_file_count++;
 
     /* create a file using the base handle and component name*/
     CU_ASSERT_NOT_EQUAL(ZFS_OK, zoidfs_link(NULL, NULL, fullpath_dirname,
-             NULL, NULL, link_fullpath_dirname, NULL, NULL));
+             NULL, NULL, link_fullpath_dirname, NULL, NULL, ZOIDFS_NO_OP_HINT));
 
     /* remove the links... this should be in the REMOVE test, but
      * ESTALE is triggered for libsysio dispatcher... leave here until 
      * corrected
      */
     CU_ASSERT(ZFS_OK == zoidfs_remove(&basedir_handle, link_component_filename,
-             NULL, NULL)); 
+             NULL, NULL, ZOIDFS_NO_OP_HINT)); 
     total_file_count--;
     
-    CU_ASSERT(ZFS_OK == zoidfs_remove(NULL, NULL, link_fullpath_filename, NULL));
+    CU_ASSERT(ZFS_OK == zoidfs_remove(NULL, NULL, link_fullpath_filename, NULL, ZOIDFS_NO_OP_HINT));
     total_file_count--;
 
     return 0;
@@ -316,31 +316,31 @@ int testLINK(void)
 int testRENAME(void)
 {
     /* create a file using the base handle and component name*/
-    CU_ASSERT(ZFS_OK == zoidfs_rename(&basedir_handle, component_filename, NULL, &basedir_handle, rename_component_filename, NULL, NULL, NULL));
+    CU_ASSERT(ZFS_OK == zoidfs_rename(&basedir_handle, component_filename, NULL, &basedir_handle, rename_component_filename, NULL, NULL, NULL, ZOIDFS_NO_OP_HINT));
 
     /* create a file using the base handle and component name*/
-    CU_ASSERT(ZFS_OK == zoidfs_rename(&basedir_handle, component_dirname, NULL, &basedir_handle, rename_component_dirname, NULL, NULL, NULL));
+    CU_ASSERT(ZFS_OK == zoidfs_rename(&basedir_handle, component_dirname, NULL, &basedir_handle, rename_component_dirname, NULL, NULL, NULL, ZOIDFS_NO_OP_HINT));
 
     /* create a file using the base handle and component name*/
-    CU_ASSERT(ZFS_OK == zoidfs_rename(NULL, NULL, fullpath_filename, NULL, NULL, rename_fullpath_filename, NULL, NULL));
+    CU_ASSERT(ZFS_OK == zoidfs_rename(NULL, NULL, fullpath_filename, NULL, NULL, rename_fullpath_filename, NULL, NULL, ZOIDFS_NO_OP_HINT));
 
     /* create a file using the base handle and component name*/
-    CU_ASSERT(ZFS_OK == zoidfs_rename(NULL, NULL, fullpath_dirname, NULL, NULL, rename_fullpath_dirname, NULL, NULL));
+    CU_ASSERT(ZFS_OK == zoidfs_rename(NULL, NULL, fullpath_dirname, NULL, NULL, rename_fullpath_dirname, NULL, NULL, ZOIDFS_NO_OP_HINT));
 
     /*
      * reverse the renames
      */
     /* create a file using the base handle and component name*/
-    CU_ASSERT(ZFS_OK == zoidfs_rename(&basedir_handle, rename_component_filename, NULL, &basedir_handle, component_filename, NULL, NULL, NULL));
+    CU_ASSERT(ZFS_OK == zoidfs_rename(&basedir_handle, rename_component_filename, NULL, &basedir_handle, component_filename, NULL, NULL, NULL, ZOIDFS_NO_OP_HINT));
 
     /* create a file using the base handle and component name*/
-    CU_ASSERT(ZFS_OK == zoidfs_rename(&basedir_handle, rename_component_dirname, NULL, &basedir_handle, component_dirname, NULL, NULL, NULL));
+    CU_ASSERT(ZFS_OK == zoidfs_rename(&basedir_handle, rename_component_dirname, NULL, &basedir_handle, component_dirname, NULL, NULL, NULL, ZOIDFS_NO_OP_HINT));
 
     /* create a file using the base handle and component name*/
-    CU_ASSERT(ZFS_OK == zoidfs_rename(NULL, NULL, rename_fullpath_filename, NULL, NULL, fullpath_filename, NULL, NULL));
+    CU_ASSERT(ZFS_OK == zoidfs_rename(NULL, NULL, rename_fullpath_filename, NULL, NULL, fullpath_filename, NULL, NULL, ZOIDFS_NO_OP_HINT));
 
     /* create a file using the base handle and component name*/
-    CU_ASSERT(ZFS_OK == zoidfs_rename(NULL, NULL, rename_fullpath_dirname, NULL, NULL, fullpath_dirname, NULL, NULL));
+    CU_ASSERT(ZFS_OK == zoidfs_rename(NULL, NULL, rename_fullpath_dirname, NULL, NULL, fullpath_dirname, NULL, NULL, ZOIDFS_NO_OP_HINT));
 
     return 0;
 }
@@ -351,47 +351,47 @@ int testREMOVE(void)
     char p2[4096];
 
     /* revalidate the basedir handle */
-    zoidfs_lookup(NULL, NULL, "/", &basedir_handle);
+    zoidfs_lookup(NULL, NULL, "/", &basedir_handle, ZOIDFS_NO_OP_HINT);
 
     /* rm several subdirs using the component dir name */
     sprintf(p1, "%s/a/b/c/d/e", component_dirname);
-    CU_ASSERT(ZFS_OK == zoidfs_remove(&basedir_handle, p1, NULL, NULL));
+    CU_ASSERT(ZFS_OK == zoidfs_remove(&basedir_handle, p1, NULL, NULL, ZOIDFS_NO_OP_HINT));
     p1[strlen(p1) - 2] = '\0'; 
-    CU_ASSERT(ZFS_OK == zoidfs_remove(&basedir_handle, p1, NULL, NULL));
+    CU_ASSERT(ZFS_OK == zoidfs_remove(&basedir_handle, p1, NULL, NULL, ZOIDFS_NO_OP_HINT));
     p1[strlen(p1) - 2] = '\0'; 
-    CU_ASSERT(ZFS_OK == zoidfs_remove(&basedir_handle, p1, NULL, NULL));
+    CU_ASSERT(ZFS_OK == zoidfs_remove(&basedir_handle, p1, NULL, NULL, ZOIDFS_NO_OP_HINT));
     p1[strlen(p1) - 2] = '\0'; 
-    CU_ASSERT(ZFS_OK == zoidfs_remove(&basedir_handle, p1, NULL, NULL));
+    CU_ASSERT(ZFS_OK == zoidfs_remove(&basedir_handle, p1, NULL, NULL, ZOIDFS_NO_OP_HINT));
     p1[strlen(p1) - 2] = '\0'; 
-    CU_ASSERT(ZFS_OK == zoidfs_remove(&basedir_handle, p1, NULL, NULL));
+    CU_ASSERT(ZFS_OK == zoidfs_remove(&basedir_handle, p1, NULL, NULL, ZOIDFS_NO_OP_HINT));
  
     /* rm several subdirs using the fullpath dir name */
     sprintf(p2, "%s/a/b/c/d/e", fullpath_dirname);
-    CU_ASSERT(ZFS_OK == zoidfs_remove(NULL, NULL, p2, NULL));
+    CU_ASSERT(ZFS_OK == zoidfs_remove(NULL, NULL, p2, NULL, ZOIDFS_NO_OP_HINT));
     p2[strlen(p2) - 2] = '\0'; 
-    CU_ASSERT(ZFS_OK == zoidfs_remove(NULL, NULL, p2, NULL));
+    CU_ASSERT(ZFS_OK == zoidfs_remove(NULL, NULL, p2, NULL, ZOIDFS_NO_OP_HINT));
     p2[strlen(p2) - 2] = '\0'; 
-    CU_ASSERT(ZFS_OK == zoidfs_remove(NULL, NULL, p2, NULL));
+    CU_ASSERT(ZFS_OK == zoidfs_remove(NULL, NULL, p2, NULL, ZOIDFS_NO_OP_HINT));
     p2[strlen(p2) - 2] = '\0'; 
-    CU_ASSERT(ZFS_OK == zoidfs_remove(NULL, NULL, p2, NULL));
+    CU_ASSERT(ZFS_OK == zoidfs_remove(NULL, NULL, p2, NULL, ZOIDFS_NO_OP_HINT));
     p2[strlen(p2) - 2] = '\0'; 
-    CU_ASSERT(ZFS_OK == zoidfs_remove(NULL, NULL, p2, NULL));
+    CU_ASSERT(ZFS_OK == zoidfs_remove(NULL, NULL, p2, NULL, ZOIDFS_NO_OP_HINT));
  
-    CU_ASSERT(ZFS_OK == zoidfs_remove(&basedir_handle, component_filename, NULL, NULL));
+    CU_ASSERT(ZFS_OK == zoidfs_remove(&basedir_handle, component_filename, NULL, NULL, ZOIDFS_NO_OP_HINT));
     total_file_count--;
-    CU_ASSERT(ZFS_OK == zoidfs_remove(&basedir_handle, component_dirname, NULL, NULL));
+    CU_ASSERT(ZFS_OK == zoidfs_remove(&basedir_handle, component_dirname, NULL, NULL, ZOIDFS_NO_OP_HINT));
     total_file_count--;
-    CU_ASSERT(ZFS_OK == zoidfs_remove(NULL, NULL, fullpath_filename, NULL));
+    CU_ASSERT(ZFS_OK == zoidfs_remove(NULL, NULL, fullpath_filename, NULL, ZOIDFS_NO_OP_HINT));
     total_file_count--;
-    CU_ASSERT(ZFS_OK == zoidfs_remove(NULL, NULL, fullpath_dirname, NULL));
+    CU_ASSERT(ZFS_OK == zoidfs_remove(NULL, NULL, fullpath_dirname, NULL, ZOIDFS_NO_OP_HINT));
     total_file_count--;
-    CU_ASSERT(ZFS_OK == zoidfs_remove(&basedir_handle, symlink_component_filename, NULL, NULL));
+    CU_ASSERT(ZFS_OK == zoidfs_remove(&basedir_handle, symlink_component_filename, NULL, NULL, ZOIDFS_NO_OP_HINT));
     total_file_count--;
-    CU_ASSERT(ZFS_OK == zoidfs_remove(&basedir_handle, symlink_component_dirname, NULL, NULL));
+    CU_ASSERT(ZFS_OK == zoidfs_remove(&basedir_handle, symlink_component_dirname, NULL, NULL, ZOIDFS_NO_OP_HINT));
     total_file_count--;
-    CU_ASSERT(ZFS_OK == zoidfs_remove(NULL, NULL, symlink_fullpath_filename, NULL));
+    CU_ASSERT(ZFS_OK == zoidfs_remove(NULL, NULL, symlink_fullpath_filename, NULL, ZOIDFS_NO_OP_HINT));
     total_file_count--;
-    CU_ASSERT(ZFS_OK == zoidfs_remove(NULL, NULL, symlink_fullpath_dirname, NULL));
+    CU_ASSERT(ZFS_OK == zoidfs_remove(NULL, NULL, symlink_fullpath_dirname, NULL, ZOIDFS_NO_OP_HINT));
     total_file_count--;
 
     return 0;
@@ -401,14 +401,14 @@ int testLOOKUP(void)
 {
     zoidfs_handle_t fhandle;
 
-    CU_ASSERT(ZFS_OK == zoidfs_lookup(&basedir_handle, component_filename, NULL, &fhandle));
-    CU_ASSERT(ZFS_OK == zoidfs_lookup(&basedir_handle, component_dirname, NULL, &fhandle));
-    CU_ASSERT(ZFS_OK == zoidfs_lookup(NULL, NULL, fullpath_filename, &fhandle));
-    CU_ASSERT(ZFS_OK == zoidfs_lookup(NULL, NULL, fullpath_dirname, &fhandle));
-    CU_ASSERT(ZFS_OK == zoidfs_lookup(&basedir_handle, symlink_component_filename, NULL, &fhandle));
-    CU_ASSERT(ZFS_OK == zoidfs_lookup(&basedir_handle, symlink_component_dirname, NULL, &fhandle));
-    CU_ASSERT(ZFS_OK == zoidfs_lookup(NULL, NULL, symlink_fullpath_filename, &fhandle));
-    CU_ASSERT(ZFS_OK == zoidfs_lookup(NULL, NULL, symlink_fullpath_dirname, &fhandle));
+    CU_ASSERT(ZFS_OK == zoidfs_lookup(&basedir_handle, component_filename, NULL, &fhandle, ZOIDFS_NO_OP_HINT));
+    CU_ASSERT(ZFS_OK == zoidfs_lookup(&basedir_handle, component_dirname, NULL, &fhandle, ZOIDFS_NO_OP_HINT));
+    CU_ASSERT(ZFS_OK == zoidfs_lookup(NULL, NULL, fullpath_filename, &fhandle, ZOIDFS_NO_OP_HINT));
+    CU_ASSERT(ZFS_OK == zoidfs_lookup(NULL, NULL, fullpath_dirname, &fhandle, ZOIDFS_NO_OP_HINT));
+    CU_ASSERT(ZFS_OK == zoidfs_lookup(&basedir_handle, symlink_component_filename, NULL, &fhandle, ZOIDFS_NO_OP_HINT));
+    CU_ASSERT(ZFS_OK == zoidfs_lookup(&basedir_handle, symlink_component_dirname, NULL, &fhandle, ZOIDFS_NO_OP_HINT));
+    CU_ASSERT(ZFS_OK == zoidfs_lookup(NULL, NULL, symlink_fullpath_filename, &fhandle, ZOIDFS_NO_OP_HINT));
+    CU_ASSERT(ZFS_OK == zoidfs_lookup(NULL, NULL, symlink_fullpath_dirname, &fhandle, ZOIDFS_NO_OP_HINT));
 
     return 0;
 }
@@ -417,22 +417,22 @@ int testCOMMIT(void)
 {
     zoidfs_handle_t fhandle;
 
-    CU_ASSERT(ZFS_OK == zoidfs_lookup(&basedir_handle, component_filename, NULL, &fhandle));
-    CU_ASSERT(ZFS_OK == zoidfs_commit(&fhandle));
-    CU_ASSERT(ZFS_OK == zoidfs_lookup(&basedir_handle, component_dirname, NULL, &fhandle));
-    CU_ASSERT(ZFS_OK == zoidfs_commit(&fhandle));
-    CU_ASSERT(ZFS_OK == zoidfs_lookup(NULL, NULL, fullpath_filename, &fhandle));
-    CU_ASSERT(ZFS_OK == zoidfs_commit(&fhandle));
-    CU_ASSERT(ZFS_OK == zoidfs_lookup(NULL, NULL, fullpath_dirname, &fhandle));
-    CU_ASSERT(ZFS_OK == zoidfs_commit(&fhandle));
-    CU_ASSERT(ZFS_OK == zoidfs_lookup(&basedir_handle, symlink_component_filename, NULL, &fhandle));
-    CU_ASSERT(ZFS_OK == zoidfs_commit(&fhandle));
-    CU_ASSERT(ZFS_OK == zoidfs_lookup(&basedir_handle, symlink_component_dirname, NULL, &fhandle));
-    CU_ASSERT(ZFS_OK == zoidfs_commit(&fhandle));
-    CU_ASSERT(ZFS_OK == zoidfs_lookup(NULL, NULL, symlink_fullpath_filename, &fhandle));
-    CU_ASSERT(ZFS_OK == zoidfs_commit(&fhandle));
-    CU_ASSERT(ZFS_OK == zoidfs_lookup(NULL, NULL, symlink_fullpath_dirname, &fhandle));
-    CU_ASSERT(ZFS_OK == zoidfs_commit(&fhandle));
+    CU_ASSERT(ZFS_OK == zoidfs_lookup(&basedir_handle, component_filename, NULL, &fhandle, ZOIDFS_NO_OP_HINT));
+    CU_ASSERT(ZFS_OK == zoidfs_commit(&fhandle, ZOIDFS_NO_OP_HINT));
+    CU_ASSERT(ZFS_OK == zoidfs_lookup(&basedir_handle, component_dirname, NULL, &fhandle, ZOIDFS_NO_OP_HINT));
+    CU_ASSERT(ZFS_OK == zoidfs_commit(&fhandle, ZOIDFS_NO_OP_HINT));
+    CU_ASSERT(ZFS_OK == zoidfs_lookup(NULL, NULL, fullpath_filename, &fhandle, ZOIDFS_NO_OP_HINT));
+    CU_ASSERT(ZFS_OK == zoidfs_commit(&fhandle, ZOIDFS_NO_OP_HINT));
+    CU_ASSERT(ZFS_OK == zoidfs_lookup(NULL, NULL, fullpath_dirname, &fhandle, ZOIDFS_NO_OP_HINT));
+    CU_ASSERT(ZFS_OK == zoidfs_commit(&fhandle, ZOIDFS_NO_OP_HINT));
+    CU_ASSERT(ZFS_OK == zoidfs_lookup(&basedir_handle, symlink_component_filename, NULL, &fhandle, ZOIDFS_NO_OP_HINT));
+    CU_ASSERT(ZFS_OK == zoidfs_commit(&fhandle, ZOIDFS_NO_OP_HINT));
+    CU_ASSERT(ZFS_OK == zoidfs_lookup(&basedir_handle, symlink_component_dirname, NULL, &fhandle, ZOIDFS_NO_OP_HINT));
+    CU_ASSERT(ZFS_OK == zoidfs_commit(&fhandle, ZOIDFS_NO_OP_HINT));
+    CU_ASSERT(ZFS_OK == zoidfs_lookup(NULL, NULL, symlink_fullpath_filename, &fhandle, ZOIDFS_NO_OP_HINT));
+    CU_ASSERT(ZFS_OK == zoidfs_commit(&fhandle, ZOIDFS_NO_OP_HINT));
+    CU_ASSERT(ZFS_OK == zoidfs_lookup(NULL, NULL, symlink_fullpath_dirname, &fhandle, ZOIDFS_NO_OP_HINT));
+    CU_ASSERT(ZFS_OK == zoidfs_commit(&fhandle, ZOIDFS_NO_OP_HINT));
 
     return 0;
 }
@@ -445,109 +445,109 @@ int testGETATTR(void)
 
     /* get all attributes for a regular file */
     gattr.mask = ZOIDFS_ATTR_ALL;
-    zoidfs_lookup(&basedir_handle, component_filename, NULL, &fhandle);
-    CU_ASSERT(ZFS_OK == zoidfs_getattr(&fhandle, &gattr));
+    zoidfs_lookup(&basedir_handle, component_filename, NULL, &fhandle, ZOIDFS_NO_OP_HINT);
+    CU_ASSERT(ZFS_OK == zoidfs_getattr(&fhandle, &gattr, ZOIDFS_NO_OP_HINT));
     CU_ASSERT(gattr.mask == ZOIDFS_ATTR_ALL);
     CU_ASSERT(gattr.type == ZOIDFS_REG);
     CU_ASSERT((gattr.mode & 0777) == 0755);
 
     /* get size attributes for a regular file */
     gattr.mask = ZOIDFS_ATTR_SIZE;
-    zoidfs_lookup(&basedir_handle, component_filename, NULL, &fhandle);
-    CU_ASSERT(ZFS_OK == zoidfs_getattr(&fhandle, &gattr));
+    zoidfs_lookup(&basedir_handle, component_filename, NULL, &fhandle, ZOIDFS_NO_OP_HINT);
+    CU_ASSERT(ZFS_OK == zoidfs_getattr(&fhandle, &gattr, ZOIDFS_NO_OP_HINT));
     CU_ASSERT(gattr.mask == ZOIDFS_ATTR_SIZE);
 
     /* get blocksize attributes for a regular file */
     gattr.mask = ZOIDFS_ATTR_BSIZE;
-    zoidfs_lookup(&basedir_handle, component_filename, NULL, &fhandle);
-    CU_ASSERT(ZFS_OK == zoidfs_getattr(&fhandle, &gattr));
+    zoidfs_lookup(&basedir_handle, component_filename, NULL, &fhandle, ZOIDFS_NO_OP_HINT);
+    CU_ASSERT(ZFS_OK == zoidfs_getattr(&fhandle, &gattr, ZOIDFS_NO_OP_HINT));
     CU_ASSERT(gattr.mask == ZOIDFS_ATTR_BSIZE);
 
     /* get nlink attributes for a regular file */
     gattr.mask = ZOIDFS_ATTR_NLINK;
-    zoidfs_lookup(&basedir_handle, component_filename, NULL, &fhandle);
-    CU_ASSERT(ZFS_OK == zoidfs_getattr(&fhandle, &gattr));
+    zoidfs_lookup(&basedir_handle, component_filename, NULL, &fhandle, ZOIDFS_NO_OP_HINT);
+    CU_ASSERT(ZFS_OK == zoidfs_getattr(&fhandle, &gattr, ZOIDFS_NO_OP_HINT));
     CU_ASSERT(gattr.mask == ZOIDFS_ATTR_NLINK);
 
     /* get atime attributes for a regular file */
     gattr.mask = ZOIDFS_ATTR_ATIME;
-    zoidfs_lookup(&basedir_handle, component_filename, NULL, &fhandle);
-    CU_ASSERT(ZFS_OK == zoidfs_getattr(&fhandle, &gattr));
+    zoidfs_lookup(&basedir_handle, component_filename, NULL, &fhandle, ZOIDFS_NO_OP_HINT);
+    CU_ASSERT(ZFS_OK == zoidfs_getattr(&fhandle, &gattr, ZOIDFS_NO_OP_HINT));
     CU_ASSERT(gattr.mask == ZOIDFS_ATTR_ATIME);
 
     /* get mtime attributes for a regular file */
     gattr.mask = ZOIDFS_ATTR_MTIME;
-    zoidfs_lookup(&basedir_handle, component_filename, NULL, &fhandle);
-    CU_ASSERT(ZFS_OK == zoidfs_getattr(&fhandle, &gattr));
+    zoidfs_lookup(&basedir_handle, component_filename, NULL, &fhandle, ZOIDFS_NO_OP_HINT);
+    CU_ASSERT(ZFS_OK == zoidfs_getattr(&fhandle, &gattr, ZOIDFS_NO_OP_HINT));
     CU_ASSERT(gattr.mask == ZOIDFS_ATTR_MTIME);
 
     /* get ctime attributes for a regular file */
     gattr.mask = ZOIDFS_ATTR_CTIME;
-    zoidfs_lookup(&basedir_handle, component_filename, NULL, &fhandle);
-    CU_ASSERT(ZFS_OK == zoidfs_getattr(&fhandle, &gattr));
+    zoidfs_lookup(&basedir_handle, component_filename, NULL, &fhandle, ZOIDFS_NO_OP_HINT);
+    CU_ASSERT(ZFS_OK == zoidfs_getattr(&fhandle, &gattr, ZOIDFS_NO_OP_HINT));
     CU_ASSERT(gattr.mask == ZOIDFS_ATTR_CTIME);
 
     /* get fsid attributes for a regular file */
     gattr.mask = ZOIDFS_ATTR_FSID;
-    zoidfs_lookup(&basedir_handle, component_filename, NULL, &fhandle);
-    CU_ASSERT(ZFS_OK == zoidfs_getattr(&fhandle, &gattr));
+    zoidfs_lookup(&basedir_handle, component_filename, NULL, &fhandle, ZOIDFS_NO_OP_HINT);
+    CU_ASSERT(ZFS_OK == zoidfs_getattr(&fhandle, &gattr, ZOIDFS_NO_OP_HINT));
     CU_ASSERT(gattr.mask == ZOIDFS_ATTR_FSID);
 
     /* get fileid attributes for a regular file */
     gattr.mask = ZOIDFS_ATTR_FILEID;
-    zoidfs_lookup(&basedir_handle, component_filename, NULL, &fhandle);
-    CU_ASSERT(ZFS_OK == zoidfs_getattr(&fhandle, &gattr));
+    zoidfs_lookup(&basedir_handle, component_filename, NULL, &fhandle, ZOIDFS_NO_OP_HINT);
+    CU_ASSERT(ZFS_OK == zoidfs_getattr(&fhandle, &gattr, ZOIDFS_NO_OP_HINT));
     CU_ASSERT(gattr.mask == ZOIDFS_ATTR_FILEID);
 
     /* get all attributes for a directory */
     gattr.mask = ZOIDFS_ATTR_ALL;
-    zoidfs_lookup(&basedir_handle, component_dirname, NULL, &fhandle);
-    CU_ASSERT(ZFS_OK == zoidfs_getattr(&fhandle, &gattr));
+    zoidfs_lookup(&basedir_handle, component_dirname, NULL, &fhandle, ZOIDFS_NO_OP_HINT);
+    CU_ASSERT(ZFS_OK == zoidfs_getattr(&fhandle, &gattr, ZOIDFS_NO_OP_HINT));
     CU_ASSERT(gattr.mask == ZOIDFS_ATTR_ALL);
     CU_ASSERT(gattr.type == ZOIDFS_DIR);
     CU_ASSERT((gattr.mode & 0777) == 0755);
 
     /* get all attributes for a regular file */
     gattr.mask = ZOIDFS_ATTR_ALL;
-    zoidfs_lookup(NULL, NULL, fullpath_filename, &fhandle);
-    CU_ASSERT(ZFS_OK == zoidfs_getattr(&fhandle, &gattr));
+    zoidfs_lookup(NULL, NULL, fullpath_filename, &fhandle, ZOIDFS_NO_OP_HINT);
+    CU_ASSERT(ZFS_OK == zoidfs_getattr(&fhandle, &gattr, ZOIDFS_NO_OP_HINT));
     CU_ASSERT(gattr.mask == ZOIDFS_ATTR_ALL);
     CU_ASSERT(gattr.type == ZOIDFS_REG);
     CU_ASSERT((gattr.mode & 0777) == 0755);
 
     /* get all attributes for a directory */
     gattr.mask = ZOIDFS_ATTR_ALL;
-    zoidfs_lookup(NULL, NULL, fullpath_dirname, &fhandle);
-    CU_ASSERT(ZFS_OK == zoidfs_getattr(&fhandle, &gattr));
+    zoidfs_lookup(NULL, NULL, fullpath_dirname, &fhandle, ZOIDFS_NO_OP_HINT);
+    CU_ASSERT(ZFS_OK == zoidfs_getattr(&fhandle, &gattr, ZOIDFS_NO_OP_HINT));
     CU_ASSERT(gattr.mask == ZOIDFS_ATTR_ALL);
     CU_ASSERT(gattr.type == ZOIDFS_DIR);
     CU_ASSERT((gattr.mode & 0777) == 0755);
 
     /* get all attributes for a regular file */
     gattr.mask = ZOIDFS_ATTR_ALL;
-    zoidfs_lookup(&basedir_handle, symlink_component_filename, NULL, &fhandle);
-    CU_ASSERT(ZFS_OK == zoidfs_getattr(&fhandle, &gattr));
+    zoidfs_lookup(&basedir_handle, symlink_component_filename, NULL, &fhandle, ZOIDFS_NO_OP_HINT);
+    CU_ASSERT(ZFS_OK == zoidfs_getattr(&fhandle, &gattr, ZOIDFS_NO_OP_HINT));
     CU_ASSERT(gattr.mask == ZOIDFS_ATTR_ALL);
     CU_ASSERT(gattr.type == ZOIDFS_LNK);
 
     /* get all attributes for a regular file */
     gattr.mask = ZOIDFS_ATTR_ALL;
-    zoidfs_lookup(&basedir_handle, symlink_component_dirname, NULL, &fhandle);
-    CU_ASSERT(ZFS_OK == zoidfs_getattr(&fhandle, &gattr));
+    zoidfs_lookup(&basedir_handle, symlink_component_dirname, NULL, &fhandle, ZOIDFS_NO_OP_HINT);
+    CU_ASSERT(ZFS_OK == zoidfs_getattr(&fhandle, &gattr, ZOIDFS_NO_OP_HINT));
     CU_ASSERT(gattr.mask == ZOIDFS_ATTR_ALL);
     CU_ASSERT(gattr.type == ZOIDFS_LNK);
 
     /* get all attributes for a regular file */
     gattr.mask = ZOIDFS_ATTR_ALL;
-    zoidfs_lookup(NULL, NULL, symlink_fullpath_filename, &fhandle);
-    CU_ASSERT(ZFS_OK == zoidfs_getattr(&fhandle, &gattr));
+    zoidfs_lookup(NULL, NULL, symlink_fullpath_filename, &fhandle, ZOIDFS_NO_OP_HINT);
+    CU_ASSERT(ZFS_OK == zoidfs_getattr(&fhandle, &gattr, ZOIDFS_NO_OP_HINT));
     CU_ASSERT(gattr.mask == ZOIDFS_ATTR_ALL);
     CU_ASSERT(gattr.type == ZOIDFS_LNK);
 
     /* get all attributes for a regular file */
     gattr.mask = ZOIDFS_ATTR_ALL;
-    zoidfs_lookup(NULL, NULL, symlink_fullpath_dirname, &fhandle);
-    CU_ASSERT(ZFS_OK == zoidfs_getattr(&fhandle, &gattr));
+    zoidfs_lookup(NULL, NULL, symlink_fullpath_dirname, &fhandle, ZOIDFS_NO_OP_HINT);
+    CU_ASSERT(ZFS_OK == zoidfs_getattr(&fhandle, &gattr, ZOIDFS_NO_OP_HINT));
     CU_ASSERT(gattr.mask == ZOIDFS_ATTR_ALL);
     CU_ASSERT(gattr.type == ZOIDFS_LNK);
 
@@ -582,75 +582,75 @@ do{ \
     /* set the attrs */
     SATTR_MASK_MODE_0644;
     ATTR_MASK_MODE;
-    zoidfs_lookup(&basedir_handle, component_filename, NULL, &fhandle);
-    CU_ASSERT(ZFS_OK == zoidfs_setattr(&fhandle, &sattr, &gattr));
+    zoidfs_lookup(&basedir_handle, component_filename, NULL, &fhandle, ZOIDFS_NO_OP_HINT);
+    CU_ASSERT(ZFS_OK == zoidfs_setattr(&fhandle, &sattr, &gattr, ZOIDFS_NO_OP_HINT));
     CU_ASSERT(gattr.mode == 0644);
     SATTR_MASK_MODE_0755;
     ATTR_MASK_MODE;
-    CU_ASSERT(ZFS_OK == zoidfs_setattr(&fhandle, &sattr, &gattr));
+    CU_ASSERT(ZFS_OK == zoidfs_setattr(&fhandle, &sattr, &gattr, ZOIDFS_NO_OP_HINT));
     CU_ASSERT(gattr.mode == 0755);
     
     SATTR_MASK_MODE_0644;
     ATTR_MASK_MODE;
-    zoidfs_lookup(&basedir_handle, component_dirname, NULL, &fhandle);
-    CU_ASSERT(ZFS_OK == zoidfs_setattr(&fhandle, &sattr, &gattr));
+    zoidfs_lookup(&basedir_handle, component_dirname, NULL, &fhandle, ZOIDFS_NO_OP_HINT);
+    CU_ASSERT(ZFS_OK == zoidfs_setattr(&fhandle, &sattr, &gattr, ZOIDFS_NO_OP_HINT));
     CU_ASSERT(gattr.mode == 0644);
     SATTR_MASK_MODE_0755;
     ATTR_MASK_MODE;
-    CU_ASSERT(ZFS_OK == zoidfs_setattr(&fhandle, &sattr, &gattr));
+    CU_ASSERT(ZFS_OK == zoidfs_setattr(&fhandle, &sattr, &gattr, ZOIDFS_NO_OP_HINT));
     CU_ASSERT(gattr.mode == 0755);
     
     SATTR_MASK_MODE_0644;
     ATTR_MASK_MODE;
-    zoidfs_lookup(NULL, NULL, fullpath_filename, &fhandle);
-    CU_ASSERT_EQUAL(ZFS_OK, zoidfs_setattr(&fhandle, &sattr, &gattr));
+    zoidfs_lookup(NULL, NULL, fullpath_filename, &fhandle, ZOIDFS_NO_OP_HINT);
+    CU_ASSERT_EQUAL(ZFS_OK, zoidfs_setattr(&fhandle, &sattr, &gattr, ZOIDFS_NO_OP_HINT));
     CU_ASSERT_EQUAL(gattr.mode, 0644);
     SATTR_MASK_MODE_0755;
     ATTR_MASK_MODE;
-    CU_ASSERT(ZFS_OK == zoidfs_setattr(&fhandle, &sattr, &gattr));
+    CU_ASSERT(ZFS_OK == zoidfs_setattr(&fhandle, &sattr, &gattr, ZOIDFS_NO_OP_HINT));
     CU_ASSERT(gattr.mode == 0755);
     
     SATTR_MASK_MODE_0644;
     ATTR_MASK_MODE;
-    zoidfs_lookup(NULL, NULL, fullpath_dirname, &fhandle);
-    CU_ASSERT_EQUAL(ZFS_OK, zoidfs_setattr(&fhandle, &sattr, &gattr));
+    zoidfs_lookup(NULL, NULL, fullpath_dirname, &fhandle, ZOIDFS_NO_OP_HINT);
+    CU_ASSERT_EQUAL(ZFS_OK, zoidfs_setattr(&fhandle, &sattr, &gattr, ZOIDFS_NO_OP_HINT));
     CU_ASSERT_EQUAL(gattr.mode, 0644);
     SATTR_MASK_MODE_0755;
     ATTR_MASK_MODE;
-    CU_ASSERT(ZFS_OK == zoidfs_setattr(&fhandle, &sattr, &gattr));
+    CU_ASSERT(ZFS_OK == zoidfs_setattr(&fhandle, &sattr, &gattr, ZOIDFS_NO_OP_HINT));
     CU_ASSERT(gattr.mode == 0755);
     
     SATTR_MASK_MODE_0644;
     ATTR_MASK_MODE;
-    zoidfs_lookup(&basedir_handle, symlink_component_filename, NULL, &fhandle);
-    CU_ASSERT_EQUAL(ZFS_OK, zoidfs_setattr(&fhandle, &sattr, &gattr));
+    zoidfs_lookup(&basedir_handle, symlink_component_filename, NULL, &fhandle, ZOIDFS_NO_OP_HINT);
+    CU_ASSERT_EQUAL(ZFS_OK, zoidfs_setattr(&fhandle, &sattr, &gattr, ZOIDFS_NO_OP_HINT));
     SATTR_MASK_MODE_0755;
     ATTR_MASK_MODE;
-    CU_ASSERT(ZFS_OK == zoidfs_setattr(&fhandle, &sattr, &gattr));
+    CU_ASSERT(ZFS_OK == zoidfs_setattr(&fhandle, &sattr, &gattr, ZOIDFS_NO_OP_HINT));
 
     SATTR_MASK_MODE_0644;
     ATTR_MASK_MODE;
-    zoidfs_lookup(&basedir_handle, symlink_component_dirname, NULL, &fhandle);
-    CU_ASSERT_EQUAL(ZFS_OK, zoidfs_setattr(&fhandle, &sattr, &gattr));
+    zoidfs_lookup(&basedir_handle, symlink_component_dirname, NULL, &fhandle, ZOIDFS_NO_OP_HINT);
+    CU_ASSERT_EQUAL(ZFS_OK, zoidfs_setattr(&fhandle, &sattr, &gattr, ZOIDFS_NO_OP_HINT));
     SATTR_MASK_MODE_0755;
     ATTR_MASK_MODE;
-    CU_ASSERT(ZFS_OK == zoidfs_setattr(&fhandle, &sattr, &gattr));
+    CU_ASSERT(ZFS_OK == zoidfs_setattr(&fhandle, &sattr, &gattr, ZOIDFS_NO_OP_HINT));
 
     SATTR_MASK_MODE_0644;
     ATTR_MASK_MODE;
-    zoidfs_lookup(NULL, NULL, symlink_fullpath_filename, &fhandle);
-    CU_ASSERT_EQUAL(ZFS_OK, zoidfs_setattr(&fhandle, &sattr, &gattr));
+    zoidfs_lookup(NULL, NULL, symlink_fullpath_filename, &fhandle, ZOIDFS_NO_OP_HINT);
+    CU_ASSERT_EQUAL(ZFS_OK, zoidfs_setattr(&fhandle, &sattr, &gattr, ZOIDFS_NO_OP_HINT));
     SATTR_MASK_MODE_0755;
     ATTR_MASK_MODE;
-    CU_ASSERT(ZFS_OK == zoidfs_setattr(&fhandle, &sattr, &gattr));
+    CU_ASSERT(ZFS_OK == zoidfs_setattr(&fhandle, &sattr, &gattr, ZOIDFS_NO_OP_HINT));
 
     SATTR_MASK_MODE_0644;
     ATTR_MASK_MODE;
-    zoidfs_lookup(NULL, NULL, symlink_fullpath_dirname, &fhandle);
-    CU_ASSERT_EQUAL(ZFS_OK, zoidfs_setattr(&fhandle, &sattr, &gattr));
+    zoidfs_lookup(NULL, NULL, symlink_fullpath_dirname, &fhandle, ZOIDFS_NO_OP_HINT);
+    CU_ASSERT_EQUAL(ZFS_OK, zoidfs_setattr(&fhandle, &sattr, &gattr, ZOIDFS_NO_OP_HINT));
     SATTR_MASK_MODE_0755;
     ATTR_MASK_MODE;
-    CU_ASSERT(ZFS_OK == zoidfs_setattr(&fhandle, &sattr, &gattr));
+    CU_ASSERT(ZFS_OK == zoidfs_setattr(&fhandle, &sattr, &gattr, ZOIDFS_NO_OP_HINT));
 
     return 0;
 }
@@ -663,41 +663,41 @@ int testREADLINK(void)
     size_t buffer_length = 4096;
     size_t short_buffer_length = 24;
 
-    zoidfs_lookup(&basedir_handle, symlink_component_filename, NULL, &fhandle);
-    CU_ASSERT(ZFS_OK == zoidfs_readlink(&fhandle, buffer, buffer_length));
+    zoidfs_lookup(&basedir_handle, symlink_component_filename, NULL, &fhandle, ZOIDFS_NO_OP_HINT);
+    CU_ASSERT(ZFS_OK == zoidfs_readlink(&fhandle, buffer, buffer_length, ZOIDFS_NO_OP_HINT));
     CU_ASSERT(strncmp(base_component_filename, buffer, zfsmin(buffer_length, strlen(base_component_filename))) == 0);
-    CU_ASSERT(ZFS_OK == zoidfs_readlink(&fhandle, short_buffer, short_buffer_length));
+    CU_ASSERT(ZFS_OK == zoidfs_readlink(&fhandle, short_buffer, short_buffer_length, ZOIDFS_NO_OP_HINT));
     CU_ASSERT(strncmp(base_component_filename, short_buffer, zfsmin(short_buffer_length, strlen(base_component_filename))) == 0);
 
-    zoidfs_lookup(&basedir_handle, symlink_component_dirname, NULL, &fhandle);
-    CU_ASSERT(ZFS_OK == zoidfs_readlink(&fhandle, buffer, buffer_length));
+    zoidfs_lookup(&basedir_handle, symlink_component_dirname, NULL, &fhandle, ZOIDFS_NO_OP_HINT);
+    CU_ASSERT(ZFS_OK == zoidfs_readlink(&fhandle, buffer, buffer_length, ZOIDFS_NO_OP_HINT));
     CU_ASSERT(strncmp(base_component_dirname, buffer, zfsmin(buffer_length, strlen(base_component_dirname))) == 0);
-    CU_ASSERT(ZFS_OK == zoidfs_readlink(&fhandle, short_buffer, short_buffer_length));
+    CU_ASSERT(ZFS_OK == zoidfs_readlink(&fhandle, short_buffer, short_buffer_length, ZOIDFS_NO_OP_HINT));
     CU_ASSERT(strncmp(base_component_dirname, short_buffer, zfsmin(short_buffer_length, strlen(base_component_dirname))) == 0);
 
-    zoidfs_lookup(NULL, NULL, symlink_fullpath_filename, &fhandle);
-    CU_ASSERT(ZFS_OK == zoidfs_readlink(&fhandle, buffer, buffer_length));
+    zoidfs_lookup(NULL, NULL, symlink_fullpath_filename, &fhandle, ZOIDFS_NO_OP_HINT);
+    CU_ASSERT(ZFS_OK == zoidfs_readlink(&fhandle, buffer, buffer_length, ZOIDFS_NO_OP_HINT));
     CU_ASSERT(strncmp(fullpath_filename, buffer, zfsmin(buffer_length, strlen(fullpath_filename))) == 0);
-    CU_ASSERT(ZFS_OK == zoidfs_readlink(&fhandle, short_buffer, short_buffer_length));
+    CU_ASSERT(ZFS_OK == zoidfs_readlink(&fhandle, short_buffer, short_buffer_length, ZOIDFS_NO_OP_HINT));
     CU_ASSERT(strncmp(fullpath_filename, short_buffer, zfsmin(short_buffer_length, strlen(fullpath_filename))) == 0);
 
-    zoidfs_lookup(NULL, NULL, symlink_fullpath_dirname, &fhandle);
-    CU_ASSERT(ZFS_OK == zoidfs_readlink(&fhandle, buffer, buffer_length));
+    zoidfs_lookup(NULL, NULL, symlink_fullpath_dirname, &fhandle, ZOIDFS_NO_OP_HINT);
+    CU_ASSERT(ZFS_OK == zoidfs_readlink(&fhandle, buffer, buffer_length, ZOIDFS_NO_OP_HINT));
     CU_ASSERT(strncmp(fullpath_dirname, buffer, zfsmin(buffer_length, strlen(fullpath_filename))) == 0);
-    CU_ASSERT(ZFS_OK == zoidfs_readlink(&fhandle, short_buffer, short_buffer_length));
+    CU_ASSERT(ZFS_OK == zoidfs_readlink(&fhandle, short_buffer, short_buffer_length, ZOIDFS_NO_OP_HINT));
     CU_ASSERT(strncmp(fullpath_dirname, short_buffer, zfsmin(short_buffer_length, strlen(fullpath_dirname))) == 0);
 
-    zoidfs_lookup(&basedir_handle, component_filename, NULL, &fhandle);
-    CU_ASSERT(ZFS_OK != zoidfs_readlink(&fhandle, buffer, buffer_length));
+    zoidfs_lookup(&basedir_handle, component_filename, NULL, &fhandle, ZOIDFS_NO_OP_HINT);
+    CU_ASSERT(ZFS_OK != zoidfs_readlink(&fhandle, buffer, buffer_length, ZOIDFS_NO_OP_HINT));
 
-    zoidfs_lookup(&basedir_handle, component_dirname, NULL, &fhandle);
-    CU_ASSERT(ZFS_OK != zoidfs_readlink(&fhandle, buffer, buffer_length));
+    zoidfs_lookup(&basedir_handle, component_dirname, NULL, &fhandle, ZOIDFS_NO_OP_HINT);
+    CU_ASSERT(ZFS_OK != zoidfs_readlink(&fhandle, buffer, buffer_length, ZOIDFS_NO_OP_HINT));
 
-    zoidfs_lookup(NULL, NULL, fullpath_filename, &fhandle);
-    CU_ASSERT(ZFS_OK != zoidfs_readlink(&fhandle, buffer, buffer_length));
+    zoidfs_lookup(NULL, NULL, fullpath_filename, &fhandle, ZOIDFS_NO_OP_HINT);
+    CU_ASSERT(ZFS_OK != zoidfs_readlink(&fhandle, buffer, buffer_length, ZOIDFS_NO_OP_HINT));
 
-    zoidfs_lookup(NULL, NULL, fullpath_dirname, &fhandle);
-    CU_ASSERT(ZFS_OK != zoidfs_readlink(&fhandle, buffer, buffer_length));
+    zoidfs_lookup(NULL, NULL, fullpath_dirname, &fhandle, ZOIDFS_NO_OP_HINT);
+    CU_ASSERT(ZFS_OK != zoidfs_readlink(&fhandle, buffer, buffer_length, ZOIDFS_NO_OP_HINT));
 
     return 0;
 }
@@ -712,13 +712,13 @@ int testREADDIR(void)
     int flags = 0;
 
     /* get the test directory we created in this program */
-    zoidfs_lookup(&basedir_handle, "zoidfs-test-dir", NULL, &thandle);
+    zoidfs_lookup(&basedir_handle, "zoidfs-test-dir", NULL, &thandle, ZOIDFS_NO_OP_HINT);
 
     cookie = 0;
     entry_count = 32;
     entries = malloc(entry_count * sizeof(zoidfs_dirent_t));
     memset(entries, 0, entry_count * sizeof(zoidfs_dirent_t));
-    CU_ASSERT_EQUAL(ZFS_OK, zoidfs_readdir(&thandle, cookie, &entry_count, entries, flags, NULL)); 
+    CU_ASSERT_EQUAL(ZFS_OK, zoidfs_readdir(&thandle, cookie, &entry_count, entries, flags, NULL, ZOIDFS_NO_OP_HINT)); 
     CU_ASSERT(10 == entry_count); /* should be 10 entries... all files created in ./zoidfs-test-dir, ., and .. */
     free(entries);
 
@@ -726,15 +726,15 @@ int testREADDIR(void)
     entry_count = 1;
     entries = malloc(entry_count * sizeof(zoidfs_dirent_t));
     memset(entries, 0, entry_count * sizeof(zoidfs_dirent_t));
-    CU_ASSERT_EQUAL(ZFS_OK, zoidfs_readdir(&thandle, cookie, &entry_count, entries, flags, NULL)); 
+    CU_ASSERT_EQUAL(ZFS_OK, zoidfs_readdir(&thandle, cookie, &entry_count, entries, flags, NULL, ZOIDFS_NO_OP_HINT)); 
     free(entries);
 
     cookie = 0;
     entry_count = 32;
     entries = malloc(entry_count * sizeof(zoidfs_dirent_t));
     memset(entries, 0, entry_count * sizeof(zoidfs_dirent_t));
-    zoidfs_lookup(&basedir_handle, component_dirname, NULL, &fhandle);
-    CU_ASSERT_EQUAL(ZFS_OK, zoidfs_readdir(&fhandle, cookie, &entry_count, entries, flags, NULL)); 
+    zoidfs_lookup(&basedir_handle, component_dirname, NULL, &fhandle, ZOIDFS_NO_OP_HINT);
+    CU_ASSERT_EQUAL(ZFS_OK, zoidfs_readdir(&fhandle, cookie, &entry_count, entries, flags, NULL, ZOIDFS_NO_OP_HINT)); 
     CU_ASSERT(3 == entry_count); /* .., ., and a entries */ 
     free(entries);
     
@@ -742,8 +742,8 @@ int testREADDIR(void)
     entry_count = 32;
     entries = malloc(entry_count * sizeof(zoidfs_dirent_t));
     memset(entries, 0, entry_count * sizeof(zoidfs_dirent_t));
-    zoidfs_lookup(NULL, NULL, fullpath_dirname, &fhandle);
-    CU_ASSERT_EQUAL(ZFS_OK, zoidfs_readdir(&fhandle, cookie, &entry_count, entries, flags, NULL)); 
+    zoidfs_lookup(NULL, NULL, fullpath_dirname, &fhandle, ZOIDFS_NO_OP_HINT);
+    CU_ASSERT_EQUAL(ZFS_OK, zoidfs_readdir(&fhandle, cookie, &entry_count, entries, flags, NULL, ZOIDFS_NO_OP_HINT)); 
     CU_ASSERT(3 == entry_count); /* .., ., and a entries */ 
     free(entries);
     
@@ -751,8 +751,8 @@ int testREADDIR(void)
     entry_count = 32;
     entries = malloc(entry_count * sizeof(zoidfs_dirent_t));
     memset(entries, 0, entry_count * sizeof(zoidfs_dirent_t));
-    zoidfs_lookup(&basedir_handle, symlink_component_dirname, NULL, &fhandle);
-    CU_ASSERT_NOT_EQUAL(ZFS_OK, zoidfs_readdir(&fhandle, cookie, &entry_count, entries, flags, NULL)); 
+    zoidfs_lookup(&basedir_handle, symlink_component_dirname, NULL, &fhandle, ZOIDFS_NO_OP_HINT);
+    CU_ASSERT_NOT_EQUAL(ZFS_OK, zoidfs_readdir(&fhandle, cookie, &entry_count, entries, flags, NULL, ZOIDFS_NO_OP_HINT)); 
     free(entries);
    
     /*
@@ -779,32 +779,32 @@ int testREADDIR(void)
     entry_count = 32;
     entries = malloc(entry_count * sizeof(zoidfs_dirent_t));
     memset(entries, 0, entry_count * sizeof(zoidfs_dirent_t));
-    zoidfs_lookup(&basedir_handle, component_filename, NULL, &fhandle);
-    CU_ASSERT_NOT_EQUAL(ZFS_OK, zoidfs_readdir(&fhandle, cookie, &entry_count, entries, flags, NULL)); 
+    zoidfs_lookup(&basedir_handle, component_filename, NULL, &fhandle, ZOIDFS_NO_OP_HINT);
+    CU_ASSERT_NOT_EQUAL(ZFS_OK, zoidfs_readdir(&fhandle, cookie, &entry_count, entries, flags, NULL, ZOIDFS_NO_OP_HINT)); 
     free(entries);
 
     cookie = 0;
     entry_count = 32;
     entries = malloc(entry_count * sizeof(zoidfs_dirent_t));
     memset(entries, 0, entry_count * sizeof(zoidfs_dirent_t));
-    zoidfs_lookup(NULL, NULL, fullpath_filename, &fhandle);
-    CU_ASSERT_NOT_EQUAL(ZFS_OK, zoidfs_readdir(&fhandle, cookie, &entry_count, entries, flags, NULL)); 
+    zoidfs_lookup(NULL, NULL, fullpath_filename, &fhandle, ZOIDFS_NO_OP_HINT);
+    CU_ASSERT_NOT_EQUAL(ZFS_OK, zoidfs_readdir(&fhandle, cookie, &entry_count, entries, flags, NULL, ZOIDFS_NO_OP_HINT)); 
     free(entries);
     
     cookie = 0;
     entry_count = 32;
     entries = malloc(entry_count * sizeof(zoidfs_dirent_t));
     memset(entries, 0, entry_count * sizeof(zoidfs_dirent_t));
-    zoidfs_lookup(&basedir_handle, symlink_component_filename, NULL, &fhandle);
-    CU_ASSERT_NOT_EQUAL(ZFS_OK, zoidfs_readdir(&fhandle, cookie, &entry_count, entries, flags, NULL)); 
+    zoidfs_lookup(&basedir_handle, symlink_component_filename, NULL, &fhandle, ZOIDFS_NO_OP_HINT);
+    CU_ASSERT_NOT_EQUAL(ZFS_OK, zoidfs_readdir(&fhandle, cookie, &entry_count, entries, flags, NULL, ZOIDFS_NO_OP_HINT)); 
     free(entries);
     
     cookie = 0;
     entry_count = 32;
     entries = malloc(entry_count * sizeof(zoidfs_dirent_t));
     memset(entries, 0, entry_count * sizeof(zoidfs_dirent_t));
-    zoidfs_lookup(NULL, NULL, symlink_fullpath_filename, &fhandle);
-    CU_ASSERT_NOT_EQUAL(ZFS_OK, zoidfs_readdir(&fhandle, cookie, &entry_count, entries, flags, NULL)); 
+    zoidfs_lookup(NULL, NULL, symlink_fullpath_filename, &fhandle, ZOIDFS_NO_OP_HINT);
+    CU_ASSERT_NOT_EQUAL(ZFS_OK, zoidfs_readdir(&fhandle, cookie, &entry_count, entries, flags, NULL, ZOIDFS_NO_OP_HINT)); 
     free(entries);
     
     return 0;
@@ -820,41 +820,41 @@ int testRESIZE(void)
 
     size = random () % 2048;
     gattr.mask = ZOIDFS_ATTR_ALL;
-    zoidfs_lookup(&basedir_handle, component_filename, NULL, &fhandle);
-    CU_ASSERT_EQUAL(ZFS_OK , zoidfs_resize(&fhandle, size));
-    zoidfs_getattr(&fhandle, &gattr);
+    zoidfs_lookup(&basedir_handle, component_filename, NULL, &fhandle, ZOIDFS_NO_OP_HINT);
+    CU_ASSERT_EQUAL(ZFS_OK , zoidfs_resize(&fhandle, size, ZOIDFS_NO_OP_HINT));
+    zoidfs_getattr(&fhandle, &gattr, ZOIDFS_NO_OP_HINT);
     CU_ASSERT_EQUAL(gattr.size , size);
 
     /* directory, should fail */ 
-    zoidfs_lookup(&basedir_handle, component_dirname, NULL, &fhandle);
-    CU_ASSERT_NOT_EQUAL(ZFS_OK, zoidfs_resize(&fhandle, size));
+    zoidfs_lookup(&basedir_handle, component_dirname, NULL, &fhandle, ZOIDFS_NO_OP_HINT);
+    CU_ASSERT_NOT_EQUAL(ZFS_OK, zoidfs_resize(&fhandle, size, ZOIDFS_NO_OP_HINT));
 
     size = random () % 2048;
     gattr.mask = ZOIDFS_ATTR_ALL;
-    zoidfs_lookup(NULL, NULL, fullpath_filename, &fhandle);
-    CU_ASSERT_EQUAL(ZFS_OK, zoidfs_resize(&fhandle, size))
-    zoidfs_getattr(&fhandle, &gattr);
+    zoidfs_lookup(NULL, NULL, fullpath_filename, &fhandle, ZOIDFS_NO_OP_HINT);
+    CU_ASSERT_EQUAL(ZFS_OK, zoidfs_resize(&fhandle, size, ZOIDFS_NO_OP_HINT))
+    zoidfs_getattr(&fhandle, &gattr, ZOIDFS_NO_OP_HINT);
     CU_ASSERT_EQUAL(gattr.size , size);
 
     /* directory, should fail */
-    zoidfs_lookup(NULL, NULL, fullpath_dirname, &fhandle);
-    CU_ASSERT_NOT_EQUAL(ZFS_OK, zoidfs_resize(&fhandle, size));
+    zoidfs_lookup(NULL, NULL, fullpath_dirname, &fhandle, ZOIDFS_NO_OP_HINT);
+    CU_ASSERT_NOT_EQUAL(ZFS_OK, zoidfs_resize(&fhandle, size, ZOIDFS_NO_OP_HINT));
 
     /* symlink to a file, should pass */
-    zoidfs_lookup(&basedir_handle, symlink_component_filename, NULL, &fhandle);
-    CU_ASSERT_EQUAL(ZFS_OK, zoidfs_resize(&fhandle, size));
+    zoidfs_lookup(&basedir_handle, symlink_component_filename, NULL, &fhandle, ZOIDFS_NO_OP_HINT);
+    CU_ASSERT_EQUAL(ZFS_OK, zoidfs_resize(&fhandle, size, ZOIDFS_NO_OP_HINT));
 
     /* symlink directory, should fail */
-    zoidfs_lookup(&basedir_handle, symlink_component_dirname, NULL, &fhandle);
-    CU_ASSERT_NOT_EQUAL(ZFS_OK, zoidfs_resize(&fhandle, size));
+    zoidfs_lookup(&basedir_handle, symlink_component_dirname, NULL, &fhandle, ZOIDFS_NO_OP_HINT);
+    CU_ASSERT_NOT_EQUAL(ZFS_OK, zoidfs_resize(&fhandle, size, ZOIDFS_NO_OP_HINT));
 
     /* symlink to a file, should pass */
-    zoidfs_lookup(NULL, NULL, symlink_fullpath_filename, &fhandle);
-    CU_ASSERT_EQUAL(ZFS_OK, zoidfs_resize(&fhandle, size));
+    zoidfs_lookup(NULL, NULL, symlink_fullpath_filename, &fhandle, ZOIDFS_NO_OP_HINT);
+    CU_ASSERT_EQUAL(ZFS_OK, zoidfs_resize(&fhandle, size, ZOIDFS_NO_OP_HINT));
 
     /* symlink directory, should fail */
-    zoidfs_lookup(NULL, NULL, symlink_fullpath_dirname, &fhandle);
-    CU_ASSERT_NOT_EQUAL(ZFS_OK, zoidfs_resize(&fhandle, size));
+    zoidfs_lookup(NULL, NULL, symlink_fullpath_dirname, &fhandle, ZOIDFS_NO_OP_HINT);
+    CU_ASSERT_NOT_EQUAL(ZFS_OK, zoidfs_resize(&fhandle, size, ZOIDFS_NO_OP_HINT));
 
     return 0;
 }
@@ -903,7 +903,7 @@ int main(int argc, char ** argv)
     /* setup test directory */
     zoidfs_init();
     sprintf(testDir, "%s/%s", argv[1], "zoidfs-test-dir");
-    err = zoidfs_mkdir(NULL, NULL, testDir, &sattr, &parent_hint);
+    err = zoidfs_mkdir(NULL, NULL, testDir, &sattr, &parent_hint, ZOIDFS_NO_OP_HINT);
     if(err != ZFS_OK)
     {
         fprintf(stderr, "ERROR: could not intialize remote test directory!\n");
@@ -954,7 +954,7 @@ int main(int argc, char ** argv)
    CU_basic_run_tests();
    CU_cleanup_registry();
 
-    err = zoidfs_remove(NULL, NULL, testDir, NULL);
+    err = zoidfs_remove(NULL, NULL, testDir, NULL, ZOIDFS_NO_OP_HINT);
     if(err != ZFS_OK)
     {
         fprintf(stderr, "ERROR: could not cleanup remote test directory!\n");

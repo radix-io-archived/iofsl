@@ -8,8 +8,8 @@
 #include <sys/time.h>
 #include <sys/types.h>
 
-#include "zoidfs.h"
-#include "zoidfs-proto.h"
+#include "zoidfs/zoidfs.h"
+#include "zoidfs/zoidfs-proto.h"
 #include "iofwd_config.h"
 
 #define NAMESIZE 255
@@ -58,7 +58,7 @@ int init_path_names(char * mpt)
 
 int init_basedir_handle(char * mpt)
 {
-    return zoidfs_lookup(NULL, NULL, mpt, &basedir_handle);
+    return zoidfs_lookup(NULL, NULL, mpt, &basedir_handle, ZOIDFS_NO_OP_HINT);
 }
 
 int testCREATE(void)
@@ -81,10 +81,10 @@ int testCREATE(void)
     sattr.mtime.nseconds = now.tv_usec;
 
     /* create a file using the base handle and component name*/
-    CU_ASSERT(ZFS_OK == zoidfs_create(&basedir_handle, component_filename, NULL, &sattr, &fhandle, &created));
+    CU_ASSERT(ZFS_OK == zoidfs_create(&basedir_handle, component_filename, NULL, &sattr, &fhandle, &created, ZOIDFS_NO_OP_HINT));
 
     /* create a file using the base handle and component name*/
-    CU_ASSERT(ZFS_OK == zoidfs_create(NULL, NULL, fullpath_filename, &sattr, &fhandle, &created));
+    CU_ASSERT(ZFS_OK == zoidfs_create(NULL, NULL, fullpath_filename, &sattr, &fhandle, &created, ZOIDFS_NO_OP_HINT));
 
     return 0;
 }
@@ -93,13 +93,13 @@ int testLOOKUP(void)
 {
     zoidfs_handle_t fhandle;
 
-    CU_ASSERT(ZFS_OK == zoidfs_lookup(&basedir_handle, component_dirname, NULL, &fhandle));
-    CU_ASSERT(ZFS_OK == zoidfs_lookup(NULL, NULL, fullpath_filename, &fhandle));
-    CU_ASSERT(ZFS_OK == zoidfs_lookup(NULL, NULL, fullpath_dirname, &fhandle));
-    CU_ASSERT(ZFS_OK == zoidfs_lookup(&basedir_handle, symlink_component_filename, NULL, &fhandle));
-    CU_ASSERT(ZFS_OK == zoidfs_lookup(&basedir_handle, symlink_component_dirname, NULL, &fhandle));
-    CU_ASSERT(ZFS_OK == zoidfs_lookup(NULL, NULL, symlink_fullpath_filename, &fhandle));
-    CU_ASSERT(ZFS_OK == zoidfs_lookup(NULL, NULL, symlink_fullpath_dirname, &fhandle));
+    CU_ASSERT(ZFS_OK == zoidfs_lookup(&basedir_handle, component_dirname, NULL, &fhandle, ZOIDFS_NO_OP_HINT));
+    CU_ASSERT(ZFS_OK == zoidfs_lookup(NULL, NULL, fullpath_filename, &fhandle, ZOIDFS_NO_OP_HINT));
+    CU_ASSERT(ZFS_OK == zoidfs_lookup(NULL, NULL, fullpath_dirname, &fhandle, ZOIDFS_NO_OP_HINT));
+    CU_ASSERT(ZFS_OK == zoidfs_lookup(&basedir_handle, symlink_component_filename, NULL, &fhandle, ZOIDFS_NO_OP_HINT));
+    CU_ASSERT(ZFS_OK == zoidfs_lookup(&basedir_handle, symlink_component_dirname, NULL, &fhandle, ZOIDFS_NO_OP_HINT));
+    CU_ASSERT(ZFS_OK == zoidfs_lookup(NULL, NULL, symlink_fullpath_filename, &fhandle, ZOIDFS_NO_OP_HINT));
+    CU_ASSERT(ZFS_OK == zoidfs_lookup(NULL, NULL, symlink_fullpath_dirname, &fhandle, ZOIDFS_NO_OP_HINT));
 
     return 0;
 }
@@ -140,10 +140,10 @@ int _do_zoidfs_write_comp_nbuf##_N##_bsize##_BSIZE() \
         file_starts[_i] = _foff; \
         _foff += _BSIZE; \
     } \
-    zoidfs_create(&basedir_handle, component_filename, NULL, &sattr, &handle, &created); \
-    zoidfs_lookup(&basedir_handle, component_filename, NULL, &handle);\
-    ret = zoidfs_write(&handle, mem_count, (const void **)mem_starts_write, mem_sizes, file_count, file_starts, file_sizes); \
-    zoidfs_remove(&basedir_handle, component_filename, NULL, NULL); \
+    zoidfs_create(&basedir_handle, component_filename, NULL, &sattr, &handle, &created, ZOIDFS_NO_OP_HINT); \
+    zoidfs_lookup(&basedir_handle, component_filename, NULL, &handle, ZOIDFS_NO_OP_HINT);\
+    ret = zoidfs_write(&handle, mem_count, (const void **)mem_starts_write, mem_sizes, file_count, file_starts, file_sizes, ZOIDFS_NO_OP_HINT); \
+    zoidfs_remove(&basedir_handle, component_filename, NULL, NULL, ZOIDFS_NO_OP_HINT); \
     for(_i = 0 ; _i < mem_count ; _i++) \
     { \
         free(mem_starts_write[_i]); \
@@ -184,10 +184,10 @@ int _do_zoidfs_write_full_nbuf##_N##_bsize##_BSIZE() \
         file_starts[_i] = _foff; \
         _foff += _BSIZE; \
     } \
-    zoidfs_create(NULL, NULL, fullpath_filename, &sattr, &handle, &created); \
-    zoidfs_lookup(NULL, NULL, fullpath_filename, &handle);\
-    ret = zoidfs_write(&handle, mem_count, (const void **)mem_starts_write, mem_sizes, file_count, file_starts, file_sizes); \
-    zoidfs_remove(NULL, NULL, fullpath_filename, NULL); \
+    zoidfs_create(NULL, NULL, fullpath_filename, &sattr, &handle, &created, ZOIDFS_NO_OP_HINT); \
+    zoidfs_lookup(NULL, NULL, fullpath_filename, &handle, ZOIDFS_NO_OP_HINT);\
+    ret = zoidfs_write(&handle, mem_count, (const void **)mem_starts_write, mem_sizes, file_count, file_starts, file_sizes, ZOIDFS_NO_OP_HINT); \
+    zoidfs_remove(NULL, NULL, fullpath_filename, NULL, ZOIDFS_NO_OP_HINT); \
     for(_i = 0 ; _i < mem_count ; _i++) \
     { \
         free(mem_starts_write[_i]); \
@@ -230,11 +230,11 @@ int _do_zoidfs_read_comp_nbuf##_N##_bsize##_BSIZE() \
         file_starts[_i] = _foff; \
         _foff += _BSIZE; \
     } \
-    zoidfs_create(&basedir_handle, component_filename, NULL, &sattr, &handle, &created); \
-    zoidfs_lookup(&basedir_handle, component_filename, NULL, &handle);\
-    zoidfs_write(&handle, mem_count, (const void **)mem_starts_write, mem_sizes, file_count, file_starts, file_sizes); \
-    ret = zoidfs_read(&handle, mem_count, (void **)mem_starts_read, mem_sizes, file_count, file_starts, file_sizes); \
-    zoidfs_remove(&basedir_handle, component_filename, NULL, NULL); \
+    zoidfs_create(&basedir_handle, component_filename, NULL, &sattr, &handle, &created, ZOIDFS_NO_OP_HINT); \
+    zoidfs_lookup(&basedir_handle, component_filename, NULL, &handle, ZOIDFS_NO_OP_HINT);\
+    zoidfs_write(&handle, mem_count, (const void **)mem_starts_write, mem_sizes, file_count, file_starts, file_sizes, ZOIDFS_NO_OP_HINT); \
+    ret = zoidfs_read(&handle, mem_count, (void **)mem_starts_read, mem_sizes, file_count, file_starts, file_sizes, ZOIDFS_NO_OP_HINT); \
+    zoidfs_remove(&basedir_handle, component_filename, NULL, NULL, ZOIDFS_NO_OP_HINT); \
     for(_i = 0 ; _i < mem_count ; _i++) \
     { \
         if(memcmp(mem_starts_write[_i], mem_starts_read[_i], _BSIZE) != 0) \
@@ -282,11 +282,11 @@ int _do_zoidfs_read_full_nbuf##_N##_bsize##_BSIZE() \
         file_starts[_i] = _foff; \
         _foff += _BSIZE; \
     } \
-    zoidfs_create(NULL, NULL, fullpath_filename, &sattr, &handle, &created); \
-    zoidfs_lookup(NULL, NULL, fullpath_filename, &handle);\
-    zoidfs_write(&handle, mem_count, (const void **)mem_starts_write, mem_sizes, file_count, file_starts, file_sizes); \
-    ret = zoidfs_read(&handle, mem_count, (void **)mem_starts_read, mem_sizes, file_count, file_starts, file_sizes); \
-    zoidfs_remove(NULL, NULL, fullpath_filename, NULL); \
+    zoidfs_create(NULL, NULL, fullpath_filename, &sattr, &handle, &created, ZOIDFS_NO_OP_HINT); \
+    zoidfs_lookup(NULL, NULL, fullpath_filename, &handle, ZOIDFS_NO_OP_HINT);\
+    zoidfs_write(&handle, mem_count, (const void **)mem_starts_write, mem_sizes, file_count, file_starts, file_sizes, ZOIDFS_NO_OP_HINT); \
+    ret = zoidfs_read(&handle, mem_count, (void **)mem_starts_read, mem_sizes, file_count, file_starts, file_sizes, ZOIDFS_NO_OP_HINT); \
+    zoidfs_remove(NULL, NULL, fullpath_filename, NULL, ZOIDFS_NO_OP_HINT); \
     for(_i = 0 ; _i < mem_count ; _i++) \
     { \
         if(memcmp(mem_starts_write[_i], mem_starts_read[_i], _BSIZE) != 0) \
@@ -444,7 +444,7 @@ int safe_read (const char * fullpath,
 {
    assert (fullpath); 
    return zoidfs_read (handle, mem_count, mem_starts, 
-         mem_sizes, file_count, file_starts, file_sizes); 
+         mem_sizes, file_count, file_starts, file_sizes, ZOIDFS_NO_OP_HINT); 
 }
 
 int safe_write (const char * fullpath, 
@@ -458,7 +458,7 @@ int safe_write (const char * fullpath,
 {
    assert (fullpath); 
    return zoidfs_write (handle, mem_count, mem_starts, mem_sizes, file_count, 
-         file_starts, file_sizes); 
+         file_starts, file_sizes, ZOIDFS_NO_OP_HINT); 
 }
 
 
@@ -485,7 +485,7 @@ void testValidate ()
    attr.mask = 0; 
 
    /* create fullpath_filename */
-   CU_ASSERT_TRUE_FATAL(ZFS_OK == zoidfs_create (0, 0, fullpath_filename, &attr, &handle, &created)); 
+   CU_ASSERT_TRUE_FATAL(ZFS_OK == zoidfs_create (0, 0, fullpath_filename, &attr, &handle, &created, ZOIDFS_NO_OP_HINT)); 
    CU_ASSERT_TRUE(created); 
 
    mem = malloc (maxmem); 
@@ -555,7 +555,7 @@ void testValidate ()
    free (mem); 
 
 
-   CU_ASSERT_TRUE (ZFS_OK == zoidfs_remove (0, 0, fullpath_filename, 0)); 
+   CU_ASSERT_TRUE (ZFS_OK == zoidfs_remove (0, 0, fullpath_filename, 0, ZOIDFS_NO_OP_HINT)); 
 }
 
 int init_suite_dispatch_basic(void)
