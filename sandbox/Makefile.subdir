@@ -1,10 +1,21 @@
 
 sandbox_ldflags = $(AM_LDFLAGS) \
+    @CUNIT_LDFLAGS@              \
+    @ZFS_DISPATCHER_LDFLAGS@     \
+    @BMI_LDFLAGS@               \
     @BOOST_LDFLAGS@ \
     @BOOST_PROGRAM_OPTIONS_LIB@ \
     @BOOST_DATE_TIME_LIB@ \
     @BOOST_THREAD_LIB@ \
     @BOOST_REGEX_LIB@
+
+sandbox_ldadd =          \
+    ${top_builddir}/src/zoidfs/libzoidfs-util.a  \
+    ${top_builddir}/src/iofwdutil/libiofwdutil.a \
+    ${top_builddir}/src/c-util/libc-util.a       \
+    @CUNIT_LIBS@                 \
+    @ZFS_DISPATCHER_LIBS@ \
+    @BMI_LIBS@
 
 noinst_PROGRAMS += sandbox/recordparam
 sandbox_recordparam_SOURCES = sandbox/recordparam.cpp
@@ -32,3 +43,22 @@ noinst_PROGRAMS += sandbox/LookupSMTest
 sandbox_LookupSMTest_SOURCES = sandbox/LookupSMTest.cpp
 sandbox_LookupSMTest_LDFLAGS = ${sandbox_ldflags}
 sandbox_LookupSMTest_LDADD = $(top_builddir)/src/sm/libiofwdsm.a
+
+noinst_PROGRAMS += sandbox/zoidfs-hints
+sandbox_zoidfs_hints_SOURCES = sandbox/zoidfs-hints.c
+sandbox_zoidfs_hints_LDFLAGS = ${sandbox_ldflags}
+sandbox_zoidfs_hints_LDADD = $(top_builddir)/src/zoidfs/libzoidfshints.a $(top_builddir)/src/zoidfs/libzoidfsclient.a ${sandbox_ldadd}
+
+if HAVE_MPI
+noinst_PROGRAMS += sandbox/mpi-server
+sandbox_mpi_server_SOURCES = sandbox/mpi-server.c
+sandbox_mpi_server_CFLAGS = -I./src/zoidfs/client
+sandbox_mpi_server_LDFLAGS = -L./src/zoidfs
+sandbox_mpi_server_LDADD = -lzoidfsclient
+
+noinst_PROGRAMS += sandbox/mpi-client
+sandbox_mpi_client_SOURCES = sandbox/mpi-client.c
+sandbox_mpi_client_CFLAGS = -I./src/zoidfs/client
+sandbox_mpi_client_LDFLAGS = -L./src/zoidfs
+sandbox_mpi_client_LDADD = -lzoidfsclient
+endif
