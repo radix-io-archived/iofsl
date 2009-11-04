@@ -37,12 +37,12 @@ public:
   iofwdutil::completion::CompletionID * enqueueWrite(
      zoidfs::zoidfs_handle_t * handle, size_t count,
      const void ** mem_starts, size_t * mem_sizes,
-     uint64_t * file_starts, uint64_t * file_sizes);
+     uint64_t * file_starts, uint64_t * file_sizes, zoidfs::zoidfs_op_hint_t * op_hint);
 
   iofwdutil::completion::CompletionID * enqueueRead(
      zoidfs::zoidfs_handle_t * handle, size_t count,
      void ** mem_starts, size_t * mem_sizes,
-     uint64_t * file_starts, uint64_t * file_sizes);
+     uint64_t * file_starts, uint64_t * file_sizes, zoidfs::zoidfs_op_hint_t * op_hint);
 
 protected:
   void run();

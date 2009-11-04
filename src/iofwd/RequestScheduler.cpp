@@ -119,7 +119,7 @@ RequestScheduler::~RequestScheduler()
 CompletionID * RequestScheduler::enqueueWrite(
   zoidfs::zoidfs_handle_t * handle, size_t count,
   const void ** mem_starts, size_t * mem_sizes,
-  uint64_t * file_starts, uint64_t * file_sizes)
+  uint64_t * file_starts, uint64_t * file_sizes, zoidfs::zoidfs_op_hint_t * op_hint)
 {
   // ignore zero-length request
   int valid_count = 0;
@@ -139,6 +139,7 @@ CompletionID * RequestScheduler::enqueueWrite(
     r.st = file_starts[i];
     r.en = r.st + file_sizes[i];
     r.cids.push_back(ccid);
+    r.op_hint = op_hint;
 
     boost::mutex::scoped_lock l(lock_);
     range_sched_->enqueue(r);
@@ -150,7 +151,7 @@ CompletionID * RequestScheduler::enqueueWrite(
 CompletionID * RequestScheduler::enqueueRead(
   zoidfs::zoidfs_handle_t * handle, size_t count,
   void ** mem_starts, size_t * mem_sizes,
-  uint64_t * file_starts, uint64_t * file_sizes)
+  uint64_t * file_starts, uint64_t * file_sizes, zoidfs::zoidfs_op_hint_t * op_hint)
 {
   // ignore zero-length request
   int valid_count = 0;
@@ -170,6 +171,7 @@ CompletionID * RequestScheduler::enqueueRead(
     r.st = file_starts[i];
     r.en = r.st + file_sizes[i];
     r.cids.push_back(ccid);
+    r.op_hint = op_hint;
 
     boost::mutex::scoped_lock l(lock_);
     range_sched_->enqueue(r);
@@ -278,10 +280,10 @@ void RequestScheduler::issue(const vector<Range>& rs)
   CompletionID *async_id;
   if (rs[0].type == Range::RANGE_WRITE) {
     async_id = async_api_->async_write(rs[0].handle, narrays, (const void**)mem_starts, mem_sizes,
-                                       narrays, file_starts, file_sizes);
+                                       narrays, file_starts, file_sizes, rs[0].op_hint);
   } else if (rs[0].type == Range::RANGE_READ) {
     async_id = async_api_->async_read(rs[0].handle, narrays, (void**)mem_starts, mem_sizes,
-                                      narrays, file_starts, file_sizes);
+                                      narrays, file_starts, file_sizes, rs[0].op_hint);
   } else {
     assert(false);
   }
