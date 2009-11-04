@@ -100,7 +100,8 @@ int zoidfs_create(const zoidfs_handle_t * parent_handle,
                   const char * full_path,
                   const zoidfs_sattr_t * sattr,
                   zoidfs_handle_t * handle,
-                  int * created)
+                  int * created,
+                  zoidfs_op_hint_t * op_hint)
 {
     int ret;
     char newpath[ZOIDFS_PATH_MAX];
@@ -123,18 +124,39 @@ int zoidfs_create(const zoidfs_handle_t * parent_handle,
         return ZFSERR_INVAL;
     }
 
+#ifdef ZFS_DISPATCHER_JOURNAL
+    /* add to journal */
+    int op = ZOIDFS_OP_CREATE;
+    int fp = full_path ? 1 : 0;
+
+    ret = fwrite(&op, sizeof(int), 1, journalFP);
+    ret = fwrite(&fp, sizeof(char), 1, journalFP);
+    if(fp)
+    {
+        ret = fwrite(full_path, strlen(full_path), 1, journalFP);
+    }
+    else
+    {
+        ret = fwrite(parent_handle, sizeof(*parent_handle), 1, journalFP);
+        ret = fwrite(component_name, strlen(full_path), 1, journalFP);
+    }
+    ret = fwrite(sattr, sizeof(zoidfs_sattr_t), 1, journalFP);
+#endif
+
     ret = handler->create(usenew ? &newhandle : parent_handle,
                            component_name,
                            full_path ? newpath : NULL,
                            sattr,
                            handle,
-                           created);
+                           created,
+                           op_hint);
     ZINT_MARK_HANDLE(handle,id);  
     return ret; 
 }
 
 int zoidfs_getattr(const zoidfs_handle_t * handle,
-                   zoidfs_attr_t * attr)
+                   zoidfs_attr_t * attr,
+                   zoidfs_op_hint_t * op_hint)
 {
     int ret;
     zint_handler_t * handler;
@@ -145,12 +167,13 @@ int zoidfs_getattr(const zoidfs_handle_t * handle,
         return ZFSERR_INVAL;
     }
 
-    return handler->getattr(handle, attr);
+    return handler->getattr(handle, attr, op_hint);
 }
     
 int zoidfs_setattr(const zoidfs_handle_t * handle,
                    const zoidfs_sattr_t * sattr,
-                   zoidfs_attr_t * attr)
+                   zoidfs_attr_t * attr,
+                   zoidfs_op_hint_t * op_hint)
 {
     zint_handler_t * handler;
     int ret;
@@ -161,13 +184,15 @@ int zoidfs_setattr(const zoidfs_handle_t * handle,
         return ZFSERR_INVAL;
     }
 
-    return handler->setattr(handle, sattr, attr);
+    return handler->setattr(handle, sattr, attr,
+                           op_hint);
 }
  
 int zoidfs_lookup(const zoidfs_handle_t * parent_handle,
                   const char * component_name,
                   const char * full_path,
-                  zoidfs_handle_t * handle)
+                  zoidfs_handle_t * handle,
+                  zoidfs_op_hint_t * op_hint)
 {
     zint_handler_t * handler;
     char new_path[ZOIDFS_PATH_MAX];
@@ -193,14 +218,16 @@ int zoidfs_lookup(const zoidfs_handle_t * parent_handle,
     ret = handler->lookup(usenew ? &newhandle : parent_handle, 
                            component_name, 
                            full_path ? new_path : NULL, 
-                           handle);
+                           handle,
+                           op_hint);
     ZINT_MARK_HANDLE(handle, hid); 
     return ret; 
 }
 
 int zoidfs_readlink(const zoidfs_handle_t * handle,
                     char * buffer,
-                    size_t buffer_length)
+                    size_t buffer_length,
+                    zoidfs_op_hint_t * op_hint)
 {
     zint_handler_t * handler;
     int ret;
@@ -211,7 +238,7 @@ int zoidfs_readlink(const zoidfs_handle_t * handle,
         return ZFSERR_INVAL;
     }
 
-    ret = handler->readlink(handle, buffer, buffer_length);
+    ret = handler->readlink(handle, buffer, buffer_length, op_hint);
 
     /* make sure buffer is null terminated */
     buffer[buffer_length - 1] = '\0';
@@ -225,7 +252,8 @@ int zoidfs_read(const zoidfs_handle_t * handle,
                 const size_t mem_sizes[],
                 size_t file_count,
                 const uint64_t file_starts[],
-                uint64_t file_sizes[])
+                uint64_t file_sizes[],
+                zoidfs_op_hint_t * op_hint)
 {
     zint_handler_t * handler;
     int ret;
@@ -242,7 +270,8 @@ int zoidfs_read(const zoidfs_handle_t * handle,
                          mem_sizes, 
                          file_count, 
                          file_starts, 
-                         file_sizes);
+                         file_sizes,
+                         op_hint);
 }
      
 int zoidfs_write(const zoidfs_handle_t * handle,
@@ -251,7 +280,8 @@ int zoidfs_write(const zoidfs_handle_t * handle,
                  const size_t mem_sizes[],
                  size_t file_count,
                  const uint64_t file_starts[],
-                 uint64_t file_sizes[])
+                 uint64_t file_sizes[],
+                 zoidfs_op_hint_t * op_hint)
 {
     zint_handler_t * handler;
     int ret;
@@ -268,13 +298,15 @@ int zoidfs_write(const zoidfs_handle_t * handle,
                           mem_sizes,
                           file_count,
                           file_starts,
-                          file_sizes);
+                          file_sizes,
+                          op_hint);
 }
 
 int zoidfs_remove(const zoidfs_handle_t * parent_handle,
                   const char * component_name,
                   const char * full_path,
-                  zoidfs_cache_hint_t * parent_hint)
+                  zoidfs_cache_hint_t * parent_hint,
+                  zoidfs_op_hint_t * op_hint)
 {
     int ret;
     zint_handler_t * handler;
@@ -299,10 +331,12 @@ int zoidfs_remove(const zoidfs_handle_t * parent_handle,
     return handler->remove(usenew ? &newhandle : parent_handle,
                            component_name,
                            full_path ? newpath : NULL,
-                           parent_hint);
+                           parent_hint,
+                           op_hint);
 }
 
-int zoidfs_commit(const zoidfs_handle_t * handle)
+int zoidfs_commit(const zoidfs_handle_t * handle,
+                  zoidfs_op_hint_t * op_hint)
 {
     int ret;
     zint_handler_t * handler;
@@ -313,7 +347,7 @@ int zoidfs_commit(const zoidfs_handle_t * handle)
         return ZFSERR_INVAL;
     }
 
-    return handler->commit(handle);
+    return handler->commit(handle, op_hint);
 }
 
 int zoidfs_rename(const zoidfs_handle_t * from_parent_handle,
@@ -323,7 +357,8 @@ int zoidfs_rename(const zoidfs_handle_t * from_parent_handle,
                   const char * to_component_name,
                   const char * to_full_path,
                   zoidfs_cache_hint_t * from_parent_hint,
-                  zoidfs_cache_hint_t * to_parent_hint)
+                  zoidfs_cache_hint_t * to_parent_hint,
+                  zoidfs_op_hint_t * op_hint)
 {
     int ret;
     zint_handler_t * handler;
@@ -368,7 +403,8 @@ int zoidfs_rename(const zoidfs_handle_t * from_parent_handle,
                            to_component_name,
                            to_full_path ? new_to_path : to_full_path,
                            from_parent_hint,
-                           to_parent_hint);
+                           to_parent_hint,
+                           op_hint);
 }
 
 int zoidfs_link(const zoidfs_handle_t * from_parent_handle,
@@ -378,7 +414,8 @@ int zoidfs_link(const zoidfs_handle_t * from_parent_handle,
                 const char * to_component_name,
                 const char * to_full_path,
                 zoidfs_cache_hint_t * from_parent_hint,
-                zoidfs_cache_hint_t * to_parent_hint)
+                zoidfs_cache_hint_t * to_parent_hint,
+                zoidfs_op_hint_t * op_hint)
 {
    /* doesn't this need a check to make sure both handlers are the same?? */
     int ret;
@@ -425,7 +462,8 @@ int zoidfs_link(const zoidfs_handle_t * from_parent_handle,
                          to_component_name,
                          (to_full_path ? new_to_path : to_full_path),
                          from_parent_hint,
-                         to_parent_hint);
+                         to_parent_hint,
+                         op_hint);
 }
 
 int zoidfs_symlink(const zoidfs_handle_t * from_parent_handle,
@@ -436,7 +474,8 @@ int zoidfs_symlink(const zoidfs_handle_t * from_parent_handle,
                    const char * to_full_path,
                    const zoidfs_sattr_t * attr,
                    zoidfs_cache_hint_t * from_parent_hint,
-                   zoidfs_cache_hint_t * to_parent_hint)
+                   zoidfs_cache_hint_t * to_parent_hint,
+                   zoidfs_op_hint_t * op_hint)
 {
    /* doesn't this need a check to make sure both handlers are the same?? */
     int ret;
@@ -484,14 +523,16 @@ int zoidfs_symlink(const zoidfs_handle_t * from_parent_handle,
                             to_full_path ? new_to_path : to_full_path,
                             attr,
                             from_parent_hint,
-                            to_parent_hint);
+                            to_parent_hint,
+                            op_hint);
 }
 
 int zoidfs_mkdir(const zoidfs_handle_t * parent_handle,
                  const char * component_name,
                  const char * full_path,
                  const zoidfs_sattr_t * attr,
-                 zoidfs_cache_hint_t * parent_hint)
+                 zoidfs_cache_hint_t * parent_hint,
+                 zoidfs_op_hint_t * op_hint)
 {
     int ret;
     zint_handler_t * handler;
@@ -517,7 +558,8 @@ int zoidfs_mkdir(const zoidfs_handle_t * parent_handle,
                           component_name,
                           full_path ? new_path : NULL,
                           attr,
-                          parent_hint);
+                          parent_hint,
+                          op_hint);
 }
 
 int zoidfs_readdir(const zoidfs_handle_t * parent_handle,
@@ -525,7 +567,8 @@ int zoidfs_readdir(const zoidfs_handle_t * parent_handle,
                    size_t * entry_count,
                    zoidfs_dirent_t * entries,
                    uint32_t flags,
-                   zoidfs_cache_hint_t * parent_hint)
+                   zoidfs_cache_hint_t * parent_hint,
+                   zoidfs_op_hint_t * op_hint)
 {
     int ret;
     zint_handler_t * handler;
@@ -541,11 +584,13 @@ int zoidfs_readdir(const zoidfs_handle_t * parent_handle,
                             entry_count,
                             entries,
                             flags,
-                            parent_hint);
+                            parent_hint,
+                            op_hint);
 }
 
 int zoidfs_resize(const zoidfs_handle_t * handle,
-                  uint64_t size)
+                  uint64_t size,
+                  zoidfs_op_hint_t * op_hint)
 {
     int ret;
     zint_handler_t * handler;
@@ -557,7 +602,8 @@ int zoidfs_resize(const zoidfs_handle_t * handle,
     }
 
     return handler->resize(handle,
-                           size);
+                           size,
+                           op_hint);
 }    
 
 /**
