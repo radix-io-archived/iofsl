@@ -41,19 +41,19 @@ int main()
 
     zoidfs_hint_print(&hint);
     
-    zoidfs_hint_remove(&hint, "key4");
+    zoidfs_hint_remove(&hint, "key4", ZOIDFS_HINTS_REUSE_HINTS);
     zoidfs_hint_print(&hint);
 
-    zoidfs_hint_remove(&hint, "key4");
+    zoidfs_hint_remove(&hint, "key4", ZOIDFS_HINTS_REUSE_HINTS);
     zoidfs_hint_print(&hint);
 
-    zoidfs_hint_remove(&hint, "key7");
+    zoidfs_hint_remove(&hint, "key7", ZOIDFS_HINTS_REUSE_HINTS);
     zoidfs_hint_print(&hint);
 
-    zoidfs_hint_remove(&hint, "key");
+    zoidfs_hint_remove(&hint, "key", ZOIDFS_HINTS_REUSE_HINTS);
     zoidfs_hint_print(&hint);
 
-    zoidfs_hint_remove(&hint, "key3");
+    zoidfs_hint_remove(&hint, "key3", ZOIDFS_HINTS_REUSE_HINTS);
     zoidfs_hint_print(&hint);
 
     zoidfs_hint_add(&hint, strdup("key"), strdup("data"), 5, ZOIDFS_HINTS_ZC);
