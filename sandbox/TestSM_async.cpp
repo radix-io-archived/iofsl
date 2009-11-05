@@ -17,11 +17,19 @@
 /* test states */
 struct Test_InitState;
 struct Test_RunOpState;
+struct Test_RunOpState_SubOp1a;
+struct Test_RunOpState_SubOp2a;
+struct Test_RunOpState_SubOp1b;
+struct Test_RunOpState_SubOp2b;
+struct Test_RunOpState_SubOp1c;
+struct Test_RunOpState_SubOp1d;
 struct Test_CleanupState;
 struct Test_ErrorState;
 
 /* test state machine transition events */
 struct Test_Success : boost::statechart::event< Test_Success > {};
+struct Test_RunOpState_SubOp1_Event : boost::statechart::event< Test_RunOpState_SubOp1_Event > {};
+struct Test_RunOpState_SubOp2_Event : boost::statechart::event< Test_RunOpState_SubOp2_Event > {};
 struct Test_Error : boost::statechart::event< Test_Error > {};
 struct Test_Terminate : boost::statechart::event< Test_Terminate > {};
 struct Test_Exception : boost::statechart::event< Test_Exception >
@@ -37,7 +45,6 @@ struct Test_Exception : boost::statechart::event< Test_Exception >
             std::cout << __FUNCTION__ << std::endl;
         }      
 };
-
 struct Test_Retry : boost::statechart::event< Test_Retry > {};
 
 struct IGetCurrentState
@@ -146,7 +153,8 @@ struct Test_InitState : IGetCurrentState, boost::statechart::simple_state<Test_I
 };
 
 /* state #2: invoke the test */
-struct Test_RunOpState : IGetCurrentState, boost::statechart::state<Test_RunOpState, TestSM>
+struct Test_RunOpState : IGetCurrentState, boost::statechart::state<Test_RunOpState, TestSM,
+        boost::mpl::list<Test_RunOpState_SubOp1a, Test_RunOpState_SubOp2a> >
 {
     public:
         /* specify the possible transitions for this state
@@ -187,6 +195,75 @@ struct Test_RunOpState : IGetCurrentState, boost::statechart::state<Test_RunOpSt
 
     protected:
         int ret_;
+};
+
+struct Test_RunOpState_SubOp1a : boost::statechart::simple_state <Test_RunOpState_SubOp1a, Test_RunOpState::orthogonal< 0 > >
+{
+    public:
+        typedef boost::mpl::list <
+            boost::statechart::transition<Test_RunOpState_SubOp1_Event, Test_RunOpState_SubOp1b> > reactions;
+
+        Test_RunOpState_SubOp1a()
+        {
+            std::cout << __FUNCTION__ << std::endl;
+        }
+};
+
+struct Test_RunOpState_SubOp1b : boost::statechart::simple_state <Test_RunOpState_SubOp1b, Test_RunOpState::orthogonal< 0 > >
+{
+    public:
+        typedef boost::mpl::list <
+            boost::statechart::transition<Test_RunOpState_SubOp1_Event, Test_RunOpState_SubOp1c> > reactions;
+
+        Test_RunOpState_SubOp1b()
+        {
+            std::cout << __FUNCTION__ << std::endl;
+        }
+};
+
+struct Test_RunOpState_SubOp1c : boost::statechart::simple_state <Test_RunOpState_SubOp1c, Test_RunOpState::orthogonal< 0 > >
+{
+    public:
+        typedef boost::mpl::list <
+            boost::statechart::transition<Test_RunOpState_SubOp1_Event, Test_RunOpState_SubOp1d> > reactions;
+
+        Test_RunOpState_SubOp1c()
+        {
+            std::cout << __FUNCTION__ << std::endl;
+        }
+};
+
+struct Test_RunOpState_SubOp1d : boost::statechart::simple_state <Test_RunOpState_SubOp1d, Test_RunOpState::orthogonal< 0 > >
+{
+    public:
+        typedef boost::mpl::list <
+            boost::statechart::transition<Test_RunOpState_SubOp1_Event, Test_RunOpState_SubOp1a> > reactions;
+
+        Test_RunOpState_SubOp1d()
+        {
+            std::cout << __FUNCTION__ << std::endl;
+        }
+};
+
+struct Test_RunOpState_SubOp2a : boost::statechart::simple_state <Test_RunOpState_SubOp2a, Test_RunOpState::orthogonal< 1 > >
+{
+    public:
+        typedef boost::mpl::list <
+            boost::statechart::transition<Test_RunOpState_SubOp2_Event, Test_RunOpState_SubOp2b> > reactions;
+
+        Test_RunOpState_SubOp2a()
+        {
+            std::cout << __FUNCTION__ << std::endl;
+        }
+};
+
+struct Test_RunOpState_SubOp2b : boost::statechart::simple_state <Test_RunOpState_SubOp2b, Test_RunOpState::orthogonal< 1 > >
+{
+    public:
+        Test_RunOpState_SubOp2b()
+        {
+            std::cout << __FUNCTION__ << std::endl;
+        }
 };
 
 struct Test_CleanupState : IGetCurrentState, boost::statechart::state<Test_CleanupState, TestSM>
@@ -294,6 +371,17 @@ int main()
     sched2.initiate_processor( p2 );
 
     sched1.queue_event( p1, boost::intrusive_ptr< const boost::statechart::event_base >(new Test_Success() ));
+    sched1.queue_event( p1, boost::intrusive_ptr< const boost::statechart::event_base >(new Test_RunOpState_SubOp1_Event() ));
+    sched1.queue_event( p1, boost::intrusive_ptr< const boost::statechart::event_base >(new Test_RunOpState_SubOp2_Event() ));
+    sched1.queue_event( p1, boost::intrusive_ptr< const boost::statechart::event_base >(new Test_RunOpState_SubOp2_Event() ));
+    sched1.queue_event( p1, boost::intrusive_ptr< const boost::statechart::event_base >(new Test_RunOpState_SubOp2_Event() ));
+    sched1.queue_event( p1, boost::intrusive_ptr< const boost::statechart::event_base >(new Test_RunOpState_SubOp1_Event() ));
+    sched1.queue_event( p1, boost::intrusive_ptr< const boost::statechart::event_base >(new Test_RunOpState_SubOp1_Event() ));
+    sched1.queue_event( p1, boost::intrusive_ptr< const boost::statechart::event_base >(new Test_RunOpState_SubOp1_Event() ));
+    sched1.queue_event( p1, boost::intrusive_ptr< const boost::statechart::event_base >(new Test_RunOpState_SubOp1_Event() ));
+    sched1.queue_event( p1, boost::intrusive_ptr< const boost::statechart::event_base >(new Test_RunOpState_SubOp1_Event() ));
+    sched1.queue_event( p1, boost::intrusive_ptr< const boost::statechart::event_base >(new Test_RunOpState_SubOp1_Event() ));
+    sched1.queue_event( p1, boost::intrusive_ptr< const boost::statechart::event_base >(new Test_RunOpState_SubOp2_Event() ));
     sched1.queue_event( p1, boost::intrusive_ptr< const boost::statechart::event_base >(new Test_Success() ));
     sched1.queue_event( p1, boost::intrusive_ptr< const boost::statechart::event_base >(new Test_Success() ));
     sched1.queue_event( p1, boost::intrusive_ptr< const boost::statechart::event_base >(new Test_Success() ));
@@ -301,6 +389,7 @@ int main()
     sched2.queue_event( p2, boost::intrusive_ptr< const boost::statechart::event_base >(new Test_Success() ));
     sched2.queue_event( p2, boost::intrusive_ptr< const boost::statechart::event_base >(new Test_Success() ));
     sched2.queue_event( p2, boost::intrusive_ptr< const boost::statechart::event_base >(new Test_Success() ));
+    sched1.queue_event( p1, boost::intrusive_ptr< const boost::statechart::event_base >(new Test_RunOpState_SubOp2_Event() ));
     sched2.queue_event( p2, boost::intrusive_ptr< const boost::statechart::event_base >(new Test_Success() ));
 
     boost::thread ot1( boost::bind(&boost::statechart::fifo_scheduler<>::operator(), &sched1, 0) );
