@@ -220,7 +220,10 @@ bool_t xdr_zoidfs_op_hint_t(XDR *xdrs, zoidfs_op_hint_t ** hint) {
     for(i = 0 ; i < hint_size ; i++)
     {
         zoidfs_op_hint_t * cur_hint = zoidfs_hint_index(hint, i);
-        ret = ret && xdr_zoidfs_op_hint_element_t(xdrs, cur_hint); 
+        if(cur_hint->key != NULL && cur_hint->value != NULL && cur_hint->value_len != 0)
+        {
+            ret = ret && xdr_zoidfs_op_hint_element_t(xdrs, cur_hint);
+        }
     }
     return ret;
 }
