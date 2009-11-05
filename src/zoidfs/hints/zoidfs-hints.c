@@ -118,7 +118,7 @@ int zoidfs_hint_add(zoidfs_op_hint_t ** op_hint, char * key, char * value, int v
     {
         *op_hint = new_op_hint;
     }
-    /* else, there are items in the list... add it to the end of the list */
+    /* else, there are items in the list... add it to the end of the list if there isn't an empty node */
     else
     {
         /* find the last hint in the list */
@@ -144,7 +144,22 @@ int zoidfs_hint_add(zoidfs_op_hint_t ** op_hint, char * key, char * value, int v
                     /* check if the key alread exists... update the value if it does */
                     if(strcmp(cur_op_hint->key, key) == 0)
                     {
-                        zoidfs_hint_update_hint(cur_op_hint, key, value, value_len, flags | ZOIDFS_HINTS_REUSE_KEY); 
+                        /* if the key, value pair already exists in the list, delete the new pair */
+                        if(value_len == cur_op_hint->value_len &&
+                            memcmp(cur_op_hint->value, value, value_len) == 0)
+                        {
+                            if(key)
+                                free(key);
+                            if(value)
+                                free(value);
+                        }
+                        /* else, update the item in the list */
+                        else
+                        {
+                            if(key)
+                                free(key);
+                            zoidfs_hint_update_hint(cur_op_hint, cur_op_hint->key, value, value_len, flags | ZOIDFS_HINTS_REUSE_KEY);
+                        }
                         break;
                     }
                     /* else, make a new hint in the linked list */
