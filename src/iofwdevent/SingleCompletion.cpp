@@ -4,6 +4,10 @@
 namespace iofwdevent
 {
 
+   SingleCompletion::SingleCompletion ()
+      : completed_ (false), status_(WAITING)
+   {
+   }
    void SingleCompletion::success ()
    {
       ALWAYS_ASSERT(status_ == WAITING);
