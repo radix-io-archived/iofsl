@@ -7,13 +7,14 @@ namespace iofwdevent
 
    void BMIResource::start ()
    {
-      BMI_open_context (&context_);
+      checkBMI(BMI_open_context (&context_));
       ThreadedResource::start ();
    }
 
    void BMIResource::stop ()
    {
       ThreadedResource::stop ();
+      // somehow, BMI_close_context does not return an error code.
       BMI_close_context (context_);
    }
 
