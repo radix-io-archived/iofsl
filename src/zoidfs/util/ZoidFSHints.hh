@@ -10,7 +10,7 @@ namespace zoidfs
     {
         zoidfs::zoidfs_op_hint_t * ZoidFSHintInit(int size);
         int ZoidFSHintAdd(zoidfs::zoidfs_op_hint_t ** op_hint, char * key, char * value, int value_len, int flags);
-        int ZoidFSHintRemove(zoidfs::zoidfs_op_hint_t ** op_hint, char * key);
+        int ZoidFSHintRemove(zoidfs::zoidfs_op_hint_t ** op_hint, char * key, int flags);
         char * ZoidFSHintGet(zoidfs::zoidfs_op_hint_t ** op_hint, char * key);
         int ZoidFSHintDestroy(zoidfs::zoidfs_op_hint_t ** op_hint);
         zoidfs::zoidfs_op_hint_t * ZoidFSHintPop(zoidfs::zoidfs_op_hint_t ** op_hint);

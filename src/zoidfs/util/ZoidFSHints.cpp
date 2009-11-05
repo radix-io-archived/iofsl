@@ -15,9 +15,9 @@ namespace zoidfs
             return zoidfs::zoidfs_hint_add(op_hint, key, value, value_len, flags);
         }
 
-        int ZoidFSHintRemove(zoidfs::zoidfs_op_hint_t ** op_hint, char * key)
+        int ZoidFSHintRemove(zoidfs::zoidfs_op_hint_t ** op_hint, char * key, int flags)
         {
-            return zoidfs::zoidfs_hint_remove(op_hint, key);
+            return zoidfs::zoidfs_hint_remove(op_hint, key, flags);
         }
 
         char * ZoidFSHintGet(zoidfs::zoidfs_op_hint_t ** op_hint, char * key)

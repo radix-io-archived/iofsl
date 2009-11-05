@@ -25,7 +25,8 @@ int zoidfs_hint_add(zoidfs_op_hint_t ** op_hint,
 
 /* remove a (key, value) pair from the hint list */
 int zoidfs_hint_remove(zoidfs_op_hint_t ** op_hint,
-                        char * key);
+                        char * key,
+                        int flags);
 
 /* get a (key, value) pair from the hint list */
 char * zoidfs_hint_get(zoidfs_op_hint_t ** op_hint,

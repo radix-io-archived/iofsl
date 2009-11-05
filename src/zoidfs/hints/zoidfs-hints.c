@@ -88,6 +88,43 @@ static int zoidfs_hint_update_hint(zoidfs_op_hint_t * cur_op_hint, char * key, c
     return 0;
 }
 
+static int zoidfs_hint_update_non_unique(zoidfs_op_hint_t * cur_op_hint, char * key, char * value, int value_len, int flags)
+{
+    /* key can not be NULL */
+    if(!key)
+    {
+        return -1;
+    }
+
+    while(cur_op_hint)
+    {
+        /* if we found a match */
+        if(cur_op_hint->key != NULL && 
+            strcmp(key, cur_op_hint->key) == 0)
+        {
+            if(value_len == cur_op_hint->value_len &&
+                memcmp(cur_op_hint->value, value, value_len) == 0)
+            {
+                if(key)
+                    free(key);
+                if(value)
+                    free(value);
+            }
+            else
+            {
+                if(key)
+                    free(key);
+                zoidfs_hint_update_hint(cur_op_hint, cur_op_hint->key, value, value_len, flags | ZOIDFS_HINTS_REUSE_KEY);
+            }
+            return 1;
+        }
+        cur_op_hint = cur_op_hint->next;
+    }
+
+    /* key is unique */
+    return 0;
+}
+
 /*
  * zoidfs_hint_add() - add a hint keyed with 'key'
  */
@@ -121,6 +158,11 @@ int zoidfs_hint_add(zoidfs_op_hint_t ** op_hint, char * key, char * value, int v
     /* else, there are items in the list... add it to the end of the list if there isn't an empty node */
     else
     {
+        if(zoidfs_hint_update_non_unique(cur_op_hint, key, value, value_len, flags))
+        {
+            return 0;
+        }
+
         /* find the last hint in the list */
         while(cur_op_hint)
         {
@@ -128,7 +170,7 @@ int zoidfs_hint_add(zoidfs_op_hint_t ** op_hint, char * key, char * value, int v
                 cur_op_hint->value == NULL)
             {
                 /* don't rebuild the hint, just copy the data into it */
-                zoidfs_hint_update_hint(cur_op_hint, key, value, value_len, flags); 
+                zoidfs_hint_update_hint(cur_op_hint, key, value, value_len, flags);
                 break;
             }
             else
@@ -190,7 +232,7 @@ int zoidfs_hint_add(zoidfs_op_hint_t ** op_hint, char * key, char * value, int v
 /*
  * zoidfs_hint_remove() - remove a hint keyed with 'key'
  */
-int zoidfs_hint_remove(zoidfs_op_hint_t ** op_hint, char * key)
+int zoidfs_hint_remove(zoidfs_op_hint_t ** op_hint, char * key, int flags)
 {
     zoidfs_op_hint_t * cur_op_hint = NULL;
     zoidfs_op_hint_t * prev_op_hint = NULL;
@@ -206,22 +248,25 @@ int zoidfs_hint_remove(zoidfs_op_hint_t ** op_hint, char * key)
     while(cur_op_hint)
     {
         /* if the current hint is the one we are looking for */
-        if(strcmp(cur_op_hint->key, key) == 0)
+        if(cur_op_hint->key != NULL && strcmp(cur_op_hint->key, key) == 0)
         {
             /* copy the hint and remove the hint from the list */
             rm_op_hint = cur_op_hint;
 
-            /* if this is not the first hint */
-            if(prev_op_hint)
+            /* if we are not keeping hint nodes, remove them from the list */
+            if((flags & ZOIDFS_HINTS_REUSE_HINTS) == 0)
             {
-                prev_op_hint->next = cur_op_hint->next;
+                /* if this is not the first hint */
+                if(prev_op_hint)
+                {
+                    prev_op_hint->next = cur_op_hint->next;
+                }
+                /* if this is the first hint */
+                else
+                {
+                    *op_hint = cur_op_hint->next; 
+                }
             }
-            /* if this is the first hint */
-            else
-            {
-                *op_hint = cur_op_hint->next; 
-            }
-
             break;
         }
         /* otherwise, keep looking through the list */
@@ -247,7 +292,11 @@ int zoidfs_hint_remove(zoidfs_op_hint_t ** op_hint, char * key)
             free(rm_op_hint->key);
             rm_op_hint->key = NULL;
         }
-        free(rm_op_hint);
+        /* if we are not reusing the hints, free the mem */
+        if((flags & ZOIDFS_HINTS_REUSE_HINTS) == 0)
+        {
+            free(rm_op_hint);
+        }
         return 0;
     }
    
@@ -401,7 +450,10 @@ int zoidfs_hint_num_elements(zoidfs_op_hint_t ** op_hint)
 
     while(cur_op_hint)
     {
-        size++;
+        if(cur_op_hint->key != NULL && cur_op_hint->value != NULL && cur_op_hint->value_len != 0)
+        {
+            size++;
+        }
         cur_op_hint = cur_op_hint->next;
     }
 
@@ -427,11 +479,18 @@ zoidfs_op_hint_t * zoidfs_hint_index(zoidfs_op_hint_t ** op_hint, int index)
 
     while(cur_op_hint)
     {
-        if(pos == index)
+        if(pos == index && 
+            (cur_op_hint->key != NULL && cur_op_hint->value != NULL && cur_op_hint->value_len != 0) )
         {
             return cur_op_hint;
         }
-        pos++;
+        else
+        {
+            if(cur_op_hint->key != NULL && cur_op_hint->value != NULL && cur_op_hint->value_len != 0)
+            {
+                pos++;
+            }
+        }
         cur_op_hint = cur_op_hint->next;
     }
 

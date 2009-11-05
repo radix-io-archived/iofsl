@@ -179,7 +179,7 @@ typedef struct zoidfs_op_hint_s
 /* zoidfs hint helper flags */
 #define ZOIDFS_HINTS_NONE 0
 #define ZOIDFS_HINTS_ZC (1 << 0)
-#define ZOIDFS_HINTS_REUSE_HINT (1 << 1)
+#define ZOIDFS_HINTS_REUSE_HINTS (1 << 1)
 #define ZOIDFS_HINTS_REUSE_KEY (1 << 2)
 
 /**
