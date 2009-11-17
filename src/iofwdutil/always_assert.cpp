@@ -12,6 +12,8 @@ void iofwdutil::always_assert (bool t, unsigned int line, const char * file,
       return;
 
    std::cerr << "ALWAYS_ASSERT (" << msg << ") failed! (line " << line 
-      << ", file " << file << ")!\n"; 
-   std::exit (1); 
+      << ", file " << file << ")!\n";
+
+
+   abort ();
 }
