@@ -49,6 +49,12 @@ namespace iofwdevent
 
          void waitStop ();
 
+         /**
+          * Return the mutex used in synchronizing with the worker thread
+          */
+         boost::mutex & getLock ()
+         { return tlock_; }
+
       private:
          sig_atomic_t shutdown_;
 

@@ -5,20 +5,27 @@ namespace iofwdevent
 {
 
    SingleCompletion::SingleCompletion ()
-      : completed_ (false), status_(WAITING)
+      : status_(WAITING)
    {
    }
+
    void SingleCompletion::success ()
    {
-      ALWAYS_ASSERT(status_ == WAITING);
-      status_ = SUCCESS;
+      {
+         boost::unique_lock<boost::mutex> l (lock_);
+         ALWAYS_ASSERT(status_ == WAITING);
+         status_ = SUCCESS;
+      }
       cond_.notify_all ();
    }
 
    void SingleCompletion::cancel ()
    {
-      ALWAYS_ASSERT(status_ == WAITING);
-      status_ = CANCEL;
+      {
+         boost::unique_lock<boost::mutex> l (lock_);
+         ALWAYS_ASSERT(status_ == WAITING);
+         status_ = CANCEL;
+      }
       cond_.notify_all ();
    }
 
@@ -42,6 +49,7 @@ namespace iofwdevent
       if (status_ == WAITING)
          return false;
 
+      // Call checkstatus here to throw exception if needed
       checkStatus ();
       return true;
    }
@@ -53,6 +61,7 @@ namespace iofwdevent
       while (status_ == WAITING)
          cond_.wait (l);
 
+      // Call checkstatus here to throw exception if needed
       checkStatus ();
    }
 

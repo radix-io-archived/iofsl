@@ -7,15 +7,21 @@ extern "C"
 }
 
 #include <boost/pool/pool.hpp>
+#include <deque>
 
 #include "ThreadedResource.hh"
 #include "ResourceOp.hh"
 #include "iofwdutil/assert.hh"
+#include "iofwdutil/IOFWDLog.hh"
 
 namespace iofwdevent
 {
    //===========================================================================
 
+   /**
+    * @TODO: consider adding cancel: make operations return some opaque value
+    * (pointer to internal entry) and provide a cancel method.
+    */
    class BMIResource : public ThreadedResource
    {
       public:
@@ -26,7 +32,10 @@ namespace iofwdevent
             CHECK_COUNT = 64,
 
             // How long we wait in testcontext
-            WAIT_TIME = 1000
+            WAIT_TIME = 1000,
+
+            // How many unexpected messages we dequeue at once
+            UNEXPECTED_SIZE = 64
          };
 
          BMIResource ();
@@ -78,6 +87,9 @@ namespace iofwdevent
           */
          inline void checkBMI (int ret) { ALWAYS_ASSERT(ret >= 0); };
 
+         void completeUnexpectedClient (size_t count);
+
+         void checkUnexpected ();
 
       public:
 
@@ -117,11 +129,69 @@ namespace iofwdevent
                bmi_msg_tag_t tag,
                bmi_hint hints);
 
+         inline void post_sendunexpected_list(ResourceOp * u,
+				 BMI_addr_t dest,
+				 const void *const *buffer_list,
+				 const bmi_size_t *size_list,
+				 int list_count,
+				 /* "total_size" is the sum of the size list */
+				 bmi_size_t total_size,
+				 enum bmi_buffer_type buffer_type,
+				 bmi_msg_tag_t tag,
+                                 bmi_hint hints);
+
+
+         inline void post_sendunexpected(ResourceOp * u,
+			    BMI_addr_t dest,
+			    const void *buffer,
+			    bmi_size_t size,
+			    enum bmi_buffer_type buffer_type,
+			    bmi_msg_tag_t tag,
+                            bmi_hint hints);
+
+         /**
+          * Post testunexpected call.
+          */
+         void testunexpected (ResourceOp * u,
+               int incount,
+               int * outcount,
+               BMI_unexpected_info * info);
+
+
+
       protected:
          bmi_context_id context_;
 
          // Note: not object pool, no destructor/constructor will be called
          boost::pool<> mempool_;
+
+         // Memory for unexpected messages when nobody is accepting them
+         boost::pool<> unexpectedpool_;
+
+         struct UnexpectedClient
+         {
+            ResourceOp * op;
+            int   incount;
+            int * outcount;
+            BMI_unexpected_info * info;
+
+            UnexpectedClient  () {}
+
+            UnexpectedClient (ResourceOp * o, 
+                  int in, int * out, BMI_unexpected_info *i)
+               : op (o), incount(in), outcount(out), info(i)
+            {
+            }
+         };
+
+         // Lock for the unexpected structures
+         boost::mutex ue_lock_;
+
+         std::vector<BMI_unexpected_info> ue_info_;
+         std::deque<UnexpectedClient> ue_clientlist_;
+         std::queue<BMI_unexpected_info *> ue_ready_;
+
+         iofwdutil::zlog::ZLogSource & log_;
    };
 
    //===========================================================================
@@ -180,6 +250,41 @@ namespace iofwdevent
       checkBMISendRecv (e, BMI_post_send (&id, dest, buffer, size, buffer_type, tag,
                e, context_, hints));
    }
+
+
+   void BMIResource::post_sendunexpected_list(ResourceOp * u,
+         BMI_addr_t dest,
+         const void *const *buffer_list,
+         const bmi_size_t *size_list,
+         int list_count,
+         /* "total_size" is the sum of the size list */
+         bmi_size_t total_size,
+         enum bmi_buffer_type buffer_type,
+         bmi_msg_tag_t tag,
+         bmi_hint hints)
+   {
+      bmi_op_id_t id;
+      BMIEntry * e = newEntry (u);
+      checkBMISendRecv (e, BMI_post_sendunexpected_list (&id,
+               dest, buffer_list, size_list, list_count,
+               total_size, buffer_type, tag, e, context_, hints));
+    }
+
+
+   void BMIResource::post_sendunexpected(ResourceOp * u,
+         BMI_addr_t dest,
+         const void *buffer,
+         bmi_size_t size,
+         enum bmi_buffer_type buffer_type,
+         bmi_msg_tag_t tag,
+         bmi_hint hints)
+   {
+      bmi_op_id_t id;
+      BMIEntry * e = newEntry (u);
+      checkBMISendRecv (e, BMI_post_sendunexpected (&id, dest, buffer, size, buffer_type, tag,
+               e, context_, hints));
+}
+
 
    void BMIResource::post_recv(ResourceOp * u, BMI_addr_t src,
          void *buffer,

@@ -1,6 +1,7 @@
 
 shared_ldadd = src/iofwdevent/libiofwdevent.a \
 	       src/iofwdutil/libiofwdutil.a \
+	       $(BOOST_DATE_TIME_LIB) \
 	       $(BOOST_UNIT_TEST_FRAMEWORK_LIB) \
 	       $(BOOST_THREAD_LIB) \
 	       $(BOOST_REGEX_LIB)
@@ -15,4 +16,10 @@ test_boost_iofwdevent_resource_SOURCES = test/boost/timerresource.cpp \
 
 test_boost_iofwdevent_resource_LDFLAGS = $(shared_ldflags)
 test_boost_iofwdevent_resource_LDADD = $(shared_ldadd)
+
+check_PROGRAMS += test/boost/bmi-pingpong
+TESTS += test/boost/bmi-pingpong
+test_boost_bmi_pingpong_SOURCES = test/boost/bmi-pingpong.cpp
+test_boost_bmi_pingpong_LDFLAGS = $(shared_ldflags) @BMI_LDFLAGS@
+test_boost_bmi_pingpong_LDADD = $(shared_ldadd) @BMI_LIBS@
 

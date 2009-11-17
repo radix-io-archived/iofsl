@@ -4,6 +4,7 @@
 #include <boost/thread.hpp>
 #include <csignal>
 #include "ResourceOp.hh"
+#include "iofwdutil/assert.hh"
 
 namespace iofwdevent
 {
@@ -37,6 +38,14 @@ namespace iofwdevent
 
       // bool timed_wait ();
 
+      /// Rearm the object so it can be reused for completion testing
+      void reset ()
+      {
+         ASSERT(status_ != WAITING);
+         status_ = WAITING;
+         // Need to reset any stored exception here
+      }
+
       virtual ~SingleCompletion ();
 
    protected:
@@ -46,7 +55,6 @@ namespace iofwdevent
    protected:
 
       enum { SUCCESS = 0, CANCEL, EXCEPTION, WAITING };
-      sig_atomic_t completed_;
       sig_atomic_t status_;
 
       boost::mutex lock_;
