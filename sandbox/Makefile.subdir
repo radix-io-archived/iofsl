@@ -49,6 +49,15 @@ sandbox_zoidfs_hints_SOURCES = sandbox/zoidfs-hints.c
 sandbox_zoidfs_hints_LDFLAGS = ${sandbox_ldflags}
 sandbox_zoidfs_hints_LDADD = $(top_builddir)/src/zoidfs/libzoidfshints.a $(top_builddir)/src/zoidfs/libzoidfsclient.a ${sandbox_ldadd}
 
+
+noinst_PROGRAMS += sandbox/smmanager
+sandbox_smmanager_SOURCES = sandbox/smmanager.cpp
+sandbox_smmanager_LDFLAGS = ${sandbox_ldflags} $(BMI_LDFLAGS)
+sandbox_smmanager_LDADD = $(top_builddir)/src/sm/libsm.a \
+			  $(top_builddir)/src/iofwdevent/libiofwdevent.a \
+			  $(top_builddir)/src/iofwdutil/libiofwdutil.a \
+			  $(BMI_LIBS)
+
 #if HAVE_MPI
 #noinst_PROGRAMS += sandbox/mpi-server
 #sandbox_mpi_server_SOURCES = sandbox/mpi-server.c

@@ -8,8 +8,23 @@ src_sm_libsm_a_LIBLDFLAGS = \
     @BOOST_REGEX_LIB@
 
 src_sm_libsm_a_SOURCES = \
-	src/sm/SM.cpp \
-	src/sm/SM.hh
+src/sm/IOFWDExceptionTranslator.hh \
+src/sm/IOFWDLookupStateMachine.cpp \
+src/sm/IOFWDLookupStateMachine.hh \
+src/sm/IOFWDState.hh \
+src/sm/IOFWDStateEvents.hh \
+src/sm/IOFWDStateMachine.hh \
+src/sm/SM.cpp \
+src/sm/SM.hh \
+src/sm/SMClient.cpp \
+src/sm/SMClient.hh \
+src/sm/SMManager.cpp \
+src/sm/SMManager.hh \
+src/sm/SMResourceClient.cpp \
+src/sm/SMResourceClient.hh \
+src/sm/SMResourceOp.cpp \
+src/sm/SMResourceOp.hh \
+src/sm/SM_OLD.hh 
 
 #
 # Boost SM support
