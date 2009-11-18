@@ -261,7 +261,7 @@ static int zfuse_getattr_helper (const zoidfs_handle_t *
 {
    zoidfs_attr_t attr; 
    attr.mask = ZOIDFS_ATTR_ALL; 
-   int ret = zoidfs_getattr (handle, &attr); 
+   int ret = zoidfs_getattr (handle, &attr, ZOIDFS_NO_OP_HINT); 
    if (ret)
       return zoidfserr_to_posix (ret); 
    
@@ -296,7 +296,7 @@ static int zfuse_getattr(const char * path,
    zfuse_debug ("zfuse_getattr: %s\n", path); 
 
    zoidfs_handle_t handle; 
-   int ret = zoidfs_lookup (NULL, NULL, path, &handle);
+   int ret = zoidfs_lookup (NULL, NULL, path, &handle, ZOIDFS_NO_OP_HINT);
    if (ret)
       return zoidfserr_to_posix (ret); 
 
@@ -306,10 +306,10 @@ static int zfuse_getattr(const char * path,
 static int zfuse_truncate (const char * path, off_t size)
 {
    zoidfs_handle_t handle; 
-   int ret = zoidfs_lookup (NULL, NULL, path, &handle);
+   int ret = zoidfs_lookup (NULL, NULL, path, &handle, ZOIDFS_NO_OP_HINT);
    if (ret)
       return zoidfserr_to_posix (ret); 
-   return zoidfserr_to_posix (zoidfs_resize (&handle, size)); 
+   return zoidfserr_to_posix (zoidfs_resize (&handle, size, ZOIDFS_NO_OP_HINT)); 
 }
 
 static int zfuse_mkdir (const char * path, mode_t mode)
@@ -322,14 +322,14 @@ static int zfuse_mkdir (const char * path, mode_t mode)
    zfuse_debug ("zfuse_mkdir %s\n", path); 
 
    return zoidfserr_to_posix (zoidfs_mkdir (NULL, NULL, path, &zattr,
-            NULL));
+            NULL, ZOIDFS_NO_OP_HINT));
 }
 
 static int zfuse_rmdir (const char * path)
 {
    /* no rmdir in ZOIDFS? */ 
    zfuse_debug ("zfuse_rmdir %s\n", path); 
-   return zoidfserr_to_posix (zoidfs_remove (NULL, NULL, path, NULL)); 
+   return zoidfserr_to_posix (zoidfs_remove (NULL, NULL, path, NULL, ZOIDFS_NO_OP_HINT)); 
 }
 
 static int zfuse_opendir(const char * path, struct fuse_file_info * fi)
@@ -340,7 +340,7 @@ static int zfuse_opendir(const char * path, struct fuse_file_info * fi)
    assert (path); 
 
    zfuse_debug ("zfuse_opendir: %s\n", path); 
-   ret =zoidfs_lookup(NULL, NULL, path, &dirhandle);
+   ret =zoidfs_lookup(NULL, NULL, path, &dirhandle, ZOIDFS_NO_OP_HINT);
    if (ret)
    {
       zfuse_debug("zfuse_readdir: lookup of %s returned error: %i\n", 
@@ -398,7 +398,7 @@ static int zfuse_readdir(const char * UNUSED(path), void *buf, fuse_fill_dir_t f
       entrycount = ZFUSE_DIRENTRY_COUNT; 
       ret = zoidfs_readdir (dirhandle, cookie, &entrycount, entries, 
             0, /* don't need attributes or filehandles */  
-            NULL); 
+            NULL, ZOIDFS_NO_OP_HINT); 
       if (ret)
       {
          zfuse_debug ("zoidfs_readdir returned error: %i\n", ret); 
@@ -435,7 +435,7 @@ static int zfuse_create (const char * path, mode_t mode, struct fuse_file_info *
    sattr.mask = ZOIDFS_ATTR_MODE; 
    posixmode_to_sattr(mode, &sattr); 
    ret = zoidfs_create (NULL, NULL, path, 
-         &sattr, &handle, &created); 
+         &sattr, &handle, &created, ZOIDFS_NO_OP_HINT); 
 
    if (ret != ZFS_OK)
       return zoidfserr_to_posix (ret); 
@@ -460,7 +460,7 @@ static int zfuse_open(const char *path, struct fuse_file_info *fi)
 
    zfuse_debug ("zfuse_open: %s\n", path); 
 
-   ret = zoidfs_lookup (NULL, NULL, path, &handle); 
+   ret = zoidfs_lookup (NULL, NULL, path, &handle, ZOIDFS_NO_OP_HINT); 
    if (ret != ZFS_OK)
    {
       zfuse_debug ("zoidfs_lookup of %s returned error: %i\n", path, ret); 
@@ -488,7 +488,7 @@ static int zfuse_write (const char * UNUSED(path), const char * buf, size_t size
    uint64_t ofs = offset; 
    uint64_t fsize = size; 
    const void * memstart = buf; 
-   int ret = zoidfs_write (handle, 1, &memstart, &size, 1, &ofs, &fsize);
+   int ret = zoidfs_write (handle, 1, &memstart, &size, 1, &ofs, &fsize, ZOIDFS_NO_OP_HINT);
    if (ret != ZFS_OK)
       return zoidfserr_to_posix (ret); 
    return size;
@@ -506,7 +506,7 @@ static int zfuse_read(const char * UNUSED(path), char *buf, size_t size, off_t o
    uint64_t ofs = offset; 
    uint64_t fsize = size; 
    void * memstart = buf; 
-   int ret = zoidfs_read (handle, 1, &memstart, &size, 1, &ofs, &fsize);
+   int ret = zoidfs_read (handle, 1, &memstart, &size, 1, &ofs, &fsize, ZOIDFS_NO_OP_HINT);
    if (ret != ZFS_OK)
       return zoidfserr_to_posix (ret); 
    return size;
@@ -536,7 +536,7 @@ static int zfuse_unlink (const char * path)
 {
    zfuse_debug ("zfuse_unlink %s\n", path); 
    return zoidfserr_to_posix (zoidfs_remove (NULL, NULL, 
-            path, NULL)); 
+            path, NULL, ZOIDFS_NO_OP_HINT)); 
 }
 
 static int zfuse_release (const char * path, struct fuse_file_info * fi)
@@ -573,7 +573,7 @@ static int zfuse_getxattr (const char * path, const char * UNUSED(name),
    int ret; 
    size_t needed; 
    
-   ret = zoidfs_lookup (NULL, NULL, path, &handle); 
+   ret = zoidfs_lookup (NULL, NULL, path, &handle, ZOIDFS_NO_OP_HINT); 
    if (ret != ZFS_OK)
    {
       zfuse_debug ("zfuse_getxattr: lookup failed on %s\n", path); 
@@ -615,10 +615,10 @@ static int zfuse_readlink (const char * file, char * buf, size_t bufsize)
    zoidfs_handle_t handle; 
    int ret;
 
-   ret = zoidfs_lookup (NULL, NULL, file, &handle); 
+   ret = zoidfs_lookup (NULL, NULL, file, &handle, ZOIDFS_NO_OP_HINT); 
    if (ret != ZFS_OK)
       return zoidfserr_to_posix (ret); 
-   ret = zoidfs_readlink (&handle, buf, bufsize); 
+   ret = zoidfs_readlink (&handle, buf, bufsize, ZOIDFS_NO_OP_HINT); 
    return zoidfserr_to_posix (ret); 
 }
 
@@ -629,20 +629,20 @@ static int zfuse_symlink (const char * file, const char * dest)
 
    attr.mask = 0; 
    ret = zoidfs_symlink (NULL, NULL, file, NULL, NULL, dest, &attr, 
-         NULL, NULL); 
+         NULL, NULL, ZOIDFS_NO_OP_HINT); 
    return zoidfserr_to_posix (ret); 
 }
 
 static int zfuse_rename (const char * file, const char * dest)
 {
    return zoidfserr_to_posix (zoidfs_rename(NULL, NULL, 
-            file, NULL, NULL, dest, NULL, NULL)); 
+            file, NULL, NULL, dest, NULL, NULL, ZOIDFS_NO_OP_HINT)); 
 }
 
 static int zfuse_link (const char * source, const char * dest)
 {
    int ret = zoidfs_link (NULL, NULL, source, NULL, NULL, dest, 
-         NULL, NULL); 
+         NULL, NULL, ZOIDFS_NO_OP_HINT); 
    return zoidfserr_to_posix (ret); 
 }
 
@@ -651,7 +651,7 @@ static int zfuse_chmod (const char * file, mode_t mode)
    zoidfs_handle_t handle;
    int ret; 
 
-   ret = zoidfs_lookup (NULL, NULL, file, &handle); 
+   ret = zoidfs_lookup (NULL, NULL, file, &handle, ZOIDFS_NO_OP_HINT); 
    if (ret != ZFS_OK)
       return zoidfserr_to_posix (ret); 
    
@@ -660,7 +660,7 @@ static int zfuse_chmod (const char * file, mode_t mode)
 
    attr.mask = ZOIDFS_ATTR_MODE; 
    attr.mode = posixmode_to_zoidfs (mode); 
-   return zoidfserr_to_posix(zoidfs_setattr (&handle, &attr, &out)); 
+   return zoidfserr_to_posix(zoidfs_setattr (&handle, &attr, &out, ZOIDFS_NO_OP_HINT)); 
 }
 
 static int zfuse_chown (const char * file, uid_t uid, gid_t gid)
@@ -668,7 +668,7 @@ static int zfuse_chown (const char * file, uid_t uid, gid_t gid)
    zoidfs_handle_t handle;
    int ret; 
 
-   ret = zoidfs_lookup (NULL, NULL, file, &handle); 
+   ret = zoidfs_lookup (NULL, NULL, file, &handle, ZOIDFS_NO_OP_HINT); 
    if (ret != ZFS_OK)
       return zoidfserr_to_posix (ret); 
    
@@ -678,7 +678,7 @@ static int zfuse_chown (const char * file, uid_t uid, gid_t gid)
    attr.mask = ZOIDFS_ATTR_UID|ZOIDFS_ATTR_GID; 
    attr.uid = uid;
    attr.gid = gid; 
-   return zoidfserr_to_posix(zoidfs_setattr (&handle, &attr, &out)); 
+   return zoidfserr_to_posix(zoidfs_setattr (&handle, &attr, &out, ZOIDFS_NO_OP_HINT)); 
 }
 
 /* no need to go through the DEFINE mess of using utimens 
@@ -688,7 +688,7 @@ static int zfuse_utimens (const char * file, const struct timespec tv[2])
    zoidfs_handle_t handle;
    int ret; 
 
-   ret = zoidfs_lookup (NULL, NULL, file, &handle); 
+   ret = zoidfs_lookup (NULL, NULL, file, &handle, ZOIDFS_NO_OP_HINT); 
    if (ret != ZFS_OK)
       return zoidfserr_to_posix (ret); 
    
@@ -698,7 +698,7 @@ static int zfuse_utimens (const char * file, const struct timespec tv[2])
    attr.mask = ZOIDFS_ATTR_ATIME | ZOIDFS_ATTR_MTIME; 
    timespec_to_zoidfstime (&tv[0], &attr.atime); 
    timespec_to_zoidfstime (&tv[1], &attr.mtime); 
-   return zoidfserr_to_posix(zoidfs_setattr (&handle, &attr, &out)); 
+   return zoidfserr_to_posix(zoidfs_setattr (&handle, &attr, &out, ZOIDFS_NO_OP_HINT)); 
 
 }
 
@@ -731,7 +731,7 @@ static int zfuse_ftruncate (const char * UNUSED(file), off_t off,
       struct fuse_file_info * info)
 {
    const zoidfs_handle_t * handle = zfuse_handle_lookup (info->fh); 
-   int ret = zoidfs_resize (handle, off); 
+   int ret = zoidfs_resize (handle, off, ZOIDFS_NO_OP_HINT); 
    return zoidfserr_to_posix (ret); 
 }
 
