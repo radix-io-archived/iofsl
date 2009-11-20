@@ -11,12 +11,15 @@
 #include "zoidfs/zoidfs-proto.h"
 
 #include <stdio.h>
+#include <time.h>
 
 /*
  * debug and trace tools
  */
 #define ZOIDFS_PRINT_COUNTER(__counter)    fprintf(stderr, "\t%s = %u\n", #__counter, __counter##_call_count)
-#define ZOIDFS_TRACE() fprintf(stderr, "ZOIDFS API TRACE: %s()\n", __func__) 
+#define ZOIDFS_PRINT_TIME(__timer)    fprintf(stderr, "\t%s = %f\n", #__timer, __timer##_time)
+/*#define ZOIDFS_TRACE() fprintf(stderr, "ZOIDFS API TRACE: %s()\n", __func__) */
+#define ZOIDFS_TRACE() /* no tracing */ 
 
 /*
  * call counts
@@ -40,6 +43,46 @@ static unsigned int zoidfs_rename_call_count = 0;
 static unsigned int zoidfs_resize_call_count = 0;
 static unsigned int zoidfs_readlink_call_count = 0;
 
+static double zoidfs_null_time = 0.0;
+static double zoidfs_init_time = 0.0;
+static double zoidfs_finalize_time = 0.0;
+static double zoidfs_getattr_time = 0.0;
+static double zoidfs_setattr_time = 0.0;
+static double zoidfs_create_time = 0.0;
+static double zoidfs_commit_time = 0.0;
+static double zoidfs_read_time = 0.0;
+static double zoidfs_write_time = 0.0;
+static double zoidfs_link_time = 0.0;
+static double zoidfs_lookup_time = 0.0;
+static double zoidfs_symlink_time = 0.0;
+static double zoidfs_mkdir_time = 0.0;
+static double zoidfs_readdir_time = 0.0;
+static double zoidfs_remove_time = 0.0;
+static double zoidfs_rename_time = 0.0;
+static double zoidfs_resize_time = 0.0;
+static double zoidfs_readlink_time = 0.0;
+
+int zoidfs_prof_get_time(struct timespec * timeval)
+{
+    clock_gettime( CLOCK_REALTIME, timeval );
+    return 0;
+}
+
+double zoidfs_prof_elapsed_time(struct timespec * t1, struct timespec * t2)
+{
+    return ((double) (t2->tv_sec - t1->tv_sec) +
+        1.0e-9 * (double) (t2->tv_nsec - t1->tv_nsec) );
+}
+
+#define ZOIDFS_PROF_TIME(__func, __tval)            \
+do{                                                 \
+    struct timespec t1, t2;                         \
+    zoidfs_prof_get_time(&t1);                      \
+    __func;                                         \
+    zoidfs_prof_get_time(&t2);                      \
+    __tval += zoidfs_prof_elapsed_time(&t1, &t2);   \
+}while(0)
+
 /*
  * zoidfs_null
  * This function implements a noop operation. The IOD returns a 1-byte message
@@ -53,7 +96,7 @@ int zoidfs_null(void) {
     zoidfs_null_call_count++;
     ZOIDFS_TRACE();
 
-    ret = Pzoidfs_null();
+    ZOIDFS_PROF_TIME(ret = Pzoidfs_null(), zoidfs_null_time);
     
     return ret;
 }
@@ -70,7 +113,7 @@ int zoidfs_getattr(const zoidfs_handle_t *handle, zoidfs_attr_t *attr, zoidfs_op
     zoidfs_getattr_call_count++;
     ZOIDFS_TRACE();
 
-    ret = Pzoidfs_getattr(handle, attr, op_hint);
+    ZOIDFS_PROF_TIME(ret = Pzoidfs_getattr(handle, attr, op_hint), zoidfs_getattr_time);
 
     return ret;
 }
@@ -88,7 +131,7 @@ int zoidfs_setattr(const zoidfs_handle_t *handle, const zoidfs_sattr_t *sattr,
     zoidfs_setattr_call_count++;
     ZOIDFS_TRACE();
 
-    ret = Pzoidfs_setattr(handle, sattr, attr, op_hint);
+    ZOIDFS_PROF_TIME(ret = Pzoidfs_setattr(handle, sattr, attr, op_hint), zoidfs_setattr_time);
 
     return ret;
 }
@@ -105,7 +148,7 @@ int zoidfs_readlink(const zoidfs_handle_t *handle, char *buffer,
     zoidfs_readlink_call_count++;
     ZOIDFS_TRACE();
 
-    ret = Pzoidfs_readlink(handle, buffer, buffer_length, op_hint);
+    ZOIDFS_PROF_TIME(ret = Pzoidfs_readlink(handle, buffer, buffer_length, op_hint), zoidfs_readlink_time);
 
     return ret;
 }
@@ -124,7 +167,7 @@ int zoidfs_lookup(const zoidfs_handle_t *parent_handle,
     zoidfs_lookup_call_count++;
     ZOIDFS_TRACE();
 
-    ret = Pzoidfs_lookup(parent_handle, component_name, full_path, handle, op_hint);
+    ZOIDFS_PROF_TIME(ret = Pzoidfs_lookup(parent_handle, component_name, full_path, handle, op_hint), zoidfs_lookup_time);
 
     return ret;
 }
@@ -142,7 +185,7 @@ int zoidfs_remove(const zoidfs_handle_t *parent_handle,
     zoidfs_remove_call_count++;
     ZOIDFS_TRACE();
 
-    ret = Pzoidfs_remove(parent_handle, component_name, full_path, parent_hint, op_hint);
+    ZOIDFS_PROF_TIME(ret = Pzoidfs_remove(parent_handle, component_name, full_path, parent_hint, op_hint), zoidfs_remove_time);
 
     return ret;
 }
@@ -158,7 +201,7 @@ int zoidfs_commit(const zoidfs_handle_t *handle, zoidfs_op_hint_t * op_hint) {
     zoidfs_commit_call_count++;
     ZOIDFS_TRACE();
 
-    ret = Pzoidfs_commit(handle, op_hint);
+    ZOIDFS_PROF_TIME(ret = Pzoidfs_commit(handle, op_hint), zoidfs_commit_time);
 
     return ret;
 }
@@ -177,7 +220,7 @@ int zoidfs_create(const zoidfs_handle_t *parent_handle,
     zoidfs_create_call_count++;
     ZOIDFS_TRACE();
 
-    ret = Pzoidfs_create(parent_handle, component_name, full_path, sattr, handle, created, op_hint);
+    ZOIDFS_PROF_TIME(ret = Pzoidfs_create(parent_handle, component_name, full_path, sattr, handle, created, op_hint), zoidfs_create_time);
 
     return ret;
 }
@@ -199,7 +242,7 @@ int zoidfs_rename(const zoidfs_handle_t *from_parent_handle,
     zoidfs_rename_call_count++;
     ZOIDFS_TRACE();
 
-    ret = Pzoidfs_rename(from_parent_handle, from_component_name, from_full_path, to_parent_handle, to_component_name, to_full_path, from_parent_hint, to_parent_hint, op_hint);
+    ZOIDFS_PROF_TIME(ret = Pzoidfs_rename(from_parent_handle, from_component_name, from_full_path, to_parent_handle, to_component_name, to_full_path, from_parent_hint, to_parent_hint, op_hint), zoidfs_rename_time);
 
     return ret;
 }
@@ -222,7 +265,7 @@ int zoidfs_link(const zoidfs_handle_t *from_parent_handle,
     zoidfs_link_call_count++;
     ZOIDFS_TRACE();
 
-    ret = Pzoidfs_link(from_parent_handle, from_component_name, from_full_path, to_parent_handle, to_component_name, to_full_path, from_parent_hint, to_parent_hint, op_hint);
+    ZOIDFS_PROF_TIME(ret = Pzoidfs_link(from_parent_handle, from_component_name, from_full_path, to_parent_handle, to_component_name, to_full_path, from_parent_hint, to_parent_hint, op_hint), zoidfs_link_time);
 
     return ret;
 }
@@ -246,7 +289,7 @@ int zoidfs_symlink(const zoidfs_handle_t *from_parent_handle,
     zoidfs_symlink_call_count++;
     ZOIDFS_TRACE();
 
-    ret = Pzoidfs_symlink(from_parent_handle, from_component_name, from_full_path, to_parent_handle, to_component_name, to_full_path, sattr, from_parent_hint, to_parent_hint, op_hint);
+    ZOIDFS_PROF_TIME(ret = Pzoidfs_symlink(from_parent_handle, from_component_name, from_full_path, to_parent_handle, to_component_name, to_full_path, sattr, from_parent_hint, to_parent_hint, op_hint), zoidfs_symlink_time);
 
     return ret;
 }
@@ -264,7 +307,7 @@ int zoidfs_mkdir(const zoidfs_handle_t *parent_handle,
     zoidfs_mkdir_call_count++;
     ZOIDFS_TRACE();
 
-    ret = Pzoidfs_mkdir(parent_handle, component_name, full_path, sattr, parent_hint, op_hint);
+    ZOIDFS_PROF_TIME(ret = Pzoidfs_mkdir(parent_handle, component_name, full_path, sattr, parent_hint, op_hint), zoidfs_mkdir_time);
 
     return ret;
 }
@@ -285,7 +328,7 @@ int zoidfs_readdir(const zoidfs_handle_t *parent_handle,
     zoidfs_readdir_call_count++;
     ZOIDFS_TRACE();
 
-    ret = Pzoidfs_readdir(parent_handle, cookie, entry_count_, entries, flags, parent_hint, op_hint);
+    ZOIDFS_PROF_TIME(ret = Pzoidfs_readdir(parent_handle, cookie, entry_count_, entries, flags, parent_hint, op_hint), zoidfs_readdir_time);
 
     return ret;
 }
@@ -301,7 +344,7 @@ int zoidfs_resize(const zoidfs_handle_t *handle, uint64_t size, zoidfs_op_hint_t
     zoidfs_resize_call_count++;
     ZOIDFS_TRACE();
 
-    ret = Pzoidfs_resize(handle, size, op_hint);
+    ZOIDFS_PROF_TIME(ret = Pzoidfs_resize(handle, size, op_hint), zoidfs_resize_time);
 
     return ret;
 }
@@ -319,7 +362,7 @@ int zoidfs_write(const zoidfs_handle_t *handle, size_t mem_count_,
     zoidfs_write_call_count++;
     ZOIDFS_TRACE();
 
-    ret = Pzoidfs_write(handle, mem_count_, mem_starts, mem_sizes_, file_count_, file_starts, file_sizes, op_hint);
+    ZOIDFS_PROF_TIME(ret = Pzoidfs_write(handle, mem_count_, mem_starts, mem_sizes_, file_count_, file_starts, file_sizes, op_hint), zoidfs_write_time);
 
     return ret;
 }
@@ -338,7 +381,7 @@ int zoidfs_read(const zoidfs_handle_t *handle, size_t mem_count_,
     zoidfs_read_call_count++;
     ZOIDFS_TRACE();
 
-    ret = zoidfs_read(handle, mem_count_, mem_starts, mem_sizes_, file_count_, file_starts, file_sizes, op_hint);
+    ZOIDFS_PROF_TIME(ret = Pzoidfs_read(handle, mem_count_, mem_starts, mem_sizes_, file_count_, file_starts, file_sizes, op_hint), zoidfs_read_time);
 
     return ret;
 }
@@ -373,7 +416,7 @@ int zoidfs_init(void) {
     zoidfs_init_call_count++;
     ZOIDFS_TRACE();
 
-    ret = Pzoidfs_init();
+    ZOIDFS_PROF_TIME(ret = Pzoidfs_init(), zoidfs_init_time);
 
     return ret;
 }
@@ -388,7 +431,7 @@ int zoidfs_finalize(void) {
     zoidfs_finalize_call_count++;
     ZOIDFS_TRACE();
 
-    ret = Pzoidfs_finalize();
+    ZOIDFS_PROF_TIME(ret = Pzoidfs_finalize(), zoidfs_finalize_time);
 
     /* print the counter values */
     fprintf(stderr, "ZOIDFS API CALL COUNTS:\n");
@@ -410,6 +453,26 @@ int zoidfs_finalize(void) {
     ZOIDFS_PRINT_COUNTER(zoidfs_rename);
     ZOIDFS_PRINT_COUNTER(zoidfs_resize);
     ZOIDFS_PRINT_COUNTER(zoidfs_readlink);
+
+    fprintf(stderr, "ZOIDFS API CALL TIMES:\n");
+    ZOIDFS_PRINT_TIME(zoidfs_null);
+    ZOIDFS_PRINT_TIME(zoidfs_init);
+    ZOIDFS_PRINT_TIME(zoidfs_finalize);
+    ZOIDFS_PRINT_TIME(zoidfs_getattr);
+    ZOIDFS_PRINT_TIME(zoidfs_setattr);
+    ZOIDFS_PRINT_TIME(zoidfs_create);
+    ZOIDFS_PRINT_TIME(zoidfs_commit);
+    ZOIDFS_PRINT_TIME(zoidfs_read);
+    ZOIDFS_PRINT_TIME(zoidfs_write);
+    ZOIDFS_PRINT_TIME(zoidfs_link);
+    ZOIDFS_PRINT_TIME(zoidfs_lookup);
+    ZOIDFS_PRINT_TIME(zoidfs_symlink);
+    ZOIDFS_PRINT_TIME(zoidfs_mkdir);
+    ZOIDFS_PRINT_TIME(zoidfs_readdir);
+    ZOIDFS_PRINT_TIME(zoidfs_remove);
+    ZOIDFS_PRINT_TIME(zoidfs_rename);
+    ZOIDFS_PRINT_TIME(zoidfs_resize);
+    ZOIDFS_PRINT_TIME(zoidfs_readlink);
 
     return ret;
 }
