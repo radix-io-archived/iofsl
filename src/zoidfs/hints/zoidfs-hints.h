@@ -17,7 +17,7 @@ namespace zoidfs
 zoidfs_op_hint_t * zoidfs_hint_init(int size);
 
 /* add a new (key, value) pair to the hint list */
-int zoidfs_hint_add(zoidfs_op_hint_t ** op_hint, 
+int zoidfs_hint_add(zoidfs_op_hint_t ** op_hint,
                     char * key,
                     char * value,
                     int value_len,
@@ -61,7 +61,7 @@ char * zoidfs_hint_make_value(int value_len);
 int zoidfs_hint_rm_value(char * value);
 
 /* encode the int value into the hint */
-void encode_int(char ** pptr, 
+void encode_int(char ** pptr,
                 void * value);
 
 /* encode the double value into the hint */

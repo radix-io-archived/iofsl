@@ -3,7 +3,7 @@
  * Simple ZoidFS trace library. Reference for future instrumentation libs.
  *
  * Jason Cope <copej@mcs.anl.gov>
- *    
+ *
  * @TODO: fix explicit uint64_t -> zoidfs_file_ofs/size_t
  */
 
@@ -19,7 +19,7 @@
 #define ZOIDFS_PRINT_COUNTER(__counter)    fprintf(stderr, "\t%s = %u\n", #__counter, __counter##_call_count)
 #define ZOIDFS_PRINT_TIME(__timer)    fprintf(stderr, "\t%s = %f\n", #__timer, __timer##_time)
 /*#define ZOIDFS_TRACE() fprintf(stderr, "ZOIDFS API TRACE: %s()\n", __func__) */
-#define ZOIDFS_TRACE() /* no tracing */ 
+#define ZOIDFS_TRACE() /* no tracing */
 
 /*
  * call counts
@@ -97,7 +97,7 @@ int zoidfs_null(void) {
     ZOIDFS_TRACE();
 
     ZOIDFS_PROF_TIME(ret = Pzoidfs_null(), zoidfs_null_time);
-    
+
     return ret;
 }
 

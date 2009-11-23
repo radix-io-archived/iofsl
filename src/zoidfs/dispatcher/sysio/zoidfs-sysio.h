@@ -4,7 +4,7 @@
  *
  * Jason Cope <copej@mcs.anl.gov>
  * Nawab Ali <alin@cse.ohio-state.edu>
- * 
+ *
  */
 
 #ifndef _ZOIDFS_SYSIO_H_
@@ -46,17 +46,17 @@
 #undef ZOIDFS_HANDLE_HEADER_SIZE
 #define ZOIDFS_HANDLE_HEADER_SIZE 4
 #undef ZOIDFS_HANDLE_PAYLOAD_SIZE
-#define ZOIDFS_HANDLE_PAYLOAD_SIZE (ZOIDFS_HANDLE_DATA_SIZE - ZOIDFS_HANDLE_HEADER_SIZE) 
+#define ZOIDFS_HANDLE_PAYLOAD_SIZE (ZOIDFS_HANDLE_DATA_SIZE - ZOIDFS_HANDLE_HEADER_SIZE)
 
-/* 
+/*
  * Size of the struct file_handle_info_export * fhi_export in struct file_handle_info
  */
 #undef SYSIO_FHE_SIZE
 #ifndef SYSIO_FHE_SIZE
-#define SYSIO_FHE_SIZE SIZEOF_STRUCT_FILE_HANDLE_INFO_EXPORT_P 
+#define SYSIO_FHE_SIZE SIZEOF_STRUCT_FILE_HANDLE_INFO_EXPORT_P
 #endif /* SYSIO_FHE_SIZE */
 
-/* 
+/*
  * Size of the size_t fhi_handle_len in struct file_handle_info
  */
 #undef SYSIO_FHILEN_SIZE
@@ -64,21 +64,21 @@
 #define SYSIO_FHILEN_SIZE SIZEOF_SIZE_T
 #endif /* SYSIO_FHILEN_SIZE */
 
-/* 
+/*
  * Since we are using small buffers and to save space in the zoidfs handle,
- * we store the sysio handle length field in the zoidfs handle as a uint8_t 
+ * we store the sysio handle length field in the zoidfs handle as a uint8_t
  */
 #undef SYSIO_FHILENPACK
 #ifndef SYSIO_FHILENPACK_SIZE
 #define SYSIO_FHILENPACK_SIZE SIZEOF_UINT8_T
 #endif /* SYSIO_FHILENPACK_SIZE */
 
-/* 
+/*
  * Size of the char fhi_handle[] in struct file_handle_info. The size of this field is computed
  * by the following equations depending on the system arch...
  *
  * sysio handle data size = (zoidfs_handle_size) - (zoidfs header) - (sysio fhe pointer) - (sysio fh len)
- *                        = 32 - 4 - 8 - 1 
+ *                        = 32 - 4 - 8 - 1
  *                        = 19 for 64-bit systems
  *                        or
  *                        = 32 - 4 - 4 - 1

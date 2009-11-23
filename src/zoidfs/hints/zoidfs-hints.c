@@ -22,7 +22,7 @@ zoidfs_op_hint_t * zoidfs_hint_init(int size)
         if(i == 0)
         {
             cur_op_hint = (zoidfs_op_hint_t *) malloc(sizeof(zoidfs_op_hint_t));
-            new_op_hint = cur_op_hint; 
+            new_op_hint = cur_op_hint;
         }
         else
         {
@@ -99,7 +99,7 @@ static int zoidfs_hint_update_non_unique(zoidfs_op_hint_t * cur_op_hint, char * 
     while(cur_op_hint)
     {
         /* if we found a match */
-        if(cur_op_hint->key != NULL && 
+        if(cur_op_hint->key != NULL &&
             strcmp(key, cur_op_hint->key) == 0)
         {
             if(value_len == cur_op_hint->value_len &&
@@ -145,7 +145,7 @@ int zoidfs_hint_add(zoidfs_op_hint_t ** op_hint, char * key, char * value, int v
             cur_op_hint->value == NULL)
         {
             /* don't rebuild the hint, just copy the data into it */
-            zoidfs_hint_update_hint(cur_op_hint, key, value, value_len, flags); 
+            zoidfs_hint_update_hint(cur_op_hint, key, value, value_len, flags);
             return 0;
         }
     }
@@ -212,7 +212,7 @@ int zoidfs_hint_add(zoidfs_op_hint_t ** op_hint, char * key, char * value, int v
                         new_op_hint->value = NULL;
                         new_op_hint->value_len = 0;
                         new_op_hint->key = NULL;
-                        zoidfs_hint_update_hint(new_op_hint, key, value, value_len, flags); 
+                        zoidfs_hint_update_hint(new_op_hint, key, value, value_len, flags);
                         new_op_hint->next = NULL;
                         new_op_hint->encode = NULL;
                         new_op_hint->decode = NULL;
@@ -264,7 +264,7 @@ int zoidfs_hint_remove(zoidfs_op_hint_t ** op_hint, char * key, int flags)
                 /* if this is the first hint */
                 else
                 {
-                    *op_hint = cur_op_hint->next; 
+                    *op_hint = cur_op_hint->next;
                 }
             }
             break;
@@ -299,8 +299,8 @@ int zoidfs_hint_remove(zoidfs_op_hint_t ** op_hint, char * key, int flags)
         }
         return 0;
     }
-   
-    /* we did not find the hint... return error */ 
+
+    /* we did not find the hint... return error */
     return -1;
 }
 
@@ -368,7 +368,7 @@ zoidfs_op_hint_t * zoidfs_hint_pop(zoidfs_op_hint_t ** op_hint)
  */
 int zoidfs_hint_destroy(zoidfs_op_hint_t ** op_hint)
 {
-    zoidfs_op_hint_t * cur_op_hint = NULL; 
+    zoidfs_op_hint_t * cur_op_hint = NULL;
     if(!op_hint)
     {
         return -1;
@@ -479,7 +479,7 @@ zoidfs_op_hint_t * zoidfs_hint_index(zoidfs_op_hint_t ** op_hint, int index)
 
     while(cur_op_hint)
     {
-        if(pos == index && 
+        if(pos == index &&
             (cur_op_hint->key != NULL && cur_op_hint->value != NULL && cur_op_hint->value_len != 0) )
         {
             return cur_op_hint;
@@ -544,13 +544,13 @@ void encode_double(char ** pptr, void * value)
 /* decode the int value stored in the hint */
 void decode_int(char ** pptr, void * value)
 {
-    *((int *)value) = *(int *) *(pptr); 
+    *((int *)value) = *(int *) *(pptr);
     *pptr += sizeof(int);
 }
 
 /* decode the double value stored in the hint */
 void decode_double(char ** pptr, void * value)
 {
-    *((double *)value) = *(double *) *(pptr); 
+    *((double *)value) = *(double *) *(pptr);
     *pptr += sizeof(double);
 }
