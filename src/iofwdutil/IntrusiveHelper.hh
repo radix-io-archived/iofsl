@@ -43,7 +43,7 @@ public:
    /**
     * Returns true if there are still shared pointers pointing to us.
     */
-   bool alive () const
+   int alive () const
    {
       return refcount_;
    }
