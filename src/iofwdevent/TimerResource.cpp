@@ -12,7 +12,7 @@ namespace iofwdevent
 //==========================================================================
 
 TimerResource::TimerResource ()
-   : queue_(comp_)
+   : queue_(comp_), log_(iofwdutil::IOFWDLog::getSource ("timer"))
 {
 }
 
@@ -49,6 +49,7 @@ void TimerResource::createTimer (ResourceOp * id, unsigned int mstimeout)
 
 void TimerResource::threadMain ()
 {
+   ZLOG_DEBUG(log_, "Timer worker thread started!");
    boost::mutex::scoped_lock l (lock_);
    while (!needShutdown ())
    {
@@ -89,6 +90,8 @@ void TimerResource::threadMain ()
 
 void TimerResource::stop ()
 {
+   ZLOG_DEBUG(log_, "Stopping timer thread...");
+
    // Notify thread it needs to finish work
    signalStop ();
 

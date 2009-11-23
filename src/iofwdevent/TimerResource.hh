@@ -11,6 +11,7 @@
 #include "ResourceOp.hh"
 #include "Resource.hh"
 #include "ThreadedResource.hh"
+#include "iofwdutil/IOFWDLog.hh"
 
 namespace iofwdevent
 {
@@ -79,6 +80,9 @@ protected:
    boost::mutex lock_;
 
    boost::condition_variable notify_;
+
+
+   iofwdutil::zlog::ZLogSource & log_;
 };
 
 
