@@ -445,7 +445,73 @@ else
    AC_MSG_RESULT([no])
 fi
 
+dnl =========================================================================
+dnl ======== Atomic operations ==============================================
+dnl =========================================================================
+ATOMICS_CPPFLAGS=
+ATOMICS_CFLAGS=
+ATOMICS_LIBS=
+ATOMICS_LDFLAGS=
 
+AC_ARG_ENABLE([openpa],
+            [AS_HELP_STRING([--disable-openpa],
+               [Don't use OpenPA for atomic operations. (Default: try to use)])],
+            [use_openpa=$withval],
+            [use_openpa=check])
+AC_ARG_ENABLE([glib],
+            [AS_HELP_STRING([--disable-glib],
+               [Don't use glib-2.0 for atomic operations. (Default: try to use)])],
+            [use_glib=$withval],
+            [use_glib=check])
+
+
+OPENPA_OK=
+GLIB_OK=
+
+if test "A$use_openpa" != "Ano"; then
+  AX_OPENPA
+fi
+
+if test "A${OPENPA_OK}" == "A1";
+then
+   AC_DEFINE([HAVE_OPENPA],[1],[If OpenPA can be used])
+   ATOMICS_LDFLAGS="${OPENPA_LDFLAGS}"
+   ATOMICS_CPPFLAGS="${OPENPA_CPPFLAGS} ${OPENPA_CFLAGS}"
+   ATOMICS_LIBS="${OPENPA_LIBS}"
+else
+   if test "A$use_glib" != "Ano"; then
+      AX_GLIB
+   fi
+   if test "A${GLIB_OK}" == "A1"
+   then
+      AC_DEFINE([HAVE_GLIB],[1],[If glib-2 can be used])
+      ATOMICS_CPPFLAGS="${GLIB_CFLAGS} ${GLIB_CPPFLAGS}"
+      ATOMICS_LDFLAGS="${GLIB_LDFLAGS}"
+      ATOMICS_LIBS="${GLIB_LIBS}"
+   else
+      AC_MSG_WARN([
+=====================================================================
+== Could not find atomic operation support! Locks will be          ==
+== used to emulate atomic operations. This is SLOW.                ==
+== Please install OpenPA (http://trac.mcs.anl.gov/projects/openpa) ==
+=====================================================================])
+   fi
+fi
+
+if test "A$use_openpa" != "Ano" -a "A$use_openpa" != "Acheck" \
+    -a "$OPENPA_OK" != "1" ; then
+    AC_MSG_ERROR("--enable-openpa given but openpa could not be found!")
+fi
+
+if test "A$use_glib" != "Ano" -a "A$use_glib" != "Acheck" \
+    -a "$GLIB_OK" != "1" ; then
+    AC_MSG_ERROR("--enable-glib given but glib could not be found!")
+fi
+
+AC_SUBST([ATOMICS_LIBS])
+AC_SUBST([ATOMICS_CPPFLAGS])
+AC_SUBST([ATOMICS_CFLAGS])
+AC_SUBST([ATOMICS_LDFLAGS])
 
 dnl =========================================================================
 dnl =========================================================================

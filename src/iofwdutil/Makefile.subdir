@@ -132,4 +132,6 @@ src/iofwdutil/always_assert.cpp \
 src/iofwdutil/backtrace.cpp \
 src/iofwdutil/demangle.cpp \
 src/iofwdutil/signals.cpp \
-src/iofwdutil/boost-spirit.hh
+src/iofwdutil/boost-spirit.hh \
+\
+src/iofwdutil/atomics.hh
