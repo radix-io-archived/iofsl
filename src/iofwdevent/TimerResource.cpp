@@ -29,8 +29,12 @@ void TimerResource::createTimer (ResourceOp * id, unsigned int mstimeout)
 
    // Add entry, and see if this alarm occurs before first alarm.
    // If so, wake the alarm thread.
-   TimerEntry * e = mempool_.construct (id,
+   TimerEntry * e;
+   {
+      boost::mutex::scoped_lock l (pool_lock_);
+      e = mempool_.construct (id,
         boost::get_system_time() + millisec (mstimeout));
+   }
 
    bool wake = false;
    {
@@ -66,6 +70,14 @@ void TimerResource::threadMain ()
          {
             ALWAYS_ASSERT(false && "ResourceOp methods should not throw!");
          }
+
+         // Free timer entry; Need to protect with lock: mempool is not 
+         // threadsafe.
+         {
+            boost::mutex::scoped_lock l2(pool_lock_);
+            mempool_.destroy (e);
+         }
+
          l.lock ();
       }
 

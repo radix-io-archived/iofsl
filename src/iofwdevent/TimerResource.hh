@@ -66,6 +66,7 @@ protected:
    }
 
 protected:
+   boost::mutex pool_lock_;
    /// Memory pool for the timer entries
    boost::object_pool<TimerEntry> mempool_;
 
