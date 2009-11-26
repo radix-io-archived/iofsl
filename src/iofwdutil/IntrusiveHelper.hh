@@ -2,6 +2,7 @@
 #define IOFWDUTIL_INTRUSIVE_HELPER_HH
 
 #include "iofwdutil/assert.hh"
+#include "iofwdutil/atomics.hh"
 
 namespace iofwdutil
 {
@@ -48,7 +49,7 @@ public:
       return refcount_;
    }
 private:
-   int refcount_; 
+   atomic<int> refcount_;
 }; 
 
 
