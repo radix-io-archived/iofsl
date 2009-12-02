@@ -29,16 +29,16 @@
 
 static zint_handler_t * zint_handlers[] =
 {
-/*#ifdef HAVE_DISPATCHER_PVFS2
+#ifdef HAVE_DISPATCHER_PVFS2
     &pvfs2_handler,
-#endif*/
+#endif
 
 #ifdef HAVE_DISPATCHER_LIBSYSIO
     &sysio_handler,
 #endif /* HAVE_DISPATCHER_LIBSYSIO */
-/*#ifdef HAVE_DISPATCHER_POSIX
+#ifdef HAVE_DISPATCHER_POSIX
     &posix_handler,
-#endif*/
+#endif
     &local_handler
 };
 
