@@ -6,6 +6,8 @@
 #ifndef IOFWDUTIL_BOOST_SPIRIT_HH
 #define IOFWDUTIL_BOOST_SPIRIT_HH
 
+#include "iofwd_config.h"
+
 #ifdef BOOST_SPIRIT_OLD
 
 # include <boost/spirit/core.hpp>
