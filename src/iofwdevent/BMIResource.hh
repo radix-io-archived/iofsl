@@ -158,8 +158,7 @@ namespace iofwdevent
                BMI_unexpected_info * info);
 
 
-
-      protected:
+       protected:
          bmi_context_id context_;
 
          // Note: not object pool, no destructor/constructor will be called
@@ -192,6 +191,13 @@ namespace iofwdevent
          std::queue<BMI_unexpected_info *> ue_ready_;
 
          iofwdutil::zlog::ZLogSource & log_;
+
+       protected:
+         static
+         size_t accumulate_helper (size_t other, const UnexpectedClient & in);
+
+
+
    };
 
    //===========================================================================

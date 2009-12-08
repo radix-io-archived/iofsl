@@ -1,7 +1,7 @@
-#include <boost/lambda/lambda.hpp>
-#include <boost/lambda/bind.hpp>
+// #include <boost/lambda/lambda.hpp>
+// #include <boost/lambda/bind.hpp>
 #include <numeric>
-#include <functional>
+// #include <functional>
 #include <boost/format.hpp>
 
 #include "iofwdutil/tools.hh"
@@ -95,6 +95,11 @@ namespace iofwdevent
 #endif
    }
    
+   size_t BMIResource::accumulate_helper (size_t other, const UnexpectedClient
+         & in)
+   {
+      return other + in.incount;
+   }
 
    /**
     * Check for unexpected messages, and hand them to the listeners or store
@@ -125,10 +130,14 @@ namespace iofwdevent
          return;
 
       // Number of messages we can get rid of
-      const size_t total_capacity = std::accumulate
+      /*const size_t total_capacity = std::accumulate
          (ue_clientlist_.begin(), ue_clientlist_.end(), int(0),
           bind(std::plus<int>(), _1, bind(&UnexpectedClient::incount,
             _2)));
+            */
+      const size_t total_capacity = std::accumulate (ue_clientlist_.begin(),
+            ue_clientlist_.end(), int (0), 
+            accumulate_helper);
 
       // Number of clients completed
       size_t completed = 0;
