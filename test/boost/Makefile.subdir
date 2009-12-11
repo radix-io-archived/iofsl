@@ -15,6 +15,7 @@ check_PROGRAMS += test/boost/iofwdevent-resource
 test_boost_iofwdevent_resource_SOURCES = test/boost/timerresource.cpp \
 				   test/boost/iofwdevent-resource.cpp \
 				   test/boost/bmiresource.cpp \
+				   test/boost/tokenresource.cpp \
 				   test/boost/singlecompletion.cpp \
 				   test/boost/ThreadSafety.cpp \
 				   test/boost/ThreadSafety.hh

@@ -15,4 +15,6 @@ src/iofwdevent/ResourceInactiveException.hh \
 src/iofwdevent/ResourceInactiveException.cpp \
 src/iofwdevent/ThreadedResource.hh \
 src/iofwdevent/ThreadedResource.cpp \
-src/iofwdevent/ResourceWrapper.hh
+src/iofwdevent/ResourceWrapper.hh \
+src/iofwdevent/TokenResource.hh \
+src/iofwdevent/TokenResource.cpp
