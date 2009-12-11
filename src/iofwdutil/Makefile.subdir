@@ -134,4 +134,7 @@ src/iofwdutil/demangle.cpp \
 src/iofwdutil/signals.cpp \
 src/iofwdutil/boost-spirit.hh \
 \
-src/iofwdutil/atomics.hh
+src/iofwdutil/atomics.hh \
+\
+src/iofwdutil/rm/IntervalMergeTree.hh \
+src/iofwdutil/rm/IntervalMergeTree.cpp

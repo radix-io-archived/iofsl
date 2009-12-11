@@ -39,4 +39,6 @@ src/c-util/sha1.h \
 src/c-util/tools.c \
 src/c-util/tools.h \
 src/c-util/txt_configfile.c \
-src/c-util/txt_configfile.h
+src/c-util/txt_configfile.h \
+src/c-util/interval-merge-tree.h \
+src/c-util/interval-merge-tree.c
