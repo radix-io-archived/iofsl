@@ -4,6 +4,7 @@
 
 // Bring in boost::format because almost everybody uses it
 #include <boost/format.hpp>
+#include <boost/thread.hpp>
 
 #include <memory>
 #include "iofwdutil/zlog/ZLogSource.hh"
@@ -53,10 +54,12 @@ private:
 
     zlog::ZLogSource & getSourceInt (const char * name)
     {
-        SourceMapType::const_iterator I = sources_.find (name); 
-        if (I!=sources_.end())
-           return *I->second;
-        return *createSource (name); 
+       boost::mutex::scoped_lock l(lock_);
+
+       SourceMapType::const_iterator I = sources_.find (name);
+       if (I!=sources_.end())
+          return *I->second;
+       return *createSource (name);
     }
 
 
@@ -84,6 +87,7 @@ private:
 
     std::vector<std::pair<std::string, unsigned int> > loglevel_override_; 
 
+    boost::mutex lock_;
 };
 
 //===========================================================================
