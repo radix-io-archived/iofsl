@@ -5,9 +5,9 @@
 #include <vector>
 #include <boost/array.hpp>
 #include <boost/format/format_fwd.hpp>
-#include "zlog/ZLog.hh"
-#include "zlog/ZLogSink.hh"
-#include "zlog/ZLogFilter.hh"
+#include "iofwdutil/zlog/ZLog.hh"
+#include "iofwdutil/zlog/ZLogSink.hh"
+#include "iofwdutil/zlog/ZLogFilter.hh"
 #include "iofwdutil/assert.hh"
 
 namespace iofwdutil
