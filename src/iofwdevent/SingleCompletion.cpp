@@ -15,8 +15,11 @@ namespace iofwdevent
          boost::unique_lock<boost::mutex> l (lock_);
          ALWAYS_ASSERT(status_ == WAITING);
          status_ = SUCCESS;
+
+         // Normally I would move this outside of the lock but valgrind
+         // doesn't like it.
+         cond_.notify_all ();
       }
-      cond_.notify_all ();
    }
 
    void SingleCompletion::cancel ()
@@ -25,8 +28,8 @@ namespace iofwdevent
          boost::unique_lock<boost::mutex> l (lock_);
          ALWAYS_ASSERT(status_ == WAITING);
          status_ = CANCEL;
+         cond_.notify_all ();
       }
-      cond_.notify_all ();
    }
 
    SingleCompletion::~SingleCompletion ()
