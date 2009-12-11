@@ -475,6 +475,7 @@ fi
 if test "A${OPENPA_OK}" == "A1";
 then
    AC_DEFINE([HAVE_OPENPA],[1],[If OpenPA can be used])
+   AC_DEFINE([HAVE_ATOMICS], [1], [If fast atomics are available])
    ATOMICS_LDFLAGS="${OPENPA_LDFLAGS}"
    ATOMICS_CPPFLAGS="${OPENPA_CPPFLAGS} ${OPENPA_CFLAGS}"
    ATOMICS_LIBS="${OPENPA_LIBS}"
@@ -485,6 +486,7 @@ else
    if test "A${GLIB_OK}" == "A1"
    then
       AC_DEFINE([HAVE_GLIB],[1],[If glib-2 can be used])
+      AC_DEFINE([HAVE_ATOMICS], [1], [If fast atomics are available])
       ATOMICS_CPPFLAGS="${GLIB_CFLAGS} ${GLIB_CPPFLAGS}"
       ATOMICS_LDFLAGS="${GLIB_LDFLAGS}"
       ATOMICS_LIBS="${GLIB_LIBS}"

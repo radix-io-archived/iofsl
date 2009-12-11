@@ -318,6 +318,10 @@ class atomic_base<int>
 
 #endif
 
+/**
+ * Adds shared functionality to the atomic_base class.
+ * Overloads, operators, ...
+ */
 template <typename BASE>
 class atomic : public atomic_base<BASE>
 {
@@ -425,6 +429,78 @@ public:
    {
       return this->load ();
    }
+};
+
+
+/**
+ * SPecialization for bool.
+ * Makes it an int instead.
+ * Doesn't support ++, --, +, -
+ */
+template <>
+class atomic<bool> : public atomic_base<int> 
+{
+protected:
+   typedef bool BASE;
+
+public:
+   atomic ()
+   { }
+
+   atomic (bool b)
+   {
+      this->store_unprotected (b);
+   }
+
+   atomic (const atomic<bool> & other)
+   {
+      this->store_unprotected (other.load ());
+   }
+
+
+public:
+   /**
+    * General C++ functions, defined in terms of the atomic_base 
+    * object.
+    */
+
+     /** 
+    * Assignment operator
+    */
+   atomic<bool> & operator = (const bool & val)
+   {
+      this->store (val);
+      return *this;
+   }
+
+   /**
+    * Implicit conversion operator; const version
+    */
+   operator bool () const
+   {
+      return this->load ();
+   }
+};
+
+/**
+ * Fast atomic class: includes static assert which fails if no hardware
+ * support is available.
+ */
+template <typename T>
+class fast_atomic : public atomic<T>
+{
+public:
+   BOOST_STATIC_ASSERT(fast_atomic<T>::USING_LOCKS == 0);
+
+   fast_atomic ()
+   {
+   }
+
+   fast_atomic (const T & init)
+      : atomic<T>(init)
+   {
+   }
+
 };
 
 //===========================================================================
