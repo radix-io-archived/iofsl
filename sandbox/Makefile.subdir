@@ -10,9 +10,10 @@ sandbox_ldflags = $(AM_LDFLAGS) \
     @BOOST_REGEX_LIB@
 
 sandbox_ldadd =          \
-    ${top_builddir}/src/zoidfs/libzoidfs-util.a  \
-    ${top_builddir}/src/iofwdutil/libiofwdutil.a \
-    ${top_builddir}/src/c-util/libc-util.a       \
+    $(top_builddir)/src/zoidfs/libzoidfs-util.a  \
+    $(top_builddir)/src/iofwdutil/libiofwdutil.a \
+    $(top_builddir)/src/c-util/libc-util.a       \
+    $(top_builddir)/src/zoidfs/libzoidfshints.a \
     @CUNIT_LIBS@                 \
     @ZFS_DISPATCHER_LIBS@ \
     @BMI_LIBS@
@@ -27,32 +28,36 @@ sandbox_regex_LDFLAGS = $(sandbox_ldflags)
 
 noinst_PROGRAMS += sandbox/sc
 sandbox_sc_SOURCES = sandbox/sc.cpp
-sandbox_sc_LDFLAGS = ${sandbox_ldflags}
+sandbox_sc_LDFLAGS = $(sandbox_ldflags)
 
 noinst_PROGRAMS += sandbox/TestSM
 sandbox_TestSM_SOURCES = sandbox/TestSM.cpp
-sandbox_TestSM_LDFLAGS = ${sandbox_ldflags}
+sandbox_TestSM_LDFLAGS = $(sandbox_ldflags)
 
 noinst_PROGRAMS += sandbox/TestSM_async
 sandbox_TestSM_async_SOURCES = sandbox/TestSM_async.cpp
-sandbox_TestSM_async_LDFLAGS = ${sandbox_ldflags}
+sandbox_TestSM_async_LDFLAGS = $(sandbox_ldflags)
 
 # Note: := should not be used, is GNU make
 
 noinst_PROGRAMS += sandbox/LookupSMTest
 sandbox_LookupSMTest_SOURCES = sandbox/LookupSMTest.cpp
-sandbox_LookupSMTest_LDFLAGS = ${sandbox_ldflags}
+sandbox_LookupSMTest_LDFLAGS = $(sandbox_ldflags)
 sandbox_LookupSMTest_LDADD = $(top_builddir)/src/sm/libiofwdsm.a
 
 noinst_PROGRAMS += sandbox/zoidfs-hints
 sandbox_zoidfs_hints_SOURCES = sandbox/zoidfs-hints.c
-sandbox_zoidfs_hints_LDFLAGS = ${sandbox_ldflags}
-sandbox_zoidfs_hints_LDADD = $(top_builddir)/src/zoidfs/libzoidfshints.a $(top_builddir)/src/zoidfs/libzoidfsclient.a ${sandbox_ldadd}
+sandbox_zoidfs_hints_LDFLAGS = $(sandbox_ldflags)
+sandbox_zoidfs_hints_LDADD = $(top_builddir)/src/zoidfs/libzoidfsclient.a $(sandbox_ldadd)
 
+noinst_PROGRAMS += sandbox/imt-test
+sandbox_imt_test_SOURCES = sandbox/imt-test.c
+sandbox_imt_test_LDFLAGS = $(sandbox_ldflags)
+sandbox_imt_test_LDADD = $(sandbox_ldadd)
 
 noinst_PROGRAMS += sandbox/smmanager
 sandbox_smmanager_SOURCES = sandbox/smmanager.cpp
-sandbox_smmanager_LDFLAGS = ${sandbox_ldflags} $(BMI_LDFLAGS)
+sandbox_smmanager_LDFLAGS = $(sandbox_ldflags) $(BMI_LDFLAGS)
 sandbox_smmanager_LDADD = $(top_builddir)/src/sm/libsm.a \
 			  $(top_builddir)/src/iofwdevent/libiofwdevent.a \
 			  $(top_builddir)/src/iofwdutil/libiofwdutil.a \
