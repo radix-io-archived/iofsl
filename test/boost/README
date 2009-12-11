@@ -1,3 +1,11 @@
+!!!!NOTE!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+The boost test macro's are not thread safe:
+use those defined in ThreadSafety.hh
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+
 Changing log level for boost unit tests:
 
 --log_level= 

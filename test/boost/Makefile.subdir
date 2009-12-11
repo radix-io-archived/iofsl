@@ -15,7 +15,9 @@ check_PROGRAMS += test/boost/iofwdevent-resource
 test_boost_iofwdevent_resource_SOURCES = test/boost/timerresource.cpp \
 				   test/boost/iofwdevent-resource.cpp \
 				   test/boost/bmiresource.cpp \
-				   test/boost/singlecompletion.cpp
+				   test/boost/singlecompletion.cpp \
+				   test/boost/ThreadSafety.cpp \
+				   test/boost/ThreadSafety.hh
 
 test_boost_iofwdevent_resource_LDFLAGS = $(shared_ldflags)
 test_boost_iofwdevent_resource_LDADD = $(shared_ldadd)
@@ -26,7 +28,10 @@ test_boost_iofwdevent_resource_LDADD = $(shared_ldadd)
 
 check_PROGRAMS += test/boost/bmi-pingpong
 TESTS += test/boost/bmi-pingpong
-test_boost_bmi_pingpong_SOURCES = test/boost/bmi-pingpong.cpp
+test_boost_bmi_pingpong_SOURCES = test/boost/bmi-pingpong.cpp \
+				  test/boost/ThreadSafety.hh \
+				   test/boost/ThreadSafety.cpp
+
 test_boost_bmi_pingpong_LDFLAGS = $(shared_ldflags) @BMI_LDFLAGS@
 test_boost_bmi_pingpong_LDADD = $(shared_ldadd) @BMI_LIBS@
 
@@ -37,7 +42,9 @@ test_boost_bmi_pingpong_LDADD = $(shared_ldadd) @BMI_LIBS@
 #############################################################################
 check_PROGRAMS += test/boost/atomics
 TESTS += test/boost/atomics
-test_boost_atomics_SOURCES = test/boost/atomics.cpp
+test_boost_atomics_SOURCES = test/boost/atomics.cpp \
+				   test/boost/ThreadSafety.hh \
+				   test/boost/ThreadSafety.cpp
 test_boost_atomics_LDFLAGS = $(shared_ldflags)
 test_boost_atomics_LDADD = $(shared_ldadd)
 
