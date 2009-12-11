@@ -38,12 +38,16 @@ public:
     ranges.erase(ranges.begin());
   }
 
-  void add(const Range& r)
+  /* find buffer intersects... no dup ranges are returned */
+  void intersect(const Range & r, std::set<Range> & s)
   {
     std::map<uint64_t, Range>::iterator it;
-    std::set<Range> s;
 
-    // intersect
+    /*
+       The beginning part of rr overlaps the end of r 
+       r  [st .... en]
+       rr      [st .... en]
+    */
     it = st_map.lower_bound(r.st);
     while (it != st_map.end()) {
       const Range& rr = it->second;
@@ -51,6 +55,12 @@ public:
       else break;
       ++it;
     }
+
+    /*
+       The last part of rr overlaps the beginning of r 
+       r        [st .... en]
+       rr [st .... en]
+    */
     it = en_map.lower_bound(r.st);
     while (it != en_map.end()) {
       const Range& rr = it->second;
@@ -59,7 +69,18 @@ public:
       ++it;
     }
 
-    // included
+  }
+
+  /* identify all of the buffers that are a subset of existing buffers */
+  void included(const Range & r, std::set<Range> & s)
+  {
+    std::map<uint64_t, Range>::iterator it;
+
+    /*
+       Buffer rr overlaps all of r 
+       r        [st .... en]
+       rr [st ................... en]
+    */
     it = en_map.lower_bound(r.en);
     while (it != en_map.end()) {
       const Range& rr = it->second;
@@ -68,9 +89,16 @@ public:
       ++it;
     }
 
-    // merge
-    uint64_t st = r.st;
-    uint64_t en = r.en;
+  }
+
+  void merge(const Range & r, std::set<Range> & s, uint64_t & st, uint64_t & en)
+  {
+    st = r.st;
+    en = r.en;
+
+    /*
+      compute the min st value and max en value for the range set
+     */
     for (std::set<Range>::iterator it = s.begin(); it != s.end(); ++it) {
       const Range& rr = *it;
       st_map.erase(rr.st);
@@ -79,6 +107,19 @@ public:
       en = std::max(en, rr.en);
       ranges.erase(rr);
     }
+  }
+
+  void add(const Range& r)
+  {
+    std::map<uint64_t, Range>::iterator it;
+    std::set<Range> s;
+    uint64_t st = 0, en = 0;
+
+    intersect(r, s);
+
+    included(r, s);
+
+    merge(r, s, st, en);
 
     Range new_r(st, en);
     new_r.type = r.type;
