@@ -6,6 +6,7 @@
 
 #include "Range.hh"
 #include "RangeSet.hh"
+#include "IntervalTreeRangeSet.hh"
 #include "zoidfs/zoidfs.h"
 
 namespace iofwd

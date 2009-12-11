@@ -39,6 +39,7 @@ struct HandleQueue
   Range::RangeType type;
   const zoidfs::zoidfs_handle_t * handle;
   RangeSet * rs;
+  IntervalTreeRangeSet * itrs;
   int quantum;
 };
 
@@ -52,9 +53,15 @@ void MergeRangeScheduler::io_enqueue(const Range &r)
     hq->handle = r.handle;
     hq->quantum = DEFAULT_QUANTUM;
 
+#ifdef ITRS
+    IntervalTreeRangeSet * itrs = new IntervalTreeRangeSet();
+    itrs->add(r);
+    hq->itrs = itrs;
+#else
     RangeSet * rs = new RangeSet();
     rs->add(r);
     hq->rs = rs;
+#endif
 
     q_.push_back(hq);
     m_[hq->handle] = hq;
@@ -62,8 +69,15 @@ void MergeRangeScheduler::io_enqueue(const Range &r)
     // if corresponding HandleQueue exists for r.handle,
     // add to its RangeSet.
     HandleQueue * hq = m_.find(r.handle)->second;
+
+#ifdef ITRS
+    IntervalTreeRangeSet * itrs = hq->itrs;
+    itrs->add(r);
+#else
     RangeSet * rs = hq->rs;
     rs->add(r);
+#endif
+
   }
 }
 
@@ -75,14 +89,28 @@ bool MergeRangeScheduler::io_dequeue(Range &r)
   tr1::unordered_map<const zoidfs::zoidfs_handle_t*, HandleQueue*>& m_ = (hq->type == Range::RANGE_READ) ? rm_ : wm_;
   assert(m_.find(hq->handle) != m_.end());
 
+#ifdef ITRS
+  IntervalTreeRangeSet * itrs = hq->itrs;
+  assert(!itrs->empty());
+  itrs->pop_front(r);
+#else
   RangeSet * rs = hq->rs;
   assert(!rs->empty());
   rs->pop_front(r);
+#endif
 
   hq->quantum--;
+#ifdef ITRS
+  if (hq->quantum > 0 && !itrs->empty()) {
+#else
   if (hq->quantum > 0 && !rs->empty()) {
+#endif
     // do nothing
+#ifdef ITRS
+  } else if (hq->quantum == 0 && !itrs->empty()) {
+#else
   } else if (hq->quantum == 0 && !rs->empty()) {
+#endif
     // turn to another queue
     hq->quantum = DEFAULT_QUANTUM;
     q_.pop_front();
@@ -91,7 +119,11 @@ bool MergeRangeScheduler::io_dequeue(Range &r)
     // delete queue
     q_.pop_front();
     m_.erase(hq->handle);
+#ifdef ITRS
+    delete hq->itrs;
+#else
     delete hq->rs;
+#endif
     delete hq;    
   }
 
