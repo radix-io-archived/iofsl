@@ -4,6 +4,7 @@ bin_PROGRAMS += src/iofwd/iofwd
 
 src_iofwd_iofwd_LDADD = \
 	src/zoidfs/libzoidfs-util.a \
+	src/zoidfs/libzoidfsprofile.a \
 	src/zoidfs/libzoidfs.a \
 	src/iofwdutil/libiofwdutil.a \
 	src/c-util/libc-util.a \
@@ -28,6 +29,7 @@ src/iofwd/IOFWDMain.cpp \
 src/iofwd/Range.cpp \
 src/iofwd/RangeScheduler.cpp \
 src/iofwd/RangeSet.cpp \
+src/iofwd/IntervalTreeRangeSet.cpp \
 src/iofwd/ReadTask.cpp \
 src/iofwd/Request.cpp \
 src/iofwd/RequestHandler.cpp \
@@ -61,6 +63,7 @@ src/iofwd/NullTask.hh \
 src/iofwd/Range.hh \
 src/iofwd/RangeScheduler.hh \
 src/iofwd/RangeSet.hh \
+src/iofwd/IntervalTreeRangeSet.hh \
 src/iofwd/ReadDirRequest.hh \
 src/iofwd/ReadDirTask.hh \
 src/iofwd/ReadLinkRequest.hh \
