@@ -15,6 +15,8 @@
 #include "iofwdevent/SingleCompletion.hh"
 
 
+#include "ThreadSafety.hh"
+
 const char *        ADDRESS = "tcp://127.0.0.1:1236";
 const unsigned int  LOOPS   = 10000;
 
@@ -49,7 +51,7 @@ public:
    
 inline void checkBMI (int ret)
    {
-      BOOST_CHECK(ret >= 0);
+      BOOST_CHECK_TS(ret >= 0);
    }
 
 //____________________________________________________________________________//
@@ -84,7 +86,7 @@ public:
                   &actual, BMI_EXT_ALLOC, receivetag, 0);
             waitreceive.wait ();
 
-            BOOST_CHECK_EQUAL (i, received);
+            BOOST_CHECK_EQUAL_TS (i, received);
 
             bmi_.post_send (&waitsend, addr_, &received, sizeof (received),
                 BMI_EXT_ALLOC, sendtag, 0);
@@ -99,7 +101,7 @@ public:
 
             waitreceive.wait ();
 
-            BOOST_CHECK_EQUAL (i, received);
+            BOOST_CHECK_EQUAL_TS (i, received);
 
             waitsend.wait ();
          }
@@ -137,14 +139,14 @@ public:
       bmi_.testunexpected (&waitReceive, 1,
             &out, &info);
 
-      BOOST_TEST_MESSAGE("Waiting for message arrival");
+      BOOST_TEST_MESSAGE_TS("Waiting for message arrival");
       waitSend.wait ();
       waitReceive.wait ();
 
-      BOOST_CHECK_EQUAL(info.size, sizeof(dummy));
-      BOOST_CHECK_EQUAL(* static_cast<char*>(info.buffer), dummy);
-      BOOST_CHECK_EQUAL(info.tag, 0);
-      BOOST_CHECK(info.error_code >= 0);
+      BOOST_CHECK_EQUAL_TS(info.size, sizeof(dummy));
+      BOOST_CHECK_EQUAL_TS(* static_cast<char*>(info.buffer), dummy);
+      BOOST_CHECK_EQUAL_TS(info.tag, 0);
+      BOOST_CHECK_TS(info.error_code >= 0);
 
       p2_ = info.addr;
 
@@ -165,19 +167,19 @@ protected:
 };
 //____________________________________________________________________________//
 
-BOOST_AUTO_TEST_SUITE( bmipingpong )
+BOOST_AUTO_TEST_SUITE( bmipingpong );
 
 struct Fixture {
     Fixture()
        : bmiinit_ ("bmi_tcp", ADDRESS, BMI_INIT_SERVER),
          bmi_(&bmires_)
     {
-       BOOST_TEST_MESSAGE( "setup fixture" ); 
+       BOOST_TEST_MESSAGE_TS( "setup fixture" ); 
     }
 
     ~Fixture()
     {
-       BOOST_TEST_MESSAGE( "teardown fixture" );
+       BOOST_TEST_MESSAGE_TS( "teardown fixture" );
     }
 
 protected:
@@ -192,10 +194,10 @@ BOOST_FIXTURE_TEST_CASE( unexpected, Fixture )
 {
    SetupLink link (bmires_);
 
-   BOOST_TEST_MESSAGE("Testing unexpected receive");
+   BOOST_TEST_MESSAGE_TS("Testing unexpected receive");
    link.findEndPoints ();
-   BOOST_TEST_MESSAGE("Endpoint P1: " << BMI_addr_rev_lookup(link.getP1()));
-   BOOST_TEST_MESSAGE("Unexpected P2: " <<
+   BOOST_TEST_MESSAGE_TS("Endpoint P1: " << BMI_addr_rev_lookup(link.getP1()));
+   BOOST_TEST_MESSAGE_TS("Unexpected P2: " <<
          BMI_addr_rev_lookup_unexpected(link.getP2()));
 }
 
@@ -209,16 +211,16 @@ BOOST_FIXTURE_TEST_CASE( talkself, Fixture )
    bmi_size_t actual;
    SetupLink link (bmires_);
 
-   BOOST_TEST_MESSAGE("Making connection");
+   BOOST_TEST_MESSAGE_TS("Making connection");
    link.findEndPoints ();
 
    BMI_addr_t sendaddr = link.getP1();
    BMI_addr_t receiveaddr = link.getP2();
 
-   BOOST_TEST_MESSAGE("Starting test\n");
+   BOOST_TEST_MESSAGE_TS("Starting test\n");
    for (unsigned int i=0; i<LOOPS; ++i)
    {
-      BOOST_TEST_MESSAGE(format("Posting for iteration %i") % i);
+      BOOST_TEST_MESSAGE_TS(format("Posting for iteration %i") % i);
       if (i)
       {
          waitsend.reset();
@@ -228,15 +230,15 @@ BOOST_FIXTURE_TEST_CASE( talkself, Fixture )
             &actual, BMI_EXT_ALLOC, 0, 0);
       bmires_.post_send (&waitsend, receiveaddr, &i, sizeof (i),
             BMI_EXT_ALLOC, 0, 0);
-      BOOST_TEST_MESSAGE("Waiting for send to complete");
+      BOOST_TEST_MESSAGE_TS("Waiting for send to complete");
       waitsend.wait ();
-      BOOST_TEST_MESSAGE("Waiting for receive to complete");
+      BOOST_TEST_MESSAGE_TS("Waiting for receive to complete");
       waitreceive.wait ();
-      BOOST_CHECK_EQUAL(actual, sizeof(i));
-      BOOST_CHECK_EQUAL(received, i);
-      BOOST_TEST_MESSAGE("Receive completed");
+      BOOST_CHECK_EQUAL_TS(actual, sizeof(i));
+      BOOST_CHECK_EQUAL_TS(received, i);
+      BOOST_TEST_MESSAGE_TS("Receive completed");
    }
-   BOOST_TEST_MESSAGE("Test done");
+   BOOST_TEST_MESSAGE_TS("Test done");
 }
 
 /*

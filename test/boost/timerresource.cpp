@@ -1,54 +1,34 @@
 #include <boost/test/unit_test.hpp>
 #include <csignal>
 
+#include "iofwdevent/SingleCompletion.hh"
 #include "iofwdevent/TimerResource.hh"
+#include "ThreadSafety.hh"
 
 using namespace boost::unit_test;
+using namespace iofwdevent;
 
 BOOST_AUTO_TEST_SUITE( timerresource)
 
-struct SetVal : public iofwdevent::ResourceOp
-{
-   SetVal (sig_atomic_t * p, sig_atomic_t v)
-      : val(p), dest(v)
-   {
-   }
-
-   void success ()
-   { *val = dest; }
-
-   void cancel ()
-   { *val = -dest; }
-
-   sig_atomic_t * val;
-   sig_atomic_t dest;
-};
-
 BOOST_AUTO_TEST_CASE( StartStopTest )
 {
-   BOOST_TEST_MESSAGE("Running timer test");
+   BOOST_TEST_MESSAGE_TS("Running timer test");
    iofwdevent::TimerResource r;
+   SingleCompletion comp;
+   SingleCompletion comp2;
 
    r.start ();
 
-   sig_atomic_t val = 0;
-   SetVal v (&val, 1);
-   SetVal v2 (&val, 2);
+   r.createTimer (&comp, 100);
+   r.createTimer (&comp2, 200);
 
-   r.createTimer (&v, 10);
+   comp.wait ();
 
-   while (!val) {}
+   comp2.wait ();
 
-   BOOST_CHECK_MESSAGE( val == 1, "Timer fired out of order");
+   r.stop (); 
 
-   r.createTimer (&v2, 20);
-
-   while (val == 1) {}
-
-   BOOST_CHECK_MESSAGE( val == 2, "Timer fired out of order");
-
-   r.stop ();
-   BOOST_TEST_MESSAGE( "Timer test completed..." );
+   BOOST_TEST_MESSAGE_TS( "Timer test completed..." );
 }
 
 BOOST_AUTO_TEST_SUITE_END()
