@@ -1,7 +1,7 @@
 #ifndef IOFWDEVENT_BMIRESOURCE_HH
 #define IOFWDEVENT_BMIRESOURCE_HH
 
-extern "C" 
+extern "C"
 {
 #include <bmi.h>
 }

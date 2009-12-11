@@ -14,15 +14,12 @@ namespace iofwdevent
 
    void ThreadedResource::threadStart ()
    {
-      while (!shutdown_)
-      {
-         this->threadMain ();
-      }
+      this->threadMain ();
    }
 
    void ThreadedResource::start ()
    {
-      boost::mutex::scoped_lock l (tlock_);
+      boost::mutex::scoped_lock l (lock_);
 
       ALWAYS_ASSERT(!running_);
       shutdown_ = false;
@@ -33,32 +30,17 @@ namespace iofwdevent
 
    void ThreadedResource::stop ()
    {
-      ALWAYS_ASSERT(running_);
+      {
+        boost::mutex::scoped_lock l(lock_);
+        ALWAYS_ASSERT(running_);
+        shutdown_ = true;
+        cond_.notify_one ();
+      }
 
-      signalStop ();
-      waitStop ();
-   }
-
-   void ThreadedResource::signalThread ()
-   {
-         //workercond_.notify_all ();
-   }
-
-   void ThreadedResource::signalStop ()
-   {
-         boost::mutex::scoped_lock l (tlock_);
-
-         shutdown_ = true;
-         signalThread ();
-   }
-
-   void ThreadedResource::waitStop ()
-   {
-      signalThread ();
       workerthread_->join ();
       workerthread_.reset (0);
       running_ = false;
-   }
+    }
 
    ThreadedResource::ThreadedResource ()
       : shutdown_(false), running_(false)

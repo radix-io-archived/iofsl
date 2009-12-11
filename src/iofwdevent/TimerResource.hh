@@ -27,8 +27,7 @@ public:
    void createTimer (ResourceOp * id, unsigned int mstimeout);
 
 
-   // Need to override stop to be able to wake the thread when waiting
-   // for a timer in order to shut it down.
+   /// TimerResource needs to do some extra cleanup on stop.
    virtual void stop ();
 
 protected:
@@ -66,7 +65,9 @@ protected:
    }
 
 protected:
+   /// Lock to protect memory pool
    boost::mutex pool_lock_;
+
    /// Memory pool for the timer entries
    boost::object_pool<TimerEntry> mempool_;
 
@@ -76,12 +77,6 @@ protected:
    /// Priority queue to order the alarms
    std::priority_queue<TimerEntry *,
       std::vector<TimerEntry *>, TimerComp> queue_;
-
-   // Protects priority queue
-   boost::mutex lock_;
-
-   boost::condition_variable notify_;
-
 
    iofwdutil::zlog::ZLogSource & log_;
 };
