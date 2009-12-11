@@ -43,7 +43,7 @@ sandbox_TestSM_async_LDFLAGS = $(sandbox_ldflags)
 noinst_PROGRAMS += sandbox/LookupSMTest
 sandbox_LookupSMTest_SOURCES = sandbox/LookupSMTest.cpp
 sandbox_LookupSMTest_LDFLAGS = $(sandbox_ldflags)
-sandbox_LookupSMTest_LDADD = $(top_builddir)/src/sm/libiofwdsm.a
+sandbox_LookupSMTest_LDADD = $(top_builddir)/src/sm/libiofwdsm.a $(sandbox_ldadd)
 
 noinst_PROGRAMS += sandbox/zoidfs-hints
 sandbox_zoidfs_hints_SOURCES = sandbox/zoidfs-hints.c
