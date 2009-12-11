@@ -28,6 +28,7 @@ sandbox/TestSM
 sandbox/TestSM_async
 sandbox/sc
 sandbox/zoidfs-hints
+sandbox/imt-test
 src/fuse/fuseclient
 src/fuse/fusedispatch
 src/iofwd/iofwd
