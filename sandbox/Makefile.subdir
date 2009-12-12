@@ -43,7 +43,23 @@ sandbox_TestSM_async_LDFLAGS = $(sandbox_ldflags)
 noinst_PROGRAMS += sandbox/LookupSMTest
 sandbox_LookupSMTest_SOURCES = sandbox/LookupSMTest.cpp
 sandbox_LookupSMTest_LDFLAGS = $(sandbox_ldflags)
-sandbox_LookupSMTest_LDADD = $(top_builddir)/src/sm/libiofwdsm.a $(sandbox_ldadd)
+sandbox_LookupSMTest_LDADD = $(top_builddir)/src/sm/libiofwdsm.a $(sandbox_ldadd) \
+            $(top_builddir)/src/sm/libsm.a \
+			$(top_builddir)/src/iofwdevent/libiofwdevent.a
+
+noinst_PROGRAMS += sandbox/LookupSMTestClient
+sandbox_LookupSMTestClient_SOURCES = sandbox/LookupSMTestClient.cpp
+sandbox_LookupSMTestClient_LDFLAGS = $(sandbox_ldflags)
+sandbox_LookupSMTestClient_LDADD = $(top_builddir)/src/sm/libiofwdsm.a $(sandbox_ldadd) \
+            $(top_builddir)/src/sm/libsm.a \
+			$(top_builddir)/src/iofwdevent/libiofwdevent.a
+
+noinst_PROGRAMS += sandbox/LookupSMTest2
+sandbox_LookupSMTest2_SOURCES = sandbox/LookupSMTest2.cpp
+sandbox_LookupSMTest2_LDFLAGS = $(sandbox_ldflags)
+sandbox_LookupSMTest2_LDADD = $(top_builddir)/src/sm/libiofwdsm.a $(sandbox_ldadd) \
+            $(top_builddir)/src/sm/libsm.a \
+			$(top_builddir)/src/iofwdevent/libiofwdevent.a
 
 noinst_PROGRAMS += sandbox/zoidfs-hints
 sandbox_zoidfs_hints_SOURCES = sandbox/zoidfs-hints.c
