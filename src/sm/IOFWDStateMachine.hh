@@ -18,13 +18,19 @@
 #include "sm/IOFWDState.hh"
 #include "sm/IOFWDStateEvents.hh"
 
+#include "sm/SMResourceClient.hh"
+#include "sm/SMManager.hh"
+#include "sm/SMResourceOp.hh"
+#include "sm/SMClient.hh"
+
 /* IOFWD State Machine interface */
 template< class IOFWDStateMachineType >
 struct IOFWDStateMachine
 {
     public:
         /* create the event scheduler and processor */
-        IOFWDStateMachine(bool trace) : scheduler_( true ), trace_(trace)
+        /* note: scheduler will not block if the state machine is in a non terminal state */
+        IOFWDStateMachine(bool trace) : scheduler_( false ), trace_(trace), cur_state_(0)
         {
             ph_ = scheduler_.create_processor< IOFWDStateMachineType >();
             scheduler_.initiate_processor(ph_);
@@ -46,14 +52,20 @@ struct IOFWDStateMachine
         void queue_event(IOFWDEvent * iofwdEvent)
         {
             iofwdEvent->enableTrace(trace_);
+            iofwdEvent->setCurStateVar(&cur_state_);
             scheduler_.queue_event(ph_, boost::intrusive_ptr< const boost::statechart::event_base >(iofwdEvent));
         }
 
+        int cur_state() const
+        {
+            return cur_state_;
+        }
     protected:
         boost::statechart::fifo_scheduler<> scheduler_;
         boost::statechart::fifo_scheduler<>::processor_handle ph_;
    
         bool trace_;
+        int cur_state_;
 };
 
 /*
@@ -73,7 +85,13 @@ struct IOFWDAsyncStateMachine : boost::statechart::asynchronous_state_machine< I
                                                                             StateExceptionTrans >
 {
     public:
-        virtual void run();
+        IOFWDAsyncStateMachine()
+        {
+        }
+
+        ~IOFWDAsyncStateMachine()
+        {
+        }
 };
 
 #endif

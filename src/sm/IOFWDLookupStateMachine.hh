@@ -8,6 +8,18 @@
 #include "sm/IOFWDStateEvents.hh"
 #include "sm/IOFWDExceptionTranslator.hh"
 
+#include "sm/SMResourceClient.hh"
+#include "sm/SMManager.hh"
+#include "sm/SMResourceOp.hh"
+#include "sm/SMClient.hh"
+
+#include <boost/format.hpp>
+#include <unistd.h>
+
+#include "iofwdevent/TimerResource.hh"
+#include "iofwdutil/tools.hh"
+#include "iofwdevent/ResourceWrapper.hh"
+
 /* States */
 struct IOFWDLookupInitState;
 struct IOFWDLookupRunOpState;
@@ -40,6 +52,54 @@ struct IOFWDLookupStateMachine : IOFWDStateMachine< IOFWDLookupAsyncStateMachine
         ~IOFWDLookupStateMachine()
         {
         }
+
+};
+
+/* state machine derived from the resource client */
+struct IOFWDLookupStateMachineClient : sm::SMResourceClient, IOFWDLookupStateMachine
+{
+    public:
+        IOFWDLookupStateMachineClient(bool trace, sm::SMManager & man, iofwdevent::TimerResource & timer) : IOFWDLookupStateMachine(trace), round_(0), op_(&man), man_(man), timer_(timer)
+        {
+            std::cout << "created the sm test client" << std::endl;
+        }
+
+        virtual ~IOFWDLookupStateMachineClient()
+        {
+            std::cout << "destroyed the sm test client" << std::endl;
+        }
+      
+        virtual bool executeClient()
+        {
+            ++round_;
+            std::cout << "Execute... (round " << round_ << ")" << std::endl;
+            if (round_ < 5)
+            {
+                return reschedule();
+            }
+            return false;
+        }
+
+        virtual void completed(bool ret)
+        {
+            queue_event(new IOFWDSuccessEvent());
+            schedule();
+            std::cout << "Client " << this << " completed call (ret=" << ret << ")" << std::endl;
+        }
+
+        bool reschedule()
+        {
+            op_.rearm (sm::SMResourceClientSharedPtr(dynamic_cast<sm::SMResourceClient *>(this)));
+            timer_.createTimer (&op_, 3000);
+
+            return false;
+        }
+
+protected:
+   int round_;
+   sm::SMResourceOp op_;
+   sm::SMManager & man_;
+   iofwdevent::TimerResource & timer_;
 };
 
 struct IOFWDLookupMonitorState;
@@ -86,7 +146,6 @@ struct IOFWDLookupInitState : IOFWDState< IOFWDLookupInitState, IOFWDLookupAsync
 
         IOFWDLookupInitState()
         {
-            // do nothing for now
         }
 
         ~IOFWDLookupInitState()
@@ -99,7 +158,7 @@ struct IOFWDLookupInitState : IOFWDState< IOFWDLookupInitState, IOFWDLookupAsync
             // do nothing for now
             return;
         }
-      
+
         /*
          * Event handlers
          */
@@ -110,6 +169,8 @@ struct IOFWDLookupInitState : IOFWDState< IOFWDLookupInitState, IOFWDLookupAsync
             {
                 std::cout << "IOFWDLookupInitState -> IOFWDLookupRunOpState" << std::endl;
             }
+
+            *(e.cur_state_) = 0;
 
             /* this is for testing / demo only */
             buggy_user_code();
@@ -125,6 +186,7 @@ struct IOFWDLookupInitState : IOFWDState< IOFWDLookupInitState, IOFWDLookupAsync
             {
                 std::cout << "IOFWDLookupInitState -> IOFWDLookupErrorState" << std::endl;
             }
+            *(e.cur_state_) = 0;
 
             // advance to the RunOp state
             return transit<IOFWDLookupErrorState>();
@@ -188,6 +250,7 @@ struct IOFWDLookupRunOpState : IOFWDState< IOFWDLookupRunOpState, IOFWDLookupAsy
             {
                 std::cout << "IOFWDLookupRunOpState -> IOFWDLookupMsgWaitState" << std::endl;
             }
+            *(e.cur_state_) = 1;
 
             // advance to the RunOp state
             return transit<IOFWDLookupMsgWaitState>();
@@ -200,6 +263,7 @@ struct IOFWDLookupRunOpState : IOFWDState< IOFWDLookupRunOpState, IOFWDLookupAsy
             {
                 std::cout << "IOFWDLookupRunOpState -> IOFWDLookupRetryState" << std::endl;
             }
+            *(e.cur_state_) = 1;
 
             // advance to the RunOp state
             return transit<IOFWDLookupErrorState>();
@@ -212,6 +276,7 @@ struct IOFWDLookupRunOpState : IOFWDState< IOFWDLookupRunOpState, IOFWDLookupAsy
             {
                 std::cout << "IOFWDLookupRunOpState -> IOFWDLookupRetryState" << std::endl;
             }
+            *(e.cur_state_) = 1;
 
             return transit<IOFWDLookupRunOpState>();
         }
@@ -256,6 +321,7 @@ struct IOFWDLookupMsgWaitState : IOFWDState< IOFWDLookupMsgWaitState, IOFWDLooku
             {
                 std::cout << "IOFWDLookupMsgWaitState -> IOFWDLookupCleanupState" << std::endl;
             }
+            *(e.cur_state_) = 2;
 
             // advance to the RunOp state
             return transit<IOFWDLookupCleanupState>();
@@ -268,6 +334,7 @@ struct IOFWDLookupMsgWaitState : IOFWDState< IOFWDLookupMsgWaitState, IOFWDLooku
             {
                 std::cout << "IOFWDLookupMsgWaitState -> IOFWDLookupErrorState" << std::endl;
             }
+            *(e.cur_state_) = 2;
 
             // advance to the RunOp state
             return transit<IOFWDLookupErrorState>();
@@ -313,6 +380,7 @@ struct IOFWDLookupCleanupState : IOFWDState< IOFWDLookupCleanupState, IOFWDLooku
             {
                 std::cout << "IOFWDLookupCleanupState -> DONE" << std::endl;
             }
+            *(e.cur_state_) = 3;
 
             // terminate
             outermost_context_type & machine = outermost_context();
@@ -327,6 +395,7 @@ struct IOFWDLookupCleanupState : IOFWDState< IOFWDLookupCleanupState, IOFWDLooku
             {
                 std::cout << "IOFWDLookupCleanupState -> IOFWDLookupErrorState" << std::endl;
             }
+            *(e.cur_state_) = 3;
 
             // advance to the RunOp state
             return transit<IOFWDLookupErrorState>();
@@ -372,6 +441,7 @@ struct IOFWDLookupErrorState : IOFWDState< IOFWDLookupErrorState, IOFWDLookupAsy
             {
                 std::cout << "IOFWDLookupErrorState -> DONE" << std::endl;
             }
+            *(e.cur_state_) = 4;
 
             // terminate
             outermost_context_type & machine = outermost_context();
@@ -386,6 +456,7 @@ struct IOFWDLookupErrorState : IOFWDState< IOFWDLookupErrorState, IOFWDLookupAsy
             {
                 std::cout << "IOFWDLookupErrorState -> DONE" << std::endl;
             }
+            *(e.cur_state_) = 4;
 
             // terminate
             outermost_context_type & machine = outermost_context();

@@ -9,7 +9,7 @@
 struct IOFWDEvent : boost::statechart::event< IOFWDEvent >
 {
     public:
-        IOFWDEvent() : op_code(0), op_id(0), trace_(false)
+        IOFWDEvent() : cur_state_(NULL), op_code(0), op_id(0), trace_(false)
         {
         }
 
@@ -32,11 +32,17 @@ struct IOFWDEvent : boost::statechart::event< IOFWDEvent >
             trace_ = trace;
         }
 
+        void setCurStateVar(int * cur_state)
+        {
+            cur_state_ = cur_state;
+        }
+
         bool traceEnabled() const
         {
             return trace_;
         }
 
+        int * cur_state_;
     protected:
         int op_code; // what type of operation is this event associated with
         int op_id;   // what instance of this operation is this event associated with
