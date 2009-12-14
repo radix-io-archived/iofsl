@@ -77,7 +77,7 @@ static int bmi_test_init(char * addr, int server, char * method)
         {
             ret = BMI_testunexpected(1, &outcount, &request_info, 10);
         } while (ret == 0 && outcount == 0);
-    
+
         if (request_info.error_code != 0)
         {
             fprintf(stderr, "Request recv failure (bad state).\n");
@@ -167,7 +167,7 @@ static int bmi_test_finalize()
 
     BMI_memfree(peer_addr, bmi_bar_send_buf, 128, BMI_SEND);
     BMI_memfree(peer_addr, bmi_bar_recv_buf, 128, BMI_RECV);
-    
+
     BMI_close_context(context);
 
     /* Finalize BMI */
@@ -213,7 +213,7 @@ int main(int argc, char * argv[])
     len = host - addr;
     strncpy(network, addr, len);
     network[len] = '\0';
-    sprintf(method, "bmi_%s", network); 
+    sprintf(method, "bmi_%s", network);
 
     /* start up bmi */
     if(strcmp(cors, "server") == 0)
@@ -247,8 +247,8 @@ int main(int argc, char * argv[])
             sendbuf = BMI_memalloc(peer_addr, buflen[i], BMI_SEND);
             recvbuf = BMI_memalloc(peer_addr, buflen[i], BMI_RECV);
         }
-    
-        /* barrier and sync here */ 
+
+        /* barrier and sync here */
         bmi_barrier(mode);
 
         if(!unexpected)
@@ -323,5 +323,5 @@ int main(int argc, char * argv[])
     /* shutdown bmi */
     bmi_test_finalize();
 
-    return 0;    
+    return 0;
 }
