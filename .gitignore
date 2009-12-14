@@ -32,6 +32,7 @@ sandbox/imt-test
 sandbox/LookupSMTest2
 sandbox/LookupSMTestClient
 sandbox/smmanager
+sandbox/bmi-pp-perf
 src/fuse/fuseclient
 src/fuse/fusedispatch
 src/iofwd/iofwd
