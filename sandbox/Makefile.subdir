@@ -66,6 +66,11 @@ sandbox_zoidfs_hints_SOURCES = sandbox/zoidfs-hints.c
 sandbox_zoidfs_hints_LDFLAGS = $(sandbox_ldflags)
 sandbox_zoidfs_hints_LDADD = $(top_builddir)/src/zoidfs/libzoidfsclient.a $(sandbox_ldadd)
 
+noinst_PROGRAMS += sandbox/bmi-pp-perf
+sandbox_bmi_pp_perf_SOURCES = sandbox/bmi-pp-perf.c
+sandbox_bmi_pp_perf_LDFLAGS = $(sandbox_ldflags)
+sandbox_bmi_pp_perf_LDADD = $(top_builddir)/src/zoidfs/libzoidfsclient.a $(sandbox_ldadd)
+
 noinst_PROGRAMS += sandbox/imt-test
 sandbox_imt_test_SOURCES = sandbox/imt-test.c
 sandbox_imt_test_LDFLAGS = $(sandbox_ldflags)
