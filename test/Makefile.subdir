@@ -62,6 +62,10 @@ test/zoidfs-microbenchmarks/lookup-thput-local test/zoidfs-microbenchmarks/getat
 test/zoidfs-microbenchmarks/setattr-thput test/zoidfs-microbenchmarks/setattr-thput-local test/zoidfs-microbenchmarks/remove-thput \
 test/zoidfs-microbenchmarks/remove-thput-local test/zoidfs-microbenchmarks/null-thput test/zoidfs-microbenchmarks/null-thput-local
 
+test_zoidfs_tile_io_SOURCES = test/zoidfs-microbenchmarks/zoidfs-tile-io.c
+test_zoidfs_tile_io_LDADD = src/zoidfs/libzoidfsclient.a ${test_microbenchmarks_ldadd}
+test_zoidfs_tile_io_LDFLAGS = ${test_microbenchmarks_ldflags}
+ 
 test_zoidfs_microbenchmarks_creat_thput_SOURCES = test/zoidfs-microbenchmarks/creat-thput.c test/zoidfs-microbenchmarks/thput.h
 test_zoidfs_microbenchmarks_creat_thput_LDADD = src/zoidfs/libzoidfsclient.a ${test_microbenchmarks_ldadd}
 test_zoidfs_microbenchmarks_creat_thput_LDFLAGS = ${test_microbenchmarks_ldflags}
