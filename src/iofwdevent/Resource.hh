@@ -1,6 +1,8 @@
 #ifndef IOFWDEVENT_RESOURCE_HH
 #define IOFWDEVENT_RESOURCE_HH
 
+#include <boost/utility.hpp>
+
 namespace iofwdevent
 {
 //===========================================================================
@@ -8,7 +10,7 @@ namespace iofwdevent
 /**
  * Resource is anything that blocks.
  */
-class Resource
+class Resource : private boost::noncopyable
 {
 public:
 
