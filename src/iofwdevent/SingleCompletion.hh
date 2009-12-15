@@ -41,6 +41,8 @@ namespace iofwdevent
       /// Rearm the object so it can be reused for completion testing
       void reset ()
       {
+         boost::mutex::scoped_lock l (lock_);
+
          ASSERT(status_ != WAITING);
          status_ = WAITING;
          // Need to reset any stored exception here
