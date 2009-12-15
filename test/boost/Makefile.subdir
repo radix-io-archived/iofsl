@@ -8,6 +8,19 @@ shared_ldadd = src/iofwdevent/libiofwdevent.a \
 shared_ldflags =  $(BOOST_LDFLAGS)
 
 #############################################################################
+#  Dummy test case (for debugging)
+#############################################################################
+
+check_PROGRAMS += test/boost/dummy
+TESTS += test/boost/dummy
+test_boost_dummy_SOURCES = test/boost/dummy.cpp \
+				  test/boost/ThreadSafety.hh \
+				   test/boost/ThreadSafety.cpp
+
+test_boost_dummy_LDFLAGS = $(shared_ldflags)
+test_boost_dummy_LDADD = $(shared_ldadd)
+
+#############################################################################
 # Resources
 #############################################################################
 TESTS += test/boost/iofwdevent-resource
