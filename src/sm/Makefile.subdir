@@ -32,13 +32,15 @@ src/sm/SM_OLD.hh
 noinst_LIBRARIES += src/sm/libiofwdsm.a
 
 src_sm_libiofwdsm_a_CPPFLAGS =          \
+    $(AMCPPFLAGS)                       \
     @BOOST_CPPFLAGS@                    \
-    -I$(top_srcdir)/src/zoidfs                      \
+    -I$(top_srcdir)/src/zoidfs          \
     -I$(top_srcdir)/src
 
 src_sm_libiofwdsm_a_CFLAGS =            \
+    $(AMCFLAGS)                         \
     @BOOST_CPPFLAGS@                    \
-    -I$(top_srcdir)/src/zoidfs                      \
+    -I$(top_srcdir)/src/zoidfs          \
     -I$(top_srcdir)/src
 
 src_sm_libiofwdsm_a_LIBLDFLAGS =        \
