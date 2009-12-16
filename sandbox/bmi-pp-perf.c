@@ -162,31 +162,6 @@ static int bmi_test_init(char * addr, int server, char * method)
     return 0;
 }
 
-/* linear barrier */
-static int bmi_barrier(int client, bmi_msg_tag_t tag, int size)
-{
-    bmi_size_t actual_size = 0;
-
-    /* if server, recv then send */
-    if(!client)
-    {
-        int i = 0;
-        for(i = 0 ; i < size ; i++)
-        {
-            bmi_comm_recv(peer_addr, bmi_bar_recv_buf, 1, (2*i) + 1, context[i], &actual_size);
-            bmi_comm_send(peer_addr, bmi_bar_send_buf, 1, (2*i), context[i]);
-        }
-    }
-    /* if client, send then recv */
-    else
-    {
-        bmi_comm_send(peer_addr, bmi_bar_send_buf, 1, tag + 1, context[tag / 2]);
-        bmi_comm_recv(peer_addr, bmi_bar_recv_buf, 1, tag, context[tag / 2], &actual_size);
-    }
-
-    return 0;
-}
-
 /* shutdown BMI */
 static int bmi_test_finalize()
 {
@@ -290,7 +265,7 @@ void * run_test(void * t)
                 {
                     bmi_comm_send(peer_addr, sendbuf, buflen[i], 1, context[d->tid]);
                     bmi_comm_recv(peer_addr, recvbuf, buflen[i], 0, context[d->tid], &actual_size);
-                    if(buflen[i] != actual_size)
+                    if((bmi_size_t)buflen[i] != actual_size)
                     {
                         fprintf(stderr, "buflen != actual_size, buflen = %lu, actual_size = %lu\n", buflen[i], actual_size);
                     }
@@ -323,7 +298,7 @@ void * run_test(void * t)
                     {
                         bmi_comm_recv(peer_addr, recvbuf, buflen[i], 1, context[d->tid], &actual_size);
                         bmi_comm_send(peer_addr, sendbuf, buflen[i], 0, context[d->tid]);
-                        if(buflen[i] != actual_size)
+                        if((bmi_size_t)buflen[i] != actual_size)
                         {
                             fprintf(stderr, "buflen != actual_size, buflen = %lu, actual_size = %lu\n", buflen[i], actual_size);
                         }
