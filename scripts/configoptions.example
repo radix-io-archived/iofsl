@@ -1,0 +1,14 @@
+
+FLAGS="-O0 -fno-inline -g"
+#FLAGS="-O3 "
+
+#uncomment to enable profiling
+#FLAGS="$FLAGS -pg" ; LDFLAGS="-pg"
+
+FLAGS="-g $FLAGS -Wall -Wextra -Wno-aggregate-return "
+# FLAGS="-g $FLAGS -Wconversion"
+
+#  OPTS= --with-pvfs2=/home/lts/ioforward/install
+OPTS="--without-pvfs2 --enable-valgrind "
+
+
