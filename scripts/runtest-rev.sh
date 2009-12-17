@@ -28,7 +28,7 @@ test "$?" == "0" || exit 1
 LOGMSG="$(echo "${FULLLOGMSG}" | cut -c 42-)"
 REV="$(echo "${FULLLOGMSG}" | cut -c 1-40)" 
 
-TEMPDIR="$(mktemp -d --tmpdir build-${rev}.XXX)"
+TEMPDIR="$(mktemp -d --tmpdir build-${REV}.XXX)"
 
 git archive "${REV}" | tar -x -C "$TEMPDIR" || exit 1
 
