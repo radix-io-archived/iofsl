@@ -3649,7 +3649,8 @@ int zoidfs_read(const zoidfs_handle_t *handle, size_t mem_count,
         /* No Pipelining */
         if (mem_count == 1) {
             /* Contiguous read */
-            ret = bmi_comm_recv(peer_addr, mem_starts[0], ZOIDFS_BUFFER_MAX, recv_msg.tag,
+            bmi_size_t bsize = mem_sizes[0] > ZOIDFS_BUFFER_MAX ?  mem_sizes[0] : ZOIDFS_BUFFER_MAX;
+            ret = bmi_comm_recv(peer_addr, mem_starts[0], bsize, recv_msg.tag,
                                 context, &recv_msg.actual_size);
         } else {
             /* Strided reads */
