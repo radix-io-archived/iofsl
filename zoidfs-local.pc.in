@@ -1,0 +1,12 @@
+prefix=@prefix@
+exec_prefix=@exec_prefix@
+libdir=@libdir@
+includedir=@includedir@
+
+Name: ZOIDFS
+Description: Forwarding implementation of ZOIDFS
+Version: @VERSION@
+Libs: @ZOIDFS_LIBS_PKG@
+Libs.private: @ZOIDFS_STATIC_LIBS_PKG@
+Cflags: @ZOIDFS_CFLAGS_PKG@
+

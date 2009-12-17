@@ -23,7 +23,17 @@ AM_LIBS = @ATOMICS_LIBS@
 
 AM_CXXFLAGS = $(AM_CFLAGS)
 
+
+#
+# pkgconfig files
+#
+pkgconfigdir = $(libdir)/pkgconfig
+pkgconfig_DATA = zoidfs.pc zoidfs-local.pc
+$(pkgconfig_DATA): config.status
+
+#
 # extra build rules
+#
 include Make.rules
 
 include $(top_srcdir)/src/spatial/Makefile.subdir

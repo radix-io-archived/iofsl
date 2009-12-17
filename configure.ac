@@ -64,6 +64,31 @@ if test "x${mpidir}" != "x" ; then
 fi
 AM_CONDITIONAL([HAVE_MPI],[test "x${ENABLE_MPI}" == "x1"])
 
+
+dnl =========================================================================
+dnl ===== pkg-config support ================================================
+dnl =========================================================================
+
+dnl There are 2 pkg-config files: zoidfs and zoidfs-local
+dnl Using zoidfs results in the forwarding version, zoidfs-local links
+dnl directly with the dispatcher.
+
+dnl
+dnl CFLAGS is CPPFLAGS + CXXFLAGS + CFLAGS
+dnl LIBS = LDFLAGS + LIBS
+dnl STATIC_LIBS = _additional_ libraries needed when linking static
+dnl
+
+ZOIDFS_CFLAGS_PKG=
+ZOIDFS_LOCAL_CFLAGS_PKG=
+
+ZOIDFS_LIBS_PKG=
+ZOIDFS_STATIC_LIBS_PKG=
+
+ZOIDFS_LOCAL_LIBS_PKG=
+ZOIDFS_LOCAL_STATIC_LIBS_PKG=
+
+
 dnl
 dnl Conditional client / server build args
 dnl
@@ -515,12 +540,21 @@ AC_SUBST([ATOMICS_CPPFLAGS])
 AC_SUBST([ATOMICS_CFLAGS])
 AC_SUBST([ATOMICS_LDFLAGS])
 
+AC_SUBST([ZOIDFS_CFLAGS_PKG])
+AC_SUBST([ZOIDFS_LOCAL_CFLAGS_PKG])
+AC_SUBST([ZOIDFS_LIBS_PKG])
+AC_SUBST([ZOIDFS_LOCAL_LIBS_PKG])
+AC_SUBST([ZOIDFS_STATIC_LIBS_PKG])
+AC_SUBST([ZOIDFS_LOCAL_STATIC_LIBS_PKG])
+
 dnl =========================================================================
 dnl =========================================================================
 dnl =========================================================================
 
 AC_CONFIG_FILES([
                  Makefile
+                 zoidfs.pc
+                 zoidfs-local.pc
                  ])
 
 AC_OUTPUT
