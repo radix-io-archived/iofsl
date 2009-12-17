@@ -8,7 +8,7 @@ AC_CANONICAL_TARGET
 AC_CANONICAL_SYSTEM
 AC_CANONICAL_HOST
 
-# removed color-tests... no supported by 1.10.2
+# removed color-tests... not supported by 1.10.2
 AM_INIT_AUTOMAKE([foreign subdir-objects -Wall])
 
 m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES([yes])])
