@@ -29,7 +29,7 @@ ENABLE_MPI=
 ORIG_CC=
 ORIG_CPP=
 ORIG_CXX=
-AC_ARG_WITH([mpi],[AS_HELP_STRING([--with-mpi@<:@=DIR@:>@], 
+AC_ARG_WITH([mpi],[AS_HELP_STRING([--with-mpi@<:@=DIR@:>@],
                         [location of MPI library])],
                    [mpidir=$withval])
 
@@ -71,13 +71,13 @@ AC_MSG_CHECKING(if IOFWD server should be built)
 AC_ARG_ENABLE([iofwd-server],
               [AS_HELP_STRING([--disable-iofwd-server], [Do not build the IOFWD server and supporting libraries.])])
 if test "x${enable_iofwd-client}" == "xyes" ; then
-   AC_MSG_RESULT(yes) 
-else 
+   AC_MSG_RESULT(yes)
+else
     if test "x${enable_iofwd-client}" == "xno" ; then
         AC_MSG_RESULT(no)
     else
         AC_MSG_RESULT(auto)
-    fi 
+    fi
 fi
 AM_CONDITIONAL([BUILD_IOFWD_SERVER], [test "x${enableval}" != "xno"])
 
@@ -85,13 +85,13 @@ AC_MSG_CHECKING(if IOFWD client should be built)
 AC_ARG_ENABLE([iofwd-client],
               [AS_HELP_STRING([--disable-iofwd-client], [Do not build the IOFWD client and supporting libraries.])])
 if test "x${enable_iofwd-client}" == "xyes" ; then
-   AC_MSG_RESULT(yes) 
+   AC_MSG_RESULT(yes)
 else
     if test "x${enable_iofwd-client}" == "xno" ; then
         AC_MSG_RESULT(no)
     else
         AC_MSG_RESULT(auto)
-    fi 
+    fi
 fi
 
 AM_CONDITIONAL([BUILD_IOFWD_CLIENT], [test "x${enableval}" != "xno"])
@@ -132,12 +132,12 @@ AC_CHECK_LIB([rt],[clock_getres],,[AC_MSG_ERROR([Could not find clock_getres!])]
 
 # Check for CUNIT
 cunitdir=
-AC_ARG_WITH([cunit],[AS_HELP_STRING([--with-cunit@<:@=DIR@:>@], 
+AC_ARG_WITH([cunit],[AS_HELP_STRING([--with-cunit@<:@=DIR@:>@],
                         [location of cunit library])],
                    [cunitdir=$withval])
 ENABLE_CUNIT=
 
-if test "A$cunitdir" != "Ano" ; 
+if test "A$cunitdir" != "Ano" ;
 then
   #
   # backup the original flags
@@ -146,7 +146,7 @@ then
   ORIG_CPPFLAGS="${CPPFLAGS}"
   ORIG_LIBS="${LIBS}"
   ORIG_CFLAGS="${CFLAGS}"
-  if test ! -z "$cunitdir" ; then 
+  if test ! -z "$cunitdir" ; then
     LDFLAGS="-L${cunitdir}/lib"
     CPPFLAGS="-I${cunitdir}/include"
     CFLAGS="-I${cunitdir}/include"
@@ -181,17 +181,17 @@ BMI_CPPFLAGS=
 BMI_LIBS=
 BMI_LDFLAGS=
 
-AC_ARG_WITH([bmi],[AS_HELP_STRING([--with-bmi@<:@=DIR@:>@], 
+AC_ARG_WITH([bmi],[AS_HELP_STRING([--with-bmi@<:@=DIR@:>@],
                         [location of BMI library])],
                    [bmidir=$withval])
-   
+
 
 if test "x$bmidir" != "x" ; then
    BMI_CPPFLAGS="-I${bmidir}/include"
    BMI_LIBS="-lbmi"
    BMI_LDFLAGS="-L${bmidir}/lib"
 fi
-    
+
 OLDCPPFLAGS="$CPPFLAGS"
 OLDLDFLAGS="$LDFLAGS"
 CPPFLAGS="$CPPFLAGS $BMI_CPPFLAGS"
@@ -226,10 +226,10 @@ ZFS_DISPATCHER_LDFLAGS=
 ZFS_DISPATCHER_LIBS=
 
 dnl
-dnl Search for PVFS 
-dnl 
+dnl Search for PVFS
+dnl
 AX_LIB_PVFS2
-if test "A$PVFS2_OK" == "A1" ; 
+if test "A$PVFS2_OK" == "A1" ;
 then
         AC_DEFINE([HAVE_DISPATCHER_PVFS2],[1],[If the PVFS2 dispatcher module
                    needs to be built])
@@ -285,7 +285,7 @@ dnl =========================================================================
 
 AC_ARG_ENABLE([posix],
               [AS_HELP_STRING([--enable-posix],[Enable new POSIX zoidfs driver])],
-              [case "${enableval}" in 
+              [case "${enableval}" in
                   yes) use_posix=1;;
                   no) use_posix=0;;
                   *) AC_MSG_ERROR([bad value ${enableval} for
@@ -336,7 +336,7 @@ AM_CONDITIONAL([DISPATCH_LIBSYSIO],[test x${use_libsysio} == xtrue])
 
 if test x${use_libsysio} == xtrue ; then
     #
-    # Check that the sysio headers are available 
+    # Check that the sysio headers are available
     #
     STCPPFLAGS="${CPPFLAGS}"
     STCFLAGS="${CFLAGS}"
@@ -350,7 +350,7 @@ if test x${use_libsysio} == xtrue ; then
     LDFLAGS="${LDFLAGS} ${SYSIO_LDFLAGS}"
     LIBS="${LIBS}"
 
-    AC_CHECK_HEADER([fhi.h], [], [AC_MSG_ERROR([Could not find the libsysio header files!])], 
+    AC_CHECK_HEADER([fhi.h], [], [AC_MSG_ERROR([Could not find the libsysio header files!])],
     [
     #include <stdlib.h>
     #include <string.h>
@@ -417,7 +417,7 @@ dnl =========================================================================
 AX_FINDLIBEXT
 
 # check boost version
-# macro defines BOOST_CPPFLAGS, BOOST_LDFLAGS 
+# macro defines BOOST_CPPFLAGS, BOOST_LDFLAGS
 # and BOOST_THREAD_LIB, BOOST_REGEX_LIB, ...
 # is already subst
 AX_BOOST_BASE([1.35])
@@ -433,7 +433,7 @@ dnl =========================================================================
 dnl  Valgrind
 dnl =========================================================================
 
-AC_ARG_ENABLE([valgrind], AS_HELP_STRING([--enable-valgrind], 
+AC_ARG_ENABLE([valgrind], AS_HELP_STRING([--enable-valgrind],
                                          [Try harder to be valgrind-clean]),
     [AC_DEFINE([VALGRIND_SAFE],[1],[Clear memory to avoid valgrind warnings])
      VALGRIND_SAFE=1],

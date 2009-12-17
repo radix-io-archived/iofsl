@@ -5,7 +5,7 @@ lib_LIBRARIES =
 #BUILD_SOURCES =
 noinst_HEADERS =
 TESTS =
-check_PROGRAMS = 
+check_PROGRAMS =
 
 AM_CPPFLAGS = -I$(top_srcdir)/src \
 	      -I$(top_srcdir)/src/iofwdutil \
@@ -16,7 +16,7 @@ AM_CPPFLAGS = -I$(top_srcdir)/src \
 	      @BMI_CPPFLAGS@ \
           @CUNIT_CPPFLAGS@ \
 	  @ATOMICS_CPPFLAGS@
-	    
+	
 AM_CFLAGS = @FUSE_CFLAGS@ @ZFS_DISPATCHER_CFLAGS@ @ATOMICS_CFLAGS@
 
 AM_LIBS = @ATOMICS_LIBS@
