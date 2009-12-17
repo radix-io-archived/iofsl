@@ -1,0 +1,25 @@
+Instructions:
+-------------
+
+export IOFWD_SRCDIR=your_local_git_checkout_dir
+
+Next you need to set the configure options/flags in
+scripts/configoptions.your_host_name
+
+Then run scripts/prepush.sh before pushing to the master repository.
+
+Overview:
+
+scripts/prepush.sh: will build all revision that will be pushed on git push
+scripts/doeconfig.sh: will configure source tree using options from configfile
+scripts/runtest.sh: will run make distcheck with the correct options
+                    (i.e. builds your current source tree)
+scripts/runtest-rev.sh  <gitrev>: builds and tests the specified git rev
+scripts/runtest-range.sh <range>: builds and tests specified range
+
+For example:
+
+scripts/runtest-rev.sh HEAD
+scripts/runtest-range.sh abc12..bcds23
+
+
