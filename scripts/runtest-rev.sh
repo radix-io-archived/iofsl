@@ -10,7 +10,6 @@ CONFIG="${SCRIPTDIR}/scripts/configoptions.$(hostname)"
 LOGDIR="${IOFWD_SRCDIR}/buildlogs"
 CURDIR="$PWD"
 REV="$1"
-TEMPDIR="$(mktemp -d)"
 LOGFILE="${LOGDIR}/runtest-rev.log"
 REVLOG="${LOGDIR}/${REV}.log"
 
@@ -28,6 +27,9 @@ test "$?" == "0" || exit 1
 
 LOGMSG="$(echo "${FULLLOGMSG}" | cut -c 42-)"
 REV="$(echo "${FULLLOGMSG}" | cut -c 1-40)" 
+
+TEMPDIR="$(mktemp -d --tmpdir build-${rev}.XXX)"
+
 git archive "${REV}" | tar -x -C "$TEMPDIR" || exit 1
 
 mkdir -p "${LOGDIR}"
