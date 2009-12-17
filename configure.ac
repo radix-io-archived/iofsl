@@ -99,8 +99,8 @@ AM_CONDITIONAL([BUILD_IOFWD_CLIENT], [test "x${enableval}" != "xno"])
 dnl
 dnl Flex/bison
 dnl
-AX_PROG_BISON([],[AC_MSG_ERROR([No BISON can be found!])])
-AX_PROG_FLEX([],[AC_MSG_ERROR([No FLEX can be found!])])
+AX_PROG_BISON([],[AC_MSG_WARN([No BISON can be found!])])
+AX_PROG_FLEX([],[AC_MSG_WARN([No FLEX can be found!])])
 AC_SUBST([BISON])
 AC_SUBST([FLEX])
 
