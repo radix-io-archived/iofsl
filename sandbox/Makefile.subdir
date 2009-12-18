@@ -18,6 +18,16 @@ sandbox_ldadd =          \
     @ZFS_DISPATCHER_LIBS@ \
     @BMI_LIBS@
 
+noinst_PROGRAMS += sandbox/zoidfs-io-bsize
+sandbox_zoidfs_io_bsize_SOURCES = sandbox/zoidfs-io-bsize.c
+sandbox_zoidfs_io_bsize_LDADD = src/zoidfs/libzoidfsclient.a $(sandbox_ldadd)
+sandbox_zoidfs_io_bsize_LDFLAGS = $(sandbox_ldflags)
+
+noinst_PROGRAMS += sandbox/zoidfs-io-bsize-local
+sandbox_zoidfs_io_bsize_local_SOURCES = sandbox/zoidfs-io-bsize.c
+sandbox_zoidfs_io_bsize_local_LDADD = src/zoidfs/libzoidfs.a $(sandbox_ldadd)
+sandbox_zoidfs_io_bsize_local_LDFLAGS = $(sandbox_ldflags)
+
 noinst_PROGRAMS += sandbox/recordparam
 sandbox_recordparam_SOURCES = sandbox/recordparam.cpp
 sandbox_recordparam_LDFLAGS = $(sandbox_ldflags)
