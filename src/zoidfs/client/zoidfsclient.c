@@ -903,7 +903,13 @@ int zoidfs_xdr_hint_size(zoidfs_op_hint_t * op_hint)
 /* pipline config */
 #ifndef PIPELINE_SIZE
 #define PIPELINE_SIZE (1024 * 1024 * 8)
-#endif
+#endif /* #ifndef PIPELINE_SIZE */
+
+/* make sure pipeline is less than or equal to ZOIDFS_BUFFER_MAX */
+#if PIPELINE_SIZE > ZOIDFS_BUFFER_MAX
+#undef PIPELINE_SIZE
+#define PIPELINE_SIZE ZOIDFS_BUFFER_MAX
+#endif /* #if PIPELINE_SIZE > ZOIDFS_BUFFER_MAX */
 
 /* reuse a static buffer */
 #ifdef ZFS_BMI_FASTMEMALLOC
@@ -3212,6 +3218,7 @@ int zoidfs_write(const zoidfs_handle_t *handle, size_t mem_count,
      * if the total size is greater than the pipeline size, set the pipeline size
      * and setup the memory size buffer for pipeline mode 
      */
+    
     if (total_size >= PIPELINE_SIZE)
     {
         pipeline_size = PIPELINE_SIZE;
@@ -3495,7 +3502,7 @@ int zoidfs_read(const zoidfs_handle_t *handle, size_t mem_count,
                    zoidfs_op_hint_t * op_hint) {
     size_t i;
     size_t pipeline_size = 0;
-    size_t total_size = 0;
+    bmi_size_t total_size = 0;
     zoidfs_size_t_array_transfer_t mem_sizes_transfer;
     zoidfs_file_ofs_array_transfer_t file_starts_transfer;
     zoidfs_file_ofs_array_transfer_t file_sizes_transfer;
@@ -3649,8 +3656,7 @@ int zoidfs_read(const zoidfs_handle_t *handle, size_t mem_count,
         /* No Pipelining */
         if (mem_count == 1) {
             /* Contiguous read */
-            bmi_size_t bsize = mem_sizes[0] < ZOIDFS_BUFFER_MAX ?  mem_sizes[0] : ZOIDFS_BUFFER_MAX;
-            ret = bmi_comm_recv(peer_addr, mem_starts[0], bsize, recv_msg.tag,
+            ret = bmi_comm_recv(peer_addr, mem_starts[0], total_size, recv_msg.tag,
                                 context, &recv_msg.actual_size);
         } else {
             /* Strided reads */
