@@ -52,12 +52,11 @@ void run_io(char * mpt)
    zoidfs_sattr_t attr; 
    const unsigned int mb = 1024*1024; 
    const unsigned int filesize = 64*mb; 
-   const unsigned int maxseg = 32; 
+   const unsigned int maxseg = 1024; 
    const unsigned int maxsegsize = filesize;
    const unsigned int maxmem = 2*filesize; 
    const unsigned int rounds = 100; 
-   const unsigned int firstskip = 4*mb; 
-   const unsigned int maxhole = 4*mb; 
+   const unsigned int firstskip = 0; 
    void * mem; 
    uint64_t * ofs; 
    uint64_t * size; 
@@ -78,7 +77,7 @@ void run_io(char * mpt)
    for (round=0; round<rounds; ++round)
    {
       unsigned int i; 
-      uint64_t curofs = random () % firstskip; 
+      uint64_t curofs = 0; 
       uint64_t cursize; 
       size_t totalsize = 0;
 
@@ -89,35 +88,47 @@ void run_io(char * mpt)
       int ret; 
       char fill; 
 
+      fprintf(stderr, "io operation #%i:\n", round);
       for (i=0; i<segments; ++i)
       {
          cursize = random () % maxsegsize; 
-         curofs += random () % maxhole; 
 
          if (curofs > filesize)
+         {
             curofs = filesize; 
+            break;
+         }
 
          if (curofs + cursize > filesize)
-            cursize = filesize - curofs; 
-
-         if (curofs && cursize)
          {
+            cursize = filesize - curofs;
+            break;
+         } 
+
+         if (cursize)
+         {
+            fprintf(stderr, " seg #%i : ofs = %lu, size = %lu\n", segcount, curofs, cursize);
             ofs[segcount] = curofs; 
             size[segcount] = cursize; 
             totalsize += cursize; 
+            curofs += cursize;
             ++segcount; 
          }
       }
+      fprintf(stderr, " total size = %lu, total segs = %i\n", totalsize, segcount);
 
-      fill = random() % 256; 
-      memset (mem, fill, totalsize); 
+      fill = (random() % 255) + 1;
+      memset (mem, fill, maxmem); 
 
       ret = safe_write (fullpath_filename, &handle, 1, (const void **) &mem, &totalsize, segcount,
             ofs, size);
 
+      /* clear out the buffer */
+      memset(mem, 0, maxmem);
       ret = safe_read (fullpath_filename, &handle, 1, &mem, &totalsize, segcount, 
             ofs, size); 
 
+      int dvfailed = 0;
       for (i=0; i<totalsize; ++i)
       {
          if ( ((const char *) mem)[i] != fill)
@@ -125,8 +136,14 @@ void run_io(char * mpt)
             char buf[255]; 
             snprintf (buf, sizeof(buf), "Problem in data validation! Expected %i, got %i!",
                   (int) fill, (int) ((const char *)mem)[i]); 
+            dvfailed = 1;
             break; 
          }
+      }
+
+      if(!dvfailed)
+      {
+        fprintf(stderr, "Data validation passed.\n");
       }
    }
 
