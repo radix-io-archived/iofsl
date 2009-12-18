@@ -26,7 +26,7 @@ namespace iofwdevent
       *outcount = 0;
       ue_clientlist_.push_back (UnexpectedClient(u, incount, outcount, info));
 
-      ZLOG_DEBUG(log_, format("testunexpected posted: incount=%i new"
+      ZLOG_DEBUG_MORE(log_, format("testunexpected posted: incount=%i new"
                " clientlist size: %i client: %p") 
             % incount % ue_clientlist_.size() % u);
 
@@ -38,7 +38,7 @@ namespace iofwdevent
    {
       checkBMI(BMI_open_context (&context_));
       ThreadedResource::start ();
-      ZLOG_INFO(log_,format("BMIResource started... BMI context: %p") % context_);
+      ZLOG_DEBUG(log_,format("BMIResource started... BMI context: %p") % context_);
    }
 
    void BMIResource::stop ()
@@ -46,7 +46,7 @@ namespace iofwdevent
       ThreadedResource::stop ();
       // somehow, BMI_close_context does not return an error code.
       BMI_close_context (context_);
-      ZLOG_INFO(log_,format("BMIResource stopped... BMI context: %p") % context_);
+      ZLOG_DEBUG(log_,format("BMIResource stopped... BMI context: %p") % context_);
    }
 
    BMIResource::~BMIResource ()
@@ -117,7 +117,7 @@ namespace iofwdevent
       checkBMI (BMI_testunexpected (ue_info_.size (), &outcount, 
                &ue_info_[0], 0));
 
-      ZLOG_DEBUG(log_, format("BMI_testunexpected: outcount=%i, "
+      ZLOG_DEBUG_EXTREME(log_, format("BMI_testunexpected: outcount=%i, "
                "clientlist size=%i queued=%i") 
             % outcount % ue_clientlist_.size() % ue_ready_.size());
 
@@ -230,7 +230,7 @@ namespace iofwdevent
       std::vector<BMIEntry *> users_ (CHECK_COUNT);
       std::vector<bmi_size_t> sizes_ (CHECK_COUNT);
 
-      ZLOG_INFO(log_, "polling thread started");
+      ZLOG_DEBUG(log_, "polling thread started");
       
       while (!needShutdown ())
       {
@@ -248,7 +248,7 @@ namespace iofwdevent
          checkBMI (BMI_testcontext (opids_.size(), &opids_[0],
                   &outcount, &errors_[0], &sizes_[0],
                   reinterpret_cast<void**>(&users_[0]), WAIT_TIME, context_));
-         ZLOG_DEBUG(log_, format("BMI_context: outcount=%i") % outcount);
+         ZLOG_DEBUG_MORE(log_, format("BMI_context: outcount=%i") % outcount);
 
          for (int i=0; i<outcount; ++i)
          {
@@ -262,7 +262,7 @@ namespace iofwdevent
          }
       }
 
-      ZLOG_INFO(log_, "Polling thread stopped");
+      ZLOG_DEBUG(log_, "Polling thread stopped");
    }
 
 //===========================================================================
