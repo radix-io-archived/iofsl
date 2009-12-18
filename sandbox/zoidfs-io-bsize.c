@@ -7,6 +7,7 @@
 #include <assert.h>
 #include <sys/time.h>
 #include <sys/types.h>
+#include <getopt.h>
 
 #include "zoidfs/zoidfs.h"
 #include "zoidfs/zoidfs-proto.h"
@@ -14,6 +15,15 @@
 
 #define NAMESIZE 255
 #define BUFSIZE (8 * 1024 * 1024)
+#define GB (1024 * 1024 * 1024)
+#define MB (1024 * 1024)
+#define KB 1024
+
+static size_t filesize = 64 * MB;
+static unsigned int maxseg = 1024;
+static size_t maxsegsize = 64 * MB;
+static unsigned int rounds = 100;
+static char debug = 0;
 
 int safe_read (const char * fullpath, 
       const zoidfs_handle_t * handle /* in:ptr */,
@@ -43,6 +53,87 @@ int safe_write (const char * fullpath,
          file_starts, file_sizes, ZOIDFS_NO_OP_HINT); 
 }
 
+size_t size_convert(char * val)
+{
+    int len = strlen(val);
+    
+    switch(val[len - 1])
+    {
+        case 'K':
+            return ((size_t)atoi(val)) * KB;
+            break;
+        case 'M':
+            return ((size_t)atoi(val)) * MB;
+            break;
+        case 'G':
+            return ((size_t)atoi(val)) * GB;
+            break;
+        default:
+            return ((size_t)atoi(val));
+            break;
+    }
+
+    return 0;
+}
+int parse_options(int argc, char * argv[])
+{
+    extern char *optarg;
+    char flags[] = "f:s:S:r:Rdh";
+    int option_index = 0;
+    int cur_opt = 0;
+    static struct option long_options[] = {
+        {"filesize", 1, 0, 'f'},
+        {"maxsegments", 1, 0, 's'},
+        {"maxsegmentsize", 1, 0, 'S'},
+        {"rounds", 1, 0, 'r'},
+        {"random", 0, 0, 'R'},
+        {"debug", 0, 0, 'd'},
+        {"help", 0, 0, 'h'},
+        {0, 0, 0, 0}
+    };
+
+    /* look at command line arguments */
+    while ((cur_opt = getopt_long(argc, argv, flags, long_options, &option_index)) != -1)
+    {
+        switch (cur_opt)
+        {
+            case 'f':
+                filesize = size_convert(optarg);
+                break;
+            case 's':
+                maxseg = (unsigned int)atoi(optarg);
+                break;
+            case 'S':
+                maxsegsize = size_convert(optarg);
+                break;
+            case 'r':
+                rounds = (unsigned int)atoi(optarg);
+                break;
+            case 'R':
+                srand(time(0));
+                break;
+            case 'd':
+                debug = 1;
+                break;
+            case 'h':
+                fprintf(stderr, "zoidfs-io-bsize: random zoidfs io test program\n");
+                fprintf(stderr, "\t--filesize=<val>, -f <val>: the max size of the file (in K or M)\n");
+                fprintf(stderr, "\t--maxsegments=<val>, -s <val>: the max number of segments in the file\n");
+                fprintf(stderr, "\t--maxsegmentsize=<val>, -S <val>: the max size of a single segment (in K or M)\n");
+                fprintf(stderr, "\t--rounds=<val>, -r <val>: the number of tests to run\n");
+                fprintf(stderr, "\t--random=<val>, -R <val>: seed the random number generator(current time is used)\n");
+                fprintf(stderr, "\t--debug, -d: enable debug print statements\n");
+                fprintf(stderr, "\t--help, -h: print this message\n");
+
+                exit(1);
+            default:
+                break;
+        }
+        option_index = 0;
+    }
+
+    return 0;
+}
 
 void run_io(char * mpt)
 {
@@ -50,19 +141,11 @@ void run_io(char * mpt)
    zoidfs_handle_t handle; 
    int created; 
    zoidfs_sattr_t attr; 
-   const unsigned int mb = 1024*1024; 
-   const unsigned int filesize = 64*mb; 
-   const unsigned int maxseg = 1024; 
-   const unsigned int maxsegsize = filesize;
-   const unsigned int maxmem = 2*filesize; 
-   const unsigned int rounds = 100; 
-   const unsigned int firstskip = 0; 
    void * mem; 
    uint64_t * ofs; 
    uint64_t * size; 
    unsigned int round; 
-
-   assert (firstskip <= filesize); 
+   const unsigned int maxmem = 2*filesize; 
 
    attr.mask = 0; 
 
@@ -88,7 +171,8 @@ void run_io(char * mpt)
       int ret; 
       char fill; 
 
-      fprintf(stderr, "io operation #%i:\n", round);
+      if(debug)
+        fprintf(stderr, "io operation #%i:\n", round);
       for (i=0; i<segments; ++i)
       {
          cursize = random () % maxsegsize; 
@@ -107,7 +191,8 @@ void run_io(char * mpt)
 
          if (cursize)
          {
-            fprintf(stderr, " seg #%i : ofs = %lu, size = %lu\n", segcount, curofs, cursize);
+            if(debug)
+                fprintf(stderr, " seg #%i : ofs = %lu, size = %lu\n", segcount, curofs, cursize);
             ofs[segcount] = curofs; 
             size[segcount] = cursize; 
             totalsize += cursize; 
@@ -115,7 +200,9 @@ void run_io(char * mpt)
             ++segcount; 
          }
       }
-      fprintf(stderr, " total size = %lu, total segs = %i\n", totalsize, segcount);
+
+      if(debug)
+        fprintf(stderr, " total size = %lu, total segs = %i\n", totalsize, segcount);
 
       fill = (random() % 255) + 1;
       memset (mem, fill, maxmem); 
@@ -143,7 +230,8 @@ void run_io(char * mpt)
 
       if(!dvfailed)
       {
-        fprintf(stderr, "Data validation passed.\n");
+        if(debug)
+            fprintf(stderr, "Data validation passed.\n");
       }
    }
 
@@ -159,6 +247,8 @@ int main(int argc, char ** argv)
     fprintf(stderr, "incorrect cmd line args!\n");
     return -1;
    }
+
+   parse_options(argc, argv);
 
    zoidfs_init();
 
