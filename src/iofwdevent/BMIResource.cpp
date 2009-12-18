@@ -29,7 +29,7 @@ namespace iofwdevent
       ue_clientlist_.push_back (*nc);
 
       ZLOG_DEBUG_MORE(log_, format("testunexpected posted: incount=%i new"
-               " clientlist size: %i client: %p") 
+               " clientlist size: %i client: %p")
             % incount % ue_clientlist_.size() % u);
 
       // We have the unexpected lock so we can just as well test for
@@ -96,7 +96,6 @@ namespace iofwdevent
    {
    }
 
-
    void BMIResource::handleBMIError (const CBType & UNUSED(u), int UNUSED(bmiret))
    {
       // TODO: convert into exception and call u->exception
@@ -115,19 +114,19 @@ namespace iofwdevent
 #ifndef NDEBUG
       try
       {
-#endif 
+#endif
          ZLOG_DEBUG_EXTREME(log_,format("unexpected client %p completed") %
                client.op);
          client.op (COMPLETED);
 #ifndef NDEBUG
-      } 
+      }
       catch (...)
       {
          ALWAYS_ASSERT(false && "ResourceOp should not throw!");
       }
 #endif
    }
-   
+
    size_t BMIResource::accumulate_helper (size_t other, const UnexpectedClient
          & in)
    {
@@ -154,7 +153,7 @@ namespace iofwdevent
                &ue_info[0], 0));
 
       ZLOG_DEBUG_EXTREME(log_, format("BMI_testunexpected: outcount=%i, "
-               "clientlist size=%i existing queue size=%i") 
+               "clientlist size=%i existing queue size=%i")
             % outcount % ue_clientlist_.size() % ue_ready_.size());
 
       if (!outcount)
@@ -181,12 +180,12 @@ namespace iofwdevent
    void BMIResource::checkUnexpected ()
    {
       // To simplify things, we always queued the unexpected messages first.
-      // This way, we don't have to block other calls to BMI_testunexpected 
+      // This way, we don't have to block other calls to BMI_testunexpected
       // (to prevent writing to ue_info_) while we drop the lock and notify
       // the client.
       checkNewUEMessages ();
 
-      // Now, for as long as we have messages to hand out 
+      // Now, for as long as we have messages to hand out
       // (either new ones, or queued in ue_ready_) _and_ we have clients
       // (!ue_clientlist_.empty()) give them to the client to process them.
       while (!ue_clientlist_.empty () &&
@@ -248,7 +247,7 @@ namespace iofwdevent
       std::vector<bmi_size_t> sizes_ (CHECK_COUNT);
 
       ZLOG_DEBUG(log_, "polling thread started");
-      
+
       while (!needShutdown ())
       {
          int outcount;
