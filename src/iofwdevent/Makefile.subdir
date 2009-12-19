@@ -17,4 +17,5 @@ src/iofwdevent/ThreadedResource.hh \
 src/iofwdevent/ThreadedResource.cpp \
 src/iofwdevent/ResourceWrapper.hh \
 src/iofwdevent/TokenResource.hh \
+src/iofwdevent/ResourceCompat.hh \
 src/iofwdevent/TokenResource.cpp

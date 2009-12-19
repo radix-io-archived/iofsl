@@ -1,3 +1,5 @@
+#include <boost/utility.hpp>
+
 #include "TokenResource.hh"
 
 namespace iofwdevent
@@ -11,6 +13,21 @@ namespace iofwdevent
 
    TokenResource::~TokenResource ()
    {
+   }
+
+   bool TokenResource::cancel (Handle h)
+   {
+      boost::mutex::scoped_lock l (lock_);
+      RequestList::iterator I = waitlist_.begin ();
+      while (I != waitlist_.end ())
+      {
+         if (boost::addressof (*I) == h)
+         {
+            waitlist_.erase (I);
+            return true;
+         }
+      }
+      return false;
    }
 
    void TokenResource::start ()
@@ -51,16 +68,11 @@ namespace iofwdevent
 
       ALWAYS_ASSERT(tokens_available_ >= f->tokens_);
       tokens_available_ -= f->tokens_;
-      f->op_->success ();
+      f->cb_ (COMPLETED);
 
       waitlist_.pop_front ();
 
-      // We call the destructor here just in case, but note that if an
-      // exception occurs allocated objects will *not* be destroyed.
-      f->~TokenRequest ();
-
-      // Note this is protected by lock_
-      pool_.deallocate (f);
+      delete (f);
    }
 
 //===========================================================================

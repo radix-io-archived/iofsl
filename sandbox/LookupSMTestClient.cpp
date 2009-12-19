@@ -49,7 +49,7 @@ public:
    bool reschedule ()
    {
       op_.rearm (SMResourceClientSharedPtr(this));
-      info_.timer_.createTimer (&op_, 3000);
+      info_.timer_.createTimer (op_.callbackRef(), 3000);
 
       return false;
    }

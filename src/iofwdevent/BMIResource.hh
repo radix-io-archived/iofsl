@@ -10,7 +10,6 @@ extern "C"
 #include <deque>
 
 #include "ThreadedResource.hh"
-#include "ResourceOp.hh"
 #include "iofwdutil/assert.hh"
 #include "iofwdutil/IOFWDLog.hh"
 
@@ -46,13 +45,20 @@ namespace iofwdevent
 
          virtual void stop ();
 
+         virtual bool cancel (Handle h)
+         { ALWAYS_ASSERT(false); }
+
       protected:
          // Note: don't store objects in here, mempool doesn't
          // destruct/construct properly
          struct BMIEntry 
          {
-            ResourceOp * op;
-            bmi_size_t * actual;
+            BMIEntry (const CBType & c, bmi_size_t * a)
+              : cb(c), actual(a)
+            { }
+
+            CBType              cb;
+            bmi_size_t *        actual;
          };
 
       protected:
@@ -73,14 +79,13 @@ namespace iofwdevent
 
          /**
           * Translate BMI error code into exception
-          * (which will be tunneled into the ResourceOp)
+          * (which will be tunneled into the Callback)
           */
-         void handleBMIError (ResourceOp * u, int bmiret);
-
+         void handleBMIError (const CBType & cb, int bmiret);
          /**
           * Return new BMI entry 
           */
-         inline BMIEntry * newEntry (ResourceOp * u, bmi_size_t * actual = 0);
+         inline BMIEntry * newEntry (const CBType & cb, bmi_size_t * actual = 0);
 
          /**
           * CHeck for normal BMI errors not associated with requests
@@ -93,14 +98,14 @@ namespace iofwdevent
 
       public:
 
-         inline void post_send (ResourceOp * u, BMI_addr_t dest,
+         inline void post_send (const CBType &  u, BMI_addr_t dest,
                const void * buffer,
                bmi_size_t size,
                enum bmi_buffer_type buffer_type,
                bmi_msg_tag_t tag,
                bmi_hint hints);
 
-         inline void post_recv(ResourceOp * u, BMI_addr_t src,
+         inline void post_recv(const CBType &  u, BMI_addr_t src,
                void *buffer,
                bmi_size_t expected_size,
                bmi_size_t * actual_size,
@@ -108,7 +113,7 @@ namespace iofwdevent
                bmi_msg_tag_t tag,
                bmi_hint hints);
 
-         inline void post_send_list(ResourceOp * u, BMI_addr_t dest,
+         inline void post_send_list(const CBType &  u, BMI_addr_t dest,
                const void *const *buffer_list,
                const bmi_size_t* size_list,
                int list_count,
@@ -118,7 +123,7 @@ namespace iofwdevent
                bmi_msg_tag_t tag,
                bmi_hint hints);
 
-         inline void post_recv_list(ResourceOp * u,
+         inline void post_recv_list(const CBType &  u,
                BMI_addr_t src,
                void *const *buffer_list,
                const bmi_size_t *size_list,
@@ -129,7 +134,7 @@ namespace iofwdevent
                bmi_msg_tag_t tag,
                bmi_hint hints);
 
-         inline void post_sendunexpected_list(ResourceOp * u,
+         inline void post_sendunexpected_list(const CBType &  u,
 				 BMI_addr_t dest,
 				 const void *const *buffer_list,
 				 const bmi_size_t *size_list,
@@ -141,7 +146,7 @@ namespace iofwdevent
                                  bmi_hint hints);
 
 
-         inline void post_sendunexpected(ResourceOp * u,
+         inline void post_sendunexpected(const CBType &  u,
 			    BMI_addr_t dest,
 			    const void *buffer,
 			    bmi_size_t size,
@@ -152,7 +157,7 @@ namespace iofwdevent
          /**
           * Post testunexpected call.
           */
-         void testunexpected (ResourceOp * u,
+         void testunexpected (const CBType &  u,
                int incount,
                int * outcount,
                BMI_unexpected_info * info);
@@ -169,14 +174,14 @@ namespace iofwdevent
 
          struct UnexpectedClient
          {
-            ResourceOp * op;
+            CBType op;
             int   incount;
             int * outcount;
             BMI_unexpected_info * info;
 
             UnexpectedClient  () {}
 
-            UnexpectedClient (ResourceOp * o, 
+            UnexpectedClient (const CBType &  o, 
                   int in, int * out, BMI_unexpected_info *i)
                : op (o), incount(in), outcount(out), info(i)
             {
@@ -202,12 +207,10 @@ namespace iofwdevent
 
    //===========================================================================
 
-   BMIResource::BMIEntry * BMIResource::newEntry (ResourceOp * u, 
+   BMIResource::BMIEntry * BMIResource::newEntry (const CBType &  u, 
          bmi_size_t * actual)
    {
-      BMIEntry * e = (BMIEntry *) mempool_.malloc ();
-      e->op = u;
-      e->actual = actual;
+      BMIEntry * e = new BMIEntry (u, actual);
       return e;
    }
 
@@ -217,18 +220,18 @@ namespace iofwdevent
       {
          if (bmiret >= 0)
          {
-            e->op->success ();
+            e->cb (COMPLETED);
          }
          else
          {
-            handleBMIError (e->op, bmiret);
+            handleBMIError (e->cb, bmiret);
          }
       }
       catch (...)
       {
-         ALWAYS_ASSERT(false && "ResourceOp should not throw");
+         ALWAYS_ASSERT(false && "Callback should not throw");
       }
-      mempool_.free (e);
+      delete (e);
    }
 
 
@@ -244,7 +247,7 @@ namespace iofwdevent
       completeEntry (e, bmiret);
    }
 
-   void BMIResource::post_send (ResourceOp * u, BMI_addr_t dest,
+   void BMIResource::post_send (const CBType &  u, BMI_addr_t dest,
          const void * buffer,
          bmi_size_t size,
          enum bmi_buffer_type buffer_type,
@@ -258,7 +261,7 @@ namespace iofwdevent
    }
 
 
-   void BMIResource::post_sendunexpected_list(ResourceOp * u,
+   void BMIResource::post_sendunexpected_list(const CBType &  u,
          BMI_addr_t dest,
          const void *const *buffer_list,
          const bmi_size_t *size_list,
@@ -277,7 +280,7 @@ namespace iofwdevent
     }
 
 
-   void BMIResource::post_sendunexpected(ResourceOp * u,
+   void BMIResource::post_sendunexpected(const CBType &  u,
          BMI_addr_t dest,
          const void *buffer,
          bmi_size_t size,
@@ -292,7 +295,7 @@ namespace iofwdevent
 }
 
 
-   void BMIResource::post_recv(ResourceOp * u, BMI_addr_t src,
+   void BMIResource::post_recv(const CBType &  u, BMI_addr_t src,
          void *buffer,
          bmi_size_t expected_size,
          bmi_size_t * actual_size,
@@ -307,7 +310,7 @@ namespace iofwdevent
                actual_size, buffer_type, tag, e, context_, hints));
    }
 
-   void BMIResource::post_send_list(ResourceOp * u, BMI_addr_t dest,
+   void BMIResource::post_send_list(const CBType &  u, BMI_addr_t dest,
          const void *const *buffer_list,
          const bmi_size_t* size_list,
          int list_count,
@@ -324,7 +327,7 @@ namespace iofwdevent
                total_size, buffer_type, tag, e, context_, hints));
    }
 
-   void BMIResource::post_recv_list(ResourceOp * u,
+   void BMIResource::post_recv_list(const CBType &  u,
          BMI_addr_t src,
          void *const *buffer_list,
          const bmi_size_t *size_list,

@@ -18,7 +18,7 @@ namespace iofwdevent
     * Note: this method may complete before returning if there are unexpected
     * messages ready.
     */
-   void BMIResource::testunexpected (ResourceOp * u,
+   void BMIResource::testunexpected (const CBType &  u,
          int incount, int * outcount, BMI_unexpected_info * info)
    {
       boost::mutex::scoped_lock l (ue_lock_);
@@ -62,7 +62,7 @@ namespace iofwdevent
    }
 
 
-   void BMIResource::handleBMIError (ResourceOp * UNUSED(u), int UNUSED(bmiret))
+   void BMIResource::handleBMIError (const CBType & UNUSED(u), int UNUSED(bmiret))
    {
       // TODO: convert into exception and call u->exception
                // TODO: maybe check for cancel?
@@ -85,7 +85,7 @@ namespace iofwdevent
 #endif 
          ZLOG_DEBUG_EXTREME(log_,format("unexpected client %p completed") %
                client.op);
-         client.op->success ();
+         client.op (COMPLETED);
 #ifndef NDEBUG
       } 
       catch (...)

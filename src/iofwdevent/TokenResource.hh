@@ -36,10 +36,12 @@ public:
 
    virtual bool started () const;
 
+   virtual bool cancel (Handle h);
+
    /**
     * Submit request for tokencount tokens.
     */
-   inline void request (ResourceOp * id, size_t tokencount);
+   inline Handle request (const CBType & cb, size_t tokencount);
 
    /**
     * Non-blocking token request. Returns true if allocated, false
@@ -74,13 +76,13 @@ protected:
    class TokenRequest
    {
     public:
-       TokenRequest (ResourceOp * o, size_t tokens)
-          : op_(o), tokens_(tokens)
+       TokenRequest (const CBType & cb, size_t tokens)
+          : cb_(cb), tokens_(tokens)
        {
        }
 
-      ResourceOp *   op_;
-      size_t         tokens_;
+      CBType   cb_;
+      size_t   tokens_;
 
       // we use an intrusive linked list to queue the requests.
       boost::intrusive::slist_member_hook<> list_hook_;
@@ -108,10 +110,7 @@ protected:
    // Protect access to waitresource
    mutable boost::mutex lock_;
 
-   boost::fast_pool_allocator<TokenRequest> pool_;
-
    size_t tokens_available_;
-   size_t waiting_;
 
    RequestList waitlist_;
 
@@ -127,7 +126,7 @@ void TokenResource::add_tokens (size_t tokens)
    check ();
 }
 
-void TokenResource::request (ResourceOp * id, size_t tokencount)
+Resource::Handle TokenResource::request (const CBType & cb, size_t tokencount)
 {
    ASSERT(started_);
 
@@ -137,16 +136,14 @@ void TokenResource::request (ResourceOp * id, size_t tokencount)
    if (try_request_unlocked (tokencount))
    {
       // obtained tokens -> call callback
-      id->success ();
-      return;
+      cb (COMPLETED);
+      return 0;
    }
 
    // Could not get tokens -> put on waitlist
-   // the pool allocator is protected by the lock_;
-   void * f_raw = pool_.allocate ();
-   ALWAYS_ASSERT(f_raw);
-   TokenRequest * f = new (f_raw) TokenRequest (id, tokencount);
+   TokenRequest * f = new  TokenRequest (cb, tokencount);
    waitlist_.push_back (*f);
+   return f;
 }
 
 bool TokenResource::try_request (size_t t)
