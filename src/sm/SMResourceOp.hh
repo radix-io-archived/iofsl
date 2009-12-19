@@ -1,9 +1,12 @@
 #ifndef SM_SMRESOURCEOP_HH
 #define SM_SMRESOURCEOP_HH
 
+#include <boost/bind.hpp>
 #include <csignal>
+
 #include "iofwdevent/ResourceOp.hh"
 #include "SMResourceClient.hh"
+#include "iofwdevent/Resource.hh"
 
 
 namespace sm
@@ -24,6 +27,25 @@ class SMResourceOp : public iofwdevent::ResourceOp
 {
 public:
    SMResourceOp (SMManager * manager);
+
+
+   void callback (int status)
+   {
+      switch (status)
+      {
+         case iofwdevent::Resource::COMPLETED:
+            success ();
+            break;
+         case iofwdevent::Resource::CANCELLED:
+            cancel ();
+            break;
+         default:
+            ALWAYS_ASSERT(false);
+      }
+   }
+   
+   iofwdevent::Resource::CBType callbackRef () 
+   { return boost::bind (&SMResourceOp::callback, boost::ref(*this), _1); }
 
    virtual void success ();
 

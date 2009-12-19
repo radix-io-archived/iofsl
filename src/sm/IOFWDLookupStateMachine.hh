@@ -2,6 +2,7 @@
 #define __SRC_SM_IOFWDLOOKUPSTATEMACHINE_HH__
 
 #include <memory>
+#include <boost/bind.hpp>
 
 #include "sm/IOFWDStateMachine.hh"
 #include "sm/IOFWDState.hh"
@@ -90,7 +91,7 @@ struct IOFWDLookupStateMachineClient : sm::SMResourceClient, IOFWDLookupStateMac
         bool reschedule()
         {
             op_.rearm (sm::SMResourceClientSharedPtr(dynamic_cast<sm::SMResourceClient *>(this)));
-            timer_.createTimer (&op_, 3000);
+            timer_.createTimer (op_.callbackRef(), 3000);
 
             return false;
         }

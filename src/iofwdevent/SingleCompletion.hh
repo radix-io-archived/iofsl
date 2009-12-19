@@ -1,8 +1,11 @@
 #ifndef IOFWDEVENT_SINGLECOMPLETION_HH
 #define IOFWDEVENT_SINGLECOMPLETION_HH
 
+#include <boost/function.hpp>
 #include <boost/thread.hpp>
 #include <csignal>
+
+#include "iofwdevent/Resource.hh"
 #include "ResourceOp.hh"
 #include "iofwdutil/assert.hh"
 
@@ -19,6 +22,25 @@ namespace iofwdevent
    class SingleCompletion : public ResourceOp
    {
    public:
+
+      Resource::CBType callbackRef () 
+      { return boost::bind (&SingleCompletion::callback, boost::ref(*this),
+            _1); }
+
+      void callback (int status)
+      {
+         switch (status)
+         {
+            case Resource::COMPLETED:
+               success ();
+               break;
+            case Resource::CANCELLED:
+               cancel ();
+               break;
+            default:
+               ALWAYS_ASSERT(false);
+         }
+      }
 
       virtual void success ();
 
