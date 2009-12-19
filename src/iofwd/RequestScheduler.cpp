@@ -133,7 +133,7 @@ CompletionID * RequestScheduler::enqueueWrite(
     if (file_sizes[i] == 0) continue;
 
     Range r;
-    r.type = Range::RANGE_WRITE;
+    r.type = RANGE_WRITE;
     r.handle = handle;
     r.buf = (char*)mem_starts[i];
     r.st = file_starts[i];
@@ -165,7 +165,7 @@ CompletionID * RequestScheduler::enqueueRead(
     if (file_sizes == 0) continue;
 
     Range r;
-    r.type = Range::RANGE_READ;
+    r.type = RANGE_READ;
     r.handle = handle;
     r.buf = (char*)mem_starts[i];
     r.st = file_starts[i];
@@ -278,10 +278,10 @@ void RequestScheduler::issue(const vector<Range>& rs)
 
   // issue asynchronous I/O using ZoidFSAsyncAPI
   CompletionID *async_id;
-  if (rs[0].type == Range::RANGE_WRITE) {
+  if (rs[0].type == RANGE_WRITE) {
     async_id = async_api_->async_write(rs[0].handle, narrays, (const void**)mem_starts, mem_sizes,
                                        narrays, file_starts, file_sizes, rs[0].op_hint);
-  } else if (rs[0].type == Range::RANGE_READ) {
+  } else if (rs[0].type == RANGE_READ) {
     async_id = async_api_->async_read(rs[0].handle, narrays, (void**)mem_starts, mem_sizes,
                                       narrays, file_starts, file_sizes, rs[0].op_hint);
   } else {

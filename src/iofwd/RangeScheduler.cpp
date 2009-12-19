@@ -36,7 +36,7 @@ bool FIFORangeScheduler::dequeue(Range& r)
 
 struct HandleQueue
 {
-  Range::RangeType type;
+  RangeType type;
   const zoidfs::zoidfs_handle_t * handle;
   RangeSet * rs;
   IntervalTreeRangeSet * itrs;
@@ -45,7 +45,7 @@ struct HandleQueue
 
 void MergeRangeScheduler::io_enqueue(const Range &r)
 {
-  tr1::unordered_map<const zoidfs::zoidfs_handle_t*, HandleQueue*>& m_ = (r.type == Range::RANGE_READ) ? rm_ : wm_;
+  tr1::unordered_map<const zoidfs::zoidfs_handle_t*, HandleQueue*>& m_ = (r.type == RANGE_READ) ? rm_ : wm_;
   if (m_.find(r.handle) == m_.end()) {
     // if no HandleQueue exists for r.handle, create new one
     HandleQueue * hq = new HandleQueue();
@@ -86,7 +86,7 @@ bool MergeRangeScheduler::io_dequeue(Range &r)
   if (q_.empty()) return false;
 
   HandleQueue * hq = q_.front();
-  tr1::unordered_map<const zoidfs::zoidfs_handle_t*, HandleQueue*>& m_ = (hq->type == Range::RANGE_READ) ? rm_ : wm_;
+  tr1::unordered_map<const zoidfs::zoidfs_handle_t*, HandleQueue*>& m_ = (hq->type == RANGE_READ) ? rm_ : wm_;
   assert(m_.find(hq->handle) != m_.end());
 
 #ifdef ITRS
