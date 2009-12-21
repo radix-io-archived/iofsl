@@ -9,6 +9,7 @@ src_iofwd_iofwd_LDADD = \
 	src/iofwdutil/libiofwdutil.a \
 	src/c-util/libc-util.a \
 	src/zoidfs/libzoidfshints.a \
+	src/iofwdevent/libiofwdevent.a \
 	@BOOST_PROGRAM_OPTIONS_LIB@ \
 	@BOOST_DATE_TIME_LIB@ \
 	@BOOST_THREAD_LIB@ \
@@ -90,6 +91,7 @@ src/iofwd/TaskHelper.hh \
 src/iofwd/ThreadTasks.hh \
 src/iofwd/WriteRequest.hh \
 src/iofwd/WriteTask.hh \
+src/iofwd/Resources.hh \
 \
 src/iofwd/frontend/Frontend.cpp \
 src/iofwd/frontend/IOFWDCommitRequest.cpp \

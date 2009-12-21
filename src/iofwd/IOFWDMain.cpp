@@ -20,9 +20,13 @@ IOFWDMain::IOFWDMain (bool notrap, const iofwdutil::ConfigFile & co)
 
 void IOFWDMain::boot ()
 {
+   ZLOG_DEBUG (mainlog_, "Starting Resources");
+   resources_.reset (new Resources ());
+
    ZLOG_DEBUG (mainlog_, "Starting IOFWD Frontend"); 
+
    frontend_.reset (new frontend::IOFWDFrontend (bmires_));
-   
+
    frontend_->setConfig (config_.openSectionDefault ("frontend"));
 
    frontend_->init ();
@@ -43,6 +47,9 @@ void IOFWDMain::shutdown ()
    frontend_->destroy (); 
 
    requesthandler_.reset (); 
+
+   ZLOG_DEBUG (mainlog_, "Stopping resources...");
+   resources_.reset (0);
 }
 
 
