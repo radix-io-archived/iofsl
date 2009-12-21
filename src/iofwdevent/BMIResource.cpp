@@ -241,8 +241,15 @@ namespace iofwdevent
          // going to poll testunexpected any moment now.
          {
             boost::mutex::scoped_try_lock ul (ue_lock_);
-            if (ul.owns_lock ())
-               checkUnexpected ();
+            // For now, don't try to queue unexpected messages. Only try to
+            // retrieve them if we know we have a client.
+            // This is TEMPORARY and only here so that we don't steal unexpected
+            // messages from other components in the system.
+            if (!ue_clientlist_.empty ())
+            {
+               if (ul.owns_lock ())
+                  checkUnexpected ();
+            }
          }
 
          checkBMI (BMI_testcontext (opids_.size(), &opids_[0],
