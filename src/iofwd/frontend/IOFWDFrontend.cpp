@@ -214,7 +214,7 @@ void IOFWDFrontend::post_testunexpected ()
  */
 void IOFWDFrontend::newUnexpected (int status)
 {
-   if (status == iofwdevent::Resource::COMPLETED)
+   if (status == iofwdevent::COMPLETED)
    {
       if (ue_count_ != 0)
       {

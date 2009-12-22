@@ -23,7 +23,7 @@ namespace iofwdevent
    {
    public:
 
-      Resource::CBType callbackRef () 
+      CBType callbackRef ()
       { return boost::bind (&SingleCompletion::callback, boost::ref(*this),
             _1); }
 
@@ -31,10 +31,10 @@ namespace iofwdevent
       {
          switch (status)
          {
-            case Resource::COMPLETED:
+            case COMPLETED:
                success ();
                break;
-            case Resource::CANCELLED:
+            case CANCELLED:
                cancel ();
                break;
             default:

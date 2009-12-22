@@ -22,10 +22,10 @@ public:
    {
       switch (status)
       {
-         case Resource::COMPLETED:
+         case COMPLETED:
             op.success ();
             break;
-         case Resource::CANCELLED:
+         case CANCELLED:
             op.cancel ();
             break;
          default:
