@@ -40,7 +40,7 @@ protected:
 protected:
    SMManager * manager_;
 
-   // By using a shared pointer, we insure nobody is going to delete 
+   // By using a shared pointer, we insure nobody is going to delete
    // the client while there are still operations pending.
    SMResourceClientSharedPtr client_;
 

@@ -6,22 +6,22 @@ namespace iofwd
 //===========================================================================
 
 /**
- * This class represents a request from a client. It contains the necessary
+ * This class represents a request from a client. It encapsulates the necessary
  * information to reply to the client.
  */
-class Request 
+class Request
 {
 public:
 
-   Request (int opid); 
+   Request (int opid);
 
-   // Return the ZoidFS operation associated with this request 
+   // Return the ZoidFS operation associated with this request
    int getOpID () const
    {
-      return opid_; 
-   }; 
+      return opid_;
+   };
 
-   const char * opid2Name (int opid) const; 
+   const char * opid2Name (int opid) const;
 
    const char * opid2Name () const
    { return opid2Name (opid_); }
@@ -31,21 +31,22 @@ public:
    ///
    void setReturnCode (int ret)
    {
-      returncode_ = ret; 
+      returncode_ = ret;
    }
 
    int getReturnCode () const
    { return returncode_; }
 
-   virtual ~Request (); 
+   virtual ~Request ();
 
   protected:
+
    // Operation
-   int opid_; 
+   int opid_;
 
    /// Return code for the request
-   int returncode_; 
-}; 
+   int returncode_;
+};
 
 //===========================================================================
 }

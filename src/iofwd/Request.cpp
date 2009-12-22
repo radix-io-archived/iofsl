@@ -7,7 +7,10 @@ namespace iofwd
 {
 //===========================================================================
 
-static const char * opidnames[] = 
+// @TODO: Move this into the zoidsf-proto.h header
+//  so that the data cannot get out of sync
+
+static const char * opidnames[] =
 {
 "ZOIDFS_NULL",
 "ZOIDFS_GET_ATTR",
@@ -25,23 +28,23 @@ static const char * opidnames[] =
 "ZOIDFS_WRITE",
 "ZOIDFS_READ",
 "ZOIDFS_LINK"
-}; 
+};
 
 const char * Request::opid2Name (int opid) const
 {
-   if (opid < 0 || 
+   if (opid < 0 ||
          opid > static_cast<int>((sizeof(opidnames)/sizeof(opidnames[0]))))
    {
-      return "INVALID_OPID"; 
+      return "INVALID_OPID";
    }
-   return opidnames[opid]; 
+   return opidnames[opid];
 }
 
 Request::Request (int opid)
    : opid_(opid)
 {
    ALWAYS_ASSERT (opid >= 0 && static_cast<size_t>(opid) <
-         ((sizeof(opidnames)/sizeof(opidnames[0])))); 
+         ((sizeof(opidnames)/sizeof(opidnames[0]))));
 }
 
 Request::~Request ()
