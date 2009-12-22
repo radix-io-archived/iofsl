@@ -1,6 +1,8 @@
 noinst_LIBRARIES += src/iofwdevent/libiofwdevent.a
 
 src_iofwdevent_libiofwdevent_a_SOURCES = \
+src/iofwdevent/DummyResource.hh \
+src/iofwdevent/DummyResource.cpp \
 src/iofwdevent/CBType.hh \
 src/iofwdevent/Resource.cpp \
 src/iofwdevent/Resource.hh \
