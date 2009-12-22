@@ -136,7 +136,7 @@ public:
       bmi_.post_sendunexpected (resource_compat(waitSend), p1_,
             &dummy, sizeof(dummy), BMI_EXT_ALLOC,
             0, 0);
-      bmi_.testunexpected (resource_compat(waitReceive), 1,
+      bmi_.post_testunexpected (resource_compat(waitReceive), 1,
             &out, &info);
 
       BOOST_TEST_MESSAGE_TS("Waiting for message arrival");

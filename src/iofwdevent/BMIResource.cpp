@@ -1,14 +1,10 @@
-// #include <boost/lambda/lambda.hpp>
-// #include <boost/lambda/bind.hpp>
 #include <numeric>
-// #include <functional>
 #include <boost/format.hpp>
 
 #include "iofwdutil/tools.hh"
 #include "BMIResource.hh"
 
 using namespace boost;
-
 
 namespace iofwdevent
 {
@@ -18,20 +14,59 @@ namespace iofwdevent
     * Note: this method may complete before returning if there are unexpected
     * messages ready.
     */
-   void BMIResource::testunexpected (const CBType &  u,
+   BMIResource::Handle BMIResource::post_testunexpected (const CBType &  u,
          int incount, int * outcount, BMI_unexpected_info * info)
    {
       boost::mutex::scoped_lock l (ue_lock_);
 
+      ALWAYS_ASSERT(incount > 0);
+
       *outcount = 0;
-      ue_clientlist_.push_back (UnexpectedClient(u, incount, outcount, info));
+      // might want to switch to pool allocated if it has performance benefits
+      UnexpectedClient * nc = new (ue_client_pool_.malloc())
+                               UnexpectedClient (u, incount, outcount, info,
+                                     ue_sequence_++);
+      ue_clientlist_.push_back (*nc);
 
       ZLOG_DEBUG_MORE(log_, format("testunexpected posted: incount=%i new"
                " clientlist size: %i client: %p") 
             % incount % ue_clientlist_.size() % u);
 
-      // if (ue_ready_)
+      // We have the unexpected lock so we can just as well test for
+      // unexpected messages
       checkUnexpected ();
+
+      return reinterpret_cast<void*>(static_cast<intptr_t> (nc->sequence));
+   }
+
+   /**
+    * Cancel for testunexpected is only called when we shut the server down.
+    * Therefore, this is not optimized at all.
+    */
+   bool BMIResource::cancel (Handle h)
+   {
+      boost::mutex::scoped_lock l(ue_lock_);
+
+      const size_t seq = static_cast<size_t> (reinterpret_cast<intptr_t> (h));
+
+      // TODO: if we allow cancel for other operations, figure out how to see
+      // if it is a testunexpected call or not.
+
+      UEClientListType::iterator I = ue_clientlist_.begin ();
+      while (I != ue_clientlist_.end())
+      {
+         if (I->sequence == seq)
+         {
+            UnexpectedClient * c = & (*I);
+            ue_clientlist_.erase (I);
+            c->op (CANCELLED);
+            c->~UnexpectedClient ();
+            ue_client_pool_.free (c);
+            return true;
+         }
+         I++;
+      }
+      return false;
    }
 
    void BMIResource::start ()
@@ -54,9 +89,9 @@ namespace iofwdevent
    }
 
    BMIResource::BMIResource ()
-      : mempool_ (sizeof(BMIEntry)),
-      unexpectedpool_ (sizeof (BMI_unexpected_info)),
-      ue_info_ (UNEXPECTED_SIZE),
+      : ue_sequence_ (0),
+      ue_message_pool_ (sizeof (UnexpectedMessage)),
+      ue_client_pool_ (sizeof (UnexpectedClient)),
       log_ (iofwdutil::IOFWDLog::getSource ("bmiresource"))
    {
    }
@@ -75,10 +110,8 @@ namespace iofwdevent
     * Complete the specified unexpected client
     * Must be called with ue_lock_ held.
     */
-   void BMIResource::completeUnexpectedClient (size_t pos)
+   void BMIResource::completeUnexpectedClient (const UnexpectedClient & client)
    {
-      ALWAYS_ASSERT(pos < ue_clientlist_.size());
-      UnexpectedClient & client = ue_clientlist_[pos];
 #ifndef NDEBUG
       try
       {
@@ -101,123 +134,107 @@ namespace iofwdevent
       return other + in.incount;
    }
 
+
+   /**
+    * Call BMI_testunexpected and store messages in ue_ready_
+    *
+    * Needs to be called with ue_lock_ held
+    */
+   void BMIResource::checkNewUEMessages ()
+   {
+      boost::array<BMI_unexpected_info, UNEXPECTED_SIZE> ue_info;
+
+      // Check if there are new messages
+      int outcount;
+
+      ASSERT(ue_info.size ());
+
+      // Get unexpected messages without waiting.
+      checkBMI (BMI_testunexpected (ue_info.size (), &outcount,
+               &ue_info[0], 0));
+
+      ZLOG_DEBUG_EXTREME(log_, format("BMI_testunexpected: outcount=%i, "
+               "clientlist size=%i existing queue size=%i") 
+            % outcount % ue_clientlist_.size() % ue_ready_.size());
+
+      if (!outcount)
+         return;
+
+      for (int i=0; i<outcount; ++i)
+      {
+         UnexpectedMessage * e = new (ue_message_pool_.malloc ())
+            UnexpectedMessage (ue_info[i]);
+         ue_ready_.push_back (*e);
+      }
+   }
+
+
    /**
     * Check for unexpected messages, and hand them to the listeners or store
     * them if nobody is listening right now.
     *
     * Must be called with ue_lock_ held.
+    * NOTE: Will release ue_lock_ but acquire it again before returning.
+    * NOTE: Is called both from the polling thread and from the client when it
+    * calls post_testunexpected
     */
    void BMIResource::checkUnexpected ()
    {
-      int outcount;
+      // To simplify things, we always queued the unexpected messages first.
+      // This way, we don't have to block other calls to BMI_testunexpected 
+      // (to prevent writing to ue_info_) while we drop the lock and notify
+      // the client.
+      checkNewUEMessages ();
 
-      ASSERT(ue_info_.size ());
-
-      // Get unexpected messages without waiting.
-      checkBMI (BMI_testunexpected (ue_info_.size (), &outcount, 
-               &ue_info_[0], 0));
-
-      ZLOG_DEBUG_EXTREME(log_, format("BMI_testunexpected: outcount=%i, "
-               "clientlist size=%i queued=%i") 
-            % outcount % ue_clientlist_.size() % ue_ready_.size());
-
-      // Total messages is the number of queued messages + 
-      // number of new messages; I.e. the number of messages
-      // we can hand to the clients
-      const size_t total_messages = outcount + ue_ready_.size();
-      
-      if (!total_messages)
-         return;
-
-      // Number of messages we can get rid of
-      /*const size_t total_capacity = std::accumulate
-         (ue_clientlist_.begin(), ue_clientlist_.end(), int(0),
-          bind(std::plus<int>(), _1, bind(&UnexpectedClient::incount,
-            _2)));
-            */
-      const size_t total_capacity = std::accumulate (ue_clientlist_.begin(),
-            ue_clientlist_.end(), int (0), 
-            accumulate_helper);
-
-      // Number of clients completed
-      size_t completed = 0;
-
-      // Number of messages dispatched
-      size_t todo = std::min(total_messages, total_capacity);
-
-      // Number of used fresh messages
-      size_t consumed = 0;
-
-      // Number of messages used
-      size_t total_used = 0;
-
-      while (total_used < todo)
+      // Now, for as long as we have messages to hand out 
+      // (either new ones, or queued in ue_ready_) _and_ we have clients
+      // (!ue_clientlist_.empty()) give them to the client to process them.
+      while (!ue_clientlist_.empty () &&
+              !ue_ready_.empty ())
       {
-         UnexpectedClient & client = ue_clientlist_[completed];
-         const size_t thisclient =
-            std::min (total_messages - total_used,
-                   static_cast<size_t>(client.incount - *client.outcount));
-         if (thisclient)
+         UnexpectedClient & c = ue_clientlist_.front ();
+         ue_clientlist_.pop_front ();
+
+         ASSERT(c.incount);
+
+         const size_t thisclient = std::min (static_cast<size_t>(c.incount),
+               static_cast<size_t>(ue_ready_.size()));
+
+         ASSERT(thisclient);
+
+         *c.outcount = thisclient;
+
+         for (size_t i=0; i<thisclient; ++i)
          {
-            for (size_t i=0; i<thisclient; ++i)
-            {
-               BMI_unexpected_info & dest =
-                  client.info[*client.outcount];
-               ++(*client.outcount);
+            UnexpectedMessage & msg = ue_ready_.front ();
+            c.info[i] = msg.info_;
+            ue_ready_.pop_front ();
 
-               ++total_used;
+            // call destructor
+            msg.~UnexpectedMessage ();
 
-               // Dequeue a message
-               if (ue_ready_.size())
-               {
-                  // We have a queued message first
-                  dest = *ue_ready_.front ();
-                  unexpectedpool_.free (ue_ready_.front());
-                  ue_ready_.pop ();
-               }
-               else
-               {
-                  // Dispatch one of the new messages
-                  ALWAYS_ASSERT(consumed <= static_cast<size_t>(outcount));
-                  dest = ue_info_[consumed];
-                  ++consumed;
-               }
-            }
-
-            completeUnexpectedClient (completed);
-            ++completed;
+            ue_message_pool_.free (&msg);
          }
+
+         // We have to release the lock before calling the callback of the
+         // client because most likely it will repost a new testunexpected
+         // request.
+         //
+         // This means that:
+         //    1) Somebody could come along and put more unexpected
+         //       requests in our ue_ready_ queue
+         //    2) ue_client_list iterators can be invalidated
+         //       if the client reregisters.
+         ue_lock_.unlock ();
+         {
+            // Note: cannot/should not throw!
+            completeUnexpectedClient (c);
+            c.~UnexpectedClient ();
+         }
+         ue_lock_.lock ();
+         // We need the lock to protect access to the mem pool
+         ue_client_pool_.free (&c);
       }
-
-      // Remove completed
-      if (completed)
-      {
-         ue_clientlist_.erase (ue_clientlist_.begin(),
-               ue_clientlist_.begin() + completed);
-      }
-
-
-      // Check if we need to overflow messages
-      ALWAYS_ASSERT(consumed <= static_cast<size_t>(outcount));
-
-      if (static_cast<size_t> (consumed)
-            == static_cast<size_t>(outcount))
-         return;
-
-      const size_t tostore = total_messages - total_capacity;
-      ALWAYS_ASSERT(tostore == (outcount - consumed));
-      ALWAYS_ASSERT(total_used + tostore == total_messages);
-
-      for (size_t i=0; i<tostore; ++i)
-      {
-         // Copy unexpected to newly allocated memory pool entry
-         BMI_unexpected_info * n =
-            (BMI_unexpected_info *) unexpectedpool_.malloc();
-         *n = ue_info_[consumed++];
-         ue_ready_.push (n);
-      }
-
-      ALWAYS_ASSERT(consumed == static_cast<size_t>(outcount));
    }
 
    /**

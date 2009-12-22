@@ -6,8 +6,8 @@ extern "C"
 #include <bmi.h>
 }
 
-#include <boost/pool/pool.hpp>
-#include <deque>
+#include <boost/intrusive/slist.hpp>
+#include <boost/pool/pool_alloc.hpp>
 
 #include "ThreadedResource.hh"
 #include "iofwdutil/assert.hh"
@@ -24,7 +24,7 @@ namespace iofwdevent
    class BMIResource : public ThreadedResource
    {
       public:
-      
+
          enum {
             // Number of completed message to handle in one call to
             // testcontext
@@ -45,13 +45,12 @@ namespace iofwdevent
 
          virtual void stop ();
 
-         virtual bool cancel (Handle h)
-         { ALWAYS_ASSERT(false); }
+         virtual bool cancel (Handle h);
 
       protected:
          // Note: don't store objects in here, mempool doesn't
          // destruct/construct properly
-         struct BMIEntry 
+         struct BMIEntry
          {
             BMIEntry (const CBType & c, bmi_size_t * a)
               : cb(c), actual(a)
@@ -67,12 +66,12 @@ namespace iofwdevent
 
          /**
           * Check if there was a BMI error; If so, deal with it.
-          * Check if the operation completed immediately. If so, 
+          * Check if the operation completed immediately. If so,
           * call the completion callback right away.
           */
          inline void checkBMISendRecv (BMIEntry * e, int bmiret);
 
-         /** 
+         /**
           * Call the correct callback and return the entry back to the mempool.
           */
          inline void completeEntry (BMIEntry * e, int bmiret);
@@ -83,7 +82,7 @@ namespace iofwdevent
           */
          void handleBMIError (const CBType & cb, int bmiret);
          /**
-          * Return new BMI entry 
+          * Return new BMI entry
           */
          inline BMIEntry * newEntry (const CBType & cb, bmi_size_t * actual = 0);
 
@@ -91,10 +90,6 @@ namespace iofwdevent
           * CHeck for normal BMI errors not associated with requests
           */
          inline void checkBMI (int ret) { ALWAYS_ASSERT(ret >= 0); };
-
-         void completeUnexpectedClient (size_t count);
-
-         void checkUnexpected ();
 
       public:
 
@@ -157,7 +152,7 @@ namespace iofwdevent
          /**
           * Post testunexpected call.
           */
-         void testunexpected (const CBType &  u,
+         Handle post_testunexpected (const CBType &  u,
                int incount,
                int * outcount,
                BMI_unexpected_info * info);
@@ -166,24 +161,33 @@ namespace iofwdevent
        protected:
          bmi_context_id context_;
 
-         // Note: not object pool, no destructor/constructor will be called
-         boost::pool<> mempool_;
+         struct UnexpectedMessage :
+            public boost::intrusive::slist_base_hook<>
+         {
+            UnexpectedMessage (const BMI_unexpected_info & i)
+               : info_ (i)
+            {
+            }
 
-         // Memory for unexpected messages when nobody is accepting them
-         boost::pool<> unexpectedpool_;
+            BMI_unexpected_info info_;
+         };
 
-         struct UnexpectedClient
+         struct UnexpectedClient :
+            public boost::intrusive::slist_base_hook<>
          {
             CBType op;
             int   incount;
             int * outcount;
             BMI_unexpected_info * info;
+            size_t sequence;
 
             UnexpectedClient  () {}
 
-            UnexpectedClient (const CBType &  o, 
-                  int in, int * out, BMI_unexpected_info *i)
-               : op (o), incount(in), outcount(out), info(i)
+            UnexpectedClient (const CBType &  o,
+                  int in, int * out, BMI_unexpected_info *i,
+                  size_t seq)
+               : op (o), incount(in), outcount(out), info(i),
+               sequence(seq)
             {
             }
          };
@@ -191,23 +195,43 @@ namespace iofwdevent
          // Lock for the unexpected structures
          boost::mutex ue_lock_;
 
-         std::vector<BMI_unexpected_info> ue_info_;
-         std::deque<UnexpectedClient> ue_clientlist_;
-         std::queue<BMI_unexpected_info *> ue_ready_;
+         // Intrusive single linked list with support for push_back
+         // (cache_last -> true)
+         typedef boost::intrusive::slist<UnexpectedClient,
+            boost::intrusive::cache_last<true>,
+            boost::intrusive::constant_time_size<true> > UEClientListType;
+         
+         UEClientListType ue_clientlist_;
+
+         // slist for storing messages until somebody asks for them.
+         // We want to take them from BMI, since as long as unexpected
+         // messages are present BMI_testcontext returns early.
+         boost::intrusive::slist<UnexpectedMessage,
+            boost::intrusive::cache_last<true>,
+            boost::intrusive::constant_time_size<true> > ue_ready_;
+
+         size_t ue_sequence_;
+
+         boost::pool<> ue_message_pool_;
+         boost::pool<> ue_client_pool_;
 
          iofwdutil::zlog::ZLogSource & log_;
 
        protected:
-         static
-         size_t accumulate_helper (size_t other, const UnexpectedClient & in);
+         static size_t accumulate_helper (size_t other,
+               const UnexpectedClient & in);
 
+         void completeUnexpectedClient (const UnexpectedClient & client);
 
+         void checkUnexpected ();
+
+         void checkNewUEMessages ();
 
    };
 
    //===========================================================================
 
-   BMIResource::BMIEntry * BMIResource::newEntry (const CBType &  u, 
+   BMIResource::BMIEntry * BMIResource::newEntry (const CBType &  u,
          bmi_size_t * actual)
    {
       BMIEntry * e = new BMIEntry (u, actual);
@@ -306,7 +330,7 @@ namespace iofwdevent
       bmi_op_id_t op;
       BMIEntry * e = newEntry (u, actual_size);
 
-      checkBMISendRecv (e, BMI_post_recv (&op, src, buffer, expected_size, 
+      checkBMISendRecv (e, BMI_post_recv (&op, src, buffer, expected_size,
                actual_size, buffer_type, tag, e, context_, hints));
    }
 
