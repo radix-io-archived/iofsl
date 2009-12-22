@@ -16,9 +16,18 @@ namespace iofwdutil
    {
 //===========================================================================
 
+/**
+ * This class wraps a BMI_unexpected_info structure and makes sure
+ * the memory is released to BMI.
+ *
+ * TODO: Probably we don't need the IntrusiveHelper anymore.
+ */
 class BMIUnexpectedBuffer  : public IntrusiveHelper 
 {
 public:
+   /**
+    * Note: A copy is made of the BMI_unexpected_info structure
+    */
    BMIUnexpectedBuffer (const BMI_unexpected_info & info)
       : info_ (info)
    {
@@ -67,21 +76,6 @@ protected:
 }; 
 
 INTRUSIVE_PTR_HELPER(BMIUnexpectedBuffer)
-
-/*inline void
-intrusive_ptr_add_ref(BMIUnexpectedBuffer * r)
-{
-    r->ref();
-}
-
-inline void
-intrusive_ptr_release(BMIUnexpectedBuffer * r)
-{
-    if (!r->unref())
-    {
-       delete r; 
-    }
-}*/
 
 
 //===========================================================================
