@@ -4,6 +4,8 @@
 #include <boost/utility.hpp>
 #include <boost/function.hpp>
 
+#include "CBType.hh"
+
 namespace iofwdevent
 {
 //===========================================================================
@@ -17,10 +19,7 @@ class Resource : private boost::noncopyable
 {
 public:
 
-   enum { COMPLETED = 0, CANCELLED, FAILED };
-
-   typedef boost::function<void (int)> CBType;
-   typedef void * Handle;
+  typedef void * Handle;
 
    /// Initialize resource, start any threads if required
    virtual void start () = 0;

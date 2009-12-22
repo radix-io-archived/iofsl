@@ -33,18 +33,18 @@ public:
    {
       switch (status)
       {
-         case iofwdevent::Resource::COMPLETED:
+         case iofwdevent::COMPLETED:
             success ();
             break;
-         case iofwdevent::Resource::CANCELLED:
+         case iofwdevent::CANCELLED:
             cancel ();
             break;
          default:
             ALWAYS_ASSERT(false);
       }
    }
-   
-   iofwdevent::Resource::CBType callbackRef () 
+
+   iofwdevent::CBType callbackRef ()
    { return boost::bind (&SMResourceOp::callback, boost::ref(*this), _1); }
 
    virtual void success ();
