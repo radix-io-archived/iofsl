@@ -311,6 +311,7 @@ BOOST_AUTO_TEST_CASE(multithreaded_request)
 
    // All tokens should be released
    BOOST_CHECK_EQUAL_TS(TOKENCOUNT, f.tokens_.get_tokencount());
+   BOOST_CHECK_EQUAL_TS(globalcount, 0);
 
    BOOST_TEST_MESSAGE_TS("request test completed..." );
 }
