@@ -4,6 +4,12 @@
 # Prepares, builds and tests 
 #
 
+if test -z "${IOFWD_SRCDIR}" ; then
+   echo "Need IOFWD_SRCDIR !"
+   exit 1
+fi
+
+
 SCRIPTDIR="${IOFWD_SRCDIR}/scripts"
 CONFIGFILE="${SCRIPTDIR}/configoptions.$(hostname)"
 if test -r "${CONFIGFILE}" ; then
