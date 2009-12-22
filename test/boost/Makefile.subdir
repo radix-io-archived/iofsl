@@ -25,7 +25,8 @@ test_boost_dummy_LDADD = $(shared_ldadd)
 #############################################################################
 TESTS += test/boost/iofwdevent-resource
 check_PROGRAMS += test/boost/iofwdevent-resource
-test_boost_iofwdevent_resource_SOURCES = test/boost/singlecompletion.cpp \
+test_boost_iofwdevent_resource_SOURCES = test/boost/dummyresource.cpp \
+					 test/boost/singlecompletion.cpp \
 				   test/boost/timerresource.cpp \
 				   test/boost/tokenresource.cpp \
 				   test/boost/bmiresource.cpp \
