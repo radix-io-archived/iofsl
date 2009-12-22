@@ -25,8 +25,8 @@ void IOFWDMain::boot ()
 
    ZLOG_DEBUG (mainlog_, "Starting IOFWD Frontend"); 
 
-   frontend_.reset (new frontend::IOFWDFrontend (bmires_));
-
+   frontend_.reset (new frontend::IOFWDFrontend (bmires_, *resources_));
+   
    frontend_->setConfig (config_.openSectionDefault ("frontend"));
 
    frontend_->init ();
@@ -34,7 +34,6 @@ void IOFWDMain::boot ()
    // Set handler for frontend
    requesthandler_.reset (new DefRequestHandler(config_.openSectionDefault("requesthandler"))); 
    frontend_->setHandler (requesthandler_.get());
-
 
    // Start frontend and begin accepting requests
    frontend_->run ();
