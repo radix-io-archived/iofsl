@@ -55,21 +55,15 @@ const IOFWDSymLinkRequest::ReqParam & IOFWDSymLinkRequest::decodeParam ()
    return param_;
 }
 
-iofwdutil::completion::CompletionID * IOFWDSymLinkRequest::reply (const zoidfs::zoidfs_cache_hint_t * from_parent_hint,
-                                                                  const zoidfs::zoidfs_cache_hint_t * to_parent_hint)
+void IOFWDSymLinkRequest::reply (const CBType & cb,
+      const zoidfs::zoidfs_cache_hint_t * from_parent_hint,
+      const zoidfs::zoidfs_cache_hint_t * to_parent_hint)
 {
    // If success, send the return code followed by the handle;
    // Otherwise send the return code.
-   if (getReturnCode() == zoidfs::ZFS_OK)
-   {
-      ASSERT (from_parent_hint);
-      ASSERT (to_parent_hint);
-      return simpleReply (TSSTART << (int32_t) getReturnCode() << *from_parent_hint << *to_parent_hint);
-   }
-   else
-   {
-      return simpleReply (TSSTART << (int32_t) getReturnCode());
-   }
+   ASSERT ((getReturnCode() != zoidfs::ZFS_OK) ||
+         (from_parent_hint && to_parent_hint));
+   simpleOptReply (cb, getReturnCode(), TSSTART << *from_parent_hint << *to_parent_hint);
 }
 
 IOFWDSymLinkRequest::~IOFWDSymLinkRequest ()

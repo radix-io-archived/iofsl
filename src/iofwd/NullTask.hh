@@ -1,12 +1,14 @@
 #ifndef IOFWD_NULLTASK_HH
 #define IOFWD_NULLTASK_HH
 
+#include <boost/bind.hpp>
 #include <boost/function.hpp>
 #include <memory>
 #include "Task.hh"
 #include "NullRequest.hh"
 #include "TaskHelper.hh"
 #include "zoidfs/util/ZoidFSAPI.hh"
+#include "iofwdevent/SingleCompletion.hh"
 
 namespace iofwd
 {
@@ -27,9 +29,11 @@ public:
 
    void run ()
    {
-      request_.setReturnCode (api_->null ()); 
-      std::auto_ptr<iofwdutil::completion::CompletionID>  id (request_.reply ()); 
-      id->wait (); 
+      // Call the ZOIDFS_NULL function and store the return code.
+      request_.setReturnCode (api_->null ());
+
+      request_.reply (boost::ref(block_));
+      block_.wait ();
    }
 
 };

@@ -20,7 +20,7 @@ public:
    }
 
 
-   virtual void reply ();
+   virtual void reply (const CBType & cb);
 
    virtual ~IOFWDNotImplementedRequest ();
 

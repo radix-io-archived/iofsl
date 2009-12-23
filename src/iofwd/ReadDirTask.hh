@@ -28,12 +28,12 @@ public:
        size_t entry_count = p.entry_count;
        int ret = api_->readdir (p.handle, p.cookie, &entry_count,
                                 p.entries, p.flags, &parent_hint, p.op_hint);
-       request_.setReturnCode (ret); 
-       std::auto_ptr<iofwdutil::completion::CompletionID> id (request_.reply (entry_count, p.entries, &parent_hint));
-       id->wait ();
+       request_.setReturnCode (ret);
+       request_.reply (boost::ref(block_), entry_count, p.entries, &parent_hint);
+       block_.wait ();
   }
 
-}; 
+};
 
 }
 

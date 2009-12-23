@@ -28,8 +28,8 @@ public:
        int ret = api_->lookup (p.parent_handle, p.component_name, 
                                p.full_path, &handle, p.op_hint); 
        request_.setReturnCode (ret); 
-       std::auto_ptr<iofwdutil::completion::CompletionID> id (request_.reply ( (ret  == zoidfs::ZFS_OK ? &handle : 0)));
-       id->wait ();
+       request_.reply (boost::ref(block_), (ret  == zoidfs::ZFS_OK ? &handle : 0));
+       block_.wait ();
   }
 
 }; 

@@ -25,7 +25,7 @@ public:
 
    virtual const ReqParam & decodeParam () ;
 
-   virtual iofwdutil::completion::CompletionID * reply (const zoidfs::zoidfs_cache_hint_t * parent_hint);
+   virtual void reply (const CBType & cb, const zoidfs::zoidfs_cache_hint_t * parent_hint);
 
    virtual ~IOFWDMkdirRequest ();
 

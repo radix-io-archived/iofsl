@@ -30,20 +30,14 @@ const IOFWDReadLinkRequest::ReqParam & IOFWDReadLinkRequest::decodeParam ()
    return param_;
 }
 
-iofwdutil::completion::CompletionID * IOFWDReadLinkRequest::reply (const char * buffer, uint64_t buffer_length)
+void IOFWDReadLinkRequest::reply (const CBType & cb, const char * buffer, uint64_t buffer_length)
 {
    // If success, send the return code followed by the handle;
    // Otherwise send the return code.
-   if (getReturnCode() == zoidfs::ZFS_OK)
-   {
-      ASSERT (buffer);
-      return simpleReply (TSSTART << (int32_t) getReturnCode()
-            << encoder::EncString(buffer, buffer_length));
-   }
-   else
-   {
-      return simpleReply (TSSTART << (int32_t) getReturnCode());
-   }
+
+   ASSERT (getReturnCode() != zoidfs::ZFS_OK || buffer);
+   simpleOptReply (cb, getReturnCode (),
+         TSSTART << encoder::EncString(buffer, buffer_length));
 }
 
 IOFWDReadLinkRequest::~IOFWDReadLinkRequest ()

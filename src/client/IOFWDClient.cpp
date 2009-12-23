@@ -251,7 +251,7 @@ int IOFWDClient::readdir(const zoidfs_handle_t * parent_handle /* in:ptr */,
                    zoidfs_cache_hint_t * parent_hint /* out:ptr:nullok */)
 {
    /* For the reply, we expect an integer listing the number of array entries
-    * that will follow: in other words, we can receive in a XDRVarArray */
+    * that will follow: in other words, we can receive in a EncVarArray */
    return comm_.genericOp (ZOIDFS_PROTO_READDIR,
          TSSTART << *parent_handle << cookie << *entry_count << flags,
          TSSTART << *entry_count

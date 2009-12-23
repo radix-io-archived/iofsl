@@ -32,9 +32,9 @@ const IOFWDResizeRequest::ReqParam & IOFWDResizeRequest::decodeParam ()
    return param_;
 }
 
-iofwdutil::completion::CompletionID * IOFWDResizeRequest::reply ()
+void IOFWDResizeRequest::reply (const CBType & cb)
 {
-   return simpleReply (TSSTART << (int32_t) getReturnCode ()); 
+   simpleReply (cb, TSSTART << (int32_t) getReturnCode ());
 }
 
 //===========================================================================

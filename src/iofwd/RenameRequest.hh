@@ -15,13 +15,13 @@ public:
 
    typedef struct
    {
-      char * from_full_path;
+      const char * from_full_path;
       zoidfs::zoidfs_handle_t * from_parent_handle;
-      char * from_component_name;
+      const char * from_component_name;
 
-      char * to_full_path;
+      const char * to_full_path;
       zoidfs::zoidfs_handle_t * to_parent_handle;
-      char * to_component_name;
+      const char * to_component_name;
       zoidfs::zoidfs_op_hint_t * op_hint;
    } ReqParam;
 
@@ -39,8 +39,9 @@ public:
     * Reply with the handle or 0 if an error occurred and the handle does not
     * need to be transmitted
     */
-   virtual iofwdutil::completion::CompletionID * reply (const zoidfs::zoidfs_cache_hint_t * from_parent_hint,
-                                                        const zoidfs::zoidfs_cache_hint_t * to_parent_hint) = 0;
+   virtual void reply (const CBType & cb, 
+              const zoidfs::zoidfs_cache_hint_t * from_parent_hint,
+              const zoidfs::zoidfs_cache_hint_t * to_parent_hint) = 0;
 };
 
 //===========================================================================

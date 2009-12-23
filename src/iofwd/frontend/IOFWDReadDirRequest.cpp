@@ -49,24 +49,18 @@ const IOFWDReadDirRequest::ReqParam & IOFWDReadDirRequest::decodeParam ()
    return param_;
 }
 
-iofwdutil::completion::CompletionID * IOFWDReadDirRequest::reply (uint32_t entry_count,
-                                                                  zoidfs::zoidfs_dirent_t * entries,
-                                                                  zoidfs::zoidfs_cache_hint_t * parent_hint)
+void IOFWDReadDirRequest::reply (const CBType & cb,
+                                 uint32_t entry_count,
+                                 zoidfs::zoidfs_dirent_t * entries,
+                                 zoidfs::zoidfs_cache_hint_t * parent_hint)
 {
    // If success, send the return code followed by the handle;
    // Otherwise send the return code.
-   if (getReturnCode() == zoidfs::ZFS_OK)
-   {
-      ASSERT (entries);
-      ASSERT (parent_hint);
-      return simpleReply (TSSTART << (int32_t) getReturnCode() << entry_count
+   ASSERT ((getReturnCode() != zoidfs::ZFS_OK) ||
+         (entries && parent_hint));
+   simpleOptReply (cb, getReturnCode (), TSSTART << entry_count
                           << encoder::EncVarArray(entries, entry_count)
                           << *parent_hint);
-   }
-   else
-   {
-      return simpleReply (TSSTART << (int32_t) getReturnCode());
-   }
 }
 
 //===========================================================================

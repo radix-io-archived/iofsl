@@ -25,9 +25,9 @@ public:
 
    virtual const ReqParam & decodeParam () ;
 
-   virtual iofwdutil::completion::CompletionID * reply (uint32_t entry_count,
-                                                        zoidfs::zoidfs_dirent_t * entries,
-                                                        zoidfs::zoidfs_cache_hint_t * cache);
+   virtual void reply (const CBType & cb, uint32_t entry_count,
+                                   zoidfs::zoidfs_dirent_t * entries,
+                                   zoidfs::zoidfs_cache_hint_t * cache);
 
    virtual ~IOFWDReadDirRequest ();
 

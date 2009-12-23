@@ -23,16 +23,16 @@ public:
 
    void run ()
    {
-       const MkdirRequest::ReqParam & p = request_.decodeParam (); 
+       const MkdirRequest::ReqParam & p = request_.decodeParam ();
        zoidfs::zoidfs_cache_hint_t hint;
        int ret = api_->mkdir (p.parent_handle, p.component_name,
                               p.full_path, p.sattr, &hint, p.op_hint);
-       request_.setReturnCode (ret); 
-       std::auto_ptr<iofwdutil::completion::CompletionID> id (request_.reply (&hint));
-       id->wait ();
+       request_.setReturnCode (ret);
+       request_.reply (boost::ref(block_), &hint);
+       block_.wait();
   }
 
-}; 
+};
 
 }
 

@@ -4,6 +4,7 @@
 #include "Task.hh"
 #include "iofwdutil/completion/BMIResource.hh"
 #include "BMIBufferPool.hh"
+#include "iofwdevent/SingleCompletion.hh"
 
 namespace zoidfs
 {
@@ -41,11 +42,13 @@ public:
 
 } ; 
 
-template <typename T>
 
 /**
  * Helper class for Threaded tasks.
+ *
+ * This is an easy way to inject a member/parameter in each thread task.
  */
+template <typename T>
 class TaskHelper : public Task
 {
    public:
@@ -80,6 +83,10 @@ class TaskHelper : public Task
       RequestScheduler * sched_;
       BMIBufferPool * bpool_;
       iofwdutil::completion::BMIResource & bmi_; 
+
+      // All (almost?) threaded tasks call a blocking function at some point.
+      // Declaring it here saves on typing.
+      iofwdevent::SingleCompletion block_;
 }; 
 
 

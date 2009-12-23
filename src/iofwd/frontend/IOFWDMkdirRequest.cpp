@@ -38,19 +38,13 @@ const IOFWDMkdirRequest::ReqParam & IOFWDMkdirRequest::decodeParam ()
    return param_; 
 }
 
-iofwdutil::completion::CompletionID * IOFWDMkdirRequest::reply (const zoidfs::zoidfs_cache_hint_t * parent_hint)
+void IOFWDMkdirRequest::reply (const CBType & cb,
+      const zoidfs::zoidfs_cache_hint_t * parent_hint)
 {
    // If success, send the return code followed by the hint;
    // Otherwise send the return code.
-   if (getReturnCode() == zoidfs::ZFS_OK)
-   {
-      ASSERT (parent_hint);
-      return simpleReply (TSSTART << (int32_t) getReturnCode() << *parent_hint);
-   }
-   else
-   {
-      return simpleReply (TSSTART << (int32_t) getReturnCode()); 
-   }
+   ASSERT (getReturnCode() != zoidfs::ZFS_OK || parent_hint);
+   simpleOptReply (cb, getReturnCode (), TSSTART << *parent_hint);
 }
 
 IOFWDMkdirRequest::~IOFWDMkdirRequest ()
