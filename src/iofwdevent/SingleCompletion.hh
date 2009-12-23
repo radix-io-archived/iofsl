@@ -41,6 +41,9 @@ namespace iofwdevent
       /// Rearm the object so it can be reused for completion testing
       void reset ()
       {
+         // In principle the lock below is not needed. The user should
+         // guarantee that the operation completed before calling reset,
+         // so nobody else should be concurrently modifying status_
          boost::mutex::scoped_lock l (lock_);
 
          ASSERT(status_ != WAITING);
