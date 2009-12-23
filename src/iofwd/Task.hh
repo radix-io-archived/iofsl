@@ -48,7 +48,7 @@ public:
    {
    }
 
-   virtual ~Task ();
+   virtual ~Task () {}
 
 
    /// Called if the task can be rescheduled for work

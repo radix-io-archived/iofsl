@@ -23,8 +23,6 @@ public:
    virtual iofwdutil::completion::CompletionID * reply ();
 
    virtual void reply (const CBType & cb);
-
-   virtual ~IOFWDNullRequest ();
 };
 
 

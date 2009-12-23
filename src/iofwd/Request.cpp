@@ -47,9 +47,5 @@ Request::Request (int opid)
          ((sizeof(opidnames)/sizeof(opidnames[0]))));
 }
 
-Request::~Request ()
-{
-}
-
 //===========================================================================
 }

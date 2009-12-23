@@ -18,14 +18,11 @@ public:
       : TaskHelper<NullRequest>(p)
    {
    }
-   virtual ~NullTask ()
-   {
-   }
 
-   /// zoidfs_null is a fast request. No need to schedule it 
+   /// zoidfs_null is a fast request. No need to schedule it
    bool isFast () const
    {
-      return true; 
+      return true;
    }
 
    void run ()
@@ -35,7 +32,7 @@ public:
       id->wait (); 
    }
 
-}; 
+};
 
 }
 
