@@ -17,9 +17,9 @@ class IOFWDLinkRequest
      public LinkRequest
 {
 public:
-   IOFWDLinkRequest (iofwdutil::bmi::BMIContext & bmi, int opid, const BMI_unexpected_info & info,
-         iofwdutil::completion::BMIResource & res)
-      : IOFWDRequest (bmi, info,res), LinkRequest (opid), op_hint_(NULL)
+   IOFWDLinkRequest (int opid, const BMI_unexpected_info & info,
+         IOFWDResources & res)
+      : IOFWDRequest (info,res), LinkRequest (opid), op_hint_(NULL)
    {
    }
 

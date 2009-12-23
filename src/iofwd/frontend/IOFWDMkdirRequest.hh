@@ -17,9 +17,9 @@ class IOFWDMkdirRequest
      public MkdirRequest
 {
 public:
-   IOFWDMkdirRequest (iofwdutil::bmi::BMIContext & bmi, int opid, const BMI_unexpected_info & info,
-         iofwdutil::completion::BMIResource & res)
-      : IOFWDRequest (bmi, info,res), MkdirRequest (opid), op_hint_(NULL)
+   IOFWDMkdirRequest (int opid, const BMI_unexpected_info & info,
+         IOFWDResources & res)
+      : IOFWDRequest (info,res), MkdirRequest (opid), op_hint_(NULL)
    {
    }
 

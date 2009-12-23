@@ -15,9 +15,9 @@ class IOFWDResizeRequest
     public IOFWDRequest
 {
 public:
-   IOFWDResizeRequest (iofwdutil::bmi::BMIContext & bmi, int opid, const BMI_unexpected_info & info,
-         iofwdutil::completion::BMIResource & res)
-      : ResizeRequest(opid), IOFWDRequest (bmi, info, res), op_hint_(NULL)
+   IOFWDResizeRequest (int opid, const BMI_unexpected_info & info,
+         IOFWDResources & res)
+      : ResizeRequest(opid), IOFWDRequest (info, res), op_hint_(NULL)
    {
    }
 

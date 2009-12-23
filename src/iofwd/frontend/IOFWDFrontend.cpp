@@ -50,23 +50,15 @@ namespace
 // ==========================================================================
 // map op id to IOFWDRequest
 
-typedef Request * (*mapfunc_t) ( iofwdutil::bmi::BMIContext & bmi,
+typedef Request * (*mapfunc_t) (
       int i, const BMI_unexpected_info & info,
-      iofwdutil::completion::BMIResource & res);
+      IOFWDResources & res);
+
 
 template <typename T>
-static inline Request * newreq (iofwdutil::bmi::BMIContext & bmi,
-      int i, const BMI_unexpected_info & info,
-      iofwdutil::completion::BMIResource & res)
-{
-#ifndef USE_REQUEST_POOL_ALLOCATOR
-    return new T (bmi, i, info, res );
-#else
-    /* get memory location from the pool and allocate a new Request using placement new */
-    Request * rloc = iofwd::RequestPoolAllocator::instance().allocate(i);
-    return new (rloc) T(bmi, i, info, res);
-#endif
-}
+static inline Request * newreq (int i, const BMI_unexpected_info & info,
+      IOFWDResources & res)
+{ return new T (i, info, res); }
 
 static boost::array<mapfunc_t, ZOIDFS_PROTO_MAX> map_ = {
    {
@@ -103,7 +95,8 @@ IOFWDFrontend::IOFWDFrontend (iofwdutil::completion::BMIResource & res,
    bmires_ (res),
    r_(r),
    stop_(false),
-   req_minsize_(encoder::xdr::getXDRSize (uint32_t ()).getActualSize())
+   req_minsize_(encoder::xdr::getXDRSize (uint32_t ()).getActualSize()),
+   res_ (r_, bmires_, log_)
 {
 }
 
@@ -136,6 +129,8 @@ void IOFWDFrontend::init ()
 
    // Make sure we have a context open
    bmictx_ = iofwdutil::bmi::BMI::get().openContext ();
+
+   res_.bmictx_ = bmictx_;
 
    stop_ = false;
 }
@@ -199,7 +194,7 @@ void IOFWDFrontend::handleIncoming (int count, const BMI_unexpected_info  * info
       {
          // Request now owns the BMI buffer
          ALWAYS_ASSERT(map_[opid]);
-         reqs[ok++] = map_[opid] (*bmictx_.get(), opid, info[i], bmires_);
+         reqs[ok++] = map_[opid] (opid, info[i], res_);
       }
    }
    handler_->handleRequest (ok, &reqs[0]);

@@ -16,9 +16,9 @@ class IOFWDSetAttrRequest
      public SetAttrRequest
 {
 public:
-   IOFWDSetAttrRequest (iofwdutil::bmi::BMIContext & bmi, int opid, const BMI_unexpected_info & info,
-         iofwdutil::completion::BMIResource & res)
-      : IOFWDRequest (bmi, info, res), SetAttrRequest (opid), op_hint_(NULL)
+   IOFWDSetAttrRequest (int opid, const BMI_unexpected_info & info,
+         IOFWDResources & res)
+      : IOFWDRequest (info, res), SetAttrRequest (opid), op_hint_(NULL)
    {
    }
    virtual ~IOFWDSetAttrRequest ();

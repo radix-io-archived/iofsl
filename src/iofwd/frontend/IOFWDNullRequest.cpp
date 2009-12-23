@@ -11,6 +11,10 @@ namespace iofwd
    {
 //===========================================================================
 
+void IOFWDNullRequest::reply (const CBType & cb)
+{
+}
+
 iofwdutil::completion::CompletionID * IOFWDNullRequest::reply ()
 {
    return simpleReply (TSSTART << (int32_t) getReturnCode ());
