@@ -62,9 +62,11 @@ protected:
 
    void decodeFileSpec (FileInfo & info)
    {
+      // @TODO: This probably needs to go!
       memset(info.parent_handle.data, 0, sizeof(uint8_t) * 32);
       memset(info.full_path, 0, ZOIDFS_PATH_MAX);
       memset(info.component_name, 0, ZOIDFS_NAME_MAX);
+
       process(req_reader_, encoder::FileSpecHelper (&info.parent_handle,
               info.component_name, info.full_path));
    }
@@ -78,9 +80,12 @@ protected:
 
 protected:
 
-   // Convenience functions for simple requests (lookup, mkdir, ... )
+   /** 
+    * Temporary helper function until we can remove CompletionID related
+    * stuff. After it is removed, this can move into simpleReply
+    */
    template <typename SENDOP>
-   CompletionID * simpleReply (const SENDOP & op)
+   void simpleReplyCommon (const SENDOP & op)
    {
       encoder::xdr::XDRSizeProcessor s;
       applyTypes (s, op);
@@ -93,15 +98,45 @@ protected:
       // if not all type encoders return actual lower bounds on the size.
       beginReply (s.size().getActualSize());
       applyTypes (reply_writer_, op);
+   }
 
+   /**
+    * \brief Convenience function for simple requests that respond with only
+    *        send back one message to the client.
+    *
+    * \deprecated
+    */
+    template <typename SENDOP>
+   CompletionID * simpleReply (const SENDOP & op)
+   {
+      simpleReplyCommon (op);
       return sendReply ();
+   }
+
+   /**
+    * \brief Convenience function for simple requests that respond with only
+    *        send back one message to the client.
+    *
+    */
+   template <typename SENDOP>
+   void simpleReply (const SENDOP & op, const iofwdevent::CBType & cb)
+   {
+      simpleReplyCommon (op);
+      sendReply (cb);
    }
 
    /// Start reply of at most maxsize data
    void beginReply (size_t maxsize);
 
-   /// Send the buffer in reply writer
+   /** 
+    * \brief Send the buffer in reply writer
+    *
+    * \deprecated
+    */
    CompletionID * sendReply ();
+
+   /// Send the buffer in reply writer
+   void sendReply (const iofwdevent::CBType & cb);
 
 protected:
    /// Send a reply back to the client; low-level function
