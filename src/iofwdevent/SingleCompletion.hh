@@ -3,6 +3,7 @@
 
 #include <boost/function.hpp>
 #include <boost/thread.hpp>
+#include <boost/utility.hpp>
 #include <csignal>
 
 #include "iofwdevent/Resource.hh"
@@ -17,17 +18,25 @@ namespace iofwdevent
     * This class enables a thread to block until a ResourceOp completes.
     * After the operation completes, it can be reused for another operation.
     *
+    * Cannot be copied for two reasons:
+    *    1) When using as functor, the user really doesn't want to copy the
+    *       functor (and complete the copy) -> force failure is boost::ref
+    *       isn't use
+    *    2) boost::mutex cannot be copied anyway.
+    *
     * @TODO: exception transport
     */
-   class SingleCompletion : public ResourceOp
+   class SingleCompletion : public ResourceOp,
+                            public boost::noncopyable
    {
    public:
 
-      CBType callbackRef ()
-      { return boost::bind (&SingleCompletion::callback, boost::ref(*this),
-            _1); }
-
-      void callback (int status)
+      /**
+       * \brief: CBType compatible functor signature.
+       *
+       *  Don't forget to use boost::ref !
+       */
+      void operator () (int status)
       {
          switch (status)
          {

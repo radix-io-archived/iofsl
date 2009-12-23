@@ -250,7 +250,7 @@ static void multi_request_helper (iofwdevent::TokenResource & tokens,
          complete.reset ();
       }
 
-      tokens.request (complete.callbackRef(), trycount);
+      tokens.request (boost::ref(complete), trycount);
       complete.wait ();
 
       {

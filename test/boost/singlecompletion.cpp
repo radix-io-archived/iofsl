@@ -2,6 +2,7 @@
 #include <boost/test/unit_test.hpp>
 #include <boost/bind.hpp>
 #include <boost/format.hpp>
+#include "iofwdevent/DummyResource.hh"
 #include "iofwdevent/SingleCompletion.hh"
 #include "ThreadSafety.hh"
 
@@ -17,6 +18,8 @@ struct SCFixture {
     ~SCFixture()         { }
     
     SingleCompletion comp;
+
+    DummyResource dummy_;
 
     bool completed_;
 
@@ -35,7 +38,7 @@ BOOST_FIXTURE_TEST_CASE( singlethreaded_test, SCFixture )
 
 
     BOOST_CHECK_TS (!comp.test ());
-    comp.success ();
+    dummy_.immediate (boost::ref(comp), COMPLETED);
     BOOST_CHECK_TS (comp.test ());
     
 }
