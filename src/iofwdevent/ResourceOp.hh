@@ -5,6 +5,11 @@ namespace iofwdevent
 {
 //===========================================================================
 
+/**
+ * Base callback class for blocking operations.
+ *
+ * @TODO: Remove this; Deprecated. Use CBType instead.
+ */
 class ResourceOp
 {
 public:
