@@ -9,6 +9,8 @@ namespace iofwdevent
 
 /**
  * This class calls the old callback functions for a ResourceOp objects.
+ *
+ * @TODO: Remove this once ResourceOp is phased out.
  */
 class ResourceCompatHelper
 {
