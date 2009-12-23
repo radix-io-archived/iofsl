@@ -12,14 +12,10 @@ namespace iofwd
 class NullRequest : public Request
 {
 public:
-   NullRequest (int opid) 
+   NullRequest (int opid)
       : Request (opid)
    {
    }
-   virtual ~NullRequest ()
-   {
-   }
-
    virtual iofwdutil::completion::CompletionID * reply () = 0; 
 
 }; 

@@ -40,7 +40,8 @@ public:
    int getReturnCode () const
    { return returncode_; }
 
-   virtual ~Request ();
+   // Virtual destructor needed
+   virtual ~Request () {};
 
   protected:
 

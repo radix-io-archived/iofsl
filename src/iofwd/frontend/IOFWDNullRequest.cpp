@@ -20,10 +20,6 @@ iofwdutil::completion::CompletionID * IOFWDNullRequest::reply ()
    return simpleReply (TSSTART << (int32_t) getReturnCode ());
 }
 
-IOFWDNullRequest::~IOFWDNullRequest ()
-{
-}
-
 //===========================================================================
    }
 }
