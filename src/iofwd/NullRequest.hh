@@ -16,9 +16,9 @@ public:
       : Request (opid)
    {
    }
-   virtual iofwdutil::completion::CompletionID * reply () = 0; 
 
-}; 
+   virtual void reply (const CBType & cb) = 0;
+};
 
 }
 

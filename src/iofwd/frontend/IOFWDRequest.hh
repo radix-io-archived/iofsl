@@ -95,7 +95,7 @@ protected:
       // Since we have actual data we can use the actual size as the
       // upper bound for the required memory for the XDR encoding.
       // Note that the actual encoded data size might still be smaller,
-      // if not all type encoders return actual lower bounds on the size.
+      // if not all type encoders return accurate lower bounds on the size.
       beginReply (s.size().getActualSize());
       applyTypes (reply_writer_, op);
    }
@@ -119,9 +119,48 @@ protected:
     *
     */
    template <typename SENDOP>
-   void simpleReply (const SENDOP & op, const iofwdevent::CBType & cb)
+   void simpleReply (const iofwdevent::CBType & cb, const SENDOP & op)
    {
       simpleReplyCommon (op);
+      sendReply (cb);
+   }
+
+   /**
+    * \brief Send full reply is status is OK, only status otherwise
+    *
+    * Encodes code, and if code == ZFS_OK encodes op.
+    * Sends the resulting buffer using sendReply.
+    *
+    * This function was added to avoid the 
+    *   if (getResultCode() == ZFS_OK)
+    *       simpleReply (getResultCode << ....)
+    *   else
+    *       simpleReply (getResultCode << ....)
+    *
+    */
+   template <typename SENDOP>
+   void simpleOptReply (const iofwdevent::CBType & cb, int code,
+         const SENDOP & op)
+   {
+      encoder::xdr::XDRSizeProcessor s;
+
+      // We encode ZFS returncodes using int32_t (even though the C prototype
+      // type is 'int')
+      s << static_cast<int32_t>(code);
+
+      if (code == zoidfs::ZFS_OK)
+      {
+         applyTypes (s, op);
+      }
+
+      beginReply (s.size().getActualSize());
+
+      reply_writer_ << static_cast<int32_t> (code);
+      if (code == zoidfs::ZFS_OK)
+      {
+         applyTypes (reply_writer_, op);
+      }
+
       sendReply (cb);
    }
 

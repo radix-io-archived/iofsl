@@ -24,7 +24,8 @@ public:
 
    virtual const ReqParam & decodeParam () ;
 
-   virtual iofwdutil::completion::CompletionID * reply (const zoidfs::zoidfs_handle_t * handle, int created);
+   virtual void reply (const CBType & cb, const zoidfs::zoidfs_handle_t *
+         handle, int created);
 
    virtual ~IOFWDCreateRequest ();
 

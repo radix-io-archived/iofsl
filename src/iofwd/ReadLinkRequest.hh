@@ -18,25 +18,25 @@ public:
       zoidfs::zoidfs_handle_t * handle;
       uint64_t buffer_length;
       zoidfs::zoidfs_op_hint_t * op_hint;
-   } ReqParam; 
+   } ReqParam;
 
-   ReadLinkRequest (int opid) : 
+   ReadLinkRequest (int opid) :
       Request (opid)
    {
    }
 
    /**
-    * Retrieve the request input parameters 
+    * Retrieve the request input parameters
     */
-   virtual const ReqParam & decodeParam ()  = 0; 
+   virtual const ReqParam & decodeParam ()  = 0;
 
    /**
     * Reply with the handle or 0 if an error occurred and the handle does not
     * need to be transmitted
     */
-   virtual iofwdutil::completion::CompletionID * reply (const char * buffer,
-                                                        uint64_t buffer_length) = 0;
-}; 
+   virtual void reply (const CBType & cb, const char * buffer,
+                                            uint64_t buffer_length) = 0;
+};
 
 
 //===========================================================================

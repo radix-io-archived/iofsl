@@ -26,7 +26,8 @@ public:
    }
 
    virtual const ReqParam & decodeParam () = 0;
-   virtual iofwdutil::completion::CompletionID * reply (const zoidfs::zoidfs_attr_t * attr) = 0;
+   virtual void reply (const CBType & cb,
+         const zoidfs::zoidfs_attr_t * attr) = 0;
 }; 
 
 }

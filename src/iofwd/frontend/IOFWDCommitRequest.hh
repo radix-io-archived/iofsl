@@ -24,7 +24,7 @@ public:
 
    virtual const ReqParam & decodeParam ();
 
-   virtual iofwdutil::completion::CompletionID * reply ();
+   virtual void reply (const CBType & cb);
 
    virtual ~IOFWDCommitRequest ();
 

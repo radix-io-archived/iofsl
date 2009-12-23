@@ -8,22 +8,17 @@ namespace iofwd
 {
    namespace frontend
    {
+//===========================================================================
 
       IOFWDNotImplementedRequest::~IOFWDNotImplementedRequest ()
       {
       }
 
-      void IOFWDNotImplementedRequest::reply ()
+      void IOFWDNotImplementedRequest::reply (const CBType & cb)
       {
-
-         setReturnCode (zoidfs::ZFSERR_NOTIMPL);
-
-         simpleReply (TSSTART << (int32_t) getReturnCode());
-
-         /*beginReply (getXDRSize<int32_t>().max);
-         reply_writer_ << (int32_t) getReturnCode ();
-         sendReply (); */
+         simpleReply (cb, TSSTART << (int32_t) getReturnCode());
       }
 
+//===========================================================================
    }
 }
