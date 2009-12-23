@@ -13,15 +13,17 @@ namespace iofwd
    {
 //===========================================================================
 
-class  IOFWDReadRequest 
-   : public IOFWDRequest, 
+class  IOFWDReadRequest
+   : public IOFWDRequest,
      public ReadRequest
 {
 public:
-   IOFWDReadRequest (iofwdutil::bmi::BMIContext & bmi, int opid, const BMI_unexpected_info & info,
-         iofwdutil::completion::BMIResource & res)
-      : IOFWDRequest (bmi, info,res), ReadRequest (opid),
-        mem_count_ (0), mem_total_size_(0), mem_ (NULL), bmi_buffer_(addr_, iofwdutil::bmi::BMI::ALLOC_SEND), mem_starts_ (NULL), mem_sizes_ (NULL), bmi_mem_sizes_ (NULL),
+   IOFWDReadRequest (int opid, const BMI_unexpected_info & info,
+         IOFWDResources & res)
+      : IOFWDRequest (info,res), ReadRequest (opid),
+        mem_count_ (0), mem_total_size_(0), mem_ (NULL), bmi_buffer_(addr_,
+              iofwdutil::bmi::BMI::ALLOC_SEND), mem_starts_ (NULL), 
+        mem_sizes_ (NULL), bmi_mem_sizes_ (NULL),
         file_count_ (0), file_starts_ (NULL), file_sizes_ (NULL),
         pipeline_size_ (0), op_hint_(NULL)
    {
@@ -59,7 +61,7 @@ private:
    zoidfs::zoidfs_file_ofs_t * file_sizes_;
    size_t pipeline_size_;
    zoidfs::zoidfs_op_hint_t * op_hint_;
-}; 
+};
 
 //===========================================================================
    }

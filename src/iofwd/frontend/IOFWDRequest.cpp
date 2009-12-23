@@ -7,15 +7,15 @@ namespace iofwd
    {
 //===========================================================================
 
-iofwdutil::zlog::ZLogSource & IOFWDRequest::log_ = iofwdutil::IOFWDLog::getSource(); 
-
-IOFWDRequest::IOFWDRequest (iofwdutil::bmi::BMIContext & bmi, const BMI_unexpected_info & info,
-      iofwdutil::completion::BMIResource & res)
-   : bmi_ (bmi), raw_request_ (info), addr_ (raw_request_.getAddr()),
+IOFWDRequest::IOFWDRequest (const BMI_unexpected_info & info,
+      IOFWDResources & res)
+   :
+   r_ (res),
+   bmi_ (*r_.bmictx_), raw_request_ (info), addr_ (raw_request_.getAddr()),
    tag_(raw_request_.getTag()), 
    req_reader_(raw_request_.get(), raw_request_.size()),
    buffer_send_ (addr_, iofwdutil::bmi::BMI::ALLOC_SEND),
-   bmires_ (res)
+   bmires_ (r_.bmires_)
 {
    // opid may not be used
    int32_t opid;
@@ -41,7 +41,7 @@ void IOFWDRequest::beginReply (size_t maxsize)
 CompletionID * IOFWDRequest::sendReply ()
 {
    // beginReply allocated BMI mem
-   ZLOG_DEBUG_EXTREME (log_, iofwdutil::format("Sending reply of %lu bytes (max bufsize = %lu bytes)")
+   ZLOG_DEBUG_EXTREME (r_.log_, iofwdutil::format("Sending reply of %lu bytes (max bufsize = %lu bytes)")
              % reply_writer_.size() % reply_writer_.getMaxSize()); 
 
    return ll_sendReply (reply_writer_.getBuf(), reply_writer_.size(), 

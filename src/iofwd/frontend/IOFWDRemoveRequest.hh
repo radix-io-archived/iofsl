@@ -11,29 +11,29 @@ namespace iofwd
    {
 //===========================================================================
 
-class IOFWDRemoveRequest 
-   : public IOFWDRequest, 
+class IOFWDRemoveRequest
+   : public IOFWDRequest,
      public RemoveRequest
 {
 public:
-   IOFWDRemoveRequest (iofwdutil::bmi::BMIContext & bmi, int opid, const BMI_unexpected_info & info,
-         iofwdutil::completion::BMIResource & res)
-      : IOFWDRequest (bmi, info,res), RemoveRequest (opid), op_hint_(NULL)
+   IOFWDRemoveRequest (int opid, const BMI_unexpected_info & info,
+         IOFWDResources & res)
+      : IOFWDRequest (info,res), RemoveRequest (opid), op_hint_(NULL)
    {
    }
 
-   virtual const ReqParam & decodeParam () ; 
+   virtual const ReqParam & decodeParam () ;
 
    virtual iofwdutil::completion::CompletionID * reply (const zoidfs::zoidfs_cache_hint_t * parent_hint);
 
-   virtual ~IOFWDRemoveRequest (); 
+   virtual ~IOFWDRemoveRequest ();
 
-   
+
 protected:
-   ReqParam param_; 
+   ReqParam param_;
    FileInfo info_;
    zoidfs::zoidfs_op_hint_t * op_hint_;
-}; 
+};
 
 //===========================================================================
    }

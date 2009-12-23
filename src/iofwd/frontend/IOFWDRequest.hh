@@ -23,6 +23,7 @@
 #include "iofwdutil/completion/BMIResource.hh"
 
 #include "iofwdutil/IOFWDLog.hh"
+#include "IOFWDResources.hh"
 
 using iofwdutil::completion::CompletionID;
 
@@ -30,12 +31,18 @@ namespace iofwd
 {
    namespace frontend
    {
+//===========================================================================
 
+
+/**
+ * \brief IOFWDRequest provides common functionality to all the
+ *        IOFWDxxxRequest implementations.
+ */
 class IOFWDRequest
 {
 public:
-   IOFWDRequest (iofwdutil::bmi::BMIContext & bmi, const BMI_unexpected_info & info,
-         iofwdutil::completion::BMIResource & bmires);
+   IOFWDRequest (const BMI_unexpected_info & info,
+         IOFWDResources & res);
 
    /// Release the memory of the incoming request
    void freeRawRequest ();
@@ -103,6 +110,9 @@ protected:
 
 protected:
 
+   /// Some general resources such as bmi, timer, ...
+   IOFWDResources & r_;
+
    // BMI connection
    iofwdutil::bmi::BMIContext & bmi_;
 
@@ -122,11 +132,9 @@ protected:
    iofwdutil::bmi::BMIBuffer buffer_send_;
 
    iofwdutil::completion::BMIResource & bmires_;
-
-   static iofwdutil::zlog::ZLogSource & log_;
 };
 
-
+//===========================================================================
    }
 }
 

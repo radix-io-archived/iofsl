@@ -16,9 +16,10 @@ class IOFWDReadDirRequest
      public ReadDirRequest
 {
 public:
-   IOFWDReadDirRequest (iofwdutil::bmi::BMIContext & bmi, int opid, const BMI_unexpected_info & info,
-         iofwdutil::completion::BMIResource & res)
-      : IOFWDRequest (bmi, info,res), ReadDirRequest (opid), entries_ (NULL), op_hint_(NULL)
+   IOFWDReadDirRequest (int opid, const BMI_unexpected_info & info,
+         IOFWDResources & res)
+      : IOFWDRequest (info,res), ReadDirRequest (opid), entries_ (NULL),
+      op_hint_(NULL)
    {
    }
 

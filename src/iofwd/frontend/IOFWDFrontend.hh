@@ -11,6 +11,7 @@
 #include "iofwd/Resources.hh"
 #include "iofwdutil/bmi/BMI.hh"
 #include "iofwdutil/bmi/BMIContext.hh"
+#include "IOFWDResources.hh"
 
 namespace iofwd
 {
@@ -53,6 +54,7 @@ protected:
 
    iofwdutil::bmi::BMIContextPtr bmictx_;
 
+
 private:
    enum { BATCH_SIZE = 128 };
 
@@ -68,6 +70,9 @@ private:
 
    // The request handle for testunexpected
    iofwdevent::Resource::Handle unexpected_handle_;
+   
+protected:
+   IOFWDResources res_;
 };
 
 //===========================================================================

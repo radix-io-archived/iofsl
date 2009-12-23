@@ -16,9 +16,9 @@ class IOFWDCreateRequest
      public CreateRequest
 {
 public:
-   IOFWDCreateRequest (iofwdutil::bmi::BMIContext & bmi, int opid, const BMI_unexpected_info & info,
-         iofwdutil::completion::BMIResource & res)
-      : IOFWDRequest (bmi, info,res), CreateRequest (opid), op_hint_(NULL)
+   IOFWDCreateRequest (int opid, const BMI_unexpected_info & info,
+         IOFWDResources & res)
+      : IOFWDRequest (info,res), CreateRequest (opid), op_hint_(NULL)
    {
    }
 

@@ -17,9 +17,9 @@ class IOFWDSymLinkRequest
      public SymLinkRequest
 {
 public:
-   IOFWDSymLinkRequest (iofwdutil::bmi::BMIContext & bmi, int opid, const BMI_unexpected_info & info,
-         iofwdutil::completion::BMIResource & res)
-      : IOFWDRequest (bmi, info,res), SymLinkRequest (opid), op_hint_(NULL)
+   IOFWDSymLinkRequest (int opid, const BMI_unexpected_info & info,
+         IOFWDResources & res)
+      : IOFWDRequest (info,res), SymLinkRequest (opid), op_hint_(NULL)
    {
    }
 

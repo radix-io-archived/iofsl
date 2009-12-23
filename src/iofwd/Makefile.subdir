@@ -93,6 +93,7 @@ src/iofwd/WriteRequest.hh \
 src/iofwd/WriteTask.hh \
 src/iofwd/Resources.hh \
 \
+src/iofwd/frontend/IOFWDResources.hh \
 src/iofwd/frontend/Frontend.cpp \
 src/iofwd/frontend/IOFWDCommitRequest.cpp \
 src/iofwd/frontend/IOFWDCreateRequest.cpp \
