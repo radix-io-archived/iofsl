@@ -24,9 +24,6 @@ public:
       Request (opid)
    {
    }
-   virtual ~ReadLinkRequest ()
-   {
-   }
 
    /**
     * Retrieve the request input parameters 

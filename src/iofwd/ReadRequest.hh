@@ -30,9 +30,6 @@ public:
       : Request (opid)
    {
    }
-   virtual ~ReadRequest ()
-   {
-   }
 
 
    virtual const ReqParam & decodeParam () = 0;

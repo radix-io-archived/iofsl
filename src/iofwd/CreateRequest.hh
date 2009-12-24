@@ -26,9 +26,6 @@ public:
       Request (opid)
    {
    }
-   virtual ~CreateRequest ()
-   {
-   }
 
    /**
     * Retrieve the request input parameters 

@@ -31,9 +31,6 @@ public:
       Request (opid)
    {
    }
-   virtual ~SymLinkRequest ()
-   {
-   }
 
    /**
     * Retrieve the request input parameters

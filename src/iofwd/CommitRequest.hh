@@ -21,9 +21,6 @@ public:
    CommitRequest (int opid) : Request (opid)
    {
    };
-   virtual ~CommitRequest ()
-   {
-   }
 
    virtual const ReqParam & decodeParam () = 0;
 
