@@ -86,6 +86,11 @@ sandbox_imt_test_SOURCES = sandbox/imt-test.c
 sandbox_imt_test_LDFLAGS = $(sandbox_ldflags)
 sandbox_imt_test_LDADD = $(sandbox_ldadd)
 
+noinst_PROGRAMS += sandbox/vl-test
+sandbox_vl_test_SOURCES = sandbox/vl-test.cpp
+sandbox_vl_test_LDFLAGS = $(sandbox_ldflags)
+sandbox_vl_test_LDADD = $(sandbox_ldadd)
+
 noinst_PROGRAMS += sandbox/smmanager
 sandbox_smmanager_SOURCES = sandbox/smmanager.cpp
 sandbox_smmanager_LDFLAGS = $(sandbox_ldflags) $(BMI_LDFLAGS)
