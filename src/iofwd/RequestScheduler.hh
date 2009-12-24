@@ -46,7 +46,7 @@ public:
 
 protected:
   void run();
-  void issue(const std::vector<Range>& rs);
+  void issue(std::vector<ChildRange *>& rs);
   void notifyConsumer();
   
 private:

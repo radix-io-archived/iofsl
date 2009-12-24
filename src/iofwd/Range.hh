@@ -3,6 +3,8 @@
 
 #include <stdlib.h>
 #include <vector>
+#include <list>
+#include <iostream>
 
 #include "zoidfs/zoidfs.h"
 
@@ -33,9 +35,6 @@ class Range
 public:
   Range() : buf(NULL), st(0), en(0) {}
   Range(uint64_t st, uint64_t en) : st(st), en(en) {}
-
-  Range(ChildRange c);
-  Range(ParentRange p);
 
   RangeType type;
   zoidfs::zoidfs_handle_t * handle;
@@ -75,7 +74,6 @@ The child range only needs data specific to the child (io type, start, end, hand
 
 The parent range contains the child properties and data structures for storing children / interval subranges
 
-TODO integrate these classes with the original request merging code
 */
 class ChildRange
 {
@@ -92,19 +90,9 @@ class ChildRange
         {
         }
 
-        Range operator() (ChildRange c)
+        virtual bool hasSubIntervals()
         {
-            Range r;
-
-            r.type = c.type_;
-            r.handle = c.handle_;
-            r.buf = c.buf_;
-            r.st = c.st_;
-            r.en = c.en_;
-            r.op_hint = c.op_hint_;
-            r.cids.push_back(c.cid_);
-
-            return r;
+            return false;
         }
 
         RangeType type_;
@@ -130,81 +118,97 @@ class ParentRange : public ChildRange
 
         ~ParentRange()
         {
-            /* clear the vectors */
-            child_ranges_.clear();
+            /* clear the cid vector */
             child_cids_.clear();
+       
+            /* cleanup the children */ 
+            destroySubRanges();
+        }
+
+        bool destroySubRanges()
+        {
+            /* delete all of the sub intervals */
+            while(!child_ranges_.empty())
+            {
+                ChildRange * r = *child_ranges_.begin();
+                child_ranges_.erase(child_ranges_.begin());
+                delete r;
+            }
+            return true;
+        }
+
+        virtual bool hasSubIntervals()
+        {
+            return true;
         }
 
         /* add the children from c to this parent */
-        bool merge(ParentRange & c)
+        bool merge(ParentRange * c)
         {
             /* update the parent interval */
-            if(st_ > c.st_)
+            if(st_ > c->st_)
             {
-                st_ = c.st_; 
+                st_ = c->st_; 
             }
     
-            if(en_ < c.en_)
+            if(en_ < c->en_)
             {
-                en_ = c.en_;
+                en_ = c->en_;
             }
 
             /* copy the child ranges and cids */
-            child_ranges_.insert(child_ranges_.begin(), c.child_ranges_.begin(), c.child_ranges_.end());
-            child_cids_.insert(child_cids_.begin(), c.child_cids_.begin(), c.child_cids_.end());
+            insertMultipleChildren(c->child_ranges_);
+            insertMultipleCids(c->child_cids_);
 
             return true;
         }
 
-        bool add(ChildRange & c)
+        bool add(ChildRange * c)
         {
             /* update the parent interval */
-            if(st_ > c.st_)
+            if(st_ > c->st_)
             {
-                st_ = c.st_; 
+                st_ = c->st_; 
             }
     
-            if(en_ < c.en_)
+            if(en_ < c->en_)
             {
-                en_ = c.en_;
+                en_ = c->en_;
             }
 
             /* copy the child ranges and cids */
-            child_ranges_.insert(child_ranges_.begin(), c);
-            child_cids_.insert(child_cids_.begin(), c.cid_);
+            insertSingleChild(c);
+            insertSingleCid(c->cid_);
 
             return true;
         }
 
-        /* convert the ParentRange to a Range */
-        Range operator() (ParentRange p)
+        /* wrappers that use vector methods with decent performance
+         * use vector push_back for single items
+         * use vector insert at end() for multiple items
+         */
+        void insertSingleChild(ChildRange * r)
         {
-            Range r;
-            r.st = p.st_;
-            r.en = p.en_;
-            r.buf = p.buf_;
-            r.op_hint = p.op_hint_;
-            r.handle = p.handle_;
-            r.type = p.type_;
+            child_ranges_.push_back(r);
+        }
 
-            r.child_ranges.clear();
-            r.cids.clear();
+        void insertSingleCid(iofwdutil::completion::CompositeCompletionID * c)
+        {
+            child_cids_.push_back(c);
+        }
 
-            if(!child_ranges_.empty())
-            {
-                r.child_ranges.insert(r.child_ranges.begin(), p.child_ranges_.begin(), p.child_ranges_.end());
-            }
+        void insertMultipleChildren(std::vector<ChildRange *> & r)
+        {
+            child_ranges_.insert(child_ranges_.end(), r.begin(), r.end());
+        }
 
-            if(!child_cids_.empty())
-            {
-                r.cids.insert(r.cids.begin(), p.child_cids_.begin(), p.child_cids_.end());
-            }
-
-            return r;
+        void insertMultipleCids(std::vector<iofwdutil::completion::CompositeCompletionID*> & c)
+        {
+            child_cids_.insert(child_cids_.end(), c.begin(), c.end());
         }
 
         /* this is the vector of sub ranges */
-        std::vector<ChildRange> child_ranges_;
+        std::vector<ChildRange *> child_ranges_;
 
         /* this is the vector of cids for the subranges */
         std::vector<iofwdutil::completion::CompositeCompletionID*> child_cids_;
@@ -216,6 +220,18 @@ inline bool operator==(const ChildRange& r1, const ChildRange& r2)
 }
 
 inline bool operator<(const ChildRange& r1, const ChildRange& r2)
+{
+  if (r1.st_ == r2.st_)
+    return r1.en_ < r2.en_;
+  return r1.st_ < r2.st_;
+}
+
+inline bool operator==(const ParentRange& r1, const ParentRange& r2)
+{
+  return (r1.st_ == r2.st_) && (r1.en_ == r2.en_);
+}
+
+inline bool operator<(const ParentRange& r1, const ParentRange& r2)
 {
   if (r1.st_ == r2.st_)
     return r1.en_ < r2.en_;

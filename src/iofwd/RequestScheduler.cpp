@@ -32,12 +32,12 @@ static bool same_handle(const zoidfs::zoidfs_handle_t *h1,
   return memcmp(h1->data, h2->data, sizeof(uint8_t)*32) == 0;
 }
 
-static void check_ranges(const vector<Range>& rs)
+static void check_ranges(const vector<ChildRange *>& rs)
 {
   if (rs.size() >= 2) {
     for (unsigned int i = 1; i < rs.size(); i++) {
-      assert(rs[0].type == rs[i].type);
-      assert(same_handle(rs[0].handle, rs[i].handle));
+      assert(rs[0]->type_ == rs[i]->type_);
+      assert(same_handle(rs[0]->handle_, rs[i]->handle_));
     }
   }
 }
@@ -132,14 +132,12 @@ CompletionID * RequestScheduler::enqueueWrite(
     assert(mem_sizes[i] == file_sizes[i]);
     if (file_sizes[i] == 0) continue;
 
-    Range r;
-    r.type = RANGE_WRITE;
-    r.handle = handle;
-    r.buf = (char*)mem_starts[i];
-    r.st = file_starts[i];
-    r.en = r.st + file_sizes[i];
-    r.cids.push_back(ccid);
-    r.op_hint = op_hint;
+    ChildRange * r = new ChildRange(file_starts[i], file_starts[i] + file_sizes[i]);
+    r->type_ = RANGE_WRITE;
+    r->handle_ = handle;
+    r->buf_ = (char*)mem_starts[i];
+    r->cid_ = ccid;
+    r->op_hint_ = op_hint;
 
     boost::mutex::scoped_lock l(lock_);
     range_sched_->enqueue(r);
@@ -164,14 +162,12 @@ CompletionID * RequestScheduler::enqueueRead(
     assert(mem_sizes[i] == file_sizes[i]);
     if (file_sizes == 0) continue;
 
-    Range r;
-    r.type = RANGE_READ;
-    r.handle = handle;
-    r.buf = (char*)mem_starts[i];
-    r.st = file_starts[i];
-    r.en = r.st + file_sizes[i];
-    r.cids.push_back(ccid);
-    r.op_hint = op_hint;
+    ChildRange * r =  new ChildRange(file_starts[i], file_starts[i] + file_sizes[i]);
+    r->type_ = RANGE_READ;
+    r->handle_ = handle;
+    r->buf_ = (char*)mem_starts[i];
+    r->cid_ = ccid;
+    r->op_hint_ = op_hint;
 
     boost::mutex::scoped_lock l(lock_);
     range_sched_->enqueue(r);
@@ -182,12 +178,12 @@ CompletionID * RequestScheduler::enqueueRead(
 
 void RequestScheduler::run()
 {
-  vector<Range> rs;
+  vector<ChildRange *> rs;
   const int batch_size = 16;
   int cur_batch = 0;
   while (true) {
     // check if RangeScheduler has pending requests
-    Range tmp_r;
+    ChildRange * tmp_r = NULL;
     bool has_tmp_r = false;
     {
       boost::mutex::scoped_lock l(lock_);
@@ -201,13 +197,13 @@ void RequestScheduler::run()
       // dequeue requests of same direction (read/write), same handle
       // TODO: batch_size should be tunable
       while (cur_batch < batch_size) {
-        Range r;
+        ChildRange * r = NULL;
         if (range_sched_->empty())
           break;
-        bool is_dequeued = range_sched_->dequeue(r);
+        bool is_dequeued = range_sched_->dequeue(&r);
         if (!is_dequeued) break;
         if (!rs.empty()) {
-          if (r.type != rs.back().type || !same_handle(r.handle, rs.back().handle)) {
+          if (r->type_ != rs.back()->type_ || !same_handle(r->handle_, rs.back()->handle_)) {
             // dequeued request is in a different direction/different handle
             // stop batching.
             tmp_r = r;
@@ -215,7 +211,16 @@ void RequestScheduler::run()
             break;
           }
         }
-        cur_batch += r.child_ranges.empty() ? 1 : r.child_ranges.size();
+    
+        /* get size */
+        if(r->hasSubIntervals())
+        {
+            cur_batch += dynamic_cast<ParentRange *>(r)->child_ranges_.size();
+        }
+        else
+        {
+            cur_batch += 1;
+        }
         rs.push_back(r);
       }
     }
@@ -227,22 +232,56 @@ void RequestScheduler::run()
     check_ranges(rs);
     issue(rs);
 
-    rs.clear();
+    //rs.clear();
+    /* delete the elements in rs */
+    while(!rs.empty())
+    {
+
+        /* check if this is a parent */
+        if((*rs.begin())->hasSubIntervals())
+        {
+            ParentRange * r = dynamic_cast<ParentRange *>(*rs.begin());
+            rs.erase(rs.begin());
+            delete r;
+        }
+        else
+        {
+            ChildRange * r = *rs.begin();
+            rs.erase(rs.begin());
+            delete r;
+        }
+    }
+
     if (has_tmp_r) {
       rs.push_back(tmp_r);
-      cur_batch = tmp_r.child_ranges.empty() ? 1 : tmp_r.child_ranges.size();
+
+      if(tmp_r->hasSubIntervals())
+      {
+        cur_batch = dynamic_cast<ParentRange *>(tmp_r)->child_ranges_.size();
+      }
+      else
+      {
+        cur_batch = 1;
+      }
     } else {
       cur_batch = 0;
     }
   }
 }
 
-void RequestScheduler::issue(const vector<Range>& rs)
+void RequestScheduler::issue(vector<ChildRange *>& rs)
 {
   unsigned int narrays = 0;
   for (unsigned int i = 0; i < rs.size(); i++) {
-    const Range& r = rs[i];
-    narrays += r.child_ranges.empty() ? 1 : r.child_ranges.size();
+    ChildRange * r = rs[i];
+    if(r->hasSubIntervals())
+    {
+        narrays += dynamic_cast<ParentRange *>(r)->child_ranges_.size();
+    }
+    else
+    {
+        narrays += 1;
+    }
   }
 
   char ** mem_starts = new char*[narrays];
@@ -252,38 +291,43 @@ void RequestScheduler::issue(const vector<Range>& rs)
 
   unsigned int nth = 0;
   for (unsigned int i = 0; i < rs.size(); i++) {
-    const Range& r = rs[i];
+    ChildRange * r = rs[i];
 
-    bool is_merged = !r.child_ranges.empty();
-    unsigned int nranges = is_merged ? r.child_ranges.size() : 1;
+    bool is_merged = r->hasSubIntervals();
+    unsigned int nranges = 1;
+    //unsigned int nranges = is_merged ? r.child_ranges_.size() : 1;
     if (is_merged) {
+      const ParentRange * pr = dynamic_cast<ParentRange *>(r);
+      nranges = pr->child_ranges_.size();
+      vector<ChildRange *>::const_iterator cit = pr->child_ranges_.begin();
       for (unsigned int j = 0; j < nranges; j++) {
-        const Range& child_r = r.child_ranges[j];
-        mem_starts[nth] = child_r.buf;
-        mem_sizes[nth] = child_r.en - child_r.st;
-        file_starts[nth] = child_r.st;
-        file_sizes[nth] = child_r.en - child_r.st;
+        const ChildRange * child_r = *cit;
+        mem_starts[nth] = child_r->buf_;
+        mem_sizes[nth] = child_r->en_ - child_r->st_;
+        file_starts[nth] = child_r->st_;
+        file_sizes[nth] = child_r->en_ - child_r->st_;
         nth++;
+        cit++;
       }
     } else {
-      mem_starts[nth] = r.buf;
-      mem_sizes[nth] = r.en - r.st;
-      file_starts[nth] = r.st;
-      file_sizes[nth] = r.en - r.st;
+      mem_starts[nth] = r->buf_;
+      mem_sizes[nth] = r->en_ - r->st_;
+      file_starts[nth] = r->st_;
+      file_sizes[nth] = r->en_ - r->st_;
       nth++;
     }
-    assert(r.en > r.st);
+    assert(r->en_ > r->st_);
   }
   assert(nth == narrays);
 
   // issue asynchronous I/O using ZoidFSAsyncAPI
   CompletionID *async_id;
-  if (rs[0].type == RANGE_WRITE) {
-    async_id = async_api_->async_write(rs[0].handle, narrays, (const void**)mem_starts, mem_sizes,
-                                       narrays, file_starts, file_sizes, rs[0].op_hint);
-  } else if (rs[0].type == RANGE_READ) {
-    async_id = async_api_->async_read(rs[0].handle, narrays, (void**)mem_starts, mem_sizes,
-                                      narrays, file_starts, file_sizes, rs[0].op_hint);
+  if (rs[0]->type_ == RANGE_WRITE) {
+    async_id = async_api_->async_write(rs[0]->handle_, narrays, (const void**)mem_starts, mem_sizes,
+                                       narrays, file_starts, file_sizes, rs[0]->op_hint_);
+  } else if (rs[0]->type_ == RANGE_READ) {
+    async_id = async_api_->async_read(rs[0]->handle_, narrays, (void**)mem_starts, mem_sizes,
+                                      narrays, file_starts, file_sizes, rs[0]->op_hint_);
   } else {
     assert(false);
   }
@@ -294,7 +338,11 @@ void RequestScheduler::issue(const vector<Range>& rs)
 
   // add io_id to associated CompositeCompletionID
   for (unsigned int i = 0; i < rs.size(); i++) {
-    const vector<CompositeCompletionID*>& v = rs[i].cids;
+    ChildRange * r = rs[i];
+    if(r->hasSubIntervals())
+    {
+    ParentRange * pr = dynamic_cast<ParentRange *>(r);
+    const vector<CompositeCompletionID*>& v = pr->child_cids_;
     assert(v.size() > 0);
     for (vector<CompositeCompletionID*>::const_iterator it = v.begin();
          it != v.end(); ++it) {
@@ -303,6 +351,11 @@ void RequestScheduler::issue(const vector<Range>& rs)
       // we use SharedCompletionID to properly release the resource by using
       // boost::shared_ptr (e.g. reference counting).
       ccid->addCompletionID(new SharedCompletionID(io_id));
+    }
+    }
+    else
+    {
+        r->cid_->addCompletionID(new SharedCompletionID(io_id));
     }
   }
 }

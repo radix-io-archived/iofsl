@@ -21,9 +21,9 @@ class RangeScheduler
 public:
   RangeScheduler() {}
   virtual ~RangeScheduler() {}
-  virtual void enqueue(const Range& r) = 0;
+  virtual void enqueue(ChildRange * r) = 0;
   virtual bool empty() = 0;
-  virtual bool dequeue(Range& r) = 0;
+  virtual bool dequeue(ChildRange ** r) = 0;
 protected:
   RequestScheduler * sched_;
 };
@@ -34,11 +34,11 @@ class FIFORangeScheduler : public RangeScheduler
 public:
   FIFORangeScheduler() {}
   virtual ~FIFORangeScheduler() { q_.clear(); }
-  virtual void enqueue(const Range& r);
+  virtual void enqueue(ChildRange * r);
   virtual bool empty();
-  virtual bool dequeue(Range& r);
+  virtual bool dequeue(ChildRange ** r);
 protected:
-  std::deque<Range> q_;
+  std::deque<ChildRange *> q_;
 };
 
 // Handle-Based-Merge range scheduler
@@ -48,16 +48,16 @@ class MergeRangeScheduler : public RangeScheduler
 public:
   MergeRangeScheduler() : bytes_queued(0) {}
   virtual ~MergeRangeScheduler() {}
-  virtual void enqueue(const Range& r);
+  virtual void enqueue(ChildRange * r);
   virtual bool empty();
-  virtual bool dequeue(Range& r);
+  virtual bool dequeue(ChildRange ** r);
 
 private:
-  void io_enqueue(const Range &r);
-  bool io_dequeue(Range &r);
+  void io_enqueue(ChildRange * r);
+  bool io_dequeue(ChildRange ** r);
 
-  void deadline_enqueue(const Range &r);
-  bool deadline_dequeue(Range &r);
+  void deadline_enqueue(ChildRange * r);
+  bool deadline_dequeue(ChildRange ** r);
   
 private:
   std::deque<HandleQueue*> q_;

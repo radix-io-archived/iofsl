@@ -12,7 +12,7 @@ namespace iofwd
 {
 //===========================================================================
 
-void FIFORangeScheduler::enqueue(const Range& r)
+void FIFORangeScheduler::enqueue(ChildRange * r)
 {
   q_.push_back(r);
 }
@@ -22,10 +22,10 @@ bool FIFORangeScheduler::empty()
   return q_.empty();
 }
 
-bool FIFORangeScheduler::dequeue(Range& r)
+bool FIFORangeScheduler::dequeue(ChildRange ** r)
 {
   if (q_.empty()) return false;
-  r = q_.front();
+  *r = q_.front();
   q_.pop_front();
   return true;
 }
@@ -39,18 +39,19 @@ struct HandleQueue
   RangeType type;
   const zoidfs::zoidfs_handle_t * handle;
   RangeSet * rs;
+  HierarchicalRangeSet * hrs;
   IntervalTreeRangeSet * itrs;
   int quantum;
 };
 
-void MergeRangeScheduler::io_enqueue(const Range &r)
+void MergeRangeScheduler::io_enqueue(ChildRange * r)
 {
-  tr1::unordered_map<const zoidfs::zoidfs_handle_t*, HandleQueue*>& m_ = (r.type == RANGE_READ) ? rm_ : wm_;
-  if (m_.find(r.handle) == m_.end()) {
+  tr1::unordered_map<const zoidfs::zoidfs_handle_t*, HandleQueue*>& m_ = (r->type_ == RANGE_READ) ? rm_ : wm_;
+  if (m_.find(r->handle_) == m_.end()) {
     // if no HandleQueue exists for r.handle, create new one
     HandleQueue * hq = new HandleQueue();
-    hq->type = r.type;
-    hq->handle = r.handle;
+    hq->type = r->type_;
+    hq->handle = r->handle_;
     hq->quantum = DEFAULT_QUANTUM;
 
 #ifdef ITRS
@@ -58,30 +59,30 @@ void MergeRangeScheduler::io_enqueue(const Range &r)
     itrs->add(r);
     hq->itrs = itrs;
 #else
-    RangeSet * rs = new RangeSet();
-    rs->add(r);
-    hq->rs = rs;
-#endif
+    HierarchicalRangeSet * hrs = new HierarchicalRangeSet();
+    hrs->add(r);
+    hq->hrs = hrs;
+#endif /* #ifdef ITRS */
 
     q_.push_back(hq);
     m_[hq->handle] = hq;
   } else {
     // if corresponding HandleQueue exists for r.handle,
     // add to its RangeSet.
-    HandleQueue * hq = m_.find(r.handle)->second;
+    HandleQueue * hq = m_.find(r->handle_)->second;
 
 #ifdef ITRS
     IntervalTreeRangeSet * itrs = hq->itrs;
     itrs->add(r);
 #else
-    RangeSet * rs = hq->rs;
-    rs->add(r);
-#endif
+    HierarchicalRangeSet * hrs = hq->hrs;
+    hrs->add(r);
+#endif /* #ifdef ITRS */
 
   }
 }
 
-bool MergeRangeScheduler::io_dequeue(Range &r)
+bool MergeRangeScheduler::io_dequeue(ChildRange ** r)
 {
   if (q_.empty()) return false;
 
@@ -94,23 +95,24 @@ bool MergeRangeScheduler::io_dequeue(Range &r)
   assert(!itrs->empty());
   itrs->pop_front(r);
 #else
-  RangeSet * rs = hq->rs;
-  assert(!rs->empty());
-  rs->pop_front(r);
-#endif
+  HierarchicalRangeSet * hrs = hq->hrs;
+  assert(!hrs->empty());
+  hrs->pop_front(r);
+  //fprintf(stderr, "pop_front = %p\n", *r);
+#endif /* #ifdef ITRS */
 
   hq->quantum--;
 #ifdef ITRS
   if (hq->quantum > 0 && !itrs->empty()) {
 #else
-  if (hq->quantum > 0 && !rs->empty()) {
-#endif
+  if (hq->quantum > 0 && !hrs->empty()) {
+#endif /* #ifdef ITRS */
     // do nothing
 #ifdef ITRS
   } else if (hq->quantum == 0 && !itrs->empty()) {
 #else
-  } else if (hq->quantum == 0 && !rs->empty()) {
-#endif
+  } else if (hq->quantum == 0 && !hrs->empty()) {
+#endif /* #ifdef ITRS */
     // turn to another queue
     hq->quantum = DEFAULT_QUANTUM;
     q_.pop_front();
@@ -122,33 +124,33 @@ bool MergeRangeScheduler::io_dequeue(Range &r)
 #ifdef ITRS
     delete hq->itrs;
 #else
-    delete hq->rs;
-#endif
+    delete hq->hrs;
+#endif /* #ifdef ITRS */
     delete hq;    
   }
 
   return true;
 }
 
-void MergeRangeScheduler::deadline_enqueue(const Range& UNUSED(r))
+void MergeRangeScheduler::deadline_enqueue(ChildRange * UNUSED(r))
 {
   // TODO: implement
   return;
 }
 
-bool MergeRangeScheduler::deadline_dequeue(Range & UNUSED(r))
+bool MergeRangeScheduler::deadline_dequeue(ChildRange ** UNUSED(r))
 {
   // TODO: implement
   return false;
 }
 
-void MergeRangeScheduler::enqueue(const Range& r)
+void MergeRangeScheduler::enqueue(ChildRange * r)
 {
   deadline_enqueue(r);
   io_enqueue(r);
 
   // update statistics
-  bytes_queued += r.en - r.st;
+  bytes_queued += r->en_ - r->st_;
 }
 
 bool MergeRangeScheduler::empty()
@@ -156,7 +158,7 @@ bool MergeRangeScheduler::empty()
   return q_.empty();
 }
 
-bool MergeRangeScheduler::dequeue(Range& r)
+bool MergeRangeScheduler::dequeue(ChildRange ** r)
 {
   bool is_dequeued = false;
 
@@ -170,7 +172,7 @@ bool MergeRangeScheduler::dequeue(Range& r)
 
   // update statistics
   if (is_dequeued)
-    bytes_queued -= (r.en - r.st);
+    bytes_queued -= ((*r)->en_ - (*r)->st_);
   
   return is_dequeued;
 }
