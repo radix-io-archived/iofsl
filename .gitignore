@@ -33,6 +33,9 @@ sandbox/LookupSMTest2
 sandbox/LookupSMTestClient
 sandbox/smmanager
 sandbox/bmi-pp-perf
+sandbox/zoidfs-io-bsize
+sandbox/zoidfs-io-bsize-local
+sandbox/vl-test
 src/fuse/fuseclient
 src/fuse/fusedispatch
 src/iofwd/iofwd
@@ -77,6 +80,7 @@ test/zoidfs-md-thread
 test/zoidfs-microbenchmarks/.deps/
 test/zoidfs-microbenchmarks/.dirstamp
 test/zoidfs-microbenchmarks/zoidfs-tile-io
+test/zoidfs-microbenchmarks/zoidfs-tile-io-local
 test/zoidfs-microbenchmarks/creat-thput
 test/zoidfs-microbenchmarks/creat-thput-local
 test/zoidfs-microbenchmarks/getattr-thput
