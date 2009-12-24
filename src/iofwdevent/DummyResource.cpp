@@ -1,5 +1,6 @@
 #include <boost/bind.hpp>
 
+#include "iofwdutil/tools.hh"
 #include "DummyResource.hh"
 
 namespace iofwdevent
@@ -30,7 +31,7 @@ bool DummyResource::started () const
    return started_;
 }
 
-bool DummyResource::cancel (Handle h)
+bool DummyResource::cancel (Handle UNUSED(h))
 {
    return false;
 }
