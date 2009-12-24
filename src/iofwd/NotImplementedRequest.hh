@@ -14,9 +14,6 @@ public:
       : Request (opid)
    {
    }
-   virtual ~NotImplementedRequest ()
-   {
-   }
 
    virtual void reply () = 0; 
 

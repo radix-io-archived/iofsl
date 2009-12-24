@@ -27,9 +27,6 @@ public:
       Request (opid)
    {
    }
-   virtual ~ReadDirRequest ()
-   {
-   }
 
    /**
     * Retrieve the request input parameters 

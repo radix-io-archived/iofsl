@@ -42,9 +42,6 @@ public:
      : Request (opid)
   {
   }
-  virtual ~WriteRequest ()
-  {
-  }
 
   virtual const ReqParam & decodeParam () = 0;
 

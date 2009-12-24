@@ -23,9 +23,6 @@ public:
       : Request (opid)
    {
    }
-   virtual ~GetAttrRequest ()
-   {
-   }
 
    virtual const ReqParam & decodeParam () = 0;
    virtual iofwdutil::completion::CompletionID * reply (const zoidfs::zoidfs_attr_t * attr) = 0;

@@ -26,9 +26,6 @@ public:
       Request (opid)
    {
    }
-   virtual ~MkdirRequest ()
-   {
-   }
 
    /**
     * Retrieve the request input parameters 

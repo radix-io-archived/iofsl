@@ -22,9 +22,6 @@ public:
    ResizeRequest (int opid) : Request (opid)
    {
    };
-   virtual ~ResizeRequest ()
-   {
-   }
 
    virtual const ReqParam & decodeParam () = 0;
 

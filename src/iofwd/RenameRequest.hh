@@ -29,9 +29,6 @@ public:
       Request (opid)
    {
    }
-   virtual ~RenameRequest ()
-   {
-   }
 
    /**
     * Retrieve the request input parameters

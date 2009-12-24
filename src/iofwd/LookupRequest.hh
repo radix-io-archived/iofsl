@@ -25,9 +25,6 @@ public:
       Request (opid)
    {
    }
-   virtual ~LookupRequest ()
-   {
-   }
 
    /**
     * Retrieve the request input parameters 

@@ -25,9 +25,6 @@ public:
       Request (opid)
    {
    }
-   virtual ~RemoveRequest ()
-   {
-   }
 
    /**
     * Retrieve the request input parameters 
