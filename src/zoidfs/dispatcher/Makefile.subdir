@@ -34,3 +34,8 @@ src/zoidfs/dispatcher/posix/zoidfs-posix.h \
 src/zoidfs/dispatcher/posix/zoidfs-util.h 
 endif
 
+if DISPATCH_NOFS
+src_zoidfs_libzoidfs_a_SOURCES += \
+src/zoidfs/dispatcher/nofs/zoidfs-nofs.h \
+src/zoidfs/dispatcher/nofs/zoidfs-nofs.c
+endif

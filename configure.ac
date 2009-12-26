@@ -331,6 +331,31 @@ fi
 AM_CONDITIONAL([DISPATCH_POSIX],[test ${use_posix} == 1])
 
 dnl =========================================================================
+dnl     Dispatcher nofs driver control
+dnl =========================================================================
+
+AC_ARG_ENABLE([nofs],
+              [AS_HELP_STRING([--enable-nofs],[Enable 'nofs' zoidfs driver])],
+              [case "${enableval}" in
+                  yes) use_nofs=1;;
+                  no) use_nofs=0;;
+                  *) AC_MSG_ERROR([bad value ${enableval} for
+                                   --enable-nofs]) ;;
+               esac],
+               [use_nofs=1])
+
+DISPATCH_NOFS=0
+AC_MSG_CHECKING([If the nofs dispatcher driver needs to be built])
+if test "${use_nofs}" == "1"; then
+   AC_DEFINE([HAVE_DISPATCHER_NOFS],[1],[Build nofs zoidfs dispatcher driver])
+   DISPATCH_NOFS=1
+   AC_MSG_RESULT([yes])
+else
+   AC_MSG_RESULT([no])
+fi
+AM_CONDITIONAL([DISPATCH_NOFS],[test ${use_nofs} == 1])
+
+dnl =========================================================================
 dnl    SYSIO
 dnl =========================================================================
 

@@ -5,21 +5,26 @@
 #include "iofwd_config.h"
 
 
-#include "zint-handler.h"
+#include "zoidfs/dispatcher/zint-handler.h"
+
+#ifdef USE_NOFS_DISPATCHER
+#include "zoidfs/dispatcher/nofs/zoidfs-nofs.h"
+#endif /* USE_NOFS_DISPATCHER */
 
 #ifdef HAVE_DISPATCHER_PVFS2
-#include "pvfs/zoidfs-pvfs2.h"
-#endif
+#include "zoidfs/dispatcher/pvfs/zoidfs-pvfs2.h"
+#endif /* HAVE_DISPATCHER_PVFS2 */
 
 #ifdef HAVE_DISPATCHER_LIBSYSIO
-#include "sysio/zoidfs-sysio.h"
-#endif
+#include "zoidfs/dispatcher/sysio/zoidfs-sysio.h"
+#endif /* HAVE_DISPATCHER_LIBSYSIO */
 
 #ifdef HAVE_DISPATCHER_POSIX
-#include "posix/zoidfs-posix.h"
-#endif
+#include "zoidfs/dispatcher/posix/zoidfs-posix.h"
+#endif /* HAVE_DISPATCHER_POSIX */
 
-#include "local/zoidfs-local.h"
+
+#include "zoidfs/dispatcher/local/zoidfs-local.h"
 
 
 /**
@@ -29,6 +34,9 @@
 
 static zint_handler_t * zint_handlers[] =
 {
+#ifdef USE_NOFS_DISPATCHER
+    &nofs_handler,
+#endif /*  USE_NOFS_DISPATCHER */
 #ifdef HAVE_DISPATCHER_PVFS2
     &pvfs2_handler,
 #endif
@@ -38,7 +46,7 @@ static zint_handler_t * zint_handlers[] =
 #endif /* HAVE_DISPATCHER_LIBSYSIO */
 #ifdef HAVE_DISPATCHER_POSIX
     &posix_handler,
-#endif
+#endif /* HAVE_DISPATCHER_POSIX */
     &local_handler
 };
 
