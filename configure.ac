@@ -133,7 +133,7 @@ AC_LANG([C++])
 
 # Checks for header files.
 AC_HEADER_STDC
-AC_CHECK_HEADERS([stdlib.h string.h unistd.h execinfo.h])
+AC_CHECK_HEADERS([stdlib.h string.h unistd.h execinfo.h pthread.h])
 
 
 # Checks for typedefs, structures, and compiler characteristics.
@@ -153,6 +153,7 @@ AC_TYPE_SSIZE_T
 # Checks for library functions.
 AC_CHECK_FUNCS([memset])
 AC_CHECK_LIB([rt],[clock_getres],,[AC_MSG_ERROR([Could not find clock_getres!])])
+AC_CHECK_LIB([pthread],[pthread_create],,[AC_MSG_ERROR([Could not find pthread_create!])])
 
 
 # Check for CUNIT
@@ -347,7 +348,7 @@ AC_ARG_ENABLE([nofs],
 DISPATCH_NOFS=0
 AC_MSG_CHECKING([If the nofs dispatcher driver needs to be built])
 if test "${use_nofs}" == "1"; then
-   AC_DEFINE([HAVE_DISPATCHER_NOFS],[1],[Build nofs zoidfs dispatcher driver])
+   AC_DEFINE([USE_DISPATCHER_NOFS],[1],[Build nofs zoidfs dispatcher driver])
    DISPATCH_NOFS=1
    AC_MSG_RESULT([yes])
 else
