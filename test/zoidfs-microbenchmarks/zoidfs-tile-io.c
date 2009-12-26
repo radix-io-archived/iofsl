@@ -17,6 +17,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/types.h>
+#include <sys/time.h>
 
 #include "zoidfs/zoidfs.h"
 
@@ -130,8 +131,6 @@ int main(int argc,
     char *buffer;
 
     MPI_Comm cart_comm;
-    MPI_Info info;
-    MPI_Status status;
 
     zoidfs_handle_t fh;
     struct timeval now;
@@ -331,7 +330,7 @@ int main(int argc,
     mem_starts[0] = buffer;
     mem_sizes[0] = (sz_tile_x * sz_tile_y * sz_element);
 
-    int i = 0;
+    size_t i = 0;
     for(i = 0 ; i < file_count ; i++)
     {
         int x_start = sz_tile_x * sz_element * my_tile[1];
