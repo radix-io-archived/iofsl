@@ -5,7 +5,12 @@
 
 namespace iofwdutil
 {
+// ==========================================================================
 
+/**
+ * TODO: There is something wrong with the const cast here.
+ * Think it through later. (Solution might be in a boost::ref like object)
+ */
 template <typename VALUETYPE, typename NEXT>
 class TypeStorage
 {
@@ -59,17 +64,17 @@ inline void applyTypes (PROC & proc, const TYPE & t)
    proc (t.value_);
 }
 
-
-
-
 #define TSSTART \
    ::iofwdutil::TSStart()
+
 #define TYPESTORAGE(varname,types) \
    BOOST_TYPEOF(TSSTART << types) varname (TSSTART << types);
+
 #define APPLYTYPES(procname,typestorage) \
    applyTypes (procname, typestorage);
 
 
+// ==========================================================================
 }
 
 #endif
