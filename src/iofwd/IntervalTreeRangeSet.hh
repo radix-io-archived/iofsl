@@ -18,7 +18,6 @@ class IntervalTreeRangeSet
     public:
         IntervalTreeRangeSet() : rt(NULL)
         {
-            fprintf(stderr, "interval tree\n");
         }
 
         ~IntervalTreeRangeSet()
