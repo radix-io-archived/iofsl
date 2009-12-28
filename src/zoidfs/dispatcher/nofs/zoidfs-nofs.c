@@ -2,6 +2,7 @@
 #include <search.h>
 #include <errno.h>
 #include <stdlib.h>
+#include <stdio.h>
 #include <string.h>
 #include "zoidfs/zoidfs.h"
 #include "zoidfs/dispatcher/zint-handler.h"
@@ -11,7 +12,7 @@
 static void * nofs_handle_tree_root = NULL;
 
 /* based on http://burtleburtle.net/bob/hash/doobs.html */
-static size_t zoidfs_nofs_handle_create(zoidfs_handle_t * parent_handle, char * component_name, char * full_path, zoidfs_handle_t * handle)
+static size_t zoidfs_nofs_handle_create(const zoidfs_handle_t * parent_handle, const char * component_name, const char * full_path, zoidfs_handle_t * handle)
 {
     size_t hash = 0;
     size_t i = 0;
@@ -92,6 +93,8 @@ static int zoidfs_nofs_handle_compare(const void * a, const void * b)
     return 0;
 }
 
+/* comment out the hand cache tree for now ... */
+#if 0
 /* add a handle to the tree */
 static int zoidfs_nofs_handle_register(size_t handle)
 {
@@ -129,6 +132,7 @@ static int zoidfs_nofs_handle_cleanup()
     tdestroy(nofs_handle_tree_root, free);
     return 0;
 }
+#endif
 
 static int zoidfs_nofs_null(void)
 {
@@ -150,13 +154,13 @@ static int zoidfs_nofs_setattr(const zoidfs_handle_t * UNUSED(handle),
     return ZFS_OK;
 }
 
-static int zoidfs_nofs_lookup(const zoidfs_handle_t * UNUSED(parent_handle),
-                      const char * UNUSED(component_name),
-                      const char * UNUSED(full_path),
+static int zoidfs_nofs_lookup(const zoidfs_handle_t * parent_handle,
+                      const char * component_name,
+                      const char * full_path,
                       zoidfs_handle_t * handle,
                       zoidfs_op_hint_t * UNUSED(op_hint))
 {
-    memset(handle, 0, sizeof(zoidfs_handle_t));
+    zoidfs_nofs_handle_create(parent_handle, component_name, full_path, handle);
     return ZFS_OK;
 }
 
@@ -198,14 +202,15 @@ static int zoidfs_nofs_commit(const zoidfs_handle_t * UNUSED(handle),
     return ZFS_OK;
 }
 
-static int zoidfs_nofs_create(const zoidfs_handle_t * UNUSED(parent_handle),
-                      const char * UNUSED(component_name),
-                      const char * UNUSED(full_path),
+static int zoidfs_nofs_create(const zoidfs_handle_t * parent_handle,
+                      const char * component_name,
+                      const char * full_path,
                       const zoidfs_sattr_t * UNUSED(attr),
-                      zoidfs_handle_t * UNUSED(handle),
+                      zoidfs_handle_t * handle,
                       int * UNUSED(created),
                       zoidfs_op_hint_t * UNUSED(op_hint))
 {
+    zoidfs_nofs_handle_create(parent_handle, component_name, full_path, handle);
     return ZFS_OK;
 }
 
@@ -288,12 +293,23 @@ static int zoidfs_nofs_resize(const zoidfs_handle_t * UNUSED(handle),
     return ZFS_OK;
 }
 
-static int zoidfs_nofs_resolve_path(const char * UNUSED(nofs_path),
-                            char * UNUSED(fs_path),
-                            int UNUSED(fs_path_max),
+static int zoidfs_nofs_resolve_path(const char * nofs_path,
+                            char * fs_path,
+                            int fs_path_max,
                             zoidfs_handle_t * UNUSED(newhandle),
-                            int * UNUSED(usenew))
+                            int * usenew)
 {
+    *usenew = 0;
+
+    /*
+     * If the fs_path buffer is available, identify the full path
+     */
+    if (fs_path)
+    {
+        strncpy(fs_path, nofs_path, fs_path_max);
+        fs_path[fs_path_max - 1] = '\0';
+    }
+
     return ZFS_OK;
 }
 
