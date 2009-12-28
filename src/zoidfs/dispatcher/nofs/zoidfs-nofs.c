@@ -16,7 +16,7 @@ static size_t zoidfs_nofs_handle_create(zoidfs_handle_t * parent_handle, char * 
     size_t hash = 0;
     size_t i = 0;
 
-    
+
     /* if the right vars are not set, just return 0 */
     if(!(full_path || (parent_handle && component_name)))
     {
@@ -25,7 +25,7 @@ static size_t zoidfs_nofs_handle_create(zoidfs_handle_t * parent_handle, char * 
 
     /* if the fullpath is available */
     if(full_path)
-    { 
+    {
         /* cycle through the handle data field */
         for(i = 0 ; i < strlen(full_path) ; i++)
         {
@@ -102,7 +102,7 @@ static int zoidfs_nofs_handle_register(size_t handle)
         *h = handle;
         tsearch(h, &nofs_handle_tree_root, zoidfs_nofs_handle_compare);
     }
-    
+
     return 0;
 }
 
@@ -244,7 +244,7 @@ static int zoidfs_nofs_link(const zoidfs_handle_t * UNUSED(from_parent_handle),
     return ZFS_OK;
 }
 
-static int zoidfs_nofs_symlink(    
+static int zoidfs_nofs_symlink(
     const zoidfs_handle_t * UNUSED(from_parent_handle),
     const char * UNUSED(from_component_name),
     const char * UNUSED(from_full_path),

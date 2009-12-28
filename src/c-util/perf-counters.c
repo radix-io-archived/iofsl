@@ -53,12 +53,12 @@ void * perf_counters_key_find(void * pc_tree, char * pc_key)
     /* if a local pc tree was given, search it */
     if(pc_tree)
     {
-        return tfind(&sk, &pc_tree, perf_counters_key_compare); 
+        return tfind(&sk, &pc_tree, perf_counters_key_compare);
     }
     /*else, search the global pc tree for the key */
     else
     {
-        return tfind(&sk, &iofwd_global_pc_tree, perf_counters_key_compare); 
+        return tfind(&sk, &iofwd_global_pc_tree, perf_counters_key_compare);
     }
     return NULL;
 }
@@ -116,7 +116,7 @@ int perf_counters_zero(iofwd_pc_t * pc)
         }
         case PC_UINT8_T:
         {
-            *(uint8_t *)pc->pc_data = 0; 
+            *(uint8_t *)pc->pc_data = 0;
             break;
         }
         case PC_UINT16_T:
@@ -195,8 +195,8 @@ iofwd_pc_t * perf_counters_counter_create(char * pc_name, iofwd_pc_dt_t pc_dt)
         default:
             break;
     };
- 
-    return k; 
+
+    return k;
 }
 
 /* insert a counter into the counter tree */
@@ -207,18 +207,18 @@ void * perf_counters_counter_insert(void * pc_tree, iofwd_pc_t * pc)
     /* if a local pc tree was given, search it */
     if(pc_tree)
     {
-        tpc = tsearch(pc, &pc_tree, perf_counters_key_compare); 
+        tpc = tsearch(pc, &pc_tree, perf_counters_key_compare);
     }
     /*else, search the global pc tree for the key */
     else
     {
-        tpc = tsearch(pc, &iofwd_global_pc_tree, perf_counters_key_compare); 
+        tpc = tsearch(pc, &iofwd_global_pc_tree, perf_counters_key_compare);
     }
 
     /* a replica of the counter was found... update the existing counter */
     if(tpc != pc)
     {
-       perf_counters_update(tpc, pc); 
+       perf_counters_update(tpc, pc);
     }
 
     return tpc;
@@ -234,18 +234,18 @@ int perf_counters_reset(void * pc_tree, char * pc_key)
     /* if a local pc tree was given, search it */
     if(pc_tree)
     {
-        tdata = tfind(&sk, &pc_tree, perf_counters_key_compare); 
+        tdata = tfind(&sk, &pc_tree, perf_counters_key_compare);
     }
     /*else, search the global pc tree for the key */
     else
     {
-        tdata = tfind(&sk, &iofwd_global_pc_tree, perf_counters_key_compare); 
+        tdata = tfind(&sk, &iofwd_global_pc_tree, perf_counters_key_compare);
     }
 
     /* if the counter was found, zero out the data */
     if(tdata)
     {
-       perf_counters_zero(tdata); 
+       perf_counters_zero(tdata);
     }
     return 0;
 }
@@ -271,12 +271,12 @@ int perf_counters_counter_delete(void * pc_tree, char * pc_key)
     /* if a local pc tree was given, search it */
     if(pc_tree)
     {
-        tdata = tdelete(&sk, &pc_tree, perf_counters_key_compare); 
+        tdata = tdelete(&sk, &pc_tree, perf_counters_key_compare);
     }
     /*else, search the global pc tree for the key */
     else
     {
-        tdata = tdelete(&sk, &iofwd_global_pc_tree, perf_counters_key_compare); 
+        tdata = tdelete(&sk, &iofwd_global_pc_tree, perf_counters_key_compare);
     }
 
     /* if the node was found, delete it */
@@ -299,6 +299,6 @@ int perf_counters_destroy_tree(void * pc_tree)
     {
         tdestroy(iofwd_global_pc_tree, perf_counters_counter_free);
     }
-    
+
     return 0;
 }
