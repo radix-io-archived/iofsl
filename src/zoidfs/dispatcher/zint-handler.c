@@ -7,9 +7,9 @@
 
 #include "zoidfs/dispatcher/zint-handler.h"
 
-#ifdef USE_NOFS_DISPATCHER
+#ifdef USE_DISPATCHER_NOFS 
 #include "zoidfs/dispatcher/nofs/zoidfs-nofs.h"
-#endif /* USE_NOFS_DISPATCHER */
+#endif /* USE_DISPATCHER_NOFS */
 
 #ifdef HAVE_DISPATCHER_PVFS2
 #include "zoidfs/dispatcher/pvfs/zoidfs-pvfs2.h"
@@ -34,9 +34,9 @@
 
 static zint_handler_t * zint_handlers[] =
 {
-#ifdef USE_NOFS_DISPATCHER
+#ifdef USE_DISPATCHER_NOFS 
     &nofs_handler,
-#endif /*  USE_NOFS_DISPATCHER */
+#endif /*  USE_DISPATCHER_NOFS */
 #ifdef HAVE_DISPATCHER_PVFS2
     &pvfs2_handler,
 #endif
