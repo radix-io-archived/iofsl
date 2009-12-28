@@ -27,6 +27,11 @@ public:
       return class_; 
    }
 
+   /// Returns true if logging for the specified level is enabled for
+   /// this source.
+   bool isEnabled (unsigned int level) const
+   { return (level <= loglevel_); }
+
    void doLog (unsigned int level, const boost::format & fmt); 
 
    void doLog (unsigned int level, const std::string & str)

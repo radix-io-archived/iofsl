@@ -67,45 +67,49 @@ class ZLog
 };
 //===========================================================================
 
+#define ZLOG_COMMON(cl,level,txt) \
+   if (cl.isEnabled(level)) \
+   { cl.doLog(level,txt); }
+
 #ifndef ZLOG_DISABLE_ERROR
-#define ZLOG_ERROR(cl,txt) cl.doLog(iofwdutil::zlog::ERROR,txt)
+#define ZLOG_ERROR(cl,txt) ZLOG_COMMON(cl,iofwdutil::zlog::ERROR,txt)
 #else
 #define ZLOG_ERROR(cl,txt)
 #endif
 
 #ifndef ZLOG_DISABLE_CRITICAL
-#define ZLOG_CRITICAL(cl,txt) cl.doLog(iofwdutil::zlog::CRITICAL,txt)
+#define ZLOG_CRITICAL(cl,txt) ZLOG_COMMON(cl,iofwdutil::zlog::CRITICAL,txt)
 #else
 #define ZLOG_CRITICAL(cl,txt)
 #endif
 
 #ifndef ZLOG_DISABLE_WARN
-#define ZLOG_WARN(cl,txt) cl.doLog(iofwdutil::zlog::WARN,txt)
+#define ZLOG_WARN(cl,txt) ZLOG_COMMON(cl,iofwdutil::zlog::WARN,txt)
 #else
 #define ZLOG_WARN(cl,txt) 
 #endif
 
 #ifndef ZLOG_DISABLE_INFO
-#define ZLOG_INFO(cl,txt) cl.doLog(iofwdutil::zlog::INFO,txt)
+#define ZLOG_INFO(cl,txt) ZLOG_COMMON(cl,iofwdutil::zlog::INFO,txt)
 #else
 #define ZLOG_INFO(cl,txt)
 #endif
 
 
 #ifndef ZLOG_DISABLE_DEBUG
-#define ZLOG_DEBUG(cl,txt) cl.doLog(iofwdutil::zlog::DEBUG,txt)
+#define ZLOG_DEBUG(cl,txt) ZLOG_COMMON(cl,iofwdutil::zlog::DEBUG,txt)
 #else
 #define ZLOG_DEBUG(cl,txt)
 #endif
 
 #ifndef ZLOG_DISABLE_DEBUG_MORE
-#define ZLOG_DEBUG_MORE(cl,txt) cl.doLog(iofwdutil::zlog::DEBUG_MORE,txt)
+#define ZLOG_DEBUG_MORE(cl,txt) ZLOG_COMMON(cl,iofwdutil::zlog::DEBUG_MORE,txt)
 #else
 #define ZLOG_DEBUG_MORE(cl,txt)
 #endif
 
 #ifndef ZLOG_DISABLE_DEBUG_EXTREME
-#define ZLOG_DEBUG_EXTREME(cl,txt) cl.doLog(iofwdutil::zlog::DEBUG_EXTREME,txt)
+#define ZLOG_DEBUG_EXTREME(cl,txt) ZLOG_COMMON(cl,iofwdutil::zlog::DEBUG_EXTREME,txt)
 #else
 #define ZLOG_DEBUG_EXTREME(cl,txt)
 #endif
