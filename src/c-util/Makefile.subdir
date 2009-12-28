@@ -41,4 +41,6 @@ src/c-util/tools.h \
 src/c-util/txt_configfile.c \
 src/c-util/txt_configfile.h \
 src/c-util/interval-merge-tree.h \
-src/c-util/interval-merge-tree.c
+src/c-util/interval-merge-tree.c \
+src/c-util/perf-counters.h \
+src/c-util/perf-counters.c
