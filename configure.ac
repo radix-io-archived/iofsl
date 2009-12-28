@@ -199,6 +199,58 @@ then
 fi
 AM_CONDITIONAL([HAVE_CUNIT],[test "x${ENABLE_CUNIT}" == "x1"])
 
+#
+# Experimental optimizations flags
+#
+
+AC_ARG_ENABLE([ceo],
+              [AS_HELP_STRING([--enable-ceo],[Enable experimental client optimizations])],
+              [case "${enableval}" in
+                  yes) use_ceo=1;;
+                  no) use_ceo=0;;
+                  *) AC_MSG_ERROR([bad value ${enableval} for
+                                   --enable-ceo]) ;;
+               esac],
+               [use_ceo=1])
+
+USE_CEO=0
+CEO_CFLAGS=""
+AC_MSG_CHECKING([If the client should be built with experimental optimizations])
+if test "${use_ceo}" == "1"; then
+   AC_DEFINE([USE_CEO],[1],[Build client with experimental optimizations])
+   USE_CEO=1
+   CEO_CFLAGS="-DZFS_USE_NB_BMI_COMM -DZFS_BMI_FASTMEMALLOC"
+   AC_MSG_RESULT([yes])
+else
+   AC_MSG_RESULT([no])
+fi
+AM_CONDITIONAL([USE_CEO],[test ${use_ceo} == 1])
+
+AC_ARG_ENABLE([seo],
+              [AS_HELP_STRING([--enable-seo],[Enable experimental server optimizations])],
+              [case "${enableval}" in
+                  yes) use_seo=1;;
+                  no) use_seo=0;;
+                  *) AC_MSG_ERROR([bad value ${enableval} for
+                                   --enable-seo]) ;;
+               esac],
+               [use_seo=1])
+
+USE_SEO=0
+SEO_CFLAGS=""
+SEO_CXXFLAGS=""
+AC_MSG_CHECKING([If the server should be built with experimental optimizations])
+if test "${use_seo}" == "1"; then
+   AC_DEFINE([USE_SEO],[1],[Build server with experimental optimizations])
+   USE_SEO=1
+   SEO_CFLAGS="-DZLOG_DISABLE_ALL -DITRS"
+   SEO_CXXFLAGS="-DZLOG_DISABLE_ALL -DITRS"
+   AC_MSG_RESULT([yes])
+else
+   AC_MSG_RESULT([no])
+fi
+AM_CONDITIONAL([USE_SEO],[test ${use_seo} == 1])
+
 # ===========================================================================
 # ====== BMI ================================================================
 # ===========================================================================
