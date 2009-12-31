@@ -36,6 +36,7 @@ sandbox/bmi-pp-perf
 sandbox/zoidfs-io-bsize
 sandbox/zoidfs-io-bsize-local
 sandbox/vl-test
+sandbox/pctest
 src/fuse/fuseclient
 src/fuse/fusedispatch
 src/iofwd/iofwd
