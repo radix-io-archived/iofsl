@@ -93,7 +93,7 @@ void * perf_counters_key_find(void ** pc_tree, char * pc_key)
         else
         {
             free(sk);
-            return fk;
+            return *fk;
         }
     }
     return NULL;
