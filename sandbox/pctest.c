@@ -21,6 +21,10 @@ int main()
     perf_counters_counter_get(&c, "TEST2", &r);
     fprintf(stderr, "counter r = %f\n", r);
 
+    perf_counters_counter_add(NULL, "TEST3", PC_DOUBLE);
+    perf_counters_counter_get(NULL, "TEST3", &r);
+    fprintf(stderr, "counter r = %f\n", r);
+
     v = 13.1;
     perf_counters_counter_update(&c, "TEST1", &v);
     perf_counters_counter_get(&c, "TEST1", &r);
@@ -30,9 +34,16 @@ int main()
     perf_counters_counter_get(&c, "TEST2", &r);
     fprintf(stderr, "counter r = %f\n", r);
 
+    perf_counters_counter_update(NULL, "TEST3", &v);
+    perf_counters_counter_update(NULL, "TEST3", &v);
+    perf_counters_counter_update(NULL, "TEST3", &v);
+    perf_counters_counter_get(NULL, "TEST3", &r);
+    fprintf(stderr, "counter r = %f\n", r);
+
     perf_counters_counter_delete(&c, "TEST1");
 
     perf_counters_cleanup(c);
+    perf_counters_cleanup(NULL);
     
     return 0;
 }
