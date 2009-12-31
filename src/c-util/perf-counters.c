@@ -45,20 +45,56 @@ int perf_counters_key_compare(const void * a, const void * b)
     return 0;
 }
 
-void * perf_counters_key_find(void * pc_tree, char * pc_key)
+void * perf_counters_key_find(void ** pc_tree, char * pc_key)
 {
     size_t k = perf_counters_key_generate(pc_key);
-    iofwd_pc_t sk = {k,NULL,NULL,PC_DOUBLE};
+    iofwd_pc_t * sk = (iofwd_pc_t *)calloc(1, sizeof(iofwd_pc_t));
+    iofwd_pc_t ** fk = NULL;
+
+    sk->pc_key = k;
+    sk->pc_dt = PC_UNDEF_T;
+    sk->pc_name = pc_key; 
+    sk->pc_data = NULL; 
 
     /* if a local pc tree was given, search it */
     if(pc_tree)
     {
-        return tfind(&sk, &pc_tree, perf_counters_key_compare);
+        fk = (iofwd_pc_t **)tfind(sk, pc_tree, perf_counters_key_compare);
+        if(!fk || !*fk)
+        {
+            free(sk);
+            return NULL;
+        }
+
+        if(*fk == sk)
+        {
+            return sk;
+        }
+        else
+        {
+            free(sk);
+            return *fk;
+        }
     }
     /*else, search the global pc tree for the key */
     else
     {
-        return tfind(&sk, &iofwd_global_pc_tree, perf_counters_key_compare);
+        fk = (iofwd_pc_t **)tfind(sk, &iofwd_global_pc_tree, perf_counters_key_compare);
+        if(!fk || !*fk)
+        {
+            free(sk);
+            return NULL;
+        }
+
+        if(*fk == sk)
+        {
+            return sk;
+        }
+        else
+        {
+            free(sk);
+            return fk;
+        }
     }
     return NULL;
 }
@@ -96,6 +132,87 @@ int perf_counters_update(iofwd_pc_t * tpc, iofwd_pc_t * pc)
         case PC_SIZE_T:
         {
             *(size_t *)tpc->pc_data += *(size_t *)pc->pc_data;
+            break;
+        }
+        default:
+            break;
+    };
+    return 0;
+}
+
+int perf_counters_update_data(iofwd_pc_t * tpc, void * pc_data)
+{
+    switch(tpc->pc_dt)
+    {
+        case PC_DOUBLE:
+        {
+            *(double *)tpc->pc_data += *(double *)pc_data;
+            break;
+        }
+        case PC_UINT8_T:
+        {
+            *(uint8_t *)tpc->pc_data += *(uint8_t *)pc_data;
+            break;
+        }
+        case PC_UINT16_T:
+        {
+            *(uint16_t *)tpc->pc_data += *(uint16_t *)pc_data;
+            break;
+        }
+        case PC_UINT32_T:
+        {
+            *(uint32_t *)tpc->pc_data += *(uint32_t *)pc_data;
+            break;
+        }
+        case PC_UINT64_T:
+        {
+            *(uint64_t *)tpc->pc_data += *(uint64_t *)pc_data;
+            break;
+        }
+        case PC_SIZE_T:
+        {
+            *(size_t *)tpc->pc_data += *(size_t *)pc_data;
+            break;
+        }
+        default:
+            break;
+    };
+    return 0;
+}
+
+/* zero the perf counters */
+int perf_counters_get(iofwd_pc_t * pc, void * pc_data)
+{
+    switch(pc->pc_dt)
+    {
+        case PC_DOUBLE:
+        {
+            *(double *)pc_data = *(double *)pc->pc_data;
+            break;
+        }
+        case PC_UINT8_T:
+        {
+            *(uint8_t *)pc_data = *(uint8_t *)pc->pc_data;
+            break;
+        }
+        case PC_UINT16_T:
+        {
+            *(uint16_t *)pc_data = *(uint16_t *)pc->pc_data;
+            break;
+        }
+        case PC_UINT32_T:
+        {
+            *(uint32_t *)pc_data = *(uint32_t *)pc->pc_data;
+            break;
+        }
+        case PC_UINT64_T:
+        {
+            *(uint64_t *)pc_data = *(uint64_t *)pc->pc_data;
+            break;
+        }
+        case PC_SIZE_T:
+        {
+            *(size_t *)pc_data = *(size_t *)pc->pc_data;
             break;
         }
         default:
@@ -148,7 +265,7 @@ int perf_counters_zero(iofwd_pc_t * pc)
 /* create a counter */
 iofwd_pc_t * perf_counters_counter_create(char * pc_name, iofwd_pc_dt_t pc_dt)
 {
-    iofwd_pc_t * k = (iofwd_pc_t *)malloc(sizeof(iofwd_pc_t));
+    iofwd_pc_t * k = (iofwd_pc_t *)calloc(1, sizeof(iofwd_pc_t));
 
     k->pc_name = pc_name;
     k->pc_dt = pc_dt;
@@ -158,37 +275,37 @@ iofwd_pc_t * perf_counters_counter_create(char * pc_name, iofwd_pc_dt_t pc_dt)
     {
         case PC_DOUBLE:
         {
-            k->pc_data = (double *)malloc(sizeof(double));
+            k->pc_data = (double *)calloc(1, sizeof(double));
             *(double *)k->pc_data = 0.0;
             break;
         }
         case PC_UINT8_T:
         {
-            k->pc_data = (uint8_t *)malloc(sizeof(uint8_t));
+            k->pc_data = (uint8_t *)calloc(1, sizeof(uint8_t));
             *(uint8_t *)k->pc_data = 0;
             break;
         }
         case PC_UINT16_T:
         {
-            k->pc_data = (uint16_t *)malloc(sizeof(uint16_t));
+            k->pc_data = (uint16_t *)calloc(1, sizeof(uint16_t));
             *(uint16_t *)k->pc_data = 0;
             break;
         }
         case PC_UINT32_T:
         {
-            k->pc_data = (uint32_t *)malloc(sizeof(uint32_t));
+            k->pc_data = (uint32_t *)calloc(1, sizeof(uint32_t));
             *(uint32_t *)k->pc_data = 0;
             break;
         }
         case PC_UINT64_T:
         {
-            k->pc_data = (uint64_t *)malloc(sizeof(uint64_t));
+            k->pc_data = (uint64_t *)calloc(1, sizeof(uint64_t));
             *(uint64_t *)k->pc_data = 0;
             break;
         }
         case PC_SIZE_T:
         {
-            k->pc_data = (size_t *)malloc(sizeof(size_t));
+            k->pc_data = (size_t *)calloc(1, sizeof(size_t));
             *(size_t *)k->pc_data = 0;
             break;
         }
@@ -200,52 +317,28 @@ iofwd_pc_t * perf_counters_counter_create(char * pc_name, iofwd_pc_dt_t pc_dt)
 }
 
 /* insert a counter into the counter tree */
-void * perf_counters_counter_insert(void * pc_tree, iofwd_pc_t * pc)
+void * perf_counters_counter_insert(void ** pc_tree, iofwd_pc_t * pc)
 {
-    iofwd_pc_t * tpc = NULL;
-
     /* if a local pc tree was given, search it */
     if(pc_tree)
     {
-        tpc = tsearch(pc, &pc_tree, perf_counters_key_compare);
+        tsearch(pc, pc_tree, perf_counters_key_compare);
     }
     /*else, search the global pc tree for the key */
     else
     {
-        tpc = tsearch(pc, &iofwd_global_pc_tree, perf_counters_key_compare);
+        tsearch(pc, &iofwd_global_pc_tree, perf_counters_key_compare);
     }
 
-    /* a replica of the counter was found... update the existing counter */
-    if(tpc != pc)
-    {
-       perf_counters_update(tpc, pc);
-    }
-
-    return tpc;
+    return pc;
 }
 
-/* reset a counter value to 0 */
-int perf_counters_reset(void * pc_tree, char * pc_key)
+int perf_counters_counter_add(void ** pc_tree, char * pc_key, iofwd_pc_dt_t pc_dt)
 {
-    size_t k = perf_counters_key_generate(pc_key);
-    iofwd_pc_t sk = {k,NULL,NULL,PC_DOUBLE};
-    iofwd_pc_t * tdata = NULL;
-
-    /* if a local pc tree was given, search it */
-    if(pc_tree)
+    if(!perf_counters_key_find(pc_tree, pc_key))
     {
-        tdata = tfind(&sk, &pc_tree, perf_counters_key_compare);
-    }
-    /*else, search the global pc tree for the key */
-    else
-    {
-        tdata = tfind(&sk, &iofwd_global_pc_tree, perf_counters_key_compare);
-    }
-
-    /* if the counter was found, zero out the data */
-    if(tdata)
-    {
-       perf_counters_zero(tdata);
+        iofwd_pc_t * pc = perf_counters_counter_create(pc_key, pc_dt); 
+        perf_counters_counter_insert(pc_tree, pc);
     }
     return 0;
 }
@@ -261,35 +354,34 @@ void perf_counters_counter_free(void * c)
     return;
 }
 
-/* delete a counter from the tree */
-int perf_counters_counter_delete(void * pc_tree, char * pc_key)
+int perf_counters_delete(void ** pc_tree, iofwd_pc_t * tpc)
 {
-    size_t k = perf_counters_key_generate(pc_key);
-    iofwd_pc_t sk = {k,NULL,NULL,PC_DOUBLE};
-    iofwd_pc_t * tdata = NULL;
-
-    /* if a local pc tree was given, search it */
     if(pc_tree)
     {
-        tdata = tdelete(&sk, &pc_tree, perf_counters_key_compare);
+        tdelete(tpc, pc_tree, perf_counters_key_compare);
+        perf_counters_counter_free(tpc);
     }
-    /*else, search the global pc tree for the key */
     else
     {
-        tdata = tdelete(&sk, &iofwd_global_pc_tree, perf_counters_key_compare);
+        tdelete(tpc, &iofwd_global_pc_tree, perf_counters_key_compare);
     }
-
-    /* if the node was found, delete it */
-    if(tdata)
-    {
-        perf_counters_counter_free(tdata);
-    }
-
     return 0;
 }
 
+/* delete a counter from the tree */
+int perf_counters_counter_delete(void ** pc_tree, char * pc_key)
+{
+    iofwd_pc_t * tpc = perf_counters_key_find(pc_tree, pc_key);
+    if(tpc)
+    {
+        perf_counters_delete(pc_tree, tpc);
+        return 0;
+    }
+    return 1;
+}
+
 /* destroy an entire counter tree */
-int perf_counters_destroy_tree(void * pc_tree)
+int perf_counters_cleanup(void * pc_tree)
 {
     if(pc_tree)
     {
@@ -301,4 +393,37 @@ int perf_counters_destroy_tree(void * pc_tree)
     }
 
     return 0;
+}
+
+int perf_counters_counter_update(void ** pc_tree, char * pc_key, void * pc_data)
+{
+    iofwd_pc_t * tpc = perf_counters_key_find(pc_tree, pc_key);
+    if(tpc)
+    {
+        perf_counters_update_data(tpc, pc_data);
+        return 0;
+    }
+    return 1;
+}
+
+int perf_counters_counter_reset(void ** pc_tree, char * pc_key)
+{
+    iofwd_pc_t * tpc = perf_counters_key_find(pc_tree, pc_key);
+    if(!tpc)
+    {
+        perf_counters_zero(tpc);
+        return 0;
+    }
+    return 1;
+}
+
+int perf_counters_counter_get(void ** pc_tree, char * pc_key, void * pc_data)
+{
+    iofwd_pc_t * tpc = perf_counters_key_find(pc_tree, pc_key);
+    if(tpc)
+    {
+        perf_counters_get(tpc, pc_data);
+        return 0;
+    }
+    return 1;
 }
