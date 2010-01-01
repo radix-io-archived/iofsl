@@ -333,10 +333,10 @@ int main(int argc,
     size_t i = 0;
     for(i = 0 ; i < file_count ; i++)
     {
-        int x_start = sz_tile_x * sz_element * my_tile[1];
-        int y_start = sz_tile_x * sz_tile_y * sz_element * nr_tiles_x * my_tile[0];
-        int t_off = i * nr_tiles_x * sz_tile_x * sz_element;
-        int l_size = sz_tile_x * sz_element;
+        size_t x_start = sz_tile_x * sz_element * my_tile[1];
+        size_t y_start = sz_tile_x * sz_tile_y * sz_element * nr_tiles_x * my_tile[0];
+        size_t t_off = i * nr_tiles_x * sz_tile_x * sz_element;
+        size_t l_size = sz_tile_x * sz_element;
 
         file_starts[i] = x_start + y_start + t_off;
         file_sizes[i] = l_size;
