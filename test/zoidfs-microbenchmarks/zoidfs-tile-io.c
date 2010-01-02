@@ -321,14 +321,10 @@ int main(int argc,
     /* setup the zoidfs write args */
     size_t mem_count = 1;
     size_t file_count = 1 * sz_tile_y;
-    char ** mem_starts = (char **)malloc(sizeof(char *) * mem_count);
-    size_t * mem_sizes = (size_t *)malloc(sizeof(size_t) * mem_count);
+    char ** mem_starts = (char **)malloc(sizeof(char *) * file_count);
+    size_t * mem_sizes = (size_t *)malloc(sizeof(size_t) * file_count);
     uint64_t * file_starts = (uint64_t *)malloc(sizeof(uint64_t) * file_count);
     uint64_t * file_sizes = (uint64_t *)malloc(sizeof(uint64_t) * file_count);
-
-    /* init the variables */
-    mem_starts[0] = buffer;
-    mem_sizes[0] = (sz_tile_x * sz_tile_y * sz_element);
 
     size_t i = 0;
     for(i = 0 ; i < file_count ; i++)
@@ -337,6 +333,9 @@ int main(int argc,
         size_t y_start = sz_tile_x * sz_tile_y * sz_element * nr_tiles_x * my_tile[0];
         size_t t_off = i * nr_tiles_x * sz_tile_x * sz_element;
         size_t l_size = sz_tile_x * sz_element;
+
+        mem_starts[i] = buffer;
+        mem_sizes[i] = (sz_tile_x * sz_tile_y * sz_element);
 
         file_starts[i] = x_start + y_start + t_off;
         file_sizes[i] = l_size;
