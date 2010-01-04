@@ -91,6 +91,11 @@ sandbox_pctest_SOURCES = sandbox/pctest.c
 sandbox_pctest_LDFLAGS = $(sandbox_ldflags)
 sandbox_pctest_LDADD = $(sandbox_ldadd)
 
+noinst_PROGRAMS += sandbox/PCtest
+sandbox_PCtest_SOURCES = sandbox/PCtest.cpp
+sandbox_PCtest_LDFLAGS = $(sandbox_ldflags)
+sandbox_PCtest_LDADD = $(sandbox_ldadd)
+
 noinst_PROGRAMS += sandbox/vl-test
 sandbox_vl_test_SOURCES = sandbox/vl-test.cpp
 sandbox_vl_test_LDFLAGS = $(sandbox_ldflags)
