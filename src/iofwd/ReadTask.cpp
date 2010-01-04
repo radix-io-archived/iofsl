@@ -88,7 +88,7 @@ iofwdutil::completion::CompletionID * ReadTask::execPipelineIO(const ReadRequest
      bool st_ok = false;
      bool en_ok = false;
      uint32_t cur_file = 0;
-     uint64_t cur_ofs = 0;
+     uint64_t cur_ofs = p_offset;
      while (!(st_ok && en_ok)) {
        const uint64_t st = p_offset;
        const uint64_t en = p_offset + p_size;
