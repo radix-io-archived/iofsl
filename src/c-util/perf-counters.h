@@ -1,6 +1,10 @@
 #ifndef __CUTIL_PERF_COUNTERS_H__
 #define __CUTIL_PERF_COUNTERS_H__
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include <stdlib.h>
 #include <stdint.h>
 
@@ -37,5 +41,9 @@ int perf_counters_cleanup(void * pc_tree);
 int perf_counters_counter_update(void ** pc_tree, char * pc_key, void * pc_data);
 int perf_counters_counter_reset(void ** pc_tree, char * pc_key);
 int perf_counters_counter_get(void ** pc_tree, char * pc_key, void * pc_data);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif
