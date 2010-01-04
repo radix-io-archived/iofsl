@@ -319,8 +319,8 @@ int main(int argc,
 	/* barrier to try to sync processes */
 
     /* setup the zoidfs write args */
-    size_t mem_count = 1;
     size_t file_count = 1 * sz_tile_y;
+    size_t mem_count = 1 * sz_tile_y;
     char ** mem_starts = (char **)malloc(sizeof(char *) * file_count);
     size_t * mem_sizes = (size_t *)malloc(sizeof(size_t) * file_count);
     uint64_t * file_starts = (uint64_t *)malloc(sizeof(uint64_t) * file_count);
