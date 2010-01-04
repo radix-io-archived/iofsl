@@ -133,6 +133,8 @@ src/iofwdutil/backtrace.cpp \
 src/iofwdutil/demangle.cpp \
 src/iofwdutil/signals.cpp \
 src/iofwdutil/boost-spirit.hh \
+src/iofwdutil/PerfCounters.hh \
+src/iofwdutil/PerfCounters.cpp \
 \
 src/iofwdutil/atomics.hh \
 \
