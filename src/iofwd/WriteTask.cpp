@@ -93,7 +93,6 @@ iofwdutil::completion::CompletionID * WriteTask::execPipelineIO(const WriteReque
      while (!(st_ok && en_ok)) {
        const uint64_t st = p_offset;
        const uint64_t en = p_offset + p_size;
-        fprintf(stderr, "cur_ofs = %lu, file_sizes[%i] = %lu, st = %lu, en = %lu, p.file_count = %lu\n", cur_ofs, cur_file, file_sizes[cur_file], st, en, p.file_count);
        assert(cur_file < p.file_count);
        if (cur_ofs <= st && st < cur_ofs + file_sizes[cur_file]) {
          st_file = cur_file;
@@ -143,9 +142,6 @@ iofwdutil::completion::CompletionID * WriteTask::execPipelineIO(const WriteReque
      mem_starts[i] = p_buf + cur;
      mem_sizes[i] = p_file_sizes[i];
      cur += p_file_sizes[i];
-
-     fprintf(stderr, "mem_sizes[%i] = %lu, p_file_starts[%i] = %lu, p_file_sizes[%i] = %lu\n",
-        i, mem_sizes[i], i, p_file_starts[i], i, p_file_sizes[i]);
    }
    iofwdutil::completion::CompletionID * id = sched_->enqueueWrite (
       p.handle, p_file_count, (const void**)mem_starts, mem_sizes,
