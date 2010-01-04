@@ -11,7 +11,7 @@ namespace iofwdutil
     int PerfCounterCleanup(void * pc_tree);
 
     /* counter updates */
-    int PerfCounterCounterUpdate(void ** pc_tree, char * pc_key, void * pc_data);
+    int PerfCounterUpdate(void ** pc_tree, char * pc_key, void * pc_data);
     int PerfCounterReset(void ** pc_tree, char * pc_key);
     int PerfCounterGet(void ** pc_tree, char * pc_key, void * pc_data);
 }

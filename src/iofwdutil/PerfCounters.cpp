@@ -19,7 +19,7 @@ namespace iofwdutil
     }
 
     /* counter updates */
-    int PerfCounterCounterUpdate(void ** pc_tree, char * pc_key, void * pc_data)
+    int PerfCounterUpdate(void ** pc_tree, char * pc_key, void * pc_data)
     {
         return perf_counters_counter_update(pc_tree, pc_key, pc_data);
     }
