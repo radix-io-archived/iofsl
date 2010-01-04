@@ -3336,7 +3336,6 @@ int zoidfs_write(const zoidfs_handle_t *handle, size_t mem_count,
         file_sizes_transfer.len = file_count;
         if((ret = zoidfs_xdr_processor(ZFS_FILE_OFS_ARRAY_T, &file_sizes_transfer, &recv_msg.recv_xdr)) != ZFS_OK)
         {
-            
             goto write_cleanup;
         }
     }
@@ -3446,31 +3445,32 @@ static int zoidfs_write_pipeline(BMI_addr_t peer_addr, size_t pipeline_size,
         else 
         {
             /* if there are multiple buffers, for each buffer */
-            for (i = start_mem; i <= end_mem; i++)
+            bmi_size_t j = 0;
+            for (i = start_mem, j = 0; i <= end_mem; i++, j++)
             {
                 /* if this is the first buffer, account for a partial buffer */
                 if (i == start_mem)
                 {
-                    p_buf_list[i] = ((const char*)buf_list[i]) + start_mem_ofs;
-                    p_size_list[i] = bmi_size_list[i] - start_mem_ofs;
+                    p_buf_list[j] = ((const char*)buf_list[i]) + start_mem_ofs;
+                    p_size_list[j] = bmi_size_list[i] - start_mem_ofs;
                 }
                 /* if this is the last buffer, account for a partial */
                 else if (i == end_mem)
                 {
-                    p_buf_list[i] = (const char*)buf_list[i];
-                    p_size_list[i] = end_mem_ofs;
+                    p_buf_list[j] = (const char*)buf_list[i];
+                    p_size_list[j] = end_mem_ofs;
                 }
                 /* treat all other buffers as complete and seperate */
                 else
                 {
-                    p_buf_list[i] = (const char*)buf_list[i];
-                    p_size_list[i] = bmi_size_list[i];
+                    p_buf_list[j] = (const char*)buf_list[i];
+                    p_size_list[j] = bmi_size_list[i];
                 }
-                assert(p_size_list[i] > 0);
-                p_total_size += p_size_list[i];
+                assert(p_size_list[j] > 0);
+                p_total_size += p_size_list[j];
             }
         }
-
+ 
         /* send the data */
         ret = bmi_comm_send_list(peer_addr, p_list_count, (const void**)p_buf_list,
                                      p_size_list, tag, context, p_total_size);
@@ -3775,28 +3775,29 @@ static int zoidfs_read_pipeline(BMI_addr_t peer_addr, size_t pipeline_size,
         else
         {
             /* for each buffer */
-            for (i = start_mem; i <= end_mem; i++)
+            bmi_size_t j = 0;
+            for (i = start_mem, j = 0 ; i <= end_mem; i++, j++)
             {
                 /* for the first buffer account for a partial */
                 if (i == start_mem)
                 {
-                    p_buf_list[i] = ((char*)buf_list[i]) + start_mem_ofs;
-                    p_size_list[i] = bmi_size_list[i] - start_mem_ofs;
+                    p_buf_list[j] = ((char*)buf_list[i]) + start_mem_ofs;
+                    p_size_list[j] = bmi_size_list[i] - start_mem_ofs;
                 }
                 /* for the last buffer account for a partial */
                 else if (i == end_mem)
                 {
-                    p_buf_list[i] = (char*)buf_list[i];
-                    p_size_list[i] = end_mem_ofs;
+                    p_buf_list[j] = (char*)buf_list[i];
+                    p_size_list[j] = end_mem_ofs;
                 }
                 /* for the other buffers, treat as whole buffers */
                 else
                 {
-                    p_buf_list[i] = (char*)buf_list[i];
-                    p_size_list[i] = bmi_size_list[i];
+                    p_buf_list[j] = (char*)buf_list[i];
+                    p_size_list[j] = bmi_size_list[i];
                 }
-                assert(p_size_list[i] > 0);
-                p_total_size += p_size_list[i];
+                assert(p_size_list[j] > 0);
+                p_total_size += p_size_list[j];
             }
         }
 
