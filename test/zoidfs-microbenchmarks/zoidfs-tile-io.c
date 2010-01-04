@@ -335,7 +335,7 @@ int main(int argc,
         size_t l_size = sz_tile_x * sz_element;
 
         mem_starts[i] = buffer;
-        mem_sizes[i] = (sz_tile_x * sz_tile_y * sz_element);
+        mem_sizes[i] = l_size;
 
         file_starts[i] = x_start + y_start + t_off;
         file_sizes[i] = l_size;
