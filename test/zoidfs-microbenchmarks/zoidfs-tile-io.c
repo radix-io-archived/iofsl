@@ -366,6 +366,14 @@ int main(int argc,
 	    }
 	}
 	end_time = MPI_Wtime();
+
+    /* cleanup the file and mem buffers */
+    free(mem_starts);
+    free(mem_sizes);
+    free(file_starts);
+    free(file_sizes);
+    free(buffer);
+
 	if (ret != MPI_SUCCESS) {
 	    fprintf(stderr, "failed during MPI_File_(read or write)\n");
 	    /* MUST close before finalize according to MPI specs */
@@ -411,6 +419,15 @@ int main(int argc,
 
     /*zoidfs finalize */
     zoidfs_finalize();
+
+    /* cleanup */
+    if(filename)
+    {
+        free(filename);
+        filename = NULL;
+    }
+
+    MPI_Comm_free(&cart_comm);
 
     MPI_Finalize();
     return 0;
