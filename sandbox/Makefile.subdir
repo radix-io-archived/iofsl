@@ -91,10 +91,15 @@ sandbox_pctest_SOURCES = sandbox/pctest.c
 sandbox_pctest_LDFLAGS = $(sandbox_ldflags)
 sandbox_pctest_LDADD = $(sandbox_ldadd)
 
-noinst_PROGRAMS += sandbox/PCtest
-sandbox_PCtest_SOURCES = sandbox/PCtest.cpp
-sandbox_PCtest_LDFLAGS = $(sandbox_ldflags)
-sandbox_PCtest_LDADD = $(sandbox_ldadd)
+noinst_PROGRAMS += sandbox/tls
+sandbox_tls_SOURCES = sandbox/tls.cpp
+sandbox_tls_LDFLAGS = $(sandbox_ldflags)
+sandbox_tls_LDADD = $(sandbox_ldadd)
+
+noinst_PROGRAMS += sandbox/PerfCountersTest
+sandbox_PerfCountersTest_SOURCES = sandbox/PerfCountersTest.cpp
+sandbox_PerfCountersTest_LDFLAGS = $(sandbox_ldflags)
+sandbox_PerfCountersTest_LDADD = $(sandbox_ldadd)
 
 noinst_PROGRAMS += sandbox/vl-test
 sandbox_vl_test_SOURCES = sandbox/vl-test.cpp
