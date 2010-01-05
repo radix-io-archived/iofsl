@@ -1,36 +1,32 @@
 #include "iofwdutil/PerfCounters.hh"
 
+#include <cstdio>
+
 namespace iofwdutil
 {
-    /* counter create and destroy */
-    int PerfCounterAdd(void ** pc_tree, char * pc_key, iofwd_pc_dt_t pc_dt)
+    /* set the perf counters collection to NULL */
+    PerfCounters * PerfCounters::perf_counters_instance_ = NULL;
+    PerfCountersDestroyer PerfCounters::perf_counters_destroyer_instance_;
+
+    /* return an instance of the PerfCounters */
+    PerfCounters * PerfCounters::Instance()
     {
-        return perf_counters_counter_add(pc_tree, pc_key, pc_dt);
+        /* only create the object once */
+        if(!perf_counters_instance_)
+        {
+            perf_counters_instance_ = new PerfCounters();
+            perf_counters_destroyer_instance_.SetPerfCounters(perf_counters_instance_);
+        }
+
+        return perf_counters_instance_;
     }
     
-    int PerfCounterDelete(void ** pc_tree, char * pc_key)
+    PerfCounters::PerfCounters()
     {
-        return perf_counters_counter_delete(pc_tree, pc_key);
     }
 
-    int PerfCounterCleanup(void * pc_tree)
+    /* cleanup if an instance of the object was created */
+    PerfCounters::~PerfCounters()
     {
-        return perf_counters_cleanup(pc_tree);
-    }
-
-    /* counter updates */
-    int PerfCounterUpdate(void ** pc_tree, char * pc_key, void * pc_data)
-    {
-        return perf_counters_counter_update(pc_tree, pc_key, pc_data);
-    }
-
-    int PerfCounterReset(void ** pc_tree, char * pc_key)
-    {
-        return perf_counters_counter_reset(pc_tree, pc_key);
-    }
-
-    int PerfCounterGet(void ** pc_tree, char * pc_key, void * pc_data)
-    {
-        return perf_counters_counter_get(pc_tree, pc_key, pc_data);
     }
 }
