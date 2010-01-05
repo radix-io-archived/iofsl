@@ -22,7 +22,7 @@ class IntervalTreeRangeSet
 
         ~IntervalTreeRangeSet()
         {
-            if(!rt)
+            if(rt)
             {
                  iofwdutil::rm::IntervalMergeTreeDestroyTree(rt);
             }
