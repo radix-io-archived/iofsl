@@ -690,9 +690,9 @@ void report_results(MPI_Comm comm,
 	/* calculate the I/O bandwidth while we still have the max. time;
 	 * avoid floating point exceptions
 	 */
-	total_size = total_size / (int64_t) 1048576;
+	double d_total_size = total_size / (int64_t) 1048576;
 	if (max_time != 0.0)
-	    io_bw = ((double) total_size) / max_time;
+	    io_bw = ((double) d_total_size) / max_time;
 	else
 	    io_bw = 0.0;
     }
