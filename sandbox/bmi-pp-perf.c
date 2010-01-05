@@ -6,15 +6,17 @@
 #include <pthread.h>
 
 #include <bmi.h>
+#include "zoidfs/zoidfs.h"
+#include "zoidfs/zoidfs-proto.h"
 #include "zoidfs/client/bmi_comm.h"
 
 /* measure the performance of the BMI interface for C clients */
 
 /* test buffer sizes and the number of itrs per buffer size */
-size_t buflen [] = {1,2,4,8,16,32,64,128,256,512,1024,2048,4096,8124,16384,32768,65536,131072,262144,524288,1048576,2097152,4194304,8388608,16777216};
-int numitr [] = {2000,2000,2000,2000,2000,2000,2000,2000,2000,2000,2000,2000,2000,2000,1000,1000,1000,1000,1000,100,100,10,10,10,10};
+size_t buflen [] = {1,2,4,8,16,32,64,128,256,512,1024,2048,4096,8124,16384,32768,65536,131072,262144,524288,1048576,2097152,4194304,8388608,16777216,33554432,67108864,134217728,268435456,536870912,1073741824};
+size_t numitr [] = {2000,2000,2000,2000,2000,2000,2000,2000,2000,2000,2000,2000,2000,2000,1000,1000,1000,1000,1000,100,100,10,10,10,10,10,10,10,10,10,10};
 size_t ubuflen [] = {1,2,4,8,16,32,64,128,256,512,1024,2048,4096,8124};
-int unumitr [] = {10000,10000,10000,10000,10000,10000,10000,10000,5000,5000,5000,2000,2000,2000};
+size_t unumitr [] = {10000,10000,10000,10000,10000,10000,10000,10000,5000,5000,5000,2000,2000,2000};
 
 static BMI_addr_t peer_addr;
 static void * bmi_bar_recv_buf = NULL;
@@ -243,8 +245,16 @@ void * run_test(void * t)
         }
         else
         {
-            sendbuf = BMI_memalloc(peer_addr, buflen[i], BMI_SEND);
-            recvbuf = BMI_memalloc(peer_addr, buflen[i], BMI_RECV);
+            if(buflen[i] <= ZOIDFS_BUFFER_MAX)
+            {
+                sendbuf = BMI_memalloc(peer_addr, buflen[i], BMI_SEND);
+                recvbuf = BMI_memalloc(peer_addr, buflen[i], BMI_RECV);
+            }
+            else
+            {
+                sendbuf = BMI_memalloc(peer_addr, ZOIDFS_BUFFER_MAX, BMI_SEND);
+                recvbuf = BMI_memalloc(peer_addr, ZOIDFS_BUFFER_MAX, BMI_RECV);
+            }
         }
 
         if(!d->unexpected)
@@ -259,15 +269,30 @@ void * run_test(void * t)
                 /* sync here */
                 pthread_barrier_wait(&tbarr);
 
-                int j = 0;
+                size_t j = 0;
                 get_time(&t1);
-                for(j = 0 ; j < numitr[i] ; j++)
+                if(buflen[i] <= ZOIDFS_BUFFER_MAX)
                 {
-                    bmi_comm_send(peer_addr, sendbuf, buflen[i], 1, context[d->tid]);
-                    bmi_comm_recv(peer_addr, recvbuf, buflen[i], 0, context[d->tid], &actual_size);
-                    if((bmi_size_t)buflen[i] != actual_size)
+                    for(j = 0 ; j < numitr[i] ; j++)
                     {
-                        fprintf(stderr, "buflen != actual_size, buflen = %lu, actual_size = %lu\n", buflen[i], actual_size);
+                        bmi_comm_send(peer_addr, sendbuf, buflen[i], 1, context[d->tid]);
+                        bmi_comm_recv(peer_addr, recvbuf, buflen[i], 0, context[d->tid], &actual_size);
+                        if((bmi_size_t)buflen[i] != actual_size)
+                        {
+                            fprintf(stderr, "buflen != actual_size, buflen = %lu, actual_size = %lu\n", buflen[i], actual_size);
+                        }
+                    }
+                }
+                else
+                {
+                    for(j = 0 ; j < numitr[i] * buflen[i] / ZOIDFS_BUFFER_MAX ; j++)
+                    {
+                        bmi_comm_send(peer_addr, sendbuf, ZOIDFS_BUFFER_MAX, 1, context[d->tid]);
+                        bmi_comm_recv(peer_addr, recvbuf, ZOIDFS_BUFFER_MAX, 0, context[d->tid], &actual_size);
+                        if((bmi_size_t)buflen[i] != actual_size)
+                        {
+                            fprintf(stderr, "buflen != actual_size, buflen = %lu, actual_size = %lu\n", buflen[i], actual_size);
+                        }
                     }
                 }
                 get_time(&t2);
@@ -291,16 +316,34 @@ void * run_test(void * t)
                     bmi_comm_send(peer_addr, sendbuf, buflen[i], 0, context[d->tid]);
                 }
 
-                int j = 0;
-                for(j = 0 ; j < numitr[i] ; j++)
+                size_t j = 0;
+                if(buflen[i] <= ZOIDFS_BUFFER_MAX)
                 {
-                    for(k = 0 ; k < num_threads ; k++)
+                    for(j = 0 ; j < numitr[i] ; j++)
                     {
-                        bmi_comm_recv(peer_addr, recvbuf, buflen[i], 1, context[d->tid], &actual_size);
-                        bmi_comm_send(peer_addr, sendbuf, buflen[i], 0, context[d->tid]);
-                        if((bmi_size_t)buflen[i] != actual_size)
+                        for(k = 0 ; k < num_threads ; k++)
                         {
-                            fprintf(stderr, "buflen != actual_size, buflen = %lu, actual_size = %lu\n", buflen[i], actual_size);
+                            bmi_comm_recv(peer_addr, recvbuf, buflen[i], 1, context[d->tid], &actual_size);
+                            bmi_comm_send(peer_addr, sendbuf, buflen[i], 0, context[d->tid]);
+                            if((bmi_size_t)buflen[i] != actual_size)
+                            {
+                                fprintf(stderr, "buflen != actual_size, buflen = %lu, actual_size = %lu\n", buflen[i], actual_size);
+                            }
+                        }
+                    }
+                }
+                else
+                {
+                    for(j = 0 ; j < numitr[i] * buflen[i] / ZOIDFS_BUFFER_MAX ; j++)
+                    {
+                        for(k = 0 ; k < num_threads ; k++)
+                        {
+                            bmi_comm_recv(peer_addr, recvbuf, buflen[i], 1, context[d->tid], &actual_size);
+                            bmi_comm_send(peer_addr, sendbuf, buflen[i], 0, context[d->tid]);
+                            if((bmi_size_t)buflen[i] != actual_size)
+                            {
+                                fprintf(stderr, "buflen != actual_size, buflen = %lu, actual_size = %lu\n", buflen[i], actual_size);
+                            }
                         }
                     }
                 }
@@ -311,7 +354,7 @@ void * run_test(void * t)
             /* if this a client, send and then recv */
             if(d->client)
             {
-                int j = 0;
+                size_t j = 0;
                 bmi_size_t bl = ubuflen[i];
 
                 pthread_barrier_wait(&tbarr);
@@ -333,7 +376,7 @@ void * run_test(void * t)
             /* if this a server, recv then send */
             else
             {
-                int j = 0;
+                size_t j = 0;
                 bmi_size_t bl = ubuflen[i];
                 for(j = 0 ; j < unumitr[i] ; j++)
                 {
