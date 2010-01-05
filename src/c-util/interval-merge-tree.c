@@ -11,69 +11,145 @@ static size_t interval_merge_tree_sentinel_key_value = 0;
 static interval_merge_tree_key_t interval_merge_tree_sentinel_key = {&interval_merge_tree_sentinel_key_key, &interval_merge_tree_sentinel_key_value};
 static interval_merge_tree_node_t interval_merge_tree_sentinel = {{&interval_merge_tree_sentinel_key_key, &interval_merge_tree_sentinel_key_value},NULL,NULL,NULL,0,0,{0,0},NULL,NULL,RB_TREE_COLOR_BLACK,0};
 
-/* node pool */
-static interval_merge_tree_node_t interval_merge_tree_node_pool[RB_TREE_NODE_POOL_SIZE_MAX];
-static interval_merge_tree_node_t * interval_merge_tree_node_pool_stack[RB_TREE_NODE_POOL_SIZE_MAX];
-static int interval_merge_tree_node_pool_stack_init = 0;
-static int interval_merge_tree_node_pool_stack_top = 0;
+#define INTERVAL_TREE_LL_POOL_SIZE 4096
+#define INTERVAL_TREE_NODE_POOL_SIZE 4096
+static size_t interval_merge_tree_ll_pool_size = 0;
+static size_t interval_merge_tree_node_pool_size = 0;
+static size_t ll_pool_next = 0;
+static size_t node_pool_next = 0;
+static interval_merge_tree_node_t * interval_merge_tree_node_pool = NULL;
+static interval_merge_tree_node_t ** interval_merge_tree_node_pool_index = NULL;
+static interval_merge_tree_node_t * interval_merge_tree_node_pool_min = NULL;
+static interval_merge_tree_node_t * interval_merge_tree_node_pool_max = NULL;
+static interval_merge_tree_interval_ll_t * interval_merge_tree_ll_pool = NULL;
+static interval_merge_tree_interval_ll_t ** interval_merge_tree_ll_pool_index = NULL;
+static interval_merge_tree_interval_ll_t * interval_merge_tree_ll_pool_min = NULL;
+static interval_merge_tree_interval_ll_t * interval_merge_tree_ll_pool_max = NULL;
 
-static inline int interval_merge_tree_node_pool_init_stack()
+static inline int interval_merge_tree_create_ll_pool(size_t num)
 {
-    int i = 0;
-    for(i = 0 ; i < RB_TREE_NODE_POOL_SIZE_MAX ; i++)
+    size_t i = 0;
+    interval_merge_tree_ll_pool = (interval_merge_tree_interval_ll_t *)malloc(sizeof(interval_merge_tree_interval_ll_t) * num);
+    interval_merge_tree_ll_pool_index = (interval_merge_tree_interval_ll_t **)malloc(sizeof(interval_merge_tree_interval_ll_t *) * num);
+    interval_merge_tree_ll_pool_size = num;
+    ll_pool_next = 0;
+    interval_merge_tree_ll_pool_min = &(interval_merge_tree_ll_pool[0]);
+    interval_merge_tree_ll_pool_max = &(interval_merge_tree_ll_pool[num - 1]);
+
+    for(i = 0 ; i < num ; i++)
     {
-        interval_merge_tree_node_pool_stack[i] = &interval_merge_tree_node_pool[i];
-        interval_merge_tree_node_pool[i].node_pool = 1;
+        interval_merge_tree_ll_pool_index[i] = &(interval_merge_tree_ll_pool[i]);
     }
-    interval_merge_tree_node_pool_stack_init = 1;
+
     return 0;
 }
 
-static inline interval_merge_tree_node_t * interval_merge_tree_node_pool_stack_pop()
+static inline int interval_merge_tree_destroy_ll_pool()
 {
-    if(interval_merge_tree_node_pool_stack_top < RB_TREE_NODE_POOL_SIZE_MAX)
+    free(interval_merge_tree_ll_pool);
+    interval_merge_tree_ll_pool = NULL;
+    free(interval_merge_tree_ll_pool_index);
+    interval_merge_tree_ll_pool_index = NULL;
+    ll_pool_next = 0;
+    interval_merge_tree_ll_pool_size = 0;
+    interval_merge_tree_ll_pool_min = NULL;
+    interval_merge_tree_ll_pool_max = NULL;
+
+    return 0;
+}
+
+static inline interval_merge_tree_interval_ll_t * interval_merge_tree_alloc_ll()
+{
+    if(ll_pool_next < interval_merge_tree_ll_pool_size)
     {
-        return interval_merge_tree_node_pool_stack[interval_merge_tree_node_pool_stack_top++];
+        return interval_merge_tree_ll_pool_index[ll_pool_next++];
     }
+    else
+    {
+        return (interval_merge_tree_interval_ll_t *) malloc(sizeof(interval_merge_tree_interval_ll_t));
+    }
+
     return NULL;
 }
 
-static inline int interval_merge_tree_node_pool_stack_push(interval_merge_tree_node_t * node)
+static inline int interval_merge_tree_dealloc_ll(interval_merge_tree_interval_ll_t * node)
 {
-    interval_merge_tree_node_pool_stack[--interval_merge_tree_node_pool_stack_top] = node;
+    if(node >= interval_merge_tree_ll_pool_min && node <= interval_merge_tree_ll_pool_max)
+    {
+        interval_merge_tree_ll_pool_index[--ll_pool_next] = node;
+    }
+    else
+    {
+        free(node);
+    }
+
     return 0;
 }
 
-static inline interval_merge_tree_node_t * interval_merge_tree_node_pool_alloc_node()
+static inline int interval_merge_tree_create_node_pool(size_t num)
 {
-    interval_merge_tree_node_t * node = NULL;
+    size_t i = 0;
+    interval_merge_tree_node_pool = (interval_merge_tree_node_t *)malloc(sizeof(interval_merge_tree_node_t) * num);
+    interval_merge_tree_node_pool_index = (interval_merge_tree_node_t **)malloc(sizeof(interval_merge_tree_node_t *) * num);
+    interval_merge_tree_node_pool_size = num;
+    node_pool_next = 0;
+    interval_merge_tree_node_pool_min = &(interval_merge_tree_node_pool[0]);
+    interval_merge_tree_node_pool_max = &(interval_merge_tree_node_pool[num - 1]);
 
-    if(!interval_merge_tree_node_pool_stack_init)
+    for(i = 0 ; i < num ; i++)
     {
-        interval_merge_tree_node_pool_init_stack();
+        interval_merge_tree_node_pool_index[i] = &(interval_merge_tree_node_pool[i]);
     }
 
-    node = interval_merge_tree_node_pool_stack_pop();
+    return 0;
+}
 
-    if(node)
+static inline int interval_merge_tree_destroy_node_pool()
+{
+    free(interval_merge_tree_node_pool);
+    interval_merge_tree_node_pool = NULL;
+    free(interval_merge_tree_node_pool_index);
+    interval_merge_tree_node_pool_index = NULL;
+    interval_merge_tree_node_pool_size = 0;
+    node_pool_next = 0;
+    interval_merge_tree_node_pool_min = NULL;
+    interval_merge_tree_node_pool_max = NULL;
+
+    return 0;
+}
+
+static inline interval_merge_tree_node_t * interval_merge_tree_alloc_node()
+{
+    if(node_pool_next < interval_merge_tree_node_pool_size)
     {
-        return node;
+        return interval_merge_tree_node_pool_index[node_pool_next++];
     }
+    else
+    {
+        return (interval_merge_tree_node_t *) malloc(sizeof(interval_merge_tree_node_t));
+    }
+
     return NULL;
 }
 
-static inline int interval_merge_tree_node_pool_free_node(interval_merge_tree_node_t * node)
+static inline int interval_merge_tree_dealloc_node(interval_merge_tree_node_t * node)
 {
-    if(node && node->node_pool)
+    if(node >= interval_merge_tree_node_pool_min && node <= interval_merge_tree_node_pool_max)
     {
-        interval_merge_tree_node_pool_stack_push(node);
+        interval_merge_tree_node_pool_index[--node_pool_next] = node;
     }
+    else
+    {
+        free(node);
+    }
+
     return 0;
 }
 
-static interval_merge_tree_interval_ll_t * interval_merge_tree_interval_ll_create()
+static inline interval_merge_tree_interval_ll_t * interval_merge_tree_interval_ll_create()
 {
     interval_merge_tree_interval_ll_t * ll = (interval_merge_tree_interval_ll_t *)malloc(sizeof(interval_merge_tree_interval_ll_t));
+    //interval_merge_tree_interval_ll_t * ll = interval_merge_tree_alloc_ll();
 
     ll->next = NULL;
     ll->data = NULL;
@@ -82,7 +158,7 @@ static interval_merge_tree_interval_ll_t * interval_merge_tree_interval_ll_creat
     return ll;
 }
 
-int interval_merge_tree_interval_ll_destroy(interval_merge_tree_interval_ll_t * ll)
+inline int interval_merge_tree_interval_ll_destroy(interval_merge_tree_interval_ll_t * ll)
 {
     interval_merge_tree_interval_ll_t * cur = ll;
     interval_merge_tree_interval_ll_t * next = NULL;
@@ -92,6 +168,7 @@ int interval_merge_tree_interval_ll_destroy(interval_merge_tree_interval_ll_t * 
         cur->next = NULL;
         cur->data = NULL;
         free(cur);
+        //interval_merge_tree_dealloc_ll(cur);
         cur = next;
     }
 
@@ -99,7 +176,7 @@ int interval_merge_tree_interval_ll_destroy(interval_merge_tree_interval_ll_t * 
 }
 
 /* copy the n2 list into the n1 list */
-static int interval_merge_tree_interval_ll_merge(interval_merge_tree_node_t * n1, interval_merge_tree_node_t ** n2)
+static inline int interval_merge_tree_interval_ll_merge(interval_merge_tree_node_t * n1, interval_merge_tree_node_t ** n2)
 {
     interval_merge_tree_interval_ll_t * l2_head = (*n2)->ll_head;
     interval_merge_tree_interval_ll_t * l2_tail = (*n2)->ll_tail;
@@ -129,7 +206,7 @@ static int interval_merge_tree_interval_ll_merge(interval_merge_tree_node_t * n1
     return 0;
 }
 
-int interval_merge_tree_interval_ll_init(interval_merge_tree_node_t * node, void * data)
+inline int interval_merge_tree_interval_ll_init(interval_merge_tree_node_t * node, void * data)
 {
 
     /* create the link list for the node and update the head with the data */
@@ -142,7 +219,7 @@ int interval_merge_tree_interval_ll_init(interval_merge_tree_node_t * node, void
 }
 
 /* determine the max value for an interval or node */
-static size_t interval_merge_tree_interval_max(interval_merge_tree_node_t * node)
+inline static size_t interval_merge_tree_interval_max(interval_merge_tree_node_t * node)
 {
     if(node->interval.end > node->left->max)
     {
@@ -172,7 +249,7 @@ static size_t interval_merge_tree_interval_max(interval_merge_tree_node_t * node
 }
 
 /* create an empty node */
-interval_merge_tree_node_t * interval_merge_tree_create_node()
+inline interval_merge_tree_node_t * interval_merge_tree_create_node()
 {
     interval_merge_tree_node_t * node = NULL;
 
@@ -183,6 +260,7 @@ interval_merge_tree_node_t * interval_merge_tree_create_node()
 #endif
     {
         node = (interval_merge_tree_node_t *)malloc(sizeof(interval_merge_tree_node_t));
+        //node = interval_merge_tree_alloc_node();
         node->node_pool = 0;
     }
 
@@ -216,7 +294,7 @@ interval_merge_tree_node_t * interval_merge_tree_create_node()
 }
 
 /* destroy a node */
-int interval_merge_tree_destroy_node(interval_merge_tree_node_t * node)
+inline int interval_merge_tree_destroy_node(interval_merge_tree_node_t * node)
 {
     if(node && node != &interval_merge_tree_sentinel)
     {
@@ -254,13 +332,14 @@ int interval_merge_tree_destroy_node(interval_merge_tree_node_t * node)
 #endif
         {
             free(node);
+            //interval_merge_tree_dealloc_node(node);
         }
     }
     return 0;
 }
 
 /* recycle a node */
-int interval_merge_tree_recycle_node(interval_merge_tree_node_t * node)
+inline int interval_merge_tree_recycle_node(interval_merge_tree_node_t * node)
 {
     if(node && node != &interval_merge_tree_sentinel)
     {
@@ -343,13 +422,19 @@ int interval_merge_tree_destroy_tree(interval_merge_tree_node_t * node)
 #endif
         {
             free(node);
+            //interval_merge_tree_dealloc_node(node);
         }
     }
+
+    /* cleanup the mem pools */
+    //interval_merge_tree_destroy_ll_pool();
+    //interval_merge_tree_destroy_node_pool();
+
     return 0;
 }
 
 /* rotate the nodes to the left */
-static int interval_merge_tree_rotate_left(interval_merge_tree_node_t ** root, interval_merge_tree_node_t * x, int op)
+static inline int interval_merge_tree_rotate_left(interval_merge_tree_node_t ** root, interval_merge_tree_node_t * x, int op)
 {
     interval_merge_tree_node_t * y = x->right;
 
@@ -403,7 +488,7 @@ static int interval_merge_tree_rotate_left(interval_merge_tree_node_t ** root, i
 }
 
 /* rotate the nodes to the right */
-static int interval_merge_tree_rotate_right(interval_merge_tree_node_t ** root, interval_merge_tree_node_t * y, int op)
+static inline int interval_merge_tree_rotate_right(interval_merge_tree_node_t ** root, interval_merge_tree_node_t * y, int op)
 {
     interval_merge_tree_node_t * x = y->left;
 
@@ -524,6 +609,14 @@ int interval_merge_tree_insert(interval_merge_tree_node_t ** node, interval_merg
     if(!x)
     {
         x = &interval_merge_tree_sentinel;
+    }
+
+    /* if this is a new tree */
+    if(!*root)
+    {
+        /* create new memory pools */
+        //interval_merge_tree_create_ll_pool(INTERVAL_TREE_LL_POOL_SIZE);
+        //interval_merge_tree_create_node_pool(INTERVAL_TREE_NODE_POOL_SIZE);
     }
 
     if(!*node)
@@ -691,7 +784,7 @@ static int interval_merge_tree_delete_rules(interval_merge_tree_node_t ** root, 
 }
 
 /* find the min value from a given node in the tree */
-static interval_merge_tree_node_t * interval_merge_tree_min(interval_merge_tree_node_t * node)
+static inline interval_merge_tree_node_t * interval_merge_tree_min(interval_merge_tree_node_t * node)
 {
     while(node->left != &interval_merge_tree_sentinel)
     {
@@ -701,7 +794,7 @@ static interval_merge_tree_node_t * interval_merge_tree_min(interval_merge_tree_
 }
 
 /* find the node in the tree that is the next greatest value */
-static interval_merge_tree_node_t * interval_merge_tree_successor(interval_merge_tree_node_t * node)
+static inline interval_merge_tree_node_t * interval_merge_tree_successor(interval_merge_tree_node_t * node)
 {
     interval_merge_tree_node_t * y = NULL;
 
@@ -990,7 +1083,7 @@ interval_merge_tree_node_t * interval_merge_tree_node_find_rank(interval_merge_t
 }
 
 /* compute the rank of a node in the rb-tree */
-int interval_merge_tree_rank(interval_merge_tree_node_t * root, interval_merge_tree_node_t * node)
+inline int interval_merge_tree_rank(interval_merge_tree_node_t * root, interval_merge_tree_node_t * node)
 {
     interval_merge_tree_node_t * y = node;
     int rank = node->left->size + 1;
@@ -1008,7 +1101,7 @@ int interval_merge_tree_rank(interval_merge_tree_node_t * root, interval_merge_t
 }
 
 /* identify overlapping or adjacent intervals */
-static int interval_merge_tree_interval_overlap(interval_merge_tree_node_t * node, interval_merge_tree_interval_t i)
+static inline int interval_merge_tree_interval_overlap(interval_merge_tree_node_t * node, interval_merge_tree_interval_t i)
 {
     interval_merge_tree_interval_t n = node->interval;
 
@@ -1271,7 +1364,7 @@ int interval_merge_tree_merge_intervals(interval_merge_tree_node_t ** root, inte
 }
 
 /* get the current size of the node if it is valid, else return 0 */
-size_t interval_merge_tree_size(interval_merge_tree_node_t * node)
+inline size_t interval_merge_tree_size(interval_merge_tree_node_t * node)
 {
     if(node && node != &interval_merge_tree_sentinel)
     {
