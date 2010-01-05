@@ -63,7 +63,6 @@ namespace iofwdutil
  
             void UpdateCounter(PerfCounterBase & pc)
             {
-                perf_counters_[pc.counter_name_] = pc;
             } 
 
         protected:
@@ -75,7 +74,6 @@ namespace iofwdutil
         private:
             static PerfCounters * perf_counters_instance_;
             static PerfCountersDestroyer perf_counters_destroyer_instance_;
-            std::map<std::string, PerfCounterBase & > perf_counters_;
     };
 
     class PerfCountersDestroyer
