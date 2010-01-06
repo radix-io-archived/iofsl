@@ -52,7 +52,11 @@ const IOFWDReadRequest::ReqParam & IOFWDReadRequest::decodeParam ()
 
    // allocate buffer for normal mode
    if (pipeline_size_ == 0) {
-     mem_ = new char[mem_count_ * zoidfs::ZOIDFS_BUFFER_MAX];
+    for(size_t i = 0 ; i < mem_count_ ; i++)
+    {
+        mem_total_size_ += mem_sizes_[i];
+    }
+    mem_ = new char[mem_total_size_];
 
      // NOTICE: mem_starts_ and mem_sizes_ are alignend with file_sizes
      // This is for request scheduler to easily handle the ranges without
