@@ -342,9 +342,9 @@ void RequestScheduler::issue(vector<ChildRange *>& rs)
     ParentRange * pr = dynamic_cast<ParentRange *>(r);
     const vector<CompositeCompletionID*>& v = pr->child_cids_;
     assert(v.size() > 0);
-    for (vector<CompositeCompletionID*>::const_iterator it = v.begin();
-         it != v.end(); ++it) {
-      CompositeCompletionID * ccid = *it;
+    for(unsigned int i = 0 ; i < v.size() ; i++)
+    { 
+      CompositeCompletionID * ccid = v[i];
       // Because io_id is shared among multiple CompositeCompletionIDs,
       // we use SharedCompletionID to properly release the resource by using
       // boost::shared_ptr (e.g. reference counting).
