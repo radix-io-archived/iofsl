@@ -295,19 +295,17 @@ void RequestScheduler::issue(vector<ChildRange *>& rs)
 
     bool is_merged = r->hasSubIntervals();
     unsigned int nranges = 1;
-    //unsigned int nranges = is_merged ? r.child_ranges_.size() : 1;
     if (is_merged) {
       const ParentRange * pr = dynamic_cast<ParentRange *>(r);
       nranges = pr->child_ranges_.size();
-      vector<ChildRange *>::const_iterator cit = pr->child_ranges_.begin();
-      for (unsigned int j = 0; j < nranges; j++) {
-        const ChildRange * child_r = *cit;
+      for(unsigned int j = 0 ; j < nranges ; j++)
+      {
+        const ChildRange * child_r = pr->child_ranges_[j];
         mem_starts[nth] = child_r->buf_;
         mem_sizes[nth] = child_r->en_ - child_r->st_;
         file_starts[nth] = child_r->st_;
         file_sizes[nth] = child_r->en_ - child_r->st_;
         nth++;
-        cit++;
       }
     } else {
       mem_starts[nth] = r->buf_;
