@@ -2,7 +2,7 @@
 #include "zoidfs/util/zoidfs-xdr.hh"
 
 using namespace iofwdutil::bmi;
-using namespace iofwdutil::xdr;
+using namespace encoder::xdr;
 
 namespace client
 {
@@ -23,7 +23,7 @@ void CommChannel::executeWriteOp (const void ** buf_list,
    const size_t * size_list, size_t list_count)
 {
     // Make sure the receive buffer is large enough for the reply
-    const size_t needed = receiveSizeProcessor_.getSize().actual;
+    const size_t needed = receiveSizeProcessor_.size().getActualSize();
     buffer_receive_.resize (needed);
     // send unexpected
     iofwdutil::bmi::BMIOp sendu = bmi_->postSendUnexpected (iofwdhost_,
@@ -49,7 +49,7 @@ void CommChannel::executePipelineWriteOp (const void ** buf_list,
    const size_t * size_list, size_t list_count, uint64_t pipeline_size)
 {
    // Make sure the receive buffer is large enough for the reply
-   const size_t needed = receiveSizeProcessor_.getSize().actual;
+   const size_t needed = receiveSizeProcessor_.size().getActualSize();
    buffer_receive_.resize (needed);
    // send unexpected
    iofwdutil::bmi::BMIOp sendu = bmi_->postSendUnexpected (iofwdhost_,
@@ -139,7 +139,7 @@ void CommChannel::executeReadOp (void ** buf_list,
    const size_t * size_list, size_t list_count)
 {
    // Make sure the receive buffer is large enough for the reply
-   const size_t needed = receiveSizeProcessor_.getSize().actual;
+   const size_t needed = receiveSizeProcessor_.size().getActualSize();
    buffer_receive_.resize (needed);
    // send unexpected
    iofwdutil::bmi::BMIOp sendu = bmi_->postSendUnexpected (iofwdhost_,
@@ -165,7 +165,7 @@ void CommChannel::executePipelineReadOp(void ** buf_list,
    const size_t * size_list, size_t list_count, uint64_t pipeline_size)
 {
    // Make sure the receive buffer is large enough for the reply
-   const size_t needed = receiveSizeProcessor_.getSize().actual;
+   const size_t needed = receiveSizeProcessor_.size().getActualSize();
    buffer_receive_.resize (needed);
    // send unexpected
    iofwdutil::bmi::BMIOp sendu = bmi_->postSendUnexpected (iofwdhost_,

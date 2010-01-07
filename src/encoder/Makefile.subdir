@@ -1,0 +1,28 @@
+noinst_LIBRARIES += src/encoder/libencoder.a
+
+src_encoder_libencoder_a_LIBLDFLAGS = \
+    @BOOST_LDFLAGS@ \
+    @BOOST_PROGRAM_OPTIONS_LIB@ \
+    @BOOST_DATE_TIME_LIB@ \
+    @BOOST_THREAD_LIB@ \
+    @BOOST_REGEX_LIB@
+
+src_encoder_libencoder_a_SOURCES = \
+	src/encoder/Size.hh \
+	src/encoder/EncoderException.cpp \
+	src/encoder/EncoderWrappers.hh \
+	src/encoder/EncoderException.hh \
+	src/encoder/Util.hh \
+	src/encoder/xdr/XDRSizeProcessor.hh \
+	src/encoder/xdr/XDRWriter.cpp \
+	src/encoder/xdr/XDRSizeProcessor.cpp \
+	src/encoder/xdr/XDRReader.cpp \
+	src/encoder/xdr/XDRBase.hh \
+	src/encoder/xdr/XDRWriter.hh \
+	src/encoder/xdr/XDRReader.hh \
+	src/encoder/Encoder.hh \
+	src/encoder/SizeSaver.hh \
+	src/encoder/Decoder.hh \
+	src/encoder/Processor.hh
+
+

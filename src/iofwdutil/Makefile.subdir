@@ -59,18 +59,6 @@ src/iofwdutil/zlog/ZLogSinkStdErr.hh \
 src/iofwdutil/zlog/ZLogSinkStdOut.hh \
 src/iofwdutil/zlog/ZLogSource.hh \
  \
-src/iofwdutil/xdr/XDR.hh \
-src/iofwdutil/xdr/XDRException.hh \
-src/iofwdutil/xdr/XDRProcessor.hh \
-src/iofwdutil/xdr/XDRReader.hh \
-src/iofwdutil/xdr/XDRSizeProcessor.hh \
-src/iofwdutil/xdr/XDRWrappers.hh \
-src/iofwdutil/xdr/XDRWriter.hh \
-src/iofwdutil/xdr/XDRException.cpp \
-src/iofwdutil/xdr/XDRReader.cpp \
-src/iofwdutil/xdr/XDRSizeProcessor.cpp \
-src/iofwdutil/xdr/XDRWriter.cpp \
- \
 src/iofwdutil/bmi/BMI.cpp \
 src/iofwdutil/bmi/BMIAddr.cpp \
 src/iofwdutil/bmi/BMIBuffer.cpp \

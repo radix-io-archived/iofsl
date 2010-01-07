@@ -1,15 +1,12 @@
-#include "XDRException.hh"
+#include "EncoderException.hh"
 
-namespace iofwdutil
+namespace encoder
 {
-   namespace xdr
-   {
 //===========================================================================
 
-      XDRException::~XDRException ()
+      EncoderException::~EncoderException ()
       {
       }
       
 //===========================================================================
-   }
 }

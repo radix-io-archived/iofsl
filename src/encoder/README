@@ -1,0 +1,14 @@
+This library defines a generic encoding/decoding framework.
+
+In its most basic form, it provides a class implementing operator () (someobject);
+
+Depending on the processor, one of the following things can happen:
+
+1) the actual and maximum size of the encoded object is calculated.
+2) the object is encoded 
+3) the object is decoded
+
+Each processor needs to define operator () for basic types;
+The user defines a process (encoder, object) method for derived types.
+
+

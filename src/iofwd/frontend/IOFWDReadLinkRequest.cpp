@@ -37,7 +37,8 @@ iofwdutil::completion::CompletionID * IOFWDReadLinkRequest::reply (const char * 
    if (getReturnCode() == zoidfs::ZFS_OK)
    {
       ASSERT (buffer);
-      return simpleReply (TSSTART << (int32_t) getReturnCode() << iofwdutil::xdr::XDRString(buffer, buffer_length));
+      return simpleReply (TSSTART << (int32_t) getReturnCode()
+            << encoder::EncString(buffer, buffer_length));
    }
    else
    {

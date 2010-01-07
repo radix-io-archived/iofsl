@@ -1,12 +1,13 @@
 #include "IOFWDClient.hh"
 #include "zoidfs/util/zoidfs-xdr.hh"
 #include "zoidfs/util/FileSpecHelper.hh"
-#include "iofwdutil/xdr/XDRWrappers.hh"
+#include "encoder/EncoderWrappers.hh"
 #include "iofwdutil/typestorage.hh"
 
-using namespace iofwdutil::bmi; 
-using namespace iofwdutil::xdr; 
-using namespace zoidfs; 
+using namespace iofwdutil::bmi;
+using namespace encoder::xdr;
+using namespace encoder;
+using namespace zoidfs;
 
 
 namespace client
@@ -23,46 +24,46 @@ IOFWDClient::IOFWDClient (const char * iofwdhost)
 
 int IOFWDClient::init ()
 {
-   return 0; 
+   return 0;
 }
 
 int IOFWDClient::finalize ()
 {
-   return 0; 
+   return 0;
 }
 
 int IOFWDClient::null ()
 {
-   return comm_.genericOp (ZOIDFS_PROTO_NULL, 
+   return comm_.genericOp (ZOIDFS_PROTO_NULL,
          TSSTART,
-         TSSTART); 
+         TSSTART);
 }
 
 int IOFWDClient::lookup (const zoidfs::zoidfs_handle_t * handle,
       const char * component, const char * full, zoidfs::zoidfs_handle_t * dhandle)
 {
-   return comm_.genericOp (ZOIDFS_PROTO_LOOKUP, 
-         TSSTART << FileSpecHelper(handle, component, full), 
-         TSSTART << *dhandle); 
+   return comm_.genericOp (ZOIDFS_PROTO_LOOKUP,
+         TSSTART << FileSpecHelper(handle, component, full),
+         TSSTART << *dhandle);
 }
 
 
-/** 
- * NOTE: 
- *   - getattr acts as lstat, i.e. it does not follow symbolic links 
+/**
+ * NOTE:
+ *   - getattr acts as lstat, i.e. it does not follow symbolic links
  *   - attr.mask indicates which values need to be retrieved.
  *     Other fields are ignored on input.
  */
 int IOFWDClient::getattr(const zoidfs::zoidfs_handle_t * handle /* in:ptr */,
                    zoidfs::zoidfs_attr_t * attr /* inout:ptr */)
 {
-   return comm_.genericOp (ZOIDFS_PROTO_GET_ATTR, 
-         TSSTART << *handle << *attr, 
-         TSSTART << *attr); 
+   return comm_.genericOp (ZOIDFS_PROTO_GET_ATTR,
+         TSSTART << *handle << *attr,
+         TSSTART << *attr);
 }
 
 /*
- * NOTE: 
+ * NOTE:
  *   - On input, only the mask field of attr is relevant.
  *   - if sattr.mode and attr.mode contain shared bits,
  *     attr will retrieve the modified values.
@@ -71,9 +72,9 @@ int IOFWDClient::setattr(const zoidfs::zoidfs_handle_t * handle /* in:ptr */,
                    const zoidfs_sattr_t * sattr /* in:ptr */,
                    zoidfs_attr_t * attr /* inout:ptr:nullok */)
 {
-   return comm_.genericOp (ZOIDFS_PROTO_SET_ATTR, 
+   return comm_.genericOp (ZOIDFS_PROTO_SET_ATTR,
          TSSTART << *handle << *sattr << *attr,
-         TSSTART << *attr); 
+         TSSTART << *attr);
 }
 
 int IOFWDClient::readlink(const zoidfs_handle_t * handle /* in:ptr */,
@@ -82,7 +83,7 @@ int IOFWDClient::readlink(const zoidfs_handle_t * handle /* in:ptr */,
 {
    return comm_.genericOp (ZOIDFS_PROTO_READLINK,
          TSSTART << *handle << buffer_length,
-         TSSTART << XDRString (buffer, buffer_length)); 
+         TSSTART << EncString (buffer, buffer_length));
 }
 
 int IOFWDClient::read(const zoidfs_handle_t * handle /* in:ptr */,
@@ -107,10 +108,10 @@ int IOFWDClient::read(const zoidfs_handle_t * handle /* in:ptr */,
       pipeline_size = 0; // disable pipelining
 
    return comm_.readOp (ZOIDFS_PROTO_READ,
-         TSSTART << *handle << mem_count_ << XDRVarArray(mem_sizes_, mem_count_)
-                 << file_count_ << XDRVarArray(file_starts_, file_count_) << XDRVarArray(file_sizes, file_count_)
+         TSSTART << *handle << mem_count_ << EncVarArray(mem_sizes_, mem_count_)
+                 << file_count_ << EncVarArray(file_starts_, file_count_) << EncVarArray(file_sizes, file_count_)
                  << pipeline_size,
-         TSSTART << XDRVarArray(file_sizes, file_count_),
+         TSSTART << EncVarArray(file_sizes, file_count_),
          mem_starts, mem_sizes, mem_count, pipeline_size);
 }
 
@@ -136,22 +137,22 @@ int IOFWDClient::write(const zoidfs_handle_t * handle /* in:ptr */,
      pipeline_size = 0; // disable pipelining
 
    return comm_.writeOp (ZOIDFS_PROTO_WRITE,
-          TSSTART << *handle << mem_count_ << XDRVarArray(mem_sizes_, mem_count_)
-          << file_count_ << XDRVarArray(file_starts_, file_count_) << XDRVarArray(file_sizes, file_count_)
+          TSSTART << *handle << mem_count_ << EncVarArray(mem_sizes_, mem_count_)
+          << file_count_ << EncVarArray(file_starts_, file_count_) << EncVarArray(file_sizes, file_count_)
           << pipeline_size,
-          TSSTART << XDRVarArray(file_sizes, file_count_),
+          TSSTART << EncVarArray(file_sizes, file_count_),
           mem_starts, mem_sizes, mem_count, pipeline_size);
 }
 
 int IOFWDClient::commit(const zoidfs_handle_t * handle /* in:ptr */)
 {
-   return comm_.genericOp (ZOIDFS_PROTO_COMMIT, 
-         TSSTART << *handle, 
-         TSSTART); 
+   return comm_.genericOp (ZOIDFS_PROTO_COMMIT,
+         TSSTART << *handle,
+         TSSTART);
 }
 
 /**
- * NOTE: if the file already exists zoidfs_create will lookup the handle 
+ * NOTE: if the file already exists zoidfs_create will lookup the handle
  * and return success but set created to 0
  */
 int IOFWDClient::create(const zoidfs_handle_t * parent_handle /* in:ptr:nullok */,
@@ -161,10 +162,10 @@ int IOFWDClient::create(const zoidfs_handle_t * parent_handle /* in:ptr:nullok *
                   zoidfs_handle_t * handle /* out:ptr */,
                   int * created /* out:ptr:nullok */)
 {
-   return comm_.genericOp (ZOIDFS_PROTO_CREATE, 
+   return comm_.genericOp (ZOIDFS_PROTO_CREATE,
          TSSTART << FileSpecHelper (parent_handle, component_name, full_path)
-                 << *attr, 
-         TSSTART << *handle << *created); 
+                 << *attr,
+         TSSTART << *handle << *created);
 }
 
 int IOFWDClient::remove(const zoidfs_handle_t * parent_handle /* in:ptr:nullok */,
@@ -172,9 +173,9 @@ int IOFWDClient::remove(const zoidfs_handle_t * parent_handle /* in:ptr:nullok *
                   const char * full_path /* in:str:nullok */,
                   zoidfs_cache_hint_t * parent_hint /* out:ptr:nullok */)
 {
-   return comm_.genericOp (ZOIDFS_PROTO_REMOVE, 
+   return comm_.genericOp (ZOIDFS_PROTO_REMOVE,
          TSSTART << FileSpecHelper (parent_handle, component_name, full_path),
-         TSSTART << *parent_hint); 
+         TSSTART << *parent_hint);
 }
 
 int IOFWDClient::rename(const zoidfs_handle_t * from_parent_handle /* in:ptr:nullok */,
@@ -186,12 +187,12 @@ int IOFWDClient::rename(const zoidfs_handle_t * from_parent_handle /* in:ptr:nul
                   zoidfs_cache_hint_t * from_parent_hint /* out:ptr:nullok */,
                   zoidfs_cache_hint_t * to_parent_hint /* out:ptr:nullok */)
 {
-   return comm_.genericOp (ZOIDFS_PROTO_RENAME, 
+   return comm_.genericOp (ZOIDFS_PROTO_RENAME,
          TSSTART << FileSpecHelper (from_parent_handle, from_component_name,
                        from_full_path)
                  << FileSpecHelper (to_parent_handle, to_component_name,
                        to_full_path),
-         TSSTART << *from_parent_hint << *to_parent_hint); 
+         TSSTART << *from_parent_hint << *to_parent_hint);
 }
 
 int IOFWDClient::link(const zoidfs_handle_t * from_parent_handle /* in:ptr:nullok */,
@@ -203,12 +204,12 @@ int IOFWDClient::link(const zoidfs_handle_t * from_parent_handle /* in:ptr:nullo
                 zoidfs_cache_hint_t * from_parent_hint /* out:ptr:nullok */,
                 zoidfs_cache_hint_t * to_parent_hint /* out:ptr:nullok */)
 {
-   return comm_.genericOp (ZOIDFS_PROTO_LINK, 
-         TSSTART << FileSpecHelper (from_parent_handle, from_component_name, 
+   return comm_.genericOp (ZOIDFS_PROTO_LINK,
+         TSSTART << FileSpecHelper (from_parent_handle, from_component_name,
                       from_full_path)
-                 << FileSpecHelper (to_parent_handle, to_component_name, 
-                      to_full_path), 
-         TSSTART << *from_parent_hint << *to_parent_hint); 
+                 << FileSpecHelper (to_parent_handle, to_component_name,
+                      to_full_path),
+         TSSTART << *from_parent_hint << *to_parent_hint);
 }
 
 
@@ -222,12 +223,12 @@ int IOFWDClient::symlink(const zoidfs_handle_t * from_parent_handle /* in:ptr:nu
                    zoidfs_cache_hint_t * from_parent_hint /* out:ptr:nullok */,
                    zoidfs_cache_hint_t * to_parent_hint /* out:ptr:nullok */)
 {
-  return comm_.genericOp (ZOIDFS_PROTO_SYMLINK, 
-         TSSTART << FileSpecHelper (from_parent_handle, from_component_name, 
+  return comm_.genericOp (ZOIDFS_PROTO_SYMLINK,
+         TSSTART << FileSpecHelper (from_parent_handle, from_component_name,
                       from_full_path)
-                 << FileSpecHelper (to_parent_handle, to_component_name, 
-                      to_full_path) 
-                 << *attr, 
+                 << FileSpecHelper (to_parent_handle, to_component_name,
+                      to_full_path)
+                 << *attr,
          TSSTART << *from_parent_hint << *to_parent_hint); }
 
 int IOFWDClient::mkdir(const zoidfs_handle_t * parent_handle /* in:ptr:nullok */,
@@ -236,10 +237,10 @@ int IOFWDClient::mkdir(const zoidfs_handle_t * parent_handle /* in:ptr:nullok */
                  const zoidfs_sattr_t * attr /* in:ptr */,
                  zoidfs_cache_hint_t * parent_hint /* out:ptr:nullok */)
 {
-   return comm_.genericOp (ZOIDFS_PROTO_MKDIR, 
+   return comm_.genericOp (ZOIDFS_PROTO_MKDIR,
          TSSTART << FileSpecHelper (parent_handle, component_name, full_path)
                  << *attr,
-         TSSTART << *parent_hint); 
+         TSSTART << *parent_hint);
 }
 
 int IOFWDClient::readdir(const zoidfs_handle_t * parent_handle /* in:ptr */,
@@ -250,19 +251,19 @@ int IOFWDClient::readdir(const zoidfs_handle_t * parent_handle /* in:ptr */,
                    zoidfs_cache_hint_t * parent_hint /* out:ptr:nullok */)
 {
    /* For the reply, we expect an integer listing the number of array entries
-    * that will follow: in other words, we can receive in a XDRVarArray */ 
+    * that will follow: in other words, we can receive in a XDRVarArray */
    return comm_.genericOp (ZOIDFS_PROTO_READDIR,
          TSSTART << *parent_handle << cookie << *entry_count << flags,
-         TSSTART << *entry_count 
-                 << XDRVarArray(entries,*entry_count) <<  *parent_hint); 
+         TSSTART << *entry_count
+                 << EncVarArray(entries,*entry_count) <<  *parent_hint);
 }
 
 int IOFWDClient::resize(const zoidfs_handle_t * handle /* in:ptr */,
                   uint64_t size /* in:obj */)
 {
-   return comm_.genericOp (ZOIDFS_PROTO_RESIZE, 
+   return comm_.genericOp (ZOIDFS_PROTO_RESIZE,
          TSSTART << *handle << size,
-         TSSTART); 
+         TSSTART);
 }
 
 

@@ -1,8 +1,8 @@
 #include "IOFWDNotImplementedRequest.hh"
 #include "zoidfs/util/zoidfs-wrapped.hh"
-#include "iofwdutil/xdr/XDRSizeProcessor.hh"
+#include "encoder/xdr/XDRSizeProcessor.hh"
 
-using namespace iofwdutil::xdr; 
+using namespace encoder::xdr;
 
 namespace iofwd
 {
@@ -16,12 +16,12 @@ namespace iofwd
       void IOFWDNotImplementedRequest::reply ()
       {
 
-         setReturnCode (zoidfs::ZFSERR_NOTIMPL); 
-        
-         simpleReply (TSSTART << (int32_t) getReturnCode()); 
+         setReturnCode (zoidfs::ZFSERR_NOTIMPL);
 
-         /*beginReply (getXDRSize<int32_t>().max); 
-         reply_writer_ << (int32_t) getReturnCode (); 
+         simpleReply (TSSTART << (int32_t) getReturnCode());
+
+         /*beginReply (getXDRSize<int32_t>().max);
+         reply_writer_ << (int32_t) getReturnCode ();
          sendReply (); */
       }
 

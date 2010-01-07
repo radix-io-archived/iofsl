@@ -62,3 +62,14 @@ test_boost_atomics_SOURCES = test/boost/atomics.cpp \
 test_boost_atomics_LDFLAGS = $(shared_ldflags)
 test_boost_atomics_LDADD = $(shared_ldadd)
 
+#############################################################################
+# Encoder Library
+#############################################################################
+check_PROGRAMS += test/boost/encoder
+TESTS += test/boost/encoder
+test_boost_encoder_SOURCES = test/boost/encoder.cpp \
+				   test/boost/ThreadSafety.hh \
+				   test/boost/ThreadSafety.cpp
+test_boost_encoder_LDFLAGS = $(shared_ldflags)
+test_boost_encoder_LDADD = $(shared_ldadd)
+

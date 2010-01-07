@@ -20,6 +20,13 @@ test_unit_tests_ldflags =        \
     @ZFS_DISPATCHER_LDFLAGS@     \
     @BMI_LDFLAGS@
 
+bin_PROGRAMS += test/xdrspeed
+test_xdrspeed_SOURCES = test/xdr/xdrspeed.cpp
+test_xdrspeed_LDADD = src/encoder/libencoder.a \
+		      src/iofwdutil/libiofwdutil.a
+
+
+
 bin_PROGRAMS += test/unit-tests/zoidfs-md-cunit test/unit-tests/zoidfs-md-cunit-local test/unit-tests/zoidfs-io-cunit \
 test/unit-tests/zoidfs-io-cunit-local
 

@@ -1,8 +1,8 @@
 #include "IOFWDNullRequest.hh"
 #include "zoidfs/util/zoidfs-wrapped.hh"
-#include "iofwdutil/xdr/XDRSizeProcessor.hh"
+#include "encoder/xdr/XDRSizeProcessor.hh"
 
-using namespace iofwdutil::xdr; 
+using namespace encoder::xdr;
 
 
 namespace iofwd
@@ -13,7 +13,7 @@ namespace iofwd
 
 iofwdutil::completion::CompletionID * IOFWDNullRequest::reply ()
 {
-   return simpleReply (TSSTART << (int32_t) getReturnCode ()); 
+   return simpleReply (TSSTART << (int32_t) getReturnCode ());
 }
 
 IOFWDNullRequest::~IOFWDNullRequest ()

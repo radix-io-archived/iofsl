@@ -43,6 +43,7 @@ include $(top_srcdir)/src/iofwd/Makefile.subdir
 include $(top_srcdir)/src/iofwdutil/Makefile.subdir
 include $(top_srcdir)/src/cache/Makefile.subdir
 include $(top_srcdir)/src/taskmon/Makefile.subdir
+include $(top_srcdir)/src/encoder/Makefile.subdir
 include $(top_srcdir)/src/zoidfs/Makefile.subdir
 include $(top_srcdir)/src/fuse/Makefile.subdir
 include $(top_srcdir)/src/client/Makefile.subdir

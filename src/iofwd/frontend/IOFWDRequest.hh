@@ -8,9 +8,9 @@
 #include "iofwdutil/bmi/BMITag.hh"
 #include "iofwdutil/bmi/BMIUnexpectedBuffer.hh"
 
-#include "iofwdutil/xdr/XDRReader.hh"
-#include "iofwdutil/xdr/XDRWriter.hh"
-#include "iofwdutil/xdr/XDRSizeProcessor.hh"
+#include "encoder/xdr/XDRReader.hh"
+#include "encoder/xdr/XDRWriter.hh"
+#include "encoder/xdr/XDRSizeProcessor.hh"
 #include "zoidfs/util/FileSpecHelper.hh"
 #include "zoidfs/util/OpHintHelper.hh"
 
@@ -58,13 +58,13 @@ protected:
       memset(info.parent_handle.data, 0, sizeof(uint8_t) * 32);
       memset(info.full_path, 0, ZOIDFS_PATH_MAX);
       memset(info.component_name, 0, ZOIDFS_NAME_MAX);
-      process(req_reader_, iofwdutil::xdr::FileSpecHelper (&info.parent_handle,
+      process(req_reader_, encoder::FileSpecHelper (&info.parent_handle,
               info.component_name, info.full_path));
    }
 
    void decodeOpHint (zoidfs::zoidfs_op_hint_t ** op_hint)
    {
-     process(req_reader_, iofwdutil::xdr::OpHintHelper ((const zoidfs::zoidfs_op_hint_t **) op_hint));
+     process(req_reader_, encoder::OpHintHelper ((const zoidfs::zoidfs_op_hint_t **) op_hint));
    }
 
 
@@ -75,7 +75,7 @@ protected:
    template <typename SENDOP>
    CompletionID * simpleReply (const SENDOP & op)
    {
-      iofwdutil::xdr::XDRSizeProcessor s;
+      encoder::xdr::XDRSizeProcessor s;
       applyTypes (s, op);
       /*fprintf (stderr, "simpleReply: actual=%u, max=%u\n",
             s.getSize().actual, s.getSize().max);  */
@@ -84,7 +84,7 @@ protected:
       // upper bound for the required memory for the XDR encoding.
       // Note that the actual encoded data size might still be smaller,
       // if not all type encoders return actual lower bounds on the size.
-      beginReply (s.getSize().actual);
+      beginReply (s.size().getActualSize());
       applyTypes (reply_writer_, op);
 
       return sendReply ();
@@ -114,10 +114,10 @@ protected:
    iofwdutil::bmi::BMITag  tag_;
 
    // XDR reader
-   iofwdutil::xdr::XDRReader req_reader_;
+   encoder::xdr::XDRReader req_reader_;
 
    // For reply
-   iofwdutil::xdr::XDRWriter reply_writer_;
+   encoder::xdr::XDRWriter reply_writer_;
 
    iofwdutil::bmi::BMIBuffer buffer_send_;
 

@@ -39,13 +39,13 @@ const IOFWDReadRequest::ReqParam & IOFWDReadRequest::decodeParam ()
 
    process (req_reader_, mem_count_);
    mem_sizes_ = new size_t[mem_count_];
-   process (req_reader_, iofwdutil::xdr::XDRVarArray(mem_sizes_, mem_count_));
+   process (req_reader_, encoder::EncVarArray(mem_sizes_, mem_count_));
 
    process (req_reader_, file_count_);
    file_starts_ = new zoidfs::zoidfs_file_ofs_t[file_count_];
-   process (req_reader_, iofwdutil::xdr::XDRVarArray(file_starts_, file_count_));
+   process (req_reader_, encoder::EncVarArray(file_starts_, file_count_));
    file_sizes_ = new zoidfs::zoidfs_file_ofs_t[file_count_];
-   process (req_reader_, iofwdutil::xdr::XDRVarArray(file_sizes_, file_count_));
+   process (req_reader_, encoder::EncVarArray(file_sizes_, file_count_));
 
    process (req_reader_, pipeline_size_);
    decodeOpHint (&op_hint_);
@@ -127,7 +127,7 @@ iofwdutil::completion::CompletionID * IOFWDReadRequest::sendPipelineBuffer(char 
 iofwdutil::completion::CompletionID * IOFWDReadRequest::reply()
 {
    return simpleReply (TSSTART << (int32_t) getReturnCode ()
-             << iofwdutil::xdr::XDRVarArray(file_sizes_, file_count_));
+             << encoder::EncVarArray(file_sizes_, file_count_));
 }
 
 //===========================================================================

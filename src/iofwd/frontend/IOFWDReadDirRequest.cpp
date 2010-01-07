@@ -60,7 +60,7 @@ iofwdutil::completion::CompletionID * IOFWDReadDirRequest::reply (uint32_t entry
       ASSERT (entries);
       ASSERT (parent_hint);
       return simpleReply (TSSTART << (int32_t) getReturnCode() << entry_count
-                          << iofwdutil::xdr::XDRVarArray(entries, entry_count)
+                          << encoder::EncVarArray(entries, entry_count)
                           << *parent_hint);
    }
    else
