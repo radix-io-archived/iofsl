@@ -27,32 +27,20 @@ class XDRSizeProcessor : public Size
 public:
 
    template <typename T>
-   XDRSizeProcessor & operator () (T & t)
+   XDRSizeProcessor & operator () (const T & t)
    {
       process (*this, t);
       return *this;
    }
 
    template <typename T>
-   XDRSizeProcessor & operator << (T & t)
+
+   XDRSizeProcessor & operator << (const T & t)
    {
       process (*this, t);
       return *this;
    }
 };
-
-   /*template <typename T>
-   void process (XDRSizeProcessor & f, const T & val)
-   {
-      process (f, const_cast<T&>(val));
-   }*/
-
-   /*template <typename T>
-   void process (XDRSizeProcessor & f, T & val)
-    {
-       BOOST_STATIC_ASSERT (sizeof(T) <= 0);
-   } */
-
 
 /**
  * Helper function:
@@ -102,7 +90,7 @@ inline void process (XDRSizeProcessor & f, const EncString & s)
 }
 
 template <typename T, typename C>
-void process (XDRSizeProcessor & f, const EncVarArrayHelper<T,C> & a)
+inline void process (XDRSizeProcessor & f, const EncVarArrayHelper<T,C> & a)
 {
    // Array size: integer
    f.incActualSize (4);
@@ -115,7 +103,7 @@ void process (XDRSizeProcessor & f, const EncVarArrayHelper<T,C> & a)
 }
 
 template <typename T>
-void process (XDRSizeProcessor & f, const EncEnumHelper<T> & UNUSED(e))
+inline void process (XDRSizeProcessor & f, const EncEnumHelper<T> & UNUSED(e))
 {
    f.incActualSize (4);
    f.incMaxSize (4);
