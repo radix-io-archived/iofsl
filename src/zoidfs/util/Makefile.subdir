@@ -31,4 +31,5 @@ src/zoidfs/util/zoidfs-util.hh \
 src/zoidfs/util/zoidfs-wrapped.hh \
 src/zoidfs/util/ZoidFSHints.hh \
 src/zoidfs/util/ZoidFSHints.cpp \
-src/zoidfs/util/zoidfs-xdr.hh 
+src/zoidfs/util/zoidfs-xdr.hh \
+src/zoidfs/util/zoidfs-ops.hh
