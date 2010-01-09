@@ -1,4 +1,6 @@
-#!/bin/sh
+#!/bin/bash
+
+# We require bash since we need access to the exit status of commands in a pipeline.
 
 if test -z "${IOFWD_SRCDIR}" ; then
    echo "Need IOFWD_SRCDIR !"
@@ -36,12 +38,28 @@ mkdir -p "${LOGDIR}"
 
 cd "${TEMPDIR}"
 echo "Building ${REV} (${LOGMSG})"
+
+
 ${SCRIPTDIR}/runtest.sh 2>&1 | tee "${REVLOG}"
-ret=$?
+ret=${PIPESTATUS[0]}
 STATUS="FAIL"
-if test "${ret}" == "0" ; then
-   STATUS="OK  "
-fi
+case "${ret}" in 
+0) 
+STATUS="OK        ";
+;;
+1)
+STATUS="PREPFAIL  ";
+;;
+2)
+STATUS="CONFFAIL  ";
+;;
+3)
+STATUS="DSTCHKFAIL";
+;;
+*)
+STATUS="OTHERFAIL ";
+;;
+esac
 
 echo "${REV} ${STATUS} $(date) ${LOGMSG}" >> "${LOGFILE}"
 
