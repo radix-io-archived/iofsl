@@ -11,8 +11,6 @@ namespace iofwd
 
 IOFWDReadRequest::~IOFWDReadRequest ()
 {
-   if (mem_)
-      delete[] mem_;
    if (mem_starts_)
       delete[] mem_starts_;
    if (mem_sizes_)
@@ -56,7 +54,8 @@ const IOFWDReadRequest::ReqParam & IOFWDReadRequest::decodeParam ()
     {
         mem_total_size_ += mem_sizes_[i];
     }
-    mem_ = new char[mem_total_size_];
+    bmi_buffer_.resize(mem_total_size_);
+    mem_ = (char *)bmi_buffer_.get();
 
      // NOTICE: mem_starts_ and mem_sizes_ are alignend with file_sizes
      // This is for request scheduler to easily handle the ranges without
@@ -107,19 +106,19 @@ iofwdutil::completion::CompletionID * IOFWDReadRequest::sendBuffers ()
 #if SIZEOF_SIZE_T == SIZEOF_BMI_SIZE_T
    /* Send the mem_sizes_ array */
    bmires_.postSendList (id, addr_, (const void**)mem_starts_, (const bmi_size_t*)mem_sizes_,
-                         mem_count_, total_size, BMI_EXT_ALLOC, tag_, 0);
+                         mem_count_, total_size, bmi_buffer_.bmiType(), tag_, 0);
 #else 
    /* Send the bmi_mem_sizes_ array */
    bmires_.postSendList (id, addr_, (const void**)mem_starts_, (const bmi_size_t*)bmi_mem_sizes_,
-                         mem_count_, total_size, BMI_EXT_ALLOC, tag_, 0);
+                         mem_count_, total_size, bmi_buffer_.bmiType(), tag_, 0);
 #endif
    return id;
 }
 
-iofwdutil::completion::CompletionID * IOFWDReadRequest::sendPipelineBuffer(char *buf, size_t size)
+iofwdutil::completion::CompletionID * IOFWDReadRequest::sendPipelineBuffer(iofwdutil::bmi::BMIBuffer * buf, size_t size)
 {
    iofwdutil::completion::BMICompletionID * id = new iofwdutil::completion::BMICompletionID ();
-   bmires_.postSend (id, addr_, buf, size, BMI_EXT_ALLOC, tag_, 0);
+   bmires_.postSend (id, addr_, (char *)buf->get(), size, buf->bmiType(), tag_, 0);
    return id;
 }
 

@@ -3,6 +3,7 @@
 
 #include "Task.hh"
 #include "iofwdutil/completion/BMIResource.hh"
+#include "BMIBufferPool.hh"
 
 namespace zoidfs
 {
@@ -24,7 +25,7 @@ public:
    zoidfs::ZoidFSAPI *                  api;
    zoidfs::ZoidFSAsyncAPI *             async_api;
    RequestScheduler *                   sched;
-   BufferPool *                         pool;
+   BMIBufferPool *                         bpool;
    iofwdutil::completion::BMIResource & bmi; 
 
    ThreadTaskParam (Request * r, 
@@ -32,9 +33,9 @@ public:
       zoidfs::ZoidFSAPI * a1,
       zoidfs::ZoidFSAsyncAPI * a2,
       RequestScheduler * s,
-      BufferPool * p,
+      BMIBufferPool * bp,
       iofwdutil::completion::BMIResource & b)
-      : req(r), resched(r2), api(a1), async_api(a2), sched(s), pool(p), bmi(b)
+      : req(r), resched(r2), api(a1), async_api(a2), sched(s), bpool(bp), bmi(b)
    {
    }
 
@@ -54,7 +55,7 @@ class TaskHelper : public Task
       TaskHelper (ThreadTaskParam & param)
          : Task (param.resched), request_ (static_cast<T &> (*param.req)), 
            api_ (param.api), async_api_(param.async_api), sched_(param.sched),
-           pool_ (param.pool), bmi_ (param.bmi)
+           bpool_(param.bpool), bmi_ (param.bmi)
       {
 #ifndef NDEBUG
          // This will throw if the request is not of the expected type
@@ -77,7 +78,7 @@ class TaskHelper : public Task
       zoidfs::ZoidFSAPI * api_;
       zoidfs::ZoidFSAsyncAPI * async_api_;
       RequestScheduler * sched_;
-      BufferPool * pool_;
+      BMIBufferPool * bpool_;
       iofwdutil::completion::BMIResource & bmi_; 
 }; 
 

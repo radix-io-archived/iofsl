@@ -3,7 +3,7 @@
 #include "zoidfs/util/ZoidFSAsyncAPI.hh"
 #include "zoidfs/zoidfs-proto.h"
 #include "RequestScheduler.hh"
-#include "BufferPool.hh"
+#include "BMIBufferPool.hh"
 
 #include <vector>
 #include <deque>
@@ -18,7 +18,7 @@ namespace iofwd
 
 struct RetrievedBuffer
 {
-  BufferAllocCompletionID * alloc_id;
+  BMIBufferAllocCompletionID * alloc_id;
   uint64_t siz;
   uint64_t off;
   iofwdutil::completion::CompletionID * io_id;
@@ -77,7 +77,7 @@ void WriteTask::runNormalMode(const WriteRequest::ReqParam & p)
 iofwdutil::completion::CompletionID * WriteTask::execPipelineIO(const WriteRequest::ReqParam & p,
    RetrievedBuffer * b)
 {
-   const char * p_buf = b->alloc_id->get_buf();
+   const char * p_buf = (char *)b->alloc_id->get_buf()->get();
    const uint64_t p_offset = b->off;
    const uint64_t p_size = b->siz;
    const uint64_t * file_starts = p.file_starts;
@@ -162,8 +162,8 @@ iofwdutil::completion::CompletionID * WriteTask::execPipelineIO(const WriteReque
 void WriteTask::runPipelineMode(const WriteRequest::ReqParam & p)
 {
    // TODO: aware of system-wide memory consumption
-   uint64_t pipeline_bytes = pool_->pipeline_size();
-   BufferAllocCompletionID * alloc_id = NULL;
+   uint64_t pipeline_bytes = bpool_->pipeline_size();
+   BMIBufferAllocCompletionID * alloc_id = NULL;
 
    // The life cycle of buffers is like follows:
    // from alloc -> NetworkRecv -> rx_q -> ZoidI/O -> io_q -> back to alloc
@@ -192,11 +192,10 @@ void WriteTask::runPipelineMode(const WriteRequest::ReqParam & p)
 
      // try to alloc buffer
      if (alloc_id == NULL)
-       alloc_id = pool_->alloc();
+       alloc_id = bpool_->alloc(request_.getRequestAddr(), iofwdutil::bmi::BMI::ALLOC_RECEIVE);
      // issue recv requests for next pipeline buffer
      if (alloc_id != NULL && alloc_id->test(10)) {
-       char * p_buf = alloc_id->get_buf();
-       rx_id = request_.recvPipelineBuffer(p_buf, p_siz);
+       rx_id = request_.recvPipelineBuffer(alloc_id->get_buf(), p_siz);
      }
 
      // check I/O requests completion in io_q

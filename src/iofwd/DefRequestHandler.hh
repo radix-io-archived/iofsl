@@ -4,9 +4,9 @@
 #include <memory>
 #include <vector>
 #include "iofwdutil/IOFWDLog.hh"
-#include "RequestHandler.hh"
-#include "BufferPool.hh"
-#include "ThreadTasks.hh"
+#include "iofwd/RequestHandler.hh"
+#include "iofwd/BMIBufferPool.hh"
+#include "iofwd/ThreadTasks.hh"
 #include "zoidfs/util/LogAPI.hh"
 
 namespace iofwdutil
@@ -72,7 +72,7 @@ protected:
    RequestScheduler * sched_;
 
    /// BufferPool
-   BufferPool * pool_;
+   BMIBufferPool * bpool_;
 };
 
 }

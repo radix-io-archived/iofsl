@@ -3,7 +3,7 @@
 #include "zoidfs/util/ZoidFSAsyncAPI.hh"
 #include "zoidfs/zoidfs-proto.h"
 #include "RequestScheduler.hh"
-#include "BufferPool.hh"
+#include "iofwd/BMIBufferPool.hh"
 
 #include <vector>
 #include <deque>
@@ -16,7 +16,7 @@ namespace iofwd
 
 struct ReadBuffer
 {
-  BufferAllocCompletionID * alloc_id;
+  BMIBufferAllocCompletionID * alloc_id;
   uint64_t siz;
   uint64_t off;
   iofwdutil::completion::CompletionID * io_id;
@@ -76,7 +76,7 @@ void ReadTask::runNormalMode(const ReadRequest::ReqParam & p)
 iofwdutil::completion::CompletionID * ReadTask::execPipelineIO(const ReadRequest::ReqParam & p,
    ReadBuffer * b)
 {
-   char * p_buf = b->alloc_id->get_buf();
+   char * p_buf = (char *)b->alloc_id->get_buf()->get();
    const uint64_t p_offset = b->off;
    const uint64_t p_size = b->siz;
    const uint64_t * file_starts = p.file_starts;
@@ -161,8 +161,8 @@ iofwdutil::completion::CompletionID * ReadTask::execPipelineIO(const ReadRequest
 void ReadTask::runPipelineMode(const ReadRequest::ReqParam & p)
 {
    // TODO: aware of system-wide memory consumption
-   uint64_t pipeline_bytes = pool_->pipeline_size();
-   BufferAllocCompletionID * alloc_id = NULL;
+   uint64_t pipeline_bytes = bpool_->pipeline_size();
+   BMIBufferAllocCompletionID * alloc_id = NULL;
 
    // The life cycle of buffers is like follows:
    // from alloc -> ZoidI/O -> io_q -> NetworkSend -> tx_q -> back to alloc
@@ -197,7 +197,7 @@ void ReadTask::runPipelineMode(const ReadRequest::ReqParam & p)
 
       // try to alloc buffer
       if (alloc_id == NULL)
-         alloc_id = pool_->alloc();
+         alloc_id = bpool_->alloc(request_.getRequestAddr(), iofwdutil::bmi::BMI::ALLOC_SEND);
       // issue I/O requests for next pipeline buffer
       if (alloc_id != NULL && alloc_id->test(10)) {
          ReadBuffer b;

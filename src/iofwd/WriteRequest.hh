@@ -4,6 +4,9 @@
 #include "Request.hh"
 #include "zoidfs/zoidfs.h"
 #include "iofwdutil/completion/CompletionID.hh"
+#include "iofwdutil/bmi/BMI.hh"
+#include "iofwdutil/bmi/BMIAddr.hh"
+#include "iofwdutil/bmi/BMIBuffer.hh"
 
 namespace iofwd
 {
@@ -40,7 +43,9 @@ public:
   virtual iofwdutil::completion::CompletionID * recvBuffers() = 0;
 
   // for pipeline mode
-  virtual iofwdutil::completion::CompletionID * recvPipelineBuffer(char *buf, size_t size) = 0;
+  virtual iofwdutil::completion::CompletionID * recvPipelineBuffer(iofwdutil::bmi::BMIBuffer * buf, size_t size) = 0;
+
+  virtual iofwdutil::bmi::BMIAddr getRequestAddr() = 0;
 }; 
 
 }

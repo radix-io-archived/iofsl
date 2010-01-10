@@ -3,6 +3,7 @@
 
 #include <boost/function.hpp>
 #include "iofwdutil/completion/BMIResource.hh"
+#include "iofwd/BMIBufferPool.hh"
 
 namespace zoidfs
 {
@@ -30,9 +31,9 @@ public:
          zoidfs::ZoidFSAPI * api,
          zoidfs::ZoidFSAsyncAPI * async_api,
          RequestScheduler * sched,
-         BufferPool * pool)
+         BMIBufferPool * bpool)
       : reschedule_(resched), api_(api), async_api_(async_api), sched_(sched),
-        pool_(pool)
+        bpool_(bpool)
    {
    }
 
@@ -44,7 +45,7 @@ protected:
    zoidfs::ZoidFSAPI * api_;
    zoidfs::ZoidFSAsyncAPI * async_api_;
    RequestScheduler * sched_;
-   BufferPool * pool_;
+   BMIBufferPool * bpool_;
 
    iofwdutil::completion::ContextBase ctx_; 
    iofwdutil::completion::BMIResource bmi_; 
