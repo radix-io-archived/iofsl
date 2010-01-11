@@ -214,7 +214,7 @@ struct ValidateSizeProcessor
  * Validates if for a type T, the encoded value and the decoded value agree.
  */
 template <typename T, typename SIZE, typename WRITER, typename READER>
-void validateEncodeDecode (SIZE & size, WRITER & writer, READER & reader)
+void validateEncodeDecode (SIZE & , WRITER & writer, READER & reader)
 {
    T dummy1;
    T dummy2;
@@ -244,7 +244,7 @@ struct ValidateEncodeDecode
    }
 
    template <typename T>
-   void operator () (const T & t)
+   void operator () (const T & )
    {
       validateEncodeDecode<T> (size, writer, reader);
    }
