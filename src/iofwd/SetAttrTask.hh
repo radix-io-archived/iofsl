@@ -26,7 +26,7 @@ public:
        const SetAttrRequest::ReqParam & p = request_.decodeParam ();
        int ret = api_->setattr (p.handle, p.sattr, p.attr, p.op_hint);
        request_.setReturnCode (ret);
-       request_.reply (boost::ref(block_), (ret  == zoidfs::ZFS_OK ? p.attr : 0));
+       request_.reply ((block_), (ret  == zoidfs::ZFS_OK ? p.attr : 0));
        block_.wait ();
   }
 

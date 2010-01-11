@@ -28,7 +28,7 @@ public:
        int ret = api_->mkdir (p.parent_handle, p.component_name,
                               p.full_path, p.sattr, &hint, p.op_hint);
        request_.setReturnCode (ret);
-       request_.reply (boost::ref(block_), &hint);
+       request_.reply ((block_), &hint);
        block_.wait();
   }
 

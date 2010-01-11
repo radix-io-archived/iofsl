@@ -5,14 +5,15 @@ namespace iofwdevent
 {
 
    SingleCompletion::SingleCompletion ()
-      : status_(WAITING)
+      : status_(UNUSED)
    {
    }
 
    void SingleCompletion::success ()
    {
-      boost::mutex::scoped_lock l (lock_);
       ALWAYS_ASSERT(status_ == WAITING);
+
+      boost::mutex::scoped_lock l (lock_);
       status_ = SUCCESS;
 
       // Normally I would move this outside of the lock but valgrind
@@ -22,9 +23,10 @@ namespace iofwdevent
 
    void SingleCompletion::cancel ()
    {
+      ALWAYS_ASSERT(status_ == WAITING);
+
       boost::mutex::scoped_lock l (lock_);
 
-      ALWAYS_ASSERT(status_ == WAITING);
       status_ = CANCEL;
 
       cond_.notify_all ();
@@ -51,6 +53,8 @@ namespace iofwdevent
 
    bool SingleCompletion::test ()
    {
+      ALWAYS_ASSERT(status_ != UNUSED);
+
       boost::mutex::scoped_lock l (lock_);
 
       if (status_ == WAITING)
@@ -63,6 +67,8 @@ namespace iofwdevent
 
    void SingleCompletion::wait ()
    {
+      ALWAYS_ASSERT(status_ != UNUSED);
+
       boost::mutex::scoped_lock l (lock_);
 
       while (status_ == WAITING)

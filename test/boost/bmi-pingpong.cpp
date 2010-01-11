@@ -13,7 +13,6 @@
 #include "iofwdevent/ThreadedResource.hh"
 #include "iofwdevent/ResourceWrapper.hh"
 #include "iofwdevent/SingleCompletion.hh"
-#include "iofwdevent/ResourceCompat.hh"
 
 #include "ThreadSafety.hh"
 
@@ -82,21 +81,21 @@ public:
 
          if (!sender_)
          {
-            bmi_.post_recv (resource_compat(waitreceive), addr_, &received, sizeof(received),
+            bmi_.post_recv (waitreceive, addr_, &received, sizeof(received),
                   &actual, BMI_EXT_ALLOC, receivetag, 0);
             waitreceive.wait ();
 
             BOOST_CHECK_EQUAL_TS (i, received);
 
-            bmi_.post_send (resource_compat(waitsend), addr_, &received, sizeof (received),
+            bmi_.post_send (waitsend, addr_, &received, sizeof (received),
                 BMI_EXT_ALLOC, sendtag, 0);
             waitsend.wait ();
          }
          else
          {
-            bmi_.post_recv (resource_compat(waitreceive), addr_, &received, sizeof(received),
+            bmi_.post_recv (waitreceive, addr_, &received, sizeof(received),
                   &actual, BMI_EXT_ALLOC, receivetag, 0);
-            bmi_.post_send (resource_compat(waitsend), addr_, &i, sizeof (i), 
+            bmi_.post_send (waitsend, addr_, &i, sizeof (i), 
                 BMI_EXT_ALLOC, sendtag, 0);
 
             waitreceive.wait ();
@@ -133,10 +132,10 @@ public:
       BMI_unexpected_info info;
 
       checkBMI (BMI_addr_lookup (&p1_, ADDRESS));
-      bmi_.post_sendunexpected (resource_compat(waitSend), p1_,
+      bmi_.post_sendunexpected (waitSend, p1_,
             &dummy, sizeof(dummy), BMI_EXT_ALLOC,
             0, 0);
-      bmi_.post_testunexpected (resource_compat(waitReceive), 1,
+      bmi_.post_testunexpected (waitReceive, 1,
             &out, &info);
 
       BOOST_TEST_MESSAGE_TS("Waiting for message arrival");
@@ -226,9 +225,9 @@ BOOST_FIXTURE_TEST_CASE( talkself, Fixture )
          waitsend.reset();
          waitreceive.reset();
       }
-      bmires_.post_recv (resource_compat(waitreceive), sendaddr, &received, sizeof(received),
+      bmires_.post_recv (waitreceive, sendaddr, &received, sizeof(received),
             &actual, BMI_EXT_ALLOC, 0, 0);
-      bmires_.post_send (resource_compat(waitsend), receiveaddr, &i, sizeof (i),
+      bmires_.post_send (waitsend, receiveaddr, &i, sizeof (i),
             BMI_EXT_ALLOC, 0, 0);
       BOOST_TEST_MESSAGE_TS("Waiting for send to complete");
       waitsend.wait ();

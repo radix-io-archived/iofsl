@@ -40,7 +40,7 @@ public:
        char buffer[bufferlen];
        int ret = api_->readlink (p.handle, buffer, bufferlen, p.op_hint);
        request_.setReturnCode (ret);
-       request_.reply (boost::ref(block_), buffer, bufferlen);
+       request_.reply ((block_), buffer, bufferlen);
        block_.wait ();
   }
 

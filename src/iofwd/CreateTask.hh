@@ -30,7 +30,7 @@ public:
                                p.full_path, p.attr, &handle, &created, p.op_hint);
        request_.setReturnCode (ret);
 
-       request_.reply (boost::ref(block_), (ret  == zoidfs::ZFS_OK ? &handle : 0), created);
+       request_.reply ((block_), (ret  == zoidfs::ZFS_OK ? &handle : 0), created);
        block_.wait ();
   }
 

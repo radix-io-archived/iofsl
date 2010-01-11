@@ -29,7 +29,7 @@ public:
        int ret = api_->readdir (p.handle, p.cookie, &entry_count,
                                 p.entries, p.flags, &parent_hint, p.op_hint);
        request_.setReturnCode (ret);
-       request_.reply (boost::ref(block_), entry_count, p.entries, &parent_hint);
+       request_.reply ((block_), entry_count, p.entries, &parent_hint);
        block_.wait ();
   }
 

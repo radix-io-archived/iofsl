@@ -28,7 +28,7 @@ public:
        int ret = api_->lookup (p.parent_handle, p.component_name, 
                                p.full_path, &handle, p.op_hint); 
        request_.setReturnCode (ret); 
-       request_.reply (boost::ref(block_), (ret  == zoidfs::ZFS_OK ? &handle : 0));
+       request_.reply ((block_), (ret  == zoidfs::ZFS_OK ? &handle : 0));
        block_.wait ();
   }
 

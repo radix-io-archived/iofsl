@@ -9,7 +9,6 @@
 #include <map>
 
 #include "iofwdutil/assert.hh"
-#include "ResourceOp.hh"
 #include "Resource.hh"
 #include "ThreadedResource.hh"
 #include "iofwdutil/IOFWDLog.hh"

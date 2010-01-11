@@ -4,7 +4,6 @@
 #include <boost/pool/pool_alloc.hpp>
 #include <boost/intrusive/slist.hpp>
 #include <boost/thread.hpp>
-#include "ResourceOp.hh"
 #include "iofwdutil/assert.hh"
 #include "Resource.hh"
 
