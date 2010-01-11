@@ -395,7 +395,7 @@ AC_ARG_ENABLE([nofs],
                   *) AC_MSG_ERROR([bad value ${enableval} for
                                    --enable-nofs]) ;;
                esac],
-               [use_nofs=1])
+               [use_nofs=0])
 
 DISPATCH_NOFS=0
 AC_MSG_CHECKING([If the nofs dispatcher driver needs to be built])
