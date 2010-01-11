@@ -26,7 +26,7 @@ public:
       const CommitRequest::ReqParam & p = request_.decodeParam ();
       int ret = api_->commit (p.handle, p.op_hint);
       request_.setReturnCode (ret);
-      request_.reply (boost::ref(block_));
+      request_.reply (block_);
       block_.wait ();
    }
 }; 

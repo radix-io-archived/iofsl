@@ -7,7 +7,6 @@
 #include <csignal>
 
 #include "iofwdevent/Resource.hh"
-#include "ResourceOp.hh"
 #include "iofwdutil/assert.hh"
 
 namespace iofwdevent
@@ -15,7 +14,7 @@ namespace iofwdevent
 //===========================================================================
 
    /**
-    * This class enables a thread to block until a ResourceOp completes.
+    * This class enables a thread to block until an operation completes.
     * After the operation completes, it can be reused for another operation.
     *
     * Cannot be copied for two reasons:
@@ -26,18 +25,30 @@ namespace iofwdevent
     *
     * @TODO: exception transport
     */
-   class SingleCompletion : public ResourceOp,
-                            public boost::noncopyable
+   class SingleCompletion : public boost::noncopyable
    {
    public:
 
       /**
+       * THis operator detects when somebody uses us as a callback.
+       * In this case, indicate that we're expecting a call and change
+       * status to WAITING
+       */
+      operator CBType ()
+      {
+         // no lock needed since nobody can call us until we return
+         // from this function.
+         ALWAYS_ASSERT (status_ == UNUSED);
+         status_ = WAITING;
+         return CBType(boost::ref(*this));
+      }
+
+      /**
        * \brief: CBType compatible functor signature.
-       *
-       *  Don't forget to use boost::ref !
        */
       void operator () (int status)
       {
+         ALWAYS_ASSERT(status_ == WAITING);
          switch (status)
          {
             case COMPLETED:
@@ -51,11 +62,13 @@ namespace iofwdevent
          }
       }
 
-      virtual void success ();
+   protected:
 
-      virtual void cancel ();
+      void success ();
 
-      //virtual void exception ();
+      void cancel ();
+
+      void exception ();
    public:
       SingleCompletion ();
 
@@ -78,7 +91,7 @@ namespace iofwdevent
          boost::mutex::scoped_lock l (lock_);
 
          ASSERT(status_ != WAITING);
-         status_ = WAITING;
+         status_ = UNUSED;
          // Need to reset any stored exception here
       }
 
@@ -90,7 +103,7 @@ namespace iofwdevent
       void checkStatus ();
    protected:
 
-      enum { SUCCESS = 0, CANCEL, EXCEPTION, WAITING };
+      enum { UNUSED = 0, SUCCESS, CANCEL, EXCEPTION, WAITING };
       sig_atomic_t status_;
 
       boost::mutex lock_;

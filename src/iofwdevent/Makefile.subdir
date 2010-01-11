@@ -6,8 +6,6 @@ src/iofwdevent/DummyResource.cpp \
 src/iofwdevent/CBType.hh \
 src/iofwdevent/Resource.cpp \
 src/iofwdevent/Resource.hh \
-src/iofwdevent/ResourceOp.hh \
-src/iofwdevent/ResourceOp.cpp \
 src/iofwdevent/BMIResource.hh \
 src/iofwdevent/BMIResource.cpp \
 src/iofwdevent/TimerResource.hh \
@@ -20,5 +18,4 @@ src/iofwdevent/ThreadedResource.hh \
 src/iofwdevent/ThreadedResource.cpp \
 src/iofwdevent/ResourceWrapper.hh \
 src/iofwdevent/TokenResource.hh \
-src/iofwdevent/ResourceCompat.hh \
 src/iofwdevent/TokenResource.cpp

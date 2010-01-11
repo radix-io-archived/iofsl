@@ -4,7 +4,6 @@
 #include <boost/bind.hpp>
 #include <csignal>
 
-#include "iofwdevent/ResourceOp.hh"
 #include "SMResourceClient.hh"
 #include "iofwdevent/Resource.hh"
 
@@ -23,7 +22,7 @@ class SMManager;
  * The entity needs to be an instance of SMResourceClient, having a
  * method receiving the result of the nonblocking operation.
  */
-class SMResourceOp : public iofwdevent::ResourceOp
+class SMResourceOp
 {
 public:
    SMResourceOp (SMManager * manager);

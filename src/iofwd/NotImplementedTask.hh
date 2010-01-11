@@ -30,7 +30,7 @@ public:
    {
       // We don't need to set the errorcode, NotImplementedRequest by default
       // returns ZFS_NOTIMPLEMENTED
-      request_.reply (boost::ref(block_));
+      request_.reply ((block_));
    }
 };
 

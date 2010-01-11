@@ -28,7 +28,7 @@ public:
        int ret = api_->remove (p.parent_handle, p.component_name,
                                p.full_path, &hint, p.op_hint);
        request_.setReturnCode (ret);
-       request_.reply (boost::ref(block_), (ret  == zoidfs::ZFS_OK ? &hint : 0));
+       request_.reply ((block_), (ret  == zoidfs::ZFS_OK ? &hint : 0));
        block_.wait ();
    }
 

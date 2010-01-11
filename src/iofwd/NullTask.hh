@@ -32,7 +32,7 @@ public:
       // Call the ZOIDFS_NULL function and store the return code.
       request_.setReturnCode (api_->null ());
 
-      request_.reply (boost::ref(block_));
+      request_.reply ((block_));
       block_.wait ();
    }
 

@@ -19,8 +19,8 @@ BOOST_AUTO_TEST_CASE( StartStopTest )
 
    r.start ();
 
-   r.createTimer (boost::ref(comp), 100);
-   r.createTimer (boost::ref(comp2), 200);
+   r.createTimer ((comp), 100);
+   r.createTimer ((comp2), 200);
 
    comp.wait ();
 
