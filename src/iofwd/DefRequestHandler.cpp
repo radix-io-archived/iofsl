@@ -28,8 +28,9 @@ DefRequestHandler::DefRequestHandler ()
    async_api_ = new zoidfs::ZoidFSAsyncAPI(&api_);
    sched_ = new RequestScheduler(async_api_);
    bpool_ = new BMIBufferPool(1024UL * 1024 * 8, 100);
-  
-   workqueue_normal_.reset (new PoolWorkQueue (0, 100)); 
+ 
+   /* TODO make the thread params a config option */
+   workqueue_normal_.reset (new PoolWorkQueue (8, 100)); 
    workqueue_fast_.reset (new SynchronousWorkQueue ()); 
    boost::function<void (Task *)> f = boost::lambda::bind
       (&DefRequestHandler::reschedule, this, boost::lambda::_1); 

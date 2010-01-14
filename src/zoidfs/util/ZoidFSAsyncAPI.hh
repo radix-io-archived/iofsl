@@ -37,7 +37,8 @@ public:
       if (api_ == NULL)
          api_ = &fallback_;
       if (q_ == NULL)
-         q_ = new iofwdutil::workqueue::PoolWorkQueue (0, 100);
+         /* TODO make the thread params a config option */
+         q_ = new iofwdutil::workqueue::PoolWorkQueue (8, 100);
    }
    ~ZoidFSAsyncAPI();
 
