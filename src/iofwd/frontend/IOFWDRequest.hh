@@ -64,7 +64,7 @@ protected:
 
    void decodeOpHint (zoidfs::zoidfs_op_hint_t ** op_hint)
    {
-     process(req_reader_, encoder::OpHintHelper ((const zoidfs::zoidfs_op_hint_t **) op_hint));
+     process(req_reader_, encoder::OpHintHelper (op_hint));
    }
 
 
