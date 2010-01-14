@@ -86,7 +86,7 @@ class ChildRange
         {
         }
 
-        ~ChildRange()
+        virtual ~ChildRange()
         {
         }
 
@@ -116,7 +116,7 @@ class ParentRange : public ChildRange
         {
         }
 
-        ~ParentRange()
+        virtual ~ParentRange()
         {
             /* clear the cid vector */
             child_cids_.clear();
