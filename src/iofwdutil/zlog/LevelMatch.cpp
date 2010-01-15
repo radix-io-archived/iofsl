@@ -121,7 +121,7 @@ public:
    {
 
       definition(const LevelGrammar & self)  
-         : self_(self)
+         : self_(self), level_p()
       { 
          /* define grammar rules here */ 
          //level = uint_p[level.value = arg1] | as_lower_d[level_p[level.value = arg1]];

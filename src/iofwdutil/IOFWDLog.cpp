@@ -111,7 +111,7 @@ public:
    template <typename ScannerT>
    struct definition 
    {
-      definition (LevelStrParser const & self)
+      definition (LevelStrParser const & self) : level_p()
       {
          // if level_p is not excluded, when parsing "error" (or any other
          // levelname) entry.name_ is first set before the rule fails because
