@@ -16,10 +16,10 @@ namespace iofwdutil
  *
  * Now you can use your class with the boost intrusive shared pointer.
  */
-class IntrusiveHelper  
+class IntrusiveHelper 
 {
 public:
-   IntrusiveHelper () : 
+   IntrusiveHelper () :
       refcount_ (0)
    {
    }
@@ -32,13 +32,13 @@ public:
 
    int removeref ()
    {
-      ASSERT(refcount_); 
-      return --refcount_; 
+      ASSERT(refcount_);
+      return --refcount_;
    }
 
    int addref ()
    {
-      return ++refcount_; 
+      return ++refcount_;
    }
 
    /**
@@ -50,16 +50,14 @@ public:
    }
 private:
    atomic<int> refcount_;
-}; 
+};
 
 
 /* @NOTE:
  *    * Can simplify this by providing a template version
  *      of the functions below.
- *    * This is not thread safe; Can make it thread safe 
- *      for all versions or just for certain classes 
- *      by providing another PTR_HELPER macro or specializing
- *      the template function.
+ *    * The code below is threadsafe since the reference count is
+ *      stored in an atomic<int> var.
  */
 #define INTRUSIVE_PTR_HELPER(cls) \
    inline void intrusive_ptr_add_ref(cls * r) \
