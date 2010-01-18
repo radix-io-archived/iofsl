@@ -14,7 +14,7 @@ namespace sm
 
 /**
  * SMManager acts as the scheduler and execution context for a collection 
- * of entities that typically need to run for a small amount of times
+ * of entities that typically need to run for a small amount of time
  * before they go back to sleep.
  *
  * The client uses a shared pointer so it will be freed automatically when 
@@ -27,7 +27,7 @@ public:
    /**
     * Construct an SMManager with the specified number of worker threads.
     */
-   SMManager (size_t threads);
+   SMManager (size_t threads  = 0);
 
 
    /**

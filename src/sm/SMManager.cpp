@@ -82,6 +82,9 @@ void SMManager::startThreads (size_t count)
    if (!count)
       count = threads_;
 
+   if (!count)
+      count = std::max(1u, boost::thread::hardware_concurrency ());
+
    ZLOG_DEBUG(log_, format("Starting %i threads...") % count);
    workers_.reserve (count);
    for (size_t i=0; i<count; ++i)
