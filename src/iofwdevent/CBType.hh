@@ -16,6 +16,10 @@ namespace iofwdevent
     *
     * LAST indicates the first free code (and can be used classes such as
     * SingleCompletion or MultiCompletion)
+    *
+    * Maybe COMPLETED is the only code needed;
+    * FAILED is really there to indicate an exception,
+    * and CANCELLED could(should?) throw its own exception.
     */
    enum { COMPLETED = 0, CANCELLED, FAILED, LAST };
 
