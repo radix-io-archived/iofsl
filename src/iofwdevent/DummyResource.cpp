@@ -18,21 +18,29 @@ DummyResource::~DummyResource ()
 
 void DummyResource::start ()
 {
+   boost::mutex::scoped_lock l(lock_);
+
    started_ = true;
 }
 
 void DummyResource::stop ()
 {
+   boost::mutex::scoped_lock l(lock_);
+
    started_= false;
 }
 
 bool DummyResource::started () const
 {
+   boost::mutex::scoped_lock l(lock_);
+
    return started_;
 }
 
 bool DummyResource::cancel (Handle UNUSED(h))
 {
+   boost::mutex::scoped_lock l(lock_);
+
    return false;
 }
 
@@ -41,6 +49,8 @@ bool DummyResource::cancel (Handle UNUSED(h))
 
 void DummyResource::complete ()
 {
+   boost::mutex::scoped_lock l(lock_);
+
    for (size_t i=0; i<deferred_.size(); ++i)
    {
       deferred_[i] ();
@@ -51,11 +61,15 @@ void DummyResource::complete ()
 
 void DummyResource::defer (const CBType & cb, int status)
 {
+   boost::mutex::scoped_lock l(lock_);
+
    deferred_.push_back (boost::bind (cb, status));
 }
 
 void DummyResource::immediate (const CBType & cb, int status)
 {
+   // no need for lock
+
    cb (status);
 }
 

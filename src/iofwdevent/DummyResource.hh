@@ -3,6 +3,7 @@
 
 #include <boost/function.hpp>
 #include <vector>
+#include <boost/thread.hpp>
 
 #include "Resource.hh"
 
@@ -53,6 +54,8 @@ protected:
    std::vector<boost::function<void ()> > deferred_;
 
    bool started_;
+
+   mutable boost::mutex lock_;
 };
 
 //==========================================================================
