@@ -93,11 +93,13 @@ private:
   boost::shared_ptr<CompletionID> ptr_;
 };
 
-RequestScheduler::RequestScheduler(zoidfs::ZoidFSAsyncAPI * async_api)
+RequestScheduler::RequestScheduler(zoidfs::ZoidFSAsyncAPI * async_api, const iofwdutil::ConfigFile & c)
   : log_(IOFWDLog::getSource()), exiting(false), async_api_(async_api)
 {
   RangeScheduler * rsched;
-  const char * sched_algo = getenv("ZOIDFS_SCHED_ALGO");
+  char * sched_algo = new char[c.getKeyDefault("schedalgo", "fifo").size() + 1];
+  strcpy(sched_algo, c.getKeyDefault("schedalgo", "fifo").c_str());
+
   if (sched_algo == NULL || strcmp(sched_algo, "fifo") == 0) {
     rsched = new FIFORangeScheduler();
   } else if (strcmp(sched_algo, "merge") == 0) {
@@ -107,6 +109,8 @@ RequestScheduler::RequestScheduler(zoidfs::ZoidFSAsyncAPI * async_api)
   }
   range_sched_.reset(rsched);
   consumethread_.reset(new boost::thread(boost::bind(&RequestScheduler::run, this)));
+
+  delete [] sched_algo;
 }
 
 RequestScheduler::~RequestScheduler()
@@ -156,7 +160,7 @@ CompletionID * RequestScheduler::enqueueRead(
   for (uint32_t i = 0; i < count; i++)
     if (file_sizes[i] > 0)
       valid_count++;
-  
+
   CompositeCompletionID * ccid = new CompositeCompletionID(valid_count);
   for (uint32_t i = 0; i < count; i++) {
     assert(mem_sizes[i] == file_sizes[i]);
@@ -211,7 +215,7 @@ void RequestScheduler::run()
             break;
           }
         }
-    
+
         /* get size */
         if(r->hasSubIntervals())
         {
@@ -227,7 +231,7 @@ void RequestScheduler::run()
 
     if (rs.empty())
       continue;
-    
+
     // issue asynchronous I/O for rs
     check_ranges(rs);
     issue(rs);
@@ -343,7 +347,7 @@ void RequestScheduler::issue(vector<ChildRange *>& rs)
     const vector<CompositeCompletionID*>& v = pr->child_cids_;
     assert(v.size() > 0);
     for(unsigned int i = 0 ; i < v.size() ; i++)
-    { 
+    {
       CompositeCompletionID * ccid = v[i];
       // Because io_id is shared among multiple CompositeCompletionIDs,
       // we use SharedCompletionID to properly release the resource by using

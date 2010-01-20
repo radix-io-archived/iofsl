@@ -2,6 +2,7 @@
 #include "zoidfs/zoidfs.h"
 #include "../zint-handler.h"
 #include "c-util/tools.h"
+#include "c-util/configfile.h"
 
 static int zint_local_null(void)
 {
@@ -116,7 +117,7 @@ static int zint_local_link(const zoidfs_handle_t * UNUSED(from_parent_handle),
     return ZFSERR_NOTIMPL;
 }
 
-static int zint_local_symlink(    
+static int zint_local_symlink(
     const zoidfs_handle_t * UNUSED(from_parent_handle),
     const char * UNUSED(from_component_name),
     const char * UNUSED(from_full_path),
@@ -179,6 +180,11 @@ static int zint_local_finalize(void)
     return ZFS_OK;
 }
 
+static int zint_local_set_options(ConfigHandle UNUSED(c), SectionHandle UNUSED(s))
+{
+    return ZFS_OK;
+}
+
 zint_handler_t local_handler =
 {
     zint_local_null,
@@ -199,14 +205,15 @@ zint_handler_t local_handler =
     zint_local_resize,
     zint_local_resolve_path,
     zint_local_init,
-    zint_local_finalize
+    zint_local_finalize,
+    zint_local_set_options
 };
 
 /*
  * Local variables:
  *  c-indent-level: 4
  *  c-basic-offset: 4
- * End: 
+ * End:
  *
  * vim: ts=8 sts=4 sw=4 expandtab
  */

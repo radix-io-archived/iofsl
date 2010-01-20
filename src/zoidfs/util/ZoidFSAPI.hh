@@ -2,11 +2,12 @@
 #define ZOIDFS_ZOIDFSAPI_HH
 
 #include "zoidfs-wrapped.hh"
+#include "iofwdutil/ConfigFile.hh"
 
 namespace zoidfs
 {
 //===========================================================================
- 
+
 /**
  * Class encapsulated interface to the ZoidFS API.
  */
@@ -14,7 +15,7 @@ class ZoidFSAPI
 {
 
    public:
-      virtual int init(void) =0;
+      virtual int init(const iofwdutil::ConfigFile & c) =0;
 
       virtual int finalize(void) = 0;
 
@@ -124,12 +125,12 @@ class ZoidFSAPI
 
       virtual int resize(const zoidfs_handle_t * handle,
             uint64_t size,
-            zoidfs_op_hint_t * hint) =0; 
+            zoidfs_op_hint_t * hint) =0;
 
 
 public:
-      virtual ~ZoidFSAPI (); 
-}; 
+      virtual ~ZoidFSAPI ();
+};
 
 
 //===========================================================================

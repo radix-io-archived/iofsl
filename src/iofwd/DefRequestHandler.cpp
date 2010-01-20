@@ -12,47 +12,47 @@
 #include "zoidfs/util/ZoidFSAsyncAPI.hh"
 #include "RequestScheduler.hh"
 
-using namespace iofwdutil; 
+using namespace iofwdutil;
 using namespace iofwdutil::workqueue;
-using namespace boost::lambda; 
+using namespace boost::lambda;
 
 namespace iofwd
 {
 //===========================================================================
 
-DefRequestHandler::DefRequestHandler ()
-   : log_ (IOFWDLog::getSource ("defreqhandler"))
+DefRequestHandler::DefRequestHandler (const iofwdutil::ConfigFile & c)
+   : log_ (IOFWDLog::getSource ("defreqhandler")), config_(c)
 {
-   if (api_.init() != zoidfs::ZFS_OK)
+
+   if (api_.init(config_.openSectionDefault ("zoidfsapi")) != zoidfs::ZFS_OK)
       throw "ZoidFSAPI::init() failed";
    async_api_ = new zoidfs::ZoidFSAsyncAPI(&api_);
-   sched_ = new RequestScheduler(async_api_);
-   bpool_ = new BMIBufferPool(1024UL * 1024 * 8, 100);
- 
-   /* TODO make the thread params a config option */
-   workqueue_normal_.reset (new PoolWorkQueue (8, 100)); 
-   workqueue_fast_.reset (new SynchronousWorkQueue ()); 
+   sched_ = new RequestScheduler(async_api_, config_.openSectionDefault ("requestscheduler"));
+   bpool_ = new BMIBufferPool(config_.openSectionDefault("bmibufferpool"));
+
+   workqueue_normal_.reset (new PoolWorkQueue (0, 100));
+   workqueue_fast_.reset (new SynchronousWorkQueue ());
    boost::function<void (Task *)> f = boost::lambda::bind
-      (&DefRequestHandler::reschedule, this, boost::lambda::_1); 
+      (&DefRequestHandler::reschedule, this, boost::lambda::_1);
 
    taskfactory_.reset (new ThreadTasks (f, &api_, async_api_, sched_, bpool_));
 }
 
 void DefRequestHandler::reschedule (Task * t)
 {
-   workqueue_normal_->queueWork (t); 
+   workqueue_normal_->queueWork (t);
 }
 
 DefRequestHandler::~DefRequestHandler ()
 {
-   std::vector<WorkItem *> items; 
-   ZLOG_INFO (log_, "Waiting for normal workqueue to complete all work..."); 
-   workqueue_normal_->waitAll (items); 
-   for_each (items.begin(), items.end(), boost::lambda::bind(delete_ptr(), boost::lambda::_1)); 
+   std::vector<WorkItem *> items;
+   ZLOG_INFO (log_, "Waiting for normal workqueue to complete all work...");
+   workqueue_normal_->waitAll (items);
+   for_each (items.begin(), items.end(), boost::lambda::bind(delete_ptr(), boost::lambda::_1));
 
    items.clear();
-   ZLOG_INFO (log_, "Waiting for fast workqueue to complete all work..."); 
-   workqueue_fast_->waitAll (items); 
+   ZLOG_INFO (log_, "Waiting for fast workqueue to complete all work...");
+   workqueue_fast_->waitAll (items);
    for_each (items.begin(), items.end(), boost::lambda::bind(delete_ptr(), boost::lambda::_1));
 
    delete sched_;
@@ -64,10 +64,10 @@ DefRequestHandler::~DefRequestHandler ()
 
 void DefRequestHandler::handleRequest (int count, Request ** reqs)
 {
-   ZLOG_DEBUG(log_, str(format("handleRequest: %u requests") % count)); 
+   ZLOG_DEBUG(log_, str(format("handleRequest: %u requests") % count));
    for (int i=0; i<count; ++i)
    {
-      Task * task = (*taskfactory_) (reqs[i]); 
+      Task * task = (*taskfactory_) (reqs[i]);
 
       // TODO: workqueues are supposed to return some handle so that we can
       // test which requests completed. That way that requesthandler can
@@ -81,16 +81,16 @@ void DefRequestHandler::handleRequest (int count, Request ** reqs)
    }
 
    // Cleanup completed requests
-   workqueue_normal_->testAll (completed_); 
-   workqueue_fast_->testAll (completed_); 
+   workqueue_normal_->testAll (completed_);
+   workqueue_fast_->testAll (completed_);
    for (unsigned int i=0; i<completed_.size(); ++i)
    {
       // we know only requesttasks can be put on the workqueues
       if (static_cast<Task*>(completed_[i])->getStatus() ==
             Task::STATUS_DONE)
-         delete (completed_[i]); 
+         delete (completed_[i]);
    }
-   completed_.clear (); 
+   completed_.clear ();
 }
 
 //===========================================================================

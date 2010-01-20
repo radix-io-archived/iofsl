@@ -7,6 +7,7 @@
 #include "iofwdutil/bmi/BMIBuffer.hh"
 #include "iofwdutil/bmi/BMIAddr.hh"
 #include "iofwdutil/bmi/BMI.hh"
+#include "iofwdutil/ConfigFile.hh"
 
 namespace iofwd
 {
@@ -19,7 +20,7 @@ class BMIBufferAllocCompletionID : public iofwdutil::completion::CompletionID
 public:
   BMIBufferAllocCompletionID(BMIBufferPool *pool_, WaitingBMIBuffer *buf_);
   virtual ~BMIBufferAllocCompletionID();
-  
+
   virtual void wait ();
   virtual bool test (unsigned int mstimeout);
 
@@ -33,7 +34,7 @@ protected:
 class BMIBufferPool
 {
 public:
-  BMIBufferPool(uint64_t size, uint64_t max_num);
+  BMIBufferPool(const iofwdutil::ConfigFile & c);
   ~BMIBufferPool();
 
   uint64_t pipeline_size() const { return size_; }
@@ -42,13 +43,13 @@ public:
 protected:
   friend class BMIBufferAllocCompletionID;
   void free(WaitingBMIBuffer * buf);
-  
+
 private:
   uint64_t size_;
   uint64_t cur_size_;
   uint64_t max_num_;
   std::deque<WaitingBMIBuffer*> wait_q_;
-  
+
   boost::mutex m_;
 };
 

@@ -1,7 +1,15 @@
 #ifndef ZINT_HANDLER_H
 #define ZINT_HANDLER_H
 
+#include "c-util/configfile.h"
 #include "zoidfs/zoidfs.h"
+
+#ifdef __cplusplus
+namespace zoidfs
+{
+   extern "C"
+   {
+#endif /* __cplusplus */
 
 typedef unsigned int zint_handle_type_t;
 
@@ -150,6 +158,8 @@ typedef int (* zint_resolve_path_handler_t)(const char * local_path,
 
 typedef int (* zint_init_t)(void);
 
+typedef int (* zint_set_options_t)(ConfigHandle c, SectionHandle s);
+
 typedef int (* zint_finalize_t)(void);
 
 typedef int (*zint_settype_handler_t) (int);
@@ -175,6 +185,7 @@ typedef struct
     zint_resolve_path_handler_t resolve_path;
     zint_init_t init;
     zint_finalize_t finalize;
+    zint_set_options_t set_options;
 } zint_handler_t;
 
 
@@ -199,9 +210,19 @@ zint_handler_t * zint_get_handler_from_path(
 
 int zint_ping_handlers ();
 
-int zint_initialize_handlers ();
+int zint_initialize_handlers();
+
+int zint_set_handler_options(ConfigHandle c, SectionHandle s);
 
 int zint_finalize_handlers ();
+
+/* setup handlers based on user args */
+int zint_setup_handlers(int n, char * args[]);
+
+#ifdef __cplusplus
+    } /* extern "C" */
+} /* namespace zoidfs */
+#endif /* __cplusplus */
 
 #endif /* ZINT_HANDLER_H */
 

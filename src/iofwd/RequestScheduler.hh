@@ -10,6 +10,7 @@
 #include "zoidfs/zoidfs.h"
 #include "iofwdutil/zlog/ZLogSource.hh"
 #include "Range.hh"
+#include "iofwdutil/ConfigFile.hh"
 
 namespace iofwdutil {
   namespace completion {
@@ -31,7 +32,7 @@ class RangeScheduler;
 class RequestScheduler
 {
 public:
-  RequestScheduler(zoidfs::ZoidFSAsyncAPI * async_api);
+  RequestScheduler(zoidfs::ZoidFSAsyncAPI * async_api, const iofwdutil::ConfigFile & c);
   virtual ~RequestScheduler();
 
   iofwdutil::completion::CompletionID * enqueueWrite(
@@ -48,10 +49,10 @@ protected:
   void run();
   void issue(std::vector<ChildRange *>& rs);
   void notifyConsumer();
-  
+
 private:
   iofwdutil::zlog::ZLogSource & log_;
-  
+
   boost::scoped_ptr<boost::thread> consumethread_;
   boost::mutex lock_;
   boost::condition_variable ready_;

@@ -10,7 +10,7 @@
 #include <sys/time.h>
 #include <assert.h>
 #include "zoidfs-sysio.h"
-
+#include "c-util/configfile.h"
 #include "zoidfs/dispatcher/zint-handler.h"
 
 /*
@@ -222,6 +222,12 @@ static char zoidfs_sysio_root_handle_data[SYSIO_HANDLE_DATA_SIZE];
 static struct file_handle_info zoidfs_sysio_root_handle = {NULL, zoidfs_sysio_root_handle_data, SYSIO_HANDLE_DATA_SIZE};
 
 static char zfs_sysio_driver[32];
+
+/* storage for the sysio handler options */
+static char * zoidfs_sysio_option_mfs = NULL;
+static char * zoidfs_sysio_option_mfs_root = NULL;
+static char * zoidfs_sysio_option_sysio_driver = NULL;
+
 /*
  * zoidfs sysio trace and debug tools
  */
@@ -2505,6 +2511,51 @@ static int zoidfs_sysio_drv_init_all()
 	return 0;
 }
 
+static int zoidfs_sysio_set_options(ConfigHandle c, SectionHandle s)
+{
+	ZFSSYSIO_TRACE_ENTER;
+
+    int keysize = 0;
+
+    keysize = cf_getKey(c, s, "mountpoint", NULL, 0);
+    zoidfs_sysio_option_mfs = (char *)malloc(sizeof(char) * (keysize + 1));
+    cf_getKey(c, s, "mountpoint", zoidfs_sysio_option_mfs, keysize + 1);
+
+    keysize = cf_getKey(c, s, "filesystem", NULL, 0);
+    zoidfs_sysio_option_mfs_root = (char *)malloc(sizeof(char) * (keysize + 1));
+    cf_getKey(c, s, "filesystem", zoidfs_sysio_option_mfs_root, keysize + 1);
+
+    keysize = cf_getKey(c, s, "driver", NULL, 0);
+    zoidfs_sysio_option_sysio_driver = (char *)malloc(sizeof(char) * (keysize + 1));
+    cf_getKey(c, s, "driver", zoidfs_sysio_option_sysio_driver, keysize + 1);
+
+	ZFSSYSIO_TRACE_EXIT;
+	return 0;
+}
+
+static int zoidfs_sysio_options_cleanup()
+{
+    if(zoidfs_sysio_option_mfs)
+    {
+        free(zoidfs_sysio_option_mfs);
+        zoidfs_sysio_option_mfs = NULL;
+    }
+
+    if(zoidfs_sysio_option_mfs_root)
+    {
+        free(zoidfs_sysio_option_mfs_root);
+        zoidfs_sysio_option_mfs_root = NULL;
+    }
+
+    if(zoidfs_sysio_option_sysio_driver)
+    {
+        free(zoidfs_sysio_option_sysio_driver);
+        zoidfs_sysio_option_sysio_driver = NULL;
+    }
+
+    return ZFS_OK;
+}
+
 /*
  * zoidfs_init
  */
@@ -2522,18 +2573,18 @@ static int zoidfs_sysio_init(void) {
 		char arg[4096];
         int err = 0;
 		int root_key = 1;
-		char * mfs = getenv("ZOIDFS_SYSIO_MOUNT");
-		char * mfs_root = getenv("ZOIDFS_SYSIO_MOUNT_ROOT");
-		char * sysio_driver = getenv("ZOIDFS_SYSIO_DRIVER");
+		/*char * mfs = zoidfs_sysio_option_mfs;
+		char * mfs_root = zoidfs_sysio_option_mfs_root;
+		char * sysio_driver = zoidfs_sysio_option_sysio_driver;*/
 
-        if(!mfs)
+        if(!zoidfs_sysio_option_mfs)
         {
 			ZFSSYSIO_INFO("zoidfs_sysio_init() failed, ZOIDFS_SYSIO_MOUNT env variable was not available");
 			ZFSSYSIO_TRACE_EXIT;
 			return err;
         }
 
-        if(!sysio_driver)
+        if(!zoidfs_sysio_option_mfs_root)
         {
 			ZFSSYSIO_INFO("zoidfs_sysio_init() failed, ZOIDFS_SYSIO_DRIVER env variable was not available");
 			ZFSSYSIO_TRACE_EXIT;
@@ -2542,7 +2593,7 @@ static int zoidfs_sysio_init(void) {
         else
         {
             memset(zfs_sysio_driver, 0, 32);
-            strcpy(zfs_sysio_driver, sysio_driver);
+            strcpy(zfs_sysio_driver, zoidfs_sysio_option_mfs_root);
         }
 
 		/*
@@ -2554,8 +2605,11 @@ static int zoidfs_sysio_init(void) {
          *
 		 */
 
-        ZFSSYSIO_INFO("Attempting to mount %s with a root of %s using the libsysio %s driver", mfs_root, mfs, sysio_driver);
-        if(strcmp(sysio_driver, "pvfs") == 0)
+        ZFSSYSIO_INFO("Attempting to mount %s with a root of %s using the libsysio %s driver", zoidfs_sysio_option_mfs_root, zoidfs_sysio_option_mfs, zoidfs_sysio_option_sysio_driver);
+
+/* force the standard libsysio... uncomment for the pvfs2 driver support */
+#if 0
+        if(strcmp(zoidfs_sysio_option_sysio_driver, "pvfs") == 0)
         {
             extern void start_pvfs_sysio_driver(char * m, char * mr);
 
@@ -2567,9 +2621,10 @@ static int zoidfs_sysio_init(void) {
             }
 
             /* invoke the mount for the driver mount */
-            start_pvfs_sysio_driver(mfs_root, mfs);
+            start_pvfs_sysio_driver(zoidfs_sysio_option_mfs_root, zoidfs_sysio_option_mfs);
         }
-        else if(strcmp(sysio_driver, "native") == 0)
+#endif
+        if(strcmp(zoidfs_sysio_option_sysio_driver, "native") == 0)
         {
             err = _sysio_init();
             if(err)
@@ -2588,7 +2643,7 @@ static int zoidfs_sysio_init(void) {
 		    }
 
             /* setup the driver mount */
-		    sprintf(arg, "{mnt,dev=\"%s:%s\",dir=%s,fl=2}", sysio_driver, mfs_root, mfs);
+		    sprintf(arg, "{mnt,dev=\"%s:%s\",dir=%s,fl=2}", zoidfs_sysio_option_sysio_driver, zoidfs_sysio_option_mfs_root, zoidfs_sysio_option_mfs);
 
             /* mount /dev/null and /dev/zero */
             /*sprintf(arg, "%s\n{mnt, dev=\"incore:0755\",dir=\"/dev\"}", arg);
@@ -2606,8 +2661,8 @@ static int zoidfs_sysio_init(void) {
         }
 
         /* export the root handle */
-		strcpy(zoidfs_sysio_root_path, mfs_root);
-		err = zoidfs_sysio_export(&root_key, mfs, &zoidfs_sysio_root_handle);
+		strcpy(zoidfs_sysio_root_path, zoidfs_sysio_option_mfs_root);
+		err = zoidfs_sysio_export(&root_key, zoidfs_sysio_option_mfs, &zoidfs_sysio_root_handle);
         if(err)
         {
 			    ZFSSYSIO_INFO("zoidfs_sysio_init() failed: zoidfs_sysio_export() failed");
@@ -2644,6 +2699,7 @@ static int zoidfs_sysio_finalize(void) {
 
     if(sysio_dispatcher_initialized && sysio_dispatcher_ref_count == 1)
     {
+        zoidfs_sysio_options_cleanup();
 	    zoidfs_sysio_unexport(&zoidfs_sysio_root_handle);
         _sysio_shutdown();
         sysio_dispatcher_initialized = 0;
@@ -2712,7 +2768,8 @@ zint_handler_t sysio_handler = {
    zoidfs_sysio_resize,
    zoidfs_sysio_resolve_path,
    zoidfs_sysio_init,
-   zoidfs_sysio_finalize
+   zoidfs_sysio_finalize,
+   zoidfs_sysio_set_options
 };
 
 /*

@@ -12,40 +12,40 @@ namespace iofwd
 //===========================================================================
 
 // Forwards
-class RequestHandler; 
+class RequestHandler;
 
 /**
  * Main object; Represents the whole I/O forwarding server
  * Groups resources and provides a single startup/shutdown point
  */
-class IOFWDMain 
+class IOFWDMain
 {
 public:
 
-   IOFWDMain (bool notrap, const iofwdutil::ConfigFile & config_); 
+   IOFWDMain (bool notrap, const iofwdutil::ConfigFile & config_);
 
    // Called to initialize the server
    void boot ();
 
-   void run (); 
+   void run ();
 
    // Called (possibly from other thread) when the server needs to shut down
-   void shutdown (); 
+   void shutdown ();
 
 protected:
-   std::auto_ptr<frontend::Frontend> frontend_;  
-   std::auto_ptr<RequestHandler> requesthandler_; 
+   std::auto_ptr<frontend::Frontend> frontend_;
+   std::auto_ptr<RequestHandler> requesthandler_;
 
-   iofwdutil::zlog::ZLogSource & mainlog_; 
+   iofwdutil::zlog::ZLogSource & mainlog_;
 
-   iofwdutil::completion::BMIResource bmires_; 
+   iofwdutil::completion::BMIResource bmires_;
 
    // If set, don't catch CTRL-C and don't protect threads from signals
-   bool notrap_; 
+   bool notrap_;
 
    // COnfig file
    const iofwdutil::ConfigFile & config_;
-}; 
+};
 
 //===========================================================================
 }

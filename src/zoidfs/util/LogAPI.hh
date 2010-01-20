@@ -16,16 +16,16 @@ namespace zoidfs
 class LogAPI : public ZoidFSAPI
 {
    public:
-      LogAPI (const char * sourcename = "LogAPI", ZoidFSAPI * api = 0); 
+      LogAPI (const char * sourcename = "LogAPI", ZoidFSAPI * api = 0);
 
-      virtual ~LogAPI (); 
+      virtual ~LogAPI ();
 
    protected:
-      iofwdutil::IOFWDLogSource & log_; 
+      iofwdutil::IOFWDLogSource & log_;
 
    public:
 
-      virtual int init(void); 
+      virtual int init(const iofwdutil::ConfigFile & c);
 
       virtual int finalize(void);
 
@@ -135,12 +135,12 @@ class LogAPI : public ZoidFSAPI
 
       virtual int resize(const zoidfs_handle_t * handle,
             uint64_t size,
-            zoidfs_op_hint_t * op_hint); 
+            zoidfs_op_hint_t * op_hint);
 
    protected:
-      ZoidFSSync fallback_; 
-      ZoidFSAPI * api_; 
-}; 
+      ZoidFSSync fallback_;
+      ZoidFSAPI * api_;
+};
 
 
 //===========================================================================

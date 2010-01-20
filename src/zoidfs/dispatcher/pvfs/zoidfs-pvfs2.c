@@ -18,6 +18,7 @@
 #include "pvfs2-util.h"
 
 #include "pvfs2.h"
+#include "c-util/configfile.h"
 
 #define zint_pvfs2_input_handle(_zfs_handle, _pvfs2_ref) \
     do { \
@@ -243,11 +244,11 @@ inline static int zint_pvfs2_output_attr(PVFS_sys_attr attr,
     zint_pvfs2_output_time(attr.mtime, zattr->mtime);
     zattr->size = attr.size;
     zattr->uid = attr.owner;
-    zattr->gid = attr.group; 
+    zattr->gid = attr.group;
     zattr->fsid = 0;
-    zattr->fileid = 0; 
-    zattr->blocksize = 4*1024*1024; 
-    zattr->nlink = 2; /* pvfs has no hardlinks */ 
+    zattr->fileid = 0;
+    zattr->blocksize = 4*1024*1024;
+    zattr->nlink = 2; /* pvfs has no hardlinks */
     zattr->type = zint_pvfs2_output_attr_type(attr.objtype);
     zattr->mask = zint_pvfs2_output_attr_mask(attr.mask);
 
@@ -360,7 +361,7 @@ inline static void zint_pvfs2_split_path(const char * path,
 
 static int zint_pvfs2_null(void)
 {
-   /* need to ping pvfs server here */ 
+   /* need to ping pvfs server here */
     return ZFS_OK;
 }
 
@@ -822,7 +823,7 @@ static int zint_pvfs2_remove(const zoidfs_handle_t * parent_handle,
         char * base_str;
 
         zint_pvfs2_split_path(full_path, &base_str, &component_str);
- 
+
         ret = PVFS_sys_lookup(ref.fs_id, base_str, &creds, &lookup_resp,
                               PVFS2_LOOKUP_LINK_NO_FOLLOW, NULL);
 
@@ -1096,7 +1097,7 @@ static int zint_pvfs2_mkdir(const zoidfs_handle_t * parent_handle,
 
         zint_pvfs2_split_path(full_path, &base_str, &component_str);
 
-        ret = PVFS_sys_lookup(ref.fs_id, base_str, &creds, &lookup_resp, 
+        ret = PVFS_sys_lookup(ref.fs_id, base_str, &creds, &lookup_resp,
                               PVFS2_LOOKUP_LINK_NO_FOLLOW, NULL);
 
         if(base_str)
@@ -1221,14 +1222,14 @@ static int zint_pvfs2_resolve_path(const char * local_path,
     PVFS_fs_id fsid;
 
     ret = PVFS_util_resolve(local_path, &fsid, fs_path, fs_path_max);
-    
+
      ref.fs_id = fsid;
      ref.handle = 0;
- 
+
      if(newhandle)
      {
          zint_pvfs2_output_handle(ref, newhandle);
-         *usenew = 1; 
+         *usenew = 1;
      }
 
 
@@ -1266,6 +1267,11 @@ static int zint_pvfs2_finalize(void)
     return ZFS_OK;
 }
 
+static int zint_pvfs2_set_options(ConfigHandle UNUSED(c), SectionHandle UNUSED(s))
+{
+    return ZFS_OK;
+}
+
 zint_handler_t pvfs2_handler =
 {
     zint_pvfs2_null,
@@ -1286,7 +1292,8 @@ zint_handler_t pvfs2_handler =
     zint_pvfs2_resize,
     zint_pvfs2_resolve_path,
     zint_pvfs2_init,
-    zint_pvfs2_finalize
+    zint_pvfs2_finalize,
+    zint_pvfs2_set_options
 };
 
 /*

@@ -20,7 +20,6 @@ IOFWDMain::IOFWDMain (bool notrap, const iofwdutil::ConfigFile & co)
 
 void IOFWDMain::boot ()
 {
-  
    ZLOG_DEBUG (mainlog_, "Starting IOFWD Frontend"); 
    frontend_.reset (new frontend::IOFWDFrontend (bmires_));
    
@@ -29,7 +28,7 @@ void IOFWDMain::boot ()
    frontend_->init ();
 
    // Set handler for frontend
-   requesthandler_.reset (new DefRequestHandler ()); 
+   requesthandler_.reset (new DefRequestHandler(config_.openSectionDefault("requesthandler"))); 
    frontend_->setHandler (requesthandler_.get());
 
 

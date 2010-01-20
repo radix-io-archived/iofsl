@@ -66,9 +66,11 @@ iofwdutil::bmi::BMIBuffer * BMIBufferAllocCompletionID::get_buf()
 
 //===========================================================================
 
-BMIBufferPool::BMIBufferPool(uint64_t size, uint64_t max_num)
-  : size_(size), cur_size_(0), max_num_(max_num)
+BMIBufferPool::BMIBufferPool(const iofwdutil::ConfigFile & c)
+  : size_(0), cur_size_(0), max_num_(0)
 {
+    size_ = c.getKeyAsDefault("buffersize", 0);
+    max_num_ = c.getKeyAsDefault("maxnumbuffers", 0);
 }
 
 BMIBufferPool::~BMIBufferPool()
@@ -107,7 +109,7 @@ BMIBufferPool::free(WaitingBMIBuffer * b)
     WaitingBMIBuffer * wait_b = wait_q_.front();
     wait_q_.pop_front();
     m_.unlock();
-    
+
     wait_b->mutex.lock();
     delete b->buf;
     wait_b->buf->resize(size_);
@@ -116,7 +118,7 @@ BMIBufferPool::free(WaitingBMIBuffer * b)
   } else {
     delete b->buf;
     b->buf = NULL;
-    
+
     cur_size_--;
     m_.unlock();
   }

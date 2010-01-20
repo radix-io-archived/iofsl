@@ -23,10 +23,10 @@ namespace zoidfs
 
 #define LOG(a) ZLOG_DEBUG(log_,a)
 
-int LogAPI::init(void)
+int LogAPI::init(const iofwdutil::ConfigFile & c)
 {
    LOG("zoidfs_init");
-   return api_->init ();
+   return api_->init(c);
 }
 
 int LogAPI::finalize(void)

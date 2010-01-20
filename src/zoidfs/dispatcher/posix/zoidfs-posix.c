@@ -33,7 +33,7 @@
 #include "fcache.h"   /* zoidfs handle <-> filename cache */
 #include "dcache.h"   /* zoidfs handle <-> fd cache */
 
-
+#include "c-util/configfile.h"
 
 #ifndef NDEBUG
 static int do_debug = 0;
@@ -256,11 +256,11 @@ static void zoidfs_path_fix (char * buf)
    zoidfs_path_fix_link (buf);
 
    len = strlen (buf);
-   
+
    /*
     * This interferes with symlinks
     */
-   
+
    /* if the last character is a /, remove it
     * unless it is also the first character */
 
@@ -413,7 +413,7 @@ static int zoidfs_posix_getattr(const zoidfs_handle_t *handle, zoidfs_attr_t *at
 
    /* always retrieve everything */
 
-   /* Don't modify the mask! */ 
+   /* Don't modify the mask! */
    /* attr->mask = ZOIDFS_ATTR_MODE | ZOIDFS_ATTR_NLINK |
       ZOIDFS_ATTR_UID  |ZOIDFS_ATTR_GID | ZOIDFS_ATTR_SIZE |
       ZOIDFS_ATTR_ATIME | ZOIDFS_ATTR_CTIME | ZOIDFS_ATTR_MTIME; */
@@ -594,21 +594,21 @@ static int our_open (const char * filename, int *err)
 
       if (*err == EEXIST)
       {
-         // File seems to exist already; Try to open 
+         // File seems to exist already; Try to open
          fd = our_open (filename, err);
          if (fd < 0 && *err == ENOENT)
          {
-            // strange: somebody removed in the mean time? 
+            // strange: somebody removed in the mean time?
             zoidfs_debug ("File %s disappeared before we could open?? Retrying to create\n",
                   filename);
             continue;
          }
          // the file existed, so whatever reason our_open had for failing is
-         // good enough for us 
+         // good enough for us
          return fd;
       }
 
-      // failed, but not because the file already existed: give up 
+      // failed, but not because the file already existed: give up
       return fd;
    }
 }*/
@@ -718,7 +718,7 @@ int filename2handle (const struct stat * s, const char * buf, zoidfs_handle_t * 
  * Note: zoidfs_lookup cannot remove a trailing '/' from the path /if the path
  * points to a symbolic link which points to a directory/!
  *
- * In other words, for a symbolic link a/b/c to a directory, a/b/c/ en a/b/c 
+ * In other words, for a symbolic link a/b/c to a directory, a/b/c/ en a/b/c
  * have different zoidfs handles.
  */
 static int zoidfs_posix_lookup(const zoidfs_handle_t *parent_handle,
@@ -1268,6 +1268,11 @@ static int zoidfs_posix_resolve_path (const char * local_path,
    return ZFS_OK;
 }
 
+static int zoidfs_posix_set_options(ConfigHandle UNUSED(c), SectionHandle UNUSED(s))
+{
+    return ZFS_OK;
+}
+
 zint_handler_t posix_handler = {
    zoidfs_posix_null,
    zoidfs_posix_getattr,
@@ -1287,7 +1292,8 @@ zint_handler_t posix_handler = {
    zoidfs_posix_resize,
    zoidfs_posix_resolve_path,
    zoidfs_posix_init,
-   zoidfs_posix_finalize
+   zoidfs_posix_finalize,
+   zoidfs_posix_set_options
 };
 
 

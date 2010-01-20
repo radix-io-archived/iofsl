@@ -49,7 +49,7 @@ public:
    std::vector<std::string> getMultiKey (const char * name) const;
 
    /// Return key value as certain type. Throws bad_cast if exception fails.
-   template <typename T> 
+   template <typename T>
    T getKeyAs (const char * name) const;
 
    /// Return key value as certain type, or default if missing. Throws
@@ -62,15 +62,15 @@ public:
 
    void dumpToStdErr () const;
 
+   ConfigHandle getConfigHandle () const;
+
+   SectionHandle getSectionHandle () const;
+
 protected:
    ConfigFile (const ConfigFile & parent, SectionHandle h);
 
    // Called to throw exception
    void error (const std::string & s) const;
-
-   ConfigHandle getConfigHandle () const;
-
-   SectionHandle getSectionHandle () const;
 
 protected:
    boost::intrusive_ptr<ConfigContainer> configfile_;
@@ -78,7 +78,7 @@ protected:
 };
 
 
-template <typename T> 
+template <typename T>
 T ConfigFile::getKeyAs (const char * name) const
 {
    return boost::lexical_cast<T> (getKey (name));

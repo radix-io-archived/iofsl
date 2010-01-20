@@ -7,6 +7,7 @@
 #include "zoidfs/zoidfs.h"
 #include "zoidfs/dispatcher/zint-handler.h"
 #include "c-util/tools.h"
+#include "c-util/configfile.h"
 
 /* dispatcher variables */
 static void * nofs_handle_tree_root = NULL;
@@ -323,6 +324,11 @@ static int zoidfs_nofs_finalize(void)
     return ZFS_OK;
 }
 
+static int zoidfs_nofs_set_options(ConfigHandle UNUSED(c), SectionHandle UNUSED(s))
+{
+    return ZFS_OK;
+}
+
 zint_handler_t nofs_handler =
 {
     zoidfs_nofs_null,
@@ -343,5 +349,6 @@ zint_handler_t nofs_handler =
     zoidfs_nofs_resize,
     zoidfs_nofs_resolve_path,
     zoidfs_nofs_init,
-    zoidfs_nofs_finalize
+    zoidfs_nofs_finalize,
+    zoidfs_nofs_set_options
 };
