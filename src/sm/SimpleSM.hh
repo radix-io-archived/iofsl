@@ -104,8 +104,8 @@ namespace sm
 
 template <typename T>
 SimpleSM<T>::SimpleSM (SMManager & m)
-  : smm_(m), next_(0), next_status_(0), running_(false),
-   yield_ (false)
+  : smm_(m), next_(0), next_status_(0), yield_(false), 
+   running_(false)
 {
    setNextMethodT<&T::init> (0);
 }

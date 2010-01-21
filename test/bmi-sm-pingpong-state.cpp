@@ -94,7 +94,7 @@ struct BMIPingPong : TrackLive,
         smm_(input.manager_),
         bmi_ (input.bmi_),
         timer_ (input.timer_),
-        slots_ (*this, smm_),
+        slots_ (*this),
         master_(master),
         mine_ (mine),
         other_ (other),
@@ -210,8 +210,8 @@ struct BMIPingPong : TrackLive,
 //======= PPInput methods ===================================================
 //===========================================================================
 
-PPInput::PPInput (size_t threads, size_t stop_after_time,
-      size_t stop_after_mb) :
+PPInput::PPInput (size_t threads, size_t UNUSED(stop_after_time),
+      size_t UNUSED(stop_after_mb)) :
    manager_(threads), timerwrap_(&timer_), bmiwrap_(&bmi_)
 {
 }
