@@ -14,11 +14,11 @@ namespace sm
    //========================================================================
 
    /**
-    * This class provides a fixed number of callback slots for 
+    * This class provides a fixed number of callback slots for
     * a SimpleSM machine.
     *
-    * The class directly calls intrusive_ptr_add_ref 
-    * and intrusive_ptr_release 
+    * The class directly calls intrusive_ptr_add_ref
+    * and intrusive_ptr_release
     *
     * Note: no locking needed, The same callback slot cannot be used
     * concurrently.
@@ -30,6 +30,8 @@ namespace sm
          enum { FREE = iofwdevent::LAST, WAITING };
 
          typedef typename T::next_method_t next_method_t;
+
+         typedef SimpleSlots<SLOTS,T> SELF;
 
       public:
          SimpleSlots (T & client, bool nothread = false)
@@ -88,7 +90,7 @@ namespace sm
             ALWAYS_ASSERT(next);
             client_.setNextMethod (next, status);
          }
-     
+
       protected:
 
          void callback (int pos, int status)
@@ -116,28 +118,36 @@ namespace sm
                   client_.resumeSM (s.next_, s.status_);
                }
 
-            }
+               // We unlock the mutex so, that if we end up destroying
+               // ourselves,
+               // we don't destroy a locked mutex.
 
+            }
+         }
+
+         static void callbackhelper (SELF & self, int pos, int status)
+         {
+            self.callback (pos, status);
             // The callback has happened, we don't care if the client doesn't
             // stay alive.
 
-            // We unlock the mutex so, that if we end up destroying ourselves,
-            // we don't destroy a locked mutex.
 
-            // We can end up destroying ourselves if: 
-            //   -> the client is rescheduled (s.next_) = true 
+            // We can end up destroying ourselves if:
+            //   -> the client is rescheduled (s.next_) = true
             //   -> it runs before we get to ptr_release
             //   -> it has no more pending actions (i.e. the SimpleSM is dead)
 
-            intrusive_ptr_release (&client_);
+            // to avoid destroying ourselves, consider making callback status
+            // and binding ref to *this
+            intrusive_ptr_release (&self.client_);
          }
 
          template <size_t POS>
-         void callbackT (int status)
+         static void callbackT (SELF & self, int status)
          {
-            callback (POS, status);
+            callbackhelper (self, POS, status);
          }
-  
+
          iofwdevent::CBType getCallback (size_t pos)
          {
             ASSERT( pos < SLOTS);
@@ -154,7 +164,7 @@ namespace sm
                case 8: return boost::bind(&SimpleSlots<SLOTS,T>::template callbackT<8>, boost::ref(*this), _1);
                case 9: return boost::bind(&SimpleSlots<SLOTS,T>::template callbackT<9>, boost::ref(*this), _1);
                default:
-                  return boost::bind (&SimpleSlots<SLOTS,T>::callback,
+                  return boost::bind (&SimpleSlots<SLOTS,T>::callbackhelper,
                         boost::ref(*this), pos, _1);
             }
          }

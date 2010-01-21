@@ -26,7 +26,7 @@ namespace sm
 
    protected:
 
-      /** 
+      /**
        * This method can be called to yield the CPU;
        * The SimpleSM will be executed once all the other waiting state
        * machines had a chance to execute.
@@ -104,7 +104,7 @@ namespace sm
 
 template <typename T>
 SimpleSM<T>::SimpleSM (SMManager & m)
-  : smm_(m), next_(0), next_status_(0), yield_(false), 
+  : smm_(m), next_(0), next_status_(0), yield_(false),
    running_(false)
 {
    setNextMethodT<&T::init> (0);
@@ -120,7 +120,6 @@ SimpleSM<T>::~SimpleSM ()
 template <typename T>
 bool SimpleSM<T>::execute ()
 {
-
    {
       boost::mutex::scoped_lock l2(state_lock_);
 
