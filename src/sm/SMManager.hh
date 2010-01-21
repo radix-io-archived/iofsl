@@ -36,6 +36,11 @@ public:
     */
    void schedule (SMClient * client);
 
+   /**
+    * Immediately execute the client
+    */
+   void runNow (SMClient * client);
+
    /// Stop all worker threads
    void stopThreads ();
 
