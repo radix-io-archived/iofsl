@@ -25,36 +25,36 @@ namespace test
 
 #define BOOST_CHECK_MESSAGE_TS(a,b) \
 {\
-   boost::mutex::scoped_lock l__(::test::boost::boost_test_lock_); \
+   ::boost::mutex::scoped_lock l__(::test::boost::boost_test_lock_); \
    BOOST_CHECK_MESSAGE(a,b); \
 }
 
 #define BOOST_CHECK_TS(a) \
 {\
-   boost::mutex::scoped_lock l__(::test::boost::boost_test_lock_);\
+   ::boost::mutex::scoped_lock l__(::test::boost::boost_test_lock_);\
    BOOST_CHECK(a);\
 }
 
 #define BOOST_TEST_MESSAGE_TS(a) \
 {\
-   boost::mutex::scoped_lock l__(::test::boost::boost_test_lock_);\
+   ::boost::mutex::scoped_lock l__(::test::boost::boost_test_lock_);\
    BOOST_TEST_MESSAGE(a);\
 }
 
 #define BOOST_WARN_EQUAL_TS(a,b) \
  { \
-    boost::mutex::scoped_lock l__(::test::boost::boost_test_lock_); \
+    ::boost::mutex::scoped_lock l__(::test::boost::boost_test_lock_); \
     BOOST_WARN_EQUAL(a,b); }
 
 #define BOOST_WARN_MESSAGE_TS(a,b) \
 {\
-   boost::mutex::scoped_lock l__(::test::boost::boost_test_lock_); \
+   ::boost::mutex::scoped_lock l__(::test::boost::boost_test_lock_); \
    BOOST_WARN_MESSAGE(a,b); \
 }
 
 #define BOOST_WARN_TS(a) \
 {\
-   boost::mutex::scoped_lock l__(::test::boost::boost_test_lock_);\
+   ::boost::mutex::scoped_lock l__(::test::boost::boost_test_lock_);\
    BOOST_WARN(a);\
 }
 
