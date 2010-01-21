@@ -105,3 +105,12 @@ test/zoidfsapi-link-test
 test/zoidfsapi-lookup-perm-test
 test/zoidfsapi-rename-test
 test/zoidfsapi-symlink-test
+test/boost/atomics
+test/boost/bmi-pingpong
+
+
+
+test/boost/iofwdevent-resource
+test/boost/encoder
+test/boost/dummy
+test/boost/sm

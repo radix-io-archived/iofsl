@@ -138,3 +138,21 @@ test_zoidfs_microbenchmarks_mkdir_thput_local_LDFLAGS = ${test_microbenchmarks_l
 endif
 
 endif
+
+
+noinst_PROGRAMS += test/bmi-sm-pingpong
+test_bmi_sm_pingpong_SOURCES = test/bmi-sm-pingpong.cpp \
+			       test/bmi-sm-pingpong-state.hh \
+			       test/bmi-sm-pingpong-state.cpp \
+			       test/BMIInit.hh \
+			       test/BMILink.hh
+test_bmi_sm_pingpong_LDADD = ${top_builddir}/src/sm/libsm.a \
+			     ${top_builddir}/src/iofwdevent/libiofwdevent.a \
+			     ${top_builddir}/src/iofwdutil/libiofwdutil.a \
+				@BOOST_PROGRAM_OPTIONS_LIB@ \
+			     @BOOST_REGEX_LIB@ \
+			     @BOOST_THREAD_LIB@ \
+			     @BOOST_DATE_TIME_LIB@ \
+			     @BMI_LIBS@
+
+test_bmi_sm_pingpong_LDFLAGS = @BMI_LDFLAGS@ @BOOST_LDFLAGS@

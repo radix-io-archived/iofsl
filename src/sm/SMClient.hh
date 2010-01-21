@@ -14,7 +14,7 @@ public:
 
    /**
     * Called when the client is scheduled. It can run as long as
-    * desired; If false is returned, it will be rescheduled.
+    * desired; If false is returned, it will immediately be rescheduled.
     */
    virtual bool execute () = 0;
 
