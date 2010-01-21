@@ -12,6 +12,14 @@ namespace sm
 {
 //===========================================================================
 
+void SMManager::runNow (SMClient * client)
+{
+   do
+   {
+      ZLOG_DEBUG_MORE(log_,format("SMManager runNow client %p") % (void*) client);
+   } while (client->execute ());
+}
+
 void SMManager::schedule (SMClient * client)
 {
    ZLOG_DEBUG_MORE(log_,format("Scheduling client %p") % (void*) client);
