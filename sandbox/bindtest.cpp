@@ -2,6 +2,7 @@
 #include <boost/thread.hpp>
 #include <boost/function.hpp>
 #include <boost/date_time/posix_time/posix_time.hpp>
+#include "iofwdutil/tools.hh"
 
 using namespace std;
 using namespace boost;
@@ -68,17 +69,17 @@ struct B : public A
       {
       }
 
-      virtual void func3 (const int & i)
+      virtual void func3 (const int & UNUSED(i))
       {
       }
 
-      virtual void func2 (int i, int j)
+      virtual void func2 (int , int )
       {
       }
 };
 
 
-int main (int argc, char ** args)
+int main (int , char ** )
 {
    cout << "Normal function pointer\n";
    doTest<void (*) ()> (&testfunc);

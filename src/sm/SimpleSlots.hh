@@ -32,7 +32,7 @@ namespace sm
          typedef typename T::next_method_t next_method_t;
 
       public:
-         SimpleSlots (T & client, SMManager & smm, bool nothread = false)
+         SimpleSlots (T & client, bool nothread = false)
             : client_(client),
               nothread_ (nothread)
          {
