@@ -12,6 +12,7 @@ src/iofwdevent/TimerResource.hh \
 src/iofwdevent/TimerResource.cpp \
 src/iofwdevent/SingleCompletion.cpp \
 src/iofwdevent/SingleCompletion.hh \
+src/iofwdevent/MultiCompletion.hh \
 src/iofwdevent/ResourceInactiveException.hh \
 src/iofwdevent/ResourceInactiveException.cpp \
 src/iofwdevent/ThreadedResource.hh \
