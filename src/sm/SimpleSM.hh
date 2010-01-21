@@ -113,6 +113,7 @@ SimpleSM<T>::SimpleSM (SMManager & m)
 template <typename T>
 SimpleSM<T>::~SimpleSM ()
 {
+   ALWAYS_ASSERT(!running_);
    // This might be better as: ZLOG_WARN_IF(!done_called_, "...")
    //ALWAYS_ASSERT(done_called_);
 }
@@ -120,6 +121,8 @@ SimpleSM<T>::~SimpleSM ()
 template <typename T>
 bool SimpleSM<T>::execute ()
 {
+   //boost::intrusive_ptr<T> self (this);
+
    {
       boost::mutex::scoped_lock l2(state_lock_);
 
@@ -159,6 +162,7 @@ bool SimpleSM<T>::execute ()
          }
    } while (true);
 
+   ALWAYS_ASSERT(alive());
    return yield_;
 }
 

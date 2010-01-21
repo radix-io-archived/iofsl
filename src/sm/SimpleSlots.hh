@@ -137,6 +137,10 @@ namespace sm
             //   -> it runs before we get to ptr_release
             //   -> it has no more pending actions (i.e. the SimpleSM is dead)
 
+            // As long as somebody is calling our execute method, it should be
+            // impossible here to destroy the client since whoever is calling
+            // its execute method should still hold a shared pointer to it.
+
             // to avoid destroying ourselves, consider making callback status
             // and binding ref to *this
             intrusive_ptr_release (&self.client_);
