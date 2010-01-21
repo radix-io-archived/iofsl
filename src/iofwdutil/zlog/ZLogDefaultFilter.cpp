@@ -5,8 +5,8 @@
 #include "ZLogSource.hh"
 #include "ZLogDefaultFilter.hh"
 
-using namespace boost; 
-using namespace boost::gregorian; 
+using namespace boost;
+using namespace boost::gregorian;
 using namespace boost::posix_time;
 
 namespace iofwdutil
@@ -16,8 +16,8 @@ namespace iofwdutil
 //===========================================================================
 
 
-ZLogDefaultFilter::ZLogDefaultFilter ()      
-   : fmt_("[%s/%u] (%s) %s\n")
+ZLogDefaultFilter::ZLogDefaultFilter ()
+   : fmt_("[%s/%u] T%i (%s) %s\n")
 {
 }
 
@@ -29,10 +29,11 @@ void ZLogDefaultFilter::initialize ()
 {
 }
 
-void ZLogDefaultFilter::setOption (const std::string & name, 
+void ZLogDefaultFilter::setOption (const std::string & name,
       const std::string & value)
 {
-   ZLogFilter::setOption (name, value); 
+   boost::mutex::scoped_lock l (lock_);
+   ZLogFilter::setOption (name, value);
 }
 
 std::string ZLogDefaultFilter::getTime () const
@@ -44,8 +45,9 @@ void ZLogDefaultFilter::filterMsg (const ZLogSource & source,
       int level, std::string & msg)
 {
    // fmt is shared: need to lock
-   boost::mutex::scoped_lock l (lock_); 
-   msg = str(fmt_ % getTime() % level % source.getSourceName () % msg); 
+   boost::mutex::scoped_lock l (lock_);
+   msg = str(fmt_ % getTime() % level % boost::this_thread::get_id() %
+         source.getSourceName () % msg);
 }
 
 
