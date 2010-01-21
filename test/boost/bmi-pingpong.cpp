@@ -14,6 +14,9 @@
 #include "iofwdevent/ResourceWrapper.hh"
 #include "iofwdevent/SingleCompletion.hh"
 
+#include "test/BMILink.hh"
+#include "test/BMIInit.hh"
+
 #include "ThreadSafety.hh"
 
 const char *        ADDRESS = "tcp://127.0.0.1:1236";
@@ -28,30 +31,12 @@ using namespace std;
 using namespace iofwdevent;
 using namespace boost;
 
-class BMIInit 
-{
-public:
-   BMIInit (const char * methods, const char * listen, int flags)
-   {
-      if (BMI_initialize (methods, listen, flags)<0)
-      {
-         throw "Error initializing BMI!";
-      }
-   }
-
-   ~BMIInit ()
-   {
-      BMI_finalize ();
-   }
-};
-
-
 //____________________________________________________________________________//
    
-inline void checkBMI (int ret)
-   {
+inline void mycheckBMI (int ret)
+{
       BOOST_CHECK_TS(ret >= 0);
-   }
+}
 
 //____________________________________________________________________________//
 
@@ -62,7 +47,7 @@ public:
       : sender_(sender),
       bmi_ (bmires)
    {
-      checkBMI (BMI_addr_lookup (&addr_, ADDRESS));
+      mycheckBMI (BMI_addr_lookup (&addr_, ADDRESS));
    }
 
 
@@ -112,58 +97,6 @@ protected:
    BMI_addr_t addr_;
    BMIResource & bmi_;
 };
-
-class SetupLink 
-{
-public:
-   SetupLink (BMIResource & res)
-      : bmi_(res)
-   {
-   }
-
-
-   void findEndPoints ()
-   {
-      SingleCompletion waitReceive;
-      SingleCompletion waitSend;
-
-      char dummy = 66;
-      int out;
-      BMI_unexpected_info info;
-
-      checkBMI (BMI_addr_lookup (&p1_, ADDRESS));
-      bmi_.post_sendunexpected (waitSend, p1_,
-            &dummy, sizeof(dummy), BMI_EXT_ALLOC,
-            0, 0);
-      bmi_.post_testunexpected (waitReceive, 1,
-            &out, &info);
-
-      BOOST_TEST_MESSAGE_TS("Waiting for message arrival");
-      waitSend.wait ();
-      waitReceive.wait ();
-
-      BOOST_CHECK_EQUAL_TS(info.size, sizeof(dummy));
-      BOOST_CHECK_EQUAL_TS(* static_cast<char*>(info.buffer), dummy);
-      BOOST_CHECK_EQUAL_TS(info.tag, 0);
-      BOOST_CHECK_TS(info.error_code >= 0);
-
-      p2_ = info.addr;
-
-      BMI_unexpected_free (p2_, info.buffer);
-
-   }
-
-   BMI_addr_t getP1 () const
-   { return p1_; }
-
-   BMI_addr_t getP2 () const
-   { return p2_; }
-
-protected:
-   BMIResource & bmi_;
-   BMI_addr_t p1_;
-   BMI_addr_t p2_;
-};
 //____________________________________________________________________________//
 
 BOOST_AUTO_TEST_SUITE( bmipingpong );
@@ -182,8 +115,8 @@ struct Fixture {
     }
 
 protected:
-    BMIInit bmiinit_;
-    BMIResource bmires_;
+    test::BMIInit bmiinit_;
+    iofwdevent::BMIResource bmires_;
     ResourceWrapper bmi_;
 };
 
@@ -191,7 +124,7 @@ protected:
 
 BOOST_FIXTURE_TEST_CASE( unexpected, Fixture )
 {
-   SetupLink link (bmires_);
+   test::SetupLink link (bmires_, ADDRESS);
 
    BOOST_TEST_MESSAGE_TS("Testing unexpected receive");
    link.findEndPoints ();
@@ -203,12 +136,12 @@ BOOST_FIXTURE_TEST_CASE( unexpected, Fixture )
 BOOST_FIXTURE_TEST_CASE( talkself, Fixture )
 {
    BMI_addr_t addr_;
-   checkBMI (BMI_addr_lookup (&addr_, ADDRESS));
+   mycheckBMI (BMI_addr_lookup (&addr_, ADDRESS));
    SingleCompletion waitsend;
    SingleCompletion waitreceive;
    unsigned int received;
    bmi_size_t actual;
-   SetupLink link (bmires_);
+   test::SetupLink link (bmires_, ADDRESS);
 
    BOOST_TEST_MESSAGE_TS("Making connection");
    link.findEndPoints ();
