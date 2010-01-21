@@ -3,6 +3,7 @@
 
 #include "iofwdutil/tools.hh"
 #include "BMIResource.hh"
+#include "BMIError.hh"
 
 using namespace boost;
 
@@ -96,13 +97,18 @@ namespace iofwdevent
    {
    }
 
-   void BMIResource::handleBMIError (const CBType & UNUSED(u), int UNUSED(bmiret))
+   void BMIResource::handleBMIError (const CBType & UNUSED(u), int bmiret)
    {
       // TODO: convert into exception and call u->exception
                // TODO: maybe check for cancel?
                // Shouldn't make a difference right now since we don't do
                // cancel.
-      ALWAYS_ASSERT(false && "TODO");
+      char buf[512];
+      // strerror_r always includes 0
+      bmi_strerror_r (bmiret, buf, sizeof(buf));
+
+      ZLOG_INFO(log_, format("BMI error: %s") % buf);
+      ALWAYS_ASSERT(false && "BMI Error occurred!");
    }
 
    /**
