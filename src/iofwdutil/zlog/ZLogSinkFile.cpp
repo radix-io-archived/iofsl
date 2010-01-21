@@ -22,6 +22,7 @@ ZLogSinkFile::~ZLogSinkFile ()
 
 void ZLogSinkFile::openFile ()
 {
+   boost::mutex::scoped_lock l (outputlock_);
    if (filename_.empty())
       throw ZLogException ("ZLogSinkFile needs a configured filename! "
             "(option filename)\n");
@@ -42,6 +43,7 @@ void ZLogSinkFile::initialize ()
 void ZLogSinkFile::setOption (const std::string & name, const
       std::string & val)
 {
+   boost::mutex::scoped_lock l (outputlock_);
    if (name == "filename")
       filename_ = val;
    else

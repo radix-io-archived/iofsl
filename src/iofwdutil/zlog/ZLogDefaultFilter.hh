@@ -7,35 +7,35 @@
 
 namespace iofwdutil
 {
-   namespace zlog
-   {
+  namespace zlog
+  {
 //===========================================================================
 
 class ZLogDefaultFilter : public ZLogFilter
 {
 public:
-   ZLogDefaultFilter (); 
+  ZLogDefaultFilter ();
 
-   virtual ~ZLogDefaultFilter (); 
+  virtual ~ZLogDefaultFilter ();
 
-   virtual void initialize (); 
+  virtual void initialize ();
 
-   virtual void filterMsg (const ZLogSource & source, int, std::string & msg); 
+  virtual void filterMsg (const ZLogSource & source, int, std::string & msg);
 
-   virtual void setOption (const std::string & name, 
-         const std::string & val); 
-
-protected:
-   std::string getTime () const; 
+  virtual void setOption (const std::string & name,
+        const std::string & val);
 
 protected:
-   boost::format fmt_; 
+  std::string getTime () const;
 
-   boost::mutex lock_; 
-}; 
+protected:
+  boost::format fmt_;
+
+  boost::mutex lock_;
+};
 
 //===========================================================================
-   }
+  }
 }
 
 #endif
