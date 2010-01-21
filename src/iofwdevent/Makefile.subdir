@@ -18,4 +18,6 @@ src/iofwdevent/ThreadedResource.hh \
 src/iofwdevent/ThreadedResource.cpp \
 src/iofwdevent/ResourceWrapper.hh \
 src/iofwdevent/TokenResource.hh \
-src/iofwdevent/TokenResource.cpp
+src/iofwdevent/TokenResource.cpp \
+src/iofwdevent/BMIError.hh \
+src/iofwdevent/BMIError.cpp
