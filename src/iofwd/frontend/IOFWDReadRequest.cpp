@@ -11,108 +11,113 @@ namespace iofwd
 
 IOFWDReadRequest::~IOFWDReadRequest ()
 {
-   if (mem_starts_)
-      delete[] mem_starts_;
-   if (mem_sizes_)
-      delete[] mem_sizes_;
-   if (file_starts_)
-      delete[] file_starts_;
-   if (file_sizes_)
-      delete[] file_sizes_;
-   if (bmi_mem_sizes_)
-      delete[] bmi_mem_sizes_;
-   if(op_hint_)
-   {
-      zoidfs::util::ZoidFSHintDestroy(&op_hint_);
-   }
+   if (param_.mem_starts)
+      delete[] param_.mem_starts;
+   if (param_.mem_sizes)
+      delete[] param_.mem_sizes;
+   if (param_.file_starts)
+      delete[] param_.file_starts;
+   if (param_.file_sizes)
+      delete[] param_.file_sizes;
+   if (param_.bmi_mem_sizes)
+      delete[] param_.bmi_mem_sizes;
+   if(param_.op_hint)
+      zoidfs::util::ZoidFSHintDestroy(&(param_.op_hint));
+   if(bmi_buffer_)
+      delete bmi_buffer_;
 }
 
 //
-// Possible optimizations: 
+// Possible optimizations:
 //   * switch to hybrid stack/heap arrays for uint64_t arrays
 //
 const IOFWDReadRequest::ReqParam & IOFWDReadRequest::decodeParam ()
 {
+   // get the handle
    process (req_reader_, handle_);
 
-   process (req_reader_, mem_count_);
-   mem_sizes_ = new size_t[mem_count_];
-   process (req_reader_, encoder::EncVarArray(mem_sizes_, mem_count_));
+   // get the mem count and sizes
+   process (req_reader_, param_.mem_count);
+   param_.mem_sizes = new size_t[param_.mem_count];
+   process (req_reader_, encoder::EncVarArray(param_.mem_sizes, param_.mem_count));
 
-   process (req_reader_, file_count_);
-   file_starts_ = new zoidfs::zoidfs_file_ofs_t[file_count_];
-   process (req_reader_, encoder::EncVarArray(file_starts_, file_count_));
-   file_sizes_ = new zoidfs::zoidfs_file_ofs_t[file_count_];
-   process (req_reader_, encoder::EncVarArray(file_sizes_, file_count_));
+   // get the file count, sizes, and starts
+   process (req_reader_, param_.file_count);
+   param_.file_starts = new zoidfs::zoidfs_file_ofs_t[param_.file_count];
+   process (req_reader_, encoder::EncVarArray(param_.file_starts, param_.file_count));
+   param_.file_sizes = new zoidfs::zoidfs_file_ofs_t[param_.file_count];
+   process (req_reader_, encoder::EncVarArray(param_.file_sizes, param_.file_count));
 
-   process (req_reader_, pipeline_size_);
-   decodeOpHint (&op_hint_);
+   // get the pipeline size
+   process (req_reader_, param_.pipeline_size);
+   decodeOpHint (&param_.op_hint);
+
+   // init other param vars
+   param_.mem_total_size = 0;
 
    // allocate buffer for normal mode
-   if (pipeline_size_ == 0) {
-    for(size_t i = 0 ; i < mem_count_ ; i++)
+    if (param_.pipeline_size == 0)
     {
-        mem_total_size_ += mem_sizes_[i];
-    }
-    bmi_buffer_.resize(mem_total_size_);
-    mem_ = (char *)bmi_buffer_.get();
+        char * mem = NULL;
+        // compute the total size of the io op
+        for(size_t i = 0 ; i < param_.mem_count ; i++)
+        {
+            param_.mem_total_size += param_.mem_sizes[i];
+        }
 
-     // NOTICE: mem_starts_ and mem_sizes_ are alignend with file_sizes
-     // This is for request scheduler to easily handle the ranges without
-     // extra memory copying.
-     mem_count_ = file_count_;
-     mem_starts_ = new char*[file_count_];
-     delete[] mem_sizes_;
-     mem_sizes_ = new size_t[file_count_];
-#if SIZEOF_SIZE_T != SIZEOF_BMI_SIZE_T
-     bmi_mem_sizes_ = new bmi_size_t[file_count_];
+        // create the bmi buffer
+        bmi_buffer_ = new iofwdutil::bmi::BMIBuffer(addr_, iofwdutil::bmi::BMI::ALLOC_RECEIVE);
+        bmi_buffer_->resize(param_.mem_total_size);
+        mem = static_cast<char *>(bmi_buffer_->get());
+
+        // NOTICE: mem_starts_ and mem_sizes_ are alignend with file_sizes
+        // This is for request scheduler to easily handle the ranges without
+        // extra memory copying.
+
+        // only going to reallocate if file and mem counts are diff
+        if(param_.mem_count != param_.file_count)
+        {
+            param_.mem_count = param_.file_count;
+            delete[] param_.mem_sizes;
+            param_.mem_sizes = new size_t[param_.file_count];
+        }
+
+        param_.mem_starts = new char*[param_.file_count];
+
+#if SIZEOF_SIZE_T != SIZEOF_INT64_T
+        param_.bmi_mem_sizes = new bmi_size_t[param_.file_count];
+#else
+        param_.bmi_mem_sizes = NULL;
 #endif
-     size_t cur = 0;
-     for (size_t i = 0; i < file_count_; i++) {
-       mem_starts_[i] = mem_ + cur;
-       mem_sizes_[i] = file_sizes_[i];
-#if SIZEOF_SIZE_T != SIZEOF_BMI_SIZE_T
-       bmi_mem_sizes_[i] = mem_sizes_[i];
+
+        // setup the mem offset and start buffers
+        size_t cur = 0;
+        for (size_t i = 0; i < param_.file_count; i++)
+        {
+            param_.mem_starts[i] = mem + cur;
+            param_.mem_sizes[i] = param_.file_sizes[i];
+#if SIZEOF_SIZE_T != SIZEOF_INT64_T
+            param_.bmi_mem_sizes[i] = param_.mem_sizes[i];
 #endif
-       cur += file_sizes_[i];
-     }
-   }
+            cur += param_.file_sizes[i];
+        }
+    }
 
    param_.handle = &handle_;
-   param_.mem_count = mem_count_;
-   param_.mem_starts = mem_starts_;
-   param_.mem_sizes = mem_sizes_;
-   param_.file_count = file_count_;
-   param_.file_starts = file_starts_;
-   param_.file_sizes = file_sizes_;
-   param_.pipeline_size = pipeline_size_;
-   if(op_hint_)
-   {
-      param_.op_hint = op_hint_;
-   }
-   else
-   {
-      param_.op_hint = NULL;
-   }
    return param_;
 }
 
-iofwdutil::completion::CompletionID * IOFWDReadRequest::sendBuffers ()
+void IOFWDReadRequest::sendBuffers(const CBType & cb)
 {
-   size_t total_size = 0;
-   for (size_t i = 0; i < mem_count_; i++)
-      total_size += mem_sizes_[i];
-   iofwdutil::completion::BMICompletionID * id = new iofwdutil::completion::BMICompletionID ();
-#if SIZEOF_SIZE_T == SIZEOF_BMI_SIZE_T
+#if SIZEOF_SIZE_T == SIZEOF_INT64_T
    /* Send the mem_sizes_ array */
-   bmires_.postSendList (id, addr_, (const void**)mem_starts_, (const bmi_size_t*)mem_sizes_,
-                         mem_count_, total_size, bmi_buffer_.bmiType(), tag_, 0);
-#else 
+   r_.rbmi_.post_send_list(cb, addr_, reinterpret_cast<void*const*>(param_.mem_starts), reinterpret_cast<const bmi_size_t *>(param_.mem_sizes),
+                            param_.mem_count, param_.mem_total_size, bmi_buffer_->bmiType(), tag_, 0);
+#else
    /* Send the bmi_mem_sizes_ array */
-   bmires_.postSendList (id, addr_, (const void**)mem_starts_, (const bmi_size_t*)bmi_mem_sizes_,
-                         mem_count_, total_size, bmi_buffer_.bmiType(), tag_, 0);
+   r_.rbmi_.post_send_list(cb, addr_, reinterpret_cast<void*const*>(param_.mem_starts), reinterpret_cast<const bmi_size_t *>(param_.bmi_mem_sizes),
+                            param_.mem_count, param_.mem_total_size, bmi_buffer_->bmiType(), tag_, 0);
 #endif
-   return id;
 }
 
 iofwdutil::completion::CompletionID * IOFWDReadRequest::sendPipelineBuffer(iofwdutil::bmi::BMIBuffer * buf, size_t size)
@@ -123,10 +128,9 @@ iofwdutil::completion::CompletionID * IOFWDReadRequest::sendPipelineBuffer(iofwd
 }
 
 
-iofwdutil::completion::CompletionID * IOFWDReadRequest::reply()
+void IOFWDReadRequest::reply(const CBType & cb)
 {
-   return simpleReply (TSSTART << (int32_t) getReturnCode ()
-             << encoder::EncVarArray(file_sizes_, file_count_));
+   simpleOptReply(cb, getReturnCode(), TSSTART << encoder::EncVarArray(param_.file_sizes, param_.file_count));
 }
 
 //===========================================================================
