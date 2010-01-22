@@ -44,34 +44,31 @@ void releaseRetrievedBuffer(RetrievedBuffer& b)
 
 void WriteTask::runNormalMode(const WriteRequest::ReqParam & p)
 {
-   std::auto_ptr<iofwdutil::completion::CompletionID> recv_id (request_.recvBuffers ());
-   recv_id->wait ();
+   // issue recvBuffers w/ callback
+   block_.reset();
+   request_.recvBuffers((block_));
+   block_.wait();
 
-   // p.mem_sizes is uint64_t array, but ZoidFSAPI::write() takes size_t array
-   // for its arguments. Therefore, in (sizeof(size_t) != sizeof(uint64_t))
-   // environment (32bit), p.mem_sizes is not valid for size_t array.
-   // We allocate temporary buffer to fix this problem.
-   size_t * tmp_mem_sizes = (size_t*)p.mem_sizes;
-   bool need_size_t_workaround = (sizeof(size_t) != sizeof(uint64_t));
-   if (need_size_t_workaround) {
-      tmp_mem_sizes = new size_t[p.mem_count];
-      for (uint32_t i = 0; i < p.mem_count; i++)
-         tmp_mem_sizes[i] = p.mem_sizes[i];
-   }
-
+#if SIZEOF_SIZE_T == SIZEOF_INT64_T
    std::auto_ptr<iofwdutil::completion::CompletionID> io_id (sched_->enqueueWrite (
       p.handle, (size_t)p.mem_count,
-      (const void**)p.mem_starts, tmp_mem_sizes,
+      (const void**)p.mem_starts, p.mem_sizes,
       p.file_starts, p.file_sizes, p.op_hint));
    io_id->wait ();
-   int ret = zoidfs::ZFS_OK;
-   request_.setReturnCode (ret);
+#else
+   std::auto_ptr<iofwdutil::completion::CompletionID> io_id (sched_->enqueueWrite (
+      p.handle, (size_t)p.mem_count,
+      (const void**)p.mem_starts, p.bmi_mem_sizes,
+      p.file_starts, p.file_sizes, p.op_hint));
+   io_id->wait ();
+#endif
 
-   if (need_size_t_workaround)
-      delete[] tmp_mem_sizes;
+   request_.setReturnCode(zoidfs::ZFS_OK); /* TODO: pass back the actual return code */
 
-   std::auto_ptr<iofwdutil::completion::CompletionID> reply_id (request_.reply ());
-   reply_id->wait ();
+   // issue reply w/ callback
+   block_.reset();
+   request_.reply((block_));
+   block_.wait();
 }
 
 iofwdutil::completion::CompletionID * WriteTask::execPipelineIO(const WriteRequest::ReqParam & p,
@@ -169,7 +166,7 @@ void WriteTask::runPipelineMode(const WriteRequest::ReqParam & p)
    // from alloc -> NetworkRecv -> rx_q -> ZoidI/O -> io_q -> back to alloc
    deque<RetrievedBuffer> rx_q;
    deque<RetrievedBuffer> io_q;
-  
+
    uint64_t cur_recv_bytes = 0;
    uint64_t total_bytes = 0;
    for (uint32_t i = 0; i < p.mem_count; i++)
@@ -238,7 +235,7 @@ void WriteTask::runPipelineMode(const WriteRequest::ReqParam & p)
      RetrievedBuffer b = rx_q.front();
      assert(b.alloc_id != NULL);
      rx_q.pop_front();
-     
+
      b.io_id = execPipelineIO(p, &b);
      io_q.push_back(b);
    }
@@ -255,9 +252,9 @@ void WriteTask::runPipelineMode(const WriteRequest::ReqParam & p)
    }
 
    // reply status
-   request_.setReturnCode(zoidfs::ZFS_OK);
+   /*request_.setReturnCode(zoidfs::ZFS_OK);
    std::auto_ptr<iofwdutil::completion::CompletionID> reply_id (request_.reply ());
-   reply_id->wait ();
+   reply_id->wait ();*/
 }
 
 //===========================================================================

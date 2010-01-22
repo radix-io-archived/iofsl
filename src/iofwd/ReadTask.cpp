@@ -43,34 +43,32 @@ void releaseReadBuffer(ReadBuffer& b)
 
 void ReadTask::runNormalMode(const ReadRequest::ReqParam & p)
 {
-   // p.mem_sizes is uint64_t array, but ZoidFSAPI::read() takes size_t array
-   // for its arguments. Therefore, in (sizeof(size_t) != sizeof(uint64_t))
-   // environment (32bit), p.mem_sizes is not valid for size_t array.
-   // We allocate temporary buffer to fix this problem.
-   size_t * tmp_mem_sizes = (size_t*)p.mem_sizes;
-   bool need_size_t_workaround = (sizeof(size_t) != sizeof(uint64_t));
-   if (need_size_t_workaround) {
-      tmp_mem_sizes = new size_t[p.mem_count];
-      for (uint32_t i = 0; i < p.mem_count; i++)
-         tmp_mem_sizes[i] = p.mem_sizes[i];
-   }
 
+#if SIZEOF_SIZE_T == SIZEOF_INT64_T
    std::auto_ptr<iofwdutil::completion::CompletionID> io_id (sched_->enqueueRead (
       p.handle, (size_t)p.mem_count,
-      (void**)p.mem_starts, tmp_mem_sizes,
+      (void**)p.mem_starts, p.mem_sizes,
       p.file_starts, p.file_sizes, p.op_hint));
    io_id->wait ();
-   int ret = zoidfs::ZFS_OK;
-   request_.setReturnCode (ret);
+#else
+   std::auto_ptr<iofwdutil::completion::CompletionID> io_id (sched_->enqueueRead (
+      p.handle, (size_t)p.mem_count,
+      (void**)p.mem_starts, p.bmi_mem_sizes,
+      p.file_starts, p.file_sizes, p.op_hint));
+   io_id->wait ();
+#endif
 
-   if (need_size_t_workaround)
-      delete[] tmp_mem_sizes;
+   request_.setReturnCode(zoidfs::ZFS_OK); /* TODO: pass back the actual return value */
 
-   std::auto_ptr<iofwdutil::completion::CompletionID> send_id (request_.sendBuffers ());
-   send_id->wait ();
+   // send buffers w/ callback
+   block_.reset();
+   request_.sendBuffers((block_));
+   block_.wait();
 
-   std::auto_ptr<iofwdutil::completion::CompletionID> reply_id (request_.reply ());
-   reply_id->wait ();
+   // send reply w/ callback
+   block_.reset();
+   request_.reply((block_));
+   block_.wait();
 }
 
 iofwdutil::completion::CompletionID * ReadTask::execPipelineIO(const ReadRequest::ReqParam & p,
@@ -192,7 +190,7 @@ void ReadTask::runPipelineMode(const ReadRequest::ReqParam & p)
 
             b.tx_id = request_.sendPipelineBuffer(b.alloc_id->get_buf(), b.siz);
             tx_q.push_back(b);
-         }        
+         }
       }
 
       // try to alloc buffer
@@ -228,7 +226,7 @@ void ReadTask::runPipelineMode(const ReadRequest::ReqParam & p)
             ++it;
          }
       }
-      
+
       // advance to read the next pipeline
       if (is_issue_read) {
          cur_read_bytes += cur_pipeline_bytes;
@@ -265,10 +263,10 @@ void ReadTask::runPipelineMode(const ReadRequest::ReqParam & p)
      }
    }
 
-   // reply status
-   request_.setReturnCode(zoidfs::ZFS_OK);
-   std::auto_ptr<iofwdutil::completion::CompletionID> reply_id (request_.reply ());
-   reply_id->wait ();
+   // send reply w/ callback
+   block_.reset();
+   request_.reply((block_));
+   block_.wait();
 }
 
 //===========================================================================
