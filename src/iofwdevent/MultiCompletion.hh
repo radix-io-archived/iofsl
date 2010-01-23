@@ -93,7 +93,7 @@ namespace iofwdevent
       // exceptions...
       struct Slot
       {
-         size_t next_;
+         int next_;
          int status_;
       };
 
@@ -246,6 +246,7 @@ namespace iofwdevent
       // Add to free chain
       s.next_ = first_free_;
       first_free_ = thisslot;
+      s.status_ = FREE;
 
       --slots_completed_;
 
@@ -274,6 +275,10 @@ namespace iofwdevent
       int    dummy2;
 
       size_t count = 0;
+
+      if (!max)
+         max = slots_completed_;
+
       while (count < max)
       {
          if (!removeCompleted ((slots ? slots[count] : dummy1),
