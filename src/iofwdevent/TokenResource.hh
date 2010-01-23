@@ -131,7 +131,7 @@ void TokenResource::request (ResourceOp * id, size_t tokencount)
 {
    ASSERT(started_);
 
-   boost::mutex::scoped_lock (lock_);
+   boost::mutex::scoped_lock l(lock_);
 
    // Cannot call try_request; already have lock
    if (try_request_unlocked (tokencount))
