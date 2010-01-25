@@ -38,6 +38,7 @@ sandbox/zoidfs-io-bsize-local
 sandbox/vl-test
 sandbox/pctest
 sandbox/PCtest
+sandbox/hatest
 src/fuse/fuseclient
 src/fuse/fusedispatch
 src/iofwd/iofwd

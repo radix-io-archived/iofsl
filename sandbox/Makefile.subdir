@@ -28,6 +28,11 @@ sandbox_zoidfs_io_bsize_local_SOURCES = sandbox/zoidfs-io-bsize.c
 sandbox_zoidfs_io_bsize_local_LDADD = src/zoidfs/libzoidfs.a $(sandbox_ldadd)
 sandbox_zoidfs_io_bsize_local_LDFLAGS = $(sandbox_ldflags)
 
+noinst_PROGRAMS += sandbox/hatest
+sandbox_hatest_SOURCES = sandbox/hatest.cpp
+sandbox_hatest_LDADD = $(sandbox_ldadd)
+sandbox_hatest_LDFLAGS = $(sandbox_ldflags)
+
 noinst_PROGRAMS += sandbox/bindtest
 sandbox_bindtest_SOURCES = sandbox/bindtest.cpp
 sandbox_bindtest_LDFLAGS = $(sandbox_ldflags)

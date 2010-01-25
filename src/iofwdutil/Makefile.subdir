@@ -6,7 +6,7 @@ src_iofwdutil_libiofwdutil_a_LIBLDFLAGS = \
     @BOOST_PROGRAM_OPTIONS_LIB@ \
     @BOOST_DATE_TIME_LIB@ \
     @BOOST_THREAD_LIB@ \
-    @BOOST_REGEX_LIB@ 
+    @BOOST_REGEX_LIB@
 
 
 src_iofwdutil_libiofwdutil_a_SOURCES = \
@@ -95,6 +95,8 @@ src/iofwdutil/workqueue/WorkQueueBase.hh \
  \
 src/iofwdutil/CFKeyMissingException.hh \
 src/iofwdutil/ConfigContainer.hh \
+src/iofwdutil/ConfigFile.hh \
+src/iofwdutil/HybridAllocator.hh \
 src/iofwdutil/ConfigFile.hh \
 src/iofwdutil/IOFWDLog.hh \
 src/iofwdutil/IntrusiveHelper.hh \
