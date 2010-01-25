@@ -2,6 +2,7 @@
 #define BOOST_TEST_DYN_LINK
 #include <boost/test/unit_test.hpp>
 #include <boost/thread.hpp>
+#include <boost/bind.hpp>
 #include "ThreadSafety.hh"
 
 using namespace boost;
@@ -14,6 +15,7 @@ const size_t THREADCOUNT = 32;
 BOOST_AUTO_TEST_SUITE( dummy )
 
 struct F {
+        int dummy;
 };
 
 //____________________________________________________________________________//
