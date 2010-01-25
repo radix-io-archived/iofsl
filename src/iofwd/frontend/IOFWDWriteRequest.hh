@@ -6,6 +6,7 @@
 #include "iofwdutil/bmi/BMI.hh"
 #include "iofwd/BMIBufferPool.hh"
 #include "iofwdutil/bmi/BMIBuffer.hh"
+#include "iofwdutil/HybridAllocator.hh"
 
 namespace iofwd
 {
@@ -43,6 +44,7 @@ public:
 private:
    ReqParam param_;
 
+   iofwdutil::HybridAllocator<4096> h;
    zoidfs::zoidfs_handle_t handle_;
    iofwdutil::bmi::BMIBuffer * bmi_buffer_;
 };

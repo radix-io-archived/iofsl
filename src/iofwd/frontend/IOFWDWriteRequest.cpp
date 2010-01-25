@@ -11,8 +11,10 @@ namespace iofwd
 
 IOFWDWriteRequest::~IOFWDWriteRequest ()
 {
+
+#ifndef USE_TASK_HA
    if (param_.mem_starts)
-      delete[] param_.mem_starts;
+      delete [] param_.mem_starts;
    if (param_.mem_sizes)
       delete[] param_.mem_sizes;
    if (param_.file_starts)
@@ -21,6 +23,18 @@ IOFWDWriteRequest::~IOFWDWriteRequest ()
       delete[] param_.file_sizes;
    if (param_.bmi_mem_sizes)
       delete[] param_.bmi_mem_sizes;
+#else
+   if (param_.mem_starts)
+      h.free(param_.mem_starts);
+   if (param_.mem_sizes)
+      h.free(param_.mem_sizes);
+   if (param_.file_starts)
+      h.free(param_.file_starts);
+   if (param_.file_sizes)
+      h.free(param_.file_sizes);
+   if (param_.bmi_mem_sizes)
+      h.free(param_.bmi_mem_sizes);
+#endif
    if(param_.op_hint)
       zoidfs::util::ZoidFSHintDestroy(&(param_.op_hint));
    if(bmi_buffer_)
@@ -35,14 +49,26 @@ const IOFWDWriteRequest::ReqParam & IOFWDWriteRequest::decodeParam ()
 
    // init the mem count and sizes
    process (req_reader_, param_.mem_count);
+#ifndef USE_TASK_HA
    param_.mem_sizes = new size_t[param_.mem_count];
+#else
+   param_.mem_sizes = static_cast<size_t *>(h.malloc(sizeof(size_t) * param_.mem_count));
+#endif
    process (req_reader_, encoder::EncVarArray(param_.mem_sizes, param_.mem_count));
 
    // init the file count, sizes, and starts
    process (req_reader_, param_.file_count);
+#ifndef USE_TASK_HA
    param_.file_starts = new zoidfs::zoidfs_file_ofs_t[param_.file_count];
+#else
+   param_.file_starts = static_cast<zoidfs::zoidfs_file_ofs_t *>(h.malloc(sizeof(zoidfs::zoidfs_file_ofs_t) * param_.file_count));
+#endif
    process (req_reader_, encoder::EncVarArray(param_.file_starts, param_.file_count));
+#ifndef USE_TASK_HA
    param_.file_sizes = new zoidfs::zoidfs_file_ofs_t[param_.file_count];
+#else
+   param_.file_sizes = static_cast<zoidfs::zoidfs_file_ofs_t *>(h.malloc(sizeof(zoidfs::zoidfs_file_ofs_t) * param_.file_count));
+#endif
    process (req_reader_, encoder::EncVarArray(param_.file_sizes, param_.file_count));
 
    // get the pipeline size
@@ -77,17 +103,34 @@ const IOFWDWriteRequest::ReqParam & IOFWDWriteRequest::decodeParam ()
         if(param_.mem_count != param_.file_count)
         {
             param_.mem_count = param_.file_count;
+#ifndef USE_TASK_HA
             delete[] param_.mem_sizes;
             param_.mem_sizes = new size_t[param_.file_count];
+#else
+            h.free(param_.mem_sizes);
+            param_.mem_sizes = static_cast<size_t *>(h.malloc(sizeof(size_t) * param_.file_count));
+#endif
         }
 
+#ifndef USE_TASK_HA
         param_.mem_starts = new char*[param_.file_count];
+#else
+        param_.mem_starts = static_cast<char **>(h.malloc(sizeof(char*) * param_.file_count));
+#endif
 
         // if this is a 32bit system, allocate a mem_size buffer using bmi_size_t
+#ifndef USE_TASK_HA
 #if SIZEOF_SIZE_T != SIZEOF_INT64_T
         param_.bmi_mem_sizes = new bmi_size_t[param_.file_count];
 #else
         param_.bmi_mem_sizes = NULL;
+#endif
+#else
+#if SIZEOF_SIZE_T != SIZEOF_INT64_T
+        param_.bmi_mem_sizes = static_cast<bmi_size_t *>(h.malloc(sizeof(bmi_size_t) * param_.file_count));
+#else
+        param_.bmi_mem_sizes = NULL;
+#endif
 #endif
         // setup the mem offset buffer
         size_t cur = 0;
