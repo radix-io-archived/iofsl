@@ -33,6 +33,11 @@ sandbox_patest_SOURCES = sandbox/patest.cpp
 sandbox_patest_LDADD = $(sandbox_ldadd)
 sandbox_patest_LDFLAGS = $(sandbox_ldflags)
 
+EXTRA_PROGRAMS += sandbox/hatest
+sandbox_hatest_SOURCES = sandbox/hatest.cpp
+sandbox_hatest_LDADD = $(sandbox_ldadd)
+sandbox_hatest_LDFLAGS = $(sandbox_ldflags)
+
 EXTRA_PROGRAMS += sandbox/bindtest
 sandbox_bindtest_SOURCES = sandbox/bindtest.cpp
 sandbox_bindtest_LDFLAGS = $(sandbox_ldflags)
