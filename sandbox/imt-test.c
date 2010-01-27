@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <time.h>
 #include "c-util/interval-merge-tree.h"
+#include "c-util/tools.h"
 
 #define NUM_DEL_KEYS 4
 #define KEYSPACE 4000
@@ -19,7 +20,7 @@ double elapsed_time(struct timespec * t1, struct timespec * t2)
         1.0e-9 * (double) (t2->tv_nsec - t1->tv_nsec) );
 }
 
-int main(int argc, char * argv[])
+int main(int UNUSED(argc), char * argv[])
 {
     interval_merge_tree_node_t * root = NULL;
     interval_merge_tree_key_t * keys = NULL;

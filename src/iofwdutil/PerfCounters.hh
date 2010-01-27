@@ -7,6 +7,8 @@
 #include <boost/thread/mutex.hpp>
 #include <boost/thread/tss.hpp>
 
+#include "iofwdutil/tools.hh"
+
 using namespace std;
 
 namespace iofwdutil
@@ -61,7 +63,7 @@ namespace iofwdutil
            
             friend class PerfCountersDestroyer;
  
-            void UpdateCounter(PerfCounterBase & pc)
+            void UpdateCounter(PerfCounterBase & UNUSED(pc))
             {
             } 
 
