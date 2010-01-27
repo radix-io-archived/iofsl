@@ -7,10 +7,10 @@
 struct  mcs_entry
 {
    const char * name;
-   unsigned int is_section; 
+   unsigned int is_section;
    struct mcs_entry * next;
-   union 
-   { 
+   union
+   {
       const char        * value;
       struct mcs_entry  * child;
    };
@@ -26,7 +26,7 @@ static inline mcs_entry * mcs_allocentry ()
 
 static inline void mcs_addtail (mcs_entry * e, mcs_entry * newe)
 {
-   assert (e); 
+   assert (e);
    while (e->next)
    {
       e = e->next;
@@ -37,7 +37,7 @@ static inline void mcs_addtail (mcs_entry * e, mcs_entry * newe)
 /* Add child to entry */
 static void mcs_addchild (mcs_entry * section, mcs_entry * child)
 {
-   mcs_entry * p; 
+   mcs_entry * p;
 
    p = section->child;
    if (!p)
@@ -46,39 +46,39 @@ static void mcs_addchild (mcs_entry * section, mcs_entry * child)
    }
    else
    {
-      mcs_addtail (p, child); 
+      mcs_addtail (p, child);
    }
 }
 
 
-/* Create empty subsection */ 
+/* Create empty subsection */
 static mcs_entry * mcs_createsection (const char * name)
 {
    mcs_entry * n = mcs_allocentry ();
    n->is_section = 1;
-   n->name = (name ? strdup (name) : 0); 
+   n->name = (name ? strdup (name) : 0);
    return n;
 }
 
 /* Create text entry */
-static mcs_entry * mcs_createvalue (const char * name, const char ** values, 
+static mcs_entry * mcs_createvalue (const char * name, const char ** values,
       unsigned int count)
 {
    mcs_entry * n = mcs_allocentry ();
    unsigned int i;
 
    n->is_section = 0;
-   n->next = 0; 
+   n->next = 0;
    n->name = (name ? strdup (name) : 0);
 
    for (i=0; i<count; ++i)
    {
       mcs_entry * v = mcs_allocentry ()  ;
-      v->is_section = 0; 
-      v->next = 0; 
+      v->is_section = 0;
+      v->next = 0;
       v->name = 0;
       v->value = (values[i] ? strdup (values[i]) : 0);
-      mcs_addchild (n, v); 
+      mcs_addchild (n, v);
    }
 
    return n;
@@ -123,14 +123,15 @@ static void mcs_freechain (mcs_entry * t)
 int mcs_removechild (mcs_entry * section, const char * child)
 {
    mcs_entry * e;
-   mcs_entry * prev; 
+   mcs_entry * prev;
 
-   assert (e->is_section); 
+   prev = 0;
+   e = section->child;
+
+   assert (e->is_section);
    if (!e->child)
       return 0;
 
-   prev = 0; 
-   e = section->child; 
 
    while (e)
    {
@@ -152,26 +153,26 @@ int mcs_removechild (mcs_entry * section, const char * child)
          mcs_freechain (e);
          return 1;
       }
-      e = e->next; 
+      e = e->next;
    }
-   return 0; 
+   return 0;
 }
 
 /* Free (recursively) section */
 int mcs_freeroot (mcs_entry * section)
 {
    mcs_freechain (section);
-   return 1; 
+   return 1;
 }
 
 static unsigned int mcs_chaincount (const mcs_entry * e)
 {
-   unsigned int ret = 0; 
-   
+   unsigned int ret = 0;
+
    while (e)
    {
       ++ret;
-      e = e->next; 
+      e = e->next;
    }
 
    return ret;
@@ -254,7 +255,7 @@ int mcs_getvaluesingle (const mcs_entry * e, char * buf, unsigned int bufsize)
 /* Retrieve the values for this key */
 int mcs_getvaluemultiple (const mcs_entry * e, char ** buf, unsigned int * maxcount)
 {
-   unsigned int i = 0; 
+   unsigned int i = 0;
    mcs_entry * t = e->child;
 
    assert (!e->is_section);
@@ -264,14 +265,14 @@ int mcs_getvaluemultiple (const mcs_entry * e, char ** buf, unsigned int * maxco
       if (i == *maxcount)
          return 0;
 
-      assert (!t->name); 
+      assert (!t->name);
 
       buf[i] = (t->value ? strdup (t->value) : 0);
-      ++i; 
+      ++i;
       t = t->next;
    }
    *maxcount = i;
-   return 1; 
+   return 1;
 }
 
 /* Move to the next entry on this level */
@@ -291,7 +292,7 @@ mcs_entry * mcs_child (const mcs_entry * e)
 static mcs_entry * mcs_findchild (const mcs_entry * e, const char * name)
 {
    mcs_entry * curchild = e->child;
-   
+
    while (curchild)
    {
       if (!strcmp (curchild->name, name))
