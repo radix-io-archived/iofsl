@@ -89,7 +89,7 @@ public:
       BOOST_TEST_MESSAGE_TS("In destructor");
    }
 
-   void init (int status)
+   void init (int )
    {
       BOOST_TEST_MESSAGE_TS("In Init");
    }
