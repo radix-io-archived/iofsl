@@ -87,6 +87,9 @@ src/iofwd/SymLinkRequest.hh \
 src/iofwd/SymLinkTask.hh \
 src/iofwd/Task.hh \
 src/iofwd/TaskHelper.hh \
+src/iofwd/TaskPool.hh \
+src/iofwd/TaskPool.cpp \
+src/iofwd/TaskPoolHelper.hh \
 src/iofwd/ThreadTasks.hh \
 src/iofwd/WriteRequest.hh \
 src/iofwd/WriteTask.hh \

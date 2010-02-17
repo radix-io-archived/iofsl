@@ -12,6 +12,8 @@
 #include "zoidfs/util/ZoidFSAsyncAPI.hh"
 #include "RequestScheduler.hh"
 
+#include "iofwd/TaskPoolHelper.hh"
+
 using namespace iofwdutil;
 using namespace iofwdutil::workqueue;
 using namespace boost::lambda;
@@ -35,7 +37,8 @@ DefRequestHandler::DefRequestHandler (const iofwdutil::ConfigFile & c)
    boost::function<void (Task *)> f = boost::lambda::bind
       (&DefRequestHandler::reschedule, this, boost::lambda::_1);
 
-   taskfactory_.reset (new ThreadTasks (f, &api_, async_api_, sched_, bpool_));
+   tpool_ = new TaskPool(config_.openSectionDefault("taskpool"), f);
+   taskfactory_.reset (new ThreadTasks (f, &api_, async_api_, sched_, bpool_, tpool_));
 }
 
 void DefRequestHandler::reschedule (Task * t)
@@ -57,6 +60,7 @@ DefRequestHandler::~DefRequestHandler ()
 
    delete sched_;
    delete bpool_;
+   delete tpool_;
 
    api_.finalize();
    delete async_api_;
@@ -88,7 +92,18 @@ void DefRequestHandler::handleRequest (int count, Request ** reqs)
       // we know only requesttasks can be put on the workqueues
       if (static_cast<Task*>(completed_[i])->getStatus() ==
             Task::STATUS_DONE)
-         delete (completed_[i]);
+      {
+         /* if this task was allocated from the pool, put it back on the pool */
+         if(static_cast<Task*>(completed_[i])->getTaskAllocType() == true)
+         {
+            static_cast<Task*>(completed_[i])->cleanup();
+         }
+         /* else, delete it */
+         else
+         {
+            delete (completed_[i]);
+         }
+      }
    }
    completed_.clear ();
 }
