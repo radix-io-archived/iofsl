@@ -32,6 +32,16 @@ public:
    void setStatus (int status)
    { status_ = status; }
 
+   void setTaskAllocType(bool pt)
+    { pool_task_ = pt; }
+
+   bool getTaskAllocType()
+    { return pool_task_; }
+
+   virtual void cleanup()
+    {
+    }
+
    // Fast requests can possibly take a shortcut and be serviced in the main
    // receiving thread; Note that a request that needs significant time to
    // determine if it is fast or not cannot be fast.
@@ -63,6 +73,8 @@ protected:
    int status_;
 
    boost::function<void (Task *)> reschedule_;
+
+   bool pool_task_;
 };
 
 //===========================================================================

@@ -189,10 +189,10 @@ void WriteTask::runPipelineMode(const WriteRequest::ReqParam & p)
 
      // try to alloc buffer
      if (alloc_id == NULL)
-       alloc_id = bpool_->alloc(request_.getRequestAddr(), iofwdutil::bmi::BMI::ALLOC_RECEIVE);
+       alloc_id = bpool_->alloc(request_->getRequestAddr(), iofwdutil::bmi::BMI::ALLOC_RECEIVE);
      // issue recv requests for next pipeline buffer
      if (alloc_id != NULL && alloc_id->test(10)) {
-       rx_id = request_.recvPipelineBuffer(alloc_id->get_buf(), p_siz);
+       rx_id = request_->recvPipelineBuffer(alloc_id->get_buf(), p_siz);
      }
 
      // check I/O requests completion in io_q

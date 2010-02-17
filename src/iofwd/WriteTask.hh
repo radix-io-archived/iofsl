@@ -3,28 +3,39 @@
 
 #include "Task.hh"
 #include "WriteRequest.hh"
-#include "TaskHelper.hh"
+#include "iofwd/TaskPoolHelper.hh"
+#include <boost/function.hpp>
 
 namespace iofwd
 {
 
 struct RetrievedBuffer;
 
-class WriteTask : public TaskHelper<WriteRequest>
+class WriteTask : public TaskPoolHelper<WriteRequest>
 {
 public:
    WriteTask (ThreadTaskParam & p)
-      : TaskHelper<WriteRequest>(p)
+      : TaskPoolHelper<WriteRequest>(p)
    {
    }
+
+   WriteTask(iofwdutil::completion::BMIResource & bmi, boost::function<void (Task *)> reschedule, boost::function<void (int, Task *)> addToPool) : TaskPoolHelper<WriteRequest>(bmi, reschedule, addToPool)
+   {
+   }
+
    virtual ~WriteTask()
    {
+   }
+
+   void resetTask(ThreadTaskParam & p)
+   {
+        resetTaskHelper(p);
    }
 
    void run ()
    {
       // parameter decode
-      const WriteRequest::ReqParam & p = request_.decodeParam ();
+      const WriteRequest::ReqParam & p = request_->decodeParam ();
       if (p.pipeline_size == 0)
          runNormalMode(p);
       else

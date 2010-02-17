@@ -60,17 +60,31 @@ Task * ThreadTasks::operator () (Request * req)
       case ZOIDFS_PROTO_RESIZE:
          return new ResizeTask (p);
       case ZOIDFS_PROTO_WRITE:
-         return new WriteTask (p);
+      {
+         /* try to get a task from the pool */
+         Task * t = tpool_->get(zoidfs::ZOIDFS_PROTO_WRITE);
+         if(t)
+         {
+            /* set the new task parameters */
+            static_cast<TaskPoolHelper<WriteRequest> *>(t)->resetTaskHelper(p);
+            return t;
+         }
+         /* else. allocate a new task */
+         else
+         {
+            return new WriteTask (p);
+         }
+      }
       case ZOIDFS_PROTO_READ:
          return new ReadTask (p);
       case ZOIDFS_PROTO_LINK:
          return new LinkTask (p);
       default:
-         return new NotImplementedTask (p); 
-   }; 
+         return new NotImplementedTask (p);
+   };
 
-   ALWAYS_ASSERT(false && "Should not get here!"); 
-   return 0; 
+   ALWAYS_ASSERT(false && "Should not get here!");
+   return 0;
 }
 
 //===========================================================================

@@ -95,6 +95,13 @@ requesthandler {
     maxnumbuffers = "100";
   }
 
+  taskpool {
+    //
+    // The max number of tasks to preallocate per operation
+    // 
+    numtasks = "256";
+  }
+
   requestscheduler {
     schedalgo = "merge";
   }
