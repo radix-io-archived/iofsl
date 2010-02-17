@@ -86,6 +86,23 @@ void ha_test1(int num)
     fprintf(stderr, "ha %i %.6f\n", num, total);
 }
 
+void ha_t_test1(int num)
+{
+    double total = 0.0;
+    for(int i = 0 ; i < 10000 ; i++)
+    {
+        iofwdutil::HybridAllocator<2048> h;
+        double t1 = get_time();
+        for(int j = 0 ; j < num ; j++)
+        {
+            size_t * t = h.hamalloc<size_t>(1);
+            h.hafree(t);
+        }
+        total += (get_time() - t1);
+    }
+    fprintf(stderr, "ha t %i %.6f\n", num, total);
+}
+
 void std_test1(int num)
 {
     double total = 0.0;
@@ -108,6 +125,7 @@ int main()
     {
         std_test1(i);
         ha_test1(i);
+        ha_t_test1(i);
     }
 
     for(int i = 1 ; i <= 4096 ; i*=2)

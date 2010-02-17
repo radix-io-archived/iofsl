@@ -25,15 +25,15 @@ IOFWDWriteRequest::~IOFWDWriteRequest ()
       delete[] param_.bmi_mem_sizes;
 #else
    if (param_.mem_starts)
-      h.free(param_.mem_starts);
+      h.hafree(param_.mem_starts);
    if (param_.mem_sizes)
-      h.free(param_.mem_sizes);
+      h.hafree(param_.mem_sizes);
    if (param_.file_starts)
-      h.free(param_.file_starts);
+      h.hafree(param_.file_starts);
    if (param_.file_sizes)
-      h.free(param_.file_sizes);
+      h.hafree(param_.file_sizes);
    if (param_.bmi_mem_sizes)
-      h.free(param_.bmi_mem_sizes);
+      h.hafree(param_.bmi_mem_sizes);
 #endif
    if(param_.op_hint)
       zoidfs::util::ZoidFSHintDestroy(&(param_.op_hint));
@@ -52,7 +52,7 @@ const IOFWDWriteRequest::ReqParam & IOFWDWriteRequest::decodeParam ()
 #ifndef USE_TASK_HA
    param_.mem_sizes = new size_t[param_.mem_count];
 #else
-   param_.mem_sizes = static_cast<size_t *>(h.malloc(sizeof(size_t) * param_.mem_count));
+   param_.mem_sizes = (h.hamalloc<size_t>(param_.mem_count));
 #endif
    process (req_reader_, encoder::EncVarArray(param_.mem_sizes, param_.mem_count));
 
@@ -61,13 +61,13 @@ const IOFWDWriteRequest::ReqParam & IOFWDWriteRequest::decodeParam ()
 #ifndef USE_TASK_HA
    param_.file_starts = new zoidfs::zoidfs_file_ofs_t[param_.file_count];
 #else
-   param_.file_starts = static_cast<zoidfs::zoidfs_file_ofs_t *>(h.malloc(sizeof(zoidfs::zoidfs_file_ofs_t) * param_.file_count));
+   param_.file_starts = (h.hamalloc<zoidfs::zoidfs_file_ofs_t>(param_.file_count));
 #endif
    process (req_reader_, encoder::EncVarArray(param_.file_starts, param_.file_count));
 #ifndef USE_TASK_HA
    param_.file_sizes = new zoidfs::zoidfs_file_ofs_t[param_.file_count];
 #else
-   param_.file_sizes = static_cast<zoidfs::zoidfs_file_ofs_t *>(h.malloc(sizeof(zoidfs::zoidfs_file_ofs_t) * param_.file_count));
+   param_.file_sizes = (h.malloc<zoidfs::zoidfs_file_ofs_t>(param_.file_count));
 #endif
    process (req_reader_, encoder::EncVarArray(param_.file_sizes, param_.file_count));
 
@@ -107,15 +107,15 @@ const IOFWDWriteRequest::ReqParam & IOFWDWriteRequest::decodeParam ()
             delete[] param_.mem_sizes;
             param_.mem_sizes = new size_t[param_.file_count];
 #else
-            h.free(param_.mem_sizes);
-            param_.mem_sizes = static_cast<size_t *>(h.malloc(sizeof(size_t) * param_.file_count));
+            h.hafree(param_.mem_sizes);
+            param_.mem_sizes = (h.hamalloc<size_t>(param_.file_count));
 #endif
         }
 
 #ifndef USE_TASK_HA
         param_.mem_starts = new char*[param_.file_count];
 #else
-        param_.mem_starts = static_cast<char **>(h.malloc(sizeof(char*) * param_.file_count));
+        param_.mem_starts = (h.hamalloc<char *>(param_.file_count));
 #endif
 
         // if this is a 32bit system, allocate a mem_size buffer using bmi_size_t
@@ -127,7 +127,7 @@ const IOFWDWriteRequest::ReqParam & IOFWDWriteRequest::decodeParam ()
 #endif
 #else
 #if SIZEOF_SIZE_T != SIZEOF_INT64_T
-        param_.bmi_mem_sizes = static_cast<bmi_size_t *>(h.malloc(sizeof(bmi_size_t) * param_.file_count));
+        param_.bmi_mem_sizes = (h.hamalloc<bmi_size_t>(param_.file_count));
 #else
         param_.bmi_mem_sizes = NULL;
 #endif
