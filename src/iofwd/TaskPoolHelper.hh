@@ -5,7 +5,7 @@
 #include "TaskHelper.hh"
 #include "iofwdutil/completion/BMIResource.hh"
 #include "BMIBufferPool.hh"
-
+#include "iofwdevent/SingleCompletion.hh"
 #include <boost/function.hpp>
 
 namespace zoidfs
@@ -110,6 +110,10 @@ class TaskPoolHelper : public Task
       bool pool_allocate_;
 
       boost::function<void (int, Task *)> addToPool_;
+
+      // All (almost?) threaded tasks call a blocking function at some point.
+      // Declaring it here saves on typing.
+      iofwdevent::SingleCompletion block_;
 };
 
 }

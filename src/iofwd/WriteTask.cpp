@@ -46,7 +46,7 @@ void WriteTask::runNormalMode(const WriteRequest::ReqParam & p)
 {
    // issue recvBuffers w/ callback
    block_.reset();
-   request_.recvBuffers((block_));
+   request_->recvBuffers((block_));
    block_.wait();
 
 #if SIZEOF_SIZE_T == SIZEOF_INT64_T
@@ -63,11 +63,11 @@ void WriteTask::runNormalMode(const WriteRequest::ReqParam & p)
    io_id->wait ();
 #endif
 
-   request_.setReturnCode(zoidfs::ZFS_OK); /* TODO: pass back the actual return code */
+   request_->setReturnCode(zoidfs::ZFS_OK); /* TODO: pass back the actual return code */
 
    // issue reply w/ callback
    block_.reset();
-   request_.reply((block_));
+   request_->reply((block_));
    block_.wait();
 }
 
