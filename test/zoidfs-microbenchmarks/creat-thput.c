@@ -111,7 +111,7 @@ int main(int argc, char **argv) {
     zoidfs_handle_t basedir_handle;
     char filename[] = "creat-thput";
     char entry_name[ZOIDFS_NAME_MAX];
-    int i, j, created, numproc, rank, ret;
+    int i, j, created = 0, numproc, rank, ret;
 
     MPI_Init(&argc, &argv);
     MPI_Comm_size(MPI_COMM_WORLD, &numproc);
