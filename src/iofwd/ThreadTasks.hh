@@ -35,10 +35,9 @@ public:
          zoidfs::ZoidFSAsyncAPI * async_api,
          RequestScheduler * sched,
          BMIBufferPool * bpool,
-         TaskPool * tpool,
-         TaskPoolAllocator * tp_allocator)
+         TaskPool * tpool)
       : reschedule_(resched), api_(api), async_api_(async_api), sched_(sched),
-        bpool_(bpool), tpool_(tpool), tp_allocator_(tp_allocator)
+        bpool_(bpool), tpool_(tpool)
    {
    }
 
@@ -56,7 +55,6 @@ protected:
    RequestScheduler * sched_;
    BMIBufferPool * bpool_;
    TaskPool * tpool_;
-   TaskPoolAllocator * tp_allocator_;
 
    iofwdutil::completion::ContextBase ctx_;
    iofwdutil::completion::BMIResource bmi_;

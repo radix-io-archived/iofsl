@@ -4,6 +4,7 @@
 #include "Task.hh"
 #include "iofwdutil/completion/BMIResource.hh"
 #include "BMIBufferPool.hh"
+#include "iofwd/RequestPoolAllocator.hh"
 
 namespace zoidfs
 {
@@ -70,7 +71,13 @@ class TaskHelper : public Task
       ~TaskHelper ()
       {
          // The task owns the request and needs to destroy it
+#ifdef USE_REQUEST_ALLOC_POOL
          delete (&request_);
+#else
+        /* explicit call to request destructor and let the mem pool reclaim the request mem */
+        request_.~Request();
+        iofwd::RequestPoolAllocator::instance().deallocate(&request_);
+#endif
       }
 
    protected:

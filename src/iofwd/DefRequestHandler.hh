@@ -77,8 +77,6 @@ protected:
    /// BufferPool
    BMIBufferPool * bpool_;
 
-   TaskPoolAllocator * tp_allocator_;
-
    // TaskPool
    TaskPool * tpool_;
 

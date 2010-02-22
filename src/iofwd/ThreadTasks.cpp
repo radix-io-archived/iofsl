@@ -91,7 +91,7 @@ Task * ThreadTasks::operator () (Request * req)
    };
 #else
    /* get the mem location from the pool and then use placement new to create the object */
-   void * task_mem_loc = tp_allocator_->allocate(req->getOpID());
+   void * task_mem_loc = iofwd::TaskPoolAllocator::instance().allocate(req->getOpID());
    switch (req->getOpID ())
    {
       case ZOIDFS_PROTO_NULL:
