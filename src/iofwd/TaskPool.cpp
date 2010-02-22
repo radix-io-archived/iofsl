@@ -15,7 +15,9 @@ Task * TaskPool::createTask(int tt)
     {
         case zoidfs::ZOIDFS_PROTO_WRITE:
         {
+#ifdef USE_IOFWD_TASK_POOL
             t = new WriteTask(bmi_, reschedule_, boost::bind(&iofwd::TaskPool::put, this, _1, _2));
+#endif
             break;
         }
         case zoidfs::ZOIDFS_PROTO_READ:

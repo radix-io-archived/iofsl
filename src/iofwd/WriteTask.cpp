@@ -44,7 +44,11 @@ void releaseRetrievedBuffer(RetrievedBuffer& b)
 
 void WriteTask::runNormalMode(const WriteRequest::ReqParam & p)
 {
+#ifdef USE_IOFWD_TASK_POOL
    std::auto_ptr<iofwdutil::completion::CompletionID> recv_id (request_->recvBuffers ());
+#else
+   std::auto_ptr<iofwdutil::completion::CompletionID> recv_id (request_.recvBuffers ());
+#endif
    recv_id->wait ();
 
    // p.mem_sizes is uint64_t array, but ZoidFSAPI::write() takes size_t array
@@ -65,12 +69,20 @@ void WriteTask::runNormalMode(const WriteRequest::ReqParam & p)
       p.file_starts, p.file_sizes, p.op_hint));
    io_id->wait ();
    int ret = zoidfs::ZFS_OK;
+#ifdef USE_IOFWD_TASK_POOL
    request_->setReturnCode (ret);
+#else
+   request_.setReturnCode (ret);
+#endif
 
    if (need_size_t_workaround)
       delete[] tmp_mem_sizes;
 
+#ifdef USE_IOFWD_TASK_POOL
    std::auto_ptr<iofwdutil::completion::CompletionID> reply_id (request_->reply ());
+#else
+   std::auto_ptr<iofwdutil::completion::CompletionID> reply_id (request_.reply ());
+#endif
    reply_id->wait ();
 }
 
@@ -192,10 +204,18 @@ void WriteTask::runPipelineMode(const WriteRequest::ReqParam & p)
 
      // try to alloc buffer
      if (alloc_id == NULL)
+#ifdef USE_IOFWD_TASK_POOL
        alloc_id = bpool_->alloc(request_->getRequestAddr(), iofwdutil::bmi::BMI::ALLOC_RECEIVE);
+#else
+       alloc_id = bpool_->alloc(request_.getRequestAddr(), iofwdutil::bmi::BMI::ALLOC_RECEIVE);
+#endif
      // issue recv requests for next pipeline buffer
      if (alloc_id != NULL && alloc_id->test(10)) {
+#ifdef USE_IOFWD_TASK_POOL
        rx_id = request_->recvPipelineBuffer(alloc_id->get_buf(), p_siz);
+#else
+       rx_id = request_.recvPipelineBuffer(alloc_id->get_buf(), p_siz);
+#endif
      }
 
      // check I/O requests completion in io_q
@@ -255,8 +275,17 @@ void WriteTask::runPipelineMode(const WriteRequest::ReqParam & p)
    }
 
    // reply status
+#ifdef USE_IOFWD_TASK_POOL
    request_->setReturnCode(zoidfs::ZFS_OK);
+#else
+   request_.setReturnCode(zoidfs::ZFS_OK);
+#endif
+
+#ifdef USE_IOFWD_TASK_POOL
    std::auto_ptr<iofwdutil::completion::CompletionID> reply_id (request_->reply ());
+#else
+   std::auto_ptr<iofwdutil::completion::CompletionID> reply_id (request_.reply ());
+#endif
    reply_id->wait ();
 }
 
