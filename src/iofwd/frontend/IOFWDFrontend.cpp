@@ -33,6 +33,8 @@
 #include "IOFWDReadRequest.hh"
 #include "IOFWDLinkRequest.hh"
 
+#include "iofwd/RequestPoolAllocator.hh"
+
 using namespace iofwdutil::bmi;
 using namespace iofwdutil;
 using namespace zoidfs;
@@ -76,8 +78,6 @@ protected:
    iofwdutil::bmi::BMI & bmi_;
    iofwdutil::bmi::BMIContextPtr bmictx_;
 
-
-
 private:
    // We put the structure here not to burden the stack
    // The front-end is singlethreaded anyway
@@ -108,7 +108,15 @@ template <typename T>
 static inline Request * newreq (iofwdutil::bmi::BMIContext & bmi,
       int i, const BMI_unexpected_info & info,
       iofwdutil::completion::BMIResource & res)
-{ return new T (bmi, i, info, res ) ; }
+{
+#ifndef USE_REQUEST_POOL_ALLOCATOR
+    return new T (bmi, i, info, res );
+#else
+    /* get memory location from the pool and allocate a new Request using placement new */
+    Request * rloc = iofwd::RequestPoolAllocator::instance().allocate(i);
+    return new (rloc) T(bmi, i, info, res);
+#endif
+}
 
 static boost::array<mapfunc_t, ZOIDFS_PROTO_MAX> map_ = {
    {

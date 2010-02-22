@@ -71,7 +71,7 @@ class TaskHelper : public Task
       ~TaskHelper ()
       {
          // The task owns the request and needs to destroy it
-#ifdef USE_REQUEST_ALLOC_POOL
+#ifndef USE_REQUEST_ALLOC_POOL
          delete (&request_);
 #else
         /* explicit call to request destructor and let the mem pool reclaim the request mem */

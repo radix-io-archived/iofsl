@@ -39,6 +39,16 @@ public:
 
    virtual ~Request ();
 
+   void setAllocID(int id)
+   {
+      alloc_id_ = id;
+   }
+
+   int getAllocID()
+   {
+      return alloc_id_;
+   }
+
   protected:
 
    // Operation
@@ -46,6 +56,9 @@ public:
 
    /// Return code for the request
    int returncode_;
+
+   // pool allocation id
+   int alloc_id_;
 };
 
 //===========================================================================
