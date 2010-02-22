@@ -10,6 +10,7 @@
 #include "iofwd/TaskPool.hh"
 #include "zoidfs/util/LogAPI.hh"
 #include "iofwdutil/ConfigFile.hh"
+#include "iofwd/TaskPoolAllocator.hh"
 
 namespace iofwdutil
 {
@@ -75,6 +76,8 @@ protected:
 
    /// BufferPool
    BMIBufferPool * bpool_;
+
+   TaskPoolAllocator * tp_allocator_;
 
    // TaskPool
    TaskPool * tpool_;

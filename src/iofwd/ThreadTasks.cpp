@@ -22,6 +22,8 @@
 #include "LinkTask.hh"
 #include "NotImplementedTask.hh"
 
+#include "iofwd/TaskPoolAllocator.hh"
+
 using namespace zoidfs;
 
 namespace iofwd
@@ -31,6 +33,7 @@ namespace iofwd
 Task * ThreadTasks::operator () (Request * req)
 {
    ThreadTaskParam p (req, reschedule_, api_, async_api_, sched_, bpool_, bmi_);
+#ifndef USE_TASK_POOL_ALLOCATOR
    switch (req->getOpID ())
    {
       case ZOIDFS_PROTO_NULL:
@@ -82,6 +85,47 @@ Task * ThreadTasks::operator () (Request * req)
       default:
          return new NotImplementedTask (p);
    };
+#else
+   /* get the mem location from the pool and then use placement new to create the object */
+   void * task_mem_loc = tp_allocator_->allocate(req->getOpID());
+   switch (req->getOpID ())
+   {
+      case ZOIDFS_PROTO_NULL:
+         return new (task_mem_loc) NullTask (p);
+      case ZOIDFS_PROTO_GET_ATTR:
+         return new (task_mem_loc) GetAttrTask (p);
+      case ZOIDFS_PROTO_SET_ATTR:
+         return new (task_mem_loc) SetAttrTask (p);
+      case ZOIDFS_PROTO_LOOKUP:
+         return new (task_mem_loc) LookupTask (p);
+      case ZOIDFS_PROTO_READLINK:
+         return new (task_mem_loc) ReadLinkTask (p);
+      case ZOIDFS_PROTO_COMMIT:
+         return new (task_mem_loc) CommitTask (p);
+      case ZOIDFS_PROTO_CREATE:
+         return new (task_mem_loc) CreateTask (p);
+      case ZOIDFS_PROTO_REMOVE:
+         return new (task_mem_loc) RemoveTask (p);
+      case ZOIDFS_PROTO_RENAME:
+         return new (task_mem_loc) RenameTask (p);
+      case ZOIDFS_PROTO_SYMLINK:
+         return new (task_mem_loc) SymLinkTask (p);
+      case ZOIDFS_PROTO_MKDIR:
+         return new (task_mem_loc) MkdirTask (p);
+      case ZOIDFS_PROTO_READDIR:
+         return new (task_mem_loc) ReadDirTask (p);
+      case ZOIDFS_PROTO_RESIZE:
+         return new (task_mem_loc) ResizeTask (p);
+      case ZOIDFS_PROTO_WRITE:
+         return new (task_mem_loc) WriteTask (p);
+      case ZOIDFS_PROTO_READ:
+         return new (task_mem_loc) ReadTask (p);
+      case ZOIDFS_PROTO_LINK:
+         return new (task_mem_loc) LinkTask (p);
+      default:
+         return new (task_mem_loc) NotImplementedTask (p);
+   };
+#endif
 
    ALWAYS_ASSERT(false && "Should not get here!");
    return 0;

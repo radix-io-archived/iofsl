@@ -7,6 +7,69 @@ using namespace std;
 #define FRAG_S 4
 #define FRAG_E 1
 
+class b1
+{
+    public:
+        b1() : a_(0), b_(0), c_(0)
+        {
+        }
+        
+        virtual ~b1()
+        {
+        }
+
+        void * operator new(size_t s)
+        {
+            std::cout << "b1 alloc, size = " << s << std::endl;
+            return malloc(s);
+        }
+    
+        void operator delete(void * p)
+        {
+            std::cout << "b1 free" << std::endl;
+            b1 * b1p = static_cast<b1 *>(p);
+            if(b1p)
+            {
+                free(b1p);
+            }
+        }
+
+        int a_;
+        int b_;
+        int c_;
+};
+
+class b2 : public b1
+{
+    public:
+        b2() : d_(0), e_(0), f_(0)
+        {
+        }
+
+        virtual ~b2()
+        {
+        }
+
+        /*void * operator new(size_t s)
+        {
+            std::cout << "b2 alloc, size = " << s << std::endl;
+            return malloc(s);
+        }
+    
+        void operator delete(void * p)
+        {
+            std::cout << "b2 free" << std::endl;
+            b1 * b1p = static_cast<b1 *>(p);
+            if(b1p)
+            {
+                free(b1p);
+            }
+        }*/
+
+        int d_;
+        int e_;
+        int f_;
+};
 double get_time()
 {
     struct timespec timeval;
@@ -172,6 +235,8 @@ int main()
     boost::fast_pool_allocator< A<64> > A_64_alloc;
     boost::fast_pool_allocator< A<128> > A_128_alloc;
     boost::fast_pool_allocator< A<256> > A_256_alloc;
+    boost::fast_pool_allocator< A<312> > A_312_alloc;
+    boost::fast_pool_allocator< A<352> > A_352_alloc;
     boost::fast_pool_allocator< A<512> > A_512_alloc;
     boost::fast_pool_allocator< A<1024> > A_1024_alloc;
     boost::fast_pool_allocator< A<2048> > A_2048_alloc;
@@ -187,6 +252,8 @@ int main()
     A<64> * a_64_array[NUMITR];
     A<128> * a_128_array[NUMITR];
     A<256> * a_256_array[NUMITR];
+    A<312> * a_312_array[NUMITR];
+    A<352> * a_352_array[NUMITR];
     A<512> * a_512_array[NUMITR];
     A<1024> * a_1024_array[NUMITR];
     A<2048> * a_2048_array[NUMITR];
@@ -203,6 +270,8 @@ int main()
     runTest(200, a_64_array, A_64_alloc); 
     runTest(200, a_128_array, A_128_alloc); 
     runTest(200, a_256_array, A_256_alloc); 
+    runTest(200, a_312_array, A_312_alloc); 
+    runTest(200, a_352_array, A_352_alloc); 
     runTest(200, a_512_array, A_512_alloc); 
     runTest(200, a_1024_array, A_1024_alloc); 
     runTest(200, a_2048_array, A_2048_alloc); 
@@ -219,6 +288,8 @@ int main()
     runTest_frag(200, a_64_array, A_64_alloc); 
     runTest_frag(200, a_128_array, A_128_alloc); 
     runTest_frag(200, a_256_array, A_256_alloc); 
+    runTest_frag(200, a_312_array, A_312_alloc); 
+    runTest_frag(200, a_352_array, A_352_alloc); 
     runTest_frag(200, a_512_array, A_512_alloc); 
     runTest_frag(200, a_1024_array, A_1024_alloc); 
     runTest_frag(200, a_2048_array, A_2048_alloc); 
@@ -235,6 +306,8 @@ int main()
     runTest_norm(200, a_64_array); 
     runTest_norm(200, a_128_array); 
     runTest_norm(200, a_256_array); 
+    runTest_norm(200, a_312_array); 
+    runTest_norm(200, a_352_array); 
     runTest_norm(200, a_512_array); 
     runTest_norm(200, a_1024_array); 
     runTest_norm(200, a_2048_array); 
@@ -251,11 +324,18 @@ int main()
     runTest_norm_frag(200, a_64_array); 
     runTest_norm_frag(200, a_128_array); 
     runTest_norm_frag(200, a_256_array); 
+    runTest_norm_frag(200, a_312_array); 
+    runTest_norm_frag(200, a_352_array); 
     runTest_norm_frag(200, a_512_array); 
     runTest_norm_frag(200, a_1024_array); 
     runTest_norm_frag(200, a_2048_array); 
     runTest_norm_frag(200, a_4096_array); 
     runTest_norm_frag(200, a_8192_array); 
+
+    b1 * b11 = new b1();
+    b2 * b21 = new b2();
+    delete b11;
+    delete b21;
 
     return 0;
 }

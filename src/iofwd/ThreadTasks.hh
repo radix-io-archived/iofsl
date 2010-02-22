@@ -5,6 +5,7 @@
 #include "iofwdutil/completion/BMIResource.hh"
 #include "iofwd/BMIBufferPool.hh"
 #include "iofwd/TaskPool.hh"
+#include "iofwd/TaskPoolAllocator.hh"
 
 namespace zoidfs
 {
@@ -34,9 +35,10 @@ public:
          zoidfs::ZoidFSAsyncAPI * async_api,
          RequestScheduler * sched,
          BMIBufferPool * bpool,
-         TaskPool * tpool)
+         TaskPool * tpool,
+         TaskPoolAllocator * tp_allocator)
       : reschedule_(resched), api_(api), async_api_(async_api), sched_(sched),
-        bpool_(bpool), tpool_(tpool)
+        bpool_(bpool), tpool_(tpool), tp_allocator_(tp_allocator)
    {
    }
 
@@ -54,6 +56,7 @@ protected:
    RequestScheduler * sched_;
    BMIBufferPool * bpool_;
    TaskPool * tpool_;
+   TaskPoolAllocator * tp_allocator_;
 
    iofwdutil::completion::ContextBase ctx_;
    iofwdutil::completion::BMIResource bmi_;

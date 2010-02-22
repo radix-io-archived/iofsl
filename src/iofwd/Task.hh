@@ -1,6 +1,7 @@
 #ifndef IOFWD_TASK_HH
 #define IOFWD_TASK_HH
 
+#include <memory>
 #include <boost/function.hpp>
 #include "iofwdutil/workqueue/WorkItem.hh"
 
@@ -53,7 +54,7 @@ public:
    virtual void run () = 0;
 
    Task (boost::function<void (Task *)> & resched)
-      : status_ (0), reschedule_(resched)
+      : status_ (0), reschedule_(resched), alloc_id_(0)
    {
    }
 
@@ -63,6 +64,32 @@ public:
    /// Called if the task can be rescheduled for work
    void reschedule ()
    { reschedule_ (this); }
+
+#ifdef TRACE_SERVER_MEM_ALLOC_SIZE
+   inline void * operator new(size_t s)
+   {
+        fprintf(stderr, "Task size %lu\n", s);
+        return malloc(s);
+   }
+
+   inline void operator delete(void * p)
+   {
+        if(p)
+        {
+            free(static_cast<Task *>(p));
+        }
+   }
+#endif
+
+   void setAllocID(int id)
+   {
+        alloc_id_ = id;
+   }
+
+   int getAllocID()
+   {
+        return alloc_id_;
+   }
 
 protected:
    /// Called by the workqueue if we get the CPU
@@ -75,6 +102,8 @@ protected:
    boost::function<void (Task *)> reschedule_;
 
    bool pool_task_;
+
+   int alloc_id_;
 };
 
 //===========================================================================

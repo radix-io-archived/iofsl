@@ -28,6 +28,11 @@ sandbox_zoidfs_io_bsize_local_SOURCES = sandbox/zoidfs-io-bsize.c
 sandbox_zoidfs_io_bsize_local_LDADD = src/zoidfs/libzoidfs.a $(sandbox_ldadd)
 sandbox_zoidfs_io_bsize_local_LDFLAGS = $(sandbox_ldflags)
 
+noinst_PROGRAMS += sandbox/patest
+sandbox_patest_SOURCES = sandbox/patest.cpp
+sandbox_patest_LDADD = $(sandbox_ldadd)
+sandbox_patest_LDFLAGS = $(sandbox_ldflags)
+
 noinst_PROGRAMS += sandbox/recordparam
 sandbox_recordparam_SOURCES = sandbox/recordparam.cpp
 sandbox_recordparam_LDFLAGS = $(sandbox_ldflags)

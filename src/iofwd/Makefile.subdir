@@ -89,6 +89,8 @@ src/iofwd/Task.hh \
 src/iofwd/TaskHelper.hh \
 src/iofwd/TaskPool.hh \
 src/iofwd/TaskPool.cpp \
+src/iofwd/TaskPoolAllocator.hh \
+src/iofwd/TaskPoolAllocator.cpp \
 src/iofwd/TaskPoolHelper.hh \
 src/iofwd/ThreadTasks.hh \
 src/iofwd/WriteRequest.hh \

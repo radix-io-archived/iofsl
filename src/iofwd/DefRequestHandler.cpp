@@ -37,8 +37,10 @@ DefRequestHandler::DefRequestHandler (const iofwdutil::ConfigFile & c)
    boost::function<void (Task *)> f = boost::lambda::bind
       (&DefRequestHandler::reschedule, this, boost::lambda::_1);
 
+   tp_allocator_ = new TaskPoolAllocator();
+
    tpool_ = new TaskPool(config_.openSectionDefault("taskpool"), f);
-   taskfactory_.reset (new ThreadTasks (f, &api_, async_api_, sched_, bpool_, tpool_));
+   taskfactory_.reset (new ThreadTasks (f, &api_, async_api_, sched_, bpool_, tpool_, tp_allocator_));
 }
 
 void DefRequestHandler::reschedule (Task * t)
@@ -61,6 +63,7 @@ DefRequestHandler::~DefRequestHandler ()
    delete sched_;
    delete bpool_;
    delete tpool_;
+   delete tp_allocator_;
 
    api_.finalize();
    delete async_api_;
@@ -93,6 +96,7 @@ void DefRequestHandler::handleRequest (int count, Request ** reqs)
       if (static_cast<Task*>(completed_[i])->getStatus() ==
             Task::STATUS_DONE)
       {
+#ifndef USE_TASK_POOL_ALLOCATOR
          /* if this task was allocated from the pool, put it back on the pool */
          if(static_cast<Task*>(completed_[i])->getTaskAllocType() == true)
          {
@@ -103,6 +107,11 @@ void DefRequestHandler::handleRequest (int count, Request ** reqs)
          {
             delete (completed_[i]);
          }
+#else
+        /* invoke the destructor and then add the mem back the task memory pool */
+        static_cast<Task *>(completed_[i])->~Task();
+        tp_allocator_->deallocate(static_cast<Task *>(completed_[i]));
+#endif
       }
    }
    completed_.clear ();
