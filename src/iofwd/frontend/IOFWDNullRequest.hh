@@ -1,5 +1,5 @@
 #ifndef IOFWD_FRONTEND_IOFWDNULLREQUEST_HH
-#define IFOWD_FRONTEND_IOFWDNULLREQUEST_HH
+#define IOFWD_FRONTEND_IOFWDNULLREQUEST_HH
 
 #include "iofwd/NullRequest.hh"
 #include "iofwd/frontend/IOFWDRequest.hh"
