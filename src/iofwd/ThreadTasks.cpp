@@ -64,6 +64,7 @@ Task * ThreadTasks::operator () (Request * req)
          return new ResizeTask (p);
       case ZOIDFS_PROTO_WRITE:
       {
+#ifdef USE_IOFWD_TASK_POOL 
          /* try to get a task from the pool */
          Task * t = tpool_->get(zoidfs::ZOIDFS_PROTO_WRITE);
          if(t)
@@ -77,6 +78,9 @@ Task * ThreadTasks::operator () (Request * req)
          {
             return new WriteTask (p);
          }
+#else
+         return new WriteTask (p);
+#endif
       }
       case ZOIDFS_PROTO_READ:
          return new ReadTask (p);

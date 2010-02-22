@@ -94,6 +94,7 @@ void DefRequestHandler::handleRequest (int count, Request ** reqs)
             Task::STATUS_DONE)
       {
 #ifndef USE_TASK_POOL_ALLOCATOR
+#ifdef USE_IOFWD_TASK_POOL 
          /* if this task was allocated from the pool, put it back on the pool */
          if(static_cast<Task*>(completed_[i])->getTaskAllocType() == true)
          {
@@ -104,6 +105,9 @@ void DefRequestHandler::handleRequest (int count, Request ** reqs)
          {
             delete (completed_[i]);
          }
+#else
+            delete (completed_[i]);
+#endif
 #else
         /* invoke the destructor and then add the mem back the task memory pool */
         static_cast<Task *>(completed_[i])->~Task();

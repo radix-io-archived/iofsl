@@ -45,30 +45,45 @@ void releaseRetrievedBuffer(RetrievedBuffer& b)
 void WriteTask::runNormalMode(const WriteRequest::ReqParam & p)
 {
    // issue recvBuffers w/ callback
+#ifdef USE_IOFWD_TASK_POOL
    block_.reset();
    request_->recvBuffers((block_));
    block_.wait();
-
-#if SIZEOF_SIZE_T == SIZEOF_INT64_T
-   std::auto_ptr<iofwdutil::completion::CompletionID> io_id (sched_->enqueueWrite (
-      p.handle, (size_t)p.mem_count,
-      (const void**)p.mem_starts, p.mem_sizes,
-      p.file_starts, p.file_sizes, p.op_hint));
-   io_id->wait ();
 #else
-   std::auto_ptr<iofwdutil::completion::CompletionID> io_id (sched_->enqueueWrite (
-      p.handle, (size_t)p.mem_count,
-      (const void**)p.mem_starts, p.bmi_mem_sizes,
-      p.file_starts, p.file_sizes, p.op_hint));
-   io_id->wait ();
+   block_.reset();
+   request_.recvBuffers((block_));
+   block_.wait();
 #endif
 
-   request_->setReturnCode(zoidfs::ZFS_OK); /* TODO: pass back the actual return code */
+   // p.mem_sizes is uint64_t array, but ZoidFSAPI::write() takes size_t array
+   // for its arguments. Therefore, in (sizeof(size_t) != sizeof(uint64_t))
+   // environment (32bit), p.mem_sizes is not valid for size_t array.
+   // We allocate temporary buffer to fix this problem.
+   size_t * tmp_mem_sizes = (size_t*)p.mem_sizes;
+   bool need_size_t_workaround = (sizeof(size_t) != sizeof(uint64_t));
+   if (need_size_t_workaround) {
+      tmp_mem_sizes = new size_t[p.mem_count];
+      for (uint32_t i = 0; i < p.mem_count; i++)
+         tmp_mem_sizes[i] = p.mem_sizes[i];
+   }
+   int ret = zoidfs::ZFS_OK;
+#ifdef USE_IOFWD_TASK_POOL
+   request_->setReturnCode (ret);
+#else
+   request_.setReturnCode (ret);
+#endif
 
    // issue reply w/ callback
+#ifdef USE_IOFWD_TASK_POOL
    block_.reset();
    request_->reply((block_));
    block_.wait();
+#else
+   block_.reset();
+   request_.reply((block_));
+   block_.wait();
+#endif
+
 }
 
 iofwdutil::completion::CompletionID * WriteTask::execPipelineIO(const WriteRequest::ReqParam & p,
@@ -189,10 +204,18 @@ void WriteTask::runPipelineMode(const WriteRequest::ReqParam & p)
 
      // try to alloc buffer
      if (alloc_id == NULL)
+#ifdef USE_IOFWD_TASK_POOL
        alloc_id = bpool_->alloc(request_->getRequestAddr(), iofwdutil::bmi::BMI::ALLOC_RECEIVE);
+#else
+       alloc_id = bpool_->alloc(request_.getRequestAddr(), iofwdutil::bmi::BMI::ALLOC_RECEIVE);
+#endif
      // issue recv requests for next pipeline buffer
      if (alloc_id != NULL && alloc_id->test(10)) {
+#ifdef USE_IOFWD_TASK_POOL
        rx_id = request_->recvPipelineBuffer(alloc_id->get_buf(), p_siz);
+#else
+       rx_id = request_.recvPipelineBuffer(alloc_id->get_buf(), p_siz);
+#endif
      }
 
      // check I/O requests completion in io_q
