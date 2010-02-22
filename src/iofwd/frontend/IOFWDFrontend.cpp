@@ -32,6 +32,8 @@
 #include "IOFWDReadRequest.hh"
 #include "IOFWDLinkRequest.hh"
 
+#include "iofwd/RequestPoolAllocator.hh"
+
 using namespace iofwdutil::bmi;
 using namespace iofwdutil;
 using namespace zoidfs;
@@ -59,7 +61,15 @@ typedef Request * (*mapfunc_t) (
 template <typename T>
 static inline Request * newreq (int i, const BMI_unexpected_info & info,
       IOFWDResources & res)
-{ return new T (i, info, res); }
+{
+#ifndef USE_REQUEST_POOL_ALLOCATOR
+    return new T (i, info, res);
+#else
+    /* get memory location from the pool and allocate a new Request using placement new */
+    Request * rloc = iofwd::RequestPoolAllocator::instance().allocate(i);
+    return new (rloc) T(i, info, res);
+#endif
+}
 
 static boost::array<mapfunc_t, ZOIDFS_PROTO_MAX> map_ = {
    {

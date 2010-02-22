@@ -79,6 +79,8 @@ src/iofwd/RenameRequest.hh \
 src/iofwd/RenameTask.hh \
 src/iofwd/Request.hh \
 src/iofwd/RequestHandler.hh \
+src/iofwd/RequestPoolAllocator.hh \
+src/iofwd/RequestPoolAllocator.cpp \
 src/iofwd/RequestScheduler.hh \
 src/iofwd/ResizeRequest.hh \
 src/iofwd/ResizeTask.hh \

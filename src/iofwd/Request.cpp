@@ -41,7 +41,7 @@ const char * Request::opid2Name (int opid) const
 }
 
 Request::Request (int opid)
-   : opid_(opid)
+   : opid_(opid), alloc_id_(0)
 {
    ALWAYS_ASSERT (opid >= 0 && static_cast<size_t>(opid) <
          ((sizeof(opidnames)/sizeof(opidnames[0]))));
