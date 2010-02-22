@@ -10,7 +10,7 @@
 #include "c-util/configfile.h"
 
 /* dispatcher variables */
-static void * nofs_handle_tree_root = NULL;
+//static void * nofs_handle_tree_root = NULL;
 
 /* based on http://burtleburtle.net/bob/hash/doobs.html */
 static size_t zoidfs_nofs_handle_create(const zoidfs_handle_t * parent_handle, const char * component_name, const char * full_path, zoidfs_handle_t * handle)
@@ -81,7 +81,7 @@ static size_t zoidfs_nofs_handle_create(const zoidfs_handle_t * parent_handle, c
 }
 
 /* compare the handle hashes */
-static int zoidfs_nofs_handle_compare(const void * a, const void * b)
+/*static int zoidfs_nofs_handle_compare(const void * a, const void * b)
 {
     if(*(size_t *)a > *(size_t *)b)
     {
@@ -92,7 +92,7 @@ static int zoidfs_nofs_handle_compare(const void * a, const void * b)
         return -1;
     }
     return 0;
-}
+}*/
 
 /* comment out the hand cache tree for now ... */
 #if 0

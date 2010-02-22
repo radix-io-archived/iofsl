@@ -12,14 +12,14 @@ namespace iofwdutil
    {
 //===========================================================================
 
-class PoolWorkQueue : public WorkQueueBase 
+class PoolWorkQueue : public WorkQueueBase
 {
 public:
    PoolWorkQueue (unsigned int min = 0, unsigned int max = 6);
 
-   virtual iofwdutil::completion::CompletionID * queueWork (WorkItem * item); 
+   virtual iofwdutil::completion::CompletionID * queueWork (WorkItem * item);
 
-   virtual ~PoolWorkQueue (); 
+   virtual ~PoolWorkQueue ();
 
 protected:
 
@@ -27,36 +27,36 @@ protected:
    void createThread ();
 
    /// Called by the thread to destroy itself
-   void shutdownThread (); 
+   void shutdownThread ();
 
-   /// Thread entry point 
-   void threadMain (); 
+   /// Thread entry point
+   void threadMain ();
 
 protected:
    unsigned int thread_min_;
-   unsigned int thread_max_; 
-   
-   /// Number of threads that is working; Needs worklock_ 
+   unsigned int thread_max_;
+
+   /// Number of threads that is working; Needs worklock_
    volatile unsigned int thread_active_;
 
    /// Current number of threads
-   volatile unsigned int thread_current_; 
+   volatile unsigned int thread_current_;
 
    /// Shutdown flag
-   volatile bool shutdown_; 
+   volatile bool shutdown_;
 
-   iofwdutil::IOFWDLogSource & log_; 
+   iofwdutil::IOFWDLogSource & log_;
 
-   std::deque<WorkItem *> worklist_; 
+   std::deque<WorkItem *> worklist_;
 
    // Lock that protects the work lists
-   boost::mutex worklock_; 
+   boost::mutex worklock_;
 
    /// Work condition variable
-   boost::condition_variable workready_; 
+   boost::condition_variable workready_;
 
-   boost::condition_variable shutdown_signal_; 
-}; 
+   boost::condition_variable shutdown_signal_;
+};
 
 //===========================================================================
    }
