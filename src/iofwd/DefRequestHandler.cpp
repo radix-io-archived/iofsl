@@ -10,6 +10,7 @@
 #include "iofwdutil/workqueue/WorkItem.hh"
 #include "zoidfs/zoidfs-proto.h"
 #include "zoidfs/util/ZoidFSAsyncAPI.hh"
+#include "zoidfs/util/ZoidFSDefAsync.hh"
 #include "RequestScheduler.hh"
 
 using namespace iofwdutil;
@@ -26,11 +27,8 @@ DefRequestHandler::DefRequestHandler (const iofwdutil::ConfigFile & c)
    iofwdutil::ConfigFile csec;
    if (api_.init(config_.openSectionDefault ("zoidfsapi")) != zoidfs::ZFS_OK)
       throw "ZoidFSAPI::init() failed";
-
-   csec = config_.openSectionDefault("zoidfsasyncapi");
-   async_api_ = new zoidfs::ZoidFSAsyncAPI(&api_,
-                                           csec.getKeyAsDefault("minthreadnum", 0),
-                                           csec.getKeyAsDefault("maxthreadnum", 100));
+   async_api_ = new zoidfs::ZoidFSAsyncAPI(&api_);
+   async_api_full_ = new zoidfs::util::ZoidFSDefAsync(api_);
    sched_ = new RequestScheduler(async_api_, config_.openSectionDefault ("requestscheduler"));
    bpool_ = new BMIBufferPool(config_.openSectionDefault("bmibufferpool"));
 
@@ -66,6 +64,7 @@ DefRequestHandler::~DefRequestHandler ()
 
    api_.finalize();
    delete async_api_;
+   delete async_api_full_;
 }
 
 void DefRequestHandler::handleRequest (int count, Request ** reqs)

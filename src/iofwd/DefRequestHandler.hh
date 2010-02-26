@@ -9,6 +9,7 @@
 #include "iofwd/ThreadTasks.hh"
 #include "zoidfs/util/LogAPI.hh"
 #include "iofwdutil/ConfigFile.hh"
+#include "zoidfs/util/ZoidFSDefAsync.hh"
 
 namespace iofwdutil
 {
@@ -68,6 +69,7 @@ protected:
    /// API
    zoidfs::LogAPI api_;
    zoidfs::ZoidFSAsyncAPI * async_api_;
+   zoidfs::util::ZoidFSDefAsync * async_api_full_;
 
    /// Scheduler
    RequestScheduler * sched_;

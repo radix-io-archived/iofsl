@@ -124,6 +124,8 @@ src/iofwdutil/signals.cpp \
 src/iofwdutil/boost-spirit.hh \
 src/iofwdutil/PerfCounters.hh \
 src/iofwdutil/PerfCounters.cpp \
+src/iofwdutil/ThreadPool.hh \
+src/iofwdutil/ThreadPool.cpp \
 \
 src/iofwdutil/atomics.hh \
 \
