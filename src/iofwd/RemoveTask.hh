@@ -6,11 +6,12 @@
 #include "RemoveRequest.hh"
 #include "TaskHelper.hh"
 #include "zoidfs/util/ZoidFSAPI.hh"
+#include "iofwdutil/InjectPool.hh"
 
 namespace iofwd
 {
 
-class RemoveTask : public TaskHelper<RemoveRequest>
+class RemoveTask : public TaskHelper<RemoveRequest>, public iofwdutil::InjectPool<RemoveTask>
 {
 public:
    RemoveTask (ThreadTaskParam & p)

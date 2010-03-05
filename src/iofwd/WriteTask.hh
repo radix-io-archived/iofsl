@@ -9,19 +9,20 @@
 #include "iofwd/TaskHelper.hh"
 #endif
 #include <boost/function.hpp>
+#include "iofwdutil/InjectPool.hh"
 
 namespace iofwd
 {
 
 struct RetrievedBuffer;
 #ifdef USE_IOFWD_TASK_POOL
-class WriteTask : public TaskPoolHelper<WriteRequest>
+class WriteTask : public TaskPoolHelper<WriteRequest>, public iofwdutil::InjectPool<WriteTask>
 {
 public:
    WriteTask (ThreadTaskParam & p)
       : TaskPoolHelper<WriteRequest>(p)
 #else
-class WriteTask : public TaskHelper<WriteRequest>
+class WriteTask : public TaskHelper<WriteRequest>, public iofwdutil::InjectPool<WriteTask>
 {
 public:
    WriteTask (ThreadTaskParam & p)

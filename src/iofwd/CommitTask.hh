@@ -6,11 +6,12 @@
 #include "CommitRequest.hh"
 #include "TaskHelper.hh"
 #include "zoidfs/util/ZoidFSAPI.hh"
+#include "iofwdutil/InjectPool.hh"
 
 namespace iofwd
 {
 
-class CommitTask : public TaskHelper<CommitRequest>
+class CommitTask : public TaskHelper<CommitRequest>, public iofwdutil::InjectPool<CommitTask>
 {
 public:
    CommitTask (ThreadTaskParam & p)
@@ -29,7 +30,7 @@ public:
       request_.reply (block_);
       block_.wait ();
    }
-}; 
+};
 
 }
 

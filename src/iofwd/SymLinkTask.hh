@@ -6,11 +6,12 @@
 #include "SymLinkRequest.hh"
 #include "TaskHelper.hh"
 #include "zoidfs/util/ZoidFSAPI.hh"
+#include "iofwdutil/InjectPool.hh"
 
 namespace iofwd
 {
 
-class SymLinkTask : public TaskHelper<SymLinkRequest>
+class SymLinkTask : public TaskHelper<SymLinkRequest>, public iofwdutil::InjectPool<SymLinkTask>
 {
 public:
    SymLinkTask (ThreadTaskParam & p)
