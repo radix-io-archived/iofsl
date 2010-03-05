@@ -4,6 +4,7 @@
 #include "zoidfs/util/zoidfs-wrapped.hh"
 #include "IOFWDRequest.hh"
 #include "iofwd/RemoveRequest.hh"
+#include "iofwdutil/InjectPool.hh"
 
 namespace iofwd
 {
@@ -13,7 +14,8 @@ namespace iofwd
 
 class IOFWDRemoveRequest
    : public IOFWDRequest,
-     public RemoveRequest
+     public RemoveRequest,
+     public iofwdutil::InjectPool<IOFWDRemoveRequest>
 {
 public:
    IOFWDRemoveRequest (int opid, const BMI_unexpected_info & info,

@@ -4,7 +4,7 @@
 #include "zoidfs/util/zoidfs-wrapped.hh"
 #include "IOFWDRequest.hh"
 #include "iofwd/MkdirRequest.hh"
-
+#include "iofwdutil/InjectPool.hh"
 
 namespace iofwd
 {
@@ -14,7 +14,8 @@ namespace iofwd
 
 class IOFWDMkdirRequest
    : public IOFWDRequest,
-     public MkdirRequest
+     public MkdirRequest,
+     public iofwdutil::InjectPool<IOFWDMkdirRequest>
 {
 public:
    IOFWDMkdirRequest (int opid, const BMI_unexpected_info & info,

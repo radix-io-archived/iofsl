@@ -4,7 +4,7 @@
 #include "zoidfs/util/zoidfs-wrapped.hh"
 #include "IOFWDRequest.hh"
 #include "iofwd/RenameRequest.hh"
-
+#include "iofwdutil/InjectPool.hh"
 
 namespace iofwd
 {
@@ -14,7 +14,8 @@ namespace iofwd
 
 class IOFWDRenameRequest
    : public IOFWDRequest,
-     public RenameRequest
+     public RenameRequest,
+     public iofwdutil::InjectPool<IOFWDRenameRequest>
 {
 public:
    IOFWDRenameRequest (int opid, const BMI_unexpected_info & info,

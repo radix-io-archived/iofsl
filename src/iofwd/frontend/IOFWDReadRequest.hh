@@ -6,6 +6,7 @@
 #include "iofwdutil/bmi/BMI.hh"
 #include "iofwd/BMIBufferPool.hh"
 #include "iofwdutil/bmi/BMIBuffer.hh"
+#include "iofwdutil/InjectPool.hh"
 
 namespace iofwd
 {
@@ -15,7 +16,8 @@ namespace iofwd
 
 class  IOFWDReadRequest
    : public IOFWDRequest,
-     public ReadRequest
+     public ReadRequest,
+     public iofwdutil::InjectPool<IOFWDReadRequest>
 {
 public:
    IOFWDReadRequest (int opid, const BMI_unexpected_info & info,

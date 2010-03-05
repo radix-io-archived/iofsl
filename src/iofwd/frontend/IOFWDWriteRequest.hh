@@ -7,6 +7,7 @@
 #include "iofwd/BMIBufferPool.hh"
 #include "iofwdutil/bmi/BMIBuffer.hh"
 #include "iofwdutil/HybridAllocator.hh"
+#include "iofwdutil/InjectPool.hh"
 
 namespace iofwd
 {
@@ -16,7 +17,8 @@ namespace iofwd
 
 class IOFWDWriteRequest
    : public IOFWDRequest,
-     public WriteRequest
+     public WriteRequest,
+     public iofwdutil::InjectPool<IOFWDWriteRequest>
 {
 public:
    IOFWDWriteRequest (int opid, const BMI_unexpected_info & info,
