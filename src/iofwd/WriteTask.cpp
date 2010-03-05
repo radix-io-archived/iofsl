@@ -56,6 +56,7 @@ void WriteTask::runNormalMode(const WriteRequest::ReqParam & p)
       p.file_starts, p.file_sizes, p.op_hint));
    io_id->wait ();
 #else
+   // @TODO this is broken
    std::auto_ptr<iofwdutil::completion::CompletionID> io_id (sched_->enqueueWrite (
       p.handle, (size_t)p.mem_count,
       (const void**)p.mem_starts, p.bmi_mem_sizes,
