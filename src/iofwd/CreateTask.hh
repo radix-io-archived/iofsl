@@ -6,11 +6,12 @@
 #include "CreateRequest.hh"
 #include "TaskHelper.hh"
 #include "zoidfs/util/ZoidFSAPI.hh"
+#include "iofwdutil/InjectPool.hh"
 
 namespace iofwd
 {
 
-class CreateTask : public TaskHelper<CreateRequest>
+class CreateTask : public TaskHelper<CreateRequest>, public iofwdutil::InjectPool<CreateTask>
 {
 public:
    CreateTask (ThreadTaskParam & p)

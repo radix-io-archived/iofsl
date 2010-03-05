@@ -6,11 +6,12 @@
 #include "ReadDirRequest.hh"
 #include "TaskHelper.hh"
 #include "zoidfs/util/ZoidFSAPI.hh"
+#include "iofwdutil/InjectPool.hh"
 
 namespace iofwd
 {
 
-class ReadDirTask : public TaskHelper<ReadDirRequest>
+class ReadDirTask : public TaskHelper<ReadDirRequest>, public iofwdutil::InjectPool<ReadDirTask>
 {
 public:
    ReadDirTask (ThreadTaskParam & p)

@@ -6,11 +6,12 @@
 #include "LinkRequest.hh"
 #include "TaskHelper.hh"
 #include "zoidfs/util/ZoidFSAPI.hh"
+#include "iofwdutil/InjectPool.hh"
 
 namespace iofwd
 {
 
-class LinkTask : public TaskHelper<LinkRequest>
+class LinkTask : public TaskHelper<LinkRequest>, public iofwdutil::InjectPool<LinkTask>
 {
 public:
    LinkTask (ThreadTaskParam & p)

@@ -6,11 +6,12 @@
 #include "GetAttrRequest.hh"
 #include "TaskHelper.hh"
 #include "zoidfs/util/ZoidFSAPI.hh"
+#include "iofwdutil/InjectPool.hh"
 
 namespace iofwd
 {
 
-class GetAttrTask : public TaskHelper<GetAttrRequest>
+class GetAttrTask : public TaskHelper<GetAttrRequest>, public iofwdutil::InjectPool<GetAttrTask>
 {
 public:
    GetAttrTask (ThreadTaskParam & p)

@@ -6,11 +6,12 @@
 #include "ResizeRequest.hh"
 #include "TaskHelper.hh"
 #include "zoidfs/util/ZoidFSAPI.hh"
+#include "iofwdutil/InjectPool.hh"
 
 namespace iofwd
 {
 
-class ResizeTask : public TaskHelper<ResizeRequest>
+class ResizeTask : public TaskHelper<ResizeRequest>, public iofwdutil::InjectPool<ResizeTask>
 {
 public:
    ResizeTask (ThreadTaskParam & p)

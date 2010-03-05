@@ -6,11 +6,12 @@
 #include "MkdirRequest.hh"
 #include "TaskHelper.hh"
 #include "zoidfs/util/ZoidFSAPI.hh"
+#include "iofwdutil/InjectPool.hh"
 
 namespace iofwd
 {
 
-class MkdirTask : public TaskHelper<MkdirRequest>
+class MkdirTask : public TaskHelper<MkdirRequest>, public iofwdutil::InjectPool<MkdirTask>
 {
 public:
    MkdirTask (ThreadTaskParam & p)

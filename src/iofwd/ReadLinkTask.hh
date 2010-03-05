@@ -8,11 +8,12 @@
 #include "ReadLinkRequest.hh"
 #include "TaskHelper.hh"
 #include "zoidfs/util/ZoidFSAPI.hh"
+#include "iofwdutil/InjectPool.hh"
 
 namespace iofwd
 {
 
-class ReadLinkTask : public TaskHelper<ReadLinkRequest>
+class ReadLinkTask : public TaskHelper<ReadLinkRequest>, public iofwdutil::InjectPool<ReadLinkTask>
 {
 public:
    ReadLinkTask (ThreadTaskParam & p)

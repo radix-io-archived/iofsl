@@ -3,14 +3,16 @@
 
 #include "Task.hh"
 #include "WriteRequest.hh"
-#include "TaskHelper.hh"
+#include "iofwd/TaskHelper.hh"
+#include <boost/function.hpp>
+#include "iofwdutil/InjectPool.hh"
 
 namespace iofwd
 {
 
 struct RetrievedBuffer;
 
-class WriteTask : public TaskHelper<WriteRequest>
+class WriteTask : public TaskHelper<WriteRequest>, public iofwdutil::InjectPool<WriteTask>
 {
 public:
    WriteTask (ThreadTaskParam & p)

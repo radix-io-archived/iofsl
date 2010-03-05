@@ -9,11 +9,12 @@
 #include "TaskHelper.hh"
 #include "zoidfs/util/ZoidFSAPI.hh"
 #include "iofwdevent/SingleCompletion.hh"
+#include "iofwdutil/InjectPool.hh"
 
 namespace iofwd
 {
 
-class NullTask : public TaskHelper<NullRequest>
+class NullTask : public TaskHelper<NullRequest>, public iofwdutil::InjectPool<NullTask>
 {
 public:
    NullTask (ThreadTaskParam & p)
