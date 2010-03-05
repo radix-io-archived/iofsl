@@ -66,6 +66,21 @@ void WriteTask::runNormalMode(const WriteRequest::ReqParam & p)
       for (uint32_t i = 0; i < p.mem_count; i++)
          tmp_mem_sizes[i] = p.mem_sizes[i];
    }
+
+#if SIZEOF_SIZE_T == SIZEOF_INT64_T
+   std::auto_ptr<iofwdutil::completion::CompletionID> io_id (sched_->enqueueWrite (
+      p.handle, (size_t)p.mem_count,
+      (const void**)p.mem_starts, p.mem_sizes,
+      p.file_starts, p.file_sizes, p.op_hint));
+   io_id->wait ();
+#else
+   std::auto_ptr<iofwdutil::completion::CompletionID> io_id (sched_->enqueueWrite (
+      p.handle, (size_t)p.mem_count,
+      (const void**)p.mem_starts, p.bmi_mem_sizes,
+      p.file_starts, p.file_sizes, p.op_hint));
+   io_id->wait ();
+#endif
+
    int ret = zoidfs::ZFS_OK;
 #ifdef USE_IOFWD_TASK_POOL
    request_->setReturnCode (ret);
