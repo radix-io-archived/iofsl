@@ -14,6 +14,9 @@ namespace sm
 
 void SMManager::runNow (SMClient * client)
 {
+   // This is here so the client gets deleted if it runs to completion
+   // in this method.
+   SMClientSharedPtr ptr (client);
    do
    {
       ZLOG_DEBUG_MORE(log_,format("SMManager runNow client %p") % (void*) client);

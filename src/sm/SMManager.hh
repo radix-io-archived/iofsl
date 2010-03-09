@@ -30,7 +30,6 @@ public:
     */
    SMManager (size_t threads  = 0);
 
-
    /**
     * Queue an item for execution.
     * Will keep the item alive until it executed.
@@ -38,7 +37,9 @@ public:
    void schedule (SMClient * client);
 
    /**
-    * Immediately execute the client
+    * Immediately execute the client until it blocks.
+    * If -- after execution -- the client reference count
+    * == 0, it will be deleted.
     */
    void runNow (SMClient * client);
 
