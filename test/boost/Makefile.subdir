@@ -73,3 +73,12 @@ test_boost_encoder_SOURCES = test/boost/encoder.cpp \
 test_boost_encoder_LDFLAGS = $(shared_ldflags)
 test_boost_encoder_LDADD = $(shared_ldadd)
 
+#############################################################################
+# IOFWDUtil Components
+#############################################################################
+check_PROGRAMS += test/boost/iofwdutil
+TESTS += test/boost/iofwdutil
+test_boost_iofwdutil_SOURCES = test/boost/iofwdutil.cpp
+test_boost_iofwdutil_LDFLAGS = $(shared_ldflags)
+test_boost_iofwdutil_LDADD = $(shared_ldadd)
+
