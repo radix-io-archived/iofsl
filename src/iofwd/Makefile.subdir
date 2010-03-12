@@ -41,6 +41,7 @@ src/iofwd/Task.cpp \
 src/iofwd/ThreadTasks.cpp \
 src/iofwd/WriteTask.cpp \
 src/iofwd/tasksm/WriteTaskSM.cpp \
+src/iofwd/tasksm/ReadTaskSM.cpp \
 src/iofwd/iofwd.cpp \
 src/iofwd/BufferPool.hh \
 src/iofwd/BMIBufferPool.hh \
@@ -94,6 +95,7 @@ src/iofwd/ThreadTasks.hh \
 src/iofwd/WriteRequest.hh \
 src/iofwd/WriteTask.hh \
 src/iofwd/tasksm/WriteTaskSM.hh \
+src/iofwd/tasksm/ReadTaskSM.hh \
 src/iofwd/Resources.hh \
 src/iofwd/tasksm/SMRetrievedBuffer.hh \
 src/iofwd/tasksm/SMRetrievedBuffer.cpp \

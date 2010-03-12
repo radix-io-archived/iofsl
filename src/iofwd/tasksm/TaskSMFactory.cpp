@@ -4,6 +4,7 @@
 #include "zoidfs/zoidfs-proto.h"
 
 #include "iofwd/tasksm/WriteTaskSM.hh"
+#include "iofwd/tasksm/ReadTaskSM.hh"
 
 using namespace zoidfs;
 
@@ -19,6 +20,9 @@ void TaskSMFactory::operator () (iofwd::Request * req)
     {
         case ZOIDFS_PROTO_WRITE:
             smm_.schedule(new WriteTaskSM(smm_, sched_, bpool_, req));
+            return;
+        case ZOIDFS_PROTO_READ:
+            smm_.schedule(new ReadTaskSM(smm_, sched_, bpool_, req));
             return;
         default:
             return;

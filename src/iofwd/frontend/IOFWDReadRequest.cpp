@@ -11,6 +11,7 @@ namespace iofwd
 
 IOFWDReadRequest::~IOFWDReadRequest ()
 {
+#ifndef USE_TASK_HA
    if (param_.mem_starts)
       delete[] param_.mem_starts;
    if (param_.mem_sizes)
@@ -21,10 +22,23 @@ IOFWDReadRequest::~IOFWDReadRequest ()
       delete[] param_.file_sizes;
    if (param_.bmi_mem_sizes)
       delete[] param_.bmi_mem_sizes;
+#else
+   if (param_.mem_starts)
+      h.hafree(param_.mem_starts);
+   if (param_.mem_sizes)
+      h.hafree(param_.mem_sizes);
+   if (param_.file_starts)
+      h.hafree(param_.file_starts);
+   if (param_.file_sizes)
+      h.hafree(param_.file_sizes);
+   if (param_.bmi_mem_sizes)
+      h.hafree(param_.bmi_mem_sizes);
+#endif
    if(param_.op_hint)
       zoidfs::util::ZoidFSHintDestroy(&(param_.op_hint));
    if(bmi_buffer_)
       delete bmi_buffer_;
+
 }
 
 //
@@ -38,14 +52,27 @@ const IOFWDReadRequest::ReqParam & IOFWDReadRequest::decodeParam ()
 
    // get the mem count and sizes
    process (req_reader_, param_.mem_count);
+#ifndef USE_TASK_HA
    param_.mem_sizes = new size_t[param_.mem_count];
+#else
+   param_.mem_sizes = (h.hamalloc<size_t>(param_.mem_count));
+#endif
    process (req_reader_, encoder::EncVarArray(param_.mem_sizes, param_.mem_count));
 
    // get the file count, sizes, and starts
    process (req_reader_, param_.file_count);
+
+#ifndef USE_TASK_HA
    param_.file_starts = new zoidfs::zoidfs_file_ofs_t[param_.file_count];
+#else
+   param_.file_starts = (h.hamalloc<zoidfs::zoidfs_file_ofs_t>(param_.file_count));
+#endif
    process (req_reader_, encoder::EncVarArray(param_.file_starts, param_.file_count));
+#ifndef USE_TASK_HA
    param_.file_sizes = new zoidfs::zoidfs_file_ofs_t[param_.file_count];
+#else
+   param_.file_sizes = (h.malloc<zoidfs::zoidfs_file_ofs_t>(param_.file_count));
+#endif
    process (req_reader_, encoder::EncVarArray(param_.file_sizes, param_.file_count));
 
    // get the pipeline size
@@ -78,16 +105,33 @@ const IOFWDReadRequest::ReqParam & IOFWDReadRequest::decodeParam ()
         if(param_.mem_count != param_.file_count)
         {
             param_.mem_count = param_.file_count;
+#ifndef USE_TASK_HA
             delete[] param_.mem_sizes;
             param_.mem_sizes = new size_t[param_.file_count];
+#else
+            h.hafree(param_.mem_sizes);
+            param_.mem_sizes = (h.hamalloc<size_t>(param_.file_count));
+#endif
         }
 
+#ifndef USE_TASK_HA
         param_.mem_starts = new char*[param_.file_count];
+#else
+        param_.mem_starts = (h.hamalloc<char *>(param_.file_count));
+#endif
 
+#ifndef USE_TASK_HA
 #if SIZEOF_SIZE_T != SIZEOF_INT64_T
         param_.bmi_mem_sizes = new bmi_size_t[param_.file_count];
 #else
         param_.bmi_mem_sizes = NULL;
+#endif
+#else
+#if SIZEOF_SIZE_T != SIZEOF_INT64_T
+        param_.bmi_mem_sizes = (h.hamalloc<bmi_size_t>(param_.file_count));
+#else
+        param_.bmi_mem_sizes = NULL;
+#endif
 #endif
 
         // setup the mem offset and start buffers
@@ -127,6 +171,10 @@ iofwdutil::completion::CompletionID * IOFWDReadRequest::sendPipelineBuffer(iofwd
    return id;
 }
 
+void IOFWDReadRequest::sendPipelineBufferCB(iofwdevent::CBType cb, iofwdutil::bmi::BMIBuffer * buf, size_t size)
+{
+   r_.rbmi_.post_send(cb, addr_, (char *)buf->get(), size, buf->bmiType(), tag_, 0);
+}
 
 void IOFWDReadRequest::reply(const CBType & cb)
 {
