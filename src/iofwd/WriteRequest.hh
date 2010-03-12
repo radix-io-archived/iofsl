@@ -44,6 +44,7 @@ public:
 
   // for pipeline mode
   virtual iofwdutil::completion::CompletionID * recvPipelineBuffer(iofwdutil::bmi::BMIBuffer * buf, size_t size) = 0;
+  virtual void recvPipelineBufferCB(iofwdevent::CBType cb, iofwdutil::bmi::BMIBuffer * buf, size_t size) = 0;
 
   virtual iofwdutil::bmi::BMIAddr getRequestAddr() = 0;
 };

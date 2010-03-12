@@ -12,6 +12,7 @@
 #include "zoidfs/util/ZoidFSAsyncAPI.hh"
 #include "zoidfs/util/ZoidFSDefAsync.hh"
 #include "RequestScheduler.hh"
+#include "iofwd/tasksm/WriteTaskSM.hh"
 
 #include "iofwd/TaskPoolHelper.hh"
 
@@ -31,7 +32,7 @@ DefRequestHandler::DefRequestHandler (const iofwdutil::ConfigFile & c)
       throw "ZoidFSAPI::init() failed";
    async_api_ = new zoidfs::ZoidFSAsyncAPI(&api_);
    async_api_full_ = new zoidfs::util::ZoidFSDefAsync(api_);
-   sched_ = new RequestScheduler(async_api_, config_.openSectionDefault ("requestscheduler"));
+   sched_ = new RequestScheduler(async_api_, async_api_full_, config_.openSectionDefault ("requestscheduler"));
    bpool_ = new BMIBufferPool(config_.openSectionDefault("bmibufferpool"));
 
    workqueue_normal_.reset (new PoolWorkQueue (0, 100));
@@ -39,8 +40,10 @@ DefRequestHandler::DefRequestHandler (const iofwdutil::ConfigFile & c)
    boost::function<void (Task *)> f = boost::lambda::bind
       (&DefRequestHandler::reschedule, this, boost::lambda::_1);
 
-   tpool_ = new TaskPool(config_.openSectionDefault("taskpool"), f);
    taskfactory_.reset (new ThreadTasks (f, &api_, async_api_, sched_, bpool_, tpool_));
+
+   taskSMFactory_.reset(new iofwd::tasksm::TaskSMFactory(sched_, bpool_, smm));
+   smm.startThreads();
 }
 
 void DefRequestHandler::reschedule (Task * t)
@@ -50,6 +53,8 @@ void DefRequestHandler::reschedule (Task * t)
 
 DefRequestHandler::~DefRequestHandler ()
 {
+   smm.stopThreads();
+
    std::vector<WorkItem *> items;
    ZLOG_INFO (log_, "Waiting for normal workqueue to complete all work...");
    workqueue_normal_->waitAll (items);
@@ -62,7 +67,6 @@ DefRequestHandler::~DefRequestHandler ()
 
    delete sched_;
    delete bpool_;
-   delete tpool_;
 
    api_.finalize();
    delete async_api_;
@@ -71,21 +75,24 @@ DefRequestHandler::~DefRequestHandler ()
 
 void DefRequestHandler::handleRequest (int count, Request ** reqs)
 {
-   ZLOG_DEBUG(log_, str(format("handleRequest: %u requests") % count));
-   for (int i=0; i<count; ++i)
-   {
-      Task * task = (*taskfactory_) (reqs[i]);
-
-      // TODO: workqueues are supposed to return some handle so that we can
-      // test which requests completed. That way that requesthandler can
-      // reschedule requests and free completed requests
-      iofwdutil::completion::CompletionID * id;
-      if (task->isFast())
-         id = workqueue_fast_->queueWork (task);
-      else
-         id = workqueue_normal_->queueWork (task);
-      delete id;
-   }
+    ZLOG_DEBUG(log_, str(format("handleRequest: %u requests") % count));
+    for (int i=0; i<count; ++i)
+    {
+        if(reqs[i]->getOpID() == zoidfs::ZOIDFS_PROTO_WRITE)
+        {
+            (*taskSMFactory_)(reqs[i]);
+        }
+        else
+        {
+            Task * task = (*taskfactory_) (reqs[i]);
+            iofwdutil::completion::CompletionID * id;
+            if (task->isFast())
+                id = workqueue_fast_->queueWork (task);
+            else
+                id = workqueue_normal_->queueWork (task);
+            delete id;
+        }
+    }
 
    // Cleanup completed requests
    workqueue_normal_->testAll (completed_);
@@ -96,26 +103,9 @@ void DefRequestHandler::handleRequest (int count, Request ** reqs)
       if (static_cast<Task*>(completed_[i])->getStatus() ==
             Task::STATUS_DONE)
       {
-#ifndef USE_TASK_POOL_ALLOCATOR
-#ifdef USE_IOFWD_TASK_POOL
-         /* if this task was allocated from the pool, put it back on the pool */
-         if(static_cast<Task*>(completed_[i])->getTaskAllocType() == true)
-         {
-            static_cast<Task*>(completed_[i])->cleanup();
-         }
-         /* else, delete it */
-         else
-         {
-            delete (completed_[i]);
-         }
-#else
-            delete (completed_[i]);
-#endif
-#else
         /* invoke the destructor and then add the mem back the task memory pool */
         static_cast<Task *>(completed_[i])->~Task();
         iofwd::TaskPoolAllocator::instance().deallocate(static_cast<Task *>(completed_[i]));
-#endif
       }
    }
    completed_.clear ();

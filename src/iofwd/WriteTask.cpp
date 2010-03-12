@@ -45,15 +45,9 @@ void releaseRetrievedBuffer(RetrievedBuffer& b)
 void WriteTask::runNormalMode(const WriteRequest::ReqParam & p)
 {
    // issue recvBuffers w/ callback
-#ifdef USE_IOFWD_TASK_POOL
-   block_.reset();
-   request_->recvBuffers((block_));
-   block_.wait();
-#else
    block_.reset();
    request_.recvBuffers((block_));
    block_.wait();
-#endif
 
    // p.mem_sizes is uint64_t array, but ZoidFSAPI::write() takes size_t array
    // for its arguments. Therefore, in (sizeof(size_t) != sizeof(uint64_t))
@@ -82,22 +76,12 @@ void WriteTask::runNormalMode(const WriteRequest::ReqParam & p)
 #endif
 
    int ret = zoidfs::ZFS_OK;
-#ifdef USE_IOFWD_TASK_POOL
-   request_->setReturnCode (ret);
-#else
    request_.setReturnCode (ret);
-#endif
 
    // issue reply w/ callback
-#ifdef USE_IOFWD_TASK_POOL
-   block_.reset();
-   request_->reply((block_));
-   block_.wait();
-#else
    block_.reset();
    request_.reply((block_));
    block_.wait();
-#endif
 
 }
 
@@ -219,18 +203,10 @@ void WriteTask::runPipelineMode(const WriteRequest::ReqParam & p)
 
      // try to alloc buffer
      if (alloc_id == NULL)
-#ifdef USE_IOFWD_TASK_POOL
-       alloc_id = bpool_->alloc(request_->getRequestAddr(), iofwdutil::bmi::BMI::ALLOC_RECEIVE);
-#else
        alloc_id = bpool_->alloc(request_.getRequestAddr(), iofwdutil::bmi::BMI::ALLOC_RECEIVE);
-#endif
      // issue recv requests for next pipeline buffer
      if (alloc_id != NULL && alloc_id->test(10)) {
-#ifdef USE_IOFWD_TASK_POOL
-       rx_id = request_->recvPipelineBuffer(alloc_id->get_buf(), p_siz);
-#else
        rx_id = request_.recvPipelineBuffer(alloc_id->get_buf(), p_siz);
-#endif
      }
 
      // check I/O requests completion in io_q
