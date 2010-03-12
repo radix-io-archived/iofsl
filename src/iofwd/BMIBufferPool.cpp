@@ -7,14 +7,25 @@ using namespace std;
 namespace iofwd
 {
 
-struct WaitingBMIBuffer
-{
-  iofwdutil::bmi::BMIBuffer * buf;
-  boost::mutex mutex;
-  boost::condition_variable cond;
-};
-
 //===========================================================================
+BMIBufferWrapper::BMIBufferWrapper() : pool_(NULL), buf_(NULL)
+{
+}
+
+BMIBufferWrapper::~BMIBufferWrapper()
+{
+    if(buf_)
+    {
+        pool_->free(buf_);
+    }
+    pool_ = NULL;
+}
+
+iofwdutil::bmi::BMIBuffer * BMIBufferWrapper::get_buf()
+{
+    assert(buf_ != NULL);
+    return buf_->buf;
+}
 
 BMIBufferAllocCompletionID::BMIBufferAllocCompletionID(BMIBufferPool * p_,
                                                  WaitingBMIBuffer * b_)
@@ -96,6 +107,32 @@ BMIBufferPool::alloc(iofwdutil::bmi::BMIAddr addr, iofwdutil::bmi::BMI::AllocTyp
   m_.unlock();
 
   return new BMIBufferAllocCompletionID(this, b);
+}
+
+void BMIBufferPool::allocCB(iofwdevent::CBType cb, iofwdutil::bmi::BMIAddr addr, iofwdutil::bmi::BMI::AllocType a, BMIBufferWrapper * bwrap)
+{
+  WaitingBMIBuffer * b = new WaitingBMIBuffer();
+
+  /* try to get a BMIBuffer */
+  m_.lock();
+  bool need_wait = cur_size_ >= max_num_;
+  if (need_wait) {
+    b->buf = new iofwdutil::bmi::BMIBuffer(addr, a);
+    b->buf->resize(0);
+    wait_q_.push_back(b);
+  } else {
+    b->buf = new iofwdutil::bmi::BMIBuffer(addr, a);
+    b->buf->resize(size_);
+    cur_size_++;
+  }
+  m_.unlock();
+
+  /* setup the buffer data */
+  bwrap->buf_ = b;
+  bwrap->pool_ = this;
+
+  /* issue the callback */
+  cb(iofwdevent::COMPLETED);
 }
 
 void
