@@ -1,4 +1,7 @@
-#include "SimpleSM.hh"
+#ifndef __HH_SM_SIMPLENESTEDSM__
+#define __HH_SM_SIMPLENESTEDSM__
+
+#include "iofwdevent/CBType.hh"
 
 namespace sm
 {
@@ -8,12 +11,11 @@ namespace sm
     * A SimpleSM that can be nested; When it leaves it enters it final state,
     * it calls a user specified callback function.
     */
-   class SimpleNestedSM : public SimpleSM<T>
+   class SimpleNestedSM
    {
-      using iofwdevent::CBType;
    public:
 
-      SimpleNestedSM (const CBType & cb)
+      SimpleNestedSM (const iofwdevent::CBType & cb)
          : cb_(cb)
       {
       }
@@ -26,7 +28,7 @@ namespace sm
        * Calling done will call notify the caller of this nested SM
        * that results are available and that it can continue.
        */
-      void done (int status)
+      void done(int status)
       {
          if (cb_.empty())
             return;
@@ -38,20 +40,22 @@ namespace sm
       /**
        * Set the function that will be called when the this SM completes.
        */
-      void setCallback (const CBType & cb)
+      void setCallback (const iofwdevent::CBType & cb)
       {
          cb_ = cb;
       }
 
       virtual ~SimpleNestedSM ()
       {
-         done ();
+         done(0);
       }
 
    protected:
-      CBType cb_;
+      iofwdevent::CBType cb_;
 
    };
 
 
 }
+
+#endif
