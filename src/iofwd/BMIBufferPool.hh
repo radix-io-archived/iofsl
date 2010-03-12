@@ -8,12 +8,19 @@
 #include "iofwdutil/bmi/BMIAddr.hh"
 #include "iofwdutil/bmi/BMI.hh"
 #include "iofwdutil/ConfigFile.hh"
+#include "iofwdevent/CBType.hh"
 
 namespace iofwd
 {
 
 class BMIBufferPool;
-class WaitingBMIBuffer;
+
+struct WaitingBMIBuffer
+{
+  iofwdutil::bmi::BMIBuffer * buf;
+  boost::mutex mutex;
+  boost::condition_variable cond;
+};
 
 class BMIBufferAllocCompletionID : public iofwdutil::completion::CompletionID
 {
@@ -31,6 +38,17 @@ protected:
   WaitingBMIBuffer * buf_;
 };
 
+class BMIBufferWrapper
+{
+    public:
+        BMIBufferWrapper();
+        ~BMIBufferWrapper();
+        iofwdutil::bmi::BMIBuffer * get_buf();
+
+        BMIBufferPool * pool_;
+        WaitingBMIBuffer * buf_;
+};
+
 class BMIBufferPool
 {
 public:
@@ -39,9 +57,11 @@ public:
 
   uint64_t pipeline_size() const { return size_; }
   BMIBufferAllocCompletionID * alloc(iofwdutil::bmi::BMIAddr addr, iofwdutil::bmi::BMI::AllocType a);
+  void allocCB(iofwdevent::CBType cb, iofwdutil::bmi::BMIAddr addr, iofwdutil::bmi::BMI::AllocType a, BMIBufferWrapper * bwrap);
 
 protected:
   friend class BMIBufferAllocCompletionID;
+  friend class BMIBufferWrapper;
   void free(WaitingBMIBuffer * buf);
 
 private:
