@@ -7,6 +7,7 @@
 #include "iofwd/BMIBufferPool.hh"
 #include "iofwdutil/bmi/BMIBuffer.hh"
 #include "iofwdutil/InjectPool.hh"
+#include "iofwdutil/HybridAllocator.hh"
 
 namespace iofwd
 {
@@ -36,6 +37,7 @@ public:
 
    // for pipeline mode
    virtual iofwdutil::completion::CompletionID * sendPipelineBuffer(iofwdutil::bmi::BMIBuffer * buf, size_t size);
+   virtual void sendPipelineBufferCB(iofwdevent::CBType cb, iofwdutil::bmi::BMIBuffer * buf, size_t size);
 
    virtual iofwdutil::bmi::BMIAddr getRequestAddr()
    {
@@ -44,6 +46,7 @@ public:
 
 private:
    ReqParam param_;
+   iofwdutil::HybridAllocator<4096> h;
    zoidfs::zoidfs_handle_t handle_;
    iofwdutil::bmi::BMIBuffer * bmi_buffer_;
 };

@@ -78,7 +78,7 @@ void DefRequestHandler::handleRequest (int count, Request ** reqs)
     ZLOG_DEBUG(log_, str(format("handleRequest: %u requests") % count));
     for (int i=0; i<count; ++i)
     {
-        if(reqs[i]->getOpID() == zoidfs::ZOIDFS_PROTO_WRITE)
+        if(reqs[i]->getOpID() == zoidfs::ZOIDFS_PROTO_WRITE || reqs[i]->getOpID() == zoidfs::ZOIDFS_PROTO_READ)
         {
             (*taskSMFactory_)(reqs[i]);
         }
