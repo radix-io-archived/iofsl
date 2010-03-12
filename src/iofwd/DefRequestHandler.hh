@@ -10,6 +10,8 @@
 #include "zoidfs/util/LogAPI.hh"
 #include "iofwdutil/ConfigFile.hh"
 #include "zoidfs/util/ZoidFSDefAsync.hh"
+#include "sm/SMManager.hh"
+#include "iofwd/tasksm/TaskSMFactory.hh"
 
 namespace iofwdutil
 {
@@ -66,6 +68,9 @@ protected:
    /// Associates request with a task
    std::auto_ptr<ThreadTasks> taskfactory_;
 
+   // state machine factory
+   std::auto_ptr<iofwd::tasksm::TaskSMFactory> taskSMFactory_;
+
    /// API
    zoidfs::LogAPI api_;
    zoidfs::ZoidFSAsyncAPI * async_api_;
@@ -79,6 +84,8 @@ protected:
 
    // config file
    const iofwdutil::ConfigFile & config_;
+
+   sm::SMManager smm;
 };
 
 }

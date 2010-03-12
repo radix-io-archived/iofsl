@@ -160,7 +160,7 @@ void IOFWDWriteRequest::recvBuffers(const CBType & cb)
                             param_.mem_count, param_.mem_total_size, &(param_.mem_expected_size), bmi_buffer_->bmiType(), tag_, 0);
 #else
    r_.rbmi_.post_recv_list (cb, addr_, reinterpret_cast<void*const*>(param_.mem_starts), reinterpret_cast<const bmi_size_t*>(param_.bmi_mem_sizes),
-                            param_.mem_count, param_.mem_total_size, &total_actual_size, bmi_buffer_->bmiType(), tag_, 0);
+                            param_.mem_count, param_.mem_total_size, &(param_.mem_expected_size), bmi_buffer_->bmiType(), tag_, 0);
 #endif
 }
 
@@ -169,6 +169,12 @@ iofwdutil::completion::CompletionID * IOFWDWriteRequest::recvPipelineBuffer(iofw
    iofwdutil::completion::BMICompletionID * id = new iofwdutil::completion::BMICompletionID ();
    bmires_.postReceive (id, addr_, (char *)buf->get(), size, buf->bmiType(), tag_, 0);
    return id;
+}
+
+void IOFWDWriteRequest::recvPipelineBufferCB(iofwdevent::CBType cb, iofwdutil::bmi::BMIBuffer * buf, size_t size)
+{
+   param_.mem_expected_size = 0;
+   r_.rbmi_.post_recv(cb, addr_, (char *)buf->get(), size, &(param_.mem_expected_size), buf->bmiType(), tag_, 0);
 }
 
 void IOFWDWriteRequest::reply(const CBType & cb)

@@ -38,6 +38,7 @@ public:
 
    // for pipeline mode
    virtual iofwdutil::completion::CompletionID * recvPipelineBuffer(iofwdutil::bmi::BMIBuffer * buf, size_t size);
+   virtual void recvPipelineBufferCB(iofwdevent::CBType cb, iofwdutil::bmi::BMIBuffer * buf, size_t size);
 
    virtual iofwdutil::bmi::BMIAddr getRequestAddr()
    {

@@ -17,6 +17,9 @@
 #include "Range.hh"
 #include "RangeSet.hh"
 
+#include "iofwd/tasksm/IOCBWrapper.hh"
+#include "iofwd/tasksm/SharedIOCB.hh"
+
 using namespace std;
 using namespace iofwdutil;
 using namespace iofwdutil::completion;
@@ -93,8 +96,8 @@ private:
   boost::shared_ptr<CompletionID> ptr_;
 };
 
-RequestScheduler::RequestScheduler(zoidfs::ZoidFSAsyncAPI * async_api, const iofwdutil::ConfigFile & c)
-  : log_(IOFWDLog::getSource()), exiting(false), async_api_(async_api)
+RequestScheduler::RequestScheduler(zoidfs::ZoidFSAsyncAPI * async_api, zoidfs::util::ZoidFSDefAsync * async_cb_api, const iofwdutil::ConfigFile & c)
+  : log_(IOFWDLog::getSource()), exiting(false), async_api_(async_api), async_cb_api_(async_cb_api)
 {
   RangeScheduler * rsched;
   char * sched_algo = new char[c.getKeyDefault("schedalgo", "fifo").size() + 1];
@@ -150,6 +153,36 @@ CompletionID * RequestScheduler::enqueueWrite(
   return ccid;
 }
 
+void RequestScheduler::enqueueWriteCB(
+  iofwdevent::CBType cb, zoidfs::zoidfs_handle_t * handle, size_t count,
+  const void ** mem_starts, size_t * mem_sizes,
+  uint64_t * file_starts, uint64_t * file_sizes, zoidfs::zoidfs_op_hint_t * op_hint)
+{
+  // ignore zero-length request
+  int valid_count = 0;
+  for (uint32_t i = 0; i < count; i++)
+    if (file_sizes[i] > 0)
+      valid_count++;
+
+  iofwd::tasksm::IOCBWrapper * c = new iofwd::tasksm::IOCBWrapper(cb, valid_count);
+  for (uint32_t i = 0; i < count; i++) {
+    assert(mem_sizes[i] == file_sizes[i]);
+    if (file_sizes[i] == 0) continue;
+
+    ChildRange * r = new ChildRange(file_starts[i], file_starts[i] + file_sizes[i]);
+    r->type_ = RANGE_WRITE;
+    r->handle_ = handle;
+    r->buf_ = (char*)mem_starts[i];
+    r->cid_ = NULL;
+    r->cb_ = c;
+    r->op_hint_ = op_hint;
+
+    boost::mutex::scoped_lock l(lock_);
+    range_sched_->enqueue(r);
+  }
+  notifyConsumer();
+}
+
 CompletionID * RequestScheduler::enqueueRead(
   zoidfs::zoidfs_handle_t * handle, size_t count,
   void ** mem_starts, size_t * mem_sizes,
@@ -178,6 +211,36 @@ CompletionID * RequestScheduler::enqueueRead(
   }
   notifyConsumer();
   return ccid;
+}
+
+void RequestScheduler::enqueueReadCB(
+  iofwdevent::CBType cb, zoidfs::zoidfs_handle_t * handle, size_t count,
+  void ** mem_starts, size_t * mem_sizes,
+  uint64_t * file_starts, uint64_t * file_sizes, zoidfs::zoidfs_op_hint_t * op_hint)
+{
+  // ignore zero-length request
+  int valid_count = 0;
+  for (uint32_t i = 0; i < count; i++)
+    if (file_sizes[i] > 0)
+      valid_count++;
+
+  iofwd::tasksm::IOCBWrapper * c = new iofwd::tasksm::IOCBWrapper(cb, valid_count);
+  for (uint32_t i = 0; i < count; i++) {
+    assert(mem_sizes[i] == file_sizes[i]);
+    if (file_sizes == 0) continue;
+
+    ChildRange * r =  new ChildRange(file_starts[i], file_starts[i] + file_sizes[i]);
+    r->type_ = RANGE_READ;
+    r->handle_ = handle;
+    r->buf_ = (char*)mem_starts[i];
+    r->cid_ = NULL;
+    r->cb_ = c;
+    r->op_hint_ = op_hint;
+
+    boost::mutex::scoped_lock l(lock_);
+    range_sched_->enqueue(r);
+  }
+  notifyConsumer();
 }
 
 void RequestScheduler::run()
@@ -275,6 +338,7 @@ void RequestScheduler::run()
 
 void RequestScheduler::issue(vector<ChildRange *>& rs)
 {
+  std::vector< iofwd::tasksm::IOCBWrapper * > cbvec;
   unsigned int narrays = 0;
   for (unsigned int i = 0; i < rs.size(); i++) {
     ChildRange * r = rs[i];
@@ -288,6 +352,7 @@ void RequestScheduler::issue(vector<ChildRange *>& rs)
     }
   }
 
+  int * ret = new int(0);
   char ** mem_starts = new char*[narrays];
   size_t * mem_sizes = new size_t[narrays];
   uint64_t * file_starts = new uint64_t[narrays];
@@ -302,6 +367,7 @@ void RequestScheduler::issue(vector<ChildRange *>& rs)
     if (is_merged) {
       const ParentRange * pr = dynamic_cast<ParentRange *>(r);
       nranges = pr->child_ranges_.size();
+      cbvec.insert(cbvec.end(), pr->child_cbs_.begin(), pr->child_cbs_.end());
       for(unsigned int j = 0 ; j < nranges ; j++)
       {
         const ChildRange * child_r = pr->child_ranges_[j];
@@ -316,50 +382,41 @@ void RequestScheduler::issue(vector<ChildRange *>& rs)
       mem_sizes[nth] = r->en_ - r->st_;
       file_starts[nth] = r->st_;
       file_sizes[nth] = r->en_ - r->st_;
+      cbvec.push_back(r->cb_);
       nth++;
     }
     assert(r->en_ > r->st_);
   }
   assert(nth == narrays);
 
-  // issue asynchronous I/O using ZoidFSAsyncAPI
-  CompletionID *async_id;
+  /* generate a shared callback wrapper */
+  iofwd::tasksm::SharedIOCB * cbs = NULL;
+  if(cbvec.size() > 1)
+  {
+     cbs = new iofwd::tasksm::MultiSharedIOCB(ret, mem_starts, mem_sizes, file_starts, file_sizes);
+     dynamic_cast<iofwd::tasksm::MultiSharedIOCB *>(cbs)->loadCBs(cbvec);
+  }
+  else if(cbvec.size() == 1)
+  {
+     cbs = new iofwd::tasksm::SingleSharedIOCB(ret, mem_starts, mem_sizes, file_starts, file_sizes);
+     dynamic_cast<iofwd::tasksm::SingleSharedIOCB *>(cbs)->loadCB(cbvec[0]);
+  }
+
+  const iofwdevent::CBType cbfunc = boost::bind(&iofwd::tasksm::SharedIOCB::issueIOCallbacks, cbs, 0);
   if (rs[0]->type_ == RANGE_WRITE) {
-    async_id = async_api_->async_write(rs[0]->handle_, narrays, (const void**)mem_starts, mem_sizes,
+    async_cb_api_->write(cbfunc, ret, rs[0]->handle_, narrays, (const void**)mem_starts, mem_sizes,
                                        narrays, file_starts, file_sizes, rs[0]->op_hint_);
   } else if (rs[0]->type_ == RANGE_READ) {
-    async_id = async_api_->async_read(rs[0]->handle_, narrays, (void**)mem_starts, mem_sizes,
+    async_cb_api_->read(cbfunc, ret, rs[0]->handle_, narrays, (void**)mem_starts, mem_sizes,
                                       narrays, file_starts, file_sizes, rs[0]->op_hint_);
   } else {
     assert(false);
   }
+}
 
-  // properly release resources, we wrap async_id by IOCompletionID
-  boost::shared_ptr<CompletionID> io_id;
-  io_id.reset(new IOCompletionID(async_id, mem_starts, mem_sizes, file_starts, file_sizes));
-
-  // add io_id to associated CompositeCompletionID
-  for (unsigned int i = 0; i < rs.size(); i++) {
-    ChildRange * r = rs[i];
-    if(r->hasSubIntervals())
-    {
-    ParentRange * pr = dynamic_cast<ParentRange *>(r);
-    const vector<CompositeCompletionID*>& v = pr->child_cids_;
-    assert(v.size() > 0);
-    for(unsigned int i = 0 ; i < v.size() ; i++)
-    {
-      CompositeCompletionID * ccid = v[i];
-      // Because io_id is shared among multiple CompositeCompletionIDs,
-      // we use SharedCompletionID to properly release the resource by using
-      // boost::shared_ptr (e.g. reference counting).
-      ccid->addCompletionID(new SharedCompletionID(io_id));
-    }
-    }
-    else
-    {
-        r->cid_->addCompletionID(new SharedCompletionID(io_id));
-    }
-  }
+void issueWait(int UNUSED(status))
+{
+   // issue the other callbacks for the request
 }
 
 void RequestScheduler::notifyConsumer()

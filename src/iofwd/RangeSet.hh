@@ -15,7 +15,7 @@ namespace iofwd
 
 
 /**
- * TODO: 
+ * TODO:
  *   convert from dual  map to rtree
  */
 class RangeSet
@@ -46,7 +46,7 @@ public:
     std::map<uint64_t, Range>::iterator it;
 
     /*
-       The beginning part of rr overlaps the end of r 
+       The beginning part of rr overlaps the end of r
        r  [st .... en]
        rr      [st .... en]
     */
@@ -59,7 +59,7 @@ public:
     }
 
     /*
-       The last part of rr overlaps the beginning of r 
+       The last part of rr overlaps the beginning of r
        r        [st .... en]
        rr [st .... en]
     */
@@ -79,7 +79,7 @@ public:
     std::map<uint64_t, Range>::iterator it;
 
     /*
-       Buffer rr overlaps all of r 
+       Buffer rr overlaps all of r
        r        [st .... en]
        rr [st ................... en]
     */
@@ -152,9 +152,11 @@ public:
     }
 
     if (!new_r.child_ranges.empty())
-      assert(new_r.cids.size() == new_r.child_ranges.size());
-    assert(new_r.cids.size() > 0);
-    
+    {
+      //assert(new_r.cids.size() == new_r.child_ranges.size());
+    }
+    //assert(new_r.cids.size() > 0);
+
     ranges.insert(new_r);
     st_map[st] = new_r;
     en_map[en] = new_r;
@@ -222,7 +224,7 @@ public:
         std::map<uint64_t, ChildRange *>::iterator it;
 
         /*
-            The beginning part of rr overlaps the end of r 
+            The beginning part of rr overlaps the end of r
             r  [st .... en]
             rr      [st .... en]
         */
@@ -242,7 +244,7 @@ public:
         }
 
         /*
-            The last part of rr overlaps the beginning of r 
+            The last part of rr overlaps the beginning of r
             r        [st .... en]
             rr [st .... en]
         */
@@ -268,7 +270,7 @@ public:
         std::map<uint64_t, ChildRange *>::iterator it;
 
         /*
-            Buffer rr overlaps all of r 
+            Buffer rr overlaps all of r
             r        [st .... en]
             rr [st ................... en]
         */
@@ -325,10 +327,9 @@ public:
     if (!s.empty())
     {
         new_pr = new ParentRange(st, en);
-        //new_pr->child_ranges_.push_back(r);
         new_pr->insertSingleChild(r);
-        //new_pr->child_cids_.insert(new_pr->child_cids_.begin(), r->cid_);
         new_pr->insertSingleCid(r->cid_);
+        new_pr->insertSingleCB(r->cb_);
         new_pr->type_ = r->type_;
         new_pr->handle_ = r->handle_;
         new_r = dynamic_cast<ChildRange *>(new_pr);
@@ -350,14 +351,16 @@ public:
             ParentRange * pr = dynamic_cast<ParentRange *>(rr);
 
             /* copy the child ranges */
-            //new_pr->child_ranges_.insert(new_pr->child_ranges_.begin(), pr->child_ranges_.begin(), pr->child_ranges_.end());
             new_pr->insertMultipleChildren(pr->child_ranges_);
             pr->child_ranges_.clear();
 
             /* copy the child cids */
-            //new_pr->child_cids_.insert(new_pr->child_cids_.begin(), pr->child_cids_.begin(), pr->child_cids_.end());
             new_pr->insertMultipleCids(pr->child_cids_);
             pr->child_cids_.clear();
+
+            /* copy the child CBs */
+            new_pr->insertMultipleCBs(pr->child_cbs_);
+            pr->child_cbs_.clear();
 
             delete pr; /* consolidated parent pr with parent new_pr... delete pr */
         }
@@ -365,27 +368,16 @@ public:
         else
         {
             /* add the child range */
-            //new_pr->child_ranges_.insert(new_pr->child_ranges_.begin(), rr);
             new_pr->insertSingleChild(rr);
 
             /* add the child cid */
             new_pr->insertSingleCid(rr->cid_);
+
+            /* add the child cb */
+            new_pr->insertSingleCB(rr->cb_);
         }
     }
 
-    /* final checks... if this is a parent.. check that the cids and subinterval sizes are equal*/
-    if (new_r->hasSubIntervals())
-    {
-        ParentRange * pr = dynamic_cast<ParentRange *>(new_r);
-        assert(pr->child_cids_.size() == pr->child_ranges_.size());
-        assert(pr->child_cids_.size() > 0);
-    }
-    /* else, verify that the cid is set */
-    else
-    {
-        assert(new_r->cid_ != NULL);
-    }
-    
     ranges.insert(new_r);
     st_map[st] = new_r;
     en_map[en] = new_r;

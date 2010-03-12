@@ -12,6 +12,7 @@
 #include "zoidfs/util/ZoidFSAsyncAPI.hh"
 #include "zoidfs/util/ZoidFSDefAsync.hh"
 #include "RequestScheduler.hh"
+#include "iofwd/tasksm/WriteTaskSM.hh"
 
 using namespace iofwdutil;
 using namespace iofwdutil::workqueue;
@@ -29,7 +30,7 @@ DefRequestHandler::DefRequestHandler (const iofwdutil::ConfigFile & c)
       throw "ZoidFSAPI::init() failed";
    async_api_ = new zoidfs::ZoidFSAsyncAPI(&api_);
    async_api_full_ = new zoidfs::util::ZoidFSDefAsync(api_);
-   sched_ = new RequestScheduler(async_api_, config_.openSectionDefault ("requestscheduler"));
+   sched_ = new RequestScheduler(async_api_, async_api_full_, config_.openSectionDefault ("requestscheduler"));
    bpool_ = new BMIBufferPool(config_.openSectionDefault("bmibufferpool"));
 
    csec = config_.openSectionDefault("workqueue");
@@ -40,6 +41,9 @@ DefRequestHandler::DefRequestHandler (const iofwdutil::ConfigFile & c)
       (&DefRequestHandler::reschedule, this, boost::lambda::_1);
 
    taskfactory_.reset (new ThreadTasks (f, &api_, async_api_, sched_, bpool_));
+
+   taskSMFactory_.reset(new iofwd::tasksm::TaskSMFactory(sched_, bpool_, smm));
+   smm.startThreads();
 }
 
 void DefRequestHandler::reschedule (Task * t)
@@ -49,6 +53,8 @@ void DefRequestHandler::reschedule (Task * t)
 
 DefRequestHandler::~DefRequestHandler ()
 {
+   smm.stopThreads();
+
    std::vector<WorkItem *> items;
    ZLOG_INFO (log_, "Waiting for normal workqueue to complete all work...");
    workqueue_normal_->waitAll (items);
@@ -69,21 +75,24 @@ DefRequestHandler::~DefRequestHandler ()
 
 void DefRequestHandler::handleRequest (int count, Request ** reqs)
 {
-   ZLOG_DEBUG(log_, str(format("handleRequest: %u requests") % count));
-   for (int i=0; i<count; ++i)
-   {
-      Task * task = (*taskfactory_) (reqs[i]);
-
-      // TODO: workqueues are supposed to return some handle so that we can
-      // test which requests completed. That way that requesthandler can
-      // reschedule requests and free completed requests
-      iofwdutil::completion::CompletionID * id;
-      if (task->isFast())
-         id = workqueue_fast_->queueWork (task);
-      else
-         id = workqueue_normal_->queueWork (task);
-      delete id;
-   }
+    ZLOG_DEBUG(log_, str(format("handleRequest: %u requests") % count));
+    for (int i=0; i<count; ++i)
+    {
+        if(reqs[i]->getOpID() == zoidfs::ZOIDFS_PROTO_WRITE)
+        {
+            (*taskSMFactory_)(reqs[i]);
+        }
+        else
+        {
+            Task * task = (*taskfactory_) (reqs[i]);
+            iofwdutil::completion::CompletionID * id;
+            if (task->isFast())
+                id = workqueue_fast_->queueWork (task);
+            else
+                id = workqueue_normal_->queueWork (task);
+            delete id;
+        }
+    }
 
    // Cleanup completed requests
    workqueue_normal_->testAll (completed_);

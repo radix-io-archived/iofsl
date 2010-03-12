@@ -7,6 +7,7 @@
 #include <iostream>
 
 #include "zoidfs/zoidfs.h"
+#include "iofwdevent/CBType.hh"
 
 namespace iofwdutil
 {
@@ -14,6 +15,14 @@ namespace iofwdutil
    {
       class CompositeCompletionID;
    }
+}
+
+namespace iofwd
+{
+    namespace tasksm
+    {
+        class IOCBWrapper;
+    }
 }
 
 namespace iofwd
@@ -78,7 +87,7 @@ The parent range contains the child properties and data structures for storing c
 class ChildRange
 {
     public:
-        ChildRange() : buf_(NULL), st_(0), en_(0), cid_(NULL)
+        ChildRange() : buf_(NULL), st_(0), en_(0), cid_(NULL), cb_(NULL)
         {
         }
 
@@ -102,7 +111,7 @@ class ChildRange
         uint64_t en_;
         zoidfs::zoidfs_op_hint_t * op_hint_;
         iofwdutil::completion::CompositeCompletionID * cid_;
-    
+        iofwd::tasksm::IOCBWrapper * cb_;
 };
 
 class ParentRange : public ChildRange
@@ -120,8 +129,10 @@ class ParentRange : public ChildRange
         {
             /* clear the cid vector */
             child_cids_.clear();
-       
-            /* cleanup the children */ 
+
+            child_cbs_.clear();
+
+            /* cleanup the children */
             destroySubRanges();
         }
 
@@ -148,9 +159,9 @@ class ParentRange : public ChildRange
             /* update the parent interval */
             if(st_ > c->st_)
             {
-                st_ = c->st_; 
+                st_ = c->st_;
             }
-    
+
             if(en_ < c->en_)
             {
                 en_ = c->en_;
@@ -168,9 +179,9 @@ class ParentRange : public ChildRange
             /* update the parent interval */
             if(st_ > c->st_)
             {
-                st_ = c->st_; 
+                st_ = c->st_;
             }
-    
+
             if(en_ < c->en_)
             {
                 en_ = c->en_;
@@ -197,6 +208,11 @@ class ParentRange : public ChildRange
             child_cids_.push_back(c);
         }
 
+        void insertSingleCB(iofwd::tasksm::IOCBWrapper * cb)
+        {
+            child_cbs_.push_back(cb);
+        }
+
         void insertMultipleChildren(std::vector<ChildRange *> & r)
         {
             child_ranges_.insert(child_ranges_.end(), r.begin(), r.end());
@@ -207,11 +223,19 @@ class ParentRange : public ChildRange
             child_cids_.insert(child_cids_.end(), c.begin(), c.end());
         }
 
+        void insertMultipleCBs(std::vector<iofwd::tasksm::IOCBWrapper *> & c)
+        {
+            child_cbs_.insert(child_cbs_.end(), c.begin(), c.end());
+        }
+
         /* this is the vector of sub ranges */
         std::vector<ChildRange *> child_ranges_;
 
         /* this is the vector of cids for the subranges */
         std::vector<iofwdutil::completion::CompositeCompletionID*> child_cids_;
+
+        /* this is the vector of cbs for the subranges */
+        std::vector<iofwd::tasksm::IOCBWrapper *> child_cbs_;
 };
 
 inline bool operator==(const ChildRange& r1, const ChildRange& r2)
