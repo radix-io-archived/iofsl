@@ -40,7 +40,7 @@ DefRequestHandler::DefRequestHandler (const iofwdutil::ConfigFile & c)
    boost::function<void (Task *)> f = boost::lambda::bind
       (&DefRequestHandler::reschedule, this, boost::lambda::_1);
 
-   taskfactory_.reset (new ThreadTasks (f, &api_, async_api_, sched_, bpool_, tpool_));
+   taskfactory_.reset (new ThreadTasks (f, &api_, async_api_, sched_, bpool_));
 
    taskSMFactory_.reset(new iofwd::tasksm::TaskSMFactory(sched_, bpool_, smm));
    smm.startThreads();

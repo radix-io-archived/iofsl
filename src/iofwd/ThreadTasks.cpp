@@ -22,8 +22,6 @@
 #include "LinkTask.hh"
 #include "NotImplementedTask.hh"
 
-#include "iofwd/TaskPoolAllocator.hh"
-
 using namespace zoidfs;
 
 namespace iofwd
