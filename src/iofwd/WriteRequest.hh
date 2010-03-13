@@ -11,6 +11,11 @@
 namespace iofwd
 {
    
+   /**
+    * THIS IS WRONG!
+    * The Read/Write Request cannot expose transport specific details.
+    * They are here to hide those details from the tasks!
+    */
 class WriteRequest : public Request 
 {
 public:
