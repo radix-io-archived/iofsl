@@ -12,9 +12,15 @@ namespace iofwd
 {
    
    /**
-    * THIS IS WRONG!
+    * @TODO This is wrong.
     * The Read/Write Request cannot expose transport specific details.
     * They are here to hide those details from the tasks!
+    * 
+    *  virtual iofwdutil::bmi::BMIAddr getRequestAddr()
+    *
+    *  cannot be here.
+    *
+    *  @TODO Remove CompletionID * stuff
     */
 class WriteRequest : public Request 
 {

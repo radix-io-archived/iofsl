@@ -12,9 +12,12 @@ namespace iofwd
    
 
    /**
-    * THIS IS WRONG!
+    * @TODO This is wrong.
     * The Read/Write Request cannot expose transport specific details.
     * They are here to hide those details from the tasks!
+    * Solution: cast the interface in terms of functionality and not 
+    * transport specific things. 
+    * There cannot be a getRequestAddr() function.
     */
 class ReadRequest : public Request 
 {
