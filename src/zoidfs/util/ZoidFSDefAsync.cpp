@@ -124,55 +124,97 @@ namespace zoidfs
                full_path, parent_hint, hint));
    }
 
-   /* TODO: boost::bind is limited to 9 function arguments... the the following bind does not work... */
-   void ZoidFSDefAsync::rename(const iofwdevent::CBType & UNUSED(cb), int * UNUSED(ret), const zoidfs_handle_t * UNUSED(from_parent_handle),
-         const char * UNUSED(from_component_name),
-         const char * UNUSED(from_full_path),
-         const zoidfs_handle_t * UNUSED(to_parent_handle),
-         const char * UNUSED(to_component_name),
-         const char * UNUSED(to_full_path),
-         zoidfs_cache_hint_t * UNUSED(from_parent_hint),
-         zoidfs_cache_hint_t * UNUSED(to_parent_hint),
-         zoidfs_op_hint_t * UNUSED(hint))
+   int ZoidFSDefAsync::rename_helper(rename_helper_bundle_t * b)
    {
-      /*addWork (cb, ret, boost::bind(&ZoidFSAPI::rename, boost::ref(api_), from_parent_handle,
+        /* run the op */
+        int ret = api_.rename(b->from_parent_handle_,
+            b->from_component_name_, b->from_full_path_, b->to_parent_handle_,
+            b->to_component_name_, b->to_full_path_, b->from_parent_hint_, b->to_parent_hint_,
+            b->hint_);
+
+        /* destroy the bundle */
+        delete b;
+
+        /* return the op result */
+        return ret;
+   }
+
+   void ZoidFSDefAsync::rename(const iofwdevent::CBType & cb, int * ret, const zoidfs_handle_t * from_parent_handle,
+         const char * from_component_name,
+         const char * from_full_path,
+         const zoidfs_handle_t * to_parent_handle,
+         const char * to_component_name,
+         const char * to_full_path,
+         zoidfs_cache_hint_t * from_parent_hint,
+         zoidfs_cache_hint_t * to_parent_hint,
+         zoidfs_op_hint_t * hint)
+   {
+      addWork (cb, ret, boost::bind(&ZoidFSDefAsync::rename_helper, this, new rename_helper_bundle_t(from_parent_handle,
                from_component_name, from_full_path, to_parent_handle,
                to_component_name, to_full_path, from_parent_hint, to_parent_hint,
-               hint));*/
+               hint)));
    }
 
-   /* TODO: boost::bind is limited to 9 function arguments... the the following bind does not work... */
-   void ZoidFSDefAsync::link(const iofwdevent::CBType & UNUSED(cb), int * UNUSED(ret), const zoidfs_handle_t * UNUSED(from_parent_handle),
-         const char * UNUSED(from_component_name),
-         const char * UNUSED(from_full_path),
-         const zoidfs_handle_t * UNUSED(to_parent_handle),
-         const char * UNUSED(to_component_name),
-         const char * UNUSED(to_full_path),
-         zoidfs_cache_hint_t * UNUSED(from_parent_hint),
-         zoidfs_cache_hint_t * UNUSED(to_parent_hint),
-         zoidfs_op_hint_t * UNUSED(hint))
+   int ZoidFSDefAsync::link_helper(link_helper_bundle_t * b)
    {
-      /*addWork (cb, ret, boost::bind(&ZoidFSAPI::link, boost::ref(api_),
-               from_parent_handle, from_component_name, from_full_path,
+        /* run the op */
+        int ret = api_.link(b->from_parent_handle_,
+            b->from_component_name_, b->from_full_path_, b->to_parent_handle_,
+            b->to_component_name_, b->to_full_path_, b->from_parent_hint_, b->to_parent_hint_,
+            b->hint_);
+
+        /* destroy the bundle */
+        delete b;
+
+        /* return the op result */
+        return ret;
+   }
+
+   void ZoidFSDefAsync::link(const iofwdevent::CBType & cb, int * ret, const zoidfs_handle_t * from_parent_handle,
+         const char * from_component_name,
+         const char * from_full_path,
+         const zoidfs_handle_t * to_parent_handle,
+         const char * to_component_name,
+         const char * to_full_path,
+         zoidfs_cache_hint_t * from_parent_hint,
+         zoidfs_cache_hint_t * to_parent_hint,
+         zoidfs_op_hint_t * hint)
+   {
+      addWork (cb, ret, boost::bind(&ZoidFSDefAsync::link_helper, this,
+               new link_helper_bundle_t(from_parent_handle, from_component_name, from_full_path,
                to_parent_handle, to_component_name, to_full_path, from_parent_hint,
-               to_parent_hint, hint));*/
+               to_parent_hint, hint)));
    }
 
-   /* TODO: boost::bind is limited to 9 function arguments... the the following bind does not work... */
-   void ZoidFSDefAsync::symlink(const iofwdevent::CBType & UNUSED(cb), int * UNUSED(ret), const zoidfs_handle_t * UNUSED(from_parent_handle),
-         const char * UNUSED(from_component_name),
-         const char * UNUSED(from_full_path),
-         const zoidfs_handle_t * UNUSED(to_parent_handle),
-         const char * UNUSED(to_component_name),
-         const char * UNUSED(to_full_path),
-         const zoidfs_sattr_t * UNUSED(attr),
-         zoidfs_cache_hint_t * UNUSED(from_parent_hint),
-         zoidfs_cache_hint_t * UNUSED(to_parent_hint),
-         zoidfs_op_hint_t * UNUSED(hint))
+   int ZoidFSDefAsync::symlink_helper(symlink_helper_bundle_t * b)
    {
-      /*addWork (cb, ret, boost::bind(&ZoidFSAPI::setattr, boost::ref(api_), from_parent_handle, from_component_name,
+        /* run the op */
+        int ret = api_.symlink(b->from_parent_handle_,
+            b->from_component_name_, b->from_full_path_, b->to_parent_handle_,
+            b->to_component_name_, b->to_full_path_, b->attr_, b->from_parent_hint_, b->to_parent_hint_,
+            b->hint_);
+
+        /* destroy the bundle */
+        delete b;
+
+        /* return the op result */
+        return ret;
+   }
+
+   void ZoidFSDefAsync::symlink(const iofwdevent::CBType & cb, int * ret, const zoidfs_handle_t * from_parent_handle,
+         const char * from_component_name,
+         const char * from_full_path,
+         const zoidfs_handle_t * to_parent_handle,
+         const char * to_component_name,
+         const char * to_full_path,
+         const zoidfs_sattr_t * attr,
+         zoidfs_cache_hint_t * from_parent_hint,
+         zoidfs_cache_hint_t * to_parent_hint,
+         zoidfs_op_hint_t * hint)
+   {
+      addWork (cb, ret, boost::bind(&ZoidFSDefAsync::symlink_helper, this, new symlink_helper_bundle_t(from_parent_handle, from_component_name,
                from_full_path, to_parent_handle, to_component_name, to_full_path,
-               attr, from_parent_hint, to_parent_hint, hint));*/
+               attr, from_parent_hint, to_parent_hint, hint)));
    }
 
 
