@@ -33,11 +33,17 @@ class ReadTaskSM : public sm::SimpleSM< ReadTaskSM >, public iofwdutil::InjectPo
             decodeInput();
             if(p.pipeline_size == 0)
             {
-                setNextMethod(&ReadTaskSM::postSendInputBuffers);
+                setNextMethod(&ReadTaskSM::postEnqueueRead);
             }
             else
             {
-                setNextMethod(&ReadTaskSM::postSendInputBuffers);
+                /* compute the total size of the pipeline transfers */
+                for (uint32_t i = 0; i < p.mem_count; i++)
+                    total_bytes_ += p.mem_sizes[i];
+
+                /* reset the rbuffer variable */
+                rbuffer_.reinit();
+                setNextMethod(&ReadTaskSM::postAllocateBMIBuffer);
             }
         }
 
@@ -49,7 +55,7 @@ class ReadTaskSM : public sm::SimpleSM< ReadTaskSM >, public iofwdutil::InjectPo
 
         void waitSendInputBuffers(int UNUSED(status))
         {
-            setNextMethod(&ReadTaskSM::postEnqueueRead);
+            setNextMethod(&ReadTaskSM::postReply);
         }
 
         void postEnqueueRead(int UNUSED(status))
@@ -59,7 +65,7 @@ class ReadTaskSM : public sm::SimpleSM< ReadTaskSM >, public iofwdutil::InjectPo
 
         void waitEnqueueRead(int UNUSED(status))
         {
-            setNextMethod(&ReadTaskSM::postReply);
+            setNextMethod(&ReadTaskSM::postSendInputBuffers);
         }
 
         void postReply(int UNUSED(status))
@@ -78,7 +84,7 @@ class ReadTaskSM : public sm::SimpleSM< ReadTaskSM >, public iofwdutil::InjectPo
          * below is a very simple pipeline state machine...
          *  1) allocate a BMI buffer
          *  2) read buffer from disk
-         *  3) send pipeline data into buffer
+         *  3) send pipeline data to client
          *  4) go back to 1) unless all data was sent to the client
          */
 
@@ -117,6 +123,7 @@ class ReadTaskSM : public sm::SimpleSM< ReadTaskSM >, public iofwdutil::InjectPo
 
         void postPipelineEnqueueRead(int UNUSED(status))
         {
+            p_siz_ = std::min(bpool_->pipeline_size(), total_bytes_ - cur_sent_bytes_);
             /* update the rbuffer with the new data entires */
             rbuffer_.siz = p_siz_;
             rbuffer_.off = cur_sent_bytes_;

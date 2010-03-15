@@ -148,11 +148,7 @@ namespace iofwd
 void ReadTaskSM::getBMIBuffer()
 {
     /* request a BMI buffer */
-#ifdef USE_IOFWD_TASK_POOL
-    bpool_->allocCB(slots_[READ_SLOT], request_->getRequestAddr(), iofwdutil::bmi::BMI::ALLOC_SEND, rbuffer_.buffer);
-#else
     bpool_->allocCB(slots_[READ_SLOT], request_.getRequestAddr(), iofwdutil::bmi::BMI::ALLOC_SEND, rbuffer_.buffer);
-#endif
 
     /* set the callback and wait */
     slots_.wait(READ_SLOT, &ReadTaskSM::waitAllocateBMIBuffer);
@@ -164,12 +160,8 @@ void ReadTaskSM::sendPipelineBuffer()
     // from alloc -> NetworkRecv -> rx_q -> ZoidI/O -> io_q -> back to alloc
 
     /* if there is still data to be recieved */
-    p_siz_ = std::min(bpool_->pipeline_size(), total_bytes_ - cur_sent_bytes_);
-#ifdef USE_IOFWD_TASK_POOL
-    request_->sendPipelineBufferCB(slots_[READ_SLOT], rbuffer_.buffer->get_buf(), p_siz_);
-#else
+    //p_siz_ = std::min(bpool_->pipeline_size(), total_bytes_ - cur_sent_bytes_);
     request_.sendPipelineBufferCB(slots_[READ_SLOT], rbuffer_.buffer->get_buf(), p_siz_);
-#endif
 
     /* set the callback and wait */
     slots_.wait(READ_SLOT, &ReadTaskSM::waitSendPipelineBuffer);
