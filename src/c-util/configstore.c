@@ -306,6 +306,8 @@ static mcs_entry * mcs_findchild (const mcs_entry * e, const char * name)
 mcs_entry * mcs_findsubsection (const mcs_entry * e, const char * name)
 {
    mcs_entry * ret = mcs_findchild (e, name);
+   if (!ret)
+      return 0;
    if (!ret->is_section)
       return 0;
    return ret;
