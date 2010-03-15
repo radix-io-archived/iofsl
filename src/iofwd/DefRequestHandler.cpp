@@ -32,9 +32,9 @@ DefRequestHandler::DefRequestHandler (const iofwdutil::ConfigFile & c)
       throw "ZoidFSAPI::init() failed";
 
    /* start thread pool */
-   iofwdutil::ConfigFile c = config_.openSectionDefault ("threadpool");
-   iofwdutil::ThreadPool::instance().setMinThreadCount(c.getKeyAsDefault("minnumthreads", 0));
-   iofwdutil::ThreadPool::instance().setMaxThreadCount(c.getKeyAsDefault("maxnumthreads", 0));
+   iofwdutil::ConfigFile lc = config_.openSectionDefault ("threadpool");
+   iofwdutil::ThreadPool::instance().setMinThreadCount(lc.getKeyAsDefault("minnumthreads", 0));
+   iofwdutil::ThreadPool::instance().setMaxThreadCount(lc.getKeyAsDefault("maxnumthreads", 0));
    iofwdutil::ThreadPool::instance().start();
 
    async_api_ = new zoidfs::ZoidFSAsyncAPI(&api_);
@@ -49,7 +49,7 @@ DefRequestHandler::DefRequestHandler (const iofwdutil::ConfigFile & c)
 
    taskfactory_.reset (new ThreadTasks (f, &api_, async_api_, sched_, bpool_));
 
-   taskSMFactory_.reset(new iofwd::tasksm::TaskSMFactory(sched_, bpool_, smm));
+   taskSMFactory_.reset(new iofwd::tasksm::TaskSMFactory(sched_, bpool_, smm, async_api_full_));
    smm.startThreads();
 }
 
@@ -85,12 +85,9 @@ void DefRequestHandler::handleRequest (int count, Request ** reqs)
     ZLOG_DEBUG(log_, str(format("handleRequest: %u requests") % count));
     for (int i=0; i<count; ++i)
     {
-        if(reqs[i]->getOpID() == zoidfs::ZOIDFS_PROTO_WRITE || reqs[i]->getOpID() == zoidfs::ZOIDFS_PROTO_READ)
-        {
+#ifndef USE_IOFWD_TASKS
             (*taskSMFactory_)(reqs[i]);
-        }
-        else
-        {
+#else
             Task * task = (*taskfactory_) (reqs[i]);
             iofwdutil::completion::CompletionID * id;
             if (task->isFast())
@@ -98,9 +95,10 @@ void DefRequestHandler::handleRequest (int count, Request ** reqs)
             else
                 id = workqueue_normal_->queueWork (task);
             delete id;
-        }
+#endif
     }
 
+#ifdef USE_IOFWD_TASKS
    // Cleanup completed requests
    workqueue_normal_->testAll (completed_);
    workqueue_fast_->testAll (completed_);
@@ -116,6 +114,7 @@ void DefRequestHandler::handleRequest (int count, Request ** reqs)
       }
    }
    completed_.clear ();
+#endif
 }
 
 //===========================================================================
