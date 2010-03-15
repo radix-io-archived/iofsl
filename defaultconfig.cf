@@ -1,9 +1,9 @@
 
-log { 
+log {
   // By default, 2 sinks (stdout and stderr) are available
   // as is the default filter ('default')
   // Without additional config, all output goes to stderr
-  // with a default loglevel of INFO. 
+  // with a default loglevel of INFO.
   // Note that the default loglevel can be changed by using
   // the IOFWD_LOGLEVEL variable
 
@@ -12,7 +12,7 @@ log {
   sinks = ( "tmpfile" );
   filters = ( );
 
-  tmpfile { 
+  tmpfile {
      sinktype = "file";
   }
 
@@ -31,7 +31,7 @@ frontend {
 requesthandler {
   //
   // zoidfs api options
-  // 
+  //
   zoidfsapi {
     //
     // the handlers to be loaded at runtime
@@ -78,6 +78,14 @@ requesthandler {
   }
 
   //
+  // threadpool config
+  //
+  threadpool {
+      minnumthreads = "4";
+      maxnumthreads = "16";
+  }
+
+  //
   // bmi buffer pool options
   //
   bmibufferpool {
@@ -98,7 +106,7 @@ requesthandler {
   taskpool {
     //
     // The max number of tasks to preallocate per operation
-    // 
+    //
     numtasks = "256";
   }
 

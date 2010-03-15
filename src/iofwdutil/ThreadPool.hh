@@ -32,7 +32,7 @@ class ThreadPool : public Singleton< ThreadPool >
         ThreadPool();
         ~ThreadPool();
 
-        void start(int min_threads_, int max_threads_);
+        void start();
 
         template <typename T>
         void cleanupWrapper(boost::function< void() > work, T * workObj)
@@ -123,6 +123,10 @@ class ThreadPool : public Singleton< ThreadPool >
         /* only accepts work that takes no args and has a void return type */
         void addWorkUnit(void (*workFunc)(void), TPPrio prio);
 
+        static void setMinThreadCount(int c);
+        static int getMinThreadCount();
+        static void setMaxThreadCount(int c);
+        static int getMaxThreadCount();
     protected:
 
         /* the thread function... polls queues for work and waits for work if non avail */
@@ -136,8 +140,6 @@ class ThreadPool : public Singleton< ThreadPool >
 
         /* check the work queue for possible work items and move the work item if one was found */
         bool checkPrioWorkQueue(std::queue< boost::function< void() > > & tp_work_queue, boost::mutex & tp_work_queue_mutex, int tid);
-
-        void start_internal(int min_threads_, int max_threads_);
 
         /* work queues */
         /* for now, we use predefined priroities seperated by queue... */
@@ -155,8 +157,8 @@ class ThreadPool : public Singleton< ThreadPool >
 
         /* thread tracking / usage variables */
         int thread_count_;
-        int max_thread_count_;
-        int min_thread_count_;
+        static int max_thread_count_;
+        static int min_thread_count_;
         bool shutdown_threads_;
         bool thread_pool_running_;
         boost::condition threadcond_;
@@ -165,8 +167,6 @@ class ThreadPool : public Singleton< ThreadPool >
         boost::mutex shutdown_cond_mutex_;
         boost::condition jobs_done_cond_;
         boost::mutex jobs_done_cond_mutex_;
-
-        static boost::once_flag start_flag_;
 };
 
 } /* namespace iofwdutil */
