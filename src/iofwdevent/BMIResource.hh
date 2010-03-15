@@ -25,14 +25,14 @@ namespace iofwdevent
    class BMIResource : public ThreadedResource
    {
       public:
-      
+
          enum {
             // Number of completed message to handle in one call to
             // testcontext
             CHECK_COUNT = 64,
 
             // How long we wait in testcontext
-            WAIT_TIME = 1000,
+            WAIT_TIME = 500000,
 
             // How many unexpected messages we dequeue at once
             UNEXPECTED_SIZE = 64
@@ -49,7 +49,7 @@ namespace iofwdevent
       protected:
          // Note: don't store objects in here, mempool doesn't
          // destruct/construct properly
-         struct BMIEntry 
+         struct BMIEntry
          {
             ResourceOp * op;
             bmi_size_t * actual;
@@ -61,12 +61,12 @@ namespace iofwdevent
 
          /**
           * Check if there was a BMI error; If so, deal with it.
-          * Check if the operation completed immediately. If so, 
+          * Check if the operation completed immediately. If so,
           * call the completion callback right away.
           */
          inline void checkBMISendRecv (BMIEntry * e, int bmiret);
 
-         /** 
+         /**
           * Call the correct callback and return the entry back to the mempool.
           */
          inline void completeEntry (BMIEntry * e, int bmiret);
@@ -78,7 +78,7 @@ namespace iofwdevent
          void handleBMIError (ResourceOp * u, int bmiret);
 
          /**
-          * Return new BMI entry 
+          * Return new BMI entry
           */
          inline BMIEntry * newEntry (ResourceOp * u, bmi_size_t * actual = 0);
 
@@ -176,7 +176,7 @@ namespace iofwdevent
 
             UnexpectedClient  () {}
 
-            UnexpectedClient (ResourceOp * o, 
+            UnexpectedClient (ResourceOp * o,
                   int in, int * out, BMI_unexpected_info *i)
                : op (o), incount(in), outcount(out), info(i)
             {
@@ -202,7 +202,7 @@ namespace iofwdevent
 
    //===========================================================================
 
-   BMIResource::BMIEntry * BMIResource::newEntry (ResourceOp * u, 
+   BMIResource::BMIEntry * BMIResource::newEntry (ResourceOp * u,
          bmi_size_t * actual)
    {
       BMIEntry * e = (BMIEntry *) mempool_.malloc ();
@@ -303,7 +303,7 @@ namespace iofwdevent
       bmi_op_id_t op;
       BMIEntry * e = newEntry (u, actual_size);
 
-      checkBMISendRecv (e, BMI_post_recv (&op, src, buffer, expected_size, 
+      checkBMISendRecv (e, BMI_post_recv (&op, src, buffer, expected_size,
                actual_size, buffer_type, tag, e, context_, hints));
    }
 
