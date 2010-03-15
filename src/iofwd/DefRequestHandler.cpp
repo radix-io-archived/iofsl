@@ -25,14 +25,20 @@ namespace iofwd
 DefRequestHandler::DefRequestHandler (const iofwdutil::ConfigFile & c)
    : log_ (IOFWDLog::getSource ("defreqhandler")), config_(c)
 {
-
+   iofwdutil::ConfigFile csec;
    if (api_.init(config_.openSectionDefault ("zoidfsapi")) != zoidfs::ZFS_OK)
       throw "ZoidFSAPI::init() failed";
-   async_api_ = new zoidfs::ZoidFSAsyncAPI(&api_);
+
+   csec = config_.openSectionDefault("zoidfsasyncapi");
+   async_api_ = new zoidfs::ZoidFSAsyncAPI(&api_,
+                                           csec.getKeyAsDefault("minthreadnum", 0),
+                                           csec.getKeyAsDefault("maxthreadnum", 100));
    sched_ = new RequestScheduler(async_api_, config_.openSectionDefault ("requestscheduler"));
    bpool_ = new BMIBufferPool(config_.openSectionDefault("bmibufferpool"));
 
-   workqueue_normal_.reset (new PoolWorkQueue (0, 100));
+   csec = config_.openSectionDefault("workqueue");
+   workqueue_normal_.reset (new PoolWorkQueue (csec.getKeyAsDefault("minthreadnum", 0),
+                                               csec.getKeyAsDefault("maxthreadnum", 100)));
    workqueue_fast_.reset (new SynchronousWorkQueue ());
    boost::function<void (Task *)> f = boost::lambda::bind
       (&DefRequestHandler::reschedule, this, boost::lambda::_1);

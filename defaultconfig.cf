@@ -78,6 +78,14 @@ requesthandler {
   }
 
   //
+  // zoidfs asynchronous api options
+  //
+  zoidfsasyncapi {
+    minthreadnum = "0";
+    maxthreadnum = "100";
+  }
+
+  //
   // bmi buffer pool options
   //
   bmibufferpool {
@@ -93,6 +101,11 @@ requesthandler {
     //  default: 0
     //
     maxnumbuffers = "100";
+  }
+
+  workqueue {
+    minthreadnum = "0";
+    maxthreadnum = "100";
   }
 
   taskpool {

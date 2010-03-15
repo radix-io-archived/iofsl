@@ -32,13 +32,11 @@ class ZoidFSAPI;
 class ZoidFSAsyncAPI
 {
 public:
-   ZoidFSAsyncAPI(ZoidFSAPI * api = NULL, iofwdutil::workqueue::WorkQueue *q = NULL)
-      : api_(api), q_(q) {
+   ZoidFSAsyncAPI(ZoidFSAPI * api = NULL, uint64_t minthnum = 0, uint64_t maxthnum = 100)
+      : api_(api) {
       if (api_ == NULL)
          api_ = &fallback_;
-      if (q_ == NULL)
-         /* TODO make the thread params a config option */
-         q_ = new iofwdutil::workqueue::PoolWorkQueue (8, 100);
+      q_ = new iofwdutil::workqueue::PoolWorkQueue (minthnum, maxthnum);
    }
    ~ZoidFSAsyncAPI();
 
