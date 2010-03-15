@@ -49,7 +49,8 @@ DefRequestHandler::DefRequestHandler (const iofwdutil::ConfigFile & cf)
 
    taskfactory_.reset (new ThreadTasks (f, &api_, async_api_, sched_, bpool_));
 
-   taskSMFactory_.reset(new iofwd::tasksm::TaskSMFactory(sched_, bpool_, smm));
+   taskSMFactory_.reset(new iofwd::tasksm::TaskSMFactory(sched_, bpool_, smm,
+            async_api_full_));
    smm.startThreads();
 }
 
