@@ -2,24 +2,35 @@
 
 namespace iofwdutil
 {
-        boost::once_flag iofwdutil::ThreadPool::start_flag_ = BOOST_ONCE_INIT;
+        int iofwdutil::ThreadPool::min_thread_count_ = 0;
+        int iofwdutil::ThreadPool::max_thread_count_ = 0;
 
-        ThreadPool::ThreadPool() : thread_count_(0),
-            max_thread_count_(0), min_thread_count_(0), shutdown_threads_(false)
+        void ThreadPool::setMinThreadCount(int c)
+        {
+            min_thread_count_ = c;
+        }
+
+        void ThreadPool::setMaxThreadCount(int c)
+        {
+            max_thread_count_ = c;
+        }
+
+        int ThreadPool::getMinThreadCount()
+        {
+            return min_thread_count_;
+        }
+
+        int ThreadPool::getMaxThreadCount()
+        {
+            return max_thread_count_;
+        }
+
+        ThreadPool::ThreadPool() : thread_count_(0), shutdown_threads_(false)
         {
         }
 
-        void ThreadPool::start(int min_thread_count, int max_thread_count)
+        void ThreadPool::start()
         {
-            /* only call this once */
-            boost::function<void ()> f1 = boost::bind(&ThreadPool::start_internal, this, min_thread_count, max_thread_count);
-            boost::call_once(start_flag_, f1);
-        }
-
-        void ThreadPool::start_internal(int min_thread_count, int max_thread_count)
-        {
-            min_thread_count_ = min_thread_count;
-            max_thread_count_ = max_thread_count;
             thread_count_ = 0;
 
             /* setup the storage queue for thread work */

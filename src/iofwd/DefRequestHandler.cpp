@@ -22,12 +22,19 @@ namespace iofwd
 {
 //===========================================================================
 
-DefRequestHandler::DefRequestHandler (const iofwdutil::ConfigFile & c)
-   : log_ (IOFWDLog::getSource ("defreqhandler")), config_(c)
+DefRequestHandler::DefRequestHandler (const iofwdutil::ConfigFile & cf)
+   : log_ (IOFWDLog::getSource ("defreqhandler")), config_(cf)
 {
    iofwdutil::ConfigFile csec;
    if (api_.init(config_.openSectionDefault ("zoidfsapi")) != zoidfs::ZFS_OK)
       throw "ZoidFSAPI::init() failed";
+
+   /* start thread pool */
+   iofwdutil::ConfigFile c = config_.openSectionDefault ("threadpool");
+   iofwdutil::ThreadPool::instance().setMinThreadCount(c.getKeyAsDefault("minnumthreads", 0));
+   iofwdutil::ThreadPool::instance().setMaxThreadCount(c.getKeyAsDefault("maxnumthreads", 0));
+   iofwdutil::ThreadPool::instance().start();
+
    async_api_ = new zoidfs::ZoidFSAsyncAPI(&api_);
    async_api_full_ = new zoidfs::util::ZoidFSDefAsync(api_);
    sched_ = new RequestScheduler(async_api_, async_api_full_, config_.openSectionDefault ("requestscheduler"));

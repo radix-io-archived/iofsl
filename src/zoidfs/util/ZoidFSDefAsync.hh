@@ -168,7 +168,7 @@ namespace zoidfs
       void addWork (const iofwdevent::CBType & cb, int * ret, const T & item)
       {
 #ifdef USE_IOFWD_THREAD_POOL
-         /* thread pool own the OpHelper and is responsible for cleanup */
+         /* thread pool owns the OpHelper and is responsible for cleanup */
          iofwdutil::ThreadPool::instance().addWorkUnit(new OpHelper(cb, ret, item), &OpHelper::run, iofwdutil::ThreadPool::HIGH, true);
 #else
          boost::thread t (OpHelper (cb, ret, item));
