@@ -32,7 +32,7 @@ namespace iofwdevent
             CHECK_COUNT = 64,
 
             // How long we wait in testcontext
-            WAIT_TIME = 500000,
+            WAIT_TIME = 1000,
 
             // How many unexpected messages we dequeue at once
             UNEXPECTED_SIZE = 64

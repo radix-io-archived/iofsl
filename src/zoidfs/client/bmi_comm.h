@@ -17,7 +17,7 @@
 
 #include "bmi.h"
 
-#define MAX_IDLE_TIME 500000
+#define MAX_IDLE_TIME 50
 #define ION_ENV "ZOIDFS_ION_NAME"
 
 /* blocking ZoidFS BMI wrappers */
