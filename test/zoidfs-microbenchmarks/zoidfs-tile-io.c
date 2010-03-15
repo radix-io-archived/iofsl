@@ -362,7 +362,7 @@ int main(int argc,
             exit(1);
 	    }
 	    else {
-		    ret = zoidfs_read(&fh, mem_count, (void **)mem_starts, mem_sizes, file_count, file_starts, file_starts, ZOIDFS_NO_OP_HINT);
+		    ret = zoidfs_read(&fh, mem_count, (void **)mem_starts, mem_sizes, file_count, file_starts, file_sizes, ZOIDFS_NO_OP_HINT);
 	    }
 	}
 	end_time = MPI_Wtime();
