@@ -12,6 +12,11 @@
 
 #include <cstdio>
 #include <deque>
+#include <math.h>
+
+/* mode options */
+#define WRITESM_SERIAL_IO_PIPELINE 0
+#define WRITESM_PARA_IO_PIPELINE 1
 
 namespace iofwd
 {
@@ -42,8 +47,18 @@ class WriteTaskSM : public sm::SimpleSM< WriteTaskSM >, public iofwdutil::Inject
                 for (uint32_t i = 0; i < p.mem_count; i++)
                     total_bytes_ += p.mem_sizes[i];
 
-                /* reset the rbuffer variable */
-                rbuffer_.reinit();
+                /* compute the total number of concurrent pipeline ops */
+                total_pipeline_ops_ = (int)ceil(total_bytes_ / bpool_->pipeline_size());
+
+                /* setup the rbuffer variable */
+                rbuffer_ = new SMRetrievedBuffer*[total_pipeline_ops_];
+                for(uint64_t i = 0 ; i < total_pipeline_ops_ ; i++)
+                {
+                    rbuffer_[i] = new SMRetrievedBuffer();
+                    rbuffer_[i]->reinit();
+                }
+
+                /* transition to the allocate buffer state */
                 setNextMethod(&WriteTaskSM::postAllocateBMIBuffer);
             }
         }
@@ -112,8 +127,8 @@ class WriteTaskSM : public sm::SimpleSM< WriteTaskSM >, public iofwdutil::Inject
         void postPipelineEnqueueWrite(int UNUSED(status))
         {
             /* update the rbuffer with the new data entires */
-            rbuffer_.siz = p_siz_;
-            rbuffer_.off = cur_recv_bytes_;
+            rbuffer_[cw_post_index_]->siz = p_siz_;
+            rbuffer_[cw_post_index_]->off = cur_recv_bytes_;
 
             execPipelineIO();
         }
@@ -127,7 +142,7 @@ class WriteTaskSM : public sm::SimpleSM< WriteTaskSM >, public iofwdutil::Inject
             if(cur_recv_bytes_ < total_bytes_)
             {
                 /* reset the rbuffer variable */
-                rbuffer_.reinit();
+                rbuffer_[cw_post_index_]->reinit();
                 setNextMethod(&WriteTaskSM::postAllocateBMIBuffer);
             }
             /* else, we are done... reply to the client */
@@ -149,8 +164,10 @@ class WriteTaskSM : public sm::SimpleSM< WriteTaskSM >, public iofwdutil::Inject
         void getBMIBuffer();
         void recvPipelineBuffer();
         void execPipelineIO();
+        void writeBarrier(int status);
 
-        enum {WRITE_SLOT = 0, NUM_WRITE_SLOTS};
+        /* set the concurrent pipeline op count to 128... this should be dynamic or tunable */
+        enum {WRITE_SLOT = 0, WRITE_PIPEOP_START, NUM_WRITE_SLOTS = 129};
         WriteRequest::ReqParam p;
         RequestScheduler * sched_;
         BMIBufferPool * bpool_;
@@ -158,11 +175,17 @@ class WriteTaskSM : public sm::SimpleSM< WriteTaskSM >, public iofwdutil::Inject
         sm::SimpleSlots<NUM_WRITE_SLOTS, iofwd::tasksm::WriteTaskSM> slots_;
 
         /* pipeline variables */
+        boost::mutex slot_mutex_;
         uint64_t total_bytes_;
         uint64_t cur_recv_bytes_;
         size_t p_siz_;
+        uint64_t total_pipeline_ops_;
+        uint64_t io_ops_done_;
+        uint64_t cw_post_index_;
 
-        SMRetrievedBuffer rbuffer_;
+        SMRetrievedBuffer ** rbuffer_;
+
+        uint32_t mode_;
 };
     }
 }

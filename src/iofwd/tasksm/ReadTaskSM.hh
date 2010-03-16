@@ -13,6 +13,12 @@
 #include <cstdio>
 #include <deque>
 
+#include <math.h>
+
+/* mode options */
+#define READSM_SERIAL_IO_PIPELINE 0
+//#define READSM_PARA_IO_PIPELINE 1 /* @TODO fix this mode */
+
 namespace iofwd
 {
     namespace tasksm
@@ -41,8 +47,18 @@ class ReadTaskSM : public sm::SimpleSM< ReadTaskSM >, public iofwdutil::InjectPo
                 for (uint32_t i = 0; i < p.mem_count; i++)
                     total_bytes_ += p.mem_sizes[i];
 
-                /* reset the rbuffer variable */
-                rbuffer_.reinit();
+                /* compute the total number of concurrent pipeline ops */
+                total_pipeline_ops_ = (int)ceil(total_bytes_ / bpool_->pipeline_size());
+
+                /* setup the rbuffer variable */
+                rbuffer_ = new SMRetrievedBuffer*[total_pipeline_ops_];
+                for(uint64_t i = 0 ; i < total_pipeline_ops_ ; i++)
+                {
+                    rbuffer_[i] = new SMRetrievedBuffer();
+                    rbuffer_[i]->reinit();
+                }
+
+                /* transition to the allocate buffer state */
                 setNextMethod(&ReadTaskSM::postAllocateBMIBuffer);
             }
         }
@@ -112,7 +128,7 @@ class ReadTaskSM : public sm::SimpleSM< ReadTaskSM >, public iofwdutil::InjectPo
             if(cur_sent_bytes_ < total_bytes_)
             {
                 /* reset the rbuffer variable */
-                rbuffer_.reinit();
+                rbuffer_[cw_post_index_]->reinit();
                 setNextMethod(&ReadTaskSM::postAllocateBMIBuffer);
             }
             else
@@ -125,8 +141,8 @@ class ReadTaskSM : public sm::SimpleSM< ReadTaskSM >, public iofwdutil::InjectPo
         {
             p_siz_ = std::min(bpool_->pipeline_size(), total_bytes_ - cur_sent_bytes_);
             /* update the rbuffer with the new data entires */
-            rbuffer_.siz = p_siz_;
-            rbuffer_.off = cur_sent_bytes_;
+            rbuffer_[cw_post_index_]->siz = p_siz_;
+            rbuffer_[cw_post_index_]->off = cur_sent_bytes_;
 
             execPipelineIO();
         }
@@ -148,8 +164,10 @@ class ReadTaskSM : public sm::SimpleSM< ReadTaskSM >, public iofwdutil::InjectPo
         void getBMIBuffer();
         void sendPipelineBuffer();
         void execPipelineIO();
+        void readBarrier(int status);
 
-        enum {READ_SLOT = 0, NUM_READ_SLOTS};
+        /* @TODO currently set the concurrent pipeline op count to 128... this should be dynamic or tunable */
+        enum {READ_SLOT = 0, READ_PIPEOP_START, NUM_READ_SLOTS = 129};
         ReadRequest::ReqParam p;
         BMIBufferPool * bpool_;
         RequestScheduler * sched_;
@@ -157,11 +175,17 @@ class ReadTaskSM : public sm::SimpleSM< ReadTaskSM >, public iofwdutil::InjectPo
         sm::SimpleSlots<NUM_READ_SLOTS, iofwd::tasksm::ReadTaskSM> slots_;
 
         /* pipeline variables */
+        boost::mutex slot_mutex_;
         uint64_t total_bytes_;
         uint64_t cur_sent_bytes_;
         size_t p_siz_;
+        uint64_t total_pipeline_ops_;
+        uint64_t io_ops_done_;
+        uint64_t cw_post_index_;
 
-        SMRetrievedBuffer rbuffer_;
+        SMRetrievedBuffer ** rbuffer_;
+
+        int mode_;
 };
     }
 }
