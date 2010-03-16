@@ -23,7 +23,7 @@ namespace iofwd
 //===========================================================================
 
 DefRequestHandler::DefRequestHandler (const iofwdutil::ConfigFile & cf)
-   : log_ (IOFWDLog::getSource ("defreqhandler")), config_(cf)
+   : log_ (IOFWDLog::getSource ("defreqhandler")), config_(cf), event_mode_(EVMODE_SM)
 {
    iofwdutil::ConfigFile csec;
    if (api_.init(config_.openSectionDefault ("zoidfsapi")) != zoidfs::ZFS_OK)
@@ -35,9 +35,22 @@ DefRequestHandler::DefRequestHandler (const iofwdutil::ConfigFile & cf)
    iofwdutil::ThreadPool::instance().setMaxThreadCount(lc.getKeyAsDefault("maxnumthreads", 0));
    iofwdutil::ThreadPool::instance().start();
 
+   /* get the event mode */
+   lc = config_.openSectionDefault ("events");
+   char * evmode = new char[lc.getKeyDefault("mode", "SM").size() + 1];
+   strcpy(evmode, const_cast<char *>(lc.getKeyDefault ("mode", "SM").c_str()));
+   if(strcmp(evmode, "SM") == 0)
+   {
+        event_mode_ = EVMODE_SM;
+   }
+   else if(strcmp(evmode, "TASK") == 0)
+   {
+        event_mode_ = EVMODE_TASK;
+   }
+
    async_api_ = new zoidfs::ZoidFSAsyncAPI(&api_);
    async_api_full_ = new zoidfs::util::ZoidFSDefAsync(api_);
-   sched_ = new RequestScheduler(async_api_, async_api_full_, config_.openSectionDefault ("requestscheduler"));
+   sched_ = new RequestScheduler(async_api_, async_api_full_, config_.openSectionDefault ("requestscheduler"), event_mode_);
    bpool_ = new BMIBufferPool(config_.openSectionDefault("bmibufferpool"));
 
    csec = config_.openSectionDefault("workqueue");
@@ -86,9 +99,12 @@ void DefRequestHandler::handleRequest (int count, Request ** reqs)
     ZLOG_DEBUG(log_, str(format("handleRequest: %u requests") % count));
     for (int i=0; i<count; ++i)
     {
-#ifndef USE_IOFWD_TASKS
+        if(event_mode_ == EVMODE_SM)
+        {
             (*taskSMFactory_)(reqs[i]);
-#else
+        }
+        else if(event_mode_ == EVMODE_TASK)
+        {
             Task * task = (*taskfactory_) (reqs[i]);
             iofwdutil::completion::CompletionID * id;
             if (task->isFast())
@@ -96,24 +112,25 @@ void DefRequestHandler::handleRequest (int count, Request ** reqs)
             else
                 id = workqueue_normal_->queueWork (task);
             delete id;
-#endif
+        }
     }
 
-#ifdef USE_IOFWD_TASKS
-   // Cleanup completed requests
-   workqueue_normal_->testAll (completed_);
-   workqueue_fast_->testAll (completed_);
-   for (unsigned int i=0; i<completed_.size(); ++i)
-   {
-      // we know only requesttasks can be put on the workqueues
-      if (static_cast<Task*>(completed_[i])->getStatus() ==
-            Task::STATUS_DONE)
-      {
-        delete (completed_[i]);
-      }
-   }
-   completed_.clear ();
-#endif
+    if(event_mode_ == EVMODE_TASK)
+    {
+        // Cleanup completed requests
+        workqueue_normal_->testAll (completed_);
+        workqueue_fast_->testAll (completed_);
+        for (unsigned int i=0; i<completed_.size(); ++i)
+        {
+            // we know only requesttasks can be put on the workqueues
+            if (static_cast<Task*>(completed_[i])->getStatus() ==
+                Task::STATUS_DONE)
+            {
+               delete (completed_[i]);
+            }
+        }
+        completed_.clear ();
+    }
 }
 
 //===========================================================================

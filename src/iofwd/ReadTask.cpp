@@ -263,10 +263,10 @@ void ReadTask::runPipelineMode(const ReadRequest::ReqParam & p)
      }
    }
 
-   // send reply w/ callback
+   /*// send reply w/ callback
    block_.reset();
    request_.reply((block_));
-   block_.wait();
+   block_.wait();*/
 }
 
 //===========================================================================

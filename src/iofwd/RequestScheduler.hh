@@ -36,7 +36,7 @@ class RangeScheduler;
 class RequestScheduler
 {
 public:
-  RequestScheduler(zoidfs::ZoidFSAsyncAPI * async_api, zoidfs::util::ZoidFSDefAsync * async_cb_api, const iofwdutil::ConfigFile & c);
+  RequestScheduler(zoidfs::ZoidFSAsyncAPI * async_api, zoidfs::util::ZoidFSDefAsync * async_cb_api, const iofwdutil::ConfigFile & c, int mode);
   virtual ~RequestScheduler();
 
   iofwdutil::completion::CompletionID * enqueueWrite(
@@ -76,6 +76,9 @@ private:
   zoidfs::ZoidFSAsyncAPI * async_api_;
   zoidfs::util::ZoidFSDefAsync * async_cb_api_;
   boost::scoped_ptr<RangeScheduler> range_sched_;
+
+  enum{EVMODE_TASK = 0, EVMODE_SM};
+  int mode_;
 };
 
 }

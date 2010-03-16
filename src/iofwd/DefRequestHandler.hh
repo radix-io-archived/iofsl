@@ -86,6 +86,9 @@ protected:
    const iofwdutil::ConfigFile & config_;
 
    sm::SMManager smm;
+
+   enum{EVMODE_TASK = 0, EVMODE_SM};
+   int event_mode_;
 };
 
 }
