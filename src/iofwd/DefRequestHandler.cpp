@@ -25,7 +25,7 @@ namespace iofwd
 //===========================================================================
 
 DefRequestHandler::DefRequestHandler (const iofwdutil::ConfigFile & c)
-   : log_ (IOFWDLog::getSource ("defreqhandler")), config_(c)
+   : log_ (IOFWDLog::getSource ("defreqhandler")), config_(c), event_mode_(EVMODE_SM)
 {
 
    if (api_.init(config_.openSectionDefault ("zoidfsapi")) != zoidfs::ZFS_OK)
@@ -37,9 +37,23 @@ DefRequestHandler::DefRequestHandler (const iofwdutil::ConfigFile & c)
    iofwdutil::ThreadPool::instance().setMaxThreadCount(lc.getKeyAsDefault("maxnumthreads", 0));
    iofwdutil::ThreadPool::instance().start();
 
+   /* get the event mode */
+   lc = config_.openSectionDefault ("events");
+   char * evmode = new char[lc.getKeyDefault("mode", "SM").size() + 1];
+   strcpy(evmode, const_cast<char *>(lc.getKeyDefault ("mode", "SM").c_str()));
+   fprintf(stderr, "ev mode = %s\n", evmode);
+   if(strcmp(evmode, "SM") == 0)
+   {
+        event_mode_ = EVMODE_SM;
+   }
+   else if(strcmp(evmode, "TASK") == 0)
+   {
+        event_mode_ = EVMODE_TASK;
+   }
+
    async_api_ = new zoidfs::ZoidFSAsyncAPI(&api_);
    async_api_full_ = new zoidfs::util::ZoidFSDefAsync(api_);
-   sched_ = new RequestScheduler(async_api_, async_api_full_, config_.openSectionDefault ("requestscheduler"));
+   sched_ = new RequestScheduler(async_api_, async_api_full_, config_.openSectionDefault ("requestscheduler"), event_mode_);
    bpool_ = new BMIBufferPool(config_.openSectionDefault("bmibufferpool"));
 
    workqueue_normal_.reset (new PoolWorkQueue (0, 100));
@@ -85,9 +99,12 @@ void DefRequestHandler::handleRequest (int count, Request ** reqs)
     ZLOG_DEBUG(log_, str(format("handleRequest: %u requests") % count));
     for (int i=0; i<count; ++i)
     {
-#ifndef USE_IOFWD_TASKS
+        if(event_mode_ == EVMODE_SM)
+        {
             (*taskSMFactory_)(reqs[i]);
-#else
+        }
+        else if(event_mode_ == EVMODE_TASK)
+        {
             Task * task = (*taskfactory_) (reqs[i]);
             iofwdutil::completion::CompletionID * id;
             if (task->isFast())
@@ -95,26 +112,27 @@ void DefRequestHandler::handleRequest (int count, Request ** reqs)
             else
                 id = workqueue_normal_->queueWork (task);
             delete id;
-#endif
+        }
     }
 
-#ifdef USE_IOFWD_TASKS
-   // Cleanup completed requests
-   workqueue_normal_->testAll (completed_);
-   workqueue_fast_->testAll (completed_);
-   for (unsigned int i=0; i<completed_.size(); ++i)
-   {
-      // we know only requesttasks can be put on the workqueues
-      if (static_cast<Task*>(completed_[i])->getStatus() ==
-            Task::STATUS_DONE)
-      {
-        /* invoke the destructor and then add the mem back the task memory pool */
-        static_cast<Task *>(completed_[i])->~Task();
-        iofwd::TaskPoolAllocator::instance().deallocate(static_cast<Task *>(completed_[i]));
-      }
-   }
-   completed_.clear ();
-#endif
+    if(event_mode_ == EVMODE_TASK)
+    {
+        // Cleanup completed requests
+        workqueue_normal_->testAll (completed_);
+        workqueue_fast_->testAll (completed_);
+        for (unsigned int i=0; i<completed_.size(); ++i)
+        {
+            // we know only requesttasks can be put on the workqueues
+            if (static_cast<Task*>(completed_[i])->getStatus() ==
+                Task::STATUS_DONE)
+            {
+                /* invoke the destructor and then add the mem back the task memory pool */
+                static_cast<Task *>(completed_[i])->~Task();
+                iofwd::TaskPoolAllocator::instance().deallocate(static_cast<Task *>(completed_[i]));
+            }
+        }
+        completed_.clear ();
+    }
 }
 
 //===========================================================================
