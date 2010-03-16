@@ -10,13 +10,22 @@ namespace iofwd
     namespace tasksm
     {
 
-    ReadTaskSM::ReadTaskSM(sm::SMManager & smm, RequestScheduler * sched, BMIBufferPool * bpool, Request * p) : sm::SimpleSM<ReadTaskSM>(smm), bpool_(bpool), sched_(sched), request_((static_cast<ReadRequest&>(*p))), slots_(*this)
+    ReadTaskSM::ReadTaskSM(sm::SMManager & smm, RequestScheduler * sched, BMIBufferPool * bpool, Request * p)
+        : sm::SimpleSM<ReadTaskSM>(smm), bpool_(bpool), sched_(sched), request_((static_cast<ReadRequest&>(*p))), slots_(*this),
+          total_pipeline_ops_(0), io_ops_done_(0), cw_post_index_(0), rbuffer_(NULL), mode_(READSM_SERIAL_IO_PIPELINE)
     {
     }
 
     ReadTaskSM::~ReadTaskSM()
     {
         delete &request_;
+
+        /* cleanup rbuffer_ wrappers */
+        for(uint64_t i = 0 ; i < total_pipeline_ops_ ; i++)
+        {
+            delete rbuffer_[i];
+        }
+        delete [] rbuffer_;
     }
 
     void ReadTaskSM::decodeInput()
@@ -62,9 +71,9 @@ namespace iofwd
 
     void ReadTaskSM::execPipelineIO()
     {
-        const char * p_buf = (char *)rbuffer_.buffer->get_buf()->get();
-        const uint64_t p_offset = rbuffer_.off;
-        const uint64_t p_size = rbuffer_.siz;
+        const char * p_buf = (char *)rbuffer_[cw_post_index_]->buffer->get_buf()->get();
+        const uint64_t p_offset = rbuffer_[cw_post_index_]->off;
+        const uint64_t p_size = rbuffer_[cw_post_index_]->siz;
         const uint64_t * file_starts = p.file_starts;
         const uint64_t * file_sizes = p.file_sizes;
         int * ret = new int(0);
@@ -130,25 +139,85 @@ namespace iofwd
         cur += p_file_sizes[i];
     }
 
-    rbuffer_.mem_starts = mem_starts;
-    rbuffer_.mem_sizes = mem_sizes;
-    rbuffer_.file_starts = p_file_starts;
-    rbuffer_.file_sizes = p_file_sizes;
-    rbuffer_.ret = ret;
-
-    /* enqueue the write */
-    sched_->enqueueReadCB (
-        slots_[READ_SLOT], p.handle, p_file_count, (void**)mem_starts, mem_sizes,
-        p_file_starts, p_file_sizes, p.op_hint);
+    rbuffer_[cw_post_index_]->mem_starts = mem_starts;
+    rbuffer_[cw_post_index_]->mem_sizes = mem_sizes;
+    rbuffer_[cw_post_index_]->file_starts = p_file_starts;
+    rbuffer_[cw_post_index_]->file_sizes = p_file_sizes;
+    rbuffer_[cw_post_index_]->ret = ret;
 
     /* set the callback and wait */
-    slots_.wait(READ_SLOT, &ReadTaskSM::waitPipelineEnqueueRead);
+    if((mode_ & READSM_SERIAL_IO_PIPELINE) == 0)
+    {
+        /* enqueue the write */
+        sched_->enqueueReadCB (
+            slots_[READ_SLOT], p.handle, p_file_count, (void**)mem_starts, mem_sizes,
+            p_file_starts, p_file_sizes, p.op_hint);
+
+        /* issue the serial wait */
+        slots_.wait(READ_SLOT, &ReadTaskSM::waitPipelineEnqueueRead);
+    }
+    else
+    {
+        int my_slot = 0;
+
+        /* protected section for the op slot update */
+        {
+            boost::mutex::scoped_lock l(slot_mutex_);
+
+            /* assign the current slot */
+            my_slot = cw_post_index_ + READ_PIPEOP_START;
+
+            cw_post_index_++;
+
+            /* update the byte transfer count */
+            cur_sent_bytes_ += p_siz_;
+        }
+
+        /* enqueue the write */
+        sched_->enqueueReadCB (
+            slots_[my_slot], p.handle, p_file_count, (void**)mem_starts, mem_sizes,
+            p_file_starts, p_file_sizes, p.op_hint);
+
+
+        /* go to the next state depending on the current pipeline stage */
+        {
+            boost::mutex::scoped_lock l(slot_mutex_);
+
+            /* if there is still outstanding pipeline data, go back to the buffer allocate stage */
+            if(cur_sent_bytes_ < total_bytes_)
+            {
+                /* issue the barrier wait */
+                rbuffer_[cw_post_index_]->reinit();
+                slots_.wait(my_slot, &ReadTaskSM::readBarrier);
+                setNextMethod(&ReadTaskSM::postAllocateBMIBuffer);
+            }
+            /* else, wait for the barrier */
+            else
+            {
+                slots_.wait(my_slot, &ReadTaskSM::readBarrier);
+            }
+        }
+    }
+}
+
+/* barrier for reads... will not go to post reply state until all writes complete */
+void ReadTaskSM::readBarrier(int UNUSED(status))
+{
+    boost::mutex::scoped_lock l(slot_mutex_);
+
+    io_ops_done_++;
+
+    /* if all the outstanding ops are done, go to the reply state */
+    if(io_ops_done_ == total_pipeline_ops_)
+    {
+        setNextMethod(&ReadTaskSM::postReply);
+    }
 }
 
 void ReadTaskSM::getBMIBuffer()
 {
     /* request a BMI buffer */
-    bpool_->allocCB(slots_[READ_SLOT], request_.getRequestAddr(), iofwdutil::bmi::BMI::ALLOC_SEND, rbuffer_.buffer);
+    bpool_->allocCB(slots_[READ_SLOT], request_.getRequestAddr(), iofwdutil::bmi::BMI::ALLOC_SEND, rbuffer_[cw_post_index_]->buffer);
 
     /* set the callback and wait */
     slots_.wait(READ_SLOT, &ReadTaskSM::waitAllocateBMIBuffer);
@@ -161,7 +230,7 @@ void ReadTaskSM::sendPipelineBuffer()
 
     /* if there is still data to be recieved */
     //p_siz_ = std::min(bpool_->pipeline_size(), total_bytes_ - cur_sent_bytes_);
-    request_.sendPipelineBufferCB(slots_[READ_SLOT], rbuffer_.buffer->get_buf(), p_siz_);
+    request_.sendPipelineBufferCB(slots_[READ_SLOT], rbuffer_[cw_post_index_]->buffer->get_buf(), p_siz_);
 
     /* set the callback and wait */
     slots_.wait(READ_SLOT, &ReadTaskSM::waitSendPipelineBuffer);

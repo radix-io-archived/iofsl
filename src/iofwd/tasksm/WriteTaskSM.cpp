@@ -12,13 +12,20 @@ namespace iofwd
 
     WriteTaskSM::WriteTaskSM(sm::SMManager & smm, RequestScheduler * sched, BMIBufferPool * bpool, Request * p)
         : sm::SimpleSM<WriteTaskSM>(smm), sched_(sched), bpool_(bpool), request_((static_cast<WriteRequest&>(*p))), slots_(*this),
-          total_bytes_(0), cur_recv_bytes_(0), p_siz_(0)
+          total_bytes_(0), cur_recv_bytes_(0), p_siz_(0), total_pipeline_ops_(0), io_ops_done_(0), cw_post_index_(0), rbuffer_(NULL), mode_(WRITESM_PARA_IO_PIPELINE)
     {
     }
 
     WriteTaskSM::~WriteTaskSM()
     {
         delete &request_;
+
+        /* cleanup rbuffer_ wrappers */
+        for(uint64_t i = 0 ; i < total_pipeline_ops_ ; i++)
+        {
+            delete rbuffer_[i];
+        }
+        delete [] rbuffer_;
     }
 
     void WriteTaskSM::decodeInput()
@@ -77,9 +84,9 @@ namespace iofwd
 
     void WriteTaskSM::execPipelineIO()
     {
-        const char * p_buf = (char *)rbuffer_.buffer->get_buf()->get();
-        const uint64_t p_offset = rbuffer_.off;
-        const uint64_t p_size = rbuffer_.siz;
+        const char * p_buf = (char *)rbuffer_[cw_post_index_]->buffer->get_buf()->get();
+        const uint64_t p_offset = rbuffer_[cw_post_index_]->off;
+        const uint64_t p_size = rbuffer_[cw_post_index_]->siz;
         const uint64_t * file_starts = p.file_starts;
         const uint64_t * file_sizes = p.file_sizes;
         int * ret = new int(0);
@@ -145,28 +152,88 @@ namespace iofwd
         cur += p_file_sizes[i];
     }
 
-    rbuffer_.mem_starts = mem_starts;
-    rbuffer_.mem_sizes = mem_sizes;
-    rbuffer_.file_starts = p_file_starts;
-    rbuffer_.file_sizes = p_file_sizes;
-    rbuffer_.ret = ret;
-
-    /* enqueue the write */
-    sched_->enqueueWriteCB (
-        slots_[WRITE_SLOT], p.handle, p_file_count, (const void**)mem_starts, mem_sizes,
-        p_file_starts, p_file_sizes, p.op_hint);
+    rbuffer_[cw_post_index_]->mem_starts = mem_starts;
+    rbuffer_[cw_post_index_]->mem_sizes = mem_sizes;
+    rbuffer_[cw_post_index_]->file_starts = p_file_starts;
+    rbuffer_[cw_post_index_]->file_sizes = p_file_sizes;
+    rbuffer_[cw_post_index_]->ret = ret;
 
     /* set the callback and wait */
-    slots_.wait(WRITE_SLOT, &WriteTaskSM::waitPipelineEnqueueWrite);
+    if((mode_ & WRITESM_SERIAL_IO_PIPELINE) == 0)
+    {
+        /* enqueue the write */
+        sched_->enqueueWriteCB (
+            slots_[WRITE_SLOT], p.handle, p_file_count, (const void**)mem_starts, mem_sizes,
+            p_file_starts, p_file_sizes, p.op_hint);
+
+        /* issue the serial wait */
+        slots_.wait(WRITE_SLOT, &WriteTaskSM::waitPipelineEnqueueWrite);
+    }
+    else
+    {
+        int my_slot = 0;
+
+        /* protected section for the op slot update */
+        {
+            boost::mutex::scoped_lock l(slot_mutex_);
+
+            /* assign the current slot */
+            my_slot = cw_post_index_ + WRITE_PIPEOP_START;
+
+            cw_post_index_++;
+
+            /* update the byte transfer count */
+            cur_recv_bytes_ += p_siz_;
+        }
+
+        /* enqueue the write */
+        sched_->enqueueWriteCB (
+            slots_[my_slot], p.handle, p_file_count, (const void**)mem_starts, mem_sizes,
+            p_file_starts, p_file_sizes, p.op_hint);
+
+
+        /* go to the next state depending on the current pipeline stage */
+        {
+            boost::mutex::scoped_lock l(slot_mutex_);
+
+            /* if there is still outstanding pipeline data, go back to the buffer allocate stage */
+            if(cur_recv_bytes_ < total_bytes_)
+            {
+                /* issue the barrier wait */
+                rbuffer_[cw_post_index_]->reinit();
+                slots_.wait(my_slot, &WriteTaskSM::writeBarrier);
+                setNextMethod(&WriteTaskSM::postAllocateBMIBuffer);
+            }
+            /* else, wait for the barrier */
+            else
+            {
+                slots_.wait(my_slot, &WriteTaskSM::writeBarrier);
+            }
+        }
+    }
+}
+
+/* barrier for writes... will not go to post reply state until all writes complete */
+void WriteTaskSM::writeBarrier(int UNUSED(status))
+{
+    boost::mutex::scoped_lock l(slot_mutex_);
+
+    io_ops_done_++;
+
+    /* if all the outstanding ops are done, go to the reply state */
+    if(io_ops_done_ == total_pipeline_ops_)
+    {
+        setNextMethod(&WriteTaskSM::postReply);
+    }
 }
 
 void WriteTaskSM::getBMIBuffer()
 {
     /* request a BMI buffer */
 #ifdef USE_IOFWD_TASK_POOL
-    bpool_->allocCB(slots_[WRITE_SLOT], request_->getRequestAddr(), iofwdutil::bmi::BMI::ALLOC_RECEIVE, rbuffer_.buffer);
+    bpool_->allocCB(slots_[WRITE_SLOT], request_->getRequestAddr(), iofwdutil::bmi::BMI::ALLOC_RECEIVE, rbuffer_[cw_post_index_]->buffer);
 #else
-    bpool_->allocCB(slots_[WRITE_SLOT], request_.getRequestAddr(), iofwdutil::bmi::BMI::ALLOC_RECEIVE, rbuffer_.buffer);
+    bpool_->allocCB(slots_[WRITE_SLOT], request_.getRequestAddr(), iofwdutil::bmi::BMI::ALLOC_RECEIVE, rbuffer_[cw_post_index_]->buffer);
 #endif
 
     /* set the callback and wait */
@@ -181,9 +248,9 @@ void WriteTaskSM::recvPipelineBuffer()
     /* if there is still data to be recieved */
     p_siz_ = std::min(bpool_->pipeline_size(), total_bytes_ - cur_recv_bytes_);
 #ifdef USE_IOFWD_TASK_POOL
-    request_->recvPipelineBufferCB(slots_[WRITE_SLOT], rbuffer_.buffer->get_buf(), p_siz_);
+    request_->recvPipelineBufferCB(slots_[WRITE_SLOT], rbuffer_[cw_post_index_]->buffer->get_buf(), p_siz_);
 #else
-    request_.recvPipelineBufferCB(slots_[WRITE_SLOT], rbuffer_.buffer->get_buf(), p_siz_);
+    request_.recvPipelineBufferCB(slots_[WRITE_SLOT], rbuffer_[cw_post_index_]->buffer->get_buf(), p_siz_);
 #endif
 
     /* set the callback and wait */
