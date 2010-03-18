@@ -105,7 +105,10 @@ void SMManager::startThreads (size_t count)
 void SMManager::stopThreads ()
 {
    ZLOG_DEBUG(log_, "Stopping threads...");
-   finish_ = true;
+   {
+        boost::mutex::scoped_lock flock(lock_);
+        finish_ = true;
+   }
 
    {
       boost::mutex::scoped_lock l(lock_);
