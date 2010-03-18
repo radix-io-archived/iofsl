@@ -97,7 +97,7 @@ private:
 };
 
 RequestScheduler::RequestScheduler(zoidfs::ZoidFSAsyncAPI * async_api, zoidfs::util::ZoidFSDefAsync * async_cb_api, const iofwdutil::ConfigFile & c, int mode)
-  : log_(IOFWDLog::getSource()), exiting(false), async_api_(async_api), async_cb_api_(async_cb_api), mode_(mode)
+  : log_(IOFWDLog::getSource()), exiting_(false), async_api_(async_api), async_cb_api_(async_cb_api), mode_(mode)
 {
   RangeScheduler * rsched;
   char * sched_algo = new char[c.getKeyDefault("schedalgo", "fifo").size() + 1];
@@ -110,6 +110,8 @@ RequestScheduler::RequestScheduler(zoidfs::ZoidFSAsyncAPI * async_api, zoidfs::u
   } else {
     assert(false);
   }
+
+  boost::mutex::scoped_lock l(lock_);
   range_sched_.reset(rsched);
   consumethread_.reset(new boost::thread(boost::bind(&RequestScheduler::run, this)));
 
@@ -118,7 +120,10 @@ RequestScheduler::RequestScheduler(zoidfs::ZoidFSAsyncAPI * async_api, zoidfs::u
 
 RequestScheduler::~RequestScheduler()
 {
-  exiting = true;
+  {
+    boost::mutex::scoped_lock elock(lock_);
+    exiting_ = true;
+  }
   ready_.notify_all();
   consumethread_->join();
 }
@@ -254,11 +259,11 @@ void RequestScheduler::run()
     bool has_tmp_r = false;
     {
       boost::mutex::scoped_lock l(lock_);
-      while (range_sched_->empty() && !exiting) {
+      while (range_sched_->empty() && !exiting_) {
         if (!rs.empty()) break;
         ready_.wait(l);
       }
-      if (exiting)
+      if(exiting_)
         break;
 
       // dequeue requests of same direction (read/write), same handle
@@ -352,7 +357,11 @@ void RequestScheduler::issue(vector<ChildRange *>& rs)
     }
   }
 
-  int * ret = new int(0);
+  int * ret = NULL;
+  if(mode_ == EVMODE_SM)
+  {
+    ret = new int(0);
+  }
   char ** mem_starts = new char*[narrays];
   size_t * mem_sizes = new size_t[narrays];
   uint64_t * file_starts = new uint64_t[narrays];
@@ -464,7 +473,7 @@ void issueWait(int UNUSED(status))
 
 void RequestScheduler::notifyConsumer()
 {
-  ready_.notify_all();
+    ready_.notify_all();
 }
 
 //===========================================================================

@@ -71,7 +71,7 @@ private:
   boost::scoped_ptr<boost::thread> consumethread_;
   boost::mutex lock_;
   boost::condition_variable ready_;
-  bool exiting;
+  bool exiting_;
 
   zoidfs::ZoidFSAsyncAPI * async_api_;
   zoidfs::util::ZoidFSDefAsync * async_cb_api_;

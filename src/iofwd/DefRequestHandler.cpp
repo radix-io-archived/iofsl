@@ -47,6 +47,7 @@ DefRequestHandler::DefRequestHandler (const iofwdutil::ConfigFile & cf)
    {
         event_mode_ = EVMODE_TASK;
    }
+   delete [] evmode;
 
    async_api_ = new zoidfs::ZoidFSAsyncAPI(&api_);
    async_api_full_ = new zoidfs::util::ZoidFSDefAsync(api_);
@@ -74,17 +75,24 @@ void DefRequestHandler::reschedule (Task * t)
 
 DefRequestHandler::~DefRequestHandler ()
 {
-   smm.stopThreads();
+   /* if this is the state machine mode, shutdown the state machine manager */
+   if(event_mode_ == EVMODE_SM)
+   {
+        smm.stopThreads();
+   }
+   /* if this is the task mode, clear out the work queues before shutdown */
+   else if(event_mode_ == EVMODE_TASK)
+   {
+        std::vector<WorkItem *> items;
+        ZLOG_INFO (log_, "Waiting for normal workqueue to complete all work...");
+        workqueue_normal_->waitAll (items);
+        for_each (items.begin(), items.end(), boost::lambda::bind(delete_ptr(), boost::lambda::_1));
 
-   std::vector<WorkItem *> items;
-   ZLOG_INFO (log_, "Waiting for normal workqueue to complete all work...");
-   workqueue_normal_->waitAll (items);
-   for_each (items.begin(), items.end(), boost::lambda::bind(delete_ptr(), boost::lambda::_1));
-
-   items.clear();
-   ZLOG_INFO (log_, "Waiting for fast workqueue to complete all work...");
-   workqueue_fast_->waitAll (items);
-   for_each (items.begin(), items.end(), boost::lambda::bind(delete_ptr(), boost::lambda::_1));
+        items.clear();
+        ZLOG_INFO (log_, "Waiting for fast workqueue to complete all work...");
+        workqueue_fast_->waitAll (items);
+        for_each (items.begin(), items.end(), boost::lambda::bind(delete_ptr(), boost::lambda::_1));
+   }
 
    delete sched_;
    delete bpool_;
