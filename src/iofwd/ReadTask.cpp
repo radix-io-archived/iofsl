@@ -44,19 +44,11 @@ void releaseReadBuffer(ReadBuffer& b)
 void ReadTask::runNormalMode(const ReadRequest::ReqParam & p)
 {
 
-#if SIZEOF_SIZE_T == SIZEOF_INT64_T
    std::auto_ptr<iofwdutil::completion::CompletionID> io_id (sched_->enqueueRead (
       p.handle, (size_t)p.mem_count,
       (void**)p.mem_starts, p.mem_sizes,
       p.file_starts, p.file_sizes, p.op_hint));
    io_id->wait ();
-#else
-   std::auto_ptr<iofwdutil::completion::CompletionID> io_id (sched_->enqueueRead (
-      p.handle, (size_t)p.mem_count,
-      (void**)p.mem_starts, p.bmi_mem_sizes,
-      p.file_starts, p.file_sizes, p.op_hint));
-   io_id->wait ();
-#endif
 
    request_.setReturnCode(zoidfs::ZFS_OK); /* TODO: pass back the actual return value */
 

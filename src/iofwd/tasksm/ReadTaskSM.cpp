@@ -47,11 +47,7 @@ namespace iofwd
     /* execute the write I/O path */
     void ReadTaskSM::readNormal()
     {
-#if SIZEOF_SIZE_T == SIZEOF_INT64_T
         sched_->enqueueReadCB(slots_[READ_SLOT], p.handle, (size_t)p.mem_count, (void**)p.mem_starts, p.mem_sizes, p.file_starts, p.file_sizes, p.op_hint);
-#else
-        sched_->enqueueReadCB(slots_[READ_SLOT], p.handle, (size_t)p.mem_count, (void**)p.mem_starts, p.bmi_mem_sizes, p.file_starts, p.file_sizes, p.op_hint);
-#endif
 
         /* set the callback */
         slots_.wait(READ_SLOT, &ReadTaskSM::waitEnqueueRead);
