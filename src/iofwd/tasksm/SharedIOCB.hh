@@ -29,7 +29,7 @@ class SharedIOCB
 
     protected:
         /* only instance of this class can delete / free itself... */
-        virtual ~SharedIOCB() = 0;
+        virtual ~SharedIOCB();
 
         /* variables... ownership of this dyn memory is transfered to this class */
         int * ret_;
