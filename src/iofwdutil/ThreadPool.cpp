@@ -4,24 +4,29 @@ namespace iofwdutil
 {
         int iofwdutil::ThreadPool::min_thread_count_ = 0;
         int iofwdutil::ThreadPool::max_thread_count_ = 0;
+        boost::mutex iofwdutil::ThreadPool::tp_setup_mutex_;
 
         void ThreadPool::setMinThreadCount(int c)
         {
+            boost::mutex::scoped_lock lock(tp_setup_mutex_);
             min_thread_count_ = c;
         }
 
         void ThreadPool::setMaxThreadCount(int c)
         {
+            boost::mutex::scoped_lock lock(tp_setup_mutex_);
             max_thread_count_ = c;
         }
 
         int ThreadPool::getMinThreadCount()
         {
+            boost::mutex::scoped_lock lock(tp_setup_mutex_);
             return min_thread_count_;
         }
 
         int ThreadPool::getMaxThreadCount()
         {
+            boost::mutex::scoped_lock lock(tp_setup_mutex_);
             return max_thread_count_;
         }
 
@@ -130,15 +135,22 @@ namespace iofwdutil
                 didWork = false;
 
                 /* if shutdown flag was set, exit the function */
-                if(shutdown_threads_)
                 {
-                    thread_count_--;
+                    boost::mutex::scoped_try_lock slock(shutdown_lock_);
 
-                    if(thread_count_ == 0)
+                    if(slock.owns_lock())
                     {
-                        shutdown_cond_.notify_one();
+                        if(shutdown_threads_)
+                        {
+                            thread_count_--;
+
+                            if(thread_count_ == 0)
+                            {
+                                shutdown_cond_.notify_one();
+                            }
+                            return;
+                        }
                     }
-                    return;
                 }
             }while(true);
         }

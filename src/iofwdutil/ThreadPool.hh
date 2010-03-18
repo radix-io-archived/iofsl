@@ -157,6 +157,8 @@ class ThreadPool : public Singleton< ThreadPool >
 
         /* thread tracking / usage variables */
         int thread_count_;
+        boost::mutex shutdown_lock_;
+        static boost::mutex tp_setup_mutex_;
         static int max_thread_count_;
         static int min_thread_count_;
         bool shutdown_threads_;
