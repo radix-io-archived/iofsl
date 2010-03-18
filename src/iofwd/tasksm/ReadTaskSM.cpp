@@ -12,7 +12,7 @@ namespace iofwd
 
     ReadTaskSM::ReadTaskSM(sm::SMManager & smm, RequestScheduler * sched, BMIBufferPool * bpool, Request * p)
         : sm::SimpleSM<ReadTaskSM>(smm), bpool_(bpool), sched_(sched), request_((static_cast<ReadRequest&>(*p))), slots_(*this),
-          total_pipeline_ops_(0), io_ops_done_(0), cw_post_index_(0), rbuffer_(NULL), mode_(READSM_SERIAL_IO_PIPELINE)
+          total_bytes_(0), cur_sent_bytes_(0), p_siz_(0), total_pipeline_ops_(0), io_ops_done_(0), cw_post_index_(0), rbuffer_(NULL), mode_(READSM_SERIAL_IO_PIPELINE)
     {
     }
 
