@@ -82,8 +82,11 @@ namespace sm
       }
 
 
-      bool isRunning () const
-      { return running_; }
+      bool isRunning ()
+      {
+            boost::mutex::scoped_lock l(state_lock_);
+            return running_;
+      }
 
    protected:
 
@@ -113,9 +116,12 @@ SimpleSM<T>::SimpleSM (SMManager & m)
 template <typename T>
 SimpleSM<T>::~SimpleSM ()
 {
-   ALWAYS_ASSERT(!running_);
-   // This might be better as: ZLOG_WARN_IF(!done_called_, "...")
-   //ALWAYS_ASSERT(done_called_);
+   {
+   boost::mutex::scoped_lock l(state_lock_);
+    ALWAYS_ASSERT(!running_);
+    // This might be better as: ZLOG_WARN_IF(!done_called_, "...")
+    //ALWAYS_ASSERT(done_called_);
+   }
 }
 
 template <typename T>
