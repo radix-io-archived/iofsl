@@ -24,7 +24,7 @@ namespace iofwd
 class WriteRequest : public Request
 {
 public:
-  typedef struct
+  typedef struct ReqParam_
   {
      zoidfs::zoidfs_handle_t * handle;
      size_t mem_count;
@@ -38,6 +38,12 @@ public:
      zoidfs::zoidfs_file_ofs_t * file_sizes;
      size_t pipeline_size;
      zoidfs::zoidfs_op_hint_t * op_hint;
+
+     ReqParam_() : handle(NULL), mem_count(0), mem_starts(NULL), mem_sizes(NULL), mem_total_size(0), mem_expected_size(0),
+        bmi_mem_sizes(NULL), file_count(0), file_starts(NULL), file_sizes(NULL), pipeline_size(0), op_hint(NULL)
+     {
+     }
+
   } ReqParam;
 
   WriteRequest (int opid)
