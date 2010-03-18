@@ -60,11 +60,7 @@ namespace iofwd
                 tmp_mem_sizes[i] = p.mem_sizes[i];
         }
 
-#if SIZEOF_SIZE_T == SIZEOF_INT64_T
         sched_->enqueueWriteCB(slots_[WRITE_SLOT], p.handle, (size_t)p.mem_count, (const void**)p.mem_starts, p.mem_sizes, p.file_starts, p.file_sizes, p.op_hint);
-#else
-        sched_->enqueueWriteCB(slots_[WRITE_SLOT], p.handle, (size_t)p.mem_count, (const void**)p.mem_starts, p.bmi_mem_sizes, p.file_starts, p.file_sizes, p.op_hint);
-#endif
 
         /* set the callback */
         slots_.wait(WRITE_SLOT, &WriteTaskSM::waitEnqueueWrite);
