@@ -18,14 +18,15 @@ namespace iofwd
 
     WriteTaskSM::~WriteTaskSM()
     {
-        delete &request_;
-
         /* cleanup rbuffer_ wrappers */
         for(uint64_t i = 0 ; i < total_pipeline_ops_ ; i++)
         {
             delete rbuffer_[i];
         }
         delete [] rbuffer_;
+
+        /* delete the request last */
+        delete &request_;
     }
 
     void WriteTaskSM::decodeInput()
