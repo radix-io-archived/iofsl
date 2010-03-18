@@ -41,7 +41,6 @@ DefRequestHandler::DefRequestHandler (const iofwdutil::ConfigFile & c)
    lc = config_.openSectionDefault ("events");
    char * evmode = new char[lc.getKeyDefault("mode", "SM").size() + 1];
    strcpy(evmode, const_cast<char *>(lc.getKeyDefault ("mode", "SM").c_str()));
-   fprintf(stderr, "ev mode = %s\n", evmode);
    if(strcmp(evmode, "SM") == 0)
    {
         event_mode_ = EVMODE_SM;
@@ -50,6 +49,7 @@ DefRequestHandler::DefRequestHandler (const iofwdutil::ConfigFile & c)
    {
         event_mode_ = EVMODE_TASK;
    }
+   delete [] evmode;
 
    async_api_ = new zoidfs::ZoidFSAsyncAPI(&api_);
    async_api_full_ = new zoidfs::util::ZoidFSDefAsync(api_);
@@ -74,17 +74,24 @@ void DefRequestHandler::reschedule (Task * t)
 
 DefRequestHandler::~DefRequestHandler ()
 {
-   smm.stopThreads();
+   /* if this is the state machine mode, shutdown the state machine manager */
+   if(event_mode_ == EVMODE_SM)
+   {
+        smm.stopThreads();
+   }
+   /* if this is the task mode, clear out the work queues before shutdown */
+   else if(event_mode_ == EVMODE_TASK)
+   {
+        std::vector<WorkItem *> items;
+        ZLOG_INFO (log_, "Waiting for normal workqueue to complete all work...");
+        workqueue_normal_->waitAll (items);
+        for_each (items.begin(), items.end(), boost::lambda::bind(delete_ptr(), boost::lambda::_1));
 
-   std::vector<WorkItem *> items;
-   ZLOG_INFO (log_, "Waiting for normal workqueue to complete all work...");
-   workqueue_normal_->waitAll (items);
-   for_each (items.begin(), items.end(), boost::lambda::bind(delete_ptr(), boost::lambda::_1));
-
-   items.clear();
-   ZLOG_INFO (log_, "Waiting for fast workqueue to complete all work...");
-   workqueue_fast_->waitAll (items);
-   for_each (items.begin(), items.end(), boost::lambda::bind(delete_ptr(), boost::lambda::_1));
+        items.clear();
+        ZLOG_INFO (log_, "Waiting for fast workqueue to complete all work...");
+        workqueue_fast_->waitAll (items);
+        for_each (items.begin(), items.end(), boost::lambda::bind(delete_ptr(), boost::lambda::_1));
+   }
 
    delete sched_;
    delete bpool_;
