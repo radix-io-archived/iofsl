@@ -2,6 +2,7 @@
 #define IOFWDEVENT_THREADEDRESOURCE_HH
 
 #include <boost/thread.hpp>
+#include <boost/thread/mutex.hpp>
 #include <queue>
 #include <csignal>
 #include <memory>
@@ -34,11 +35,17 @@ namespace iofwdevent
       protected:
          /// Can be used by the derived threadMain to determine if it should
          /// exit
-         inline bool needShutdown () const
-         { return shutdown_; }
+         inline bool needShutdown()
+         {
+            boost::mutex::scoped_lock l(shutdown_lock_);
+            return shutdown_;
+         }
 
-         inline bool isRunning () const
-         { return running_; }
+         inline bool isRunning()
+         {
+            boost::mutex::scoped_lock l(running_lock_);
+            return running_;
+         }
          
          /// This method needs to be overridden in the derived class
          virtual void threadMain () = 0;
@@ -57,6 +64,8 @@ namespace iofwdevent
 
       protected:
          boost::mutex lock_;
+         boost::mutex shutdown_lock_;
+         boost::mutex running_lock_;
          boost::condition_variable cond_;
 
       private:
