@@ -127,6 +127,7 @@ src/iofwdutil/PerfCounters.hh \
 src/iofwdutil/PerfCounters.cpp \
 src/iofwdutil/ThreadPool.hh \
 src/iofwdutil/ThreadPool.cpp \
+src/iofwdutil/InjectPool.hh \
 \
 src/iofwdutil/atomics.hh \
 \
