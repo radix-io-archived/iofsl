@@ -8,7 +8,7 @@ extern "C"
 
 #include <boost/intrusive/slist.hpp>
 #include <boost/pool/pool_alloc.hpp>
-
+#include "iofwdutil/tools.hh"
 #include "ThreadedResource.hh"
 #include "iofwdutil/assert.hh"
 #include "iofwdutil/IOFWDLog.hh"
@@ -188,6 +188,20 @@ namespace iofwdevent
                   size_t seq)
                : op (o), incount(in), outcount(out), info(i),
                sequence(seq)
+            {
+            }
+         };
+
+         struct ue_ready_disposer
+         {
+            void operator () (UnexpectedMessage * UNUSED(v))
+            {
+            }
+         };
+
+         struct ue_clientlist_disposer
+         {
+            void operator () (UnexpectedClient * UNUSED(v))
             {
             }
          };

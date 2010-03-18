@@ -87,6 +87,8 @@ namespace iofwdevent
 
    BMIResource::~BMIResource ()
    {
+       ue_ready_.clear_and_dispose(ue_ready_disposer()); 
+       ue_clientlist_.clear_and_dispose(ue_clientlist_disposer()); 
    }
 
    BMIResource::BMIResource ()
@@ -273,7 +275,6 @@ namespace iofwdevent
                   checkUnexpected ();
             }
          }
-
          checkBMI (BMI_testcontext (opids_.size(), &opids_[0],
                   &outcount, &errors_[0], &sizes_[0],
                   reinterpret_cast<void**>(&users_[0]), WAIT_TIME, context_));
