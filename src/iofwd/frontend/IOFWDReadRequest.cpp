@@ -93,7 +93,7 @@ const IOFWDReadRequest::ReqParam & IOFWDReadRequest::decodeParam ()
         }
 
         // create the bmi buffer
-        bmi_buffer_ = new iofwdutil::bmi::BMIBuffer(addr_, iofwdutil::bmi::BMI::ALLOC_RECEIVE);
+        bmi_buffer_ = new iofwdutil::bmi::BMIBuffer(addr_, iofwdutil::bmi::BMI::ALLOC_SEND);
         bmi_buffer_->resize(param_.mem_total_size);
         mem = static_cast<char *>(bmi_buffer_->get());
 
