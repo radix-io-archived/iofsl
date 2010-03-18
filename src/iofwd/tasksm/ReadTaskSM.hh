@@ -178,7 +178,7 @@ class ReadTaskSM : public sm::SimpleSM< ReadTaskSM >, public iofwdutil::InjectPo
         boost::mutex slot_mutex_;
         uint64_t total_bytes_;
         uint64_t cur_sent_bytes_;
-        size_t p_siz_;
+        uint64_t p_siz_;
         uint64_t total_pipeline_ops_;
         uint64_t io_ops_done_;
         uint64_t cw_post_index_;
