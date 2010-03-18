@@ -48,7 +48,7 @@ class WriteTaskSM : public sm::SimpleSM< WriteTaskSM >, public iofwdutil::Inject
                     total_bytes_ += p.mem_sizes[i];
 
                 /* compute the total number of concurrent pipeline ops */
-                total_pipeline_ops_ = (int)ceil(total_bytes_ / bpool_->pipeline_size());
+                total_pipeline_ops_ = (int)ceil(1.0 * total_bytes_ / bpool_->pipeline_size());
 
                 /* setup the rbuffer variable */
                 rbuffer_ = new SMRetrievedBuffer*[total_pipeline_ops_];
