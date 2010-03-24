@@ -48,7 +48,7 @@ class ReadTaskSM : public sm::SimpleSM< ReadTaskSM >, public iofwdutil::InjectPo
             else
             {
                 /* compute the total size of the pipeline transfers */
-                for (int i = 0; i < p.mem_count; i++)
+                for (size_t i = 0; i < p.mem_count; i++)
                     total_bytes_ += p.mem_sizes[i];
 
                 /* compute the total number of concurrent pipeline ops */
@@ -145,7 +145,7 @@ class ReadTaskSM : public sm::SimpleSM< ReadTaskSM >, public iofwdutil::InjectPo
 
         void postPipelineEnqueueRead(int UNUSED(status))
         {
-            p_siz_ = std::min(bpool_->pipeline_size(), total_bytes_ - cur_sent_bytes_);
+            p_siz_ = std::min((size_t)bpool_->pipeline_size(), total_bytes_ - cur_sent_bytes_);
             /* update the rbuffer with the new data entires */
             rbuffer_[cw_post_index_]->siz = p_siz_;
             rbuffer_[cw_post_index_]->off = cur_sent_bytes_;

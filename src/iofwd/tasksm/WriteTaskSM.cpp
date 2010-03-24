@@ -264,7 +264,7 @@ void WriteTaskSM::recvPipelineBuffer()
     // from alloc -> NetworkRecv -> rx_q -> ZoidI/O -> io_q -> back to alloc
 
     /* if there is still data to be recieved */
-    p_siz_ = std::min(bpool_->pipeline_size(), total_bytes_ - cur_recv_bytes_);
+    p_siz_ = std::min((size_t)bpool_->pipeline_size(), total_bytes_ - cur_recv_bytes_);
     request_.recvPipelineBufferCB(slots_[WRITE_SLOT], rbuffer_[cw_post_index_]->buffer->get_buf(), p_siz_);
 
     /* set the callback and wait */
