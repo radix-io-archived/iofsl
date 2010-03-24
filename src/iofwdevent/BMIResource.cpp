@@ -87,8 +87,21 @@ namespace iofwdevent
 
    BMIResource::~BMIResource ()
    {
-       ue_ready_.clear_and_dispose(ue_ready_disposer()); 
-       ue_clientlist_.clear_and_dispose(ue_clientlist_disposer()); 
+      // It is an error if they are still outstanding operations when
+      // the resource is destroyed.
+      //
+      // Clients of the resource should unregister/cancel before the resource
+      // itself is destroyed.
+      //
+      // Since we only support cancelling unexpected receives for now,
+      // we clear out the lists here.
+      //
+      // this is a hack.
+      //
+      // @TODO Fix cancel of BMI resource operations
+      //
+      ue_ready_.clear_and_dispose(ue_ready_disposer());
+      ue_clientlist_.clear_and_dispose(ue_clientlist_disposer());
    }
 
    BMIResource::BMIResource ()
@@ -217,7 +230,7 @@ namespace iofwdevent
             c.info[i] = msg.info_;
             ue_ready_.pop_front ();
 
-            // call destructor
+            // call destructor; Boost pool
             msg.~UnexpectedMessage ();
 
             ue_message_pool_.free (&msg);

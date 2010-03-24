@@ -214,7 +214,7 @@ namespace iofwdevent
          typedef boost::intrusive::slist<UnexpectedClient,
             boost::intrusive::cache_last<true>,
             boost::intrusive::constant_time_size<true> > UEClientListType;
-         
+
          UEClientListType ue_clientlist_;
 
          // slist for storing messages until somebody asks for them.
