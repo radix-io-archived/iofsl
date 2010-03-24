@@ -19,7 +19,7 @@ namespace iofwd
     WriteTaskSM::~WriteTaskSM()
     {
         /* cleanup rbuffer_ wrappers */
-        for(uint64_t i = 0 ; i < total_pipeline_ops_ ; i++)
+        for(int i = 0 ; i < total_pipeline_ops_ ; i++)
         {
             delete rbuffer_[i];
         }
@@ -47,20 +47,11 @@ namespace iofwd
     /* execute the write I/O path */
     void WriteTaskSM::writeNormal()
     {
-        // p.mem_sizes is uint64_t array, but ZoidFSAPI::write() takes size_t array
-        // for its arguments. Therefore, in (sizeof(size_t) != sizeof(uint64_t))
-        // environment (32bit), p.mem_sizes is not valid for size_t array.
-        // We allocate temporary buffer to fix this problem.
-        size_t * tmp_mem_sizes = (size_t*)p.mem_sizes;
-        bool need_size_t_workaround = (sizeof(size_t) != sizeof(uint64_t));
-        if (need_size_t_workaround)
-        {
-            tmp_mem_sizes = new size_t[p.mem_count];
-            for (uint32_t i = 0; i < p.mem_count; i++)
-                tmp_mem_sizes[i] = p.mem_sizes[i];
-        }
-
+#if SIZEOF_SIZE_T == SIZEOF_INT64_T
         sched_->enqueueWriteCB(slots_[WRITE_SLOT], p.handle, (size_t)p.mem_count, (const void**)p.mem_starts, p.mem_sizes, p.file_starts, p.file_sizes, p.op_hint);
+#else
+        sched_->enqueueWriteCB(slots_[WRITE_SLOT], p.handle, (size_t)p.mem_count, (const void**)p.mem_starts, p.mem_sizes, p.file_starts, p.file_sizes, p.op_hint);
+#endif
 
         /* set the callback */
         slots_.wait(WRITE_SLOT, &WriteTaskSM::waitEnqueueWrite);
@@ -79,100 +70,133 @@ namespace iofwd
         slots_.wait(WRITE_SLOT, &WriteTaskSM::waitReply);
     }
 
+    void WriteTaskSM::computePipelineFileSegments()
+    {
+        const zoidfs_file_ofs_t * file_starts = p.file_starts;
+        const zoidfs_file_size_t * file_sizes = p.file_sizes;
+        
+        size_t cur_pipe_ofs = 0;
+        int cur_file_index = 0;
+        int num_pipe_segments = 0;
+        size_t pipeline_size = bpool_->pipeline_size();
+        size_t cur_pipe_buffer_size = pipeline_size;
+        zoidfs_file_size_t cur_file_size = file_sizes[cur_file_index];
+        zoidfs_file_ofs_t cur_file_start = file_starts[cur_file_index];
+        size_t cur_mem_offset = 0;
+        int cur_pipe = 0;
+
+        /* while there is still data to process in this op */
+        p_segments.push_back(0);
+        p_segments_start.push_back(0);
+        while(cur_pipe_ofs < total_bytes_)
+        {
+            /* setup the file sizes */
+            cur_file_size = file_sizes[cur_file_index];
+            cur_file_start = file_starts[cur_file_index];
+
+            while(cur_file_size > 0)
+            {
+                /* if the data left in the current file is large than the remaining pipeline buffer */
+                if(cur_file_size > cur_pipe_buffer_size)
+                {
+                    /* update the pipeline segment data */
+                    p_file_sizes.push_back(cur_pipe_buffer_size);
+                    p_file_starts.push_back(cur_file_start);
+                    p_mem_offsets.push_back(cur_mem_offset);
+                    p_segments[cur_pipe] += 1;
+                    
+                    cur_file_start += cur_pipe_buffer_size;
+
+                    cur_file_size -= cur_pipe_buffer_size;
+                    cur_pipe_ofs += cur_pipe_buffer_size;
+                    cur_pipe_buffer_size = pipeline_size;
+                    cur_pipe++;
+                    p_segments.push_back(0);
+                    cur_mem_offset = 0;
+                    num_pipe_segments++;
+                    p_segments_start.push_back(num_pipe_segments);
+                }
+                /* buffer consumes the rest of the segment */
+                else
+                {
+                    /* update the pipeline segment data */
+                    p_file_sizes.push_back(cur_file_size);
+                    p_file_starts.push_back(cur_file_start);
+                    p_mem_offsets.push_back(cur_mem_offset);
+                    p_segments[cur_pipe] += 1;
+
+                    cur_file_start += cur_file_size;
+
+                    cur_pipe_buffer_size -= cur_file_size;
+                    cur_pipe_ofs += cur_file_size;
+                    cur_mem_offset += cur_file_size;
+                    cur_file_size = 0;
+                    cur_file_index++;
+                    num_pipe_segments++;
+                }
+            }
+        }
+#if 0
+        for(int i = 0 ; i < p_segments.size() ; i++)
+        {
+            fprintf(stderr, "pipe transfer %i: # segments %llu\n", i, p_segments[i]);
+        }
+        for(int i = 0 ; i < p_file_starts.size() ; i++)
+        {
+            fprintf(stderr, "pipe transfer %i: file_starts = %llu, file_sizes = %llu, mem_offsets = %llu\n", i, p_file_starts[i], p_file_sizes[i], p_mem_offsets[i]);
+        }
+#endif 
+    }
+
     void WriteTaskSM::execPipelineIO()
     {
         const char * p_buf = (char *)rbuffer_[cw_post_index_]->buffer->get_buf()->get();
-        const uint64_t p_offset = rbuffer_[cw_post_index_]->off;
-        const uint64_t p_size = rbuffer_[cw_post_index_]->siz;
-        const uint64_t * file_starts = p.file_starts;
-        const uint64_t * file_sizes = p.file_sizes;
+        int p_seg_start = p_segments_start[cw_post_index_];
+        int p_file_count = p_segments[cw_post_index_]; 
         int * ret = new int(0);
+    
+        /* setup segment data structures */
+        zoidfs_file_ofs_t * file_starts = new zoidfs_file_ofs_t[p_file_count];
+        zoidfs_file_size_t * file_sizes = new zoidfs_file_size_t[p_file_count];
+        const char ** mem_starts = new const char*[p_file_count];
+        size_t * mem_sizes = new size_t[p_file_count];
 
-        uint32_t st_file = 0, en_file = 0;
-        uint64_t st_fileofs = 0, en_fileofs = 0;
+        for (int i = 0; i < p_file_count; i++)
         {
-            bool st_ok = false;
-            bool en_ok = false;
-            uint32_t cur_file = 0;
-            uint64_t cur_ofs = p_offset;
-            while (!(st_ok && en_ok)) {
-                const uint64_t st = p_offset;
-                const uint64_t en = p_offset + p_size;
-                assert(cur_file < p.file_count);
-                if (cur_ofs <= st && st < cur_ofs + file_sizes[cur_file]) {
-                    st_file = cur_file;
-                    st_fileofs = st;
-                    st_ok = true;
-                }
-                if (cur_ofs < en && en <= cur_ofs + file_sizes[cur_file]) {
-                    en_file = cur_file;
-                    en_fileofs = en;
-                    en_ok = true;
-                    assert(st_ok);
-                    break;
-                }
-                cur_ofs += file_sizes[cur_file];
-                cur_file++;
+            /* find the index into the pipeline data */
+            int p_index = p_seg_start + i;
+
+            /* compute the I/O offsets for this data */
+            mem_starts[i] = p_buf + p_mem_offsets[p_index];
+            mem_sizes[i] = p_file_sizes[p_index];
+            file_starts[i] = p_file_starts[p_index];
+            file_sizes[i] = p_file_sizes[p_index];
         }
-        assert(st_file <= en_file);
-    }
 
-    size_t p_file_count = en_file + 1 - st_file;
-    uint64_t * p_file_starts = new uint64_t[p_file_count];
-    uint64_t * p_file_sizes = new uint64_t[p_file_count];
-    if (st_file == en_file) {
-        p_file_starts[0] = file_starts[st_file] + st_fileofs;
-        assert(en_fileofs > st_fileofs);
-        p_file_sizes[0] = en_fileofs - st_fileofs;
-    } else {
-        for (uint32_t i = st_file; i <= en_file; i++) {
-            if (i == st_file) {
-                p_file_starts[i - st_file] = file_starts[i] + st_fileofs;
-                p_file_sizes[i - st_file] = file_sizes[i] - st_fileofs;
-            } else if (i == en_file) {
-                p_file_starts[i - st_file] = file_starts[i];
-                p_file_sizes[i - st_file] = en_fileofs;
-            } else {
-                p_file_starts[i - st_file] = file_starts[i];
-                p_file_sizes[i - st_file] = file_sizes[i];
-            }
-        }
-    }
+        rbuffer_[cw_post_index_]->mem_starts = mem_starts;
+        rbuffer_[cw_post_index_]->mem_sizes = mem_sizes;
+        rbuffer_[cw_post_index_]->file_starts = file_starts;
+        rbuffer_[cw_post_index_]->file_sizes = file_sizes;
+        rbuffer_[cw_post_index_]->ret = ret;
 
-    // issue async I/O
-    uint64_t cur = 0;
-    const char ** mem_starts = new const char*[p_file_count];
-    size_t * mem_sizes = new size_t[p_file_count];
-    for (size_t i = 0; i < p_file_count; i++) {
-        mem_starts[i] = p_buf + cur;
-        mem_sizes[i] = p_file_sizes[i];
-        cur += p_file_sizes[i];
-    }
-
-    rbuffer_[cw_post_index_]->mem_starts = mem_starts;
-    rbuffer_[cw_post_index_]->mem_sizes = mem_sizes;
-    rbuffer_[cw_post_index_]->file_starts = p_file_starts;
-    rbuffer_[cw_post_index_]->file_sizes = p_file_sizes;
-    rbuffer_[cw_post_index_]->ret = ret;
-
-    /* set the callback and wait */
-    if((mode_ & WRITESM_SERIAL_IO_PIPELINE) == 0)
-    {
-        /* enqueue the write */
-        sched_->enqueueWriteCB (
-            slots_[WRITE_SLOT], p.handle, p_file_count, (const void**)mem_starts, mem_sizes,
-            p_file_starts, p_file_sizes, p.op_hint);
-
-        /* issue the serial wait */
-        slots_.wait(WRITE_SLOT, &WriteTaskSM::waitPipelineEnqueueWrite);
-    }
-    else
-    {
-        int my_slot = 0;
-
-        /* protected section for the op slot update */
+        /* set the callback and wait */
+        if((mode_ & WRITESM_SERIAL_IO_PIPELINE) == 0)
         {
-            boost::mutex::scoped_lock l(slot_mutex_);
+            /* enqueue the write */
+            sched_->enqueueWriteCB (
+                slots_[WRITE_SLOT], p.handle, p_file_count, (const void**)mem_starts, mem_sizes,
+                file_starts, file_sizes, p.op_hint);
+
+            /* issue the serial wait */
+            slots_.wait(WRITE_SLOT, &WriteTaskSM::waitPipelineEnqueueWrite);
+        }
+        else
+        {
+            int my_slot = 0;
+
+            /* protected section for the op slot update */
+            {
+                boost::mutex::scoped_lock l(slot_mutex_);
 
             /* assign the current slot */
             my_slot = cw_post_index_ + WRITE_PIPEOP_START;
@@ -186,7 +210,7 @@ namespace iofwd
         /* enqueue the write */
         sched_->enqueueWriteCB (
             slots_[my_slot], p.handle, p_file_count, (const void**)mem_starts, mem_sizes,
-            p_file_starts, p_file_sizes, p.op_hint);
+            file_starts, file_sizes, p.op_hint);
 
 
         /* go to the next state depending on the current pipeline stage */

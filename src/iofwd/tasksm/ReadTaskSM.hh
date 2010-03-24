@@ -9,6 +9,8 @@
 #include "iofwdutil/InjectPool.hh"
 #include "iofwd/tasksm/SMRetrievedBuffer.hh"
 
+#include "zoidfs/zoidfs.h"
+
 #include <cstdio>
 #include <deque>
 
@@ -17,6 +19,8 @@
 /* mode options */
 #define READSM_SERIAL_IO_PIPELINE 0
 //#define READSM_PARA_IO_PIPELINE 1 /* @TODO fix this mode */
+
+using namespace zoidfs;
 
 namespace iofwd
 {
@@ -43,15 +47,17 @@ class ReadTaskSM : public sm::SimpleSM< ReadTaskSM >, public iofwdutil::InjectPo
             else
             {
                 /* compute the total size of the pipeline transfers */
-                for (uint32_t i = 0; i < p.mem_count; i++)
+                for (int i = 0; i < p.mem_count; i++)
                     total_bytes_ += p.mem_sizes[i];
 
                 /* compute the total number of concurrent pipeline ops */
                 total_pipeline_ops_ = (int)ceil(1.0 * total_bytes_ / bpool_->pipeline_size());
 
+                computePipelineFileSegments();
+
                 /* setup the rbuffer variable */
                 rbuffer_ = new SMRetrievedBuffer*[total_pipeline_ops_];
-                for(uint64_t i = 0 ; i < total_pipeline_ops_ ; i++)
+                for(int i = 0 ; i < total_pipeline_ops_ ; i++)
                 {
                     rbuffer_[i] = new SMRetrievedBuffer();
                     rbuffer_[i]->reinit();
@@ -164,6 +170,7 @@ class ReadTaskSM : public sm::SimpleSM< ReadTaskSM >, public iofwdutil::InjectPo
         void sendPipelineBuffer();
         void execPipelineIO();
         void readBarrier(int status);
+        void computePipelineFileSegments();
 
         /* @TODO currently set the concurrent pipeline op count to 128... this should be dynamic or tunable */
         enum {READ_SLOT = 0, READ_PIPEOP_START, NUM_READ_SLOTS = 129};
@@ -175,16 +182,22 @@ class ReadTaskSM : public sm::SimpleSM< ReadTaskSM >, public iofwdutil::InjectPo
 
         /* pipeline variables */
         boost::mutex slot_mutex_;
-        uint64_t total_bytes_;
-        uint64_t cur_sent_bytes_;
-        uint64_t p_siz_;
-        uint64_t total_pipeline_ops_;
-        uint64_t io_ops_done_;
-        uint64_t cw_post_index_;
+        size_t total_bytes_;
+        size_t cur_sent_bytes_;
+        size_t p_siz_;
+        int total_pipeline_ops_;
+        int io_ops_done_;
+        int cw_post_index_;
 
         SMRetrievedBuffer ** rbuffer_;
 
-        int mode_;
+        unsigned int mode_;
+
+        std::vector<zoidfs_file_size_t> p_file_sizes;
+        std::vector<zoidfs_file_ofs_t> p_file_starts;
+        std::vector<size_t> p_mem_offsets;
+        std::vector<int> p_segments;
+        std::vector<int> p_segments_start;
 };
     }
 }
