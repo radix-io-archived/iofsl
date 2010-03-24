@@ -10,6 +10,8 @@
 #include "iofwd/tasksm/SMRetrievedBuffer.hh"
 #include "iofwd/WriteRequest.hh"
 
+#include "zoidfs/zoidfs.h"
+
 #include <cstdio>
 #include <deque>
 #include <math.h>
@@ -17,6 +19,8 @@
 /* mode options */
 #define WRITESM_SERIAL_IO_PIPELINE 0
 #define WRITESM_PARA_IO_PIPELINE 1
+
+using namespace zoidfs;
 
 namespace iofwd
 {
@@ -44,15 +48,17 @@ class WriteTaskSM : public sm::SimpleSM< WriteTaskSM >, public iofwdutil::Inject
             else
             {
                 /* compute the total size of the pipeline transfers */
-                for (uint32_t i = 0; i < p.mem_count; i++)
+                for (size_t i = 0; i < p.mem_count; i++)
                     total_bytes_ += p.mem_sizes[i];
 
                 /* compute the total number of concurrent pipeline ops */
                 total_pipeline_ops_ = (int)ceil(1.0 * total_bytes_ / bpool_->pipeline_size());
 
+                computePipelineFileSegments();
+
                 /* setup the rbuffer variable */
                 rbuffer_ = new SMRetrievedBuffer*[total_pipeline_ops_];
-                for(uint64_t i = 0 ; i < total_pipeline_ops_ ; i++)
+                for(int i = 0 ; i < total_pipeline_ops_ ; i++)
                 {
                     rbuffer_[i] = new SMRetrievedBuffer();
                     rbuffer_[i]->reinit();
@@ -137,6 +143,7 @@ class WriteTaskSM : public sm::SimpleSM< WriteTaskSM >, public iofwdutil::Inject
         {
             /* update the amount of outstanding data */
             cur_recv_bytes_ += p_siz_;
+            cw_post_index_++;
 
             /* if we still have pipeline data to fetch go back to the allocate buffer state */
             if(cur_recv_bytes_ < total_bytes_)
@@ -166,6 +173,8 @@ class WriteTaskSM : public sm::SimpleSM< WriteTaskSM >, public iofwdutil::Inject
         void execPipelineIO();
         void writeBarrier(int status);
 
+        void computePipelineFileSegments();
+
         /* set the concurrent pipeline op count to 128... this should be dynamic or tunable */
         enum {WRITE_SLOT = 0, WRITE_PIPEOP_START, NUM_WRITE_SLOTS = 129};
         WriteRequest::ReqParam p;
@@ -176,16 +185,22 @@ class WriteTaskSM : public sm::SimpleSM< WriteTaskSM >, public iofwdutil::Inject
 
         /* pipeline variables */
         boost::mutex slot_mutex_;
-        uint64_t total_bytes_;
-        uint64_t cur_recv_bytes_;
+        size_t total_bytes_;
+        size_t cur_recv_bytes_;
         size_t p_siz_;
-        uint64_t total_pipeline_ops_;
-        uint64_t io_ops_done_;
-        uint64_t cw_post_index_;
+        int total_pipeline_ops_;
+        int io_ops_done_;
+        int cw_post_index_;
 
         SMRetrievedBuffer ** rbuffer_;
 
-        uint32_t mode_;
+        unsigned int mode_;
+
+        std::vector<zoidfs_file_size_t> p_file_sizes;
+        std::vector<zoidfs_file_ofs_t> p_file_starts;
+        std::vector<size_t> p_mem_offsets;
+        std::vector<int> p_segments;
+        std::vector<int> p_segments_start;
 };
     }
 }
