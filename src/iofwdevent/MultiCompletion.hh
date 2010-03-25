@@ -16,7 +16,11 @@ namespace iofwdevent
     * The template parameter specifies the maximum number of
     * concurrent callbacks.
     *
-    * Each slot consumes a less than 64 bytes.
+    * This class calls a callback after a user-specified number of its slots
+    * have completed. It can be used to wait for a the completion of any, all
+    * or some of its slots.
+    *
+    * Each slot consumes less than 64 bytes.
     */
    template <size_t COUNT>
    class MultiCompletion
