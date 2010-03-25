@@ -128,6 +128,11 @@ src/iofwdutil/ThreadPool.hh \
 src/iofwdutil/ThreadPool.cpp \
 src/iofwdutil/InjectPool.hh \
 \
+src/iofwdutil/Factory.hh \
+src/iofwdutil/FactoryAutoRegister.hh \
+src/iofwdutil/CreateMethod.hh \
+src/iofwdutil/FactoryHelper.hh \
+\
 src/iofwdutil/atomics.hh \
 \
 src/iofwdutil/rm/IntervalMergeTree.hh \
