@@ -18,100 +18,100 @@ sandbox_ldadd =          \
     @ZFS_DISPATCHER_LIBS@ \
     @BMI_LIBS@
 
-noinst_PROGRAMS += sandbox/zoidfs-io-bsize
+EXTRA_PROGRAMS += sandbox/zoidfs-io-bsize
 sandbox_zoidfs_io_bsize_SOURCES = sandbox/zoidfs-io-bsize.c
 sandbox_zoidfs_io_bsize_LDADD = src/zoidfs/libzoidfsclient.a $(sandbox_ldadd)
 sandbox_zoidfs_io_bsize_LDFLAGS = $(sandbox_ldflags)
 
-noinst_PROGRAMS += sandbox/zoidfs-io-bsize-local
+EXTRA_PROGRAMS += sandbox/zoidfs-io-bsize-local
 sandbox_zoidfs_io_bsize_local_SOURCES = sandbox/zoidfs-io-bsize.c
 sandbox_zoidfs_io_bsize_local_LDADD = src/zoidfs/libzoidfs.a $(sandbox_ldadd)
 sandbox_zoidfs_io_bsize_local_LDFLAGS = $(sandbox_ldflags)
 
-noinst_PROGRAMS += sandbox/patest
+EXTRA_PROGRAMS += sandbox/patest
 sandbox_patest_SOURCES = sandbox/patest.cpp
 sandbox_patest_LDADD = $(sandbox_ldadd)
 sandbox_patest_LDFLAGS = $(sandbox_ldflags)
 
-noinst_PROGRAMS += sandbox/recordparam
+EXTRA_PROGRAMS += sandbox/recordparam
 sandbox_recordparam_SOURCES = sandbox/recordparam.cpp
 sandbox_recordparam_LDFLAGS = $(sandbox_ldflags)
 
-noinst_PROGRAMS += sandbox/regex
+EXTRA_PROGRAMS += sandbox/regex
 sandbox_regex_SOURCES = sandbox/regex.cpp
 sandbox_regex_LDFLAGS = $(sandbox_ldflags)
 
-noinst_PROGRAMS += sandbox/sc
+EXTRA_PROGRAMS += sandbox/sc
 sandbox_sc_SOURCES = sandbox/sc.cpp
 sandbox_sc_LDFLAGS = $(sandbox_ldflags)
 
-noinst_PROGRAMS += sandbox/TestSM
+EXTRA_PROGRAMS += sandbox/TestSM
 sandbox_TestSM_SOURCES = sandbox/TestSM.cpp
 sandbox_TestSM_LDFLAGS = $(sandbox_ldflags)
 
-noinst_PROGRAMS += sandbox/TestSM_async
+EXTRA_PROGRAMS += sandbox/TestSM_async
 sandbox_TestSM_async_SOURCES = sandbox/TestSM_async.cpp
 sandbox_TestSM_async_LDFLAGS = $(sandbox_ldflags)
 
 # Note: := should not be used, is GNU make
 
-noinst_PROGRAMS += sandbox/LookupSMTest
+EXTRA_PROGRAMS += sandbox/LookupSMTest
 sandbox_LookupSMTest_SOURCES = sandbox/LookupSMTest.cpp
 sandbox_LookupSMTest_LDFLAGS = $(sandbox_ldflags)
 sandbox_LookupSMTest_LDADD = $(top_builddir)/src/sm/libiofwdsm.a $(sandbox_ldadd) \
             $(top_builddir)/src/sm/libsm.a \
 			$(top_builddir)/src/iofwdevent/libiofwdevent.a
 
-noinst_PROGRAMS += sandbox/LookupSMTestClient
+EXTRA_PROGRAMS += sandbox/LookupSMTestClient
 sandbox_LookupSMTestClient_SOURCES = sandbox/LookupSMTestClient.cpp
 sandbox_LookupSMTestClient_LDFLAGS = $(sandbox_ldflags)
 sandbox_LookupSMTestClient_LDADD = $(top_builddir)/src/sm/libiofwdsm.a  \
             $(top_builddir)/src/sm/libsm.a \
 			$(top_builddir)/src/iofwdevent/libiofwdevent.a $(sandbox_ldadd)
 
-noinst_PROGRAMS += sandbox/LookupSMTest2
+EXTRA_PROGRAMS += sandbox/LookupSMTest2
 sandbox_LookupSMTest2_SOURCES = sandbox/LookupSMTest2.cpp
 sandbox_LookupSMTest2_LDFLAGS = $(sandbox_ldflags)
 sandbox_LookupSMTest2_LDADD = $(top_builddir)/src/sm/libiofwdsm.a  \
             $(top_builddir)/src/sm/libsm.a \
 			$(top_builddir)/src/iofwdevent/libiofwdevent.a $(sandbox_ldadd)
 
-noinst_PROGRAMS += sandbox/zoidfs-hints
+EXTRA_PROGRAMS += sandbox/zoidfs-hints
 sandbox_zoidfs_hints_SOURCES = sandbox/zoidfs-hints.c
 sandbox_zoidfs_hints_LDFLAGS = $(sandbox_ldflags)
 sandbox_zoidfs_hints_LDADD = $(top_builddir)/src/zoidfs/libzoidfsclient.a $(sandbox_ldadd)
 
-noinst_PROGRAMS += sandbox/bmi-pp-perf
+EXTRA_PROGRAMS += sandbox/bmi-pp-perf
 sandbox_bmi_pp_perf_SOURCES = sandbox/bmi-pp-perf.c
 sandbox_bmi_pp_perf_LDFLAGS = $(sandbox_ldflags)
 sandbox_bmi_pp_perf_LDADD = $(top_builddir)/src/zoidfs/libzoidfsclient.a $(sandbox_ldadd)
 
-noinst_PROGRAMS += sandbox/imt-test
+EXTRA_PROGRAMS += sandbox/imt-test
 sandbox_imt_test_SOURCES = sandbox/imt-test.c
 sandbox_imt_test_LDFLAGS = $(sandbox_ldflags)
 sandbox_imt_test_LDADD = $(sandbox_ldadd)
 
-noinst_PROGRAMS += sandbox/pctest
+EXTRA_PROGRAMS += sandbox/pctest
 sandbox_pctest_SOURCES = sandbox/pctest.c
 sandbox_pctest_LDFLAGS = $(sandbox_ldflags)
 sandbox_pctest_LDADD = $(sandbox_ldadd)
 
-#noinst_PROGRAMS += sandbox/tls
+#EXTRA_PROGRAMS += sandbox/tls
 #sandbox_tls_SOURCES = sandbox/tls.cpp
 #sandbox_tls_LDFLAGS = $(sandbox_ldflags)
 #sandbox_tls_LDADD = $(sandbox_ldadd)
 
-noinst_PROGRAMS += sandbox/PerfCountersTest
+EXTRA_PROGRAMS += sandbox/PerfCountersTest
 sandbox_PerfCountersTest_SOURCES = sandbox/PerfCountersTest.cpp
 sandbox_PerfCountersTest_LDFLAGS = $(sandbox_ldflags)
 sandbox_PerfCountersTest_LDADD = $(sandbox_ldadd)
 
-noinst_PROGRAMS += sandbox/vl-test
+EXTRA_PROGRAMS += sandbox/vl-test
 sandbox_vl_test_SOURCES = sandbox/vl-test.cpp
 sandbox_vl_test_LDFLAGS = $(sandbox_ldflags)
 sandbox_vl_test_LDADD = $(sandbox_ldadd)
 
-noinst_PROGRAMS += sandbox/smmanager
+EXTRA_PROGRAMS += sandbox/smmanager
 sandbox_smmanager_SOURCES = sandbox/smmanager.cpp
 sandbox_smmanager_LDFLAGS = $(sandbox_ldflags) $(BMI_LDFLAGS)
 sandbox_smmanager_LDADD = $(top_builddir)/src/sm/libsm.a \
@@ -120,13 +120,13 @@ sandbox_smmanager_LDADD = $(top_builddir)/src/sm/libsm.a \
 			  $(BMI_LIBS)
 
 #if HAVE_MPI
-#noinst_PROGRAMS += sandbox/mpi-server
+#EXTRA_PROGRAMS += sandbox/mpi-server
 #sandbox_mpi_server_SOURCES = sandbox/mpi-server.c
 #sandbox_mpi_server_CFLAGS = -I./src/zoidfs/client
 #sandbox_mpi_server_LDFLAGS = -L./src/zoidfs
 #sandbox_mpi_server_LDADD = -lzoidfsclient
 #
-#noinst_PROGRAMS += sandbox/mpi-client
+#EXTRA_PROGRAMS += sandbox/mpi-client
 #sandbox_mpi_client_SOURCES = sandbox/mpi-client.c
 #sandbox_mpi_client_CFLAGS = -I./src/zoidfs/client
 #sandbox_mpi_client_LDFLAGS = -L./src/zoidfs
