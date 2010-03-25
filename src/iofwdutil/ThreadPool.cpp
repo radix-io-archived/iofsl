@@ -70,7 +70,6 @@ namespace iofwdutil
         /* only accepts work that takes no args and has a void return type */
         void ThreadPool::addWorkUnit(void (*workFunc)(void), TPPrio prio)
         {
-            fprintf(stderr, "add work unit\n");
             if(prio == HIGH)
             {
                 boost::mutex::scoped_lock lock(high_prio_queue_mutex_);
