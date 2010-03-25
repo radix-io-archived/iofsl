@@ -11,8 +11,8 @@ sandbox_ldflags = $(AM_LDFLAGS) \
 
 sandbox_ldadd =          \
     $(top_builddir)/src/zoidfs/libzoidfs-util.a  \
-    $(top_builddir)/src/iofwdutil/libiofwdutil.a \
     $(top_builddir)/src/c-util/libc-util.a       \
+    $(top_builddir)/src/iofwdutil/libiofwdutil.a \
     $(top_builddir)/src/zoidfs/libzoidfshints.a \
     @CUNIT_LIBS@                 \
     @ZFS_DISPATCHER_LIBS@ \
@@ -65,16 +65,16 @@ sandbox_LookupSMTest_LDADD = $(top_builddir)/src/sm/libiofwdsm.a $(sandbox_ldadd
 noinst_PROGRAMS += sandbox/LookupSMTestClient
 sandbox_LookupSMTestClient_SOURCES = sandbox/LookupSMTestClient.cpp
 sandbox_LookupSMTestClient_LDFLAGS = $(sandbox_ldflags)
-sandbox_LookupSMTestClient_LDADD = $(top_builddir)/src/sm/libiofwdsm.a $(sandbox_ldadd) \
+sandbox_LookupSMTestClient_LDADD = $(top_builddir)/src/sm/libiofwdsm.a  \
             $(top_builddir)/src/sm/libsm.a \
-			$(top_builddir)/src/iofwdevent/libiofwdevent.a
+			$(top_builddir)/src/iofwdevent/libiofwdevent.a $(sandbox_ldadd)
 
 noinst_PROGRAMS += sandbox/LookupSMTest2
 sandbox_LookupSMTest2_SOURCES = sandbox/LookupSMTest2.cpp
 sandbox_LookupSMTest2_LDFLAGS = $(sandbox_ldflags)
-sandbox_LookupSMTest2_LDADD = $(top_builddir)/src/sm/libiofwdsm.a $(sandbox_ldadd) \
+sandbox_LookupSMTest2_LDADD = $(top_builddir)/src/sm/libiofwdsm.a  \
             $(top_builddir)/src/sm/libsm.a \
-			$(top_builddir)/src/iofwdevent/libiofwdevent.a
+			$(top_builddir)/src/iofwdevent/libiofwdevent.a $(sandbox_ldadd)
 
 noinst_PROGRAMS += sandbox/zoidfs-hints
 sandbox_zoidfs_hints_SOURCES = sandbox/zoidfs-hints.c
