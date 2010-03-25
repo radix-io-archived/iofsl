@@ -6,6 +6,7 @@ lib_LIBRARIES =
 noinst_HEADERS =
 TESTS =
 check_PROGRAMS =
+EXTRA_PROGRAMS =
 
 AM_CPPFLAGS = -I$(top_srcdir)/src \
 	      -I$(top_srcdir)/src/iofwdutil \
