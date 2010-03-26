@@ -37,17 +37,23 @@ DefRequestHandler::DefRequestHandler (const iofwdutil::ConfigFile & cf)
 
    /* get the event mode */
    lc = config_.openSectionDefault ("events");
-   char * evmode = new char[lc.getKeyDefault("mode", "SM").size() + 1];
-   strcpy(evmode, const_cast<char *>(lc.getKeyDefault ("mode", "SM").c_str()));
-   if(strcmp(evmode, "SM") == 0)
+   const std::string mode = lc.getKeyDefault("mode", "SM");
+   if(mode == "SM")
    {
-        event_mode_ = EVMODE_SM;
+      ZLOG_INFO(log_, "Using SM mode");
+      event_mode_ = EVMODE_SM;
    }
-   else if(strcmp(evmode, "TASK") == 0)
+   else if (mode == "TASK")
    {
-        event_mode_ = EVMODE_TASK;
+      ZLOG_INFO(log_, "Using TASK mode");
+      event_mode_ = EVMODE_TASK;
    }
-   delete [] evmode;
+   else
+   {
+      ZLOG_WARN(log_, format("Invalid mode '%s' in [events]; Defaulting to SM")
+            % mode);
+      event_mode_ = EVMODE_SM;
+   }
 
    async_api_ = new zoidfs::ZoidFSAsyncAPI(&api_);
    async_api_full_ = new zoidfs::util::ZoidFSDefAsync(api_);
@@ -78,6 +84,7 @@ DefRequestHandler::~DefRequestHandler ()
    /* if this is the state machine mode, shutdown the state machine manager */
    if(event_mode_ == EVMODE_SM)
    {
+      // @TODO we need to wait for state machines too!
         smm.stopThreads();
    }
    /* if this is the task mode, clear out the work queues before shutdown */
