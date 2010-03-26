@@ -4,8 +4,9 @@
 # Prepares, builds and tests 
 #
 
+SRCDIR=$PWD
 if test -z "${IOFWD_SRCDIR}" ; then
-   echo "Need IOFWD_SRCDIR !"
+   echo "Need IOFWD_SRCDIR ! (to find configoptions)"
    exit 1
 fi
 
@@ -16,10 +17,9 @@ if test -r "${CONFIGFILE}" ; then
    source  "${CONFIGFILE}"
 fi
 
-OLDDIR=$(pwd)
+cd ${SRCDIR}
 ./prepare || exit 1
-cd ${OLDDIR}
 
-${IOFWD_SRCDIR}/configure ${DISTCHECK_CONFIGURE_FLAGS} || exit 2
+${SRCDIR}/configure ${DISTCHECK_CONFIGURE_FLAGS} || exit 2
 make distcheck || exit 3
 
