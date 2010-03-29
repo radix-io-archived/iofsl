@@ -33,16 +33,6 @@ public:
    void setStatus (int status)
    { status_ = status; }
 
-   void setTaskAllocType(bool pt)
-    { pool_task_ = pt; }
-
-   bool getTaskAllocType()
-    { return pool_task_; }
-
-   virtual void cleanup()
-    {
-    }
-
    // Fast requests can possibly take a shortcut and be serviced in the main
    // receiving thread; Note that a request that needs significant time to
    // determine if it is fast or not cannot be fast.
@@ -54,7 +44,7 @@ public:
    virtual void run () = 0;
 
    Task (boost::function<void (Task *)> & resched)
-      : status_ (0), reschedule_(resched), alloc_id_(0)
+      : status_ (0), reschedule_(resched)
    {
    }
 
@@ -81,16 +71,6 @@ public:
    }
 #endif
 
-   void setAllocID(int id)
-   {
-        alloc_id_ = id;
-   }
-
-   int getAllocID()
-   {
-        return alloc_id_;
-   }
-
 protected:
    /// Called by the workqueue if we get the CPU
    virtual void doWork ();
@@ -100,10 +80,6 @@ protected:
    int status_;
 
    boost::function<void (Task *)> reschedule_;
-
-   bool pool_task_;
-
-   int alloc_id_;
 };
 
 //===========================================================================

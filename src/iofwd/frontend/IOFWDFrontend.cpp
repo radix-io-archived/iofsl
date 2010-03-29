@@ -33,8 +33,6 @@
 #include "IOFWDReadRequest.hh"
 #include "IOFWDLinkRequest.hh"
 
-#include "iofwd/RequestPoolAllocator.hh"
-
 using namespace iofwdutil::bmi;
 using namespace iofwdutil;
 using namespace zoidfs;

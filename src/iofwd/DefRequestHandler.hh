@@ -7,10 +7,8 @@
 #include "iofwd/RequestHandler.hh"
 #include "iofwd/BMIBufferPool.hh"
 #include "iofwd/ThreadTasks.hh"
-#include "iofwd/TaskPool.hh"
 #include "zoidfs/util/LogAPI.hh"
 #include "iofwdutil/ConfigFile.hh"
-#include "iofwd/TaskPoolAllocator.hh"
 
 namespace iofwdutil
 {
@@ -76,9 +74,6 @@ protected:
 
    /// BufferPool
    BMIBufferPool * bpool_;
-
-   // TaskPool
-   TaskPool * tpool_;
 
    // config file
    const iofwdutil::ConfigFile & config_;
