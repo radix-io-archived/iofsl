@@ -3,6 +3,7 @@
 
 #include <boost/pool/pool_alloc.hpp>
 
+#include "iofwdutil/assert.hh"
 #include "iofwdutil/tools.hh"
 
 /* generic boost pool allocator template */
@@ -12,9 +13,11 @@ namespace iofwdutil
     class InjectPool
     {
         public:
-            inline void * operator new(size_t UNUSED(s))
+            inline void * operator new(size_t s)
             {
-                return boost::fast_pool_allocator<T>::allocate();
+               // This check is here to make sure nobody inherits from T
+               ASSERT(s == sizeof(T));
+               return boost::fast_pool_allocator<T>::allocate();
             }
 
             inline void operator delete(void * ptr)
