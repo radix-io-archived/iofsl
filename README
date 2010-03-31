@@ -52,4 +52,4 @@ address of the server. And also, you need to add "zoidfs:" prefix to the
 filepath, which is passed to MPI_File_open().
 
 $ export ZOIDFS_ION_NAME=tcp://hostname:12345
-$ mpiexec -n 4 path_to_binary -f "zoidfs://path/to/file"
+$ mpiexec -n 4 path_to_binary
