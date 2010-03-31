@@ -82,6 +82,8 @@ DefRequestHandler::~DefRequestHandler ()
    /* if this is the task mode, clear out the work queues before shutdown */
    else if(event_mode_ == EVMODE_TASK)
    {
+        smm.stopThreads();
+
         std::vector<WorkItem *> items;
         ZLOG_INFO (log_, "Waiting for normal workqueue to complete all work...");
         workqueue_normal_->waitAll (items);
