@@ -50,20 +50,21 @@ namespace iofwdutil
 
         ThreadPool::~ThreadPool()
         {
-            boost::mutex::scoped_lock lock(shutdown_cond_mutex_);
+            {
+                boost::mutex::scoped_lock lock(shutdown_cond_mutex_);
 
-            /* shutdown the active threads */
-            shutdown_threads_ = true;
+                /* shutdown the active threads */
+                shutdown_threads_ = true;
+            }
 
             /* while there are still active threads */
             threadcond_.notify_all();
-            while(thread_count_ > 0)
-            {
-                if(thread_count_ > 0)
-                {
-                    shutdown_cond_.wait(lock);
-                }
-            }
+
+            for_each (thread_vec_.begin(), thread_vec_.end(),
+                boost::bind(&boost::thread::join, _1));
+            for_each (thread_vec_.begin(), thread_vec_.end(),
+                boost::bind(&operator delete, _1));
+            thread_vec_.clear();
         }
 
         /* add work to the thread pool from a free function */
@@ -136,20 +137,10 @@ namespace iofwdutil
 
                 /* if shutdown flag was set, exit the function */
                 {
-                    boost::mutex::scoped_try_lock slock(shutdown_lock_);
-
-                    if(slock.owns_lock())
+                    if(shutdown_threads_)
                     {
-                        if(shutdown_threads_)
-                        {
-                            thread_count_--;
-
-                            if(thread_count_ == 0)
-                            {
-                                shutdown_cond_.notify_one();
-                            }
-                            return;
-                        }
+                        thread_count_--;
+                        return;
                     }
                 }
             }while(true);
@@ -165,9 +156,7 @@ namespace iofwdutil
         /* create a thread for the thread pool and detach it */
         void ThreadPool::createThread(int tid)
         {
-            boost::thread t (boost::bind(&ThreadPool::run, this, tid));
-
-            t.detach();
+            thread_vec_.push_back(new boost::thread(boost::bind(&ThreadPool::run, this, tid)));
         }
 
         /* check the work queue for possible work items and move the work item if one was found */
