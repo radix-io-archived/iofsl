@@ -5,11 +5,10 @@
 #include "ReadRequest.hh"
 #include "TaskHelper.hh"
 #include "iofwdutil/InjectPool.hh"
+#include "iofwdutil/tools.hh"
 
 namespace iofwd
 {
-
-struct ReadBuffer;
 
 class ReadTask : public TaskHelper<ReadRequest>, public iofwdutil::InjectPool<ReadTask>
 {
@@ -34,10 +33,8 @@ public:
 
 private:
    void runNormalMode(const ReadRequest::ReqParam & p);
-
    void runPipelineMode(const ReadRequest::ReqParam & p);
-   iofwdutil::completion::CompletionID * execPipelineIO(const ReadRequest::ReqParam & p,
-      ReadBuffer * b);
+   void execPipelineIO(const ReadRequest::ReqParam & p);
 };
 
 }
