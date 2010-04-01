@@ -6,6 +6,7 @@
 #include "iofwd/TaskHelper.hh"
 #include <boost/function.hpp>
 #include "iofwdutil/InjectPool.hh"
+#include "iofwdutil/tools.hh"
 
 namespace iofwd
 {
@@ -36,10 +37,8 @@ public:
 
 private:
    void runNormalMode(const WriteRequest::ReqParam & p);
-
    void runPipelineMode(const WriteRequest::ReqParam & p);
-   iofwdutil::completion::CompletionID * execPipelineIO(const WriteRequest::ReqParam & p,
-      RetrievedBuffer * b);
+   void execPipelineIO(const WriteRequest::ReqParam & p);
 };
 
 }
