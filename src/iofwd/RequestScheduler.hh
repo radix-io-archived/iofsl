@@ -16,12 +16,6 @@
 #include "iofwdutil/tools.hh"
 #include "sm/SimpleSlots.hh"
 
-namespace iofwdutil {
-  namespace completion {
-    class CompletionID;
-    class CompositeCompletionID;
-  }
-}
 namespace zoidfs {
   class ZoidFSAsyncAPI;
 }
@@ -39,19 +33,9 @@ public:
   RequestScheduler(zoidfs::ZoidFSAsyncAPI * async_api, zoidfs::util::ZoidFSDefAsync * async_cb_api, const iofwdutil::ConfigFile & c, int mode);
   virtual ~RequestScheduler();
 
-  iofwdutil::completion::CompletionID * enqueueWrite(
-     zoidfs::zoidfs_handle_t * handle, size_t count,
-     const void ** mem_starts, size_t * mem_sizes,
-     uint64_t * file_starts, uint64_t * file_sizes, zoidfs::zoidfs_op_hint_t * op_hint);
-
   void enqueueWriteCB(
      iofwdevent::CBType cb, zoidfs::zoidfs_handle_t * handle, size_t count,
      const void ** mem_starts, size_t * mem_sizes,
-     uint64_t * file_starts, uint64_t * file_sizes, zoidfs::zoidfs_op_hint_t * op_hint);
-
-  iofwdutil::completion::CompletionID * enqueueRead(
-     zoidfs::zoidfs_handle_t * handle, size_t count,
-     void ** mem_starts, size_t * mem_sizes,
      uint64_t * file_starts, uint64_t * file_sizes, zoidfs::zoidfs_op_hint_t * op_hint);
 
   void enqueueReadCB(

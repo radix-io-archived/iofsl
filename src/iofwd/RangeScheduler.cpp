@@ -38,7 +38,6 @@ struct HandleQueue
 {
   RangeType type;
   const zoidfs::zoidfs_handle_t * handle;
-  RangeSet * rs;
   HierarchicalRangeSet * hrs;
   IntervalTreeRangeSet * itrs;
   int quantum;

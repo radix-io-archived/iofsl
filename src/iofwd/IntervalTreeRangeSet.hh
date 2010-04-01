@@ -77,10 +77,8 @@ class IntervalTreeRangeSet
                 while(cur)
                 {
                     ChildRange * cur_r = (ChildRange *)cur->data;
-                    //pr->child_ranges_.push_back(cur_r);
                     pr->insertSingleChild(cur_r);
-                    //pr->child_cids_.insert(pr->child_cids_.begin(), cur_r->cid_);
-                    pr->insertSingleCid(cur_r->cid_);
+                    pr->insertSingleCB(cur_r->cb_);
                     delete (size_t *)cur->key;
                     cur = cur->next;
                 }
