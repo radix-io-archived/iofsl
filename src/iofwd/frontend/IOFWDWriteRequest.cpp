@@ -164,13 +164,6 @@ void IOFWDWriteRequest::recvBuffers(const CBType & cb)
 #endif
 }
 
-iofwdutil::completion::CompletionID * IOFWDWriteRequest::recvPipelineBuffer(iofwdutil::bmi::BMIBuffer * buf, size_t size)
-{
-   iofwdutil::completion::BMICompletionID * id = new iofwdutil::completion::BMICompletionID ();
-   bmires_.postReceive (id, addr_, (char *)buf->get(), size, buf->bmiType(), tag_, 0);
-   return id;
-}
-
 void IOFWDWriteRequest::recvPipelineBufferCB(iofwdevent::CBType cb, iofwdutil::bmi::BMIBuffer * buf, size_t size)
 {
    param_.mem_expected_size = 0;
