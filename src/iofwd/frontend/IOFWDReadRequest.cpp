@@ -164,13 +164,6 @@ void IOFWDReadRequest::sendBuffers(const CBType & cb)
 #endif
 }
 
-iofwdutil::completion::CompletionID * IOFWDReadRequest::sendPipelineBuffer(iofwdutil::bmi::BMIBuffer * buf, size_t size)
-{
-   iofwdutil::completion::BMICompletionID * id = new iofwdutil::completion::BMICompletionID ();
-   bmires_.postSend (id, addr_, (char *)buf->get(), size, buf->bmiType(), tag_, 0);
-   return id;
-}
-
 void IOFWDReadRequest::sendPipelineBufferCB(iofwdevent::CBType cb, iofwdutil::bmi::BMIBuffer * buf, size_t size)
 {
    r_.rbmi_.post_send(cb, addr_, (char *)buf->get(), size, buf->bmiType(), tag_, 0);

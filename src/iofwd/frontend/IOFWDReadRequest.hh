@@ -36,7 +36,6 @@ public:
    virtual void sendBuffers(const CBType & cb);
 
    // for pipeline mode
-   virtual iofwdutil::completion::CompletionID * sendPipelineBuffer(iofwdutil::bmi::BMIBuffer * buf, size_t size);
    virtual void sendPipelineBufferCB(iofwdevent::CBType cb, iofwdutil::bmi::BMIBuffer * buf, size_t size);
 
    virtual iofwdutil::bmi::BMIAddr getRequestAddr()
