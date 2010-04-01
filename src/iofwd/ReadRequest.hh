@@ -4,7 +4,6 @@
 #include <cstring>
 #include "Request.hh"
 #include "zoidfs/zoidfs.h"
-#include "iofwdutil/completion/CompletionID.hh"
 #include "iofwdutil/bmi/BMIBuffer.hh"
 #include "iofwdevent/CBType.hh"
 
@@ -55,7 +54,6 @@ public:
    virtual void sendBuffers(const CBType & cb) = 0;
 
    // for pipeline mode
-   virtual iofwdutil::completion::CompletionID * sendPipelineBuffer(iofwdutil::bmi::BMIBuffer * buf, size_t size) = 0;
    virtual void sendPipelineBufferCB(iofwdevent::CBType cb, iofwdutil::bmi::BMIBuffer * buf, size_t size) = 0;
 
    virtual iofwdutil::bmi::BMIAddr getRequestAddr() = 0;
