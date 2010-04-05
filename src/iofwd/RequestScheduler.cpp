@@ -240,11 +240,7 @@ void RequestScheduler::issue(vector<ChildRange *>& rs)
     }
   }
 
-  int * ret = NULL;
-  if(mode_ == EVMODE_SM)
-  {
-    ret = new int(0);
-  }
+  int * ret = new int(0);
   char ** mem_starts = new char*[narrays];
   size_t * mem_sizes = new size_t[narrays];
   uint64_t * file_starts = new uint64_t[narrays];
