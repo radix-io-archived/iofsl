@@ -127,6 +127,8 @@ class ThreadPool : public Singleton< ThreadPool >
         static int getMinThreadCount();
         static void setMaxThreadCount(int c);
         static int getMaxThreadCount();
+
+        void reset();
     protected:
 
         /* the thread function... polls queues for work and waits for work if non avail */

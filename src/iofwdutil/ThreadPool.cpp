@@ -30,6 +30,25 @@ namespace iofwdutil
             return max_thread_count_;
         }
 
+        void ThreadPool::reset()
+        {
+            {
+                boost::mutex::scoped_lock lock(shutdown_cond_mutex_);
+
+                /* shutdown the active threads */
+                shutdown_threads_ = true;
+            }
+
+            /* while there are still active threads */
+            threadcond_.notify_all();
+
+            for_each (thread_vec_.begin(), thread_vec_.end(),
+                boost::bind(&boost::thread::join, _1));
+            for_each (thread_vec_.begin(), thread_vec_.end(),
+                boost::bind(&operator delete, _1));
+            thread_vec_.clear();
+        }
+
         ThreadPool::ThreadPool() : thread_count_(0), shutdown_threads_(false)
         {
         }

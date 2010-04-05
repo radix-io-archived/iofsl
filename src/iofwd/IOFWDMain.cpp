@@ -45,10 +45,14 @@ void IOFWDMain::shutdown ()
    ZLOG_DEBUG (mainlog_, "Stopping IOFWD Frontend"); 
    frontend_->destroy (); 
 
-   requesthandler_.reset (); 
+   requesthandler_.reset ();
 
    ZLOG_DEBUG (mainlog_, "Stopping resources...");
    resources_.reset (0);
+
+   ZLOG_DEBUG (mainlog_, "Stopping thread pool...");
+   iofwdutil::ThreadPool::instance().reset(); 
+
 }
 
 
