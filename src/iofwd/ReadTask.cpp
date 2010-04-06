@@ -134,6 +134,13 @@ void ReadTask::execPipelineIO(const ReadRequest::ReqParam & p)
     int pipe_read_ops_done = total_pipeline_ops_;
     int pipe_sent_ops = total_pipeline_ops_;
     int pipe_buffer_ops = total_pipeline_ops_;
+    int cur_send_op = 0;
+    bool * send_ready = new bool[total_pipeline_ops_];
+
+    for(int i = 0 ; i < total_pipeline_ops_ ; i++)
+    {
+        send_ready[i] = false;
+    }
 
     /* while the pipeline operation is not done... */
     while( pipe_read_ops_posted > 0 || pipe_read_ops_done > 0 || pipe_buffer_ops > 0 )
@@ -177,6 +184,8 @@ void ReadTask::execPipelineIO(const ReadRequest::ReqParam & p)
                     /* update the count */
                     pipe_read_ops_done--;
 
+                    send_ready[cur] = true;
+
                     /* remove the completed op from the pipeline op list */
                     pipeline_ops_.erase(pipeline_ops_.begin() + i);
                 }
@@ -186,6 +195,22 @@ void ReadTask::execPipelineIO(const ReadRequest::ReqParam & p)
                     i++;
                 }
             }
+
+            /* send any data that is ready */
+            bool sendMoreData = true;
+            do
+            {
+                if(cur_send_op < total_pipeline_ops_ && send_ready[cur_send_op])
+                {
+                    sendPipelineBuffer(cur_send_op);
+                    cur_send_op++;
+                    pipe_sent_ops--;
+                }
+                else
+                {
+                    sendMoreData = false;
+                }
+            }while(sendMoreData);
         }
     }
 
@@ -208,6 +233,8 @@ void ReadTask::execPipelineIO(const ReadRequest::ReqParam & p)
                 /* update the count */
                 pipe_read_ops_done--;
 
+                send_ready[cur] = true;
+
                 /* remove the completed op from the pipeline op list */
                 pipeline_ops_.erase(pipeline_ops_.begin() + i);
             }
@@ -217,17 +244,35 @@ void ReadTask::execPipelineIO(const ReadRequest::ReqParam & p)
                 i++;
             }
         }
+
+        /* send any data that is ready */
+        bool sendMoreData = true;
+        do
+        {
+            if(cur_send_op < total_pipeline_ops_ && send_ready[cur_send_op])
+            {
+                sendPipelineBuffer(cur_send_op);
+                cur_send_op++;
+                pipe_sent_ops--;
+            }
+            else
+            {
+                sendMoreData = false;
+            }
+        }while(sendMoreData);
     }
 
     /* send the data to the client */
-    int i = 0;
     while(pipe_sent_ops > 0)
     { 
         /* sent data into a buffer */
-        sendPipelineBuffer(i);
+        sendPipelineBuffer(cur_send_op);
         pipe_sent_ops--;
-        i++;
+        cur_send_op++;
     }
+
+    /* delete the ready flags */
+    delete [] send_ready;
 }
 
 void ReadTask::postRead(const ReadRequest::ReqParam & p, int index)
