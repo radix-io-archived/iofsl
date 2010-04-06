@@ -72,7 +72,7 @@ class TaskHelper : public Task
       ~TaskHelper ()
       {
          // The task owns the request and needs to destroy it
-        delete (&request_); 
+         delete (&request_);
       }
 
    protected:
