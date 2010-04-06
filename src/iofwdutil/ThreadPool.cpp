@@ -41,11 +41,15 @@ namespace iofwdutil
 
             /* while there are still active threads */
             threadcond_.notify_all();
+           
+            /* join all of the dyn alloc'ed threads and delete them */ 
+            for(int i = 0 ; i < thread_vec_.size() ; i++)
+            {
+                thread_vec_[i]->join();
+                delete (thread_vec_[i]);
+            }
 
-            for_each (thread_vec_.begin(), thread_vec_.end(),
-                boost::bind(&boost::thread::join, _1));
-            for_each (thread_vec_.begin(), thread_vec_.end(),
-                boost::bind(&operator delete, _1));
+            /* remove all of the elements from the vector */
             thread_vec_.clear();
         }
 
@@ -69,21 +73,7 @@ namespace iofwdutil
 
         ThreadPool::~ThreadPool()
         {
-            {
-                boost::mutex::scoped_lock lock(shutdown_cond_mutex_);
-
-                /* shutdown the active threads */
-                shutdown_threads_ = true;
-            }
-
-            /* while there are still active threads */
-            threadcond_.notify_all();
-
-            for_each (thread_vec_.begin(), thread_vec_.end(),
-                boost::bind(&boost::thread::join, _1));
-            for_each (thread_vec_.begin(), thread_vec_.end(),
-                boost::bind(&operator delete, _1));
-            thread_vec_.clear();
+            reset();
         }
 
         /* add work to the thread pool from a free function */
