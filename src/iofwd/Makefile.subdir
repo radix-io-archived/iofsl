@@ -83,6 +83,7 @@ src/iofwd/RequestHandler.hh \
 src/iofwd/RequestScheduler.hh \
 src/iofwd/ResizeRequest.hh \
 src/iofwd/ResizeTask.hh \
+src/iofwd/RetrievedBuffer.hh \
 src/iofwd/SetAttrRequest.hh \
 src/iofwd/SetAttrTask.hh \
 src/iofwd/SymLinkRequest.hh \
