@@ -52,7 +52,7 @@ void IOFWDMain::shutdown ()
 
    ZLOG_DEBUG (mainlog_, "Stopping thread pool...");
    iofwdutil::ThreadPool::instance().reset(); 
-
+   delete &iofwdutil::ThreadPool::instance();
 }
 
 
