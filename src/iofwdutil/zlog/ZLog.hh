@@ -74,12 +74,14 @@ class ZLog
 #ifndef ZLOG_DISABLE_ERROR
 #define ZLOG_ERROR(cl,txt) ZLOG_COMMON(cl,iofwdutil::zlog::ERROR,txt)
 #else
+#warning Disabling logging of ERROR events!
 #define ZLOG_ERROR(cl,txt)
 #endif
 
 #ifndef ZLOG_DISABLE_CRITICAL
 #define ZLOG_CRITICAL(cl,txt) ZLOG_COMMON(cl,iofwdutil::zlog::CRITICAL,txt)
 #else
+#warning Disabling logging of CRITICAL events!
 #define ZLOG_CRITICAL(cl,txt)
 #endif
 
@@ -117,15 +119,9 @@ class ZLog
 
 /* 
  * check if all logging is disabled... if so... redef all the logging commands 
- * to empty commands 
+ * to empty commands /except CRITICAL and ERROR/
  */
 #ifdef ZLOG_DISABLE_ALL
-
-#undef ZLOG_ERROR
-#define ZLOG_ERROR(cl,txt)
-
-#undef ZLOG_CRITICAL
-#define ZLOG_CRITICAL(cl,txt)
 
 #undef ZLOG_WARN
 #define ZLOG_WARN(cl,txt)
