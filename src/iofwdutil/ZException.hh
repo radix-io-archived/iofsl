@@ -9,22 +9,26 @@
 namespace iofwdutil
 {
 
-   class ZException 
+   /**
+    * This class should be the base class for all exception classes defined in
+    * this project.
+    */
+   class ZException
    {
    public:
       ZException ();
 
       ZException (const std::string & s);
 
-      void pushMsg (const std::string & msg); 
+      void pushMsg (const std::string & msg);
 
-      virtual ~ZException (); 
+      virtual ~ZException ();
 
-      std::string toString () const; 
+      std::string toString () const;
 
    protected:
-      std::vector<std::string> msg_; 
-   }; 
+      std::vector<std::string> msg_;
+   };
 
 
 
