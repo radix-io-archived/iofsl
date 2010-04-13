@@ -20,14 +20,14 @@ test_unit_tests_ldflags =        \
     @ZFS_DISPATCHER_LDFLAGS@     \
     @BMI_LDFLAGS@
 
-bin_PROGRAMS += test/xdrspeed
+noinst_PROGRAMS += test/xdrspeed
 test_xdrspeed_SOURCES = test/xdr/xdrspeed.cpp
 test_xdrspeed_LDADD = src/encoder/libencoder.a \
 		      src/iofwdutil/libiofwdutil.a
 
 
 
-bin_PROGRAMS += test/unit-tests/zoidfs-md-cunit test/unit-tests/zoidfs-md-cunit-local test/unit-tests/zoidfs-io-cunit \
+noinst_PROGRAMS += test/unit-tests/zoidfs-md-cunit test/unit-tests/zoidfs-md-cunit-local test/unit-tests/zoidfs-io-cunit \
 test/unit-tests/zoidfs-io-cunit-local
 
 test_unit_tests_zoidfs_md_cunit_SOURCES = test/unit-tests/zoidfs-md-cunit.c
@@ -71,7 +71,7 @@ test_microbenchmarks_ldadd =     \
 test_microbenchmarks_ldflags =   \
     @ZFS_DISPATCHER_LDFLAGS@ @BMI_LDFLAGS@
 
-bin_PROGRAMS += test/zoidfs-microbenchmarks/creat-thput test/zoidfs-microbenchmarks/creat-thput-local \
+noinst_PROGRAMS += test/zoidfs-microbenchmarks/creat-thput test/zoidfs-microbenchmarks/creat-thput-local \
 test/zoidfs-microbenchmarks/mkdir-thput test/zoidfs-microbenchmarks/mkdir-thput-local test/zoidfs-microbenchmarks/lookup-thput \
 test/zoidfs-microbenchmarks/lookup-thput-local test/zoidfs-microbenchmarks/getattr-thput test/zoidfs-microbenchmarks/getattr-thput-local \
 test/zoidfs-microbenchmarks/setattr-thput test/zoidfs-microbenchmarks/setattr-thput-local test/zoidfs-microbenchmarks/remove-thput \
