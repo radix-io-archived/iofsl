@@ -156,6 +156,12 @@ endif
 
 endif
 
+noinst_PROGRAMS += test/hashfunc
+test_hashfunc_SOURCES = test/hashfunc.cpp
+test_hashfunc_LDADD = ${top_builddir}/src/iofwdutil/libiofwdutil.a \
+		      ${top_builddir}/src/c-util/libc-util.a \
+		      @BOOST_PROGRAM_OPTIONS_LIB@\
+		      @BOOST_THREAD_LIB@
 
 noinst_PROGRAMS += test/bmi-sm-pingpong
 test_bmi_sm_pingpong_SOURCES = test/bmi-sm-pingpong.cpp \
