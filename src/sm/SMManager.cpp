@@ -29,7 +29,7 @@ void SMManager::schedule (SMClient * client)
 #else
    boost::mutex::scoped_lock l (lock_);
    worklist_.push (SMClientSharedPtr (client));
-    Notify a worker thread.
+   /* Notify a worker thread. */
    cond_.notify_one ();
 #endif
 }
@@ -88,7 +88,7 @@ void SMManager::workerMain ()
 
 void SMManager::startThreads (size_t count)
 {
-#ifdef USE_IOFWD_THREAD_POOL
+#ifndef USE_IOFWD_THREAD_POOL
    ALWAYS_ASSERT(workers_.empty());
 
    if (!count)
@@ -109,7 +109,7 @@ void SMManager::startThreads (size_t count)
 
 void SMManager::stopThreads ()
 {
-#ifdef USE_IOFWD_THREAD_POOL
+#ifndef USE_IOFWD_THREAD_POOL
    ZLOG_DEBUG(log_, "Stopping threads...");
    {
         boost::mutex::scoped_lock flock(lock_);
