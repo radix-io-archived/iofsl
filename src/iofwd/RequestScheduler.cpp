@@ -42,7 +42,7 @@ static void check_ranges(const vector<ChildRange *>& rs)
 }
 
 RequestScheduler::RequestScheduler(zoidfs::ZoidFSAsyncAPI * async_api, zoidfs::util::ZoidFSAsync * async_cb_api, const iofwdutil::ConfigFile & c, int mode)
-  : log_(IOFWDLog::getSource()), exiting_(false), async_api_(async_api), async_cb_api_(async_cb_api), mode_(mode)
+  : log_(IOFWDLog::getSource()), exiting_(false), async_api_(async_api), async_cb_api_(async_cb_api), mode_(mode), schedActive_(false)
 {
   RangeScheduler * rsched;
   char * sched_algo = new char[c.getKeyDefault("schedalgo", "fifo").size() + 1];
@@ -58,7 +58,7 @@ RequestScheduler::RequestScheduler(zoidfs::ZoidFSAsyncAPI * async_api, zoidfs::u
 
   boost::mutex::scoped_lock l(lock_);
   range_sched_.reset(rsched);
-  consumethread_.reset(new boost::thread(boost::bind(&RequestScheduler::run, this)));
+  //consumethread_.reset(new boost::thread(boost::bind(&RequestScheduler::run, this)));
 
   delete [] sched_algo;
 }
@@ -69,8 +69,15 @@ RequestScheduler::~RequestScheduler()
     boost::mutex::scoped_lock elock(lock_);
     exiting_ = true;
   }
-  ready_.notify_all();
-  consumethread_->join();
+
+  /* wait for the sched to finish */
+  while(schedActive_)
+  {
+        // just spin
+  }
+
+  //ready_.notify_all();
+  //consumethread_->join();
 }
 
 void RequestScheduler::enqueueWriteCB(
@@ -98,8 +105,15 @@ void RequestScheduler::enqueueWriteCB(
 
     boost::mutex::scoped_lock l(lock_);
     range_sched_->enqueue(r);
+
+    /* if the scheduler is not active, add the scheduler work to the ThreadPool */
+    if(!schedActive_)
+    {
+        iofwdutil::ThreadPool::instance().addWorkUnit(new ReqSchedHelper(this), &ReqSchedHelper::run, iofwdutil::ThreadPool::HIGH, true);
+        schedActive_ = true;
+    }
   }
-  notifyConsumer();
+  //notifyConsumer();
 }
 
 void RequestScheduler::enqueueReadCB(
@@ -127,11 +141,18 @@ void RequestScheduler::enqueueReadCB(
 
     boost::mutex::scoped_lock l(lock_);
     range_sched_->enqueue(r);
+
+    /* if the scheduler is not active, add the scheduler work to the ThreadPool */
+    if(!schedActive_)
+    {
+        iofwdutil::ThreadPool::instance().addWorkUnit(new ReqSchedHelper(this), &ReqSchedHelper::run, iofwdutil::ThreadPool::HIGH, true);
+        schedActive_ = true;
+    }
   }
-  notifyConsumer();
+  //notifyConsumer();
 }
 
-void RequestScheduler::run()
+void RequestScheduler::run(bool waitForWork)
 {
   vector<ChildRange *> rs;
   const int batch_size = 16;
@@ -142,12 +163,26 @@ void RequestScheduler::run()
     bool has_tmp_r = false;
     {
       boost::mutex::scoped_lock l(lock_);
-      while (range_sched_->empty() && !exiting_) {
-        if (!rs.empty()) break;
-        ready_.wait(l);
+      while (range_sched_->empty() && !exiting_)
+      {
+        if(!rs.empty())
+            break;
+        /* if the scheduler should shutdown when no work is present */
+        if(!waitForWork)
+        {
+            /* update the sched active flag */
+            schedActive_ = false;
+            return;
+        }
+        /* else, wait on the condition variable for work */
+        else
+        {
+            ready_.wait(l);
+        }
+        /* if the exit flag was set, exit this function */
+        if(exiting_)
+            return;
       }
-      if(exiting_)
-        break;
 
       // dequeue requests of same direction (read/write), same handle
       // TODO: batch_size should be tunable

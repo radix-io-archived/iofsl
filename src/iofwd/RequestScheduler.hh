@@ -44,7 +44,29 @@ public:
      uint64_t * file_starts, uint64_t * file_sizes, zoidfs::zoidfs_op_hint_t * op_hint);
 
 protected:
-  void run();
+
+    /* ThreadPool helper for the RequestScheduler */
+    class ReqSchedHelper
+    {
+        public:
+            ReqSchedHelper(RequestScheduler * rs) : rs_(rs)
+            {
+            }
+
+            ~ReqSchedHelper()
+            {
+            }
+
+            void run()
+            {
+                rs_->run(false);
+            }
+
+        protected:
+            RequestScheduler * rs_;
+    };
+
+  void run(bool waitForWork);
   void issue(std::vector<ChildRange *>& rs);
   void notifyConsumer();
   void issueWait(int status);
@@ -63,6 +85,7 @@ private:
 
   enum{EVMODE_TASK = 0, EVMODE_SM};
   int mode_;
+  bool schedActive_;
 };
 
 }
