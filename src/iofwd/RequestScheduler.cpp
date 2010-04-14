@@ -58,7 +58,10 @@ RequestScheduler::RequestScheduler(zoidfs::ZoidFSAsyncAPI * async_api, zoidfs::u
 
   boost::mutex::scoped_lock l(lock_);
   range_sched_.reset(rsched);
-  //consumethread_.reset(new boost::thread(boost::bind(&RequestScheduler::run, this)));
+
+#ifndef USE_IOFWD_THREAD_POOL
+  consumethread_.reset(new boost::thread(boost::bind(&RequestScheduler::run, this, false)));
+#endif
 
   delete [] sched_algo;
 }
@@ -70,14 +73,17 @@ RequestScheduler::~RequestScheduler()
     exiting_ = true;
   }
 
+#ifdef USE_IOFWD_THREAD_POOL
   /* wait for the sched to finish */
   while(schedActive_)
   {
         // just spin
   }
+#else
+  ready_.notify_all();
+  consumethread_->join();
+#endif
 
-  //ready_.notify_all();
-  //consumethread_->join();
 }
 
 void RequestScheduler::enqueueWriteCB(
@@ -106,14 +112,18 @@ void RequestScheduler::enqueueWriteCB(
     boost::mutex::scoped_lock l(lock_);
     range_sched_->enqueue(r);
 
+#ifdef USE_IOFWD_THREAD_POOL
     /* if the scheduler is not active, add the scheduler work to the ThreadPool */
     if(!schedActive_)
     {
         iofwdutil::ThreadPool::instance().addWorkUnit(new ReqSchedHelper(this), &ReqSchedHelper::run, iofwdutil::ThreadPool::HIGH, true);
         schedActive_ = true;
     }
+#endif
   }
-  //notifyConsumer();
+#ifndef USE_IOFWD_THREAD_POOL
+  notifyConsumer();
+#endif
 }
 
 void RequestScheduler::enqueueReadCB(
@@ -142,14 +152,18 @@ void RequestScheduler::enqueueReadCB(
     boost::mutex::scoped_lock l(lock_);
     range_sched_->enqueue(r);
 
+#ifdef USE_IOFWD_THREAD_POOL
     /* if the scheduler is not active, add the scheduler work to the ThreadPool */
     if(!schedActive_)
     {
         iofwdutil::ThreadPool::instance().addWorkUnit(new ReqSchedHelper(this), &ReqSchedHelper::run, iofwdutil::ThreadPool::HIGH, true);
         schedActive_ = true;
     }
+#endif
   }
-  //notifyConsumer();
+#ifndef USE_IOFWD_THREAD_POOL
+  notifyConsumer();
+#endif
 }
 
 void RequestScheduler::run(bool waitForWork)
