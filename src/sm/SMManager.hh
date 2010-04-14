@@ -7,6 +7,7 @@
 #include <csignal>
 #include "iofwdutil/IOFWDLog.hh"
 #include "SMClient.hh"
+#include "iofwdutil/ThreadPool.hh"
 
 namespace sm
 {
@@ -69,6 +70,30 @@ protected:
    sig_atomic_t finish_;
 
    iofwdutil::zlog::ZLogSource & log_;
+
+   /* wrapper for the SM ops sent to the ThreadPool */
+   struct SMHelper
+   {
+      SMHelper(SMClient * client) : client_(client)
+      {
+      }
+
+      ~SMHelper()
+      {
+      }
+
+      /* after running the SM, force the SM client to deallocate */ 
+      void run()
+      {
+         client_->execute();
+         client_.reset(0);
+      }
+
+      protected:
+         SMClientSharedPtr client_;
+   };
+
+
 };
 
 //===========================================================================
