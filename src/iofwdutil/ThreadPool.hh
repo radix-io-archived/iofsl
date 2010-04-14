@@ -19,6 +19,9 @@
     distinct priorities (HIGH, MID, LOW). Thread safe.
 */
 
+/* enable the thread pool by default */
+#define USE_IOFWD_THREAD_POOL
+
 namespace iofwdutil
 {
 
