@@ -1,6 +1,8 @@
-#include "ZoidFSDefAsync.hh"
+#include <memory>
 #include <boost/bind.hpp>
+
 #include "iofwdutil/tools.hh"
+#include "ZoidFSDefAsync.hh"
 
 namespace zoidfs
 {
@@ -157,16 +159,16 @@ namespace zoidfs
                hint)));
    }
 
-   int ZoidFSDefAsync::link_helper(link_helper_bundle_t * b)
+   int ZoidFSDefAsync::link_helper(link_helper_bundle_t * b2)
    {
+        // use auto_ptr for exception safety
+        auto_ptr<link_helper_bundle_t> b(b2);
+
         /* run the op */
         int ret = api_.link(b->from_parent_handle_,
             b->from_component_name_, b->from_full_path_, b->to_parent_handle_,
             b->to_component_name_, b->to_full_path_, b->from_parent_hint_, b->to_parent_hint_,
             b->hint_);
-
-        /* destroy the bundle */
-        delete b;
 
         /* return the op result */
         return ret;
@@ -188,16 +190,15 @@ namespace zoidfs
                to_parent_hint, hint)));
    }
 
-   int ZoidFSDefAsync::symlink_helper(symlink_helper_bundle_t * b)
+   int ZoidFSDefAsync::symlink_helper(symlink_helper_bundle_t * b2)
    {
+        auto_ptr<symlink_helper_bundle_t> b(b2);
+
         /* run the op */
         int ret = api_.symlink(b->from_parent_handle_,
             b->from_component_name_, b->from_full_path_, b->to_parent_handle_,
             b->to_component_name_, b->to_full_path_, b->attr_, b->from_parent_hint_, b->to_parent_hint_,
             b->hint_);
-
-        /* destroy the bundle */
-        delete b;
 
         /* return the op result */
         return ret;
