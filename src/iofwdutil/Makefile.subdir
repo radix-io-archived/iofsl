@@ -10,6 +10,7 @@ src_iofwdutil_libiofwdutil_a_LIBLDFLAGS = \
 
 
 src_iofwdutil_libiofwdutil_a_SOURCES = \
+src/iofwdutil/LinkHelper.hh \
 src/iofwdutil/completion/BMICompletionID.hh \
 src/iofwdutil/completion/BMIResource.hh \
 src/iofwdutil/completion/BMISendID.hh \
