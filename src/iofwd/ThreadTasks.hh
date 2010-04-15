@@ -27,12 +27,12 @@ class ThreadTasks
 {
 public:
 
-   ThreadTasks (boost::function<void (Task *)> & resched,
+   ThreadTasks (
          zoidfs::ZoidFSAPI * api,
          zoidfs::ZoidFSAsyncAPI * async_api,
          RequestScheduler * sched,
          BMIBufferPool * bpool)
-      : reschedule_(resched), api_(api), async_api_(async_api), sched_(sched),
+      : api_(api), async_api_(async_api), sched_(sched),
         bpool_(bpool)
    {
    }
@@ -40,8 +40,6 @@ public:
    Task * operator () (Request * req); 
 
 protected:
-   boost::function<void (Task *)> reschedule_; 
-
    zoidfs::ZoidFSAPI * api_;
    zoidfs::ZoidFSAsyncAPI * async_api_;
    RequestScheduler * sched_;

@@ -22,7 +22,6 @@ class ThreadTaskParam
 {
 public:
    Request   *                          req;
-   boost::function<void (Task*)>        resched; 
    zoidfs::ZoidFSAPI *                  api;
    zoidfs::ZoidFSAsyncAPI *             async_api;
    RequestScheduler *                   sched;
@@ -30,13 +29,12 @@ public:
    iofwdutil::completion::BMIResource & bmi; 
 
    ThreadTaskParam (Request * r, 
-      boost::function<void (Task*)> r2,
       zoidfs::ZoidFSAPI * a1,
       zoidfs::ZoidFSAsyncAPI * a2,
       RequestScheduler * s,
       BMIBufferPool * bp,
       iofwdutil::completion::BMIResource & b)
-      : req(r), resched(r2), api(a1), async_api(a2), sched(s), bpool(bp), bmi(b)
+      : req(r), api(a1), async_api(a2), sched(s), bpool(bp), bmi(b)
    {
    }
 
@@ -56,7 +54,7 @@ class TaskHelper : public Task
        * The task takes ownership of the request
        */
       TaskHelper (ThreadTaskParam & param)
-         : Task (param.resched), request_ (static_cast<T &> (*param.req)), 
+         : request_ (static_cast<T &> (*param.req)), 
            api_ (param.api), async_api_(param.async_api), sched_(param.sched),
            bpool_(param.bpool), bmi_ (param.bmi)
       {

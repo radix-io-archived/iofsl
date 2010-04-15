@@ -39,8 +39,6 @@ namespace iofwd
 /**
  * This class accepts requests from the frontend and uses a workqueue to run
  * the requests until the request returns false (indicating it is done)
- *
- * Requests are able to reschedule themselves if needed.
  */
 class DefRequestHandler : public RequestHandler
 {
@@ -52,9 +50,6 @@ public:
    DefRequestHandler (const iofwdutil::ConfigFile & c);
 
    virtual ~DefRequestHandler ();
-
-protected:
-   void reschedule (Task * t);
 
 protected:
    iofwdutil::IOFWDLogSource & log_;

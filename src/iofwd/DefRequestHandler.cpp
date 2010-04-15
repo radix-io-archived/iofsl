@@ -81,19 +81,12 @@ DefRequestHandler::DefRequestHandler (const iofwdutil::ConfigFile & cf)
    workqueue_normal_.reset (new PoolWorkQueue (csec.getKeyAsDefault("minthreadnum", 0),
                                                csec.getKeyAsDefault("maxthreadnum", 100)));
    workqueue_fast_.reset (new SynchronousWorkQueue ());
-   boost::function<void (Task *)> f = boost::lambda::bind
-      (&DefRequestHandler::reschedule, this, boost::lambda::_1);
 
-   taskfactory_.reset (new ThreadTasks (f, &api_, async_api_, sched_, bpool_));
+   taskfactory_.reset (new ThreadTasks (&api_, async_api_, sched_, bpool_));
 
    taskSMFactory_.reset(new iofwd::tasksm::TaskSMFactory(sched_, bpool_, smm,
             async_api_full_));
    smm.startThreads();
-}
-
-void DefRequestHandler::reschedule (Task * t)
-{
-   workqueue_normal_->queueWork (t);
 }
 
 DefRequestHandler::~DefRequestHandler ()
@@ -156,12 +149,8 @@ void DefRequestHandler::handleRequest (int count, Request ** reqs)
         workqueue_fast_->testAll (completed_);
         for (unsigned int i=0; i<completed_.size(); ++i)
         {
-            // we know only requesttasks can be put on the workqueues
-            if (static_cast<Task*>(completed_[i])->getStatus() ==
-                Task::STATUS_DONE)
-            {
-               delete (completed_[i]);
-            }
+           // we know only requesttasks can be put on the workqueues
+           delete (completed_[i]);
         }
         completed_.clear ();
     }
