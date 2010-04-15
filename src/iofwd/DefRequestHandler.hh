@@ -74,7 +74,7 @@ protected:
    /// API
    zoidfs::LogAPI api_;
    zoidfs::ZoidFSAsyncAPI * async_api_;
-   zoidfs::util::ZoidFSDefAsync * async_api_full_;
+   zoidfs::util::ZoidFSAsync * async_api_full_;
 
    /// Scheduler
    RequestScheduler * sched_;

@@ -41,7 +41,7 @@ static void check_ranges(const vector<ChildRange *>& rs)
   }
 }
 
-RequestScheduler::RequestScheduler(zoidfs::ZoidFSAsyncAPI * async_api, zoidfs::util::ZoidFSDefAsync * async_cb_api, const iofwdutil::ConfigFile & c, int mode)
+RequestScheduler::RequestScheduler(zoidfs::ZoidFSAsyncAPI * async_api, zoidfs::util::ZoidFSAsync * async_cb_api, const iofwdutil::ConfigFile & c, int mode)
   : log_(IOFWDLog::getSource()), exiting_(false), async_api_(async_api), async_cb_api_(async_cb_api), mode_(mode)
 {
   RangeScheduler * rsched;

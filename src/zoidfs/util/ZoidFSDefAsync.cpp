@@ -9,6 +9,8 @@ namespace zoidfs
 
    //=====================================================================
 
+       GENERIC_FACTORY_CLIENT(std::string,ZoidFSAsync,ZoidFSDefAsync,"defasync");
+
    int ZoidFSDefAsync::init(void)
    {
       return 1;

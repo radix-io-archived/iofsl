@@ -6,6 +6,8 @@
 #include "ZoidFSAsync.hh"
 #include "iofwdutil/ThreadPool.hh"
 
+#include "iofwdutil/LinkHelper.hh"
+
 //#define BOOST_FUNCTION_MAX_ARGS 20
 //#include <boost/function.hpp>
 
@@ -19,6 +21,10 @@ namespace zoidfs
    class ZoidFSDefAsync : public ZoidFSAsync
    {
    public:
+      // Registers this client to a factory taking a std::string and returning
+      // a ZoidFSAsync object.
+      GENERIC_FACTORY_CLIENT_DECLARE(std::string,ZoidFSAsync,ZoidFSDefAsync);
+
       ZoidFSDefAsync (ZoidFSAPI & api)
          : api_(api)
       {

@@ -9,6 +9,7 @@
 #include "iofwdutil/ZException.hh"
 #include "iofwdutil/ConfigFile.hh"
 #include "c-util/txt_configfile.h"
+#include "FactoryHelper.hh"
 
 namespace po = boost::program_options;
 
@@ -127,6 +128,8 @@ int main (int argc, char ** args)
                " shutdown"); 
       }
 
+      ZLOG_INFO(mainlog, "Registering factory clients...");
+      iofwd::registerFactoryClients ();
 
       iofwd::IOFWDMain main (opt_notrap, config_); 
 

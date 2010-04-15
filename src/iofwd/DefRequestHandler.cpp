@@ -13,6 +13,8 @@
 #include "zoidfs/util/ZoidFSDefAsync.hh"
 #include "RequestScheduler.hh"
 #include "iofwd/tasksm/WriteTaskSM.hh"
+#include "iofwdutil/Factory.hh"
+#include "iofwdutil/FactoryException.hh"
 
 using namespace iofwdutil;
 using namespace iofwdutil::workqueue;
@@ -56,7 +58,22 @@ DefRequestHandler::DefRequestHandler (const iofwdutil::ConfigFile & cf)
    }
 
    async_api_ = new zoidfs::ZoidFSAsyncAPI(&api_);
-   async_api_full_ = new zoidfs::util::ZoidFSDefAsync(api_);
+ 
+   const std::string apiname = config_.getKeyAsDefault<std::string>("zoidfsapi.name","defasync");
+   try
+   {
+      ZLOG_INFO (log_, format("Loading using async API '%s'") % apiname);
+      async_api_full_ = iofwdutil::Factory<
+                        std::string,
+                        zoidfs::util::ZoidFSAsync>::construct (apiname)(api_);
+   }
+   catch (FactoryException & e)
+   {
+      ZLOG_ERROR(log_, format("No async API called '%s' registered!") %
+            apiname);
+      throw;
+   }
+
    sched_ = new RequestScheduler(async_api_, async_api_full_, config_.openSectionDefault ("requestscheduler"), event_mode_);
    bpool_ = new BMIBufferPool(config_.openSectionDefault("bmibufferpool"));
 

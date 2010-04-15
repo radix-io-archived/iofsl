@@ -24,6 +24,8 @@ src_iofwd_iofwd_LDFLAGS = \
     @BMI_LDFLAGS@
 
 src_iofwd_iofwd_SOURCES = \
+src/iofwd/FactoryHelper.hh \
+src/iofwd/FactoryHelper.cpp \
 src/iofwd/BufferPool.cpp \
 src/iofwd/BMIBufferPool.cpp \
 src/iofwd/DefRequestHandler.cpp \
