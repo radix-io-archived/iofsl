@@ -6,6 +6,7 @@
 #include <map>
 #include "Singleton.hh"
 #include "FactoryHelper.hh"
+#include "FactoryException.hh"
 
 namespace iofwdutil
 {
@@ -67,7 +68,7 @@ struct Factory : public Singleton<Factory<KEY,BASE> >
          typename ContainerType::const_iterator I = map_.find (key);
          if (I == map_.end())
          {
-            throw "Unknown key in Factory::construct!";
+            throw FactoryException ("Unknown key in Factory::construct!");
          }
          return I->second;
       }

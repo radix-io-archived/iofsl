@@ -132,6 +132,7 @@ src/iofwdutil/InjectPool.hh \
 src/iofwdutil/Factory.hh \
 src/iofwdutil/FactoryAutoRegister.hh \
 src/iofwdutil/CreateMethod.hh \
+src/iofwdutil/FactoryException.hh \
 src/iofwdutil/FactoryHelper.hh \
 \
 src/iofwdutil/atomics.hh \

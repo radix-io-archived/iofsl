@@ -1,4 +1,5 @@
 #include "iofwdutil/Factory.hh"
+#include "iofwdutil/FactoryException.hh"
 #include "iofwdutil/FactoryAutoRegister.hh"
 #include <boost/mpl/list.hpp>
 
@@ -92,7 +93,8 @@ BOOST_FIXTURE_TEST_CASE ( basic, F )
    BOOST_CHECK_EQUAL (mmm->getName(), "MM");
   
   
-   BOOST_CHECK_THROW (MyF::construct ("nonexistent")(1),const char *);
+   BOOST_CHECK_THROW (MyF::construct
+         ("nonexistent")(1),iofwdutil::FactoryException);
 }
 
 BOOST_FIXTURE_TEST_CASE ( references, F )
