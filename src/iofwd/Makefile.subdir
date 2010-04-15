@@ -29,7 +29,6 @@ src/iofwd/FactoryHelper.cpp \
 src/iofwd/BufferPool.cpp \
 src/iofwd/BMIBufferPool.cpp \
 src/iofwd/DefRequestHandler.cpp \
-src/iofwd/DefRequestItem.cpp \
 src/iofwd/IOFWDMain.cpp \
 src/iofwd/Range.cpp \
 src/iofwd/RangeScheduler.cpp \
@@ -51,7 +50,6 @@ src/iofwd/ConfigException.hh \
 src/iofwd/CreateRequest.hh \
 src/iofwd/CreateTask.hh \
 src/iofwd/DefRequestHandler.hh \
-src/iofwd/DefRequestItem.hh \
 src/iofwd/GetAttrRequest.hh \
 src/iofwd/GetAttrTask.hh \
 src/iofwd/IOFWDMain.hh \
