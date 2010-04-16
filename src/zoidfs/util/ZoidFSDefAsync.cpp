@@ -162,7 +162,7 @@ namespace zoidfs
    int ZoidFSDefAsync::link_helper(link_helper_bundle_t * b2)
    {
         // use auto_ptr for exception safety
-        auto_ptr<link_helper_bundle_t> b(b2);
+        std::auto_ptr<link_helper_bundle_t> b(b2);
 
         /* run the op */
         int ret = api_.link(b->from_parent_handle_,
@@ -192,7 +192,7 @@ namespace zoidfs
 
    int ZoidFSDefAsync::symlink_helper(symlink_helper_bundle_t * b2)
    {
-        auto_ptr<symlink_helper_bundle_t> b(b2);
+        std::auto_ptr<symlink_helper_bundle_t> b(b2);
 
         /* run the op */
         int ret = api_.symlink(b->from_parent_handle_,
