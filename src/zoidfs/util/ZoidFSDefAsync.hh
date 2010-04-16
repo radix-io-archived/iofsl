@@ -245,7 +245,7 @@ namespace zoidfs
             mcb_ (iofwdevent::COMPLETED);
          }
 
-         virtual void run()
+         void run()
          {
             *ret_ = wcb_ ();
             mcb_ (iofwdevent::COMPLETED);
