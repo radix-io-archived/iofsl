@@ -44,6 +44,8 @@ src/iofwd/WriteTask.cpp \
 src/iofwd/iofwd.cpp \
 src/iofwd/BufferPool.hh \
 src/iofwd/BMIBufferPool.hh \
+src/iofwd/BMIMemoryManager.hh \
+src/iofwd/BMIMemoryManager.cpp \
 src/iofwd/CommitRequest.hh \
 src/iofwd/CommitTask.hh \
 src/iofwd/ConfigException.hh \
