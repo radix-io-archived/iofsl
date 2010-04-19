@@ -9,6 +9,7 @@
 #include "iofwdutil/InjectPool.hh"
 #include "iofwd/tasksm/SMRetrievedBuffer.hh"
 #include "iofwd/ReadRequest.hh"
+#include "iofwd/BMIMemoryManager.hh"
 
 #include "zoidfs/zoidfs.h"
 
@@ -30,7 +31,7 @@ namespace iofwd
 class ReadTaskSM : public sm::SimpleSM< ReadTaskSM >, public iofwdutil::InjectPool< ReadTaskSM >
 {
     public:
-        ReadTaskSM(sm::SMManager & smm, RequestScheduler * sched, BMIBufferPool * bpool, Request * r);
+        ReadTaskSM(sm::SMManager & smm, RequestScheduler * sched, Request * r);
         ~ReadTaskSM();
 
         void init(int UNUSED(status))
@@ -52,7 +53,7 @@ class ReadTaskSM : public sm::SimpleSM< ReadTaskSM >, public iofwdutil::InjectPo
                     total_bytes_ += p.mem_sizes[i];
 
                 /* compute the total number of concurrent pipeline ops */
-                total_pipeline_ops_ = (int)ceil(1.0 * total_bytes_ / bpool_->pipeline_size());
+                total_pipeline_ops_ = (int)ceil(1.0 * total_bytes_ / iofwd::BMIMemoryManager::instance().pipeline_size());
 
                 computePipelineFileSegments();
 
@@ -60,7 +61,7 @@ class ReadTaskSM : public sm::SimpleSM< ReadTaskSM >, public iofwdutil::InjectPo
                 rbuffer_ = new SMRetrievedBuffer*[total_pipeline_ops_];
                 for(int i = 0 ; i < total_pipeline_ops_ ; i++)
                 {
-                    rbuffer_[i] = new SMRetrievedBuffer();
+                    rbuffer_[i] = new SMRetrievedBuffer(request_.getRequestAddr(), iofwdutil::bmi::BMI::ALLOC_SEND, iofwd::BMIMemoryManager::instance().pipeline_size());
                     rbuffer_[i]->reinit();
                 }
 
@@ -130,6 +131,9 @@ class ReadTaskSM : public sm::SimpleSM< ReadTaskSM >, public iofwdutil::InjectPo
             /* update the amount of outstanding data */
             cur_sent_bytes_ += p_siz_;
 
+            /* dealloc the buffer */
+            iofwd::BMIMemoryManager::instance().dealloc(rbuffer_[cw_post_index_]->buffer);
+
             /* if we still have pipeline data to fetch go back to the allocate buffer state */
             if(cur_sent_bytes_ < total_bytes_)
             {
@@ -145,7 +149,7 @@ class ReadTaskSM : public sm::SimpleSM< ReadTaskSM >, public iofwdutil::InjectPo
 
         void postPipelineEnqueueRead(int UNUSED(status))
         {
-            p_siz_ = std::min((size_t)bpool_->pipeline_size(), total_bytes_ - cur_sent_bytes_);
+            p_siz_ = std::min((size_t)iofwd::BMIMemoryManager::instance().pipeline_size(), total_bytes_ - cur_sent_bytes_);
             /* update the rbuffer with the new data entires */
             rbuffer_[cw_post_index_]->siz = p_siz_;
             rbuffer_[cw_post_index_]->off = cur_sent_bytes_;
@@ -176,7 +180,6 @@ class ReadTaskSM : public sm::SimpleSM< ReadTaskSM >, public iofwdutil::InjectPo
         /* @TODO currently set the concurrent pipeline op count to 128... this should be dynamic or tunable */
         enum {READ_SLOT = 0, READ_PIPEOP_START, NUM_READ_SLOTS = 129};
         ReadRequest::ReqParam p;
-        BMIBufferPool * bpool_;
         RequestScheduler * sched_;
         ReadRequest & request_;
         sm::SimpleSlots<NUM_READ_SLOTS, iofwd::tasksm::ReadTaskSM> slots_;

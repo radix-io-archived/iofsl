@@ -3,15 +3,14 @@
 #include "zoidfs/util/ZoidFSAsyncAPI.hh"
 #include "zoidfs/zoidfs-proto.h"
 #include "iofwd/RequestScheduler.hh"
-#include "iofwd/BMIBufferPool.hh"
 
 namespace iofwd
 {
     namespace tasksm
     {
 
-    ReadTaskSM::ReadTaskSM(sm::SMManager & smm, RequestScheduler * sched, BMIBufferPool * bpool, Request * p)
-        : sm::SimpleSM<ReadTaskSM>(smm), bpool_(bpool), sched_(sched), request_((static_cast<ReadRequest&>(*p))), slots_(*this),
+    ReadTaskSM::ReadTaskSM(sm::SMManager & smm, RequestScheduler * sched, Request * p)
+        : sm::SimpleSM<ReadTaskSM>(smm), sched_(sched), request_((static_cast<ReadRequest&>(*p))), slots_(*this),
           total_bytes_(0), cur_sent_bytes_(0), p_siz_(0), total_pipeline_ops_(0), io_ops_done_(0), cw_post_index_(0), rbuffer_(NULL), mode_(READSM_SERIAL_IO_PIPELINE)
     {
     }
@@ -78,7 +77,7 @@ namespace iofwd
         size_t cur_pipe_ofs = 0;
         int cur_file_index = 0;
         int num_pipe_segments = 0;
-        size_t pipeline_size = bpool_->pipeline_size();
+        size_t pipeline_size = iofwd::BMIMemoryManager::instance().pipeline_size();
         size_t cur_pipe_buffer_size = pipeline_size;
         zoidfs_file_size_t cur_file_size = file_sizes[cur_file_index];
         zoidfs_file_ofs_t cur_file_start = file_starts[cur_file_index];
@@ -150,7 +149,7 @@ namespace iofwd
 
     void ReadTaskSM::execPipelineIO()
     {
-        const char * p_buf = (char *)rbuffer_[cw_post_index_]->buffer->get_buf()->get();
+        const char * p_buf = (char *)rbuffer_[cw_post_index_]->buffer->getMemory();
         int p_seg_start = p_segments_start[cw_post_index_];
         size_t p_file_count = p_segments[cw_post_index_];
         int * ret = new int(0);
@@ -251,7 +250,7 @@ void ReadTaskSM::readBarrier(int UNUSED(status))
 void ReadTaskSM::getBMIBuffer()
 {
     /* request a BMI buffer */
-    bpool_->allocCB(slots_[READ_SLOT], request_.getRequestAddr(), iofwdutil::bmi::BMI::ALLOC_SEND, rbuffer_[cw_post_index_]->buffer);
+    iofwd::BMIMemoryManager::instance().alloc(slots_[READ_SLOT], rbuffer_[cw_post_index_]->buffer);
 
     /* set the callback and wait */
     slots_.wait(READ_SLOT, &ReadTaskSM::waitAllocateBMIBuffer);
@@ -263,8 +262,7 @@ void ReadTaskSM::sendPipelineBuffer()
     // from alloc -> NetworkRecv -> rx_q -> ZoidI/O -> io_q -> back to alloc
 
     /* if there is still data to be recieved */
-    //p_siz_ = std::min(bpool_->pipeline_size(), total_bytes_ - cur_sent_bytes_);
-    request_.sendPipelineBufferCB(slots_[READ_SLOT], rbuffer_[cw_post_index_]->buffer->get_buf(), p_siz_);
+    request_.sendPipelineBufferCB(slots_[READ_SLOT], rbuffer_[cw_post_index_]->buffer->getBMIBuffer(), p_siz_);
 
     /* set the callback and wait */
     slots_.wait(READ_SLOT, &ReadTaskSM::waitSendPipelineBuffer);
