@@ -10,6 +10,8 @@
 #include "iofwdutil/ConfigFile.hh"
 #include "iofwdevent/CBType.hh"
 #include "iofwdevent/TokenResource.hh"
+#include "iofwdutil/Singleton.hh"
+#include "boost/thread/mutex.hpp"
 
 /*
  * The following classes are replacements for the BMIMemoryPool and MemoryPool
@@ -102,11 +104,12 @@ class BMIMemoryAlloc
 };
 
 /* allocation manager for BMI buffers */
-class BMIMemoryManager
+class BMIMemoryManager : public iofwdutil::Singleton < BMIMemoryManager > 
 {
     public:
-        BMIMemoryManager(const iofwdutil::ConfigFile & c);
+        BMIMemoryManager();
         ~BMIMemoryManager();
+        void setup(const iofwdutil::ConfigFile & c);
 
         /* get the size of pipelien buffers */
         size_t pipeline_size() const
@@ -120,6 +123,16 @@ class BMIMemoryManager
         /* return a buffer to the manager */
         void dealloc(BMIMemoryAlloc * memAlloc_);
 
+        /* start the memory manager */
+        void start();
+
+        /* reset the memory manager */
+        void reset();
+
+        /* memory manager setup */
+        static void setMaxBufferSize(size_t pipelineSize);
+        static void setMaxNumBuffers(int numBuffers);
+
     protected:
         void runBufferAllocCB(int status, BMIMemoryAlloc * memAlloc, iofwdevent::CBType cb);        
 
@@ -132,7 +145,9 @@ class BMIMemoryManager
         iofwdevent::TokenResource * tokens_;
 
         /* size of pipeline transfers... also the max transfer buffer size that is allowed */
-        size_t pipelineSize_;
+        static size_t pipelineSize_;
+        static int numTokens_;
+        static boost::mutex bmm_setup_mutex_;
 };
 
 }

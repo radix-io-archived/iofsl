@@ -97,17 +97,47 @@ void BMIMemoryManager::runBufferAllocCB(int status, BMIMemoryAlloc * memAlloc, i
  *  - create the token resource
  *  - start the token resource
  */
-BMIMemoryManager::BMIMemoryManager(const iofwdutil::ConfigFile & c)
+BMIMemoryManager::BMIMemoryManager()
 {
-    /* get params from the config file */
-    pipelineSize_ = c.getKeyAsDefault("buffersize", 0);
-    int numTokens = c.getKeyAsDefault("maxnumbuffers", 0);
+}
 
+/* static variables for the mem manager */
+size_t iofwd::BMIMemoryManager::pipelineSize_ = 0;
+int iofwd::BMIMemoryManager::numTokens_ = 0;
+boost::mutex iofwd::BMIMemoryManager::bmm_setup_mutex_;
+
+void BMIMemoryManager::setMaxBufferSize(size_t pipelineSize)
+{
+    boost::mutex::scoped_lock lock(bmm_setup_mutex_);
+    pipelineSize_ = pipelineSize;
+}
+
+void BMIMemoryManager::setMaxNumBuffers(int numTokens)
+{
+    boost::mutex::scoped_lock lock(bmm_setup_mutex_);
+    numTokens_ = numTokens;
+}
+
+void BMIMemoryManager::start()
+{
     /* create the token resource */
-    tokens_ = new iofwdevent::TokenResource(numTokens); 
+    tokens_ = new iofwdevent::TokenResource(numTokens_); 
 
     /* start the token resource */
     tokens_->start();
+}
+
+void BMIMemoryManager::reset()
+{
+    if(tokens_)
+    {
+        /* stop the token resource */
+        tokens_->stop();
+
+        /* delete the token object */
+        delete tokens_;
+        tokens_ = NULL;
+    }
 }
 
 /*
@@ -116,11 +146,7 @@ BMIMemoryManager::BMIMemoryManager(const iofwdutil::ConfigFile & c)
 BMIMemoryManager::~BMIMemoryManager()
 {
     /* stop and delete the token resource */
-    if(tokens_)
-    {
-        tokens_->stop();
-        delete tokens_;
-    }
+    reset();
 }
 
 /*
