@@ -43,7 +43,7 @@ namespace iofwdutil
             threadcond_.notify_all();
            
             /* join all of the dyn alloc'ed threads and delete them */ 
-            for(int i = 0 ; i < thread_vec_.size() ; i++)
+            for(unsigned int i = 0 ; i < thread_vec_.size() ; i++)
             {
                 thread_vec_[i]->join();
                 delete (thread_vec_[i]);
