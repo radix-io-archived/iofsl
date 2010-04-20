@@ -3869,6 +3869,11 @@ int zoidfs_init(void) {
         exit(1);
     }
 
+    {
+	int timeout = 3600 * 1000;
+	BMI_set_info(peer_addr, BMI_ZOID_POST_TIMEOUT, &timeout);
+    }
+
     /* preallocate buffers */
 #ifdef ZFS_BMI_FASTMEMALLOC
     zfs_bmi_client_sendbuf = BMI_memalloc(peer_addr, ZFS_BMI_CLIENT_SENDBUF_LEN, BMI_SEND);
