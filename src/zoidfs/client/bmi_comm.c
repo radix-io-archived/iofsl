@@ -28,8 +28,7 @@ int bmi_comm_send(BMI_addr_t peer_addr, const void *buffer, bmi_size_t buflen,
         exit(1);
     } else if (ret == 0) {
         do {
-            ret = BMI_test(op_id, &outcount, &error_code, &actual_size, NULL,
-                           MAX_IDLE_TIME, context);
+            ret = BMI_testcontext(1, &op_id, &outcount, &error_code, &actual_size, NULL, MAX_IDLE_TIME, context);
         } while (ret == 0 && outcount == 0);
 
         if (ret < 0 || error_code != 0) {
@@ -75,7 +74,7 @@ int bmi_comm_isend_wait(bmi_op_id_t op_id, bmi_size_t buflen, bmi_context_id con
     bmi_error_code_t error_code;
 
     do {
-        ret = BMI_test(op_id, &outcount, &error_code, &actual_size, NULL, MAX_IDLE_TIME, context);
+        ret = BMI_testcontext(1, &op_id, &outcount, &error_code, &actual_size, NULL, MAX_IDLE_TIME, context);
     } while (ret == 0 && outcount == 0);
 
     if (ret < 0 || error_code != 0)
@@ -111,8 +110,7 @@ int bmi_comm_recv(BMI_addr_t peer_addr, void *buffer, bmi_size_t buflen,
         exit(1);
     } else if (ret == 0) {
         do {
-            ret = BMI_test(op_id, &outcount, &error_code, actual_size, NULL,
-                           MAX_IDLE_TIME, context);
+            ret = BMI_testcontext(1, &op_id, &outcount, &error_code, actual_size, NULL, MAX_IDLE_TIME, context);
         } while (ret == 0 && outcount == 0);
 
         if (ret < 0 || error_code != 0) {
@@ -133,7 +131,7 @@ int bmi_comm_irecv_wait(bmi_op_id_t op_id, bmi_size_t * actual_size, bmi_context
     bmi_error_code_t error_code;
 
     do {
-        ret = BMI_test(op_id, &outcount, &error_code, actual_size, NULL, MAX_IDLE_TIME, context);
+        ret = BMI_testcontext(1, &op_id, &outcount, &error_code, actual_size, NULL, MAX_IDLE_TIME, context);
     } while (ret == 0 && outcount == 0);
 
     if (ret < 0 || error_code != 0)
@@ -182,8 +180,7 @@ int bmi_comm_sendu(BMI_addr_t peer_addr, const void *buffer, bmi_size_t buflen,
         exit(1);
     } else if (ret == 0) {
         do {
-            ret = BMI_test(op_id, &outcount, &error_code, &actual_size, NULL,
-                           MAX_IDLE_TIME, context);
+            ret = BMI_testcontext(1, &op_id, &outcount, &error_code, &actual_size, NULL, MAX_IDLE_TIME, context);
         } while (ret == 0 && outcount == 0);
 
         if (ret < 0 || error_code != 0) {
@@ -224,8 +221,7 @@ int bmi_comm_isendu_wait(bmi_size_t buflen, bmi_context_id context, bmi_op_id_t 
     bmi_error_code_t error_code;
 
     do {
-        ret = BMI_test(op_id, &outcount, &error_code, &actual_size, NULL,
-        MAX_IDLE_TIME, context);
+        ret = BMI_testcontext(1, &op_id, &outcount, &error_code, &actual_size, NULL, MAX_IDLE_TIME, context);
     } while (ret == 0 && outcount == 0);
 
     if (ret < 0 || error_code != 0) {
@@ -303,8 +299,7 @@ int bmi_comm_send_list(BMI_addr_t peer_addr, size_t list_count,
         exit(1);
     } else if (ret == 0) {
         do {
-            ret = BMI_test(op_id, &outcount, &error_code, &actual_size, NULL,
-                           MAX_IDLE_TIME, context);
+            ret = BMI_testcontext(1, &op_id, &outcount, &error_code, &actual_size, NULL, MAX_IDLE_TIME, context);
         } while (ret == 0 && outcount == 0);
 
         if (ret < 0 || error_code != 0) {
@@ -347,8 +342,7 @@ int bmi_comm_isend_list_wait(bmi_op_id_t op_id, bmi_context_id context, bmi_size
 
     do
     {
-        ret = BMI_test(op_id, &outcount, &error_code, &actual_size, NULL,
-                       MAX_IDLE_TIME, context);
+        ret = BMI_testcontext(1, &op_id, &outcount, &error_code, &actual_size, NULL, MAX_IDLE_TIME, context);
     }while (ret == 0 && outcount == 0);
 
     if (ret < 0 || error_code != 0) {
@@ -387,8 +381,7 @@ int bmi_comm_recv_list(BMI_addr_t peer_addr, size_t list_count,
         exit(1);
     } else if (ret == 0) {
         do {
-            ret = BMI_test(op_id, &outcount, &error_code, &actual_size, NULL,
-                           MAX_IDLE_TIME, context);
+            ret = BMI_testcontext(1, &op_id, &outcount, &error_code, &actual_size, NULL, MAX_IDLE_TIME, context);
         } while (ret == 0 && outcount == 0);
 
         if (ret < 0 || error_code != 0) {
@@ -426,8 +419,7 @@ int bmi_comm_irecv_list_wait(bmi_op_id_t op_id, bmi_context_id context, bmi_size
 
     do
     {
-        ret = BMI_test(op_id, &outcount, &error_code, actual_size, NULL,
-                       MAX_IDLE_TIME, context);
+        ret = BMI_testcontext(1, &op_id, &outcount, &error_code, actual_size, NULL, MAX_IDLE_TIME, context);
     }while (ret == 0 && outcount == 0);
 
     if (ret < 0 || error_code != 0) {
