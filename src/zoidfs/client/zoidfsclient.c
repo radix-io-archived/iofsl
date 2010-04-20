@@ -899,11 +899,9 @@ int zoidfs_xdr_hint_size(zoidfs_op_hint_t * op_hint)
 
     return size;
 }
-
 /* pipline config */
-#ifndef PIPELINE_SIZE
-#define PIPELINE_SIZE (1024 * 1024 * 8)
-#endif /* #ifndef PIPELINE_SIZE */
+bmi_size_t PIPELINE_SIZE = 8388608;
+
 
 /* make sure pipeline is less than or equal to ZOIDFS_BUFFER_MAX */
 #if PIPELINE_SIZE > ZOIDFS_BUFFER_MAX
@@ -3825,6 +3823,7 @@ static int zoidfs_read_pipeline(BMI_addr_t peer_addr, size_t pipeline_size,
  */
 int zoidfs_init(void) {
     int ret = ZFS_OK;
+    char * pipeline_size = NULL;
 
 #ifdef ZFS_USE_XDR_SIZE_CACHE
     /* get the values for the size cache */
@@ -3845,6 +3844,13 @@ int zoidfs_init(void) {
     if (ret < 0) {
         fprintf(stderr, "zoidfs_init: BMI_open_context() failed.\n");
         exit(1);
+    }
+
+    /* setup the pipeline size */
+    pipeline_size = getenv("ZOIDFS_PIPELINE_SIZE");
+    if(pipeline_size)
+    {
+        PIPELINE_SIZE = atoi(pipeline_size);
     }
 
     /*
