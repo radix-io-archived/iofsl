@@ -14,9 +14,17 @@ namespace iofwd
 {
 //===========================================================================
 
-void ReadTask::runNormalMode(const ReadRequest::ReqParam & p)
+void ReadTask::runNormalMode(ReadRequest::ReqParam & p)
 {
+   // get a BMI buffer
+   block_.reset();
+   iofwd::BMIMemoryManager::instance().alloc(block_, rbuffer_[0]->buffer);
+   block_.wait();
 
+   // init the task params
+   request_.initRequestParams(p, rbuffer_[0]->buffer->getMemory());
+
+   // issue the read request
    block_.reset();
    sched_->enqueueReadCB(block_, p.handle, (size_t)p.mem_count, (void**)p.mem_starts, p.mem_sizes, p.file_starts, p.file_sizes, p.op_hint);
    block_.wait();
@@ -27,6 +35,9 @@ void ReadTask::runNormalMode(const ReadRequest::ReqParam & p)
    block_.reset();
    request_.sendBuffers((block_));
    block_.wait();
+
+   /* deallocate the buffer after the send */
+   iofwd::BMIMemoryManager::instance().dealloc(rbuffer_[0]->buffer);
 
    // send reply w/ callback
    block_.reset();
@@ -42,7 +53,7 @@ void ReadTask::computePipelineFileSegments(const ReadRequest::ReqParam & p)
     size_t cur_pipe_ofs = 0;
     int cur_file_index = 0;
     int num_pipe_segments = 0;
-    size_t pipeline_size = bpool_->pipeline_size();
+    size_t pipeline_size = iofwd::BMIMemoryManager::instance().pipeline_size();
     size_t cur_pipe_buffer_size = pipeline_size;
     zoidfs::zoidfs_file_size_t cur_file_size = file_sizes[cur_file_index];
     zoidfs::zoidfs_file_ofs_t cur_file_start = file_starts[cur_file_index];
@@ -107,7 +118,7 @@ void ReadTask::getBMIBuffer(int index)
 {
     /* request a BMI buffer */
     block_.reset();
-    bpool_->allocCB(block_, request_.getRequestAddr(), iofwdutil::bmi::BMI::ALLOC_SEND, rbuffer_[index]->buffer);
+    iofwd::BMIMemoryManager::instance().alloc(block_, rbuffer_[index]->buffer);
 
     /* set the callback and wait */
     block_.wait();
@@ -117,11 +128,14 @@ void ReadTask::sendPipelineBuffer(int index)
 {
     /* if there is still data to be recieved */
     block_.reset();
-    p_siz_ = std::min((size_t)bpool_->pipeline_size(), total_bytes_ - cur_sent_bytes_);
-    request_.sendPipelineBufferCB(block_, rbuffer_[index]->buffer->get_buf(), p_siz_);
+    p_siz_ = std::min((size_t)iofwd::BMIMemoryManager::instance().pipeline_size(), total_bytes_ - cur_sent_bytes_);
+    request_.sendPipelineBufferCB(block_, rbuffer_[index]->buffer->getBMIBuffer(), p_siz_);
 
     /* set the callback and wait */
     block_.wait();
+
+    /* dealloc the buffer */
+    iofwd::BMIMemoryManager::instance().dealloc(rbuffer_[index]->buffer);
 
     /* update the byte transfer count */
     cur_sent_bytes_ += p_siz_;
@@ -277,7 +291,7 @@ void ReadTask::execPipelineIO(const ReadRequest::ReqParam & p)
 
 void ReadTask::postRead(const ReadRequest::ReqParam & p, int index)
 {
-    const char * p_buf = (char *)rbuffer_[index]->buffer->get_buf()->get();
+    const char * p_buf = (char *)rbuffer_[index]->buffer->getMemory();
     int p_seg_start = p_segments_start[index];
     int p_file_count = p_segments[index];
     int * ret = new int(0);

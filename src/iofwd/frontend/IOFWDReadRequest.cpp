@@ -45,7 +45,7 @@ IOFWDReadRequest::~IOFWDReadRequest ()
 // Possible optimizations:
 //   * switch to hybrid stack/heap arrays for uint64_t arrays
 //
-const IOFWDReadRequest::ReqParam & IOFWDReadRequest::decodeParam ()
+IOFWDReadRequest::ReqParam & IOFWDReadRequest::decodeParam ()
 {
    // get the handle
    process (req_reader_, handle_);
@@ -82,6 +82,12 @@ const IOFWDReadRequest::ReqParam & IOFWDReadRequest::decodeParam ()
    // init other param vars
    param_.mem_total_size = 0;
 
+   param_.handle = &handle_;
+   return param_;
+}
+
+void IOFWDReadRequest::initRequestParams(ReqParam & p, void * bufferMem)
+{
    // allocate buffer for normal mode
     if (param_.pipeline_size == 0)
     {
@@ -93,9 +99,7 @@ const IOFWDReadRequest::ReqParam & IOFWDReadRequest::decodeParam ()
         }
 
         // create the bmi buffer
-        bmi_buffer_ = new iofwdutil::bmi::BMIBuffer(addr_, iofwdutil::bmi::BMI::ALLOC_SEND);
-        bmi_buffer_->resize(param_.mem_total_size);
-        mem = static_cast<char *>(bmi_buffer_->get());
+        mem = static_cast<char *>(bufferMem);
 
         // NOTICE: mem_starts_ and mem_sizes_ are alignend with file_sizes
         // This is for request scheduler to easily handle the ranges without
@@ -109,7 +113,7 @@ const IOFWDReadRequest::ReqParam & IOFWDReadRequest::decodeParam ()
             delete[] param_.mem_sizes;
             param_.mem_sizes = new size_t[param_.file_count];
 #else
-            h.hafree(param_.mem_sizes);
+            h.hafree(p.mem_sizes);
             param_.mem_sizes = (h.hamalloc<size_t>(param_.file_count));
 #endif
         }
@@ -145,10 +149,9 @@ const IOFWDReadRequest::ReqParam & IOFWDReadRequest::decodeParam ()
 #endif
             cur += param_.file_sizes[i];
         }
+        p = param_;
     }
 
-   param_.handle = &handle_;
-   return param_;
 }
 
 void IOFWDReadRequest::sendBuffers(const CBType & cb)

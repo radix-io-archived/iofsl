@@ -11,20 +11,23 @@ namespace iofwd
     {
 //===========================================================================
 
-    WriteTaskSM::WriteTaskSM(sm::SMManager & smm, RequestScheduler * sched, BMIBufferPool * bpool, Request * p)
-        : sm::SimpleSM<WriteTaskSM>(smm), sched_(sched), bpool_(bpool), request_((static_cast<WriteRequest&>(*p))), slots_(*this),
-          total_bytes_(0), cur_recv_bytes_(0), p_siz_(0), total_pipeline_ops_(0), io_ops_done_(0), cw_post_index_(0), rbuffer_(NULL), mode_(WRITESM_PARA_IO_PIPELINE)
+    WriteTaskSM::WriteTaskSM(sm::SMManager & smm, RequestScheduler * sched, Request * p)
+        : sm::SimpleSM<WriteTaskSM>(smm), sched_(sched), request_((static_cast<WriteRequest&>(*p))), slots_(*this),
+          total_bytes_(0), cur_recv_bytes_(0), p_siz_(0), total_pipeline_ops_(0), total_buffers_(0),
+          io_ops_done_(0), cw_post_index_(0), rbuffer_(NULL), mode_(WRITESM_PARA_IO_PIPELINE)
     {
     }
 
     WriteTaskSM::~WriteTaskSM()
     {
         /* cleanup rbuffer_ wrappers */
-        for(int i = 0 ; i < total_pipeline_ops_ ; i++)
+        for(int i = 0 ; i < total_buffers_ ; i++)
         {
             delete rbuffer_[i];
         }
-        delete [] rbuffer_;
+
+        if(rbuffer_)
+            delete [] rbuffer_;
 
         /* delete the request last */
         delete &request_;
@@ -79,7 +82,7 @@ namespace iofwd
         size_t cur_pipe_ofs = 0;
         int cur_file_index = 0;
         int num_pipe_segments = 0;
-        size_t pipeline_size = bpool_->pipeline_size();
+        size_t pipeline_size = iofwd::BMIMemoryManager::instance().pipeline_size();
         size_t cur_pipe_buffer_size = pipeline_size;
         zoidfs_file_size_t cur_file_size = file_sizes[cur_file_index];
         zoidfs_file_ofs_t cur_file_start = file_starts[cur_file_index];
@@ -151,7 +154,7 @@ namespace iofwd
 
     void WriteTaskSM::execPipelineIO()
     {
-        const char * p_buf = (char *)rbuffer_[cw_post_index_]->buffer->get_buf()->get();
+        const char * p_buf = (char *)rbuffer_[cw_post_index_]->buffer->getMemory();
         int p_seg_start = p_segments_start[cw_post_index_];
         int p_file_count = p_segments[cw_post_index_]; 
         int * ret = new int(0);
@@ -252,20 +255,26 @@ void WriteTaskSM::writeBarrier(int UNUSED(status))
 void WriteTaskSM::getBMIBuffer()
 {
     /* request a BMI buffer */
-    bpool_->allocCB(slots_[WRITE_SLOT], request_.getRequestAddr(), iofwdutil::bmi::BMI::ALLOC_RECEIVE, rbuffer_[cw_post_index_]->buffer);
+    iofwd::BMIMemoryManager::instance().alloc(slots_[WRITE_SLOT], rbuffer_[cw_post_index_]->buffer);
 
     /* set the callback and wait */
     slots_.wait(WRITE_SLOT, &WriteTaskSM::waitAllocateBMIBuffer);
 }
 
+void WriteTaskSM::getSingleBMIBuffer()
+{
+    /* request a BMI buffer */
+    iofwd::BMIMemoryManager::instance().alloc(slots_[WRITE_SLOT], rbuffer_[0]->buffer);
+
+    /* set the callback and wait */
+    slots_.wait(WRITE_SLOT, &WriteTaskSM::waitAllocateSingleBuffer);
+}
+
 void WriteTaskSM::recvPipelineBuffer()
 {
-    // The life cycle of buffers is like follows:
-    // from alloc -> NetworkRecv -> rx_q -> ZoidI/O -> io_q -> back to alloc
-
     /* if there is still data to be recieved */
-    p_siz_ = std::min((size_t)bpool_->pipeline_size(), total_bytes_ - cur_recv_bytes_);
-    request_.recvPipelineBufferCB(slots_[WRITE_SLOT], rbuffer_[cw_post_index_]->buffer->get_buf(), p_siz_);
+    p_siz_ = std::min((size_t)iofwd::BMIMemoryManager::instance().pipeline_size(), total_bytes_ - cur_recv_bytes_);
+    request_.recvPipelineBufferCB(slots_[WRITE_SLOT], rbuffer_[cw_post_index_]->buffer->getBMIBuffer(), p_siz_);
 
     /* set the callback and wait */
     slots_.wait(WRITE_SLOT, &WriteTaskSM::waitRecvPipelineBuffer);

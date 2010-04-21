@@ -75,16 +75,21 @@ DefRequestHandler::DefRequestHandler (const iofwdutil::ConfigFile & cf)
    }
 
    sched_ = new RequestScheduler(async_api_, async_api_full_, config_.openSectionDefault ("requestscheduler"), event_mode_);
-   bpool_ = new BMIBufferPool(config_.openSectionDefault("bmibufferpool"));
+
+   /* start the BMI memory manager */
+   lc = config_.openSectionDefault("bmimemorymanager");
+   iofwd::BMIMemoryManager::instance().setMaxBufferSize(lc.getKeyAsDefault("buffersize", 0));
+   iofwd::BMIMemoryManager::instance().setMaxNumBuffers(lc.getKeyAsDefault("maxnumbuffers", 0));
+   iofwd::BMIMemoryManager::instance().start();
 
    csec = config_.openSectionDefault("workqueue");
    workqueue_normal_.reset (new PoolWorkQueue (csec.getKeyAsDefault("minthreadnum", 0),
                                                csec.getKeyAsDefault("maxthreadnum", 100)));
    workqueue_fast_.reset (new SynchronousWorkQueue ());
 
-   taskfactory_.reset (new ThreadTasks (&api_, async_api_, sched_, bpool_));
+   taskfactory_.reset (new ThreadTasks (&api_, async_api_, sched_));
 
-   taskSMFactory_.reset(new iofwd::tasksm::TaskSMFactory(sched_, bpool_, smm,
+   taskSMFactory_.reset(new iofwd::tasksm::TaskSMFactory(sched_, smm,
             async_api_full_));
    smm.startThreads();
 }
@@ -114,7 +119,6 @@ DefRequestHandler::~DefRequestHandler ()
    }
 
    delete sched_;
-   delete bpool_;
 
    api_.finalize();
    delete async_api_;

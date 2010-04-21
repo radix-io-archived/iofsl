@@ -75,10 +75,10 @@ void TaskSMFactory::operator () (iofwd::Request * req)
             smm_.schedule(new GetAttrTaskSM(smm_, api_, req));
             break;
         case ZOIDFS_PROTO_WRITE:
-            smm_.schedule(new WriteTaskSM(smm_, sched_, bpool_, req));
+            smm_.schedule(new WriteTaskSM(smm_, sched_, req));
             break;
         case ZOIDFS_PROTO_READ:
-            smm_.schedule(new ReadTaskSM(smm_, sched_, bpool_, req));
+            smm_.schedule(new ReadTaskSM(smm_, sched_, req));
             break;
         default:
             smm_.schedule(new NotImplementedTaskSM(smm_, api_, req));

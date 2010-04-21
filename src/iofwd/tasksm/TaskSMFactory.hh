@@ -3,6 +3,7 @@
 
 #include <boost/function.hpp>
 #include "iofwd/BMIBufferPool.hh"
+#include "iofwd/BMIMemoryManager.hh"
 #include "sm/SMManager.hh"
 #include "iofwd/Request.hh"
 
@@ -35,8 +36,8 @@ class TaskSMFactory
 public:
 
    TaskSMFactory(RequestScheduler * sched,
-         BMIBufferPool * bpool, sm::SMManager & smm, zoidfs::util::ZoidFSAsync * api)
-      : sched_(sched), bpool_(bpool), smm_(smm), api_(api)
+         sm::SMManager & smm, zoidfs::util::ZoidFSAsync * api)
+      : sched_(sched), smm_(smm), api_(api)
    {
    }
 
@@ -48,7 +49,6 @@ public:
 
 protected:
    RequestScheduler * sched_;
-   BMIBufferPool * bpool_;
    sm::SMManager & smm_;
    zoidfs::util::ZoidFSAsync * api_;
 };

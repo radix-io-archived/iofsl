@@ -28,7 +28,7 @@ public:
    }
    virtual ~IOFWDReadRequest ();
 
-   virtual const ReqParam & decodeParam ();
+   virtual ReqParam & decodeParam ();
 
    virtual void reply(const CBType & cb);
 
@@ -42,6 +42,8 @@ public:
    {
       return addr_;
    }
+
+   virtual void initRequestParams(ReqParam & p, void * bufferMem);
 
 private:
    ReqParam param_;

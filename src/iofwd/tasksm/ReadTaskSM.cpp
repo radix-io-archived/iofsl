@@ -11,18 +11,20 @@ namespace iofwd
 
     ReadTaskSM::ReadTaskSM(sm::SMManager & smm, RequestScheduler * sched, Request * p)
         : sm::SimpleSM<ReadTaskSM>(smm), sched_(sched), request_((static_cast<ReadRequest&>(*p))), slots_(*this),
-          total_bytes_(0), cur_sent_bytes_(0), p_siz_(0), total_pipeline_ops_(0), io_ops_done_(0), cw_post_index_(0), rbuffer_(NULL), mode_(READSM_SERIAL_IO_PIPELINE)
+          total_bytes_(0), cur_sent_bytes_(0), p_siz_(0), total_pipeline_ops_(0), total_buffers_(0),
+          io_ops_done_(0), cw_post_index_(0), rbuffer_(NULL), mode_(READSM_SERIAL_IO_PIPELINE)
     {
     }
 
     ReadTaskSM::~ReadTaskSM()
     {
         /* cleanup rbuffer_ wrappers */
-        for(int i = 0 ; i < total_pipeline_ops_ ; i++)
+        for(int i = 0 ; i < total_buffers_ ; i++)
         {
             delete rbuffer_[i];
         }
-        delete [] rbuffer_;
+        if(rbuffer_)
+            delete [] rbuffer_;
 
         /* delete the request last */
         delete &request_;
@@ -254,6 +256,15 @@ void ReadTaskSM::getBMIBuffer()
 
     /* set the callback and wait */
     slots_.wait(READ_SLOT, &ReadTaskSM::waitAllocateBMIBuffer);
+}
+
+void ReadTaskSM::getSingleBMIBuffer()
+{
+    /* request a BMI buffer */
+    iofwd::BMIMemoryManager::instance().alloc(slots_[READ_SLOT], rbuffer_[0]->buffer);
+
+    /* set the callback and wait */
+    slots_.wait(READ_SLOT, &ReadTaskSM::waitAllocateSingleBuffer);
 }
 
 void ReadTaskSM::sendPipelineBuffer()

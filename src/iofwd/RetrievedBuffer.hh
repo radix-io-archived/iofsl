@@ -2,14 +2,16 @@
 #define __IOFWD_RETRIEVEDBUFFER_HH__
 
 #include "iofwd/BMIBufferPool.hh"
+#include "iofwd/BMIMemoryManager.hh"
 
 namespace iofwd
 {
 
 struct RetrievedBuffer
 {
-    iofwd::BMIBufferWrapper * buffer;
+    iofwd::BMIMemoryAlloc * buffer;
     uint64_t siz;
+    size_t p_siz;
     uint64_t off;
 
     // for async request
@@ -18,10 +20,12 @@ struct RetrievedBuffer
     uint64_t * file_starts;
     uint64_t * file_sizes;
     int * ret;
+    iofwdutil::bmi::BMIAddr addr_;
+    iofwdutil::bmi::BMI::AllocType allocType_;
 
-    RetrievedBuffer()
-        : buffer(NULL), siz(0), off(0), mem_starts(NULL), mem_sizes(NULL),
-          file_starts(NULL), file_sizes(NULL), ret(NULL)
+    RetrievedBuffer(iofwdutil::bmi::BMIAddr addr, iofwdutil::bmi::BMI::AllocType allocType, size_t p_size)
+        : buffer(NULL), siz(0), p_siz(p_size), off(0), mem_starts(NULL), mem_sizes(NULL),
+          file_starts(NULL), file_sizes(NULL), ret(NULL), addr_(addr), allocType_(allocType)
     {
     }
 
@@ -37,7 +41,7 @@ struct RetrievedBuffer
         cleanup();
 
         /* allocate a new BMIBufferWrapper */
-        buffer = new BMIBufferWrapper();
+        buffer = new BMIMemoryAlloc(addr_, allocType_, p_siz);
     }
 
     void cleanup()

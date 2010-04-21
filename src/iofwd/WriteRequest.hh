@@ -50,7 +50,7 @@ public:
   {
   }
 
-  virtual const ReqParam & decodeParam () = 0;
+  virtual ReqParam & decodeParam () = 0;
 
   virtual void reply(const CBType & cb) = 0;
 
@@ -61,6 +61,8 @@ public:
   virtual void recvPipelineBufferCB(iofwdevent::CBType cb, iofwdutil::bmi::BMIBuffer * buf, size_t size) = 0;
 
   virtual iofwdutil::bmi::BMIAddr getRequestAddr() = 0;
+
+  virtual void initRequestParams(ReqParam & p, void * bufferMem) = 0;
 };
 
 }

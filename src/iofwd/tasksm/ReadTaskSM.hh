@@ -42,26 +42,41 @@ class ReadTaskSM : public sm::SimpleSM< ReadTaskSM >, public iofwdutil::InjectPo
         void decodeInputParams(int UNUSED(status))
         {
             decodeInput();
+
+            /* compute the total size of the pipeline transfers */
+            for (size_t i = 0; i < p.mem_count; i++)
+                total_bytes_ += p.mem_sizes[i];
+
             if(p.pipeline_size == 0)
             {
-                setNextMethod(&ReadTaskSM::postEnqueueRead);
+                /* setup the rbuffer variable */
+                rbuffer_ = new SMRetrievedBuffer*[1];
+                rbuffer_[0] = new SMRetrievedBuffer(request_.getRequestAddr(), iofwdutil::bmi::BMI::ALLOC_SEND, total_bytes_);
+                rbuffer_[0]->reinit();
+                total_buffers_ = 1;
+                setNextMethod(&ReadTaskSM::postAllocateSingleBuffer);
             }
             else
             {
-                /* compute the total size of the pipeline transfers */
-                for (size_t i = 0; i < p.mem_count; i++)
-                    total_bytes_ += p.mem_sizes[i];
-
                 /* compute the total number of concurrent pipeline ops */
                 total_pipeline_ops_ = (int)ceil(1.0 * total_bytes_ / iofwd::BMIMemoryManager::instance().pipeline_size());
+                total_buffers_ = total_pipeline_ops_;
 
                 computePipelineFileSegments();
 
                 /* setup the rbuffer variable */
+                bool lastBufferIsPartial = (total_bytes_ % iofwd::BMIMemoryManager::instance().pipeline_size() == 0 ? false : true);
                 rbuffer_ = new SMRetrievedBuffer*[total_pipeline_ops_];
                 for(int i = 0 ; i < total_pipeline_ops_ ; i++)
                 {
-                    rbuffer_[i] = new SMRetrievedBuffer(request_.getRequestAddr(), iofwdutil::bmi::BMI::ALLOC_SEND, iofwd::BMIMemoryManager::instance().pipeline_size());
+                    if(lastBufferIsPartial && i + 1 == total_pipeline_ops_)
+                    {
+                        rbuffer_[i] = new SMRetrievedBuffer(request_.getRequestAddr(), iofwdutil::bmi::BMI::ALLOC_SEND, total_bytes_ % iofwd::BMIMemoryManager::instance().pipeline_size());
+                    }
+                    else
+                    {
+                        rbuffer_[i] = new SMRetrievedBuffer(request_.getRequestAddr(), iofwdutil::bmi::BMI::ALLOC_SEND, iofwd::BMIMemoryManager::instance().pipeline_size());
+                    }
                     rbuffer_[i]->reinit();
                 }
 
@@ -71,6 +86,18 @@ class ReadTaskSM : public sm::SimpleSM< ReadTaskSM >, public iofwdutil::InjectPo
         }
 
         /* normal mode (non-pipeline) state transitions */
+        void postAllocateSingleBuffer(int UNUSED(status))
+        {
+            getSingleBMIBuffer();
+        }
+
+        void waitAllocateSingleBuffer(int UNUSED(status))
+        {
+            request_.initRequestParams(p, rbuffer_[0]->buffer->getMemory());
+
+            setNextMethod(&ReadTaskSM::postEnqueueRead);
+        }
+
         void postSendInputBuffers(int UNUSED(status))
         {
             sendBuffers();
@@ -78,6 +105,9 @@ class ReadTaskSM : public sm::SimpleSM< ReadTaskSM >, public iofwdutil::InjectPo
 
         void waitSendInputBuffers(int UNUSED(status))
         {
+            /* free the buffer */
+            iofwd::BMIMemoryManager::instance().dealloc(rbuffer_[0]->buffer);
+
             setNextMethod(&ReadTaskSM::postReply);
         }
 
@@ -172,6 +202,7 @@ class ReadTaskSM : public sm::SimpleSM< ReadTaskSM >, public iofwdutil::InjectPo
 
         /* pipeline mode operations */
         void getBMIBuffer();
+        void getSingleBMIBuffer();
         void sendPipelineBuffer();
         void execPipelineIO();
         void readBarrier(int status);
@@ -190,6 +221,7 @@ class ReadTaskSM : public sm::SimpleSM< ReadTaskSM >, public iofwdutil::InjectPo
         size_t cur_sent_bytes_;
         size_t p_siz_;
         int total_pipeline_ops_;
+        int total_buffers_;
         int io_ops_done_;
         int cw_post_index_;
 

@@ -2,6 +2,7 @@
 #define __IOFWD_TASKSM_SMRETRIEVEDBUFFER_HH__
 
 #include "iofwd/BMIBufferPool.hh"
+#include "iofwd/BMIMemoryManager.hh"
 
 namespace iofwd
 {
@@ -10,8 +11,9 @@ namespace iofwd
 
 struct SMRetrievedBuffer
 {
-    BMIBufferWrapper * buffer;
+    BMIMemoryAlloc * buffer;
     uint64_t siz;
+    size_t p_siz;
     uint64_t off;
 
     // for async request
@@ -20,8 +22,10 @@ struct SMRetrievedBuffer
     uint64_t * file_starts;
     uint64_t * file_sizes;
     int * ret;
+    iofwdutil::bmi::BMIAddr addr_;
+    iofwdutil::bmi::BMI::AllocType allocType_;
 
-    SMRetrievedBuffer();
+    SMRetrievedBuffer(iofwdutil::bmi::BMIAddr addr, iofwdutil::bmi::BMI::AllocType allocType, size_t p_size);
     ~SMRetrievedBuffer();
 
     /* before this object is used / reused  reinit it */
@@ -31,7 +35,7 @@ struct SMRetrievedBuffer
         cleanup();
 
         /* allocate a new BMIBufferWrapper */
-        buffer = new BMIBufferWrapper();
+        buffer = new BMIMemoryAlloc(addr_, allocType_, p_siz);
     }
 
     void cleanup()

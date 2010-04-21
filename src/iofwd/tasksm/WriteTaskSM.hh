@@ -9,6 +9,7 @@
 #include "iofwdutil/InjectPool.hh"
 #include "iofwd/tasksm/SMRetrievedBuffer.hh"
 #include "iofwd/WriteRequest.hh"
+#include "iofwd/BMIMemoryManager.hh"
 
 #include "zoidfs/zoidfs.h"
 
@@ -30,7 +31,7 @@ namespace iofwd
 class WriteTaskSM : public sm::SimpleSM< WriteTaskSM >, public iofwdutil::InjectPool< WriteTaskSM >
 {
     public:
-        WriteTaskSM(sm::SMManager & smm, RequestScheduler * sched, BMIBufferPool * bpool, Request * r);
+        WriteTaskSM(sm::SMManager & smm, RequestScheduler * sched, Request * r);
         ~WriteTaskSM();
 
         void init(int UNUSED(status))
@@ -41,32 +42,60 @@ class WriteTaskSM : public sm::SimpleSM< WriteTaskSM >, public iofwdutil::Inject
         void decodeInputParams(int UNUSED(status))
         {
             decodeInput();
+
+            /* compute the total size of the pipeline transfers */
+            for (size_t i = 0; i < p.mem_count; i++)
+                total_bytes_ += p.mem_sizes[i];
+
             if(p.pipeline_size == 0)
             {
-                setNextMethod(&WriteTaskSM::postRecvInputBuffers);
+                /* setup the rbuffer variable */
+                rbuffer_ = new SMRetrievedBuffer*[1];
+                rbuffer_[0] = new SMRetrievedBuffer(request_.getRequestAddr(), iofwdutil::bmi::BMI::ALLOC_RECEIVE, total_bytes_);
+                rbuffer_[0]->reinit();
+                total_buffers_ = 1;
+                setNextMethod(&WriteTaskSM::postAllocateSingleBuffer);
             }
             else
             {
-                /* compute the total size of the pipeline transfers */
-                for (size_t i = 0; i < p.mem_count; i++)
-                    total_bytes_ += p.mem_sizes[i];
-
                 /* compute the total number of concurrent pipeline ops */
-                total_pipeline_ops_ = (int)ceil(1.0 * total_bytes_ / bpool_->pipeline_size());
+                total_pipeline_ops_ = (int)ceil(1.0 * total_bytes_ / iofwd::BMIMemoryManager::instance().pipeline_size());
+                total_buffers_ = total_pipeline_ops_;
 
                 computePipelineFileSegments();
 
                 /* setup the rbuffer variable */
+                bool lastBufferIsPartial = (total_bytes_ % iofwd::BMIMemoryManager::instance().pipeline_size() == 0 ? false : true);
                 rbuffer_ = new SMRetrievedBuffer*[total_pipeline_ops_];
                 for(int i = 0 ; i < total_pipeline_ops_ ; i++)
                 {
-                    rbuffer_[i] = new SMRetrievedBuffer();
+                    if(lastBufferIsPartial && i + 1 == total_pipeline_ops_)
+                    {
+                        rbuffer_[i] = new SMRetrievedBuffer(request_.getRequestAddr(), iofwdutil::bmi::BMI::ALLOC_RECEIVE, total_bytes_ % iofwd::BMIMemoryManager::instance().pipeline_size());
+                    }
+                    else
+                    {
+                        rbuffer_[i] = new SMRetrievedBuffer(request_.getRequestAddr(), iofwdutil::bmi::BMI::ALLOC_RECEIVE, iofwd::BMIMemoryManager::instance().pipeline_size());
+                    }
                     rbuffer_[i]->reinit();
                 }
 
                 /* transition to the allocate buffer state */
                 setNextMethod(&WriteTaskSM::postAllocateBMIBuffer);
             }
+        }
+    
+        void postAllocateSingleBuffer(int UNUSED(status))
+        {
+            getSingleBMIBuffer();
+        }
+
+        void waitAllocateSingleBuffer(int UNUSED(status))
+        {
+            // init the task params
+            request_.initRequestParams(p, rbuffer_[0]->buffer->getMemory());
+
+            setNextMethod(&WriteTaskSM::postRecvInputBuffers);
         }
 
         /* normal mode (non-pipeline) state transitions */
@@ -87,6 +116,9 @@ class WriteTaskSM : public sm::SimpleSM< WriteTaskSM >, public iofwdutil::Inject
 
         void waitEnqueueWrite(int UNUSED(status))
         {
+            /* free the buffer */
+            iofwd::BMIMemoryManager::instance().dealloc(rbuffer_[0]->buffer);
+
             setNextMethod(&WriteTaskSM::postReply);
         }
 
@@ -143,6 +175,9 @@ class WriteTaskSM : public sm::SimpleSM< WriteTaskSM >, public iofwdutil::Inject
         {
             /* update the amount of outstanding data */
             cur_recv_bytes_ += p_siz_;
+
+            /* dealloc the buffer */
+            iofwd::BMIMemoryManager::instance().dealloc(rbuffer_[cw_post_index_]->buffer);
             cw_post_index_++;
 
             /* if we still have pipeline data to fetch go back to the allocate buffer state */
@@ -169,6 +204,7 @@ class WriteTaskSM : public sm::SimpleSM< WriteTaskSM >, public iofwdutil::Inject
 
         /* pipeline mode operations */
         void getBMIBuffer();
+        void getSingleBMIBuffer();
         void recvPipelineBuffer();
         void execPipelineIO();
         void writeBarrier(int status);
@@ -179,7 +215,6 @@ class WriteTaskSM : public sm::SimpleSM< WriteTaskSM >, public iofwdutil::Inject
         enum {WRITE_SLOT = 0, WRITE_PIPEOP_START, NUM_WRITE_SLOTS = 129};
         WriteRequest::ReqParam p;
         RequestScheduler * sched_;
-        BMIBufferPool * bpool_;
         WriteRequest & request_;
         sm::SimpleSlots<NUM_WRITE_SLOTS, iofwd::tasksm::WriteTaskSM> slots_;
 
@@ -189,6 +224,7 @@ class WriteTaskSM : public sm::SimpleSM< WriteTaskSM >, public iofwdutil::Inject
         size_t cur_recv_bytes_;
         size_t p_siz_;
         int total_pipeline_ops_;
+        int total_buffers_;
         int io_ops_done_;
         int cw_post_index_;
 

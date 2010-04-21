@@ -41,7 +41,7 @@ IOFWDWriteRequest::~IOFWDWriteRequest ()
       delete bmi_buffer_;
 }
 
-const IOFWDWriteRequest::ReqParam & IOFWDWriteRequest::decodeParam ()
+IOFWDWriteRequest::ReqParam & IOFWDWriteRequest::decodeParam ()
 {
 
    // init the handle
@@ -81,19 +81,25 @@ const IOFWDWriteRequest::ReqParam & IOFWDWriteRequest::decodeParam ()
    param_.mem_total_size = 0;
    param_.mem_expected_size = 0;
 
+   // init the handle
+   param_.handle = &handle_;
+
+   return param_;
+}
+
+void IOFWDWriteRequest::initRequestParams(ReqParam & p, void * bufferMem)
+{
     // allocate buffer for normal mode
     if (param_.pipeline_size == 0)
     {
         char * mem = NULL;
         for(size_t i = 0 ; i < param_.mem_count ; i++)
         {
-            param_.mem_total_size += param_.mem_sizes[i];
+            param_.mem_total_size += p.mem_sizes[i];
         }
 
         // setup the BMI buffer to the user requested size
-        bmi_buffer_ = new iofwdutil::bmi::BMIBuffer(addr_, iofwdutil::bmi::BMI::ALLOC_RECEIVE);
-        bmi_buffer_->resize(param_.mem_total_size);
-        mem = static_cast<char *>(bmi_buffer_->get());
+        mem = static_cast<char *>(bufferMem);
 
         // NOTICE: mem_starts_ and mem_sizes_ are alignend with file_sizes
         // This is for request scheduler to easily handle the ranges without
@@ -107,7 +113,7 @@ const IOFWDWriteRequest::ReqParam & IOFWDWriteRequest::decodeParam ()
             delete[] param_.mem_sizes;
             param_.mem_sizes = new size_t[param_.file_count];
 #else
-            h.hafree(param_.mem_sizes);
+            h.hafree(p.mem_sizes);
             param_.mem_sizes = (h.hamalloc<size_t>(param_.file_count));
 #endif
         }
@@ -144,11 +150,8 @@ const IOFWDWriteRequest::ReqParam & IOFWDWriteRequest::decodeParam ()
 #endif
             cur += param_.file_sizes[i];
         }
+        p = param_;
     }
-
-   param_.handle = &handle_;
-
-   return param_;
 }
 
 void IOFWDWriteRequest::recvBuffers(const CBType & cb)

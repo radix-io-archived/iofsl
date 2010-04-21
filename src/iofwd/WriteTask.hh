@@ -11,6 +11,7 @@
 #include "iofwdevent/SingleCompletion.hh"
 #include "iofwd/RetrievedBuffer.hh"
 #include "zoidfs/zoidfs.h"
+#include "iofwd/BMIMemoryManager.hh"
 
 namespace iofwd
 {
@@ -20,14 +21,14 @@ class WriteTask : public TaskHelper<WriteRequest>, public iofwdutil::InjectPool<
 public:
    WriteTask (ThreadTaskParam & p)
       : TaskHelper<WriteRequest>(p), total_bytes_(0), cur_recv_bytes_(0), p_siz_(0), total_pipeline_ops_(0),
-        rbuffer_(NULL), pipeline_blocks_(NULL)
+        total_buffers_(0), rbuffer_(NULL), pipeline_blocks_(NULL)
    {
    }
 
    virtual ~WriteTask()
    {
         /* cleanup rbuffer_ wrappers */
-        for(int i = 0 ; i < total_pipeline_ops_ ; i++)
+        for(int i = 0 ; i < total_buffers_ ; i++)
         {
             delete rbuffer_[i];
         }
@@ -50,25 +51,39 @@ public:
    void run ()
    {
       // parameter decode
-      const WriteRequest::ReqParam & p = request_.decodeParam ();
+      WriteRequest::ReqParam & p = request_.decodeParam();
+
+      /* compute the total size of the transfers */
+      for (size_t i = 0; i < p.mem_count; i++)
+          total_bytes_ += p.mem_sizes[i];
+
       if (p.pipeline_size == 0)
+      {
+         /* this doesn't pipeline, but is a special case of the pipeline mode */
+         total_buffers_ = 1;
          runNormalMode(p);
+      }
       else
       {
-            /* compute the total size of the pipeline transfers */
-            for (size_t i = 0; i < p.mem_count; i++)
-                total_bytes_ += p.mem_sizes[i];
-
             /* compute the total number of concurrent pipeline ops */
-            total_pipeline_ops_ = (int)ceil(1.0 * total_bytes_ / bpool_->pipeline_size());
+            total_pipeline_ops_ = (int)ceil(1.0 * total_bytes_ / iofwd::BMIMemoryManager::instance().pipeline_size());
+            total_buffers_ = total_pipeline_ops_;
 
             computePipelineFileSegments(p);
 
             /* setup the rbuffer variable */
+            bool lastBufferIsPartial = (total_bytes_ % iofwd::BMIMemoryManager::instance().pipeline_size() == 0 ?  false : true);
             rbuffer_ = new RetrievedBuffer*[total_pipeline_ops_];
             for(int i = 0 ; i < total_pipeline_ops_ ; i++)
             {
-                rbuffer_[i] = new RetrievedBuffer();
+                if(lastBufferIsPartial && i + 1 == total_pipeline_ops_)
+                {
+                    rbuffer_[i] = new RetrievedBuffer(request_.getRequestAddr(), iofwdutil::bmi::BMI::ALLOC_RECEIVE, total_bytes_ % iofwd::BMIMemoryManager::instance().pipeline_size());
+                }
+                else
+                {
+                    rbuffer_[i] = new RetrievedBuffer(request_.getRequestAddr(), iofwdutil::bmi::BMI::ALLOC_RECEIVE, iofwd::BMIMemoryManager::instance().pipeline_size());
+                }
                 rbuffer_[i]->reinit();
             }
 
@@ -85,19 +100,21 @@ public:
    }
 
 private:
-   void runNormalMode(const WriteRequest::ReqParam & p);
+   void runNormalMode(WriteRequest::ReqParam & p);
    void runPipelineMode(const WriteRequest::ReqParam & p);
    void execPipelineIO(const WriteRequest::ReqParam & p);
    void computePipelineFileSegments(const WriteRequest::ReqParam & p);
    void getBMIBuffer(int index);
    void recvPipelineBuffer(int index);
    void postWrite(const WriteRequest::ReqParam & p, int index);
+   void runPostWriteCB(int status, BMIMemoryAlloc * buffer, iofwdevent::CBType cb);
 
    /* pipeline variables */
    size_t total_bytes_;
    size_t cur_recv_bytes_;
    size_t p_siz_;
    int total_pipeline_ops_;
+   int total_buffers_;
    RetrievedBuffer ** rbuffer_;
    iofwdevent::SingleCompletion ** pipeline_blocks_;
 
