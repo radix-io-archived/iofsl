@@ -1,8 +1,17 @@
 #include <memory>
 #include <boost/bind.hpp>
 
+#include "iofwdutil/LinkHelper.hh"
 #include "iofwdutil/tools.hh"
 #include "ZoidFSDefAsync.hh"
+
+
+
+GENERIC_FACTORY_CLIENT(std::string,
+      zoidfs::util::ZoidFSAsync,
+      zoidfs::util::ZoidFSDefAsync,
+      "defasync",
+      defasync);
 
 namespace zoidfs
 {
@@ -11,7 +20,6 @@ namespace zoidfs
 
    //=====================================================================
 
-       GENERIC_FACTORY_CLIENT(std::string,ZoidFSAsync,ZoidFSDefAsync,"defasync");
 
    int ZoidFSDefAsync::init(void)
    {

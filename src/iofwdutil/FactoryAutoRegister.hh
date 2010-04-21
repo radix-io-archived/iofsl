@@ -21,13 +21,5 @@ struct FactoryAutoRegister
    }
 };
 
-
-#define FACTORYAUTOREGISTER(KEYT,BASE,DERIVED,KEYVAL)\
-   static ::iofwdutil::FactoryAutoRegister<KEYT,BASE,DERIVED> fac##DERIVED (KEYVAL); \
-   void * LinkHelper_##DERIVED () { return &fac##DERIVED; }
-
-#define FACTORYLINKHELPER(KEYT,BASE,DERIVED) \
-   namespace { /* TODO */ }
-
 }
 #endif

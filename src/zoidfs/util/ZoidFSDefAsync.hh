@@ -21,9 +21,6 @@ namespace zoidfs
    class ZoidFSDefAsync : public ZoidFSAsync
    {
    public:
-      // Registers this client to a factory taking a std::string and returning
-      // a ZoidFSAsync object.
-      GENERIC_FACTORY_CLIENT_DECLARE(std::string,ZoidFSAsync,ZoidFSDefAsync);
 
       ZoidFSDefAsync (ZoidFSAPI & api)
          : api_(api)
