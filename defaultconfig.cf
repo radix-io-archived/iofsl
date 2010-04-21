@@ -97,7 +97,7 @@ requesthandler {
   //
   // bmi buffer pool options
   //
-  bmibufferpool {
+  bmimemorymanager {
     //
     // size of individual bmi buffers
     //  default: 0
