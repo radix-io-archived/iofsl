@@ -6,7 +6,6 @@
 
 #include "zoidfs-util.hh"
 #include "ZoidFSAPI.hh"
-#include "iofwdutil/completion/CompletionID.hh"
 #include "iofwdutil/workqueue/WorkItem.hh"
 #include "iofwdutil/workqueue/WorkQueue.hh"
 #include "iofwdutil/tools.hh"

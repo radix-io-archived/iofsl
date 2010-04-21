@@ -7,10 +7,6 @@
 
 namespace iofwdutil
 {
-   namespace completion
-   {
-      class CompletionID;
-   }
    namespace workqueue
    {
       class WorkQueue;
