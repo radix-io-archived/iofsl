@@ -2,7 +2,6 @@
 #define __IOFWD_TASKSM_TASKSMFACTORY_HH__
 
 #include <boost/function.hpp>
-#include "iofwd/BMIBufferPool.hh"
 #include "iofwd/BMIMemoryManager.hh"
 #include "sm/SMManager.hh"
 #include "iofwd/Request.hh"

@@ -5,7 +5,6 @@
 #include <vector>
 #include "iofwdutil/IOFWDLog.hh"
 #include "iofwd/RequestHandler.hh"
-#include "iofwd/BMIBufferPool.hh"
 #include "iofwd/BMIMemoryManager.hh"
 #include "iofwd/ThreadTasks.hh"
 #include "zoidfs/util/LogAPI.hh"

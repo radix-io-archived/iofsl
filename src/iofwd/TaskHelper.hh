@@ -3,7 +3,6 @@
 
 #include "Task.hh"
 #include "iofwdutil/completion/BMIResource.hh"
-#include "BMIBufferPool.hh"
 #include "iofwdevent/SingleCompletion.hh"
 
 namespace zoidfs
@@ -16,7 +15,6 @@ namespace iofwd
 {
 
 class RequestScheduler;
-class BufferPool;
 
 class ThreadTaskParam
 {

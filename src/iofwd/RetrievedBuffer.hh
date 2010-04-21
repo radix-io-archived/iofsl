@@ -1,7 +1,6 @@
 #ifndef __IOFWD_RETRIEVEDBUFFER_HH__
 #define __IOFWD_RETRIEVEDBUFFER_HH__
 
-#include "iofwd/BMIBufferPool.hh"
 #include "iofwd/BMIMemoryManager.hh"
 
 namespace iofwd

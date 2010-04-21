@@ -26,8 +26,6 @@ src_iofwd_iofwd_LDFLAGS = \
 src_iofwd_iofwd_SOURCES = \
 src/iofwd/FactoryHelper.hh \
 src/iofwd/FactoryHelper.cpp \
-src/iofwd/BufferPool.cpp \
-src/iofwd/BMIBufferPool.cpp \
 src/iofwd/DefRequestHandler.cpp \
 src/iofwd/IOFWDMain.cpp \
 src/iofwd/Range.cpp \
@@ -42,8 +40,6 @@ src/iofwd/Task.cpp \
 src/iofwd/ThreadTasks.cpp \
 src/iofwd/WriteTask.cpp \
 src/iofwd/iofwd.cpp \
-src/iofwd/BufferPool.hh \
-src/iofwd/BMIBufferPool.hh \
 src/iofwd/BMIMemoryManager.hh \
 src/iofwd/BMIMemoryManager.cpp \
 src/iofwd/CommitRequest.hh \

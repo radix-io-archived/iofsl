@@ -3,7 +3,6 @@
 #include "zoidfs/util/ZoidFSAsyncAPI.hh"
 #include "zoidfs/zoidfs-proto.h"
 #include "iofwd/RequestScheduler.hh"
-#include "iofwd/BMIBufferPool.hh"
 
 namespace iofwd
 {

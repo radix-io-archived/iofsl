@@ -4,7 +4,6 @@
 #include "IOFWDRequest.hh"
 #include "iofwd/ReadRequest.hh"
 #include "iofwdutil/bmi/BMI.hh"
-#include "iofwd/BMIBufferPool.hh"
 #include "iofwdutil/bmi/BMIBuffer.hh"
 #include "iofwdutil/InjectPool.hh"
 #include "iofwdutil/HybridAllocator.hh"
