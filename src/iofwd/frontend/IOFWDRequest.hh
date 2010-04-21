@@ -18,14 +18,11 @@
 
 #include "iofwd/Request.hh"
 #include "iofwdutil/typestorage.hh"
-#include "iofwdutil/completion/CompletionID.hh"
 
 #include "iofwdutil/completion/BMIResource.hh"
 
 #include "iofwdutil/IOFWDLog.hh"
 #include "IOFWDResources.hh"
-
-using iofwdutil::completion::CompletionID;
 
 namespace iofwd
 {
@@ -104,19 +101,6 @@ protected:
     * \brief Convenience function for simple requests that respond with only
     *        send back one message to the client.
     *
-    * \deprecated
-    */
-    template <typename SENDOP>
-   CompletionID * simpleReply (const SENDOP & op)
-   {
-      simpleReplyCommon (op);
-      return sendReply ();
-   }
-
-   /**
-    * \brief Convenience function for simple requests that respond with only
-    *        send back one message to the client.
-    *
     */
    template <typename SENDOP>
    void simpleReply (const iofwdevent::CBType & cb, const SENDOP & op)
@@ -167,20 +151,8 @@ protected:
    /// Start reply of at most maxsize data
    void beginReply (size_t maxsize);
 
-   /** 
-    * \brief Send the buffer in reply writer
-    *
-    * \deprecated
-    */
-   CompletionID * sendReply ();
-
    /// Send the buffer in reply writer
    void sendReply (const iofwdevent::CBType & cb);
-
-protected:
-   /// Send a reply back to the client; low-level function
-   CompletionID * ll_sendReply (const void * buf, size_t bufsize,
-         bmi_buffer_type);
 
 protected:
 

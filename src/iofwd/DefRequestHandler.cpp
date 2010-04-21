@@ -137,12 +137,10 @@ void DefRequestHandler::handleRequest (int count, Request ** reqs)
         else if(event_mode_ == EVMODE_TASK)
         {
             Task * task = (*taskfactory_) (reqs[i]);
-            iofwdutil::completion::CompletionID * id;
             if (task->isFast())
-                id = workqueue_fast_->queueWork (task);
+                workqueue_fast_->queueWork (task);
             else
-                id = workqueue_normal_->queueWork (task);
-            delete id;
+                workqueue_normal_->queueWork (task);
         }
     }
 

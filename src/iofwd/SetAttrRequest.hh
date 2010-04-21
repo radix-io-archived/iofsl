@@ -2,9 +2,6 @@
 #define IOFWD_SETATTRREQUEST_HH
 
 #include "Request.hh"
-#include "iofwdutil/completion/CompletionID.hh"
-
-// #include "SetAttrRequestSM.hh"
 
 namespace iofwd
 {

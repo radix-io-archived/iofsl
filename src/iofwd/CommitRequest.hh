@@ -3,7 +3,6 @@
 
 #include "Request.hh"
 #include "zoidfs/util/zoidfs-wrapped.hh"
-#include "iofwdutil/completion/CompletionID.hh"
 
 namespace iofwd
 {

@@ -2,9 +2,6 @@
 #define IOFWD_NULLREQUEST_HH
 
 #include "Request.hh"
-#include "iofwdutil/completion/CompletionID.hh"
-
-// #include "NullRequestSM.hh"
 
 namespace iofwd
 {

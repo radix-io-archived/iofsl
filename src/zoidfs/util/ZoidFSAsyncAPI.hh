@@ -40,7 +40,7 @@ public:
    }
    ~ZoidFSAsyncAPI();
 
-   iofwdutil::completion::CompletionID * async_write(
+   void async_write(
       const zoidfs_handle_t * handle,
       size_t mem_count,
       const void * mem_starts[],
@@ -50,7 +50,7 @@ public:
       uint64_t file_sizes[],
       zoidfs_op_hint_t * op_hint);
 
-   iofwdutil::completion::CompletionID * async_read(
+   void async_read(
       const zoidfs_handle_t * handle,
       size_t mem_count,
       void * mem_starts[],

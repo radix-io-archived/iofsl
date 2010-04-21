@@ -38,16 +38,6 @@ void IOFWDRequest::beginReply (size_t maxsize)
    reply_writer_.reset (buffer_send_.get(maxsize), maxsize);
 }
 
-CompletionID * IOFWDRequest::sendReply ()
-{
-   // beginReply allocated BMI mem
-   ZLOG_DEBUG_EXTREME (r_.log_, iofwdutil::format("Sending reply of %lu bytes (max bufsize = %lu bytes)")
-             % reply_writer_.size() % reply_writer_.getMaxSize());
-
-   return ll_sendReply (reply_writer_.getBuf(), reply_writer_.size(),
-         BMI_PRE_ALLOC);
-}
-
 void IOFWDRequest::sendReply (const iofwdevent::CBType & cb)
 {
    ZLOG_DEBUG_EXTREME (r_.log_, iofwdutil::format("Sending reply of %lu bytes (max bufsize = %lu bytes)")
@@ -72,16 +62,6 @@ void IOFWDRequest::sendReply (const iofwdevent::CBType & cb)
 void IOFWDRequest::freeRawRequest ()
 {
    raw_request_.free ();
-}
-
-inline CompletionID * IOFWDRequest::ll_sendReply (const void * buf, size_t bufsize,
-      bmi_buffer_type type)
-{
-   // Server replies with same tag
-
-   iofwdutil::completion::BMICompletionID * id = new iofwdutil::completion::BMICompletionID ();
-   bmires_.postSend (id, addr_, buf, bufsize, type, tag_, 0);
-   return id;
 }
 
 //===========================================================================

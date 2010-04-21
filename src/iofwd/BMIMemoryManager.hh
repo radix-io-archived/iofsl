@@ -3,7 +3,6 @@
 
 #include <deque>
 #include <boost/thread.hpp>
-#include <iofwdutil/completion/CompletionID.hh>
 #include "iofwdutil/bmi/BMIBuffer.hh"
 #include "iofwdutil/bmi/BMIAddr.hh"
 #include "iofwdutil/bmi/BMI.hh"

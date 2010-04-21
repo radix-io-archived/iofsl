@@ -98,7 +98,7 @@ ZoidFSAsyncAPI::~ZoidFSAsyncAPI()
    }
 }
 
-iofwdutil::completion::CompletionID * ZoidFSAsyncAPI::async_write(
+void ZoidFSAsyncAPI::async_write(
    const zoidfs_handle_t * handle,
    size_t mem_count,
    const void * mem_starts[],
@@ -110,10 +110,10 @@ iofwdutil::completion::CompletionID * ZoidFSAsyncAPI::async_write(
 {
    AsyncWriteTask * task = new AsyncWriteTask (api_, handle,
       mem_count, mem_starts, mem_sizes, file_count, file_starts, file_sizes, op_hint);
-   return q_->queueWork (task);
+   q_->queueWork (task);
 }
 
-iofwdutil::completion::CompletionID * ZoidFSAsyncAPI::async_read(
+void ZoidFSAsyncAPI::async_read(
    const zoidfs_handle_t * handle,
    size_t mem_count,
    void * mem_starts[],
@@ -125,7 +125,7 @@ iofwdutil::completion::CompletionID * ZoidFSAsyncAPI::async_read(
 {
    AsyncReadTask * task = new AsyncReadTask (api_, handle,
       mem_count, mem_starts, mem_sizes, file_count, file_starts, file_sizes, op_hint);
-   return q_->queueWork (task);
+   q_->queueWork (task);
 }
 
 //===========================================================================

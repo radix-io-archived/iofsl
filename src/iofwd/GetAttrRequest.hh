@@ -2,9 +2,6 @@
 #define IOFWD_GETATTRREQUEST_HH
 
 #include "Request.hh"
-#include "iofwdutil/completion/CompletionID.hh"
-
-// #include "GetAttrRequestSM.hh"
 
 namespace iofwd
 {

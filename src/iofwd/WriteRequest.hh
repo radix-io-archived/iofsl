@@ -18,7 +18,6 @@ namespace iofwd
     *
     *  cannot be here.
     *
-    *  @TODO Remove CompletionID * stuff
     */
 class WriteRequest : public Request
 {
