@@ -25,7 +25,8 @@ void ReadTask::runNormalMode(ReadRequest::ReqParam & p)
 
    // issue the read request
    block_.reset();
-   sched_->enqueueReadCB(block_, p.handle, (size_t)p.mem_count, (void**)p.mem_starts, p.mem_sizes, p.file_starts, p.file_sizes, p.op_hint);
+   sched_->read(block_, p.handle, (size_t)p.mem_count, (void**)p.mem_starts,
+         p.mem_sizes, p.file_starts, p.file_sizes, p.op_hint);
    block_.wait();
 
    request_.setReturnCode(zoidfs::ZFS_OK); /* TODO: pass back the actual return value */
@@ -320,7 +321,7 @@ void ReadTask::postRead(const ReadRequest::ReqParam & p, int index)
     rbuffer_[index]->ret = ret;
 
     /* enqueue the read */
-    sched_->enqueueReadCB (
+    sched_->read (
         *(pipeline_blocks_[index]), p.handle, p_file_count, (void**)mem_starts, mem_sizes,
         file_starts, file_sizes, p.op_hint);
 }

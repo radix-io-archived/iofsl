@@ -41,8 +41,12 @@ static void check_ranges(const vector<ChildRange *>& rs)
   }
 }
 
-RequestScheduler::RequestScheduler(zoidfs::ZoidFSAsyncAPI * async_api, zoidfs::util::ZoidFSAsync * async_cb_api, const iofwdutil::ConfigFile & c, int mode)
-  : log_(IOFWDLog::getSource()), exiting_(false), async_api_(async_api), async_cb_api_(async_cb_api), mode_(mode), schedActive_(false)
+RequestScheduler::RequestScheduler(zoidfs::ZoidFSAsyncAPI * async_api,
+      zoidfs::util::ZoidFSAsync * async_cb_api, const iofwdutil::ConfigFile &
+      c, int mode)
+  : ZoidFSAsyncPT(async_cb_api),
+    log_(IOFWDLog::getSource()), exiting_(false), async_api_(async_api),
+    async_cb_api_(async_cb_api), mode_(mode), schedActive_(false)
 {
   RangeScheduler * rsched;
   char * sched_algo = new char[c.getKeyDefault("schedalgo", "fifo").size() + 1];
@@ -86,7 +90,7 @@ RequestScheduler::~RequestScheduler()
 
 }
 
-void RequestScheduler::enqueueWriteCB(
+void RequestScheduler::write(
   iofwdevent::CBType cb, zoidfs::zoidfs_handle_t * handle, size_t count,
   const void ** mem_starts, size_t * mem_sizes,
   uint64_t * file_starts, uint64_t * file_sizes, zoidfs::zoidfs_op_hint_t * op_hint)
@@ -126,7 +130,7 @@ void RequestScheduler::enqueueWriteCB(
 #endif
 }
 
-void RequestScheduler::enqueueReadCB(
+void RequestScheduler::read(
   iofwdevent::CBType cb, zoidfs::zoidfs_handle_t * handle, size_t count,
   void ** mem_starts, size_t * mem_sizes,
   uint64_t * file_starts, uint64_t * file_sizes, zoidfs::zoidfs_op_hint_t * op_hint)

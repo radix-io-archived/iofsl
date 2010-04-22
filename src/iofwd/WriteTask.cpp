@@ -37,7 +37,9 @@ void WriteTask::runNormalMode(WriteRequest::ReqParam & p)
 
    /* issue the write */
    block_.reset();
-   sched_->enqueueWriteCB((block_), p.handle, (size_t)p.mem_count, (const void**)p.mem_starts, p.mem_sizes, p.file_starts, p.file_sizes, p.op_hint);
+   sched_->write((block_), p.handle, (size_t)p.mem_count, (const
+            void**)p.mem_starts, p.mem_sizes, p.file_starts, p.file_sizes,
+         p.op_hint);
    block_.wait();
 
    /* deallocate the buffer */
@@ -291,7 +293,7 @@ void WriteTask::postWrite(const WriteRequest::ReqParam & p, int index)
             this, _1, rbuffer_[index]->buffer, pcb);
 
     /* enqueue the write */
-    sched_->enqueueWriteCB (
+    sched_->write (
         boost::bind(bmmCB, 0), p.handle, p_file_count, (const void**)mem_starts, mem_sizes,
         file_starts, file_sizes, p.op_hint);
 }

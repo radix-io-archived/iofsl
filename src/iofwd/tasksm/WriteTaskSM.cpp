@@ -51,7 +51,9 @@ namespace iofwd
     void WriteTaskSM::writeNormal()
     {
 #if SIZEOF_SIZE_T == SIZEOF_INT64_T
-        sched_->enqueueWriteCB(slots_[WRITE_SLOT], p.handle, (size_t)p.mem_count, (const void**)p.mem_starts, p.mem_sizes, p.file_starts, p.file_sizes, p.op_hint);
+        sched_->write(slots_[WRITE_SLOT], p.handle, (size_t)p.mem_count,
+              (const void**)p.mem_starts, p.mem_sizes, p.file_starts,
+              p.file_sizes, p.op_hint);
 #else
         sched_->enqueueWriteCB(slots_[WRITE_SLOT], p.handle, (size_t)p.mem_count, (const void**)p.mem_starts, p.mem_sizes, p.file_starts, p.file_sizes, p.op_hint);
 #endif
@@ -186,7 +188,7 @@ namespace iofwd
         if((mode_ & WRITESM_SERIAL_IO_PIPELINE) == 0)
         {
             /* enqueue the write */
-            sched_->enqueueWriteCB (
+            sched_->write (
                 slots_[WRITE_SLOT], p.handle, p_file_count, (const void**)mem_starts, mem_sizes,
                 file_starts, file_sizes, p.op_hint);
 
@@ -211,7 +213,7 @@ namespace iofwd
         }
 
         /* enqueue the write */
-        sched_->enqueueWriteCB (
+        sched_->write (
             slots_[my_slot], p.handle, p_file_count, (const void**)mem_starts, mem_sizes,
             file_starts, file_sizes, p.op_hint);
 

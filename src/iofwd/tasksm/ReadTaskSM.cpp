@@ -9,6 +9,8 @@ namespace iofwd
     namespace tasksm
     {
 
+       // @TODO: sched should be ZoidFSAsync *, not RequestScheduler *
+       
     ReadTaskSM::ReadTaskSM(sm::SMManager & smm, RequestScheduler * sched, Request * p)
         : sm::SimpleSM<ReadTaskSM>(smm), sched_(sched), request_((static_cast<ReadRequest&>(*p))), slots_(*this),
           total_bytes_(0), cur_sent_bytes_(0), p_siz_(0), total_pipeline_ops_(0), total_buffers_(0),
@@ -49,7 +51,9 @@ namespace iofwd
     void ReadTaskSM::readNormal()
     {
 #if SIZEOF_SIZE_T == SIZEOF_INT64_T
-        sched_->enqueueReadCB(slots_[READ_SLOT], p.handle, (size_t)p.mem_count, (void**)p.mem_starts, p.mem_sizes, p.file_starts, p.file_sizes, p.op_hint);
+        sched_->read (slots_[READ_SLOT], p.handle, (size_t)p.mem_count,
+              (void**)p.mem_starts, p.mem_sizes, p.file_starts, p.file_sizes,
+              p.op_hint);
 #else
         sched_->enqueueReadCB(slots_[READ_SLOT], p.handle, (size_t)p.mem_count, (void**)p.mem_starts, p.mem_sizes, p.file_starts, p.file_sizes, p.op_hint);
 #endif
@@ -184,7 +188,7 @@ namespace iofwd
     if((mode_ & READSM_SERIAL_IO_PIPELINE) == 0)
     {
         /* enqueue the write */
-        sched_->enqueueReadCB (
+        sched_->read (
             slots_[READ_SLOT], p.handle, p_file_count, (void**)mem_starts, mem_sizes,
             file_starts, file_sizes, p.op_hint);
 
@@ -209,7 +213,7 @@ namespace iofwd
         }
 
         /* enqueue the write */
-        sched_->enqueueReadCB (
+        sched_->read (
             slots_[my_slot], p.handle, p_file_count, (void**)mem_starts, mem_sizes,
             file_starts, file_sizes, p.op_hint);
 

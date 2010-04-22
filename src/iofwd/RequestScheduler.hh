@@ -15,6 +15,7 @@
 #include "iofwdevent/CBType.hh"
 #include "iofwdutil/tools.hh"
 #include "sm/SimpleSlots.hh"
+#include "zoidfs/util/ZoidFSAsyncPT.hh"
 
 namespace zoidfs {
   class ZoidFSAsyncAPI;
@@ -27,18 +28,18 @@ class WriteRequest;
 class ReadRequest;
 class RangeScheduler;
 
-class RequestScheduler
+class RequestScheduler : public zoidfs::util::ZoidFSAsyncPT
 {
 public:
   RequestScheduler(zoidfs::ZoidFSAsyncAPI * async_api, zoidfs::util::ZoidFSAsync * async_cb_api, const iofwdutil::ConfigFile & c, int mode);
   virtual ~RequestScheduler();
 
-  void enqueueWriteCB(
+  void write(
      iofwdevent::CBType cb, zoidfs::zoidfs_handle_t * handle, size_t count,
      const void ** mem_starts, size_t * mem_sizes,
      uint64_t * file_starts, uint64_t * file_sizes, zoidfs::zoidfs_op_hint_t * op_hint);
 
-  void enqueueReadCB(
+  void read(
      iofwdevent::CBType cb, zoidfs::zoidfs_handle_t * handle, size_t count,
      void ** mem_starts, size_t * mem_sizes,
      uint64_t * file_starts, uint64_t * file_sizes, zoidfs::zoidfs_op_hint_t * op_hint);
