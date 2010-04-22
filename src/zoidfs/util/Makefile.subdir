@@ -11,6 +11,8 @@ src_zoidfs_libzoidfs_util_a_LIBLDFLAGS = \
 #    ${top_builddir}/src/zoidfs/libzoidfshints.a
 
 src_zoidfs_libzoidfs_util_a_SOURCES = \
+src/zoidfs/util/ZoidFSAsyncPT.cpp \
+src/zoidfs/util/ZoidFSAsyncPT.hh \
 src/zoidfs/util/zoidfs-c-util.h \
 src/zoidfs/util/zoidfs-c-util.c \
 src/zoidfs/util/LogAPI.cpp \
