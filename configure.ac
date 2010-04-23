@@ -136,6 +136,7 @@ AC_HEADER_STDC
 AC_CHECK_HEADERS([stdlib.h string.h unistd.h execinfo.h pthread.h])
 
 
+# note that we should be using the C++ boost inttypes header instead.
 # Checks for typedefs, structures, and compiler characteristics.
 AC_C_CONST
 AC_C_INLINE
@@ -531,6 +532,25 @@ AX_BOOST_DATE_TIME
 AX_BOOST_UNIT_TEST_FRAMEWORK
 
 AX_BOOST_SPIRIT_OLD
+
+dnl =========================================================================
+dnl  gcc attribute support
+dnl =========================================================================
+
+AC_CACHE_CHECK([whether __attribute__ allowed],
+pac_cv_gnu_attr_unused,[
+AC_TRY_COMPILE([int foo(int) __attribute__ ((unused));],[int a;],
+pac_cv_gnu_attr_unused=yes,pac_cv_gnu_attr_unused=no)])
+
+dnl AC_CACHE_CHECK([whether __attribute__((format)) allowed],
+dnl pac_cv_gnu_attr_format,[
+dnl AC_TRY_COMPILE([int foo(char *,...) __attribute__ ((format(printf,1,2)));],[int a;],
+dnl pac_cv_gnu_attr_format=yes,pac_cv_gnu_attr_format=no)])
+
+if test "$pac_cv_gnu_attr_unused" = "yes" ; then
+    AC_DEFINE(HAVE_GCC_ATTRIBUTE_UNUSED,[1],
+              [Define if GNU __attribute__ unused is supported])
+fi
 
 dnl =========================================================================
 dnl  Valgrind
