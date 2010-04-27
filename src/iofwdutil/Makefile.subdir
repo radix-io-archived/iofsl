@@ -101,6 +101,7 @@ src/iofwdutil/ConfigContainer.hh \
 src/iofwdutil/ConfigFile.hh \
 src/iofwdutil/HybridAllocator.hh \
 src/iofwdutil/IOFWDLog.hh \
+src/iofwdutil/IOFWDLog-fwd.hh \
 src/iofwdutil/IntrusiveHelper.hh \
 src/iofwdutil/Singleton.hh \
 src/iofwdutil/TimeVal.hh \
