@@ -217,7 +217,7 @@ int zint_set_handler_options(ConfigHandle c, SectionHandle s);
 int zint_finalize_handlers ();
 
 /* setup handlers based on user args */
-int zint_setup_handlers(int n, char * args[]);
+int zint_setup_handlers(int n, const char * args[]);
 
 #ifdef __cplusplus
     } /* extern "C" */
