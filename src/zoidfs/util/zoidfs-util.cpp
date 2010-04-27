@@ -1,3 +1,4 @@
+#include <string>
 #include <boost/format.hpp>
 #include "iofwdutil/assert.hh"
 #include "zoidfs-util.hh"
@@ -7,7 +8,52 @@ using namespace boost;
 
 namespace zoidfs
 {
-//===========================================================================
+   //===========================================================================
+
+   typedef struct 
+   {
+      int               code;
+      const char *      desc;
+   } ErrorLookup;
+
+#define ZFSERROR(a) { a, #a }
+
+   static ErrorLookup zfserrors[] = { 
+      ZFSERROR(ZFS_OK),
+      ZFSERROR(ZFSERR_PERM),
+      ZFSERROR(ZFSERR_NOENT),
+      ZFSERROR(ZFSERR_IO),
+      ZFSERROR(ZFSERR_NXIO),
+      ZFSERROR(ZFSERR_NOMEM),
+      ZFSERROR(ZFSERR_ACCES),
+      ZFSERROR(ZFSERR_EXIST),
+      ZFSERROR(ZFSERR_NODEV),
+      ZFSERROR(ZFSERR_NOTDIR),
+      ZFSERROR(ZFSERR_ISDIR),
+      ZFSERROR(ZFSERR_INVAL),
+      ZFSERROR(ZFSERR_FBIG),
+      ZFSERROR(ZFSERR_NOSPC),
+      ZFSERROR(ZFSERR_ROFS),
+      ZFSERROR(ZFSERR_NOTIMPL),
+      ZFSERROR(ZFSERR_NAMETOOLONG),
+      ZFSERROR(ZFSERR_NOTEMPTY),
+      ZFSERROR(ZFSERR_DQUOT),
+      ZFSERROR(ZFSERR_STALE),
+      ZFSERROR(ZFSERR_WFLUSH),
+      ZFSERROR(ZFSERR_OTHER)
+   };
+
+#undef ZFSERROR
+
+   std::string zfserror2string (int ret)
+   {
+      for (size_t i = 0; i<sizeof(zfserrors)/sizeof(zfserrors[0]); ++i)
+      {
+         if (zfserrors[i].code == ret)
+            return std::string(zfserrors[i].desc);
+      }
+      return std::string (str(format("Unknown ZFS error ('%i')") % ret));
+   }
 
    std::string handle2string (const zoidfs_handle_t  * handle)
    {
@@ -47,5 +93,5 @@ namespace zoidfs
             (parent_handle) % safestring(component) % safestring(full_path));
    }
 
-//===========================================================================
+   //===========================================================================
 }

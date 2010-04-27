@@ -6,7 +6,7 @@
 
 namespace zoidfs
 {
-
+   std::string zfserror2string (int ret);
 
    std::string handle2string (const zoidfs_handle_t * handle);
 
