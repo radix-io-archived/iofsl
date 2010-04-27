@@ -26,9 +26,15 @@ public:
    {
        const RemoveRequest::ReqParam & p = request_.decodeParam ();
        zoidfs::zoidfs_cache_hint_t hint;
-       int ret = api_->remove (p.parent_handle, p.component_name,
+       int ret;
+
+       api_->remove (block_, &ret, p.parent_handle, p.component_name,
                                p.full_path, &hint, p.op_hint);
+       block_.wait ();
+
        request_.setReturnCode (ret);
+
+       block_.reset();
        request_.reply ((block_), (ret  == zoidfs::ZFS_OK ? &hint : 0));
        block_.wait ();
    }

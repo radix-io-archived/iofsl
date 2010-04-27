@@ -1,20 +1,16 @@
 #include "iofwd/tasksm/ReadTaskSM.hh"
-#include "zoidfs/util/ZoidFSAPI.hh"
-#include "zoidfs/util/ZoidFSAsyncAPI.hh"
 #include "zoidfs/zoidfs-proto.h"
-#include "iofwd/RequestScheduler.hh"
 
 namespace iofwd
 {
     namespace tasksm
     {
 
-       // @TODO: sched should be ZoidFSAsync *, not RequestScheduler *
-       
-    ReadTaskSM::ReadTaskSM(sm::SMManager & smm, RequestScheduler * sched, Request * p)
-        : sm::SimpleSM<ReadTaskSM>(smm), sched_(sched), request_((static_cast<ReadRequest&>(*p))), slots_(*this),
+    ReadTaskSM::ReadTaskSM(sm::SMManager & smm, zoidfs::util::ZoidFSAsync * api, Request * p)
+        : sm::SimpleSM<ReadTaskSM>(smm), api_(api), request_((static_cast<ReadRequest&>(*p))), slots_(*this),
           total_bytes_(0), cur_sent_bytes_(0), p_siz_(0), total_pipeline_ops_(0), total_buffers_(0),
-          io_ops_done_(0), cw_post_index_(0), rbuffer_(NULL), mode_(READSM_SERIAL_IO_PIPELINE)
+          io_ops_done_(0), cw_post_index_(0), rbuffer_(NULL), mode_(READSM_SERIAL_IO_PIPELINE),
+          ret_(zoidfs::ZFS_OK)
     {
     }
 
@@ -51,11 +47,12 @@ namespace iofwd
     void ReadTaskSM::readNormal()
     {
 #if SIZEOF_SIZE_T == SIZEOF_INT64_T
-        sched_->read (slots_[READ_SLOT], p.handle, (size_t)p.mem_count,
-              (void**)p.mem_starts, p.mem_sizes, p.file_starts, p.file_sizes,
+        api_->read (slots_[READ_SLOT], &ret_, p.handle, p.mem_count,
+              (void**)p.mem_starts, p.mem_sizes, p.file_count, p.file_starts, p.file_sizes,
               p.op_hint);
 #else
-        sched_->enqueueReadCB(slots_[READ_SLOT], p.handle, (size_t)p.mem_count, (void**)p.mem_starts, p.mem_sizes, p.file_starts, p.file_sizes, p.op_hint);
+        api_->read(slots_[READ_SLOT], &ret_, p.handle, p.mem_count, (void**)p.mem_starts, p.mem_sizes,
+              p.file_count, p.file_starts, p.file_sizes, p.op_hint);
 #endif
 
         /* set the callback */
@@ -188,9 +185,9 @@ namespace iofwd
     if((mode_ & READSM_SERIAL_IO_PIPELINE) == 0)
     {
         /* enqueue the write */
-        sched_->read (
-            slots_[READ_SLOT], p.handle, p_file_count, (void**)mem_starts, mem_sizes,
-            file_starts, file_sizes, p.op_hint);
+        api_->read (
+            slots_[READ_SLOT], &ret_, p.handle, p_file_count, (void**)mem_starts, mem_sizes,
+            p_file_count, file_starts, file_sizes, p.op_hint);
 
         /* issue the serial wait */
         slots_.wait(READ_SLOT, &ReadTaskSM::waitPipelineEnqueueRead);
@@ -213,9 +210,9 @@ namespace iofwd
         }
 
         /* enqueue the write */
-        sched_->read (
-            slots_[my_slot], p.handle, p_file_count, (void**)mem_starts, mem_sizes,
-            file_starts, file_sizes, p.op_hint);
+        api_->read (
+            slots_[my_slot], &ret_, p.handle, p_file_count, (void**)mem_starts, mem_sizes,
+            p_file_count, file_starts, file_sizes, p.op_hint);
 
 
         /* go to the next state depending on the current pipeline stage */

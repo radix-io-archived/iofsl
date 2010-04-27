@@ -1,10 +1,11 @@
 #ifndef __ZOIDFS_UTIL_ZOIDFSASYNC_HH__
 #define __ZOIDFS_UTIL_ZOIDFSASYNC_HH__
 
+#include <boost/mpl/list.hpp>  // for factory
+
 #include "zoidfs-wrapped.hh"
 #include "iofwdevent/CBType.hh"
 #include "ZoidFSAPI.hh"
-#include <boost/mpl/list.hpp>  // for factory
 
 
 namespace zoidfs
@@ -20,7 +21,7 @@ class ZoidFSAsync
 {
    public:
       // ZoidFSAsync derived classes don't need extra constructor parameters
-      typedef boost::mpl::list<zoidfs::ZoidFSAPI &> FACTORY_SIGNATURE;
+      typedef boost::mpl::list<> FACTORY_SIGNATURE;
 
       virtual int init(void) =0;
 
@@ -54,8 +55,8 @@ class ZoidFSAsync
             void * mem_starts[],
             const size_t mem_sizes[],
             size_t file_count,
-            const uint64_t file_starts[],
-            uint64_t file_sizes[],
+            const zoidfs_file_ofs_t file_starts[],
+            zoidfs_file_size_t file_sizes[],
             zoidfs_op_hint_t * hint) =0;
 
       virtual void write(const iofwdevent::CBType & cb, int * ret, const zoidfs_handle_t * handle,
@@ -63,8 +64,8 @@ class ZoidFSAsync
             const void * mem_starts[],
             const size_t mem_sizes[],
             size_t file_count,
-            const uint64_t file_starts[],
-            uint64_t file_sizes[],
+            const zoidfs_file_ofs_t file_starts[],
+            zoidfs_file_size_t file_sizes[],
             zoidfs_op_hint_t * hint) =0;
 
       virtual void commit(const iofwdevent::CBType & cb, int * ret, const zoidfs_handle_t * handle,
@@ -132,7 +133,7 @@ class ZoidFSAsync
             zoidfs_op_hint_t * hint) =0;
 
       virtual void resize(const iofwdevent::CBType & cb, int * ret, const zoidfs_handle_t * handle,
-            uint64_t size,
+            zoidfs_file_size_t size,
             zoidfs_op_hint_t * hint) =0;
    public:
       virtual ~ZoidFSAsync ();

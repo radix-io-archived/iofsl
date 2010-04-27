@@ -4,14 +4,18 @@
 #include "zoidfs/util/ZoidFSDefAsync.hh"
 
 GENERIC_FACTORY_CLIENT_REGISTER(defasync);
-
-int test;
+GENERIC_FACTORY_CLIENT_REGISTER(zoidfs);
+GENERIC_FACTORY_CLIENT_REGISTER(log);
+GENERIC_FACTORY_CLIENT_REGISTER(syncadapter);
 
 namespace iofwd
 {
    void registerFactoryClients ()
    {
       GENERIC_FACTORY_CLIENT_CALL(defasync);
+      GENERIC_FACTORY_CLIENT_CALL(zoidfs);
+      GENERIC_FACTORY_CLIENT_CALL(log);
+      GENERIC_FACTORY_CLIENT_CALL(syncadapter);
    }
 }
 

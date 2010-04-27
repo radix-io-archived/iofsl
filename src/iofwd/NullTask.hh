@@ -31,8 +31,13 @@ public:
    void run ()
    {
       // Call the ZOIDFS_NULL function and store the return code.
-      request_.setReturnCode (api_->null ());
+      int ret;
+      api_->null (block_, &ret);
+      block_.wait ();
 
+      request_.setReturnCode (ret);
+
+      block_.reset();
       request_.reply ((block_));
       block_.wait ();
    }

@@ -21,5 +21,16 @@ struct FactoryAutoRegister
    }
 };
 
+#define F_TOKENPASTE(x, y) x ## y
+#define F_TOKENPASTE2(x, y) F_TOKENPASTE(x, y)
+#define F_UNIQUE(a) F_TOKENPASTE2(a, __LINE__)
+
+
+#define FACTORYAUTOREGISTER(key,base,derived,name) \
+   namespace { \
+      static iofwdutil::FactoryAutoRegister<key,base,derived> \
+      F_UNIQUE(autoreg_) (name); \
+   }
+
 }
 #endif

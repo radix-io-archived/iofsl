@@ -3,6 +3,8 @@
 
 #include <memory>
 #include <vector>
+#include <boost/scoped_ptr.hpp>
+
 #include "iofwdutil/IOFWDLog.hh"
 #include "iofwd/RequestHandler.hh"
 #include "iofwd/BMIMemoryManager.hh"
@@ -21,11 +23,6 @@ namespace iofwdutil
       class WorkQueue;
       class WorkItem;
    }
-}
-
-namespace zoidfs
-{
-   class ZoidFSAsyncAPI;
 }
 
 namespace iofwd
@@ -54,22 +51,20 @@ public:
 protected:
    iofwdutil::IOFWDLogSource & log_;
 
-   std::auto_ptr<iofwdutil::workqueue::WorkQueue> workqueue_normal_;
-   std::auto_ptr<iofwdutil::workqueue::WorkQueue> workqueue_fast_;
+   boost::scoped_ptr<iofwdutil::workqueue::WorkQueue> workqueue_normal_;
+   boost::scoped_ptr<iofwdutil::workqueue::WorkQueue> workqueue_fast_;
 
    /// Holds completed requests until they are freed
    std::vector<iofwdutil::workqueue::WorkItem *> completed_;
 
    /// Associates request with a task
-   std::auto_ptr<ThreadTasks> taskfactory_;
+   boost::scoped_ptr<ThreadTasks> taskfactory_;
 
    // state machine factory
-   std::auto_ptr<iofwd::tasksm::TaskSMFactory> taskSMFactory_;
+   boost::scoped_ptr<iofwd::tasksm::TaskSMFactory> taskSMFactory_;
 
-   /// API
-   zoidfs::LogAPI api_;
-   zoidfs::ZoidFSAsyncAPI * async_api_;
-   zoidfs::util::ZoidFSAsync * async_api_full_;
+   /// Async API
+   boost::scoped_ptr<zoidfs::util::ZoidFSAsync> api_;
 
    /// Scheduler
    RequestScheduler * sched_;
@@ -77,7 +72,7 @@ protected:
    // config file
    const iofwdutil::ConfigFile & config_;
 
-   sm::SMManager smm;
+   sm::SMManager smm_;
 
    enum{EVMODE_TASK = 0, EVMODE_SM};
    int event_mode_;

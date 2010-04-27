@@ -20,7 +20,6 @@ src/zoidfs/util/zoidfs-c-util.c \
 src/zoidfs/util/LogAPI.cpp \
 src/zoidfs/util/NullAPI.cpp \
 src/zoidfs/util/ZoidFSAPI.cpp \
-src/zoidfs/util/ZoidFSAsyncAPI.cpp \
 src/zoidfs/util/ZoidFSAsync.cpp \
 src/zoidfs/util/ZoidFSDefAsync.cpp \
 src/zoidfs/util/ZoidFSSync.cpp \
@@ -31,7 +30,6 @@ src/zoidfs/util/LogAPI.hh \
 src/zoidfs/util/NullAPI.hh \
 src/zoidfs/util/ThreadPool.hh \
 src/zoidfs/util/ZoidFSAPI.hh \
-src/zoidfs/util/ZoidFSAsyncAPI.hh \
 src/zoidfs/util/ZoidFSAsync.hh \
 src/zoidfs/util/ZoidFSDefAsync.hh \
 src/zoidfs/util/ZoidFSSync.hh \

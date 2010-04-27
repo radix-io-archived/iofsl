@@ -24,7 +24,7 @@ public:
    {
       zoidfs::zoidfs_handle_t * handle;
       size_t mem_count;
-      char ** mem_starts;
+      void ** mem_starts;
       size_t * mem_sizes;
       bmi_size_t * bmi_mem_sizes;
       size_t file_count;

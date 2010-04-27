@@ -31,7 +31,7 @@ namespace iofwd
 class ReadTaskSM : public sm::SimpleSM< ReadTaskSM >, public iofwdutil::InjectPool< ReadTaskSM >
 {
     public:
-        ReadTaskSM(sm::SMManager & smm, RequestScheduler * sched, Request * r);
+        ReadTaskSM(sm::SMManager & smm, zoidfs::util::ZoidFSAsync * api, Request * r);
         ~ReadTaskSM();
 
         void init(int UNUSED(status))
@@ -211,7 +211,7 @@ class ReadTaskSM : public sm::SimpleSM< ReadTaskSM >, public iofwdutil::InjectPo
         /* @TODO currently set the concurrent pipeline op count to 128... this should be dynamic or tunable */
         enum {READ_SLOT = 0, READ_PIPEOP_START, NUM_READ_SLOTS = 129};
         ReadRequest::ReqParam p;
-        RequestScheduler * sched_;
+        zoidfs::util::ZoidFSAsync * api_;
         ReadRequest & request_;
         sm::SimpleSlots<NUM_READ_SLOTS, iofwd::tasksm::ReadTaskSM> slots_;
 
@@ -234,6 +234,8 @@ class ReadTaskSM : public sm::SimpleSM< ReadTaskSM >, public iofwdutil::InjectPo
         std::vector<size_t> p_mem_offsets;
         std::vector<int> p_segments;
         std::vector<int> p_segments_start;
+
+        int ret_;
 };
     }
 }

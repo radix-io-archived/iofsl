@@ -11,8 +11,6 @@ class LinkHelperDerived : public LinkHelperBase
 {
    public:
       virtual bool returnTrue () const;
-
-      GENERIC_FACTORY_CLIENT_DECLARE(size_t,LinkHelperBase,LinkHelperDerived);
 };
 
 }

@@ -1,11 +1,15 @@
 #include <memory>
 #include <boost/bind.hpp>
+#include <boost/scoped_ptr.hpp>
+#include <boost/format.hpp>
 
 #include "iofwdutil/LinkHelper.hh"
 #include "iofwdutil/tools.hh"
 #include "ZoidFSDefAsync.hh"
+#include "iofwdutil/ConfigFile.hh"
+#include "zoidfs/util/ZoidFSAPI.hh"
 
-
+using boost::format;
 
 GENERIC_FACTORY_CLIENT(std::string,
       zoidfs::util::ZoidFSAsync,
@@ -23,17 +27,54 @@ namespace zoidfs
 
    int ZoidFSDefAsync::init(void)
    {
-      return 1;
+      return api_->init ();
    }
 
    int ZoidFSDefAsync::finalize(void)
    {
-      return 1;
+      return api_->finalize ();
    }
+
+   void ZoidFSDefAsync::configure (const iofwdutil::ConfigFile & config)
+   {
+      // Try to get the name of the blocking zoidfs API
+      std::string apiname = config.getKeyDefault ("blocking_api", "zoidfs");
+      ZLOG_INFO (log_, format("Using blocking API '%s'") % apiname);
+
+      // @TODO: get blocking API through factory here
+      try
+      {
+      api_.reset (iofwdutil::Factory<
+                        std::string,
+                        zoidfs::util::ZoidFSAPI>::construct (apiname)());
+      }
+      catch (iofwdutil::FactoryException & e)
+      {
+         ZLOG_ERROR(log_, format("Could not instantiate blocking API '%s'!") %
+               apiname);
+         // TODO: translate exception?
+         throw;
+      }
+
+      wait_for_threads_ = config.getKeyAsDefault<bool>("use_thread_pool", false);
+      if (wait_for_threads_)
+      {
+         ZLOG_INFO(log_, "Using thread pool...");
+      }
+      else
+      {
+         ZLOG_INFO(log_, "Not using thread pool...");
+      }
+
+      // Configure blocking api_
+      Configurable::configure_if_needed (api_.get(),
+            config.openSectionDefault(apiname.c_str()));
+   }
+
 
    void ZoidFSDefAsync::null(const iofwdevent::CBType & cb, int * ret)
    {
-      addWork (cb, ret, boost::bind(&ZoidFSAPI::null, boost::ref(api_)));
+      addWork (cb, ret, boost::bind(&ZoidFSAPI::null, boost::ref(*api_)));
    }
 
 
@@ -41,7 +82,7 @@ namespace zoidfs
          zoidfs_attr_t * attr,
          zoidfs_op_hint_t * op_hint)
    {
-      addWork (cb, ret, boost::bind(&ZoidFSAPI::getattr, boost::ref(api_), handle, attr,
+      addWork (cb, ret, boost::bind(&ZoidFSAPI::getattr, boost::ref(*api_), handle, attr,
                op_hint));
    }
 
@@ -51,7 +92,7 @@ namespace zoidfs
          zoidfs_attr_t * attr,
          zoidfs_op_hint_t * hint)
    {
-      addWork (cb, ret, boost::bind(&ZoidFSAPI::setattr, boost::ref(api_), handle, sattr, attr,
+      addWork (cb, ret, boost::bind(&ZoidFSAPI::setattr, boost::ref(*api_), handle, sattr, attr,
                hint));
    }
 
@@ -63,7 +104,7 @@ namespace zoidfs
          zoidfs_handle_t * handle,
          zoidfs_op_hint_t * hint)
    {
-      addWork (cb, ret, boost::bind(&ZoidFSAPI::lookup, boost::ref(api_), parent_handle, component_name,
+      addWork (cb, ret, boost::bind(&ZoidFSAPI::lookup, boost::ref(*api_), parent_handle, component_name,
                full_path, handle, hint));
    }
 
@@ -73,7 +114,7 @@ namespace zoidfs
          size_t buffer_length,
          zoidfs_op_hint_t * hint)
    {
-      addWork (cb, ret, boost::bind(&ZoidFSAPI::readlink, boost::ref(api_), handle, buffer, buffer_length,
+      addWork (cb, ret, boost::bind(&ZoidFSAPI::readlink, boost::ref(*api_), handle, buffer, buffer_length,
                hint));
    }
 
@@ -87,7 +128,7 @@ namespace zoidfs
          uint64_t file_sizes[],
          zoidfs_op_hint_t * hint)
    {
-      addWork (cb, ret, boost::bind(&ZoidFSAPI::read, boost::ref(api_), handle, mem_count, mem_starts,
+      addWork (cb, ret, boost::bind(&ZoidFSAPI::read, boost::ref(*api_), handle, mem_count, mem_starts,
                mem_sizes, file_count, file_starts, file_sizes, hint));
    }
 
@@ -101,7 +142,7 @@ namespace zoidfs
          uint64_t file_sizes[],
          zoidfs_op_hint_t * hint)
    {
-      addWork (cb, ret, boost::bind(&ZoidFSAPI::write, boost::ref(api_), handle, mem_count, mem_starts,
+      addWork (cb, ret, boost::bind(&ZoidFSAPI::write, boost::ref(*api_), handle, mem_count, mem_starts,
                mem_sizes, file_count, file_starts, file_sizes, hint));
    }
 
@@ -109,7 +150,7 @@ namespace zoidfs
    void ZoidFSDefAsync::commit(const iofwdevent::CBType & cb, int * ret, const zoidfs_handle_t * handle,
          zoidfs_op_hint_t * hint)
    {
-      addWork (cb, ret, boost::bind(&ZoidFSAPI::commit, boost::ref(api_), handle, hint));
+      addWork (cb, ret, boost::bind(&ZoidFSAPI::commit, boost::ref(*api_), handle, hint));
    }
 
 
@@ -121,7 +162,7 @@ namespace zoidfs
          int * created,
          zoidfs_op_hint_t * hint)
    {
-      addWork (cb, ret, boost::bind(&ZoidFSAPI::create, boost::ref(api_), parent_handle, component_name,
+      addWork (cb, ret, boost::bind(&ZoidFSAPI::create, boost::ref(*api_), parent_handle, component_name,
                full_path, attr, handle, created, hint));
    }
 
@@ -132,14 +173,14 @@ namespace zoidfs
          zoidfs_cache_hint_t * parent_hint,
          zoidfs_op_hint_t * hint)
    {
-      addWork (cb, ret, boost::bind(&ZoidFSAPI::remove, boost::ref(api_), parent_handle, component_name,
+      addWork (cb, ret, boost::bind(&ZoidFSAPI::remove, boost::ref(*api_), parent_handle, component_name,
                full_path, parent_hint, hint));
    }
 
    int ZoidFSDefAsync::rename_helper(rename_helper_bundle_t * b)
    {
         /* run the op */
-        int ret = api_.rename(b->from_parent_handle_,
+        int ret = api_->rename(b->from_parent_handle_,
             b->from_component_name_, b->from_full_path_, b->to_parent_handle_,
             b->to_component_name_, b->to_full_path_, b->from_parent_hint_, b->to_parent_hint_,
             b->hint_);
@@ -170,10 +211,10 @@ namespace zoidfs
    int ZoidFSDefAsync::link_helper(link_helper_bundle_t * b2)
    {
         // use auto_ptr for exception safety
-        std::auto_ptr<link_helper_bundle_t> b(b2);
+      boost::scoped_ptr<link_helper_bundle_t> b(b2);
 
         /* run the op */
-        int ret = api_.link(b->from_parent_handle_,
+        int ret = api_->link(b->from_parent_handle_,
             b->from_component_name_, b->from_full_path_, b->to_parent_handle_,
             b->to_component_name_, b->to_full_path_, b->from_parent_hint_, b->to_parent_hint_,
             b->hint_);
@@ -200,10 +241,10 @@ namespace zoidfs
 
    int ZoidFSDefAsync::symlink_helper(symlink_helper_bundle_t * b2)
    {
-        std::auto_ptr<symlink_helper_bundle_t> b(b2);
+      boost::scoped_ptr<symlink_helper_bundle_t> b(b2);
 
         /* run the op */
-        int ret = api_.symlink(b->from_parent_handle_,
+        int ret = api_->symlink(b->from_parent_handle_,
             b->from_component_name_, b->from_full_path_, b->to_parent_handle_,
             b->to_component_name_, b->to_full_path_, b->attr_, b->from_parent_hint_, b->to_parent_hint_,
             b->hint_);
@@ -236,7 +277,7 @@ namespace zoidfs
          zoidfs_cache_hint_t * parent_hint,
          zoidfs_op_hint_t * hint)
    {
-      addWork (cb, ret, boost::bind(&ZoidFSAPI::mkdir, boost::ref(api_), parent_handle, component_name,
+      addWork (cb, ret, boost::bind(&ZoidFSAPI::mkdir, boost::ref(*api_), parent_handle, component_name,
                full_path, attr, parent_hint, hint));
    }
 
@@ -249,7 +290,7 @@ namespace zoidfs
          zoidfs_cache_hint_t * parent_hint,
          zoidfs_op_hint_t * hint)
    {
-      addWork (cb, ret, boost::bind(&ZoidFSAPI::readdir, boost::ref(api_), parent_handle, cookie,
+      addWork (cb, ret, boost::bind(&ZoidFSAPI::readdir, boost::ref(*api_), parent_handle, cookie,
                entry_count, entries, flags, parent_hint, hint));
    }
 
@@ -258,7 +299,7 @@ namespace zoidfs
          uint64_t size,
          zoidfs_op_hint_t * hint)
    {
-      addWork (cb, ret, boost::bind(&ZoidFSAPI::resize, boost::ref(api_), handle, size, hint));
+      addWork (cb, ret, boost::bind(&ZoidFSAPI::resize, boost::ref(*api_), handle, size, hint));
    }
 
     } /* namespace util */

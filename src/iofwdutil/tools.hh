@@ -11,6 +11,7 @@
 # define UNUSED(x) x
 #endif
 
+/* UNUSED for now 
 // Class declarations
 template<typename T1, typename T2, bool C>
 struct TP_IF { };
@@ -36,5 +37,5 @@ struct TYPE_EQUAL<T1,T1>
 {
    enum { value = true }; 
 };
-
+*/
 #endif

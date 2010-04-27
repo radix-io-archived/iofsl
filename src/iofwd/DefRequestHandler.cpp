@@ -9,10 +9,6 @@
 #include "ThreadTasks.hh"
 #include "iofwdutil/workqueue/WorkItem.hh"
 #include "zoidfs/zoidfs-proto.h"
-#include "zoidfs/util/ZoidFSAsyncAPI.hh"
-#include "zoidfs/util/ZoidFSDefAsync.hh"
-#include "RequestScheduler.hh"
-#include "iofwd/tasksm/WriteTaskSM.hh"
 #include "iofwdutil/Factory.hh"
 #include "iofwdutil/FactoryException.hh"
 
@@ -27,9 +23,33 @@ namespace iofwd
 DefRequestHandler::DefRequestHandler (const iofwdutil::ConfigFile & cf)
    : log_ (IOFWDLog::getSource ("defreqhandler")), config_(cf), event_mode_(EVMODE_SM)
 {
-   iofwdutil::ConfigFile csec;
-   if (api_.init(config_.openSectionDefault ("zoidfsapi")) != zoidfs::ZFS_OK)
+   //
+   // Get async API
+   //
+   const iofwdutil::ConfigFile zoidfssection (config_.openSectionDefault ("zoidfsapi"));
+   const std::string apiname = zoidfssection.getKeyAsDefault<std::string>("name","defasync");
+   try
+   {
+      ZLOG_INFO (log_, format("Loading using async API '%s'") % apiname);
+      api_.reset (iofwdutil::Factory<
+                        std::string,
+                        zoidfs::util::ZoidFSAsync>::construct (apiname)());
+      // We configure the API using its own subsection 
+      iofwdutil::Configurable::configure_if_needed (api_.get(),
+            zoidfssection.openSectionDefault(apiname.c_str()));
+   }
+   catch (FactoryException & e)
+   {
+      ZLOG_ERROR(log_, format("No async API called '%s' registered!") %
+            apiname);
+      throw;
+   }
+
+   if (api_->init() != zoidfs::ZFS_OK)
+   {
+      // @TODO: make this real exception
       throw "ZoidFSAPI::init() failed";
+   }
 
    /* start thread pool */
    iofwdutil::ConfigFile lc = config_.openSectionDefault ("threadpool");
@@ -57,41 +77,22 @@ DefRequestHandler::DefRequestHandler (const iofwdutil::ConfigFile & cf)
       event_mode_ = EVMODE_SM;
    }
 
-   async_api_ = new zoidfs::ZoidFSAsyncAPI(&api_);
- 
-   const std::string apiname = config_.getKeyAsDefault<std::string>("zoidfsapi.name","defasync");
-   try
-   {
-      ZLOG_INFO (log_, format("Loading using async API '%s'") % apiname);
-      async_api_full_ = iofwdutil::Factory<
-                        std::string,
-                        zoidfs::util::ZoidFSAsync>::construct (apiname)(api_);
-   }
-   catch (FactoryException & e)
-   {
-      ZLOG_ERROR(log_, format("No async API called '%s' registered!") %
-            apiname);
-      throw;
-   }
-
-   sched_ = new RequestScheduler(async_api_, async_api_full_, config_.openSectionDefault ("requestscheduler"), event_mode_);
-
    /* start the BMI memory manager */
    lc = config_.openSectionDefault("bmimemorymanager");
    iofwd::BMIMemoryManager::instance().setMaxBufferSize(lc.getKeyAsDefault("buffersize", 0));
    iofwd::BMIMemoryManager::instance().setMaxNumBuffers(lc.getKeyAsDefault("maxnumbuffers", 0));
    iofwd::BMIMemoryManager::instance().start();
 
-   csec = config_.openSectionDefault("workqueue");
+   iofwdutil::ConfigFile csec = config_.openSectionDefault("workqueue");
    workqueue_normal_.reset (new PoolWorkQueue (csec.getKeyAsDefault("minthreadnum", 0),
                                                csec.getKeyAsDefault("maxthreadnum", 100)));
    workqueue_fast_.reset (new SynchronousWorkQueue ());
 
-   taskfactory_.reset (new ThreadTasks (&api_, async_api_, sched_));
+   taskfactory_.reset (new ThreadTasks (api_.get()));
 
-   taskSMFactory_.reset(new iofwd::tasksm::TaskSMFactory(sched_, smm,
-            async_api_full_));
-   smm.startThreads();
+   taskSMFactory_.reset(new iofwd::tasksm::TaskSMFactory(api_.get(), smm_));
+
+   smm_.startThreads();
 }
 
 DefRequestHandler::~DefRequestHandler ()
@@ -100,12 +101,12 @@ DefRequestHandler::~DefRequestHandler ()
    if(event_mode_ == EVMODE_SM)
    {
       // @TODO we need to wait for state machines too!
-        smm.stopThreads();
+        smm_.stopThreads();
    }
    /* if this is the task mode, clear out the work queues before shutdown */
    else if(event_mode_ == EVMODE_TASK)
    {
-        smm.stopThreads();
+        smm_.stopThreads();
 
         std::vector<WorkItem *> items;
         ZLOG_INFO (log_, "Waiting for normal workqueue to complete all work...");
@@ -118,11 +119,7 @@ DefRequestHandler::~DefRequestHandler ()
         for_each (items.begin(), items.end(), boost::lambda::bind(delete_ptr(), boost::lambda::_1));
    }
 
-   delete sched_;
-
-   api_.finalize();
-   delete async_api_;
-   delete async_api_full_;
+   api_->finalize();
 }
 
 void DefRequestHandler::handleRequest (int count, Request ** reqs)

@@ -1,17 +1,29 @@
 #include <boost/format.hpp>
+
+#include "iofwdutil/tools.hh"
 #include "zoidfs-util.hh"
 #include "iofwdutil/tools.hh"
 #include "LogAPI.hh"
+#include "iofwdutil/Factory.hh"
+#include "iofwdutil/LinkHelper.hh"
+
+
+GENERIC_FACTORY_CLIENT(std::string,
+      zoidfs::util::ZoidFSAPI,
+      zoidfs::util::LogAPI,
+      "log",
+      log);
+
 
 using namespace boost;
 
 namespace zoidfs
 {
+   namespace util
+   {
 //===========================================================================
 
-   LogAPI::LogAPI (const char * name, ZoidFSAPI * api)
-      : log_ (iofwdutil::IOFWDLog::getSource (name)),
-        api_ (api ? api : &fallback_)
+   LogAPI::LogAPI ()
    {
    }
 
@@ -21,24 +33,46 @@ namespace zoidfs
 
 //===========================================================================
 
-#define LOG(a) ZLOG_DEBUG(log_,a)
 
-int LogAPI::init(const iofwdutil::ConfigFile & c)
+#define LOG(a) ZLOG_DEBUG((*log_.get()),a)
+
+void LogAPI::configure (const iofwdutil::ConfigFile & config)
+{
+   std::string logsource = config.getKeyDefault ("logname", "LogAPI");
+   std::string apiname = config.getKeyDefault ("blocking_api", "zoidfs");
+
+   log_.reset (&iofwdutil::IOFWDLog::getSource (logsource.c_str()));
+   ZLOG_INFO((*log_.get()), format("Using log source name '%s'") % logsource);
+   ZLOG_INFO((*log_.get()), format("Using zoidfs blocking API '%s'") % apiname);
+   api_.reset (iofwdutil::Factory<
+                        std::string,
+                        zoidfs::util::ZoidFSAPI>::construct(apiname)());
+   iofwdutil::Configurable::configure_if_needed (api_.get(),
+         config.openSectionDefault(apiname.c_str()));
+}
+
+int LogAPI::init()
 {
    LOG("zoidfs_init");
-   return api_->init(c);
+   int ret = api_->init();
+   checkerror(ret);
+   return ret;
 }
 
 int LogAPI::finalize(void)
 {
    LOG("zoidfs_finalize");
-   return api_->finalize ();
+   int ret = api_->finalize ();
+   checkerror(ret);
+   return ret;
 }
 
 int LogAPI::null(void)
 {
    LOG("zoidfs_null");
-   return api_->null ();
+   int ret =  api_->null ();
+   checkerror(ret);
+   return ret;
 }
 
 int LogAPI::getattr(const zoidfs_handle_t * handle,
@@ -46,7 +80,9 @@ int LogAPI::getattr(const zoidfs_handle_t * handle,
             zoidfs_op_hint_t * op_hint)
 {
    LOG(format("zoidfs_getattr handle=%s") % handle2string(handle));
-   return api_->getattr (handle, attr, op_hint);
+   int ret = api_->getattr (handle, attr, op_hint);
+   checkerror(ret);
+   return ret;
 }
 
 int LogAPI::setattr(const zoidfs_handle_t * handle,
@@ -55,7 +91,9 @@ int LogAPI::setattr(const zoidfs_handle_t * handle,
             zoidfs_op_hint_t * op_hint)
 {
    LOG(format("zoidfs_setattr handle=%s") % handle2string(handle));
-   return api_->setattr (handle, a1, a2, op_hint);
+   int ret = api_->setattr (handle, a1, a2, op_hint);
+   checkerror(ret);
+   return ret;
 }
 
 int LogAPI::lookup(const zoidfs_handle_t * parent_handle,
@@ -66,7 +104,9 @@ int LogAPI::lookup(const zoidfs_handle_t * parent_handle,
 {
    LOG(format("zoidfs_lookup %s") % filespec2string (parent_handle,
             component_name, full_path));
-   return api_->lookup (parent_handle, component_name, full_path, h, op_hint);
+   int ret = api_->lookup (parent_handle, component_name, full_path, h, op_hint);
+   checkerror(ret);
+   return ret;
 }
 
 int LogAPI::readlink(const zoidfs_handle_t * handle,
@@ -74,9 +114,10 @@ int LogAPI::readlink(const zoidfs_handle_t * handle,
             size_t buffer_length,
             zoidfs_op_hint_t * op_hint)
 {
+   LOG(format("zoidfs_readlink %s buf=%p len=%i") % handle2string(handle)
+         % (void*) buffer % buffer_length);
    int ret = api_->readlink (handle, buffer, buffer_length, op_hint);
-   LOG(format("zoidfs_readlink %s buf=%p len=%i ret=%i") % handle2string(handle)
-         % (void*) buffer % buffer_length % ret);
+   checkerror(ret);
    return ret;
 }
 
@@ -89,10 +130,11 @@ int LogAPI::read(const zoidfs_handle_t * handle,
             uint64_t file_sizes[],
             zoidfs_op_hint_t * op_hint)
 {
+   LOG(format("zoidfs_read %s mem_count=%u file_count=%u")
+         % handle2string(handle) % mem_count % file_count);
    int ret = api_->read (handle, mem_count, mem_starts, mem_sizes,
          file_count, file_starts, file_sizes, op_hint);
-   LOG(format("zoidfs_read %s mem_count=%u file_count=%u ret=%u")
-         % handle2string(handle) % mem_count % file_count % ret);
+   checkerror(ret);
    return ret;
 }
 
@@ -105,18 +147,20 @@ int LogAPI::write(const zoidfs_handle_t * handle,
             uint64_t file_sizes[],
             zoidfs_op_hint_t * op_hint)
 {
+   LOG(format("zoidfs_write %s mem_count=%u file_count=%u")
+         % handle2string(handle) % mem_count % file_count);
    int ret = api_->write (handle, mem_count, mem_starts,
          mem_sizes, file_count, file_starts, file_sizes, op_hint);
-   LOG(format("zoidfs_write %s mem_count=%u file_count=%u ret=%i")
-         % handle2string(handle) % mem_count % file_count % ret);
+   checkerror(ret);
    return ret;
 }
 
 int LogAPI::commit(const zoidfs_handle_t * handle,
             zoidfs_op_hint_t * op_hint)
 {
+   LOG(format("zoidfs_commit %s") % handle2string(handle));
    int ret = api_->commit (handle, op_hint);
-   LOG(format("zoidfs_commit %s ret=%i") % handle2string(handle) % ret);
+   checkerror(ret);
    return ret;
 }
 
@@ -129,8 +173,10 @@ int LogAPI::create(const zoidfs_handle_t * parent_handle,
             zoidfs_op_hint_t * op_hint)
 {
    LOG(format("zoidfs_create"));
-   return api_->create (parent_handle, component_name, full_path,
+   int ret= api_->create (parent_handle, component_name, full_path,
          attr, handle, created, op_hint);
+   checkerror(ret);
+   return ret;
 }
 
 int LogAPI::remove(const zoidfs_handle_t * parent_handle,
@@ -140,8 +186,10 @@ int LogAPI::remove(const zoidfs_handle_t * parent_handle,
             zoidfs_op_hint_t * op_hint)
 {
    LOG(format("zoidfs_remove"));
-   return api_->remove (parent_handle, component_name, full_path,
+   int ret= api_->remove (parent_handle, component_name, full_path,
          parent_hint, op_hint);
+   checkerror(ret);
+   return ret;
 }
 
 int LogAPI::rename(const zoidfs_handle_t * from_parent_handle,
@@ -155,9 +203,11 @@ int LogAPI::rename(const zoidfs_handle_t * from_parent_handle,
             zoidfs_op_hint_t * op_hint)
 {
    LOG(format("zoidfs_rename"));
-   return api_->rename (from_parent_handle, from_component_name,
+   int ret= api_->rename (from_parent_handle, from_component_name,
          from_full_path, to_parent_handle, to_component_name, to_full_path,
          from_parent_hint, to_parent_hint, op_hint);
+   checkerror(ret);
+   return ret;
 }
 
 int LogAPI::link(const zoidfs_handle_t * from_parent_handle,
@@ -171,9 +221,11 @@ int LogAPI::link(const zoidfs_handle_t * from_parent_handle,
             zoidfs_op_hint_t * op_hint)
 {
    LOG("zoidfs_symlink");
-   return api_->link (from_parent_handle, from_component_name,
+   int ret = api_->link (from_parent_handle, from_component_name,
          from_full_path, to_parent_handle, to_component_name,
          to_full_path, from_parent_hint, to_parent_hint, op_hint);
+   checkerror(ret);
+   return ret;
 }
 
 
@@ -189,9 +241,11 @@ int LogAPI::symlink(const zoidfs_handle_t * from_parent_handle,
             zoidfs_op_hint_t * op_hint)
 {
    LOG("zoidfs_symlink");
-   return api_->symlink (from_parent_handle, from_component_name,
+   int ret = api_->symlink (from_parent_handle, from_component_name,
          from_full_path, to_parent_handle, to_component_name,
          to_full_path, attr, from_parent_hint, to_parent_hint, op_hint);
+   checkerror(ret);
+   return ret;
 }
 
 int LogAPI::mkdir(const zoidfs_handle_t * parent_handle,
@@ -202,8 +256,10 @@ int LogAPI::mkdir(const zoidfs_handle_t * parent_handle,
             zoidfs_op_hint_t * op_hint)
 {
    LOG("zoidfs_mkdir");
-   return api_->mkdir (parent_handle, component_name, full_path,
+   int ret= api_->mkdir (parent_handle, component_name, full_path,
          attr, parent_hint, op_hint);
+   checkerror(ret);
+   return ret;
 }
 
 int LogAPI::readdir(const zoidfs_handle_t * parent_handle,
@@ -215,22 +271,33 @@ int LogAPI::readdir(const zoidfs_handle_t * parent_handle,
             zoidfs_op_hint_t * op_hint)
 {
    LOG(format("zoidfs_readdir entry_count=%u") % *entry_count);
-   return api_->readdir (parent_handle, cookie, entry_count, entries, flags,
+   int ret= api_->readdir (parent_handle, cookie, entry_count, entries, flags,
          parent_hint, op_hint);
+   checkerror(ret);
+   return ret;
 }
 
 int LogAPI::resize(const zoidfs_handle_t * handle,
             uint64_t size,
             zoidfs_op_hint_t * op_hint)
 {
+   LOG(format("zoidfs_resize: handle=%s size=%lu")
+         % handle2string(handle) % size);
    int ret=api_->resize (handle, size, op_hint);
-   LOG(format("zoidfs_resize: handle=%s size=%lu return=%i")
-         % handle2string(handle) % size % ret);
+   checkerror(ret);
    return ret;
 }
 
+void LogAPI::checkerror (int ret) const
+{
+   if (ret == zoidfs::ZFS_OK)
+      return;
 
+   ZLOG_DEBUG((*log_.get()),format("!!ZoidFS call returned error!!: %s") %
+         zfserror2string(ret))
+}
 
 //===========================================================================
+   }
 
 }

@@ -1,8 +1,5 @@
 #include "ReadTask.hh"
-#include "zoidfs/util/ZoidFSAPI.hh"
-#include "zoidfs/util/ZoidFSAsyncAPI.hh"
 #include "zoidfs/zoidfs-proto.h"
-#include "RequestScheduler.hh"
 
 #include <vector>
 #include <deque>
@@ -24,12 +21,13 @@ void ReadTask::runNormalMode(ReadRequest::ReqParam & p)
    request_.initRequestParams(p, rbuffer_[0]->buffer->getMemory());
 
    // issue the read request
+   int ret;
    block_.reset();
-   sched_->read(block_, p.handle, (size_t)p.mem_count, (void**)p.mem_starts,
-         p.mem_sizes, p.file_starts, p.file_sizes, p.op_hint);
+   api_->read(block_, &ret, p.handle, p.mem_count, p.mem_starts,
+         p.mem_sizes, p.file_count, p.file_starts, p.file_sizes, p.op_hint);
    block_.wait();
 
-   request_.setReturnCode(zoidfs::ZFS_OK); /* TODO: pass back the actual return value */
+   request_.setReturnCode(ret);
 
    // send buffers w/ callback
    block_.reset();
@@ -291,7 +289,7 @@ void ReadTask::execPipelineIO(const ReadRequest::ReqParam & p)
 
 void ReadTask::postRead(const ReadRequest::ReqParam & p, int index)
 {
-    const char * p_buf = (char *)rbuffer_[index]->buffer->getMemory();
+    char * p_buf = (char *)rbuffer_[index]->buffer->getMemory();
     int p_seg_start = p_segments_start[index];
     int p_file_count = p_segments[index];
     int * ret = new int(0);
@@ -299,9 +297,11 @@ void ReadTask::postRead(const ReadRequest::ReqParam & p, int index)
     /* setup segment data structures */
     zoidfs::zoidfs_file_ofs_t * file_starts = new zoidfs::zoidfs_file_ofs_t[p_file_count];
     zoidfs::zoidfs_file_size_t * file_sizes = new zoidfs::zoidfs_file_size_t[p_file_count];
-    const char ** mem_starts = new const char*[p_file_count];
+    char ** mem_starts = new char*[p_file_count];
     size_t * mem_sizes = new size_t[p_file_count];
 
+    // Use helper class from cache tree to iterator through mem/file ranges.
+    // @TODO: This code assumes file_count == mem_count
     for (int i = 0; i < p_file_count; i++)
     {
         /* find the index into the pipeline data */
@@ -314,16 +314,17 @@ void ReadTask::postRead(const ReadRequest::ReqParam & p, int index)
         file_sizes[i] = p_file_sizes[p_index];
     }
 
-    rbuffer_[index]->mem_starts = mem_starts;
+    rbuffer_[index]->mem_starts = const_cast<const char**>(mem_starts);
     rbuffer_[index]->mem_sizes = mem_sizes;
     rbuffer_[index]->file_starts = file_starts;
     rbuffer_[index]->file_sizes = file_sizes;
     rbuffer_[index]->ret = ret;
 
     /* enqueue the read */
-    sched_->read (
-        *(pipeline_blocks_[index]), p.handle, p_file_count, (void**)mem_starts, mem_sizes,
-        file_starts, file_sizes, p.op_hint);
+    api_->read (
+        *(pipeline_blocks_[index]), ret, p.handle, p_file_count,
+        reinterpret_cast<void**>(mem_starts), mem_sizes, p_file_count, file_starts,
+        file_sizes, p.op_hint);
 }
 
 void ReadTask::runPipelineMode(const ReadRequest::ReqParam & p)

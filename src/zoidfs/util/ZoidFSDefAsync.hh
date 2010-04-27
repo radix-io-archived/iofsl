@@ -1,5 +1,5 @@
-#ifndef __ZOIDFS_UTIL_ZOIDFSDEFASYNC_HH__
-#define __ZOIDFS_UTIL_ZOIDFSDEFASYNC_HH__
+#ifndef ZOIDFS_UTIL_ZOIDFSDEFASYNC_HH
+#define ZOIDFS_UTIL_ZOIDFSDEFASYNC_HH
 
 #include <boost/thread.hpp>
 #include "ZoidFSAPI.hh"
@@ -7,6 +7,8 @@
 #include "iofwdutil/ThreadPool.hh"
 
 #include "iofwdutil/LinkHelper.hh"
+#include "iofwdutil/Configurable.hh"
+#include "iofwdutil/IOFWDLog.hh"
 
 //#define BOOST_FUNCTION_MAX_ARGS 20
 //#include <boost/function.hpp>
@@ -18,14 +20,20 @@ namespace zoidfs
     {
 //==========================================================================
 
-   class ZoidFSDefAsync : public ZoidFSAsync
+   /**
+    * This class implements a non-blocking API on top of a blocking ZoidFS
+    * API. Uses a threadpool to call the blocking ZFS calls in the background.
+    *
+    */
+   class ZoidFSDefAsync : public ZoidFSAsync, public iofwdutil::Configurable
    {
    public:
 
-      ZoidFSDefAsync (ZoidFSAPI & api)
-         : api_(api)
+      ZoidFSDefAsync () : log_ (iofwdutil::IOFWDLog::getSource("defasync"))
       {
       }
+
+      void configure (const iofwdutil::ConfigFile & config);
 
       virtual int init(void) ;
 
@@ -256,17 +264,23 @@ namespace zoidfs
       template <typename T>
       void addWork (const iofwdevent::CBType & cb, int * ret, const T & item)
       {
-#ifdef USE_IOFWD_THREAD_POOL
-         /* thread pool owns the OpHelper and is responsible for cleanup */
-         iofwdutil::ThreadPool::instance().addWorkUnit(new OpHelper(cb, ret, item), &OpHelper::run, iofwdutil::ThreadPool::HIGH, true);
-#else
-         boost::thread t (OpHelper (cb, ret, item));
-         // thread detaches when t is destructed.
-#endif
+         if (wait_for_threads_)
+         {
+            /* thread pool owns the OpHelper and is responsible for cleanup */
+            iofwdutil::ThreadPool::instance().addWorkUnit(new OpHelper(cb, ret, item), &OpHelper::run, iofwdutil::ThreadPool::HIGH, true);
+         }
+         else
+         {
+            boost::thread t (OpHelper (cb, ret, item));
+            // thread detaches when t is destructed.
+         }
       }
 
    protected:
-      ZoidFSAPI & api_;
+      boost::scoped_ptr<ZoidFSAPI> api_;
+      bool wait_for_threads_;
+
+      iofwdutil::zlog::ZLogSource & log_;
    };
 
 //==========================================================================

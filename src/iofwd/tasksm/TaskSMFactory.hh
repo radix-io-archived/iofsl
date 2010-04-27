@@ -8,9 +8,6 @@
 
 namespace zoidfs
 {
-    class ZoidFSAPI;
-    class ZoidFSAsyncAPI;
-
     namespace util
     {
         class ZoidFSAsync;
@@ -20,7 +17,6 @@ namespace zoidfs
 namespace iofwd
 {
     class Request;
-    class RequestScheduler;
 
     namespace tasksm
     {
@@ -28,15 +24,18 @@ namespace iofwd
 
 
 /**
- * Task factory that generates task which block until complete.
+ * This task factory generates state machine tasks
+ * @TODO: This is probably not needed for the state machines.
+ * Needs to integrated into requesthandler after split of DefRequestHandler is
+ * complete
  */
 class TaskSMFactory
 {
 public:
 
-   TaskSMFactory(RequestScheduler * sched,
-         sm::SMManager & smm, zoidfs::util::ZoidFSAsync * api)
-      : sched_(sched), smm_(smm), api_(api)
+   TaskSMFactory(zoidfs::util::ZoidFSAsync * api,
+         sm::SMManager & smm)
+      :  api_(api), smm_(smm)
    {
    }
 
@@ -47,9 +46,8 @@ public:
    void operator () (iofwd::Request * req);
 
 protected:
-   RequestScheduler * sched_;
-   sm::SMManager & smm_;
    zoidfs::util::ZoidFSAsync * api_;
+   sm::SMManager & smm_;
 };
 
     }

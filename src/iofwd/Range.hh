@@ -62,7 +62,7 @@ class ChildRange
         }
 
         RangeType type_;
-        zoidfs::zoidfs_handle_t * handle_;
+        const zoidfs::zoidfs_handle_t * handle_;
         char * buf_;
         uint64_t st_;
         uint64_t en_;

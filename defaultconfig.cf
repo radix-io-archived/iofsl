@@ -33,13 +33,24 @@ requesthandler {
   // zoidfs api options
   //
   zoidfsapi {
+
+    name = "defasync";
+
+    defasync {
+      //blocking_api = "zoidfs";
+      blocking_api = "log";
+
+    log {
+      blocking_api = "zoidfs";
+
+      zoidfs {
     //
     // the handlers to be loaded at runtime
     //  if a specified handler is not available,
     //  it is ignored
     //  default: LOCAL
     //
-    handlers = "POSIX,SYSIO,PVFS2,NOFS,LOCAL";
+    handlers = ("POSIX","SYSIO","PVFS2","NOFS","LOCAL");
     //handlers = "NOFS,LOCAL";
 
     //
@@ -74,6 +85,11 @@ requesthandler {
     //
     local {
     }
+
+      }
+    }
+    }
+
 
   }
 

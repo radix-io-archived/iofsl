@@ -1,14 +1,16 @@
 #ifndef IOFWDUTIL_CONFIGFILE_HH
 #define IOFWDUTIL_CONFIGFILE_HH
 
-#include "c-util/configfile.h"
-#include "ConfigContainer.hh"
-#include "CFKeyMissingException.hh"
+#include <boost/optional.hpp>
 #include <boost/utility.hpp>
 #include <boost/smart_ptr.hpp>
 #include <boost/lexical_cast.hpp>
 #include <string>
 #include <vector>
+
+#include "c-util/configfile.h"
+#include "ConfigContainer.hh"
+#include "CFKeyMissingException.hh"
 
 namespace iofwdutil
 {
@@ -72,6 +74,10 @@ protected:
    // Called to throw exception
    void error (const std::string & s) const;
 
+   boost::optional<std::string> getKeyOptional (const char * name) const;
+
+   boost::optional<ConfigFile> openSectionOptional (const char * name) const;
+
 protected:
    boost::intrusive_ptr<ConfigContainer> configfile_;
    boost::intrusive_ptr<ConfigContainer> configsection_;
@@ -87,14 +93,11 @@ T ConfigFile::getKeyAs (const char * name) const
 template <typename T>
 T ConfigFile::getKeyAsDefault (const char * name, const T & def) const
 {
-   try
-   {
-   return boost::lexical_cast<T> (getKey (name));
-   }
-   catch (const CFKeyMissingException & e)
-   {
+   boost::optional<std::string> ret (getKeyOptional(name));
+   if (!ret)
       return def;
-   }
+   else
+      return boost::lexical_cast<T> (*ret);
 }
 
 

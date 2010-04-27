@@ -7,8 +7,10 @@
 
 namespace zoidfs
 {
-   class ZoidFSAPI;
-   class ZoidFSAsyncAPI;
+   namespace util
+   {
+   class ZoidFSAsync;
+   }
 }
 
 namespace iofwd
@@ -27,20 +29,17 @@ class ThreadTasks
 public:
 
    ThreadTasks (
-         zoidfs::ZoidFSAPI * api,
-         zoidfs::ZoidFSAsyncAPI * async_api,
-         RequestScheduler * sched)
-      : api_(api), async_api_(async_api), sched_(sched)
+         zoidfs::util::ZoidFSAsync * api)
+      : api_(api)
    {
    }
 
    Task * operator () (Request * req); 
 
 protected:
-   zoidfs::ZoidFSAPI * api_;
-   zoidfs::ZoidFSAsyncAPI * async_api_;
-   RequestScheduler * sched_;
+   zoidfs::util::ZoidFSAsync * api_;
 
+   // @TODO: this probably needs to be removed.
    iofwdutil::completion::ContextBase ctx_; 
    iofwdutil::completion::BMIResource bmi_; 
 }; 

@@ -4,33 +4,23 @@
 #include "Task.hh"
 #include "iofwdutil/completion/BMIResource.hh"
 #include "iofwdevent/SingleCompletion.hh"
+#include "zoidfs/util/ZoidFSAsync.hh"
 
-namespace zoidfs
-{
-   class ZoidFSAPI;
-   class ZoidFSAsyncAPI;
-}
 
 namespace iofwd
 {
-
-class RequestScheduler;
 
 class ThreadTaskParam
 {
 public:
    Request   *                          req;
-   zoidfs::ZoidFSAPI *                  api;
-   zoidfs::ZoidFSAsyncAPI *             async_api;
-   RequestScheduler *                   sched;
+   zoidfs::util::ZoidFSAsync *                  api;
    iofwdutil::completion::BMIResource & bmi; 
 
    ThreadTaskParam (Request * r, 
-      zoidfs::ZoidFSAPI * a1,
-      zoidfs::ZoidFSAsyncAPI * a2,
-      RequestScheduler * s,
+      zoidfs::util::ZoidFSAsync * a1,
       iofwdutil::completion::BMIResource & b)
-      : req(r), api(a1), async_api(a2), sched(s), bmi(b)
+      : req(r), api(a1), bmi(b)
    {
    }
 
@@ -51,8 +41,7 @@ class TaskHelper : public Task
        */
       TaskHelper (ThreadTaskParam & param)
          : request_ (static_cast<T &> (*param.req)), 
-           api_ (param.api), async_api_(param.async_api), sched_(param.sched),
-           bmi_ (param.bmi)
+           api_ (param.api), bmi_ (param.bmi)
       {
 #ifndef NDEBUG
          // This will throw if the request is not of the expected type
@@ -72,9 +61,7 @@ class TaskHelper : public Task
    protected:
       T & request_; 
 
-      zoidfs::ZoidFSAPI * api_;
-      zoidfs::ZoidFSAsyncAPI * async_api_;
-      RequestScheduler * sched_;
+      zoidfs::util::ZoidFSAsync * api_;
       iofwdutil::completion::BMIResource & bmi_;
 
       // All (almost?) threaded tasks call a blocking function at some point.

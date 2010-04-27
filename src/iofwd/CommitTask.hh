@@ -25,8 +25,14 @@ public:
    void run ()
    {
       const CommitRequest::ReqParam & p = request_.decodeParam ();
-      int ret = api_->commit (p.handle, p.op_hint);
+      int ret;
+      
+      api_->commit (block_, &ret, p.handle, p.op_hint);
+      block_.wait ();
+
       request_.setReturnCode (ret);
+
+      block_.reset();
       request_.reply (block_);
       block_.wait ();
    }

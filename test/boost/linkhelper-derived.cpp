@@ -1,4 +1,7 @@
 #include "linkhelper-derived.hh"
+   
+GENERIC_FACTORY_CLIENT(size_t,mynamespace::LinkHelperBase,
+                              mynamespace::LinkHelperDerived,66,linkkey);
 
 namespace mynamespace
 {
@@ -7,6 +10,5 @@ namespace mynamespace
    { return true; }
 
    
-   GENERIC_FACTORY_CLIENT(size_t,LinkHelperBase,LinkHelperDerived,66);
 
 }

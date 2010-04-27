@@ -9,7 +9,7 @@ namespace client
    //========================================================================
    //========================================================================
    
-   class IOFWDClient : public zoidfs::ZoidFSAPI
+   class IOFWDClient : public zoidfs::util::ZoidFSAPI
    {
 
       public:

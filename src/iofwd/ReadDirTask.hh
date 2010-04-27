@@ -27,9 +27,15 @@ public:
        const ReadDirRequest::ReqParam & p = request_.decodeParam ();
        zoidfs::zoidfs_cache_hint_t parent_hint;
        size_t entry_count = p.entry_count;
-       int ret = api_->readdir (p.handle, p.cookie, &entry_count,
+       int ret;
+
+       api_->readdir (block_, &ret, p.handle, p.cookie, &entry_count,
                                 p.entries, p.flags, &parent_hint, p.op_hint);
+       block_.wait ();
+
        request_.setReturnCode (ret);
+
+       block_.reset();
        request_.reply ((block_), entry_count, p.entries, &parent_hint);
        block_.wait ();
   }

@@ -1,6 +1,5 @@
 #include "WriteTask.hh"
 #include "zoidfs/util/ZoidFSAPI.hh"
-#include "zoidfs/util/ZoidFSAsyncAPI.hh"
 #include "zoidfs/zoidfs-proto.h"
 #include "RequestScheduler.hh"
 
@@ -36,17 +35,18 @@ void WriteTask::runNormalMode(WriteRequest::ReqParam & p)
    block_.wait();
 
    /* issue the write */
+   int ret;
    block_.reset();
-   sched_->write((block_), p.handle, (size_t)p.mem_count, (const
-            void**)p.mem_starts, p.mem_sizes, p.file_starts, p.file_sizes,
-         p.op_hint);
+   api_->write((block_), &ret,  p.handle, p.mem_count, 
+         const_cast<const void**>(reinterpret_cast<void**>(p.mem_starts)), p.mem_sizes,
+         p.file_count, p.file_starts, p.file_sizes, p.op_hint); 
    block_.wait();
 
    /* deallocate the buffer */
    iofwd::BMIMemoryManager::instance().dealloc(rbuffer_[0]->buffer);
 
    /* setup the return code */
-   request_.setReturnCode(zoidfs::ZFS_OK);
+   request_.setReturnCode(ret);
 
    // issue reply w/ callback
    block_.reset();
@@ -293,9 +293,9 @@ void WriteTask::postWrite(const WriteRequest::ReqParam & p, int index)
             this, _1, rbuffer_[index]->buffer, pcb);
 
     /* enqueue the write */
-    sched_->write (
-        boost::bind(bmmCB, 0), p.handle, p_file_count, (const void**)mem_starts, mem_sizes,
-        file_starts, file_sizes, p.op_hint);
+    api_->write (
+        boost::bind(bmmCB, 0), ret, p.handle, p_file_count, (const void**)mem_starts, mem_sizes,
+        p_file_count, file_starts, file_sizes, p.op_hint);
 }
 
 void WriteTask::runPipelineMode(const WriteRequest::ReqParam & p)

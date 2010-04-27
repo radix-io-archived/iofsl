@@ -39,8 +39,14 @@ public:
           bufferlen = p.buffer_length;
 
        char buffer[bufferlen];
-       int ret = api_->readlink (p.handle, buffer, bufferlen, p.op_hint);
+       int ret;
+
+       api_->readlink (block_, &ret, p.handle, buffer, bufferlen, p.op_hint);
+       block_.wait ();
+
        request_.setReturnCode (ret);
+
+       block_.reset();
        request_.reply ((block_), buffer, bufferlen);
        block_.wait ();
   }

@@ -17,10 +17,6 @@
 #include "sm/SimpleSlots.hh"
 #include "zoidfs/util/ZoidFSAsyncPT.hh"
 
-namespace zoidfs {
-  class ZoidFSAsyncAPI;
-}
-
 namespace iofwd
 {
 
@@ -31,18 +27,18 @@ class RangeScheduler;
 class RequestScheduler : public zoidfs::util::ZoidFSAsyncPT
 {
 public:
-  RequestScheduler(zoidfs::ZoidFSAsyncAPI * async_api, zoidfs::util::ZoidFSAsync * async_cb_api, const iofwdutil::ConfigFile & c, int mode);
+  RequestScheduler(zoidfs::util::ZoidFSAsync * api, const iofwdutil::ConfigFile & c, int mode);
   virtual ~RequestScheduler();
 
   void write(
-     iofwdevent::CBType cb, zoidfs::zoidfs_handle_t * handle, size_t count,
-     const void ** mem_starts, size_t * mem_sizes,
-     uint64_t * file_starts, uint64_t * file_sizes, zoidfs::zoidfs_op_hint_t * op_hint);
+     const iofwdevent::CBType & cb, int * ret, const zoidfs::zoidfs_handle_t * handle, size_t count,
+     const void ** mem_starts, const size_t * mem_sizes, size_t file_count,
+     const zoidfs::zoidfs_file_ofs_t file_starts[], zoidfs::zoidfs_file_size_t file_sizes[], zoidfs::zoidfs_op_hint_t * op_hint);
 
   void read(
-     iofwdevent::CBType cb, zoidfs::zoidfs_handle_t * handle, size_t count,
-     void ** mem_starts, size_t * mem_sizes,
-     uint64_t * file_starts, uint64_t * file_sizes, zoidfs::zoidfs_op_hint_t * op_hint);
+     const iofwdevent::CBType & cb, int * ret, const zoidfs::zoidfs_handle_t * handle, size_t count,
+     void * mem_starts[], const size_t mem_sizes[], size_t file_count,
+     const zoidfs::zoidfs_file_ofs_t file_starts[], zoidfs::zoidfs_file_size_t file_sizes[], zoidfs::zoidfs_op_hint_t * op_hint);
 
 protected:
 
@@ -80,8 +76,7 @@ private:
   boost::condition_variable ready_;
   bool exiting_;
 
-  zoidfs::ZoidFSAsyncAPI * async_api_;
-  zoidfs::util::ZoidFSAsync * async_cb_api_;
+  zoidfs::util::ZoidFSAsync * api_;
   boost::scoped_ptr<RangeScheduler> range_sched_;
 
   enum{EVMODE_TASK = 0, EVMODE_SM};

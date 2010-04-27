@@ -119,7 +119,7 @@ void IOFWDReadRequest::initRequestParams(ReqParam & p, void * bufferMem)
         }
 
 #ifndef USE_TASK_HA
-        param_.mem_starts = new char*[param_.file_count];
+        param_.mem_starts = new void*[param_.file_count];
 #else
         param_.mem_starts = (h.hamalloc<char *>(param_.file_count));
 #endif

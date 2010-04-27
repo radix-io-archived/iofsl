@@ -31,7 +31,7 @@ namespace iofwd
 class WriteTaskSM : public sm::SimpleSM< WriteTaskSM >, public iofwdutil::InjectPool< WriteTaskSM >
 {
     public:
-        WriteTaskSM(sm::SMManager & smm, RequestScheduler * sched, Request * r);
+        WriteTaskSM(sm::SMManager & smm, zoidfs::util::ZoidFSAsync * api, Request * r);
         ~WriteTaskSM();
 
         void init(int UNUSED(status))
@@ -214,7 +214,7 @@ class WriteTaskSM : public sm::SimpleSM< WriteTaskSM >, public iofwdutil::Inject
         /* set the concurrent pipeline op count to 128... this should be dynamic or tunable */
         enum {WRITE_SLOT = 0, WRITE_PIPEOP_START, NUM_WRITE_SLOTS = 129};
         WriteRequest::ReqParam p;
-        RequestScheduler * sched_;
+        zoidfs::util::ZoidFSAsync * api_;
         WriteRequest & request_;
         sm::SimpleSlots<NUM_WRITE_SLOTS, iofwd::tasksm::WriteTaskSM> slots_;
 
@@ -237,6 +237,8 @@ class WriteTaskSM : public sm::SimpleSM< WriteTaskSM >, public iofwdutil::Inject
         std::vector<size_t> p_mem_offsets;
         std::vector<int> p_segments;
         std::vector<int> p_segments_start;
+
+        int ret_;
 };
     }
 }

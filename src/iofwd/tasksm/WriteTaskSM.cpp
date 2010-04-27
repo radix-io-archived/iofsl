@@ -1,8 +1,5 @@
 #include "iofwd/tasksm/WriteTaskSM.hh"
-#include "zoidfs/util/ZoidFSAPI.hh"
-#include "zoidfs/util/ZoidFSAsyncAPI.hh"
 #include "zoidfs/zoidfs-proto.h"
-#include "iofwd/RequestScheduler.hh"
 
 namespace iofwd
 {
@@ -10,10 +7,11 @@ namespace iofwd
     {
 //===========================================================================
 
-    WriteTaskSM::WriteTaskSM(sm::SMManager & smm, RequestScheduler * sched, Request * p)
-        : sm::SimpleSM<WriteTaskSM>(smm), sched_(sched), request_((static_cast<WriteRequest&>(*p))), slots_(*this),
+    WriteTaskSM::WriteTaskSM(sm::SMManager & smm, zoidfs::util::ZoidFSAsync * api, Request * p)
+        : sm::SimpleSM<WriteTaskSM>(smm), api_(api), request_((static_cast<WriteRequest&>(*p))), slots_(*this),
           total_bytes_(0), cur_recv_bytes_(0), p_siz_(0), total_pipeline_ops_(0), total_buffers_(0),
-          io_ops_done_(0), cw_post_index_(0), rbuffer_(NULL), mode_(WRITESM_PARA_IO_PIPELINE)
+          io_ops_done_(0), cw_post_index_(0), rbuffer_(NULL), mode_(WRITESM_PARA_IO_PIPELINE),
+          ret_(zoidfs::ZFS_OK)
     {
     }
 
@@ -51,11 +49,13 @@ namespace iofwd
     void WriteTaskSM::writeNormal()
     {
 #if SIZEOF_SIZE_T == SIZEOF_INT64_T
-        sched_->write(slots_[WRITE_SLOT], p.handle, (size_t)p.mem_count,
-              (const void**)p.mem_starts, p.mem_sizes, p.file_starts,
+        api_->write(slots_[WRITE_SLOT], &ret_, p.handle, p.mem_count,
+              (const void**)p.mem_starts, p.mem_sizes, p.file_count, p.file_starts,
               p.file_sizes, p.op_hint);
 #else
-        sched_->enqueueWriteCB(slots_[WRITE_SLOT], p.handle, (size_t)p.mem_count, (const void**)p.mem_starts, p.mem_sizes, p.file_starts, p.file_sizes, p.op_hint);
+        api_->write(slots_[WRITE_SLOT], &ret_, p.handle, p.mem_count, (const
+                 void**)p.mem_starts, p.mem_sizes, p.file_count, p.file_starts,
+              p.file_sizes, p.op_hint);
 #endif
 
         /* set the callback */
@@ -66,7 +66,7 @@ namespace iofwd
     void WriteTaskSM::reply()
     {
         /* set the return code */
-        request_.setReturnCode(zoidfs::ZFS_OK);
+        request_.setReturnCode(ret_);
 
         /* issue the reply */
         request_.reply(slots_[WRITE_SLOT]);
@@ -157,7 +157,7 @@ namespace iofwd
     {
         const char * p_buf = (char *)rbuffer_[cw_post_index_]->buffer->getMemory();
         int p_seg_start = p_segments_start[cw_post_index_];
-        int p_file_count = p_segments[cw_post_index_]; 
+        size_t p_file_count = p_segments[cw_post_index_]; 
         int * ret = new int(0);
     
         /* setup segment data structures */
@@ -166,7 +166,7 @@ namespace iofwd
         const char ** mem_starts = new const char*[p_file_count];
         size_t * mem_sizes = new size_t[p_file_count];
 
-        for (int i = 0; i < p_file_count; i++)
+        for (size_t i = 0; i < p_file_count; i++)
         {
             /* find the index into the pipeline data */
             int p_index = p_seg_start + i;
@@ -188,9 +188,9 @@ namespace iofwd
         if((mode_ & WRITESM_SERIAL_IO_PIPELINE) == 0)
         {
             /* enqueue the write */
-            sched_->write (
-                slots_[WRITE_SLOT], p.handle, p_file_count, (const void**)mem_starts, mem_sizes,
-                file_starts, file_sizes, p.op_hint);
+            api_->write (
+                slots_[WRITE_SLOT], &ret_, p.handle, p_file_count, (const void**)mem_starts, mem_sizes,
+                p_file_count, file_starts, file_sizes, p.op_hint);
 
             /* issue the serial wait */
             slots_.wait(WRITE_SLOT, &WriteTaskSM::waitPipelineEnqueueWrite);
@@ -213,9 +213,9 @@ namespace iofwd
         }
 
         /* enqueue the write */
-        sched_->write (
-            slots_[my_slot], p.handle, p_file_count, (const void**)mem_starts, mem_sizes,
-            file_starts, file_sizes, p.op_hint);
+        api_->write (
+            slots_[my_slot], &ret_, p.handle, p_file_count, (const void**)mem_starts, mem_sizes,
+            p_file_count, file_starts, file_sizes, p.op_hint);
 
 
         /* go to the next state depending on the current pipeline stage */

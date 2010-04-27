@@ -5,7 +5,6 @@
 #include <tr1/unordered_map>
 
 #include "zoidfs/zoidfs.h"
-#include "zoidfs/util/ZoidFSAsyncAPI.hh"
 
 #include "iofwd/WriteRequest.hh"
 #include "iofwd/ReadRequest.hh"
@@ -41,12 +40,12 @@ static void check_ranges(const vector<ChildRange *>& rs)
   }
 }
 
-RequestScheduler::RequestScheduler(zoidfs::ZoidFSAsyncAPI * async_api,
-      zoidfs::util::ZoidFSAsync * async_cb_api, const iofwdutil::ConfigFile &
+RequestScheduler::RequestScheduler(
+      zoidfs::util::ZoidFSAsync * api, const iofwdutil::ConfigFile &
       c, int mode)
-  : ZoidFSAsyncPT(async_cb_api),
-    log_(IOFWDLog::getSource()), exiting_(false), async_api_(async_api),
-    async_cb_api_(async_cb_api), mode_(mode), schedActive_(false)
+  : ZoidFSAsyncPT(api_),
+    log_(IOFWDLog::getSource()), exiting_(false),
+    api_(api), mode_(mode), schedActive_(false)
 {
   RangeScheduler * rsched;
   char * sched_algo = new char[c.getKeyDefault("schedalgo", "fifo").size() + 1];
@@ -91,10 +90,13 @@ RequestScheduler::~RequestScheduler()
 }
 
 void RequestScheduler::write(
-  iofwdevent::CBType cb, zoidfs::zoidfs_handle_t * handle, size_t count,
-  const void ** mem_starts, size_t * mem_sizes,
-  uint64_t * file_starts, uint64_t * file_sizes, zoidfs::zoidfs_op_hint_t * op_hint)
+  const iofwdevent::CBType & cb, int * ret, const zoidfs::zoidfs_handle_t * handle, size_t count,
+  const void * mem_starts[], const size_t * mem_sizes, size_t file_count,
+  const zoidfs::zoidfs_file_ofs_t file_starts[], zoidfs::zoidfs_file_size_t file_sizes[], zoidfs::zoidfs_op_hint_t * op_hint)
 {
+   // Note: the Requestscheduler depends on this. Needs to be fixed.
+   ALWAYS_ASSERT(file_count == count);
+
   // ignore zero-length request
   int valid_count = 0;
   for (uint32_t i = 0; i < count; i++)
@@ -131,10 +133,11 @@ void RequestScheduler::write(
 }
 
 void RequestScheduler::read(
-  iofwdevent::CBType cb, zoidfs::zoidfs_handle_t * handle, size_t count,
-  void ** mem_starts, size_t * mem_sizes,
-  uint64_t * file_starts, uint64_t * file_sizes, zoidfs::zoidfs_op_hint_t * op_hint)
+  const iofwdevent::CBType & cb, int * ret, const zoidfs::zoidfs_handle_t * handle, size_t count,
+  void * mem_starts[], const size_t * mem_sizes, size_t file_count,
+  const zoidfs::zoidfs_file_ofs_t file_starts[], zoidfs::zoidfs_file_size_t file_sizes[], zoidfs::zoidfs_op_hint_t * op_hint)
 {
+   ALWAYS_ASSERT(file_count == count);
   // ignore zero-length request
   int valid_count = 0;
   for (uint32_t i = 0; i < count; i++)
@@ -345,10 +348,10 @@ void RequestScheduler::issue(vector<ChildRange *>& rs)
 
   const iofwdevent::CBType cbfunc = boost::bind(&iofwd::tasksm::SharedIOCB::issueIOCallbacks, cbs, 0);
   if (rs[0]->type_ == RANGE_WRITE) {
-    async_cb_api_->write(cbfunc, ret, rs[0]->handle_, narrays, (const void**)mem_starts, mem_sizes,
+    api_->write(cbfunc, ret, rs[0]->handle_, narrays, (const void**)mem_starts, mem_sizes,
                                        narrays, file_starts, file_sizes, rs[0]->op_hint_);
   } else if (rs[0]->type_ == RANGE_READ) {
-    async_cb_api_->read(cbfunc, ret, rs[0]->handle_, narrays, (void**)mem_starts, mem_sizes,
+    api_->read(cbfunc, ret, rs[0]->handle_, narrays, (void**)mem_starts, mem_sizes,
                                       narrays, file_starts, file_sizes, rs[0]->op_hint_);
   } else {
     assert(false);
