@@ -156,3 +156,8 @@ test_bmi_sm_pingpong_LDADD = ${top_builddir}/src/sm/libsm.a \
 			     @BMI_LIBS@
 
 test_bmi_sm_pingpong_LDFLAGS = @BMI_LDFLAGS@ @BOOST_LDFLAGS@
+
+
+noinst_PROGRAMS += test/configfile
+test_configfile_SOURCES = test/configfile.c
+test_configfile_LDADD = ${top_builddir}/src/c-util/libc-util.a
