@@ -44,9 +44,12 @@ namespace zoidfs
       // @TODO: get blocking API through factory here
       try
       {
-      api_.reset (iofwdutil::Factory<
-                        std::string,
-                        zoidfs::util::ZoidFSAPI>::construct (apiname)());
+         api_.reset (iofwdutil::Factory<
+               std::string,
+               zoidfs::util::ZoidFSAPI>::construct (apiname)());
+         // Configure blocking api_
+         Configurable::configure_if_needed (api_.get(),
+               config.openSectionDefault(apiname.c_str()));
       }
       catch (iofwdutil::FactoryException & e)
       {
@@ -56,19 +59,24 @@ namespace zoidfs
          throw;
       }
 
-      wait_for_threads_ = config.getKeyAsDefault<bool>("use_thread_pool", false);
-      if (wait_for_threads_)
+      try
       {
-         ZLOG_INFO(log_, "Using thread pool...");
+         wait_for_threads_ = config.getKeyAsDefault<bool>("use_thread_pool", false);
+         if (wait_for_threads_)
+         {
+            ZLOG_INFO(log_, "Using thread pool...");
+         }
+         else
+         {
+            ZLOG_INFO(log_, "Not using thread pool...");
+         }
       }
-      else
+      catch (const boost::bad_lexical_cast &)
       {
-         ZLOG_INFO(log_, "Not using thread pool...");
+         ZLOG_ERROR(log_, "Invalid value for use_thread_pool: use '0' or"
+               " '1'");
+         throw;
       }
-
-      // Configure blocking api_
-      Configurable::configure_if_needed (api_.get(),
-            config.openSectionDefault(apiname.c_str()));
    }
 
 
