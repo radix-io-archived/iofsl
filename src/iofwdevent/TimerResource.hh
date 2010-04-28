@@ -9,15 +9,17 @@
 #include <map>
 
 #include "iofwdutil/assert.hh"
+#include "iofwdutil/Singleton.hh"
 #include "Resource.hh"
 #include "ThreadedResource.hh"
-#include "iofwdutil/IOFWDLog.hh"
+#include "iofwdutil/IOFWDLog-fwd.hh"
 
 namespace iofwdevent
 {
 //===========================================================================
 
-class TimerResource : public ThreadedResource
+class TimerResource : public ThreadedResource,
+                      public iofwdutil::Singleton<TimerResource>
 {
 public:
    TimerResource ();
@@ -33,7 +35,7 @@ public:
    virtual void stop ();
 
 protected:
-   typedef unsigned int seq_type_t; 
+   typedef unsigned int seq_type_t;
 
    struct TimerEntry 
    {
@@ -85,7 +87,7 @@ protected:
    QueueType queue_;
    IDMapType ids_;
 
-   iofwdutil::zlog::ZLogSource & log_;
+   iofwdutil::IOFWDLogSource & log_;
 
    seq_type_t sequence_;
 };
