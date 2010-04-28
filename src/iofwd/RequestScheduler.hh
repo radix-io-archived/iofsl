@@ -85,8 +85,6 @@ private:
   boost::scoped_ptr<zoidfs::util::ZoidFSAsync> api_;
   boost::scoped_ptr<RangeScheduler> range_sched_;
 
-  enum{EVMODE_TASK = 0, EVMODE_SM};
-  int mode_;
   bool schedActive_;
 };
 
