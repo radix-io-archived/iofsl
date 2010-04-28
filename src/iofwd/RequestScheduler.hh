@@ -9,13 +9,14 @@
 
 #include "zoidfs/zoidfs.h"
 #include "zoidfs/util/ZoidFSDefAsync.hh"
-#include "iofwdutil/zlog/ZLogSource.hh"
 #include "Range.hh"
 #include "iofwdutil/ConfigFile.hh"
 #include "iofwdevent/CBType.hh"
 #include "iofwdutil/tools.hh"
 #include "sm/SimpleSlots.hh"
 #include "zoidfs/util/ZoidFSAsyncPT.hh"
+#include "iofwdutil/Configurable.hh"
+#include "iofwdutil/IOFWDLog-fwd.hh"
 
 namespace iofwd
 {
@@ -24,11 +25,16 @@ class WriteRequest;
 class ReadRequest;
 class RangeScheduler;
 
-class RequestScheduler : public zoidfs::util::ZoidFSAsyncPT
+class RequestScheduler : public zoidfs::util::ZoidFSAsyncPT,
+                         public iofwdutil::Configurable
 {
 public:
-  RequestScheduler(zoidfs::util::ZoidFSAsync * api, const iofwdutil::ConfigFile & c, int mode);
+  RequestScheduler ();
+
+  //RequestScheduler(zoidfs::util::ZoidFSAsync * api, const iofwdutil::ConfigFile & c, int mode);
   virtual ~RequestScheduler();
+
+  void configure (const iofwdutil::ConfigFile & config);
 
   void write(
      const iofwdevent::CBType & cb, int * ret, const zoidfs::zoidfs_handle_t * handle, size_t count,
@@ -69,14 +75,14 @@ protected:
   void issueWait(int status);
 
 private:
-  iofwdutil::zlog::ZLogSource & log_;
+  iofwdutil::IOFWDLogSource & log_;
 
   boost::scoped_ptr<boost::thread> consumethread_;
   boost::mutex lock_;
   boost::condition_variable ready_;
   bool exiting_;
 
-  zoidfs::util::ZoidFSAsync * api_;
+  boost::scoped_ptr<zoidfs::util::ZoidFSAsync> api_;
   boost::scoped_ptr<RangeScheduler> range_sched_;
 
   enum{EVMODE_TASK = 0, EVMODE_SM};

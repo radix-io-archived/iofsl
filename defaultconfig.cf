@@ -34,11 +34,14 @@ requesthandler {
   //
   zoidfsapi {
 
-    name = "defasync";
+    name = "requestscheduler";
+    //name = "defasync";
 
+    requestscheduler {
     defasync {
       //blocking_api = "zoidfs";
       blocking_api = "log";
+      use_thread_pool = "1";
 
     log {
       blocking_api = "zoidfs";
@@ -87,6 +90,7 @@ requesthandler {
     }
 
       }
+    }
     }
     }
 

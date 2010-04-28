@@ -1,8 +1,11 @@
-#include "RequestScheduler.hh"
 
 #include <boost/shared_ptr.hpp>
 #include <boost/bind.hpp>
+
+// @TODO: boost 1.43 has unordered containers
 #include <tr1/unordered_map>
+
+#include "RequestScheduler.hh"
 
 #include "zoidfs/zoidfs.h"
 
@@ -13,16 +16,29 @@
 #include "Range.hh"
 #include "RangeSet.hh"
 
+// @TODO: the following 2 tasksm headers are useable outside of tasksm (they
+// are used here) and should be moved up one level
 #include "iofwd/tasksm/IOCBWrapper.hh"
 #include "iofwd/tasksm/SharedIOCB.hh"
+#include "iofwdutil/IOFWDLog.hh"
+#include "iofwdutil/LinkHelper.hh"
 
 using namespace std;
 using namespace iofwdutil;
+
+
+GENERIC_FACTORY_CLIENT(std::string,
+      zoidfs::util::ZoidFSAsync,
+      iofwd::RequestScheduler,
+      "requestscheduler",
+      requestscheduler);
 
 namespace iofwd
 {
 //===========================================================================
 
+// @TODO: use src/zoidfs/util/zoidfs-ops.hh : implements operator == and so on
+// for zoidfs structures.
 static bool same_handle(const zoidfs::zoidfs_handle_t *h1,
                         const zoidfs::zoidfs_handle_t *h2)
 {
@@ -40,33 +56,49 @@ static void check_ranges(const vector<ChildRange *>& rs)
   }
 }
 
-RequestScheduler::RequestScheduler(
-      zoidfs::util::ZoidFSAsync * api, const iofwdutil::ConfigFile &
-      c, int mode)
-  : ZoidFSAsyncPT(api_),
-    log_(IOFWDLog::getSource()), exiting_(false),
-    api_(api), mode_(mode), schedActive_(false)
+RequestScheduler::RequestScheduler ()
+    : log_(IOFWDLog::getSource("requestscheduler")), exiting_(false),
+       schedActive_(false)
 {
-  RangeScheduler * rsched;
-  char * sched_algo = new char[c.getKeyDefault("schedalgo", "fifo").size() + 1];
-  strcpy(sched_algo, c.getKeyDefault("schedalgo", "fifo").c_str());
+}
 
-  if (sched_algo == NULL || strcmp(sched_algo, "fifo") == 0) {
-    rsched = new FIFORangeScheduler();
-  } else if (strcmp(sched_algo, "merge") == 0) {
-    rsched = new MergeRangeScheduler();
-  } else {
-    assert(false);
-  }
+void RequestScheduler::configure (const iofwdutil::ConfigFile & config)
+{
+   boost::mutex::scoped_lock l(lock_);
 
-  boost::mutex::scoped_lock l(lock_);
-  range_sched_.reset(rsched);
+   const std::string api (config.getKeyDefault ("api", "defasync"));
+   ZLOG_INFO(log_, format("Using async API '%s'") % api);
+   api_.reset (iofwdutil::Factory<
+         std::string,
+         zoidfs::util::ZoidFSAsync>::construct(api)());
+   iofwdutil::Configurable::configure_if_needed (api_.get(),
+         config.openSectionDefault(api.c_str()));
+
+   // For ZoidFSAsyncPT
+   setAsyncPT (api_.get());
+
+   const std::string schedalgo = config.getKeyDefault("schedalgo", "fifo");
+   if (schedalgo == "fifo")
+   {
+      ZLOG_INFO(log_, "Using FIFO scheduler");
+      range_sched_.reset(new FIFORangeScheduler());
+   }
+   else if (schedalgo == "merge")
+   {
+      ZLOG_INFO(log_, "Using MERGE scheduler");
+      range_sched_.reset(new MergeRangeScheduler());
+   }
+   else
+   {
+      ZLOG_ERROR(log_, format("Unknown scheduler specified! ('%s')")
+            % schedalgo);
+      // @TODO: need configuration file exception
+      throw "bad config";
+   }
 
 #ifndef USE_IOFWD_THREAD_POOL
   consumethread_.reset(new boost::thread(boost::bind(&RequestScheduler::run, this, false)));
 #endif
-
-  delete [] sched_algo;
 }
 
 RequestScheduler::~RequestScheduler()
@@ -94,7 +126,8 @@ void RequestScheduler::write(
   const void * mem_starts[], const size_t * mem_sizes, size_t file_count,
   const zoidfs::zoidfs_file_ofs_t file_starts[], zoidfs::zoidfs_file_size_t file_sizes[], zoidfs::zoidfs_op_hint_t * op_hint)
 {
-   // Note: the Requestscheduler depends on this. Needs to be fixed.
+   // @TODO Note: the Requestscheduler depends on this. Needs to be fixed.
+   // @TODO Need to do proper error (return code) handling!
    ALWAYS_ASSERT(file_count == count);
 
   // ignore zero-length request
@@ -137,6 +170,7 @@ void RequestScheduler::read(
   void * mem_starts[], const size_t * mem_sizes, size_t file_count,
   const zoidfs::zoidfs_file_ofs_t file_starts[], zoidfs::zoidfs_file_size_t file_sizes[], zoidfs::zoidfs_op_hint_t * op_hint)
 {
+   // @TODO Need to do proper error (return code) handling!
    ALWAYS_ASSERT(file_count == count);
   // ignore zero-length request
   int valid_count = 0;
