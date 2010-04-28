@@ -54,7 +54,6 @@ requesthandler {
     //  default: LOCAL
     //
     handlers = ("POSIX","SYSIO","PVFS2","NOFS","LOCAL");
-    //handlers = "NOFS,LOCAL";
 
     //
     // options for the nofs handler
