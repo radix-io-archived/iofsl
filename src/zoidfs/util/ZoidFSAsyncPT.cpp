@@ -1,4 +1,5 @@
 #include "ZoidFSAsyncPT.hh"
+#include "iofwdutil/assert.hh"
 
 namespace zoidfs
 {
@@ -11,6 +12,12 @@ namespace zoidfs
       {
       }
 
+
+      void ZoidFSAsyncPT::setAsyncPT (ZoidFSAsync * pt)
+      {
+         ALWAYS_ASSERT(pt);
+         pt_ = pt;
+      }
 
       int ZoidFSAsyncPT::init(void)
       {

@@ -17,7 +17,10 @@ namespace zoidfs
       class ZoidFSAsyncPT : public ZoidFSAsync 
       {
          public:
-            ZoidFSAsyncPT (ZoidFSAsync * pt);
+            ZoidFSAsyncPT (ZoidFSAsync * pt = 0);
+
+            /// Called to set the passthrough API instance
+            void setAsyncPT (ZoidFSAsync * pt);
 
             virtual int init(void);
 
