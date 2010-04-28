@@ -19,7 +19,6 @@ namespace iofwd
 
 class Task;
 class Request; 
-class RequestScheduler;
 
 /**
  * Task factory that generates task which block until complete.

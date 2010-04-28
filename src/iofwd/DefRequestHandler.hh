@@ -27,11 +27,6 @@ namespace iofwdutil
 
 namespace iofwd
 {
-   class RequestScheduler;
-}
-
-namespace iofwd
-{
 
 /**
  * This class accepts requests from the frontend and uses a workqueue to run
@@ -65,9 +60,6 @@ protected:
 
    /// Async API
    boost::scoped_ptr<zoidfs::util::ZoidFSAsync> api_;
-
-   /// Scheduler
-   RequestScheduler * sched_;
 
    // config file
    const iofwdutil::ConfigFile & config_;
