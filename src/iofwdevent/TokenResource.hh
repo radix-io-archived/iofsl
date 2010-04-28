@@ -18,7 +18,8 @@ namespace iofwdevent
  * It can be used to limit the number of outstanding transactions, memory, ...
  *
  * The resource does not use an internal thread and does not need to be
- * polled.
+ * polled. As such, it can be created and stored inside the classes that want
+ * to use it.
  *
  * Currently does FIFO order.
  */
