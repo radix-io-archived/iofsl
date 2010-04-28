@@ -1,7 +1,6 @@
 #include "WriteTask.hh"
 #include "zoidfs/util/ZoidFSAPI.hh"
 #include "zoidfs/zoidfs-proto.h"
-#include "RequestScheduler.hh"
 
 #include <vector>
 #include <deque>
