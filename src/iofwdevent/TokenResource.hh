@@ -60,6 +60,12 @@ public:
    inline void add_tokens (size_t tokencount);
 
    /**
+    * Add more tokens to the system, but make sure the total number of tokens
+    * doesn't exceed limit.
+    */
+   inline void add_tokens_limit (size_t tokencount, size_t limit);
+
+   /**
     * Return number of free tokens
     */
    inline size_t get_tokencount () const
@@ -123,6 +129,16 @@ void TokenResource::add_tokens (size_t tokens)
 {
    boost::mutex::scoped_lock l(lock_);
    tokens_available_ += tokens;
+   check ();
+}
+
+void TokenResource::add_tokens_limit (size_t tokens, size_t limit)
+{
+   boost::mutex::scoped_lock l(lock_);
+   if (tokens_available_ >= limit)
+      return;
+
+   tokens_available_ += std::min (limit - tokens_available_, tokens);
    check ();
 }
 
