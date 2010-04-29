@@ -2,6 +2,7 @@
 #define IOFWDEVENT_TIMERRESOURCE_HH
 
 #include <boost/thread.hpp>
+#include <boost/unordered_map.hpp>
 #include <queue>
 #include <csignal>
 #include <boost/thread/thread_time.hpp>
@@ -53,11 +54,12 @@ protected:
       seq_type_t sequence_;
    };
 
-   struct IDComp
+   // Compare the sequence ID's of 
+   /*struct IDComp
    {
       bool operator () (const TimerEntry * v1, const TimerEntry * v2)
       { return v1->sequence_ > v2->sequence_; }
-   };
+   }; */
 
    /// Comparison operator for the heap
    struct TimerComp
@@ -82,7 +84,7 @@ protected:
 
 protected:
    typedef std::set<TimerEntry *, TimerComp>  QueueType;
-   typedef std::set<TimerEntry *, IDComp> IDMapType;
+   typedef boost::unordered_map<seq_type_t, TimerEntry *> IDMapType;
 
    QueueType queue_;
    IDMapType ids_;
@@ -90,6 +92,9 @@ protected:
    iofwdutil::IOFWDLogSource & log_;
 
    seq_type_t sequence_;
+
+   // pointer to the timer entry currently being executed by the worker thread
+   TimerEntry * executing_;
 };
 
 

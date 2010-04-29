@@ -13,10 +13,12 @@ namespace iofwdevent
 {
 //==========================================================================
 
+// Consider boost::MultiIndex for this
+
 TimerResource::TimerResource ()
-   : queue_(TimerComp ()), ids_(IDComp()),
+   : queue_(TimerComp ()),
      log_(iofwdutil::IOFWDLog::getSource ("timer")),
-     sequence_(0)
+     sequence_(0), executing_(0)
 {
 }
 
@@ -43,7 +45,7 @@ TimerResource::Handle TimerResource::createTimer (const CBType & cb, unsigned in
          ++sequence_);
 
    queue_.insert (e);
-   ids_.insert (e);
+   ids_.insert (std::make_pair(sequence_, e));
 
    // If the new alarm is the next one, the worker thread needs to be
    // informed.
@@ -62,23 +64,22 @@ void TimerResource::threadMain ()
    {
       while (!queue_.empty () && peekNext () <= boost::get_system_time ())
       {
-         int status = COMPLETED;
+         const int status = COMPLETED;
 
          TimerEntry * e = *queue_.begin ();
          queue_.erase (queue_.begin ());
 
-         // If the ID is no longer there it was cancelled
-         // If not we remove it
-         IDMapType::iterator iter = ids_.find (e);
-         if (iter == ids_.end())
-         {
-            status = CANCELLED;
-         }
-         else
-         {
-            ids_.erase (iter);
-         }
+         // Indicate that we picked this entry and that it is too late to
+         // cancel it.
+         executing_ = e;
 
+         // Remove sequence id from active sequence id list
+         IDMapType::iterator iter = ids_.find (e->sequence_);
+         ALWAYS_ASSERT ((iter != ids_.end()));
+         ids_.erase (iter);
+
+         // Drop lock before calling callback (so the callback can schedule
+         // another timer if desired)
          l.unlock ();
          try
          {
@@ -88,10 +89,10 @@ void TimerResource::threadMain ()
          {
             ALWAYS_ASSERT(false && "ResourceOp methods should not throw!");
          }
-
-         delete (e);
-
          l.lock ();
+
+         executing_ = 0;
+         delete (e);
       }
 
       if (needShutdown ())
@@ -104,14 +105,77 @@ void TimerResource::threadMain ()
    }
 }
 
+/**
+ *
+ * Note that we cannot use the pointer to the TimerEntry struct as an ID,
+ * since, if cancel runs after the timer expired it could match another
+ * TimerEntry *, especially if a memory pool is in use and the same memory
+ * blocks will be reused.
+ *
+ * Instead we maintain a hashmap of valid sequence ID's, and make sure every
+ * timer request gets a unique sequence ID. We need a map instead of a set
+ * because cancel needs to be able to call the callback (CANCELLED) *before*
+ * returning. Therefore, it has to map a sequence to a valid pointer; With a
+ * set, it would have to do a linear search.
+ *
+ */
 bool TimerResource::cancel (Handle h)
 {
-   boost::mutex::scoped_lock l(lock_);
-   TimerEntry e (reinterpret_cast<intptr_t> (h));
-   IDMapType::iterator I = ids_.find (&e);
-   if (I == ids_.end ())
-      return false;
-   ids_.erase (I);
+   TimerEntry * e;
+
+   {
+      boost::mutex::scoped_lock l(lock_);
+      // h contains the timer sequence id
+      seq_type_t seq = reinterpret_cast<intptr_t> (h);
+
+      // check if this entry is currently being executed
+      // We need to make sure to block cancel until it completed
+      if (executing_ && executing_->sequence_ == seq)
+      {
+         // The worker thread already picked this to be executed, so normally
+         // there is nothing we need to do. However, we need to guarantee that
+         // the callback is not going to be called AFTER cancel returns. So we
+         // need to wait until executing_ is done.
+         ZLOG_INFO (log_, "Cancelling timer entry that is being executed..."
+               " busy waiting...");
+
+         l.unlock ();
+         do
+         {
+            // strictly not needed to lock
+            boost::mutex::scoped_lock l2(lock_);
+            if (executing_ != e || executing_->sequence_ != seq)
+               break;
+         } while (true);
+
+         // we don't need to free, the worker thread did it already
+         return false;
+      }
+
+      IDMapType::iterator I = ids_.find (seq);
+      if (I == ids_.end ())
+      {
+         // Timer already completed or is not valid
+         return false;
+      }
+
+      e = I->second;
+
+      // Remove entry from queue and sequence list
+      // This way the worker thread can no longer pick this item.
+
+      // No need to wake up/warn the worker thread, if this was the next timer
+      // to be executed than the worker thread might wake up for no reason.
+      ids_.erase (I);
+      queue_.erase (e);
+   }
+
+   // We can drop the lock: the timer is removed so the worker thread cannot
+   // call it any longer
+   // Call callback and indicate cancel. We drop the main lock in case the
+   // callback wants to reschedule.
+   e->cb_ (CANCELLED);
+
    return true;
 }
 
@@ -122,6 +186,7 @@ void TimerResource::stop ()
    ThreadedResource::stop ();
 
    // There should be no contention on this lock now
+   // since our background thread cannot be running any more
    boost::unique_lock<boost::mutex> l (lock_, boost::try_to_lock_t ());
    ALWAYS_ASSERT(l.owns_lock());
 
