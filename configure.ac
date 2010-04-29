@@ -626,6 +626,24 @@ AC_SUBST([ZOIDFS_STATIC_LIBS_PKG])
 AC_SUBST([ZOIDFS_LOCAL_STATIC_LIBS_PKG])
 
 dnl =========================================================================
+dnl === Check if we have a BMI zoid that supports BMI_ZOID_POST_TIMEOUT =====
+dnl =========================================================================
+
+CPPFLAGS_OLD="$CPPFLAGS"
+CPPFLAGS="$CPPFLAGS $BMI_CPPFLAGS"
+AC_MSG_CHECKING([If BMI has support for BMI_ZOID_POST_TIMEOUT])
+AC_TRY_COMPILE(
+           [#include <bmi.h>],
+           [BMI_set_info(0,BMI_ZOID_POST_TIMEOUT,0);],
+           [
+              AC_DEFINE([HAVE_BMI_ZOID_TIMEOUT],[1],[If BMI has BMI_ZOID_POST_TIMEOUT])
+              AC_MSG_RESULT([yes])
+           ],
+           [ AC_MSG_RESULT([no])]
+          )
+CPPLAGS="$CPPFLAGS_OLD"
+
+dnl =========================================================================
 dnl =========================================================================
 dnl =========================================================================
 
