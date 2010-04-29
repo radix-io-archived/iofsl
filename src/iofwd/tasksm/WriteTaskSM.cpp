@@ -185,7 +185,7 @@ namespace iofwd
         rbuffer_[cw_post_index_]->ret = ret;
 
         /* set the callback and wait */
-        if((mode_ & WRITESM_SERIAL_IO_PIPELINE) == 0)
+        if(mode_ == WRITESM_SERIAL_IO_PIPELINE)
         {
             /* enqueue the write */
             api_->write (
@@ -203,40 +203,49 @@ namespace iofwd
             {
                 boost::mutex::scoped_lock l(slot_mutex_);
 
-            /* assign the current slot */
-            my_slot = cw_post_index_ + WRITE_PIPEOP_START;
+                /* assign the current slot */
+                my_slot = cw_post_index_ + WRITE_PIPEOP_START;
 
-            cw_post_index_++;
+                cw_post_index_++;
 
-            /* update the byte transfer count */
-            cur_recv_bytes_ += p_siz_;
-        }
-
-        /* enqueue the write */
-        api_->write (
-            slots_[my_slot], &ret_, p.handle, p_file_count, (const void**)mem_starts, mem_sizes,
-            p_file_count, file_starts, file_sizes, p.op_hint);
-
-
-        /* go to the next state depending on the current pipeline stage */
-        {
-            boost::mutex::scoped_lock l(slot_mutex_);
-
-            /* if there is still outstanding pipeline data, go back to the buffer allocate stage */
-            if(cur_recv_bytes_ < total_bytes_)
-            {
-                /* issue the barrier wait */
-                rbuffer_[cw_post_index_]->reinit();
-                slots_.wait(my_slot, &WriteTaskSM::writeBarrier);
-                setNextMethod(&WriteTaskSM::postAllocateBMIBuffer);
+                /* update the byte transfer count */
+                cur_recv_bytes_ += p_siz_;
             }
-            /* else, wait for the barrier */
-            else
+
+            /* enqueue the write */
+            boost::function<void(int)> barrierCB = boost::bind(&iofwd::tasksm::WriteTaskSM::writeDoneCB, this, 0, my_slot, slots_[my_slot]);
+            api_->write (
+                barrierCB, &ret_, p.handle, p_file_count, (const void**)mem_starts, mem_sizes,
+                p_file_count, file_starts, file_sizes, p.op_hint);
+
+
+            /* go to the next state depending on the current pipeline stage */
             {
-                slots_.wait(my_slot, &WriteTaskSM::writeBarrier);
+                boost::mutex::scoped_lock l(slot_mutex_);
+
+                /* if there is still outstanding pipeline data, go back to the buffer allocate stage */
+                if(cur_recv_bytes_ < total_bytes_)
+                {
+                    /* issue the barrier wait */
+                    rbuffer_[cw_post_index_]->reinit();
+                    slots_.wait(my_slot, &WriteTaskSM::writeBarrier);
+                    setNextMethod(&WriteTaskSM::postAllocateBMIBuffer);
+                }
+                /* else, wait for the barrier */
+                else
+                {
+                    slots_.wait(my_slot, &WriteTaskSM::writeBarrier);
+                }
             }
         }
     }
+
+void WriteTaskSM::writeDoneCB(int status, int my_slot, iofwdevent::CBType cb)
+{
+    /* free the buffer */
+    iofwd::BMIMemoryManager::instance().dealloc(rbuffer_[my_slot - WRITE_PIPEOP_START]->buffer);
+
+    cb(status);
 }
 
 /* barrier for writes... will not go to post reply state until all writes complete */

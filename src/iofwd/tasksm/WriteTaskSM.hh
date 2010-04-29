@@ -208,6 +208,7 @@ class WriteTaskSM : public sm::SimpleSM< WriteTaskSM >, public iofwdutil::Inject
         void recvPipelineBuffer();
         void execPipelineIO();
         void writeBarrier(int status);
+        void writeDoneCB(int status, int my_slot, iofwdevent::CBType cb);
 
         void computePipelineFileSegments();
 
