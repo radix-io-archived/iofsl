@@ -5,7 +5,6 @@
 
 #include "frontend/IOFWDFrontend.hh"
 #include "iofwdutil/zlog/ZLogSource.hh"
-#include "iofwdutil/completion/BMIResource.hh"
 #include "iofwdutil/ConfigFile.hh"
 #include "Resources.hh"
 
@@ -39,8 +38,6 @@ protected:
    std::auto_ptr<RequestHandler> requesthandler_;
 
    iofwdutil::zlog::ZLogSource & mainlog_;
-
-   iofwdutil::completion::BMIResource bmires_;
 
    // ===== Resources ====
    std::auto_ptr<Resources> resources_;

@@ -89,14 +89,12 @@ static boost::array<mapfunc_t, ZOIDFS_PROTO_MAX> map_ = {
 //===========================================================================
 //===========================================================================
 
-IOFWDFrontend::IOFWDFrontend (iofwdutil::completion::BMIResource & res,
-      Resources & r)
+IOFWDFrontend::IOFWDFrontend (Resources & r)
    : log_(IOFWDLog::getSource ("iofwdfrontend")),
-   bmires_ (res),
    r_(r),
    stop_(false),
    req_minsize_(encoder::xdr::getXDRSize (uint32_t ()).getActualSize()),
-   res_ (r_, bmires_, log_)
+   res_ (r_, log_)
 {
 }
 

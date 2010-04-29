@@ -19,8 +19,6 @@
 #include "iofwd/Request.hh"
 #include "iofwdutil/typestorage.hh"
 
-#include "iofwdutil/completion/BMIResource.hh"
-
 #include "iofwdutil/IOFWDLog.hh"
 #include "IOFWDResources.hh"
 
@@ -176,8 +174,6 @@ protected:
    encoder::xdr::XDRWriter reply_writer_;
 
    iofwdutil::bmi::BMIBuffer buffer_send_;
-
-   iofwdutil::completion::BMIResource & bmires_;
 };
 
 //===========================================================================

@@ -7,7 +7,6 @@
 
 #include "Frontend.hh"
 #include "iofwdutil/IOFWDLog.hh"
-#include "iofwdutil/completion/BMIResource.hh"
 #include "iofwd/Resources.hh"
 #include "iofwdutil/bmi/BMI.hh"
 #include "iofwdutil/bmi/BMIContext.hh"
@@ -24,8 +23,7 @@ class IOFWDFrontend : public Frontend
 public:
 
    /// res = the BMI resource to use
-   IOFWDFrontend (iofwdutil::completion::BMIResource & res,
-         Resources & r);
+   IOFWDFrontend (Resources & r);
 
    virtual ~IOFWDFrontend ();
 
@@ -47,8 +45,6 @@ protected:
 
 protected:
    iofwdutil::IOFWDLogSource & log_;
-
-   iofwdutil::completion::BMIResource & bmires_;
 
    Resources & r_;
 

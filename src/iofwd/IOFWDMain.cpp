@@ -25,7 +25,7 @@ void IOFWDMain::boot ()
 
    ZLOG_DEBUG (mainlog_, "Starting IOFWD Frontend"); 
 
-   frontend_.reset (new frontend::IOFWDFrontend (bmires_, *resources_));
+   frontend_.reset (new frontend::IOFWDFrontend (*resources_));
    
    frontend_->setConfig (config_.openSectionDefault ("frontend"));
 

@@ -2,7 +2,6 @@
 #define IOFWD_TASKHELPER_HH
 
 #include "Task.hh"
-#include "iofwdutil/completion/BMIResource.hh"
 #include "iofwdevent/SingleCompletion.hh"
 #include "zoidfs/util/ZoidFSAsync.hh"
 
