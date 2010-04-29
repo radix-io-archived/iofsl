@@ -15,6 +15,7 @@
 #include "zoidfs_xdr.h"
 #include "zoidfs/zoidfs-proto.h"
 #include "zoidfs/hints/zoidfs-hints.h"
+#include "iofwd_config.h"
 
 #include "c-util/tools.h"
 #include <assert.h>
@@ -3869,10 +3870,12 @@ int zoidfs_init(void) {
         exit(1);
     }
 
+#ifdef HAVE_BMI_ZOID_TIMEOUT
     {
 	int timeout = 3600 * 1000;
 	BMI_set_info(peer_addr, BMI_ZOID_POST_TIMEOUT, &timeout);
     }
+#endif
 
     /* preallocate buffers */
 #ifdef ZFS_BMI_FASTMEMALLOC
