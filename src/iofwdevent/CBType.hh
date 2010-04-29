@@ -25,6 +25,7 @@ namespace iofwdevent
 
    typedef boost::function<void (int)> CBType;
 
+   typedef void * Handle;
 }
 
 

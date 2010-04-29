@@ -19,7 +19,7 @@ class Resource : private boost::noncopyable
 {
 public:
 
-  typedef void * Handle;
+  typedef iofwdevent::Handle Handle;
 
    /// Initialize resource, start any threads if required
    virtual void start () = 0;
