@@ -30,7 +30,7 @@ namespace iofwd
 
 Task * ThreadTasks::operator () (Request * req)
 {
-   ThreadTaskParam p (req, api_, bmi_);
+   ThreadTaskParam p (req, api_);
    switch (req->getOpID ())
    {
       case ZOIDFS_PROTO_NULL:

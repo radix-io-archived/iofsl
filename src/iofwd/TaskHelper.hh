@@ -10,17 +10,24 @@
 namespace iofwd
 {
 
+/**
+ * This class was originally introduced to reduce the number of parameters
+ * that needed to be passed to each constructed Task. However, over time that
+ * number has gone down so this helper class is less helpful.
+ *
+ * It still saves on typing since any parameter that needs to be passed to the
+ * TaskHelper can be stored here, avoiding the need to change all the
+ * constructors of the thread tasks.
+ */
 class ThreadTaskParam
 {
 public:
    Request   *                          req;
    zoidfs::util::ZoidFSAsync *                  api;
-   iofwdutil::completion::BMIResource & bmi; 
 
    ThreadTaskParam (Request * r, 
-      zoidfs::util::ZoidFSAsync * a1,
-      iofwdutil::completion::BMIResource & b)
-      : req(r), api(a1), bmi(b)
+      zoidfs::util::ZoidFSAsync * a1)
+      : req(r), api(a1)
    {
    }
 
@@ -41,7 +48,7 @@ class TaskHelper : public Task
        */
       TaskHelper (ThreadTaskParam & param)
          : request_ (static_cast<T &> (*param.req)), 
-           api_ (param.api), bmi_ (param.bmi)
+           api_ (param.api)
       {
 #ifndef NDEBUG
          // This will throw if the request is not of the expected type
@@ -62,7 +69,6 @@ class TaskHelper : public Task
       T & request_; 
 
       zoidfs::util::ZoidFSAsync * api_;
-      iofwdutil::completion::BMIResource & bmi_;
 
       // All (almost?) threaded tasks call a blocking function at some point.
       // Declaring it here saves on typing.

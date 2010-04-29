@@ -2,8 +2,6 @@
 #define IOFWD_THREADTASKS_HH
 
 #include <boost/function.hpp>
-#include "iofwdutil/completion/BMIResource.hh"
-#include "iofwd/BMIMemoryManager.hh"
 
 namespace zoidfs
 {
@@ -33,15 +31,11 @@ public:
    {
    }
 
-   Task * operator () (Request * req); 
+   Task * operator () (Request * req);
 
 protected:
    zoidfs::util::ZoidFSAsync * api_;
-
-   // @TODO: this probably needs to be removed.
-   iofwdutil::completion::ContextBase ctx_; 
-   iofwdutil::completion::BMIResource bmi_; 
-}; 
+};
 
 //===========================================================================
 }
