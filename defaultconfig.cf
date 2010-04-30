@@ -52,10 +52,24 @@ requesthandler {
         //
         batchsize = "16";
 
-        //
-        // hbrr quantum 
-        //
-        defquantum = "8";
+        rangesched {
+            //
+            // request mereger type
+            //  hierarchical: list of ranges merged 
+            //  intervaltree: red-black interval tree
+            //  default: hierarchical
+            //
+            merger = "hierarchical";
+
+            hierarchical {
+                // no special config options
+            }
+            
+            //
+            // hbrr quantum 
+            //
+            defquantum = "8";
+        }
 
     defasync {
       //blocking_api = "zoidfs";
