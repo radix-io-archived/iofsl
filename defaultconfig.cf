@@ -38,6 +38,13 @@ requesthandler {
     //name = "defasync";
 
     requestscheduler {
+        //
+        // request scheduler modes
+        //  fifo - schedule requests as they arrive
+        //  merge - attempt to merge requests
+        //
+        schedalgo = "merge";
+
     defasync {
       //blocking_api = "zoidfs";
       blocking_api = "log";
@@ -136,12 +143,4 @@ requesthandler {
     maxthreadnum = "100";
   }
 
-  //
-  // request scheduler modes
-  //  fifo - schedule requests as they arrive
-  //  merge - attempt to merge requests
-  //
-  requestscheduler {
-    schedalgo = "merge";
-  }
 }
