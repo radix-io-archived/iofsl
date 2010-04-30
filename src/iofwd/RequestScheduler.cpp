@@ -13,8 +13,8 @@
 #include "iofwd/ReadRequest.hh"
 #include "iofwd/RangeScheduler.hh"
 
-#include "Range.hh"
-#include "RangeSet.hh"
+#include "iofwd/Range.hh"
+#include "iofwd/BaseRangeSet.hh"
 
 // @TODO: the following 2 tasksm headers are useable outside of tasksm (they
 // are used here) and should be moved up one level

@@ -7,14 +7,15 @@
 #include <set>
 #include <map>
 
-#include "Range.hh"
+#include "iofwd/Range.hh"
+#include "iofwd/BaseRangeSet.hh"
 
 namespace iofwd
 {
 //===========================================================================
 
 
-class HierarchicalRangeSet
+class HierarchicalRangeSet : public BaseRangeSet
 {
 public:
     HierarchicalRangeSet()
@@ -55,7 +56,7 @@ public:
         return ranges.empty();
     }
 
-    void pop_front(ChildRange ** r)
+    void get(ChildRange ** r)
     {
         assert(!ranges.empty());
         *r = *ranges.begin();

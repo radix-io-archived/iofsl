@@ -6,14 +6,15 @@
 #include <set>
 #include <map>
 
-#include "Range.hh"
+#include "iofwd/Range.hh"
+#include "iofwd/BaseRangeSet.hh"
 
 #include "iofwdutil/rm/IntervalMergeTree.hh"
 
 namespace iofwd
 {
 
-class IntervalTreeRangeSet
+class IntervalTreeRangeSet : public BaseRangeSet
 {
     public:
         IntervalTreeRangeSet() : rt(NULL)
@@ -42,7 +43,7 @@ class IntervalTreeRangeSet
             return false;
         }
 
-        void pop_front(ChildRange ** r)
+        void get(ChildRange ** r)
         {
             interval_merge_tree_node_t * node = NULL;
 

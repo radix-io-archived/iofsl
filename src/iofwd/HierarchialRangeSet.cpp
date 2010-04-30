@@ -1,4 +1,4 @@
-#include "RangeSet.hh"
+#include "iofwd/HierarchialRangeSet.hh"
 
 namespace iofwd
 {

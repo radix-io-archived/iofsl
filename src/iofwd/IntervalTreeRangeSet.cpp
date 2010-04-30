@@ -1,4 +1,4 @@
-#include "IntervalTreeRangeSet.hh"
+#include "iofwd/IntervalTreeRangeSet.hh"
 
 namespace iofwd
 {

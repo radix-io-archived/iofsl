@@ -4,9 +4,10 @@
 #include <tr1/unordered_map>
 #include <deque>
 
-#include "Range.hh"
-#include "RangeSet.hh"
-#include "IntervalTreeRangeSet.hh"
+#include "iofwd/Range.hh"
+#include "iofwd/BaseRangeSet.hh"
+#include "iofwd/HierarchialRangeSet.hh"
+#include "iofwd/IntervalTreeRangeSet.hh"
 #include "zoidfs/zoidfs.h"
 
 namespace iofwd

@@ -30,7 +30,7 @@ src/iofwd/DefRequestHandler.cpp \
 src/iofwd/IOFWDMain.cpp \
 src/iofwd/Range.cpp \
 src/iofwd/RangeScheduler.cpp \
-src/iofwd/RangeSet.cpp \
+src/iofwd/HierarchialRangeSet.cpp \
 src/iofwd/IntervalTreeRangeSet.cpp \
 src/iofwd/ReadTask.cpp \
 src/iofwd/Request.cpp \
@@ -64,7 +64,8 @@ src/iofwd/NullRequestSM.hh \
 src/iofwd/NullTask.hh \
 src/iofwd/Range.hh \
 src/iofwd/RangeScheduler.hh \
-src/iofwd/RangeSet.hh \
+src/iofwd/BaseRangeSet.hh \
+src/iofwd/HierarchialRangeSet.hh \
 src/iofwd/IntervalTreeRangeSet.hh \
 src/iofwd/ReadDirRequest.hh \
 src/iofwd/ReadDirTask.hh \
