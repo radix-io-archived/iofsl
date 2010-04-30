@@ -10,9 +10,6 @@
 #include "iofwdutil/Configurable.hh"
 #include "iofwdutil/IOFWDLog.hh"
 
-//#define BOOST_FUNCTION_MAX_ARGS 20
-//#include <boost/function.hpp>
-
 namespace zoidfs
 {
 
