@@ -33,6 +33,11 @@ namespace iofwdutil
       try
       {
          ptr = dynamic_cast<Configurable *>(cfg);
+
+         if(!ptr)
+         {
+            return;
+         }
       }
       catch (std::bad_cast & bd)
       {
