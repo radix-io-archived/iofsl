@@ -158,6 +158,12 @@ class ReadTaskSM : public sm::SimpleSM< ReadTaskSM >, public iofwdutil::InjectPo
 
         void waitSendPipelineBuffer(int UNUSED(status))
         {
+            /* update the return code */
+            if(*(rbuffer_[cw_post_index_]->ret) != zoidfs::ZFS_OK)
+            {
+                ret_ = *(rbuffer_[cw_post_index_]->ret);
+            }
+
             /* update the amount of outstanding data */
             cur_sent_bytes_ += p_siz_;
 

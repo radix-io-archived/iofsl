@@ -21,7 +21,7 @@ class ReadTask : public TaskHelper<ReadRequest>, public iofwdutil::InjectPool<Re
 public:
    ReadTask (ThreadTaskParam & p)
       : TaskHelper<ReadRequest>(p), total_bytes_(0), cur_sent_bytes_(0), p_siz_(0), total_pipeline_ops_(0),
-        total_buffers_(0), rbuffer_(NULL), pipeline_blocks_(NULL)
+        total_buffers_(0), rbuffer_(NULL), pipeline_blocks_(NULL), ret_(zoidfs::ZFS_OK)
    {
    }
 
@@ -110,6 +110,7 @@ private:
    void getBMIBuffer(int index);
    void computePipelineFileSegments(const ReadRequest::ReqParam & p);
    void sendPipelineBuffer(int index);
+   void runPostReadCB(int status, int index, iofwdevent::CBType cb);
 
    /* pipeline variables */
    size_t total_bytes_;
@@ -128,6 +129,8 @@ private:
    std::vector<int> p_segments;
    std::vector<int> p_segments_start;
    std::vector<int> pipeline_ops_;
+
+   int ret_;
 };
 
 }

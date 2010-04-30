@@ -287,6 +287,17 @@ void ReadTask::execPipelineIO(const ReadRequest::ReqParam & p)
     delete [] send_ready;
 }
 
+void ReadTask::runPostReadCB(int status, int index, iofwdevent::CBType cb)
+{
+    /* update the ret code */
+    if(*(rbuffer_[index]->ret) != zoidfs::ZFS_OK)
+    {
+        ret_ = *(rbuffer_[index]->ret);
+    }
+
+    cb(status);
+}
+
 void ReadTask::postRead(const ReadRequest::ReqParam & p, int index)
 {
     char * p_buf = (char *)rbuffer_[index]->buffer->getMemory();
@@ -320,9 +331,13 @@ void ReadTask::postRead(const ReadRequest::ReqParam & p, int index)
     rbuffer_[index]->file_sizes = file_sizes;
     rbuffer_[index]->ret = ret;
 
+    iofwdevent::CBType pcb = *(pipeline_blocks_[index]);
+    boost::function<void(int)> bmmCB = boost::bind(&iofwd::ReadTask::runPostReadCB,
+            this, 0, index, pcb);
+
     /* enqueue the read */
     api_->read (
-        *(pipeline_blocks_[index]), ret, p.handle, p_file_count,
+        bmmCB, ret, p.handle, p_file_count,
         reinterpret_cast<void**>(mem_starts), mem_sizes, p_file_count, file_starts,
         file_sizes, p.op_hint);
 }
@@ -333,7 +348,7 @@ void ReadTask::runPipelineMode(const ReadRequest::ReqParam & p)
    execPipelineIO(p);
 
    // reply status
-   request_.setReturnCode(zoidfs::ZFS_OK);
+   request_.setReturnCode(ret_);
    block_.reset();
    request_.reply((block_));
    block_.wait();

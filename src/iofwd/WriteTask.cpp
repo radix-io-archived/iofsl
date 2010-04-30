@@ -247,9 +247,16 @@ void WriteTask::execPipelineIO(const WriteRequest::ReqParam & p)
     }
 }
 
-void WriteTask::runPostWriteCB(int status, BMIMemoryAlloc * buffer, iofwdevent::CBType cb)
+void WriteTask::runPostWriteCB(int status, BMIMemoryAlloc * buffer, int index, iofwdevent::CBType cb)
 {
     iofwd::BMIMemoryManager::instance().dealloc(buffer);
+
+    /* update the ret code */
+    if(*(rbuffer_[index]->ret) != zoidfs::ZFS_OK)
+    {
+        ret_ = *(rbuffer_[index]->ret);
+    }
+
     cb(status);
 }
 
@@ -289,11 +296,11 @@ void WriteTask::postWrite(const WriteRequest::ReqParam & p, int index)
 
     iofwdevent::CBType pcb = *(pipeline_blocks_[index]);
     boost::function<void(int)> bmmCB = boost::bind(&iofwd::WriteTask::runPostWriteCB, 
-            this, _1, rbuffer_[index]->buffer, pcb);
+            this, 0, rbuffer_[index]->buffer, index, pcb);
 
     /* enqueue the write */
     api_->write (
-        boost::bind(bmmCB, 0), ret, p.handle, p_file_count, (const void**)mem_starts, mem_sizes,
+        bmmCB, ret, p.handle, p_file_count, (const void**)mem_starts, mem_sizes,
         p_file_count, file_starts, file_sizes, p.op_hint);
 }
 
@@ -303,7 +310,7 @@ void WriteTask::runPipelineMode(const WriteRequest::ReqParam & p)
    execPipelineIO(p);
 
    // reply status
-   request_.setReturnCode(zoidfs::ZFS_OK);
+   request_.setReturnCode(ret_);
    block_.reset();
    request_.reply((block_));
    block_.wait();

@@ -63,7 +63,7 @@ namespace iofwd
     void ReadTaskSM::reply()
     {
         /* set the return code */
-        request_.setReturnCode(zoidfs::ZFS_OK);
+        request_.setReturnCode(ret_);
 
         /* issue the reply */
         request_.reply(slots_[READ_SLOT]);
@@ -186,7 +186,7 @@ namespace iofwd
     {
         /* enqueue the write */
         api_->read (
-            slots_[READ_SLOT], &ret_, p.handle, p_file_count, (void**)mem_starts, mem_sizes,
+            slots_[READ_SLOT], ret, p.handle, p_file_count, (void**)mem_starts, mem_sizes,
             p_file_count, file_starts, file_sizes, p.op_hint);
 
         /* issue the serial wait */
@@ -211,7 +211,7 @@ namespace iofwd
 
         /* enqueue the write */
         api_->read (
-            slots_[my_slot], &ret_, p.handle, p_file_count, (void**)mem_starts, mem_sizes,
+            slots_[my_slot], ret, p.handle, p_file_count, (void**)mem_starts, mem_sizes,
             p_file_count, file_starts, file_sizes, p.op_hint);
 
 

@@ -179,7 +179,7 @@ namespace iofwd
         {
             /* enqueue the write */
             api_->write (
-                slots_[WRITE_SLOT], &ret_, p.handle, p_file_count, (const void**)mem_starts, mem_sizes,
+                slots_[WRITE_SLOT], ret, p.handle, p_file_count, (const void**)mem_starts, mem_sizes,
                 p_file_count, file_starts, file_sizes, p.op_hint);
 
             /* issue the serial wait */
@@ -201,7 +201,7 @@ namespace iofwd
                 /* enqueue the write */
                 boost::function<void(int)> barrierCB = boost::bind(&iofwd::tasksm::WriteTaskSM::writeDoneCB, this, 0, my_slot);
                 api_->write (
-                    barrierCB, &ret_, p.handle, p_file_count, (const void**)mem_starts, mem_sizes,
+                    barrierCB, ret, p.handle, p_file_count, (const void**)mem_starts, mem_sizes,
                     p_file_count, file_starts, file_sizes, p.op_hint);
 
                 if(cur_recv_bytes_ == total_bytes_)
@@ -226,6 +226,12 @@ void WriteTaskSM::writeDoneCB(int UNUSED(status), int my_slot)
         // update the op count
         io_ops_done_++;
         count = io_ops_done_;
+    }
+
+    /* update the return code */
+    if(*(rbuffer_[my_slot]->ret) != zoidfs::ZFS_OK)
+    {
+        ret_ = *(rbuffer_[my_slot]->ret);
     }
 
     /* free the buffer */
