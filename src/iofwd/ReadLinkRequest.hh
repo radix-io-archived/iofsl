@@ -15,7 +15,7 @@ public:
    typedef struct
    {
       zoidfs::zoidfs_handle_t * handle;
-      uint64_t buffer_length;
+      size_t buffer_length;
       zoidfs::zoidfs_op_hint_t * op_hint;
    } ReqParam;
 
@@ -34,7 +34,7 @@ public:
     * need to be transmitted
     */
    virtual void reply (const CBType & cb, const char * buffer,
-                                            uint64_t buffer_length) = 0;
+                                            size_t buffer_length) = 0;
 };
 
 

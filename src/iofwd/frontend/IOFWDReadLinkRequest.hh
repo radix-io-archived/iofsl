@@ -28,7 +28,7 @@ public:
 
    /// @TODO: Why is buffer_length 64 bit????
    virtual void reply (const CBType & cb, const char * buffer,
-                                         uint64_t buffer_length);
+                                         size_t buffer_length);
 
    virtual ~IOFWDReadLinkRequest ();
 

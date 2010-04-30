@@ -30,7 +30,7 @@ const IOFWDReadLinkRequest::ReqParam & IOFWDReadLinkRequest::decodeParam ()
    return param_;
 }
 
-void IOFWDReadLinkRequest::reply (const CBType & cb, const char * buffer, uint64_t buffer_length)
+void IOFWDReadLinkRequest::reply (const CBType & cb, const char * buffer, size_t buffer_length)
 {
    // If success, send the return code followed by the handle;
    // Otherwise send the return code.
