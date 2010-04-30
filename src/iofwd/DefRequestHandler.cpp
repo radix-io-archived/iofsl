@@ -34,9 +34,6 @@ DefRequestHandler::DefRequestHandler (const iofwdutil::ConfigFile & cf)
       api_.reset (iofwdutil::Factory<
                         std::string,
                         zoidfs::util::ZoidFSAsync>::construct (apiname)());
-      // We configure the API using its own subsection 
-      iofwdutil::Configurable::configure_if_needed (api_.get(),
-            zoidfssection.openSectionDefault(apiname.c_str()));
    }
    catch (FactoryException & e)
    {
@@ -44,6 +41,10 @@ DefRequestHandler::DefRequestHandler (const iofwdutil::ConfigFile & cf)
             apiname);
       throw;
    }
+
+   // We configure the API using its own subsection 
+   iofwdutil::Configurable::configure_if_needed (api_.get(),
+         zoidfssection.openSectionDefault(apiname.c_str()));
 
    if (api_->init() != zoidfs::ZFS_OK)
    {
