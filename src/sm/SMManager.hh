@@ -42,12 +42,6 @@ public:
     */
    void runNow (SMClient * client);
 
-   /// Stop all worker threads
-   void stopThreads ();
-
-   /// Start specified number of worker threads
-   void startThreads (size_t threads = 0);
-
    ~SMManager ();
 
 protected:

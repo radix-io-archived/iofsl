@@ -96,10 +96,6 @@ void RequestScheduler::configure (const iofwdutil::ConfigFile & config)
       // @TODO: need configuration file exception
       throw "bad config";
    }
-
-#ifndef USE_IOFWD_THREAD_POOL
-  consumethread_.reset(new boost::thread(boost::bind(&RequestScheduler::run, this, false)));
-#endif
 }
 
 RequestScheduler::~RequestScheduler()
@@ -109,20 +105,14 @@ RequestScheduler::~RequestScheduler()
     exiting_ = true;
   }
 
-#ifdef USE_IOFWD_THREAD_POOL
   /* wait for the sched to finish */
   while(schedActive_)
   {
         // just spin
   }
-#else
-  ready_.notify_all();
-  consumethread_->join();
-#endif
-
 }
 
-void RequestScheduler::write (const iofwdevent::CBType & cb, int * ret, const
+void RequestScheduler::write (const iofwdevent::CBType & cb, int * UNUSED(ret), const
       zoidfs::zoidfs_handle_t * handle, size_t count, const void *
       mem_starts[], const size_t * mem_sizes, size_t file_count, const
       zoidfs::zoidfs_file_ofs_t file_starts[], const
@@ -130,7 +120,7 @@ void RequestScheduler::write (const iofwdevent::CBType & cb, int * ret, const
       op_hint)
 {
    // @TODO Note: the Requestscheduler depends on this. Needs to be fixed.
-   // @TODO Need to do proper error (return code) handling!
+   // @TODO Need to do proper error (return code) handling! ... current ret is UNUSED
    ALWAYS_ASSERT(file_count == count);
 
   // ignore zero-length request
@@ -154,27 +144,22 @@ void RequestScheduler::write (const iofwdevent::CBType & cb, int * ret, const
     boost::mutex::scoped_lock l(lock_);
     range_sched_->enqueue(r);
 
-#ifdef USE_IOFWD_THREAD_POOL
     /* if the scheduler is not active, add the scheduler work to the ThreadPool */
     if(!schedActive_)
     {
         iofwdutil::ThreadPool::instance().addWorkUnit(new ReqSchedHelper(this), &ReqSchedHelper::run, iofwdutil::ThreadPool::HIGH, true);
         schedActive_ = true;
     }
-#endif
   }
-#ifndef USE_IOFWD_THREAD_POOL
-  notifyConsumer();
-#endif
 }
 
-void RequestScheduler::read (const iofwdevent::CBType & cb, int * ret, const
+void RequestScheduler::read (const iofwdevent::CBType & cb, int * UNUSED(ret), const
       zoidfs::zoidfs_handle_t * handle, size_t count, void * mem_starts[],
       const size_t * mem_sizes, size_t file_count,
       const zoidfs::zoidfs_file_ofs_t file_starts[],
       const zoidfs::zoidfs_file_size_t file_sizes[], zoidfs::zoidfs_op_hint_t * op_hint)
 {
-   // @TODO Need to do proper error (return code) handling!
+   // @TODO Need to do proper error (return code) handling! ... current ret is UNUSED
    ALWAYS_ASSERT(file_count == count);
   // ignore zero-length request
   int valid_count = 0;
@@ -197,18 +182,13 @@ void RequestScheduler::read (const iofwdevent::CBType & cb, int * ret, const
     boost::mutex::scoped_lock l(lock_);
     range_sched_->enqueue(r);
 
-#ifdef USE_IOFWD_THREAD_POOL
     /* if the scheduler is not active, add the scheduler work to the ThreadPool */
     if(!schedActive_)
     {
         iofwdutil::ThreadPool::instance().addWorkUnit(new ReqSchedHelper(this), &ReqSchedHelper::run, iofwdutil::ThreadPool::HIGH, true);
         schedActive_ = true;
     }
-#endif
   }
-#ifndef USE_IOFWD_THREAD_POOL
-  notifyConsumer();
-#endif
 }
 
 void RequestScheduler::run(bool waitForWork)
@@ -232,11 +212,6 @@ void RequestScheduler::run(bool waitForWork)
             /* update the sched active flag */
             schedActive_ = false;
             return;
-        }
-        /* else, wait on the condition variable for work */
-        else
-        {
-            ready_.wait(l);
         }
         /* if the exit flag was set, exit this function */
         if(exiting_)
@@ -399,11 +374,6 @@ void RequestScheduler::issue(vector<ChildRange *>& rs)
 void issueWait(int UNUSED(status))
 {
    // issue the other callbacks for the request
-}
-
-void RequestScheduler::notifyConsumer()
-{
-    ready_.notify_all();
 }
 
 //===========================================================================

@@ -24,14 +24,7 @@ void SMManager::schedule (SMClient * client)
 {
    ZLOG_DEBUG_MORE(log_,format("Scheduling client %p") % (void*) client);
 
-#ifdef USE_IOFWD_THREAD_POOL
    iofwdutil::ThreadPool::instance().addWorkUnit(new SMHelper(client), &SMHelper::run, iofwdutil::ThreadPool::HIGH, true);
-#else
-   boost::mutex::scoped_lock l (lock_);
-   worklist_.push (SMClientSharedPtr (client));
-   /* Notify a worker thread. */
-   cond_.notify_one ();
-#endif
 }
 
 void SMManager::workerMain ()
@@ -84,48 +77,6 @@ void SMManager::workerMain ()
    }
    
    ZLOG_DEBUG_EXTREME(log_, "Worker thread exiting");
-}
-
-void SMManager::startThreads (size_t count)
-{
-#ifndef USE_IOFWD_THREAD_POOL
-   ALWAYS_ASSERT(workers_.empty());
-
-   if (!count)
-      count = threads_;
-
-   if (!count)
-      count = std::max(1u, boost::thread::hardware_concurrency ());
-
-   ZLOG_DEBUG(log_, format("Starting %i threads...") % count);
-   workers_.reserve (count);
-   for (size_t i=0; i<count; ++i)
-   {
-      workers_.push_back (
-            new boost::thread (boost::bind (&SMManager::workerMain, this)));
-   }
-#endif
-}
-
-void SMManager::stopThreads ()
-{
-#ifndef USE_IOFWD_THREAD_POOL
-   ZLOG_DEBUG(log_, "Stopping threads...");
-   {
-        boost::mutex::scoped_lock flock(lock_);
-        finish_ = true;
-   }
-
-   {
-      boost::mutex::scoped_lock l(lock_);
-      cond_.notify_all ();
-   }
-   for_each (workers_.begin(), workers_.end(),
-         boost::bind(&boost::thread::join, _1));
-   for_each (workers_.begin(), workers_.end(),
-         boost::bind(&operator delete, _1));
-   workers_.clear();
-#endif
 }
 
 SMManager::~SMManager ()

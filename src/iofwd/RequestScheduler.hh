@@ -75,15 +75,12 @@ protected:
 
   void run(bool waitForWork);
   void issue(std::vector<ChildRange *>& rs);
-  void notifyConsumer();
   void issueWait(int status);
 
 private:
   iofwdutil::IOFWDLogSource & log_;
 
-  boost::scoped_ptr<boost::thread> consumethread_;
   boost::mutex lock_;
-  boost::condition_variable ready_;
   bool exiting_;
 
   boost::scoped_ptr<zoidfs::util::ZoidFSAsync> api_;

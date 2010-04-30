@@ -91,8 +91,6 @@ DefRequestHandler::DefRequestHandler (const iofwdutil::ConfigFile & cf)
    taskfactory_.reset (new ThreadTasks (api_.get()));
 
    taskSMFactory_.reset(new iofwd::tasksm::TaskSMFactory(api_.get(), smm_));
-
-   smm_.startThreads();
 }
 
 DefRequestHandler::~DefRequestHandler ()
@@ -100,14 +98,11 @@ DefRequestHandler::~DefRequestHandler ()
    /* if this is the state machine mode, shutdown the state machine manager */
    if(event_mode_ == EVMODE_SM)
    {
-      // @TODO we need to wait for state machines too!
-        smm_.stopThreads();
+        /* nothing to do */
    }
    /* if this is the task mode, clear out the work queues before shutdown */
    else if(event_mode_ == EVMODE_TASK)
    {
-        smm_.stopThreads();
-
         std::vector<WorkItem *> items;
         ZLOG_INFO (log_, "Waiting for normal workqueue to complete all work...");
         workqueue_normal_->waitAll (items);

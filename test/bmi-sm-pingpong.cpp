@@ -89,10 +89,10 @@ int main (int argc, char ** argv)
                   opt_iterations));
       }
 
-      input.manager_.startThreads (opt_threads);
+      //input.manager_.startThreads (opt_threads);
 
       waitPingPongDone ();
       
-      input.manager_.stopThreads ();
+      //input.manager_.stopThreads ();
    }
 }
