@@ -6,6 +6,7 @@ namespace iofwd
    {
 //===========================================================================
 
+      // @TODO: make op_hint a C++ class so no explicit destruction is needed.
 IOFWDCommitRequest::~IOFWDCommitRequest ()
 {
     if(op_hint_)
