@@ -46,7 +46,7 @@ struct HandleQueue;
 class MergeRangeScheduler : public RangeScheduler
 {
 public:
-  MergeRangeScheduler() : bytes_queued(0) {}
+  MergeRangeScheduler(int default_quantum) : bytes_queued(0), default_quantum_(default_quantum) {}
   virtual ~MergeRangeScheduler() {}
   virtual void enqueue(ChildRange * r);
   virtual bool empty();
@@ -65,6 +65,8 @@ private:
   std::tr1::unordered_map<const zoidfs::zoidfs_handle_t*, HandleQueue*> wm_;
 
   ssize_t bytes_queued;
+
+  int default_quantum_;
 };
 
 //===========================================================================

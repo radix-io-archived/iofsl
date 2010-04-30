@@ -32,8 +32,6 @@ bool FIFORangeScheduler::dequeue(ChildRange ** r)
 
 //===========================================================================
 
-#define DEFAULT_QUANTUM 8
-
 struct HandleQueue
 {
   RangeType type;
@@ -51,7 +49,7 @@ void MergeRangeScheduler::io_enqueue(ChildRange * r)
     HandleQueue * hq = new HandleQueue();
     hq->type = r->type_;
     hq->handle = r->handle_;
-    hq->quantum = DEFAULT_QUANTUM;
+    hq->quantum = default_quantum_;
 
 #ifdef ITRS
     IntervalTreeRangeSet * itrs = new IntervalTreeRangeSet();
@@ -113,7 +111,7 @@ bool MergeRangeScheduler::io_dequeue(ChildRange ** r)
   } else if (hq->quantum == 0 && !hrs->empty()) {
 #endif /* #ifdef ITRS */
     // turn to another queue
-    hq->quantum = DEFAULT_QUANTUM;
+    hq->quantum = default_quantum_;
     q_.pop_front();
     q_.push_back(hq);
   } else {

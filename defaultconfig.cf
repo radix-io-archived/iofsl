@@ -45,6 +45,18 @@ requesthandler {
         //
         schedalgo = "merge";
 
+        //
+        // list io batch size
+        //  upper limit on the number of non contig ops
+        //  the scheduler will issue in a single zoidfs read or write
+        //
+        batchsize = "16";
+
+        //
+        // hbrr quantum 
+        //
+        defquantum = "8";
+
     defasync {
       //blocking_api = "zoidfs";
       blocking_api = "log";

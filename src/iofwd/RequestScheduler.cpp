@@ -59,7 +59,7 @@ static void check_ranges(const vector<ChildRange *>& rs)
 
 RequestScheduler::RequestScheduler ()
     : log_(IOFWDLog::getSource("requestscheduler")), exiting_(false),
-       schedActive_(false)
+       schedActive_(false), batch_size_(0)
 {
 }
 
@@ -78,6 +78,7 @@ void RequestScheduler::configure (const iofwdutil::ConfigFile & config)
    // For ZoidFSAsyncPT
    setAsyncPT (api_.get());
 
+   /* get the scheduler type... defaults to FIFO */
    const std::string schedalgo = config.getKeyDefault("schedalgo", "fifo");
    if (schedalgo == "fifo")
    {
@@ -86,8 +87,11 @@ void RequestScheduler::configure (const iofwdutil::ConfigFile & config)
    }
    else if (schedalgo == "merge")
    {
+      /* get the hbrr quantum */
+      int default_quantum = config.getKeyAsDefault("defquantum", 8);
+
       ZLOG_INFO(log_, "Using MERGE scheduler");
-      range_sched_.reset(new MergeRangeScheduler());
+      range_sched_.reset(new MergeRangeScheduler(default_quantum));
    }
    else
    {
@@ -96,6 +100,9 @@ void RequestScheduler::configure (const iofwdutil::ConfigFile & config)
       // @TODO: need configuration file exception
       throw "bad config";
    }
+
+   /* get the scheduler batch size */
+   batch_size_ = config.getKeyAsDefault("batchsize", 16);
 }
 
 RequestScheduler::~RequestScheduler()
@@ -194,7 +201,6 @@ void RequestScheduler::read (const iofwdevent::CBType & cb, int * UNUSED(ret), c
 void RequestScheduler::run(bool waitForWork)
 {
   vector<ChildRange *> rs;
-  const int batch_size = 16;
   int cur_batch = 0;
   while (true) {
     // check if RangeScheduler has pending requests
@@ -219,8 +225,7 @@ void RequestScheduler::run(bool waitForWork)
       }
 
       // dequeue requests of same direction (read/write), same handle
-      // TODO: batch_size should be tunable
-      while (cur_batch < batch_size) {
+      while (cur_batch < batch_size_) {
         ChildRange * r = NULL;
         if (range_sched_->empty())
           break;

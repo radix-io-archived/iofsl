@@ -87,6 +87,8 @@ private:
   boost::scoped_ptr<RangeScheduler> range_sched_;
 
   bool schedActive_;
+
+  int batch_size_;
 };
 
 }
