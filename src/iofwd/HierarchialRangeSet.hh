@@ -155,7 +155,7 @@ public:
     }
   }
 
-  void add(ChildRange * r)
+  void add(const ChildRange * r)
   {
     std::map<uint64_t, ChildRange *>::iterator it;
     std::set<ChildRange *> s;
@@ -174,7 +174,7 @@ public:
     if (!s.empty())
     {
         new_pr = new ParentRange(st, en);
-        new_pr->insertSingleChild(r);
+        new_pr->insertSingleChild(const_cast<ChildRange *>(r));
         new_pr->insertSingleCB(r->cb_);
         new_pr->type_ = r->type_;
         new_pr->handle_ = r->handle_;
@@ -183,7 +183,7 @@ public:
     /* a single interval... */
     else
     {
-        new_r = r; /* assign the child to the local child */
+        new_r = const_cast<ChildRange *>(r); /* assign the child to the local child */
     }
 
     /* iterate of the set of ranges */

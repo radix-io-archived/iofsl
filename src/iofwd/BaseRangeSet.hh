@@ -1,6 +1,8 @@
 #ifndef __SRC_IOFWD_BASERANGESET_HH__
 #define __SRC_IOFWD_BASERANGESET_HH__
 
+#include <boost/mpl/list.hpp>
+
 #include "iofwd/Range.hh"
 
 /*
@@ -12,6 +14,9 @@ namespace iofwd
 class BaseRangeSet
 {
     public:
+        /* for the factory */
+        typedef boost::mpl::list<> FACTORY_SIGNATURE;
+
         BaseRangeSet()
         {
         }
@@ -22,7 +27,7 @@ class BaseRangeSet
 
        
         /* add / merge a range */ 
-        virtual void add(iofwd::ChildRange * r) = 0;
+        virtual void add(const iofwd::ChildRange * r) = 0;
 
         /* get a range from the merger */
         virtual void get(iofwd::ChildRange ** r) = 0;
