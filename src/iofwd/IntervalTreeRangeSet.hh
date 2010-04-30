@@ -11,6 +11,9 @@
 
 #include "iofwdutil/rm/IntervalMergeTree.hh"
 
+#include "iofwdutil/LinkHelper.hh"
+#include "iofwdutil/Configurable.hh"
+
 namespace iofwd
 {
 

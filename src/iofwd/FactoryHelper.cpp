@@ -6,6 +6,8 @@ GENERIC_FACTORY_CLIENT_REGISTER(zoidfs);
 GENERIC_FACTORY_CLIENT_REGISTER(log);
 GENERIC_FACTORY_CLIENT_REGISTER(syncadapter);
 GENERIC_FACTORY_CLIENT_REGISTER(requestscheduler);
+GENERIC_FACTORY_CLIENT_REGISTER(hierarchical);
+GENERIC_FACTORY_CLIENT_REGISTER(intervaltree);
 
 namespace iofwd
 {
@@ -16,6 +18,8 @@ namespace iofwd
       GENERIC_FACTORY_CLIENT_CALL(log);
       GENERIC_FACTORY_CLIENT_CALL(syncadapter);
       GENERIC_FACTORY_CLIENT_CALL(requestscheduler);
+      GENERIC_FACTORY_CLIENT_CALL(hierarchical);
+      GENERIC_FACTORY_CLIENT_CALL(intervaltree);
    }
 }
 

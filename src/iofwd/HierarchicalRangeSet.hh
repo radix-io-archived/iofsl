@@ -10,6 +10,9 @@
 #include "iofwd/Range.hh"
 #include "iofwd/BaseRangeSet.hh"
 
+#include "iofwdutil/LinkHelper.hh"
+#include "iofwdutil/Configurable.hh"
+
 namespace iofwd
 {
 //===========================================================================

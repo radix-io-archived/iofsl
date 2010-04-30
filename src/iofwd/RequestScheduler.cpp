@@ -87,11 +87,8 @@ void RequestScheduler::configure (const iofwdutil::ConfigFile & config)
    }
    else if (schedalgo == "merge")
    {
-      /* get the hbrr quantum */
-      int default_quantum = config.getKeyAsDefault("defquantum", 8);
-
       ZLOG_INFO(log_, "Using MERGE scheduler");
-      range_sched_.reset(new MergeRangeScheduler(default_quantum));
+      range_sched_.reset(new MergeRangeScheduler(config.openSectionDefault ("rangesched") ));
    }
    else
    {

@@ -51,11 +51,7 @@ void MergeRangeScheduler::io_enqueue(ChildRange * r)
     hq->handle = r->handle_;
     hq->quantum = default_quantum_;
 
-#ifdef ITRS
-    brs = new IntervalTreeRangeSet();
-#else
-    brs = new HierarchicalRangeSet();
-#endif /* #ifdef ITRS */
+    brs = createRangeSet();
     brs->add(r);
     hq->brs = brs;
 
