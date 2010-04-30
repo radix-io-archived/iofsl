@@ -2,6 +2,7 @@
 #define __IOFWD_TASKSM_SHAREDIOCB_HH__
 
 #include <vector>
+#include "zoidfs/zoidfs.h"
 #include "iofwd/tasksm/IOCBWrapper.hh"
 #include "iofwdutil/tools.hh"
 
@@ -19,7 +20,9 @@ class SharedIOCB
 {
     public:
         /* constructor... anybody can allocate this */
-        SharedIOCB(int * ret, char ** mem_starts, size_t * mem_sizes, uint64_t * file_starts, uint64_t * file_sizes) :
+        SharedIOCB(int * ret, char ** mem_starts, size_t * mem_sizes,
+              const zoidfs::zoidfs_file_ofs_t * file_starts, 
+              const zoidfs::zoidfs_file_size_t * file_sizes) :
             ret_(ret), mem_starts_(mem_starts), mem_sizes_(mem_sizes), file_starts_(file_starts), file_sizes_(file_sizes)
         {
         }
@@ -35,8 +38,8 @@ class SharedIOCB
         int * ret_;
         char ** mem_starts_;
         size_t * mem_sizes_;
-        uint64_t * file_starts_;
-        uint64_t * file_sizes_;
+        const zoidfs::zoidfs_file_ofs_t * file_starts_;
+        const zoidfs::zoidfs_file_size_t * file_sizes_;
 };
 
 /* use this wrapper when multiple callbacks must be invoked
@@ -47,7 +50,9 @@ class SharedIOCB
 class MultiSharedIOCB : public SharedIOCB
 {
     public:
-        MultiSharedIOCB(int * ret, char ** mem_starts, size_t * mem_sizes, uint64_t * file_starts, uint64_t * file_sizes)
+        MultiSharedIOCB(int * ret, char ** mem_starts, size_t * mem_sizes,
+              const zoidfs::zoidfs_file_ofs_t * file_starts,
+              const zoidfs::zoidfs_file_size_t * file_sizes)
             : SharedIOCB(ret, mem_starts, mem_sizes, file_starts, file_sizes)
         {
         }
@@ -87,7 +92,9 @@ class MultiSharedIOCB : public SharedIOCB
 class SingleSharedIOCB : public SharedIOCB
 {
     public:
-        SingleSharedIOCB(int * ret, char ** mem_starts, size_t * mem_sizes, uint64_t * file_starts, uint64_t * file_sizes)
+        SingleSharedIOCB(int * ret, char ** mem_starts, size_t * mem_sizes,
+              const zoidfs::zoidfs_file_ofs_t * file_starts,
+              const zoidfs::zoidfs_file_size_t * file_sizes)
             : SharedIOCB(ret, mem_starts, mem_sizes, file_starts, file_sizes)
         {
         }

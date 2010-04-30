@@ -132,8 +132,8 @@ namespace zoidfs
          void * mem_starts[],
          const size_t mem_sizes[],
          size_t file_count,
-         const uint64_t file_starts[],
-         uint64_t file_sizes[],
+         const zoidfs_file_ofs_t file_starts[],
+         const zoidfs_file_size_t file_sizes[],
          zoidfs_op_hint_t * hint)
    {
       addWork (cb, ret, boost::bind(&ZoidFSAPI::read, boost::ref(*api_), handle, mem_count, mem_starts,
@@ -146,8 +146,8 @@ namespace zoidfs
          const void * mem_starts[],
          const size_t mem_sizes[],
          size_t file_count,
-         const uint64_t file_starts[],
-         uint64_t file_sizes[],
+         const zoidfs_file_ofs_t file_starts[],
+         const zoidfs_file_size_t file_sizes[],
          zoidfs_op_hint_t * hint)
    {
       addWork (cb, ret, boost::bind(&ZoidFSAPI::write, boost::ref(*api_), handle, mem_count, mem_starts,
@@ -304,7 +304,7 @@ namespace zoidfs
 
 
    void ZoidFSDefAsync::resize(const iofwdevent::CBType & cb, int * ret, const zoidfs_handle_t * handle,
-         uint64_t size,
+         zoidfs_file_size_t size,
          zoidfs_op_hint_t * hint)
    {
       addWork (cb, ret, boost::bind(&ZoidFSAPI::resize, boost::ref(*api_), handle, size, hint));

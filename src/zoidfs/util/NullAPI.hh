@@ -14,13 +14,13 @@ namespace zoidfs
       /**
        * Just returns not implemented for every call
        */
-      class NullAPI : public ZoidFSAPI 
+      class NullAPI : public ZoidFSAPI
       {
 
          public:
-            NullAPI (); 
+            NullAPI ();
 
-            virtual ~NullAPI (); 
+            virtual ~NullAPI ();
 
          public:
 
@@ -28,10 +28,10 @@ namespace zoidfs
             { return ZFS_OK; }
 
             virtual int finalize(void)
-            { return ZFS_OK; } 
+            { return ZFS_OK; }
 
             virtual int null(void)
-            { return ZFS_OK; } 
+            { return ZFS_OK; }
 
             virtual int getattr(const zoidfs_handle_t * ,
                   zoidfs_attr_t *,
@@ -59,8 +59,8 @@ namespace zoidfs
                   void * [],
                   const size_t [],
                   size_t ,
-                  const uint64_t [],
-                  uint64_t [])
+                  const zoidfs_file_ofs_t [],
+                  const zoidfs_file_size_t [])
             { return ZFS_OK; }
 
             virtual int write(const zoidfs_handle_t * ,
@@ -68,8 +68,8 @@ namespace zoidfs
                   const void * [],
                   const size_t [],
                   size_t ,
-                  const uint64_t [],
-                  uint64_t [])
+                  const zoidfs_file_ofs_t [],
+                  const zoidfs_file_size_t [])
             { return ZFS_OK; }
 
             virtual int commit(const zoidfs_handle_t * )
@@ -137,8 +137,8 @@ namespace zoidfs
             { return ZFS_OK; }
 
             virtual int resize(const zoidfs_handle_t * ,
-                  uint64_t )
-            { return ZFS_OK; } 
+                  zoidfs_file_size_t )
+            { return ZFS_OK; }
 
 
 

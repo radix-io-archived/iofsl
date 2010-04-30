@@ -3021,7 +3021,7 @@ readdir_cleanup:
  * zoidfs_resize
  * This function resizes the file associated with the file handle.
  */
-int zoidfs_resize(const zoidfs_handle_t *handle, uint64_t size,
+int zoidfs_resize(const zoidfs_handle_t *handle, zoidfs_file_size_t size,
                    zoidfs_op_hint_t * op_hint) {
     int ret = ZFS_OK;
     zoidfs_send_msg_t send_msg;
@@ -3126,7 +3126,7 @@ resize_cleanup:
 int zoidfs_write(const zoidfs_handle_t *handle, size_t mem_count,
                  const void *mem_starts[], const size_t mem_sizes[],
                  size_t file_count, const zoidfs_file_ofs_t file_starts[],
-                 zoidfs_file_ofs_t file_sizes[],
+                 const zoidfs_file_ofs_t file_sizes[],
                    zoidfs_op_hint_t * op_hint) {
     size_t i;
     size_t pipeline_size = 0;
@@ -3497,7 +3497,7 @@ static int zoidfs_write_pipeline(BMI_addr_t peer_addr, size_t pipeline_size,
 int zoidfs_read(const zoidfs_handle_t *handle, size_t mem_count,
                 void *mem_starts[], const size_t mem_sizes[],
                 size_t file_count, const zoidfs_file_ofs_t file_starts[],
-                zoidfs_file_size_t file_sizes[],
+                const zoidfs_file_size_t file_sizes[],
                    zoidfs_op_hint_t * op_hint) {
     size_t i;
     size_t pipeline_size = 0;

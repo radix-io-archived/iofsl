@@ -36,15 +36,19 @@ public:
 
   void configure (const iofwdutil::ConfigFile & config);
 
-  void write(
-     const iofwdevent::CBType & cb, int * ret, const zoidfs::zoidfs_handle_t * handle, size_t count,
-     const void ** mem_starts, const size_t * mem_sizes, size_t file_count,
-     const zoidfs::zoidfs_file_ofs_t file_starts[], zoidfs::zoidfs_file_size_t file_sizes[], zoidfs::zoidfs_op_hint_t * op_hint);
+  void write (const iofwdevent::CBType & cb, int * ret, const
+        zoidfs::zoidfs_handle_t * handle, size_t count, const void **
+        mem_starts, const size_t * mem_sizes, size_t file_count, const
+        zoidfs::zoidfs_file_ofs_t file_starts[], const
+        zoidfs::zoidfs_file_size_t file_sizes[], zoidfs::zoidfs_op_hint_t *
+        op_hint);
 
-  void read(
-     const iofwdevent::CBType & cb, int * ret, const zoidfs::zoidfs_handle_t * handle, size_t count,
-     void * mem_starts[], const size_t mem_sizes[], size_t file_count,
-     const zoidfs::zoidfs_file_ofs_t file_starts[], zoidfs::zoidfs_file_size_t file_sizes[], zoidfs::zoidfs_op_hint_t * op_hint);
+  void read (const iofwdevent::CBType & cb, int * ret, const
+        zoidfs::zoidfs_handle_t * handle, size_t count, void * mem_starts[],
+        const size_t mem_sizes[], size_t file_count, const
+        zoidfs::zoidfs_file_ofs_t file_starts[], const
+        zoidfs::zoidfs_file_size_t file_sizes[], zoidfs::zoidfs_op_hint_t *
+        op_hint);
 
 protected:
 

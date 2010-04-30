@@ -126,8 +126,8 @@ int LogAPI::read(const zoidfs_handle_t * handle,
             void * mem_starts[],
             const size_t mem_sizes[],
             size_t file_count,
-            const uint64_t file_starts[],
-            uint64_t file_sizes[],
+            const zoidfs_file_ofs_t file_starts[],
+            const zoidfs_file_size_t file_sizes[],
             zoidfs_op_hint_t * op_hint)
 {
    LOG(format("zoidfs_read %s mem_count=%u file_count=%u")
@@ -143,8 +143,8 @@ int LogAPI::write(const zoidfs_handle_t * handle,
             const void * mem_starts[],
             const size_t mem_sizes[],
             size_t file_count,
-            const uint64_t file_starts[],
-            uint64_t file_sizes[],
+            const zoidfs_file_ofs_t file_starts[],
+            const zoidfs_file_size_t file_sizes[],
             zoidfs_op_hint_t * op_hint)
 {
    LOG(format("zoidfs_write %s mem_count=%u file_count=%u")
@@ -278,7 +278,7 @@ int LogAPI::readdir(const zoidfs_handle_t * parent_handle,
 }
 
 int LogAPI::resize(const zoidfs_handle_t * handle,
-            uint64_t size,
+            zoidfs_file_size_t size,
             zoidfs_op_hint_t * op_hint)
 {
    LOG(format("zoidfs_resize: handle=%s size=%lu")

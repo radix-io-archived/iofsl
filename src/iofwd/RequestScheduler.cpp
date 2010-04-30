@@ -25,6 +25,7 @@
 
 using namespace std;
 using namespace iofwdutil;
+using namespace zoidfs;
 
 
 GENERIC_FACTORY_CLIENT(std::string,
@@ -121,10 +122,12 @@ RequestScheduler::~RequestScheduler()
 
 }
 
-void RequestScheduler::write(
-  const iofwdevent::CBType & cb, int * ret, const zoidfs::zoidfs_handle_t * handle, size_t count,
-  const void * mem_starts[], const size_t * mem_sizes, size_t file_count,
-  const zoidfs::zoidfs_file_ofs_t file_starts[], zoidfs::zoidfs_file_size_t file_sizes[], zoidfs::zoidfs_op_hint_t * op_hint)
+void RequestScheduler::write (const iofwdevent::CBType & cb, int * ret, const
+      zoidfs::zoidfs_handle_t * handle, size_t count, const void *
+      mem_starts[], const size_t * mem_sizes, size_t file_count, const
+      zoidfs::zoidfs_file_ofs_t file_starts[], const
+      zoidfs::zoidfs_file_size_t file_sizes[], zoidfs::zoidfs_op_hint_t *
+      op_hint)
 {
    // @TODO Note: the Requestscheduler depends on this. Needs to be fixed.
    // @TODO Need to do proper error (return code) handling!
@@ -132,12 +135,12 @@ void RequestScheduler::write(
 
   // ignore zero-length request
   int valid_count = 0;
-  for (uint32_t i = 0; i < count; i++)
+  for (size_t i = 0; i < count; i++)
     if (file_sizes[i] > 0)
       valid_count++;
 
   iofwd::tasksm::IOCBWrapper * c = new iofwd::tasksm::IOCBWrapper(cb, valid_count);
-  for (uint32_t i = 0; i < count; i++) {
+  for (size_t i = 0; i < count; i++) {
     assert(mem_sizes[i] == file_sizes[i]);
     if (file_sizes[i] == 0) continue;
 
@@ -165,21 +168,22 @@ void RequestScheduler::write(
 #endif
 }
 
-void RequestScheduler::read(
-  const iofwdevent::CBType & cb, int * ret, const zoidfs::zoidfs_handle_t * handle, size_t count,
-  void * mem_starts[], const size_t * mem_sizes, size_t file_count,
-  const zoidfs::zoidfs_file_ofs_t file_starts[], zoidfs::zoidfs_file_size_t file_sizes[], zoidfs::zoidfs_op_hint_t * op_hint)
+void RequestScheduler::read (const iofwdevent::CBType & cb, int * ret, const
+      zoidfs::zoidfs_handle_t * handle, size_t count, void * mem_starts[],
+      const size_t * mem_sizes, size_t file_count,
+      const zoidfs::zoidfs_file_ofs_t file_starts[],
+      const zoidfs::zoidfs_file_size_t file_sizes[], zoidfs::zoidfs_op_hint_t * op_hint)
 {
    // @TODO Need to do proper error (return code) handling!
    ALWAYS_ASSERT(file_count == count);
   // ignore zero-length request
   int valid_count = 0;
-  for (uint32_t i = 0; i < count; i++)
+  for (size_t i = 0; i < count; i++)
     if (file_sizes[i] > 0)
       valid_count++;
 
   iofwd::tasksm::IOCBWrapper * c = new iofwd::tasksm::IOCBWrapper(cb, valid_count);
-  for (uint32_t i = 0; i < count; i++) {
+  for (size_t i = 0; i < count; i++) {
     assert(mem_sizes[i] == file_sizes[i]);
     if (file_sizes == 0) continue;
 
@@ -333,8 +337,8 @@ void RequestScheduler::issue(vector<ChildRange *>& rs)
   int * ret = new int(0);
   char ** mem_starts = new char*[narrays];
   size_t * mem_sizes = new size_t[narrays];
-  uint64_t * file_starts = new uint64_t[narrays];
-  uint64_t * file_sizes = new uint64_t[narrays];
+  zoidfs_file_ofs_t * file_starts = new zoidfs_file_ofs_t[narrays];
+  zoidfs_file_size_t * file_sizes = new zoidfs_file_size_t[narrays];
 
   unsigned int nth = 0;
   for (unsigned int i = 0; i < rs.size(); i++) {

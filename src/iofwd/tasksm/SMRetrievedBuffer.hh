@@ -2,6 +2,7 @@
 #define __IOFWD_TASKSM_SMRETRIEVEDBUFFER_HH__
 
 #include "iofwd/BMIMemoryManager.hh"
+#include "zoidfs/zoidfs.h"
 
 namespace iofwd
 {
@@ -11,15 +12,15 @@ namespace iofwd
 struct SMRetrievedBuffer
 {
     BMIMemoryAlloc * buffer;
-    uint64_t siz;
+    zoidfs::zoidfs_file_size_t siz;
     size_t p_siz;
-    uint64_t off;
+    zoidfs::zoidfs_file_ofs_t off;
 
     // for async request
     const char ** mem_starts;
     size_t * mem_sizes;
-    uint64_t * file_starts;
-    uint64_t * file_sizes;
+    const zoidfs::zoidfs_file_ofs_t * file_starts;
+    const zoidfs::zoidfs_file_size_t * file_sizes;
     int * ret;
     iofwdutil::bmi::BMIAddr addr_;
     iofwdutil::bmi::BMI::AllocType allocType_;

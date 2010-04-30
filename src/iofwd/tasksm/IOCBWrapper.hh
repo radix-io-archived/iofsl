@@ -11,7 +11,7 @@ namespace iofwd
 
 /*
  * Used when multiple callbacks are mapped to one
- * Ref count the calbbacks and issue the parent callback when the last
+ * Ref count the callbacks and issue the parent callback when the last
  *  child callback is issued
  */
 class IOCBWrapper
