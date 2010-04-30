@@ -10,6 +10,7 @@
 #include "iofwd/tasksm/SMRetrievedBuffer.hh"
 #include "iofwd/WriteRequest.hh"
 #include "iofwd/BMIMemoryManager.hh"
+#include "iofwdevent/MultiCompletion.hh"
 
 #include "zoidfs/zoidfs.h"
 
@@ -79,7 +80,7 @@ class WriteTaskSM : public sm::SimpleSM< WriteTaskSM >, public iofwdutil::Inject
                     }
                     rbuffer_[i]->reinit();
                 }
-
+    
                 /* transition to the allocate buffer state */
                 setNextMethod(&WriteTaskSM::postAllocateBMIBuffer);
             }
@@ -173,24 +174,39 @@ class WriteTaskSM : public sm::SimpleSM< WriteTaskSM >, public iofwdutil::Inject
 
         void waitPipelineEnqueueWrite(int UNUSED(status))
         {
-            /* update the amount of outstanding data */
-            cur_recv_bytes_ += p_siz_;
-
-            /* dealloc the buffer */
-            iofwd::BMIMemoryManager::instance().dealloc(rbuffer_[cw_post_index_]->buffer);
-            cw_post_index_++;
-
-            /* if we still have pipeline data to fetch go back to the allocate buffer state */
-            if(cur_recv_bytes_ < total_bytes_)
+            if(mode_ == WRITESM_SERIAL_IO_PIPELINE)
             {
-                /* reset the rbuffer variable */
-                rbuffer_[cw_post_index_]->reinit();
-                setNextMethod(&WriteTaskSM::postAllocateBMIBuffer);
+                /* update the amount of outstanding data */
+                cur_recv_bytes_ += p_siz_;
+
+                /* dealloc the buffer */
+                iofwd::BMIMemoryManager::instance().dealloc(rbuffer_[cw_post_index_]->buffer);
+                cw_post_index_++;
+
+                /* if we still have pipeline data to fetch go back to the allocate buffer state */
+                if(cur_recv_bytes_ < total_bytes_)
+                {
+                    /* reset the rbuffer variable */
+                    rbuffer_[cw_post_index_]->reinit();
+                    setNextMethod(&WriteTaskSM::postAllocateBMIBuffer);
+                }
+                /* else, we are done... reply to the client */
+                else
+                {
+                    setNextMethod(&WriteTaskSM::postReply);
+                }
             }
-            /* else, we are done... reply to the client */
             else
             {
-                setNextMethod(&WriteTaskSM::postReply);
+                boost::mutex::scoped_lock l(slot_mutex_);
+
+                /* if we still have pipeline data to fetch go back to the allocate buffer state */
+                if(cur_recv_bytes_ < total_bytes_)
+                {
+                    /* reset the rbuffer variable */
+                    rbuffer_[cw_post_index_]->reinit();
+                    setNextMethod(&WriteTaskSM::postAllocateBMIBuffer);
+                }
             }
         }
 
@@ -207,13 +223,12 @@ class WriteTaskSM : public sm::SimpleSM< WriteTaskSM >, public iofwdutil::Inject
         void getSingleBMIBuffer();
         void recvPipelineBuffer();
         void execPipelineIO();
-        void writeBarrier(int status);
-        void writeDoneCB(int status, int my_slot, iofwdevent::CBType cb);
+        void waitWriteBarrier(int status);
+        void writeDoneCB(int status, int my_slot);
 
         void computePipelineFileSegments();
 
-        /* set the concurrent pipeline op count to 128... this should be dynamic or tunable */
-        enum {WRITE_SLOT = 0, WRITE_PIPEOP_START, NUM_WRITE_SLOTS = 129};
+        enum {WRITE_SLOT = 0, NUM_WRITE_SLOTS = 1};
         WriteRequest::ReqParam p;
         zoidfs::util::ZoidFSAsync * api_;
         WriteRequest & request_;
@@ -240,6 +255,8 @@ class WriteTaskSM : public sm::SimpleSM< WriteTaskSM >, public iofwdutil::Inject
         std::vector<int> p_segments_start;
 
         int ret_;
+
+        iofwdevent::CBType s_;
 };
     }
 }

@@ -141,16 +141,6 @@ namespace iofwd
                 }
             }
         }
-#if 0
-        for(int i = 0 ; i < p_segments.size() ; i++)
-        {
-            fprintf(stderr, "pipe transfer %i: # segments %llu\n", i, p_segments[i]);
-        }
-        for(int i = 0 ; i < p_file_starts.size() ; i++)
-        {
-            fprintf(stderr, "pipe transfer %i: file_starts = %llu, file_sizes = %llu, mem_offsets = %llu\n", i, p_file_starts[i], p_file_sizes[i], p_mem_offsets[i]);
-        }
-#endif 
     }
 
     void WriteTaskSM::execPipelineIO()
@@ -198,65 +188,64 @@ namespace iofwd
         else
         {
             int my_slot = 0;
-
-            /* protected section for the op slot update */
             {
                 boost::mutex::scoped_lock l(slot_mutex_);
 
                 /* assign the current slot */
-                my_slot = cw_post_index_ + WRITE_PIPEOP_START;
-
+                my_slot = cw_post_index_;
                 cw_post_index_++;
 
                 /* update the byte transfer count */
                 cur_recv_bytes_ += p_siz_;
-            }
 
-            /* enqueue the write */
-            boost::function<void(int)> barrierCB = boost::bind(&iofwd::tasksm::WriteTaskSM::writeDoneCB, this, 0, my_slot, slots_[my_slot]);
-            api_->write (
-                barrierCB, &ret_, p.handle, p_file_count, (const void**)mem_starts, mem_sizes,
-                p_file_count, file_starts, file_sizes, p.op_hint);
+                /* enqueue the write */
+                boost::function<void(int)> barrierCB = boost::bind(&iofwd::tasksm::WriteTaskSM::writeDoneCB, this, 0, my_slot);
+                api_->write (
+                    barrierCB, &ret_, p.handle, p_file_count, (const void**)mem_starts, mem_sizes,
+                    p_file_count, file_starts, file_sizes, p.op_hint);
 
-
-            /* go to the next state depending on the current pipeline stage */
-            {
-                boost::mutex::scoped_lock l(slot_mutex_);
-
-                /* if there is still outstanding pipeline data, go back to the buffer allocate stage */
-                if(cur_recv_bytes_ < total_bytes_)
+                if(cur_recv_bytes_ == total_bytes_)
                 {
-                    /* issue the barrier wait */
-                    rbuffer_[cw_post_index_]->reinit();
-                    slots_.wait(my_slot, &WriteTaskSM::writeBarrier);
-                    setNextMethod(&WriteTaskSM::postAllocateBMIBuffer);
+                    s_ = slots_[WRITE_SLOT];
+                    slots_.wait(WRITE_SLOT, &WriteTaskSM::waitWriteBarrier);
                 }
-                /* else, wait for the barrier */
                 else
                 {
-                    slots_.wait(my_slot, &WriteTaskSM::writeBarrier);
+                    setNextMethod(&WriteTaskSM::waitPipelineEnqueueWrite);
                 }
             }
         }
     }
 
-void WriteTaskSM::writeDoneCB(int status, int my_slot, iofwdevent::CBType cb)
+void WriteTaskSM::writeDoneCB(int UNUSED(status), int my_slot)
 {
-    /* free the buffer */
-    iofwd::BMIMemoryManager::instance().dealloc(rbuffer_[my_slot - WRITE_PIPEOP_START]->buffer);
+    int count = 0;
+    {
+        boost::mutex::scoped_lock l(slot_mutex_);
 
-    cb(status);
+        // update the op count
+        io_ops_done_++;
+        count = io_ops_done_;
+    }
+
+    /* free the buffer */
+    iofwd::BMIMemoryManager::instance().dealloc(rbuffer_[my_slot]->buffer);
+
+    if(count == total_pipeline_ops_)
+    {
+        s_(0);
+    }
 }
 
 /* barrier for writes... will not go to post reply state until all writes complete */
-void WriteTaskSM::writeBarrier(int UNUSED(status))
+void WriteTaskSM::waitWriteBarrier(int UNUSED(status))
 {
-    boost::mutex::scoped_lock l(slot_mutex_);
-
-    io_ops_done_++;
-
-    /* if all the outstanding ops are done, go to the reply state */
-    if(io_ops_done_ == total_pipeline_ops_)
+    int count = 0;
+    {
+        boost::mutex::scoped_lock l(slot_mutex_);
+        count = io_ops_done_;
+    }
+    if(count == total_pipeline_ops_)
     {
         setNextMethod(&WriteTaskSM::postReply);
     }
