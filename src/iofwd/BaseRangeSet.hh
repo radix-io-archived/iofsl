@@ -1,8 +1,6 @@
 #ifndef __SRC_IOFWD_BASERANGESET_HH__
 #define __SRC_IOFWD_BASERANGESET_HH__
 
-#include <boost/mpl/list.hpp>
-
 #include "iofwd/Range.hh"
 
 /*
@@ -14,9 +12,6 @@ namespace iofwd
 class BaseRangeSet
 {
     public:
-        /* for the factory */
-        typedef boost::mpl::list<> FACTORY_SIGNATURE;
-
         BaseRangeSet()
         {
         }
