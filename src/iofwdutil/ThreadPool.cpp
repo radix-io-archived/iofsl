@@ -35,10 +35,26 @@ namespace iofwdutil
             /* mark as shutting down */
             {
                 boost::mutex::scoped_lock lock(tp_start_mutex_);
+
+                /* if it had not been started, do not try to shutdown */
                 if(!started_)
                     return;
                 else
-                    started_ = false;
+                {
+                    /* dec the ref count */
+                    tp_start_ref_count_--;
+
+                    /* if the ref count i 0, shutdown */
+                    if(tp_start_ref_count_ == 0)
+                    {
+                        started_ = false;
+                    }
+                    /* if not 0, somebody else is using the tp... do not shutdown */
+                    else
+                    {
+                        return;
+                    }
+                }
             }
 
             {
@@ -62,7 +78,7 @@ namespace iofwdutil
             thread_vec_.clear();
         }
 
-        ThreadPool::ThreadPool() : thread_count_(0), shutdown_threads_(false), started_(false)
+        ThreadPool::ThreadPool() : thread_count_(0), shutdown_threads_(false), started_(false), tp_start_ref_count_(0)
         {
         }
 
@@ -71,6 +87,8 @@ namespace iofwdutil
             /* check and see if the tp is started */
             {
                 boost::mutex::scoped_lock lock(tp_start_mutex_);
+
+                tp_start_ref_count_++;
                 if(started_)
                     return;
                 else

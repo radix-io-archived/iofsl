@@ -34,6 +34,7 @@ void SMManager::startThreads()
 
 void SMManager::stopThreads()
 {
+    iofwdutil::ThreadPool::instance().reset();
 }
 
 void SMManager::workerMain ()

@@ -176,6 +176,7 @@ class ThreadPool : public Singleton< ThreadPool >
 
         boost::mutex tp_start_mutex_;
         bool started_;
+        int tp_start_ref_count_;
 };
 
 } /* namespace iofwdutil */
