@@ -44,6 +44,9 @@ public:
 
    ~SMManager ();
 
+   void startThreads();
+   void stopThreads();
+
 protected:
 
 

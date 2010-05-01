@@ -173,6 +173,9 @@ class ThreadPool : public Singleton< ThreadPool >
         boost::mutex jobs_done_cond_mutex_;
 
         std::vector<boost::thread *> thread_vec_;
+
+        boost::mutex tp_start_mutex_;
+        bool started_;
 };
 
 } /* namespace iofwdutil */

@@ -27,6 +27,15 @@ void SMManager::schedule (SMClient * client)
    iofwdutil::ThreadPool::instance().addWorkUnit(new SMHelper(client), &SMHelper::run, iofwdutil::ThreadPool::HIGH, true);
 }
 
+void SMManager::startThreads()
+{
+    iofwdutil::ThreadPool::instance().start();
+}
+
+void SMManager::stopThreads()
+{
+}
+
 void SMManager::workerMain ()
 {
    boost::mutex::scoped_lock l(lock_);

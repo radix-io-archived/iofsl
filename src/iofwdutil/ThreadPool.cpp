@@ -2,8 +2,8 @@
 
 namespace iofwdutil
 {
-        int iofwdutil::ThreadPool::min_thread_count_ = 0;
-        int iofwdutil::ThreadPool::max_thread_count_ = 0;
+        int iofwdutil::ThreadPool::min_thread_count_ = 1;
+        int iofwdutil::ThreadPool::max_thread_count_ = 1;
         boost::mutex iofwdutil::ThreadPool::tp_setup_mutex_;
 
         void ThreadPool::setMinThreadCount(int c)
@@ -32,6 +32,15 @@ namespace iofwdutil
 
         void ThreadPool::reset()
         {
+            /* mark as shutting down */
+            {
+                boost::mutex::scoped_lock lock(tp_start_mutex_);
+                if(!started_)
+                    return;
+                else
+                    started_ = false;
+            }
+
             {
                 boost::mutex::scoped_lock lock(shutdown_cond_mutex_);
 
@@ -53,12 +62,21 @@ namespace iofwdutil
             thread_vec_.clear();
         }
 
-        ThreadPool::ThreadPool() : thread_count_(0), shutdown_threads_(false)
+        ThreadPool::ThreadPool() : thread_count_(0), shutdown_threads_(false), started_(false)
         {
         }
 
         void ThreadPool::start()
         {
+            /* check and see if the tp is started */
+            {
+                boost::mutex::scoped_lock lock(tp_start_mutex_);
+                if(started_)
+                    return;
+                else
+                    started_ = true;
+            }
+
             thread_count_ = 0;
 
             /* setup the storage queue for thread work */
