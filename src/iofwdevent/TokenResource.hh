@@ -132,14 +132,7 @@ protected:
 
 void TokenResource::add_tokens (size_t tokens)
 {
-   iofwdevent::CBType cb;
-   boost::mutex::scoped_lock l(lock_);
-   tokens_available_ += tokens;
-   if (check (cb))
-   {
-      l.unlock ();
-      cb (COMPLETED);
-   }
+   return add_tokens_limit (tokens, 0);
 }
 
 /**
@@ -149,12 +142,22 @@ void TokenResource::add_tokens (size_t tokens)
  */
 void TokenResource::add_tokens_limit (size_t tokens, size_t limit)
 {
-   iofwdevent::CBType cb;
-   boost::mutex::scoped_lock l(lock_);
-   if (tokens_available_ >= limit)
+   if (!tokens)
       return;
 
-   tokens_available_ += std::min (limit - tokens_available_, tokens);
+   iofwdevent::CBType cb;
+   boost::mutex::scoped_lock l(lock_);
+   if (limit)
+   {
+      if (tokens_available_ >= limit)
+         return;
+      tokens_available_ += std::min (limit - tokens_available_, tokens);
+   }
+   else
+   {
+      tokens_available_ += tokens;
+   }
+
    if (check (cb))
    {
       l.unlock ();
