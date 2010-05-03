@@ -49,7 +49,15 @@ namespace zoidfs
          {
             MutexType::scoped_lock l(lock_);
             shutdown_ = false;
-            scheduleTimer ();
+            if (op_limit_ || read_bw_ || write_bw_)
+            {
+               scheduleTimer ();
+            }
+            else
+            {
+               ZLOG_INFO(log_,
+                     "Not starting timer; No rate limiting requested");
+            }
          }
 
          return ZoidFSAsyncPT::init ();
