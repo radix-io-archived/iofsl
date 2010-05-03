@@ -901,14 +901,7 @@ int zoidfs_xdr_hint_size(zoidfs_op_hint_t * op_hint)
     return size;
 }
 /* pipline config */
-bmi_size_t PIPELINE_SIZE = 8388608;
-
-
-/* make sure pipeline is less than or equal to ZOIDFS_BUFFER_MAX */
-#if PIPELINE_SIZE > ZOIDFS_BUFFER_MAX
-#undef PIPELINE_SIZE
-#define PIPELINE_SIZE ZOIDFS_BUFFER_MAX
-#endif /* #if PIPELINE_SIZE > ZOIDFS_BUFFER_MAX */
+static bmi_size_t PIPELINE_SIZE = 8388608;
 
 /* reuse a static buffer */
 #ifdef ZFS_BMI_FASTMEMALLOC
@@ -3139,6 +3132,8 @@ int zoidfs_write(const zoidfs_handle_t *handle, size_t mem_count,
     zoidfs_send_msg_data_t send_msg_data;
     zoidfs_recv_msg_t recv_msg;
     bmi_size_t * bmi_mem_sizes = NULL;
+    char * op_hint_pipeline_size = NULL;
+    size_t op_hint_pipeline_size_req = 0;
 
     /* init the zoidfs xdr data */
     ZOIDFS_SEND_MSG_INIT(send_msg, ZOIDFS_PROTO_WRITE);
@@ -3192,6 +3187,16 @@ int zoidfs_write(const zoidfs_handle_t *handle, size_t mem_count,
         goto write_cleanup;
     }
 
+    /* check if a pipeline size was set in the hint */
+    if((op_hint_pipeline_size = zoidfs_hint_get(&op_hint, ZOIDFS_PIPELINE_SIZE)) != NULL)
+    {
+        op_hint_pipeline_size_req = atoi(op_hint_pipeline_size);
+    }
+    else
+    {
+        op_hint_pipeline_size_req = (size_t)-1;
+    }
+
     /* 
      * if we have a list of mem to write, alloc a buffer of bmi_mem_sizes
      * fill it, compute the total mem size, and determine if pipeline is applicable
@@ -3204,8 +3209,8 @@ int zoidfs_write(const zoidfs_handle_t *handle, size_t mem_count,
         {
             bmi_mem_sizes[i] = (bmi_size_t)mem_sizes[i];
             total_size += bmi_mem_sizes[i];
-            if (mem_sizes[i] > ZOIDFS_BUFFER_MAX)
-                pipeline_size = PIPELINE_SIZE;
+            if(mem_sizes[i] > (size_t)zfsmin((size_t)PIPELINE_SIZE, op_hint_pipeline_size_req))
+                pipeline_size = (size_t)zfsmin((size_t)PIPELINE_SIZE, op_hint_pipeline_size_req);
         }
     }
     else
@@ -3218,9 +3223,9 @@ int zoidfs_write(const zoidfs_handle_t *handle, size_t mem_count,
      * and setup the memory size buffer for pipeline mode 
      */
     
-    if (total_size >= PIPELINE_SIZE)
+    if (total_size >= (bmi_size_t)zfsmin((size_t)PIPELINE_SIZE, op_hint_pipeline_size_req))
     {
-        pipeline_size = PIPELINE_SIZE;
+        pipeline_size = (size_t)zfsmin((size_t)PIPELINE_SIZE, op_hint_pipeline_size_req);
         if(!bmi_mem_sizes)
         {
             bmi_mem_sizes = (bmi_size_t *)malloc(sizeof(bmi_size_t) * mem_count);
@@ -3509,6 +3514,8 @@ int zoidfs_read(const zoidfs_handle_t *handle, size_t mem_count,
     zoidfs_send_msg_t send_msg;
     zoidfs_recv_msg_t recv_msg;
     bmi_size_t * bmi_mem_sizes = NULL;
+    char * op_hint_pipeline_size = NULL;
+    size_t op_hint_pipeline_size_req = 0;
 
     /* init the zoidfs xdr data */
     ZOIDFS_SEND_MSG_INIT(send_msg, ZOIDFS_PROTO_READ);
@@ -3529,6 +3536,16 @@ int zoidfs_read(const zoidfs_handle_t *handle, size_t mem_count,
         goto read_cleanup;
     }
 
+    /* check if a pipeline size was set in the hint */
+    if((op_hint_pipeline_size = zoidfs_hint_get(&op_hint, ZOIDFS_PIPELINE_SIZE)) != NULL)
+    {
+        op_hint_pipeline_size_req = atoi(op_hint_pipeline_size);
+    }
+    else
+    {
+        op_hint_pipeline_size_req = (size_t)-1;
+    }
+
     /* 
      * if we have a list of mem to write, alloc a buffer of bmi_mem_sizes
      * fill it, compute the total mem size, and determine if pipeline is applicable
@@ -3541,8 +3558,8 @@ int zoidfs_read(const zoidfs_handle_t *handle, size_t mem_count,
         {
             bmi_mem_sizes[i] = (bmi_size_t)mem_sizes[i];
             total_size += bmi_mem_sizes[i];
-            if (mem_sizes[i] > ZOIDFS_BUFFER_MAX)
-                pipeline_size = PIPELINE_SIZE;
+            if (mem_sizes[i] > (size_t)zfsmin((size_t)PIPELINE_SIZE, op_hint_pipeline_size_req))
+                pipeline_size = (size_t)zfsmin((size_t)PIPELINE_SIZE, op_hint_pipeline_size_req);
         }
     }
     else
@@ -3554,9 +3571,9 @@ int zoidfs_read(const zoidfs_handle_t *handle, size_t mem_count,
      * if the total size is greater than the pipeline size, set the pipeline size
      * and setup the memory size buffer for pipeline mode 
      */
-    if (total_size >= PIPELINE_SIZE)
+    if (total_size >= (bmi_size_t)zfsmin((size_t)PIPELINE_SIZE, op_hint_pipeline_size_req))
     {
-        pipeline_size = PIPELINE_SIZE;
+        pipeline_size = (size_t)zfsmin((size_t)PIPELINE_SIZE, op_hint_pipeline_size_req);
         if(!bmi_mem_sizes)
         {
             bmi_mem_sizes = (bmi_size_t *)malloc(sizeof(bmi_size_t) * mem_count);
@@ -3881,6 +3898,7 @@ int zoidfs_init(void) {
             fprintf(stderr, "zoidfs_init: BMI_get_info(BMI_CHECK_MAXSIZE) failed.\n");
             exit(1);
         }
+        PIPELINE_SIZE = (size_t)psiz;
     }
 
 #ifdef HAVE_BMI_ZOID_TIMEOUT

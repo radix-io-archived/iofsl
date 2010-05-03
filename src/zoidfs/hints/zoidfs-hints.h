@@ -17,6 +17,7 @@ namespace zoidfs
 #define ZOIDFS_HINT_ENABLED (char*)"1"
 #define ZOIDFS_HINT_DISABLED (char*)"0"
 #define ZOIDFS_ENABLE_PIPELINE (char*)"ZOIDFS_ENABLE_PIPELINE"
+#define ZOIDFS_PIPELINE_SIZE (char*)"ZOIDFS_PIPELINE_SIZE"
 
 /* create and initialize the hint list */
 zoidfs_op_hint_t * zoidfs_hint_init(int size);
