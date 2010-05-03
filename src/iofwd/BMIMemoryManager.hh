@@ -110,12 +110,6 @@ class BMIMemoryManager : public iofwdutil::Singleton < BMIMemoryManager >
         ~BMIMemoryManager();
         void setup(const iofwdutil::ConfigFile & c);
 
-        /* get the size of pipelien buffers */
-        size_t pipeline_size() const
-        {
-            return pipelineSize_;
-        }
-
         /* submit a buffer request */
         void alloc(iofwdevent::CBType cb, BMIMemoryAlloc * memAlloc_);
 
@@ -129,7 +123,6 @@ class BMIMemoryManager : public iofwdutil::Singleton < BMIMemoryManager >
         void reset();
 
         /* memory manager setup */
-        static void setMaxBufferSize(size_t pipelineSize);
         static void setMaxNumBuffers(int numBuffers);
 
     protected:
@@ -143,8 +136,6 @@ class BMIMemoryManager : public iofwdutil::Singleton < BMIMemoryManager >
          */
         iofwdevent::TokenResource * tokens_;
 
-        /* size of pipeline transfers... also the max transfer buffer size that is allowed */
-        static size_t pipelineSize_;
         static int numTokens_;
         static boost::mutex bmm_setup_mutex_;
 };

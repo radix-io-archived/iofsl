@@ -92,7 +92,6 @@ void BMIMemoryManager::runBufferAllocCB(int status, BMIMemoryAlloc * memAlloc, i
 
 /*
  * Setup the memory manager.
- *  - get the pipeline size (config file) 
  *  - get the number of concurrent buffers allocs (config file)
  *  - create the token resource
  *  - start the token resource
@@ -102,15 +101,8 @@ BMIMemoryManager::BMIMemoryManager()
 }
 
 /* static variables for the mem manager */
-size_t iofwd::BMIMemoryManager::pipelineSize_ = 0;
 int iofwd::BMIMemoryManager::numTokens_ = 0;
 boost::mutex iofwd::BMIMemoryManager::bmm_setup_mutex_;
-
-void BMIMemoryManager::setMaxBufferSize(size_t pipelineSize)
-{
-    boost::mutex::scoped_lock lock(bmm_setup_mutex_);
-    pipelineSize_ = pipelineSize;
-}
 
 void BMIMemoryManager::setMaxNumBuffers(int numTokens)
 {

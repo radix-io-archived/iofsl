@@ -80,7 +80,6 @@ DefRequestHandler::DefRequestHandler (const iofwdutil::ConfigFile & cf)
 
    /* start the BMI memory manager */
    lc = config_.openSectionDefault("bmimemorymanager");
-   iofwd::BMIMemoryManager::instance().setMaxBufferSize(lc.getKeyAsDefault("buffersize", 0));
    iofwd::BMIMemoryManager::instance().setMaxNumBuffers(lc.getKeyAsDefault("maxnumbuffers", 0));
    iofwd::BMIMemoryManager::instance().start();
 

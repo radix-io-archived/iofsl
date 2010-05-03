@@ -151,12 +151,6 @@ requesthandler {
   //
   bmimemorymanager {
     //
-    // size of individual bmi buffers
-    //  default: 0
-    //
-    buffersize = "8388608";
-
-    //
     // the max number of bmi buffers that are used at any
     //  point in time
     //  default: 0
