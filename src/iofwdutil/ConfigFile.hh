@@ -4,6 +4,7 @@
 #include <boost/optional.hpp>
 #include <boost/utility.hpp>
 #include <boost/smart_ptr.hpp>
+#include <boost/algorithm/string.hpp>
 #include <boost/lexical_cast.hpp>
 #include <string>
 #include <vector>
@@ -69,6 +70,10 @@ public:
    SectionHandle getSectionHandle () const;
 
 protected:
+
+   template <typename T>
+   static inline T our_lexical_cast (const std::string & s);
+
    ConfigFile (const ConfigFile & parent, SectionHandle h);
 
    // Called to throw exception
@@ -83,12 +88,30 @@ protected:
    boost::intrusive_ptr<ConfigContainer> configsection_;
 };
 
+template <typename T>
+T ConfigFile::our_lexical_cast (const std::string & s)
+{
+   return boost::lexical_cast<T> (s);
+}
+
+
+template <>
+inline bool ConfigFile::our_lexical_cast<bool> (const std::string & s)
+{
+   if (boost::iequals (s,"true") || boost::iequals(s,"yes"))
+      return true;
+   if (boost::iequals (s,"false") || boost::iequals(s,"no"))
+      return false;
+
+   return boost::lexical_cast<bool> (s);
+}
 
 template <typename T>
 T ConfigFile::getKeyAs (const char * name) const
 {
-   return boost::lexical_cast<T> (getKey (name));
+   return our_lexical_cast<T> (getKey (name));
 }
+
 
 template <typename T>
 T ConfigFile::getKeyAsDefault (const char * name, const T & def) const
@@ -97,7 +120,7 @@ T ConfigFile::getKeyAsDefault (const char * name, const T & def) const
    if (!ret)
       return def;
    else
-      return boost::lexical_cast<T> (*ret);
+      return our_lexical_cast<T> (*ret);
 }
 
 

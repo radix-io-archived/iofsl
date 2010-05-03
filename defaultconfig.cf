@@ -74,7 +74,7 @@ requesthandler {
     defasync {
       //blocking_api = "zoidfs";
       blocking_api = "log";
-      use_thread_pool = "1";
+      use_thread_pool = "TrUe";
 
     log {
       blocking_api = "zoidfs";
