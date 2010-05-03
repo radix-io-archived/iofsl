@@ -39,8 +39,9 @@ namespace zoidfs
        */
       void RateLimiterAsync::scheduleTimer ()
       {
+         // improvement: make timer absolutate to compensate for drift
          timerhandle_ = timer_.createTimer
-            (boost::bind(&RateLimiterAsync::timerTick, this, _1), 1000);
+            (boost::bind(&RateLimiterAsync::timerTick, this, _1), 1000 / hz_);
       }
 
       int RateLimiterAsync::init ()
@@ -117,6 +118,12 @@ namespace zoidfs
          write_bw_ *= KB;
 
          delay_issue_ = config.getKeyAsDefault ("delay_issue", false);
+         hz_ = config.getKeyAsDefault<size_t> ("timerfreq", 1);
+         if (hz_ <= 0 || hz_ > 1000)
+         {
+            // @TODO: get base exception class for configuration file errors
+            throw "Invalid hz value: valid range: [1,1000[";
+         }
 
          ZLOG_INFO (log_, format("Read bw %i kb/s, write bw %i kb/s, op limit"
                   "%i ops/s") % read_bw_ % write_bw_ % op_limit_);
@@ -126,6 +133,7 @@ namespace zoidfs
          ZLOG_INFO (log_, (delay_issue_ ? "Delaying issuing of requests..."
                   : "Requests will be issued immediately;"
                   " Reponses will be delayed."));
+         ZLOG_INFO (log_, format("Timer frequency: %i Hz") % hz_);
 
          ZLOG_INFO (log_, format("Using api '%s'") % api);
          api_.reset (iofwdutil::Factory<
@@ -136,6 +144,13 @@ namespace zoidfs
 
          // For ZoidFSAsyncPT
          setAsyncPT (api_.get());
+
+         op_limit_ /= hz_;
+         read_bw_ /= hz_;
+         write_bw_ /= hz_;
+         read_burst_bw_ /= hz_;
+         write_burst_bw_ /= hz_;
+         op_burst_limit_ /= hz_;
       }
 
       /**
@@ -177,6 +192,7 @@ namespace zoidfs
          // Cannot use a simple lock here since the callback could be called
          // recursively from for example TokenResource.request.
          // If locking is needed, it needs to be a recursive lock
+         size_t thisreq = 0;
 
          switch (status_)
          {
@@ -199,31 +215,68 @@ namespace zoidfs
                // Note that the cb could fire immediately (before returning
                // from request) so we need to update the status_ first so we
                // don't end up here again.
-               parent_.op_tokens_.request (cb_, 1);
-               return true;
+               if (parent_.op_limit_)
+               {
+                  parent_.op_tokens_.request (cb_, 1);
+                  return true;
+               }
+               // if op_limit_ = 0, don't try to obtain a token but just fall
+               // through
             case WAITING_FOR_TOKEN_1:
-               ZLOG_DEBUG_MORE(parent_.log_, format("(op %p): in waiting_for_op_token")%this);
-               status_ = WAITING_FOR_TOKEN_2;
+               ZLOG_DEBUG_MORE(parent_.log_, format("(op %p): in "
+                        "waiting_for_op_token (%s/%s)")%this
+                     % obtained_ % transfersize_ );
                // get tokens for bw
                if (read_)
-                  parent_.r_bw_tokens_.request (cb_, transfersize_);
+               {
+                  if (parent_.read_bw_ != 0)
+                  {
+                     thisreq = std::min(transfersize_ - obtained_, parent_.read_bw_);
+                     obtained_ += thisreq;
+                     status_ = (obtained_ == transfersize_ ?
+                           WAITING_FOR_TOKEN_2 : WAITING_FOR_TOKEN_1);
+                     parent_.r_bw_tokens_.request (cb_, thisreq);
+                     return true;
+                  }
+                  else
+                  {
+                     // don't track read bw; fall through
+                     status_ = WAITING_FOR_TOKEN_2;
+                  }
+               }
                else
-                  parent_.w_bw_tokens_.request (cb_, transfersize_);
-               return true;
+               {
+                  if (parent_.write_bw_)
+                  {
+                     thisreq = std::min(transfersize_ - obtained_, parent_.write_bw_);
+                     obtained_ += thisreq;
+                     status_ = (obtained_ == transfersize_ ?
+                           WAITING_FOR_TOKEN_2 : WAITING_FOR_TOKEN_1);
+                     parent_.w_bw_tokens_.request (cb_, thisreq);
+                     return true;
+                  }
+                  else
+                  {
+                     status_ = WAITING_FOR_TOKEN_2;
+                  }
+               }
             case WAITING_FOR_TOKEN_2:
-               ZLOG_DEBUG_MORE(parent_.log_, format("(op %p): in waiting_for_bwtoken")%this);
+               ZLOG_DEBUG_MORE(parent_.log_, format("(op %p): in "
+                        "waiting_for_bwtoken")%this);
                status_ = WAITING_FOR_POST_EXEC;
                if (delay_issue_)
                {
                   execOp ();
                   return true;
                }
+               // fall through
             case WAITING_FOR_POST_EXEC:
                ZLOG_DEBUG_MORE(parent_.log_, format("(op %p): in waiting_for_postexec")%this);
                if (delay_issue_)
                {
                   op_status_ = cbstat;
                }
+               // fall through
             case DONE:
                // all done: call real callback
                ZLOG_DEBUG_MORE(parent_.log_, format("(op %p): all done;"
@@ -292,7 +345,8 @@ namespace zoidfs
          return o;
       }
 
-      void RateLimiterAsync::read(const iofwdevent::CBType & cb, int * ret, const zoidfs_handle_t * handle,
+      void RateLimiterAsync::read(const iofwdevent::CBType & cb, int * ret,
+            const zoidfs_handle_t * handle,
             size_t mem_count,
             void * mem_starts[],
             const size_t mem_sizes[],
@@ -308,7 +362,8 @@ namespace zoidfs
          callback (op, iofwdevent::COMPLETED);
       }
 
-      void RateLimiterAsync::write(const iofwdevent::CBType & cb, int * ret, const zoidfs_handle_t * handle,
+      void RateLimiterAsync::write(const iofwdevent::CBType & cb, int * ret,
+            const zoidfs_handle_t * handle,
             size_t mem_count,
             const void * mem_starts[],
             const size_t mem_sizes[],

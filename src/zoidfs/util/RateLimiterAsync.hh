@@ -89,7 +89,8 @@ namespace zoidfs
 
                   DelayedOp (RateLimiterAsync & parent)
                      : parent_(parent),
-                       status_ (INIT)
+                       status_ (INIT),
+                       obtained_ (0)
                   {
                   }
 
@@ -116,6 +117,7 @@ namespace zoidfs
                   int op_status_;  // status returned by read/write op
                   bool delay_issue_;
                   size_t transfersize_;
+                  size_t obtained_;
 
                   iofwdevent::CBType usercb;
                   int * ret;
@@ -169,9 +171,9 @@ namespace zoidfs
             size_t op_burst_limit_;
             size_t read_burst_bw_;
             size_t write_burst_bw_;
+            size_t hz_;
 
             bool delay_issue_;
-
 
             boost::optional<iofwdevent::Handle> timerhandle_;
 
