@@ -54,10 +54,10 @@ namespace iofwdevent
       return started_;
    }
 
-   void TokenResource::notify_next ()
+   bool TokenResource::notify_next (iofwdevent::CBType & cb)
    {
       if (waitlist_.empty () || (waitlist_.front().tokens_ > tokens_available_))
-         return;
+         return false;
 
       ASSERT (!waitlist_.empty ());
       TokenRequest * f = &waitlist_.front ();
@@ -68,11 +68,10 @@ namespace iofwdevent
 
       ALWAYS_ASSERT(tokens_available_ >= f->tokens_);
       tokens_available_ -= f->tokens_;
-      f->cb_ (COMPLETED);
-
+      cb = f->cb_;
       waitlist_.pop_front ();
-
       delete (f);
+      return true;
    }
 
 //===========================================================================
