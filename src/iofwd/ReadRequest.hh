@@ -34,8 +34,13 @@ public:
       size_t pipeline_size;
       zoidfs::zoidfs_op_hint_t * op_hint;
 
+      /* decoded hint values */
+     bool op_hint_pipeline_enabled;
+
+     size_t max_buffer_size;
+
      ReqParam_() : handle(NULL), mem_count(0), mem_starts(NULL), mem_sizes(NULL), bmi_mem_sizes(NULL),
-        file_count(0), mem_total_size(0), file_starts(NULL), file_sizes(NULL), pipeline_size(0), op_hint(NULL)
+        file_count(0), mem_total_size(0), file_starts(NULL), file_sizes(NULL), pipeline_size(0), op_hint(NULL), op_hint_pipeline_enabled(true), max_buffer_size(0)
      {
      }
    } ReqParam;

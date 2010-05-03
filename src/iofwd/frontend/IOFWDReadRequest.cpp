@@ -2,6 +2,7 @@
 #include "iofwdutil/bmi/BMIOp.hh"
 #include "zoidfs/zoidfs-proto.h"
 #include "iofwd_config.h"
+#include "zoidfs/util/ZoidFSHints.hh"
 
 namespace iofwd
 {
@@ -79,8 +80,30 @@ IOFWDReadRequest::ReqParam & IOFWDReadRequest::decodeParam ()
    process (req_reader_, param_.pipeline_size);
    decodeOpHint (&param_.op_hint);
 
+   // check for hints here
+   char * enable_pipeline = zoidfs::util::ZoidFSHintGet(&(param_.op_hint), ZOIDFS_ENABLE_PIPELINE);
+   if(enable_pipeline)
+   {
+        if(strcmp(enable_pipeline, ZOIDFS_HINT_ENABLED) == 0)
+        {
+            param_.op_hint_pipeline_enabled = true;
+        }
+        else
+        {
+            param_.op_hint_pipeline_enabled = false;
+        }
+   }
+   /* keep pipelining enabled by default */
+   else
+   {
+        param_.op_hint_pipeline_enabled = true;
+   }
+
    // init other param vars
    param_.mem_total_size = 0;
+
+   // get the max buffer size from BMI
+   r_.rbmi_.get_info(addr_, BMI_CHECK_MAXSIZE, static_cast<void *>(&param_.max_buffer_size));
 
    param_.handle = &handle_;
    return param_;

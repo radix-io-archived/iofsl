@@ -87,11 +87,15 @@ namespace iofwdevent
          inline BMIEntry * newEntry (const CBType & cb, bmi_size_t * actual = 0);
 
          /**
-          * CHeck for normal BMI errors not associated with requests
+          * Check for normal BMI errors not associated with requests
           */
          inline void checkBMI (int ret) { ALWAYS_ASSERT(ret >= 0); };
 
       public:
+
+         inline void get_info(BMI_addr_t dest,
+               int option,
+               void * inout_param);
 
          inline void post_send (const CBType &  u, BMI_addr_t dest,
                const void * buffer,
@@ -346,6 +350,13 @@ namespace iofwdevent
 
       checkBMISendRecv (e, BMI_post_recv (&op, src, buffer, expected_size,
                actual_size, buffer_type, tag, e, context_, hints));
+   }
+
+   void BMIResource::get_info(BMI_addr_t dst,
+         int option, 
+         void * inout_param)
+   {
+      checkBMI(BMI_get_info(dst, option, inout_param));
    }
 
    void BMIResource::post_send_list(const CBType &  u, BMI_addr_t dest,

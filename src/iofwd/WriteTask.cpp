@@ -61,8 +61,7 @@ void WriteTask::computePipelineFileSegments(const WriteRequest::ReqParam & p)
     size_t cur_pipe_ofs = 0;
     int cur_file_index = 0;
     int num_pipe_segments = 0;
-    size_t pipeline_size = iofwd::BMIMemoryManager::instance().pipeline_size();
-    size_t cur_pipe_buffer_size = pipeline_size;
+    size_t cur_pipe_buffer_size = pipeline_size_;
     zoidfs::zoidfs_file_size_t cur_file_size = file_sizes[cur_file_index];
     zoidfs::zoidfs_file_ofs_t cur_file_start = file_starts[cur_file_index];
     size_t cur_mem_offset = 0;
@@ -92,7 +91,7 @@ void WriteTask::computePipelineFileSegments(const WriteRequest::ReqParam & p)
 
                 cur_file_size -= cur_pipe_buffer_size;
                 cur_pipe_ofs += cur_pipe_buffer_size;
-                cur_pipe_buffer_size = pipeline_size;
+                cur_pipe_buffer_size = pipeline_size_;
                 cur_pipe++;
                 p_segments.push_back(0);
                 cur_mem_offset = 0;
@@ -134,7 +133,7 @@ void WriteTask::recvPipelineBuffer(int index)
 {
     /* if there is still data to be recieved */
     block_.reset();
-    p_siz_ = std::min((size_t)iofwd::BMIMemoryManager::instance().pipeline_size(), total_bytes_ - cur_recv_bytes_);
+    p_siz_ = std::min(pipeline_size_, total_bytes_ - cur_recv_bytes_);
     request_.recvPipelineBufferCB(block_, rbuffer_[index]->buffer->getBMIBuffer(), p_siz_);
 
     /* set the callback and wait */

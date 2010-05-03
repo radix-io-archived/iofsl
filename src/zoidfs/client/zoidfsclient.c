@@ -3847,13 +3847,6 @@ int zoidfs_init(void) {
         exit(1);
     }
 
-    /* setup the pipeline size */
-    pipeline_size = getenv("ZOIDFS_PIPELINE_SIZE");
-    if(pipeline_size)
-    {
-        PIPELINE_SIZE = atoi(pipeline_size);
-    }
-
     /*
      * Pick up the ION hostname from an environment variable (ZOIDFS_ION_NAME).
      */
@@ -3868,6 +3861,26 @@ int zoidfs_init(void) {
     if (ret < 0) {
         fprintf(stderr, "zoidfs_init: BMI_addr_lookup() failed, ion_name = %s.\n", ion_name);
         exit(1);
+    }
+
+    /* setup the pipeline size */
+
+    /* check the for the PIPELINE_SIZE env variable */
+    pipeline_size = getenv(PIPELINE_SIZE_ENV);
+    if(pipeline_size)
+    {
+        PIPELINE_SIZE = atoi(pipeline_size);
+    }
+    else
+    {
+        /* ask BMI for the max buffer size it can handle... */
+        int psiz = 0;
+        ret = BMI_get_info(peer_addr, BMI_CHECK_MAXSIZE, (void *)&psiz);
+        if(ret)
+        {
+            fprintf(stderr, "zoidfs_init: BMI_get_info(BMI_CHECK_MAXSIZE) failed.\n");
+            exit(1);
+        }
     }
 
 #ifdef HAVE_BMI_ZOID_TIMEOUT

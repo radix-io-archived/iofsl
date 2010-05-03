@@ -10,7 +10,7 @@ namespace iofwd
         : sm::SimpleSM<ReadTaskSM>(smm), api_(api), request_((static_cast<ReadRequest&>(*p))), slots_(*this),
           total_bytes_(0), cur_sent_bytes_(0), p_siz_(0), total_pipeline_ops_(0), total_buffers_(0),
           io_ops_done_(0), cw_post_index_(0), rbuffer_(NULL), mode_(READSM_SERIAL_IO_PIPELINE),
-          ret_(zoidfs::ZFS_OK)
+          ret_(zoidfs::ZFS_OK), pipeline_size_(0)
     {
     }
 
@@ -80,8 +80,7 @@ namespace iofwd
         size_t cur_pipe_ofs = 0;
         int cur_file_index = 0;
         int num_pipe_segments = 0;
-        size_t pipeline_size = iofwd::BMIMemoryManager::instance().pipeline_size();
-        size_t cur_pipe_buffer_size = pipeline_size;
+        size_t cur_pipe_buffer_size = pipeline_size_;
         zoidfs_file_size_t cur_file_size = file_sizes[cur_file_index];
         zoidfs_file_ofs_t cur_file_start = file_starts[cur_file_index];
         size_t cur_mem_offset = 0;
@@ -111,7 +110,7 @@ namespace iofwd
 
                     cur_file_size -= cur_pipe_buffer_size;
                     cur_pipe_ofs += cur_pipe_buffer_size;
-                    cur_pipe_buffer_size = pipeline_size;
+                    cur_pipe_buffer_size = pipeline_size_;
                     cur_pipe++;
                     p_segments.push_back(0);
                     cur_mem_offset = 0;
