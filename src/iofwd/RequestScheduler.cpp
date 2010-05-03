@@ -116,7 +116,7 @@ RequestScheduler::~RequestScheduler()
   }
 }
 
-void RequestScheduler::write (const iofwdevent::CBType & cb, int * UNUSED(ret), const
+void RequestScheduler::write (const iofwdevent::CBType & cb, int * ret, const
       zoidfs::zoidfs_handle_t * handle, size_t count, const void *
       mem_starts[], const size_t * mem_sizes, size_t file_count, const
       zoidfs::zoidfs_file_ofs_t file_starts[], const
@@ -133,7 +133,7 @@ void RequestScheduler::write (const iofwdevent::CBType & cb, int * UNUSED(ret), 
     if (file_sizes[i] > 0)
       valid_count++;
 
-  iofwd::tasksm::IOCBWrapper * c = new iofwd::tasksm::IOCBWrapper(cb, valid_count);
+  iofwd::tasksm::IOCBWrapper * c = new iofwd::tasksm::IOCBWrapper(cb, valid_count, ret);
   for (size_t i = 0; i < count; i++) {
     assert(mem_sizes[i] == file_sizes[i]);
     if (file_sizes[i] == 0) continue;
@@ -157,7 +157,7 @@ void RequestScheduler::write (const iofwdevent::CBType & cb, int * UNUSED(ret), 
   }
 }
 
-void RequestScheduler::read (const iofwdevent::CBType & cb, int * UNUSED(ret), const
+void RequestScheduler::read (const iofwdevent::CBType & cb, int * ret, const
       zoidfs::zoidfs_handle_t * handle, size_t count, void * mem_starts[],
       const size_t * mem_sizes, size_t file_count,
       const zoidfs::zoidfs_file_ofs_t file_starts[],
@@ -171,7 +171,7 @@ void RequestScheduler::read (const iofwdevent::CBType & cb, int * UNUSED(ret), c
     if (file_sizes[i] > 0)
       valid_count++;
 
-  iofwd::tasksm::IOCBWrapper * c = new iofwd::tasksm::IOCBWrapper(cb, valid_count);
+  iofwd::tasksm::IOCBWrapper * c = new iofwd::tasksm::IOCBWrapper(cb, valid_count, ret);
   for (size_t i = 0; i < count; i++) {
     assert(mem_sizes[i] == file_sizes[i]);
     if (file_sizes == 0) continue;

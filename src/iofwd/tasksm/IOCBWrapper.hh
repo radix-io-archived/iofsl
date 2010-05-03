@@ -17,8 +17,8 @@ namespace iofwd
 class IOCBWrapper
 {
     public:
-        IOCBWrapper(iofwdevent::CBType cb, int count)
-            : cb_(cb), count_(count)
+        IOCBWrapper(iofwdevent::CBType cb, int count, int * ret)
+            : cb_(cb), count_(count), ret_(ret)
         {
         }
 
@@ -27,6 +27,7 @@ class IOCBWrapper
             boost::mutex::scoped_lock l(lock_);
             if(count_ == 1)
             {
+                *(ret_) = status;
                 cb_(status);
                 l.unlock();
                 delete this;
@@ -40,6 +41,7 @@ class IOCBWrapper
         iofwdevent::CBType cb_;
         int count_;
         boost::mutex lock_;
+        int * ret_;
 
     protected:
         ~IOCBWrapper();
