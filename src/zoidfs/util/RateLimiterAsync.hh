@@ -102,6 +102,7 @@ namespace zoidfs
                   friend class RateLimiterAsync;
 
                   enum { INIT = 0,
+                     WAITING_FOR_LAT,
                      WAITING_FOR_PRE_EXEC,
                      WAITING_FOR_TOKEN_1,
                      WAITING_FOR_TOKEN_2,
@@ -172,6 +173,7 @@ namespace zoidfs
             size_t read_burst_bw_;
             size_t write_burst_bw_;
             size_t hz_;
+            size_t latency_;
 
             bool delay_issue_;
 

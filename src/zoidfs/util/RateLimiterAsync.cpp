@@ -133,6 +133,8 @@ namespace zoidfs
             throw "Invalid hz value: valid range: [1,1000[";
          }
 
+         latency_ = config.getKeyAsDefault<size_t> ("latency", 0);
+
          ZLOG_INFO (log_, format("Read bw %i kb/s, write bw %i kb/s, op limit"
                   "%i ops/s") % read_bw_ % write_bw_ % op_limit_);
          ZLOG_INFO (log_, format("Burst read bw %i kb/s, burst write bw %i kb/s,"
@@ -142,6 +144,7 @@ namespace zoidfs
                   : "Requests will be issued immediately;"
                   " Reponses will be delayed."));
          ZLOG_INFO (log_, format("Timer frequency: %i Hz") % hz_);
+         ZLOG_INFO (log_, format("Request latency: %i ms") % latency_);
 
          ZLOG_INFO (log_, format("Using api '%s'") % api);
          api_.reset (iofwdutil::Factory<
@@ -216,6 +219,14 @@ namespace zoidfs
                }
                // if we delay issuing exec fall through to getting tokens
             case WAITING_FOR_PRE_EXEC:
+               status_ = WAITING_FOR_LAT;
+               if (parent_.latency_)
+               {
+                  ZLOG_DEBUG_MORE(parent_.log_, "Scheduling latency timer");
+                  parent_.timer_.createTimer (cb_, parent_.latency_);
+                  return true;
+               }
+            case WAITING_FOR_LAT:
                ZLOG_DEBUG_MORE(parent_.log_, format("(op %p): in pre_exec")%this);
                op_status_ = cbstat;
                status_ = WAITING_FOR_TOKEN_1;
