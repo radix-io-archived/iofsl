@@ -66,16 +66,8 @@ void RequestScheduler::configure (const iofwdutil::ConfigFile & config)
 {
    boost::mutex::scoped_lock l(lock_);
 
-   const std::string api (config.getKeyDefault ("api", "defasync"));
-   ZLOG_INFO(log_, format("Using async API '%s'") % api);
-   api_.reset (iofwdutil::Factory<
-         std::string,
-         zoidfs::util::ZoidFSAsync>::construct(api)());
-   iofwdutil::Configurable::configure_if_needed (api_.get(),
-         config.openSectionDefault(api.c_str()));
-
-   // For ZoidFSAsyncPT
-   setAsyncPT (api_.get());
+   // ZoidFSAsyncPT creates and configures api_
+   configurePT(log_, config);
 
    /* get the scheduler type... defaults to FIFO */
    const std::string schedalgo = config.getKeyDefault("schedalgo", "fifo");

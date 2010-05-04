@@ -31,7 +31,6 @@ class RequestScheduler : public zoidfs::util::ZoidFSAsyncPT,
 public:
   RequestScheduler ();
 
-  //RequestScheduler(zoidfs::util::ZoidFSAsync * api, const iofwdutil::ConfigFile & c, int mode);
   virtual ~RequestScheduler();
 
   void configure (const iofwdutil::ConfigFile & config);
@@ -83,7 +82,6 @@ private:
   boost::mutex lock_;
   bool exiting_;
 
-  boost::scoped_ptr<zoidfs::util::ZoidFSAsync> api_;
   boost::scoped_ptr<RangeScheduler> range_sched_;
 
   bool schedActive_;
