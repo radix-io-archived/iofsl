@@ -118,3 +118,4 @@ test/boost/sm
 zoidfs-local.pc
 zoidfs.pc
 test/unit-tests/configfile-cunit
+buildlogs
