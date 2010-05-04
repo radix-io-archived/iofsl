@@ -23,6 +23,8 @@ struct IOFWDStateMachineOps
 {
     public:
         virtual void run() const = 0;
+
+        virtual ~IOFWDStateMachineOps () {}
 };
 
 /*
