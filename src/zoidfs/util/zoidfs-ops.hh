@@ -1,12 +1,25 @@
 #ifndef ZOIDFS_ZOIDFS_OPS_HH
 #define ZOIDFS_ZOIDFS_OPS_HH
 
+#include <boost/functional/hash.hpp>
 #include <cstring>
+#include <iosfwd>
 #include "zoidfs/util/zoidfs-wrapped.hh"
 
 namespace zoidfs
 {
 //===========================================================================
+
+   std::ostream & operator << (std::ostream & out,
+         const zoidfs_handle_t & handle);
+
+   /**
+    * Hash function for boost::unordered_xxxx and TR1 unordered.
+    */
+   inline std::size_t hash_value (const zoidfs_handle_t & h)
+   {
+      return boost::hash_range(&h.data[0], &h.data[sizeof(h.data)]);
+   }
 
 #define TMP_EQUAL_CMP(name) (t1.name == t2.name)
 

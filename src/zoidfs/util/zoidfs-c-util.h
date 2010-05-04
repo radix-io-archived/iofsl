@@ -4,6 +4,13 @@
 #include <string.h>
 #include "zoidfs/zoidfs.h"
 
+#ifdef __cplusplus
+namespace zoidfs
+{
+   extern "C"
+   {
+#endif
+
 /* Convert zoidfs handle into human readable string */ 
 int zoidfs_handle_to_text (const zoidfs_handle_t * handle, char * buf, int
       bufsize); 
@@ -22,6 +29,10 @@ static inline int zoidfs_handle_equal (const zoidfs_handle_t * h1, const
    return (memcmp (h1, h2, sizeof(zoidfs_handle_t))==0); 
 }
 
+#ifdef __cplusplus
+   }
+}
+#endif
 
 
 #endif
