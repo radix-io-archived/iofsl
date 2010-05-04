@@ -76,10 +76,6 @@ protected:
       {
       }
 
-      ~SMHelper()
-      {
-      }
-
       /* after running the SM, force the SM client to deallocate */ 
       void run()
       {
