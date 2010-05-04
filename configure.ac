@@ -531,7 +531,10 @@ AX_BOOST_REGEX
 AX_BOOST_DATE_TIME
 AX_BOOST_UNIT_TEST_FRAMEWORK
 
+OLD_CPPFLAGS="$CPPFLAGS"
+CPPFLAGS="$CPPFLAGS $BOOST_CPPFLAGS"
 AX_BOOST_SPIRIT_OLD
+CPPFLAGS="$OLD_CPPFLAGS"
 
 dnl =========================================================================
 dnl  gcc attribute support
