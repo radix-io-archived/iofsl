@@ -18,8 +18,12 @@ namespace sm
  * of entities that typically need to run for a small amount of time
  * before they go back to sleep.
  *
- * The client uses a shared pointer so it will be freed automatically when 
+ * The client uses a shared pointer so it will be freed automatically when
  * it can no longer be rescheduled.
+ *
+ * @TODO: remove old code from when SMManager still had a thread of its own.
+ * @TODO: schedule could use boost::bind with an intrusive_ptr to avoid
+ *        new SMHelper()
  */
 class SMManager
 {
