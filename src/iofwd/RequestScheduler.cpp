@@ -1,5 +1,4 @@
 
-#include <boost/shared_ptr.hpp>
 #include <boost/bind.hpp>
 
 // @TODO: boost 1.43 has unordered containers
