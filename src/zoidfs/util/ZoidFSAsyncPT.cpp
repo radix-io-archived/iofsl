@@ -30,7 +30,12 @@ namespace zoidfs
       void ZoidFSAsyncPT::configurePT (iofwdutil::IOFWDLogSource & log,
             const iofwdutil::ConfigFile & config)
       {
-         const std::string api (config.getKeyDefault ("api", "zoidfs"));
+         const std::string api (config.getKeyDefault ("api", ""));
+         if (!api.size())
+         {
+            ZLOG_ERROR(log, format("No 'api' specified in config file!"));
+            throw "No API specified!";
+         }
          ZLOG_INFO (log, format("Using async api '%s'") % api);
          api_.reset (iofwdutil::Factory<
                std::string,
