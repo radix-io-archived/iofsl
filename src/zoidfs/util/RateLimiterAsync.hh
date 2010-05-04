@@ -152,8 +152,6 @@ namespace zoidfs
              static void callback (DelayedOp * op, int status);
 
          protected:
-            boost::scoped_ptr<ZoidFSAsync> api_;
-
             iofwdutil::IOFWDLogSource & log_;
 
             iofwdevent::TimerResource & timer_;

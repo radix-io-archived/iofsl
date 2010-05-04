@@ -110,7 +110,6 @@ namespace zoidfs
 
       void RateLimiterAsync::configure (const iofwdutil::ConfigFile & config)
       {
-         const std::string api (config.getKeyDefault ("api", "zoidfs"));
          read_bw_ = config.getKeyAsDefault ("read_bw", 64*1024);
          write_bw_ = config.getKeyAsDefault ("write_bw", 64*1024);
          op_limit_ = config.getKeyAsDefault ("op_limit", 1024);
@@ -146,22 +145,14 @@ namespace zoidfs
          ZLOG_INFO (log_, format("Timer frequency: %i Hz") % hz_);
          ZLOG_INFO (log_, format("Request latency: %i ms") % latency_);
 
-         ZLOG_INFO (log_, format("Using api '%s'") % api);
-         api_.reset (iofwdutil::Factory<
-               std::string,
-               zoidfs::util::ZoidFSAsync>::construct(api)());
-         iofwdutil::Configurable::configure_if_needed (api_.get(),
-               config.openSectionDefault(api.c_str()));
-
-         // For ZoidFSAsyncPT
-         setAsyncPT (api_.get());
-
          op_limit_ /= hz_;
          read_bw_ /= hz_;
          write_bw_ /= hz_;
          read_burst_bw_ /= hz_;
          write_burst_bw_ /= hz_;
          op_burst_limit_ /= hz_;
+
+         configurePT (log_, config);
       }
 
       /**
