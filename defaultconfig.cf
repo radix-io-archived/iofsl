@@ -52,6 +52,8 @@ requesthandler {
         //
         batchsize = "16";
 
+        api = "defasync";
+
         rangesched {
             //
             // request mereger type
