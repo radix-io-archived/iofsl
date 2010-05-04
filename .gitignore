@@ -115,3 +115,5 @@ test/boost/iofwdevent-resource
 test/boost/encoder
 test/boost/dummy
 test/boost/sm
+zoidfs-local.pc
+zoidfs.pc
