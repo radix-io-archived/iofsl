@@ -1,5 +1,13 @@
+#include <boost/format.hpp>
+
 #include "ZoidFSAsyncPT.hh"
 #include "iofwdutil/assert.hh"
+#include "iofwdutil/ConfigFile.hh"
+#include "iofwdutil/IOFWDLog.hh"
+#include "iofwdutil/Factory.hh"
+#include "iofwdutil/Configurable.hh"
+
+using boost::format;
 
 namespace zoidfs
 {
@@ -17,6 +25,20 @@ namespace zoidfs
       {
          ALWAYS_ASSERT(pt);
          pt_ = pt;
+      }
+
+      void ZoidFSAsyncPT::configurePT (iofwdutil::IOFWDLogSource & log,
+            const iofwdutil::ConfigFile & config)
+      {
+         const std::string api (config.getKeyDefault ("api", "zoidfs"));
+         ZLOG_INFO (log, format("Using async api '%s'") % api);
+         api_.reset (iofwdutil::Factory<
+               std::string,
+               zoidfs::util::ZoidFSAsync>::construct(api)());
+         iofwdutil::Configurable::configure_if_needed (api_.get(),
+               config.openSectionDefault(api.c_str()));
+
+         setAsyncPT (api_.get());
       }
 
       int ZoidFSAsyncPT::init(void)

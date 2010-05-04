@@ -1,7 +1,16 @@
 #ifndef ZOIDFS_UTIL_ZOIDFSASYNCPT_HH
 #define ZOIDFS_UTIL_ZOIDFSASYNCPT_HH
 
+#include <boost/scoped_ptr.hpp>
+
 #include "ZoidFSAsync.hh"
+#include "iofwdutil/IOFWDLog-fwd.hh"
+
+namespace iofwdutil
+{
+   class ConfigFile;
+}
+
 
 namespace zoidfs
 {
@@ -21,6 +30,13 @@ namespace zoidfs
 
             /// Called to set the passthrough API instance
             void setAsyncPT (ZoidFSAsync * pt);
+
+            /// If the PT API instance comes from the config file
+            /// Looks for the 'api' key in the configfile.
+            /// Pointer is owned by AsyncPT and stored in api_;
+            /// Will be destroyed.
+            void configurePT (iofwdutil::IOFWDLogSource & log,
+                  const iofwdutil::ConfigFile & config);
 
             virtual int init(void);
 
@@ -137,6 +153,7 @@ namespace zoidfs
 
        protected:
             ZoidFSAsync * pt_;
+            boost::scoped_ptr<ZoidFSAsync> api_;
       };
 
       //=====================================================================
