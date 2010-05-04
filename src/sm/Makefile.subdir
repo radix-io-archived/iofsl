@@ -14,6 +14,7 @@ src/sm/IOFWDLookupStateMachine.hh \
 src/sm/IOFWDState.hh \
 src/sm/IOFWDStateEvents.hh \
 src/sm/IOFWDStateMachine.hh \
+src/sm/sm-fwd.hh \
 src/sm/SM.cpp \
 src/sm/SM.hh \
 src/sm/SMClient.cpp \
