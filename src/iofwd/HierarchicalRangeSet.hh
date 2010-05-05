@@ -25,7 +25,7 @@ public:
     {
     }
 
-    ~HierarchicalRangeSet()
+    virtual ~HierarchicalRangeSet()
     {
         /* clear the range set */
         while(!ranges.empty())
