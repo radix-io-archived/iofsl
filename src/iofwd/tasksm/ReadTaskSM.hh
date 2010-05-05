@@ -171,6 +171,9 @@ class ReadTaskSM : public sm::SimpleSM< ReadTaskSM >, public iofwdutil::InjectPo
             /* dealloc the buffer */
             iofwd::BMIMemoryManager::instance().dealloc(rbuffer_[cw_post_index_]->buffer);
 
+            /* update the index counter */
+            cw_post_index_++;
+
             /* if we still have pipeline data to fetch go back to the allocate buffer state */
             if(cur_sent_bytes_ < total_bytes_)
             {

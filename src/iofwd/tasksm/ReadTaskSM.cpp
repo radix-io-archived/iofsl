@@ -137,16 +137,6 @@ namespace iofwd
                 }
             }
         }
-#if 0
-        for(int i = 0 ; i < p_segments.size() ; i++)
-        {
-            fprintf(stderr, "pipe transfer %i: # segments %llu\n", i, p_segments[i]);
-        }
-        for(int i = 0 ; i < p_file_starts.size() ; i++)
-        {
-            fprintf(stderr, "pipe transfer %i: file_starts = %llu, file_sizes = %llu, mem_offsets = %llu\n", i, p_file_starts[i], p_file_sizes[i], p_mem_offsets[i]);
-        }
-#endif
     }
 
     void ReadTaskSM::execPipelineIO()
