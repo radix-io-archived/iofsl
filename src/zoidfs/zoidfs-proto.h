@@ -8,6 +8,8 @@
 #ifndef _ZOIDFS_PROTO_H_
 #define _ZOIDFS_PROTO_H_
 
+#include <stdint.h>
+
 #ifdef __cplusplus
 namespace zoidfs
 {
