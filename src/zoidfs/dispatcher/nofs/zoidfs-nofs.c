@@ -178,8 +178,8 @@ static int zoidfs_nofs_read(const zoidfs_handle_t * UNUSED(handle),
                     void * UNUSED(mem_starts[]),
                     const size_t UNUSED(mem_sizes[]),
                     size_t UNUSED(file_count),
-                    const uint64_t UNUSED(file_starts[]),
-                    uint64_t UNUSED(file_sizes[]),
+                    const zoidfs_file_ofs_t UNUSED(file_starts[]),
+                    zoidfs_file_size_t UNUSED(file_sizes[]),
                     zoidfs_op_hint_t * UNUSED(op_hint))
 {
     return ZFS_OK;
@@ -190,8 +190,8 @@ static int zoidfs_nofs_write(const zoidfs_handle_t * UNUSED(handle),
                      const void * UNUSED(mem_starts[]),
                      const size_t UNUSED(mem_sizes[]),
                      size_t UNUSED(file_count),
-                     const uint64_t UNUSED(file_starts[]),
-                     uint64_t UNUSED(file_sizes[]),
+                     const zoidfs_file_ofs_t UNUSED(file_starts[]),
+                     zoidfs_file_size_t UNUSED(file_sizes[]),
                      zoidfs_op_hint_t * UNUSED(op_hint))
 {
     return ZFS_OK;
