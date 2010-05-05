@@ -8,14 +8,7 @@
 
 #include "zoidfs/zoidfs.h"
 #include "iofwdevent/CBType.hh"
-
-namespace iofwd
-{
-    namespace tasksm
-    {
-        class IOCBWrapper;
-    }
-}
+#include "iofwd/tasksm/IOCBWrapper.hh"
 
 namespace iofwd
 {
@@ -48,7 +41,7 @@ class ChildRange
         {
         }
 
-        ChildRange(uint64_t st, uint64_t en) : st_(st), en_(en)
+        ChildRange(uint64_t st, uint64_t en) : st_(st), en_(en), cb_(NULL)
         {
         }
 
@@ -113,11 +106,13 @@ class ParentRange : public ChildRange
             /* update the parent interval */
             if(st_ > c->st_)
             {
+                fprintf(stderr, "%s: st_ = %i > c->st_ = %i\n", __func__, st_, c->st_);
                 st_ = c->st_;
             }
 
             if(en_ < c->en_)
             {
+                fprintf(stderr, "%s: en_ = %i > c->en_ = %i\n", __func__, en_, c->en_);
                 en_ = c->en_;
             }
 
@@ -133,11 +128,13 @@ class ParentRange : public ChildRange
             /* update the parent interval */
             if(st_ > c->st_)
             {
+                fprintf(stderr, "%s: st_ = %i > c->st_ = %i\n", __func__, st_, c->st_);
                 st_ = c->st_;
             }
 
             if(en_ < c->en_)
             {
+                fprintf(stderr, "%s: en_ = %i > c->en_ = %i\n", __func__, en_, c->en_);
                 en_ = c->en_;
             }
 

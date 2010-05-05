@@ -24,7 +24,7 @@ class IntervalTreeRangeSet : public BaseRangeSet
         {
         }
 
-        ~IntervalTreeRangeSet()
+        virtual ~IntervalTreeRangeSet()
         {
             if(rt)
             {
@@ -99,7 +99,7 @@ class IntervalTreeRangeSet : public BaseRangeSet
         }
 
         /* add the range to the interval tree */
-        void add(const ChildRange * r)
+        void add(ChildRange * r)
         {
             int ret = 0;
             interval_merge_tree_node_t * nn = iofwdutil::rm::IntervalMergeTreeCreateNode();
@@ -121,8 +121,64 @@ class IntervalTreeRangeSet : public BaseRangeSet
             /* try to insert it */
             ret = iofwdutil::rm::IntervalMergeTreeMergeIntervals(&rt, &nn, key);
 
+            /* if the buffer was completely consumed by another buffer */
+            if(ret == RB_TREE_CONSUME)
+            {
+                interval_merge_tree_interval_ll_t * cur_ll = nn->consumer->ll_head;
+                size_t tbytes = 0;
+                size_t cbytes = r->en_ - r->st_;
+
+                /* identify the buffers on this range that overlap and add copy operations to the cb */
+                while(cur_ll != NULL && tbytes < cbytes)
+                {
+                    ChildRange * c = static_cast<ChildRange *>(cur_ll->data);
+                    if(r->st_ > c->en_)
+                    {
+                        cur_ll = cur_ll->next;
+                        continue;
+                    }
+
+                    if(c->st_ <= r->st_ && c->en_ >= r->en_)
+                    {
+                        c->cb_->addCopy(r->buf_, 0, c->buf_, r->st_ - c->st_, r->en_ - r->st_);
+                        cbytes += r->en_ - r->st_;
+                        break;
+                    }
+                    else if(c->st_ > r->st_ && c->en_ < r->en_)
+                    {
+                        c->cb_->addCopy(r->buf_, c->st_ - r->st_, c->buf_, 0, c->en_ - c->st_);
+                        cbytes += c->en_ - c->st_;
+                    }
+                    else
+                    {
+                        if(c->st_ <= r->st_)
+                        {
+                            c->cb_->addCopy(r->buf_, 0, c->buf_, r->st_ - c->st_, c->en_ - r->st_);
+                            cbytes += (c->en_ - r->st_);
+                        }
+                        else if(c->en_ >= r->en_)
+                        {
+                            c->cb_->addCopy(r->buf_, c->st_ - r->st_, c->buf_, 0, r->en_ - c->st_);
+                            cbytes += (r->en_ - c->st_);
+                        }
+                    }
+                    cur_ll = cur_ll->next;
+                }
+
+                /* dec the callback count threshold */
+                r->cb_->count_--;
+
+                /* cleanup the node */
+                iofwdutil::rm::IntervalMergeTreeIntervalLLDestroy(nn->ll_head);
+                nn->ll_head = NULL;
+                nn->ll_tail = NULL;
+                iofwdutil::rm::IntervalMergeTreeDestroyNode(nn);
+
+                /* cleanup consumed range */
+                delete r;
+            }
             /* if it could not be inserted */
-            if(ret)
+            else if(ret)
             {
                 iofwdutil::rm::IntervalMergeTreeIntervalLLDestroy(nn->ll_head);
                 nn->ll_head = NULL;

@@ -115,7 +115,6 @@ void RequestScheduler::write (const iofwdevent::CBType & cb, int * ret, const
       op_hint)
 {
    // @TODO Note: the Requestscheduler depends on this. Needs to be fixed.
-   // @TODO Need to do proper error (return code) handling! ... current ret is UNUSED
    ALWAYS_ASSERT(file_count == count);
 
   // ignore zero-length request
@@ -154,7 +153,6 @@ void RequestScheduler::read (const iofwdevent::CBType & cb, int * ret, const
       const zoidfs::zoidfs_file_ofs_t file_starts[],
       const zoidfs::zoidfs_file_size_t file_sizes[], zoidfs::zoidfs_op_hint_t * op_hint)
 {
-   // @TODO Need to do proper error (return code) handling! ... current ret is UNUSED
    ALWAYS_ASSERT(file_count == count);
   // ignore zero-length request
   int valid_count = 0;
@@ -163,6 +161,7 @@ void RequestScheduler::read (const iofwdevent::CBType & cb, int * ret, const
       valid_count++;
 
   iofwd::tasksm::IOCBWrapper * c = new iofwd::tasksm::IOCBWrapper(cb, valid_count, ret);
+  c->isRead= true; /* add a hint to the cb wrapper that this op is a read */
   for (size_t i = 0; i < count; i++) {
     assert(mem_sizes[i] == file_sizes[i]);
     if (file_sizes == 0) continue;

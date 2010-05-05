@@ -158,7 +158,7 @@ public:
     }
   }
 
-  void add(const ChildRange * r)
+  void add(ChildRange * r)
   {
     std::map<uint64_t, ChildRange *>::iterator it;
     std::set<ChildRange *> s;

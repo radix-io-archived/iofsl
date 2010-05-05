@@ -9,7 +9,7 @@
 static size_t interval_merge_tree_sentinel_key_key = 0;
 static size_t interval_merge_tree_sentinel_key_value = 0;
 static interval_merge_tree_key_t interval_merge_tree_sentinel_key = {&interval_merge_tree_sentinel_key_key, &interval_merge_tree_sentinel_key_value};
-static interval_merge_tree_node_t interval_merge_tree_sentinel = {{&interval_merge_tree_sentinel_key_key, &interval_merge_tree_sentinel_key_value},NULL,NULL,NULL,0,0,{0,0},NULL,NULL,RB_TREE_COLOR_BLACK,0};
+static interval_merge_tree_node_t interval_merge_tree_sentinel = {{&interval_merge_tree_sentinel_key_key, &interval_merge_tree_sentinel_key_value},NULL,NULL,NULL,0,0,{0,0},NULL,NULL,RB_TREE_COLOR_BLACK,0,NULL};
 
 #define INTERVAL_TREE_LL_POOL_SIZE 4096
 #define INTERVAL_TREE_NODE_POOL_SIZE 4096
@@ -289,6 +289,9 @@ inline interval_merge_tree_node_t * interval_merge_tree_create_node()
     /* create the link list for intervals... set the head to the tail */
     node->ll_head = NULL;
     node->ll_tail = node->ll_head;
+
+    /* init the consumer to null */
+    node->consumer = NULL;
 
     return node;
 }
@@ -1311,11 +1314,12 @@ int interval_merge_tree_merge_intervals(interval_merge_tree_node_t ** root, inte
         /* new interval is consumed by the existing interval, do not modify the tree */
         else if(oc == RB_TREE_INTERVAL_C3)
         {
-            interval_merge_tree_interval_ll_destroy((*n_node)->ll_head);
+            (*n_node)->consumer = e_node; 
+            /*interval_merge_tree_interval_ll_destroy((*n_node)->ll_head);
             (*n_node)->ll_head = NULL;
             (*n_node)->ll_tail = NULL;
-            interval_merge_tree_destroy_node(*n_node);
-            return 0;
+            interval_merge_tree_destroy_node(*n_node);*/
+            return RB_TREE_CONSUME;
         }
         /* delete the existing node and add a new node for interval i*/
         /* this case will update the max values along the path */
