@@ -88,7 +88,7 @@ class IOCBWrapper
         void copy()
         {
             /* run each copy */
-            for(int i = 0 ; i < copy_wrappers_.size() ; i++)
+            for(unsigned int i = 0 ; i < copy_wrappers_.size() ; i++)
             {
                 /* validate that we have non-null buffers */
                 if(copy_wrappers_[i].dbuf_ && copy_wrappers_[i].obuf_)
