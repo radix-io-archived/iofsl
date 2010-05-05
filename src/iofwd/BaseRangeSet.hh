@@ -21,13 +21,13 @@ class BaseRangeSet
         {
         }
 
-        ~BaseRangeSet()
+        virtual ~BaseRangeSet()
         {
         }
 
        
         /* add / merge a range */ 
-        virtual void add(const iofwd::ChildRange * r) = 0;
+        virtual void add(iofwd::ChildRange * r) = 0;
 
         /* get a range from the merger */
         virtual void get(iofwd::ChildRange ** r) = 0;
