@@ -1,6 +1,7 @@
 #ifndef __IOFWD_TASKSM_IOCBWRAPPER_HH__
 #define __IOFWD_TASKSM_IOCBWRAPPER_HH__
 
+#include <vector>
 #include "iofwdevent/CBType.hh"
 #include <boost/thread/mutex.hpp>
 
