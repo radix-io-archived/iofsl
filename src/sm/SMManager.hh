@@ -113,7 +113,9 @@ protected:
             if(w->client_)
             {
                 /* execute the client work and drop the ref */
-                w->client_->execute();
+                do
+                {
+                } while (w->client_->execute());
     
                 /* reschedule the thread with more work from the tp */
 #ifndef USE_CRAY_TP
