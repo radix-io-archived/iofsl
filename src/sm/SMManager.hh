@@ -95,7 +95,9 @@ protected:
             if(w->client_)
             {
                 /* execute the client work and drop the ref */
-                w->client_->execute();
+                do
+                {
+                } while (w->client_->execute());
     
                 /* TODO: we shouldn't need to manually manage the ref count */
                 if (!w->client_->removeref())
