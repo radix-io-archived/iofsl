@@ -5,7 +5,9 @@
 // Bring in boost::format because almost everybody uses it
 #include <boost/format.hpp>
 #include <boost/thread.hpp>
+#include <boost/unordered_map.hpp>
 
+#include <vector>
 #include <memory>
 #include "iofwdutil/zlog/ZLogSource.hh"
 #include "iofwdutil/zlog/ZLog.hh"
@@ -78,7 +80,8 @@ private:
     void applyLogLevelOverride (zlog::ZLogSource & source);
 
 private:
-    typedef std::map<std::string, zlog::ZLogSource *> SourceMapType;
+    typedef boost::unordered_map<std::string,
+                        zlog::ZLogSource *> SourceMapType;
     SourceMapType sources_;
 
     std::auto_ptr<zlog::ZLogConfigurator> configurator_;
