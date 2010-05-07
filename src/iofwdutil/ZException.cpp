@@ -1,11 +1,25 @@
+#include <iterator>
 #include <sstream>
+#include <algorithm>
 #include <boost/foreach.hpp>
 #include "ZException.hh"
+#include "backtrace.hh"
 
 using namespace std; 
 
 namespace iofwdutil
 {
+   //========================================================================
+
+   namespace {
+      struct addendl
+      {
+         std::string operator () (const std::string & in)
+         {
+            return in + "\n";
+         }
+      };
+   }
 
    ZException::ZException ()
    {
@@ -24,10 +38,9 @@ namespace iofwdutil
    std::string ZException::toString () const
    {
       ostringstream o; 
-      BOOST_FOREACH(const std::string & val, msg_)
-      {
-         o << val << endl; 
-      }
+      std::ostream_iterator<std::string> out(o);
+      std::transform (msg_.begin(), msg_.end(), out, addendl());
+
       return o.str(); 
    }
 
@@ -36,4 +49,5 @@ namespace iofwdutil
       msg_.push_back (msg); 
    }
 
+   //========================================================================
 }
