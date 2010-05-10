@@ -42,7 +42,7 @@ public:
    }
 
    /**
-    * Returns true if there are still shared pointers pointing to us.
+    * Returns number of shared pointers pointing to us
     */
    int alive () const
    {
