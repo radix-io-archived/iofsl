@@ -3882,23 +3882,30 @@ int zoidfs_init(void) {
 
     /* setup the pipeline size */
 
+    /* ask BMI for the max buffer size it can handle... */
+    int psiz = 0;
+    ret = BMI_get_info(peer_addr, BMI_CHECK_MAXSIZE, (void *)&psiz);
+    if(ret)
+    {
+       fprintf(stderr, "zoidfs_init: BMI_get_info(BMI_CHECK_MAXSIZE) failed.\n");
+       exit(1);
+    }
+    PIPELINE_SIZE = (size_t)psiz;
+
     /* check the for the PIPELINE_SIZE env variable */
     pipeline_size = getenv(PIPELINE_SIZE_ENV);
     if(pipeline_size)
     {
-        PIPELINE_SIZE = atoi(pipeline_size);
-    }
-    else
-    {
-        /* ask BMI for the max buffer size it can handle... */
-        int psiz = 0;
-        ret = BMI_get_info(peer_addr, BMI_CHECK_MAXSIZE, (void *)&psiz);
-        if(ret)
+        int requested = atoi (pipeline_size);
+        if (requested > psiz)
         {
-            fprintf(stderr, "zoidfs_init: BMI_get_info(BMI_CHECK_MAXSIZE) failed.\n");
-            exit(1);
+           fprintf (stderr, "zoidfs_init: reducing pipelinesize to BMI max"
+                 " (%i bytes)\n", psiz);
         }
-        PIPELINE_SIZE = (size_t)psiz;
+        else
+        {
+           PIPELINE_SIZE = requested;
+        }
     }
 
 #ifdef HAVE_BMI_ZOID_TIMEOUT
