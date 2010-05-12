@@ -995,12 +995,20 @@ int zoidfs_null(void) {
     send_msg.bmi_comp_id = ret;
 #else
     ret = ZOIDFS_BMI_COMM_SENDU(send_msg);
+    if (ret != ZFS_OK)
+    {
+       goto null_cleanup;
+    }
 #endif
 
 #ifdef ZFS_USE_NB_BMI_COMM
     ret = ZOIDFS_BMI_COMM_IRECV_WAIT(recv_msg);
 #else
     ret = ZOIDFS_BMI_COMM_RECV(recv_msg);
+    if (ret != ZFS_OK)
+    {
+       goto null_cleanup;
+    }
 #endif
 
     /* Decode the ION response */
@@ -1100,6 +1108,8 @@ int zoidfs_getattr(const zoidfs_handle_t *handle, zoidfs_attr_t *attr, zoidfs_op
     send_msg.bmi_comp_id = ret;
 #else
     ret = ZOIDFS_BMI_COMM_SENDU(send_msg);
+    if (ret != ZFS_OK)
+       goto getattr_cleanup;
 #endif
 
     /* Do a BMI receive in recvbuf */
@@ -1107,6 +1117,8 @@ int zoidfs_getattr(const zoidfs_handle_t *handle, zoidfs_attr_t *attr, zoidfs_op
     ret = ZOIDFS_BMI_COMM_IRECV_WAIT(recv_msg);
 #else
     ret = ZOIDFS_BMI_COMM_RECV(recv_msg);
+    if (ret != ZFS_OK)
+       goto getattr_cleanup;
 #endif
 
     /* Decode the ION response */
@@ -1213,12 +1225,16 @@ int zoidfs_setattr(const zoidfs_handle_t *handle, const zoidfs_sattr_t *sattr,
     send_msg.bmi_comp_id = ret;
 #else
     ret = ZOIDFS_BMI_COMM_SENDU(send_msg);
+    if (ret != ZFS_OK)
+       goto setattr_cleanup;
 #endif
 
 #ifdef ZFS_USE_NB_BMI_COMM
     ret = ZOIDFS_BMI_COMM_IRECV_WAIT(recv_msg);
 #else
     ret = ZOIDFS_BMI_COMM_RECV(recv_msg);
+    if (ret != ZFS_OK)
+       goto setattr_cleanup;
 #endif
 
     /* Decode the ION response */
@@ -1333,6 +1349,8 @@ int zoidfs_readlink(const zoidfs_handle_t *handle, char *buffer,
     send_msg.bmi_comp_id = ret;
 #else
     ret = ZOIDFS_BMI_COMM_SENDU(send_msg);
+    if (ret != ZFS_OK)
+       goto readlink_cleanup;
 #endif
 
     /* Do a BMI receive in recvbuf */
@@ -1340,6 +1358,8 @@ int zoidfs_readlink(const zoidfs_handle_t *handle, char *buffer,
     ret = ZOIDFS_BMI_COMM_IRECV_WAIT(recv_msg);
 #else
     ret = ZOIDFS_BMI_COMM_RECV(recv_msg);
+    if (ret != ZFS_OK)
+       goto readlink_cleanup;
 #endif
 
 
@@ -1503,6 +1523,8 @@ int zoidfs_lookup(const zoidfs_handle_t *parent_handle,
     send_msg.bmi_comp_id = ret;
 #else
     ret = ZOIDFS_BMI_COMM_SENDU(send_msg);
+    if (ret != ZFS_OK)
+       goto lookup_cleanup;
 #endif
 
     /* Do a BMI receive in recvbuf */
@@ -1510,6 +1532,8 @@ int zoidfs_lookup(const zoidfs_handle_t *parent_handle,
     ret = ZOIDFS_BMI_COMM_IRECV_WAIT(recv_msg);
 #else
     ret = ZOIDFS_BMI_COMM_RECV(recv_msg);
+    if (ret != ZFS_OK)
+       goto lookup_cleanup;
 #endif
 
     /* Decode the ION response */
@@ -1667,6 +1691,8 @@ int zoidfs_remove(const zoidfs_handle_t *parent_handle,
     send_msg.bmi_comp_id = ret;
 #else
     ret = ZOIDFS_BMI_COMM_SENDU(send_msg);
+    if (ret != ZFS_OK)
+       goto remove_cleanup;
 #endif
 
     /* Do a BMI receive in recvbuf */
@@ -1674,6 +1700,8 @@ int zoidfs_remove(const zoidfs_handle_t *parent_handle,
     ret = ZOIDFS_BMI_COMM_IRECV_WAIT(recv_msg);
 #else
     ret = ZOIDFS_BMI_COMM_RECV(recv_msg);
+    if (ret != ZFS_OK)
+       goto remove_cleanup;
 #endif
 
     /* Decode the ION response */
@@ -1773,6 +1801,8 @@ int zoidfs_commit(const zoidfs_handle_t *handle,
     send_msg.bmi_comp_id = ret;
 #else
     ret = ZOIDFS_BMI_COMM_SENDU(send_msg);
+    if (ret != ZFS_OK)
+       goto commit_cleanup;
 #endif
 
     /* Do a BMI receive in recvbuf */
@@ -1780,6 +1810,8 @@ int zoidfs_commit(const zoidfs_handle_t *handle,
     ret = ZOIDFS_BMI_COMM_IRECV_WAIT(recv_msg);
 #else
     ret = ZOIDFS_BMI_COMM_RECV(recv_msg);
+    if (ret != ZFS_OK)
+       goto commit_cleanup;
 #endif
 
     /* Decode the ION response */
@@ -1930,6 +1962,8 @@ int zoidfs_create(const zoidfs_handle_t *parent_handle,
     send_msg.bmi_comp_id = ret;
 #else
     ret = ZOIDFS_BMI_COMM_SENDU(send_msg);
+    if (ret != ZFS_OK)
+       goto create_cleanup;
 #endif
 
     /* Do a BMI receive in recvbuf */
@@ -1937,6 +1971,8 @@ int zoidfs_create(const zoidfs_handle_t *parent_handle,
     ret = ZOIDFS_BMI_COMM_IRECV_WAIT(recv_msg);
 #else
     ret = ZOIDFS_BMI_COMM_RECV(recv_msg);
+    if (ret != ZFS_OK)
+       goto create_cleanup;
 #endif
 
     /* Decode the ION response */
@@ -2149,6 +2185,8 @@ int zoidfs_rename(const zoidfs_handle_t *from_parent_handle,
     send_msg.bmi_comp_id = ret;
 #else
     ret = ZOIDFS_BMI_COMM_SENDU(send_msg);
+    if (ret != ZFS_OK)
+       goto rename_cleanup;
 #endif
 
     /* Do a BMI receive in recvbuf */
@@ -2156,6 +2194,8 @@ int zoidfs_rename(const zoidfs_handle_t *from_parent_handle,
     ret = ZOIDFS_BMI_COMM_IRECV_WAIT(recv_msg);
 #else
     ret = ZOIDFS_BMI_COMM_RECV(recv_msg);
+    if (ret != ZFS_OK)
+       goto rename_cleanup;
 #endif
 
     /* Decode the ION response */
@@ -2374,6 +2414,8 @@ int zoidfs_link(const zoidfs_handle_t *from_parent_handle,
     send_msg.bmi_comp_id = ret;
 #else
     ret = ZOIDFS_BMI_COMM_SENDU(send_msg);
+    if (ret != ZFS_OK)
+       goto link_cleanup;
 #endif
 
     /* Do a BMI receive in recvbuf */
@@ -2381,6 +2423,8 @@ int zoidfs_link(const zoidfs_handle_t *from_parent_handle,
     ret = ZOIDFS_BMI_COMM_IRECV_WAIT(recv_msg);
 #else
     ret = ZOIDFS_BMI_COMM_RECV(recv_msg);
+    if (ret != ZFS_OK)
+       goto link_cleanup;
 #endif
 
     /* Decode the ION response */
@@ -2604,6 +2648,8 @@ int zoidfs_symlink(const zoidfs_handle_t *from_parent_handle,
     send_msg.bmi_comp_id = ret;
 #else
     ret = ZOIDFS_BMI_COMM_SENDU(send_msg);
+    if (ret != ZFS_OK)
+       goto symlink_cleanup;
 #endif
 
     /* Do a BMI receive in recvbuf */
@@ -2611,6 +2657,8 @@ int zoidfs_symlink(const zoidfs_handle_t *from_parent_handle,
     ret = ZOIDFS_BMI_COMM_IRECV_WAIT(recv_msg);
 #else
     ret = ZOIDFS_BMI_COMM_RECV(recv_msg);
+    if (ret != ZFS_OK)
+       goto symlink_cleanup;
 #endif
 
     /* Decode the ION response */
@@ -2787,6 +2835,8 @@ int zoidfs_mkdir(const zoidfs_handle_t *parent_handle,
     send_msg.bmi_comp_id = ret;
 #else
     ret = ZOIDFS_BMI_COMM_SENDU(send_msg);
+    if (ret != ZFS_OK)
+       goto mkdir_cleanup;
 #endif
 
     /* Do a BMI receive in recvbuf */
@@ -2794,6 +2844,8 @@ int zoidfs_mkdir(const zoidfs_handle_t *parent_handle,
     ret = ZOIDFS_BMI_COMM_IRECV_WAIT(recv_msg);
 #else
     ret = ZOIDFS_BMI_COMM_RECV(recv_msg);
+    if (ret != ZFS_OK)
+       goto mkdir_cleanup;
 #endif
 
     /* Decode the ION response */
@@ -2940,6 +2992,8 @@ int zoidfs_readdir(const zoidfs_handle_t *parent_handle,
     send_msg.bmi_comp_id = ret;
 #else
     ret = ZOIDFS_BMI_COMM_SENDU(send_msg);
+    if (ret != ZFS_OK)
+       goto readdir_cleanup;
 #endif
 
     /* Do a BMI receive in recvbuf */
@@ -2947,6 +3001,8 @@ int zoidfs_readdir(const zoidfs_handle_t *parent_handle,
     ret = ZOIDFS_BMI_COMM_IRECV_WAIT(recv_msg);
 #else
     ret = ZOIDFS_BMI_COMM_RECV(recv_msg);
+    if (ret != ZFS_OK)
+       goto readdir_cleanup;
 #endif
 
     /* Decode the ION response */
@@ -3076,6 +3132,8 @@ int zoidfs_resize(const zoidfs_handle_t *handle, zoidfs_file_size_t size,
     send_msg.bmi_comp_id = ret;
 #else
     ret = ZOIDFS_BMI_COMM_SENDU(send_msg);
+    if (ret != ZFS_OK)
+       goto resize_cleanup;
 #endif
 
     /* Do a BMI receive in recvbuf */
@@ -3083,6 +3141,8 @@ int zoidfs_resize(const zoidfs_handle_t *handle, zoidfs_file_size_t size,
     ret = ZOIDFS_BMI_COMM_IRECV_WAIT(recv_msg);
 #else
     ret = ZOIDFS_BMI_COMM_RECV(recv_msg);
+    if (ret != ZFS_OK)
+       goto resize_cleanup;
 #endif
 
     /* Decode the ION response */
@@ -3286,6 +3346,8 @@ int zoidfs_write(const zoidfs_handle_t *handle, size_t mem_count,
      * unexpected BMI message.
      */
     ret = ZOIDFS_BMI_COMM_SENDU(send_msg);
+    if (ret != ZFS_OK)
+       goto write_cleanup;
 
     /* Send the data using an expected BMI message */
     if (pipeline_size == 0) {
@@ -3300,6 +3362,8 @@ int zoidfs_write(const zoidfs_handle_t *handle, size_t mem_count,
 #else
             ret = bmi_comm_send(peer_addr, mem_starts[0], mem_sizes[0],
                                 send_msg_data.tag, context);
+            if (ret != ZFS_OK)
+               goto write_cleanup;
 #endif
         } else {
 #ifdef ZFS_USE_NB_BMI_COMM
@@ -3313,6 +3377,8 @@ int zoidfs_write(const zoidfs_handle_t *handle, size_t mem_count,
             ret = bmi_comm_send_list(peer_addr,
                                      mem_count, mem_starts, bmi_mem_sizes, send_msg.tag,
                                      context, total_size);
+            if (ret != ZFS_OK)
+               goto write_cleanup;
 #endif
         }
     } else {
@@ -3320,12 +3386,16 @@ int zoidfs_write(const zoidfs_handle_t *handle, size_t mem_count,
         ret = zoidfs_write_pipeline(peer_addr, pipeline_size,
                                     mem_count, mem_starts, bmi_mem_sizes,
                                     send_msg.tag, context, total_size);
+        if (ret != ZFS_OK)
+           goto write_cleanup;
     }
 
 #ifdef ZFS_USE_NB_BMI_COMM
     ret = ZOIDFS_BMI_COMM_IRECV_WAIT(recv_msg);
 #else
     ret = ZOIDFS_BMI_COMM_RECV(recv_msg);
+    if (ret != ZFS_OK)
+       goto write_cleanup;
 #endif
 
     /* Decode the ION response */
@@ -3478,6 +3548,11 @@ static int zoidfs_write_pipeline(BMI_addr_t peer_addr, size_t pipeline_size,
         /* send the data */
         ret = bmi_comm_send_list(peer_addr, p_list_count, (const void**)p_buf_list,
                                      p_size_list, tag, context, p_total_size);
+        free(p_buf_list);
+        free(p_size_list);
+
+        if (ret != ZFS_OK)
+           break;
 
         /* next */
         start = end;
@@ -3487,12 +3562,10 @@ static int zoidfs_write_pipeline(BMI_addr_t peer_addr, size_t pipeline_size,
             start_mem++;
             start_mem_ofs = 0;
         }
-        free(p_buf_list);
-        free(p_size_list);
         np++;
     }
 
-    return 0;
+    return ret;
 }
 
 /*
@@ -3666,6 +3739,8 @@ int zoidfs_read(const zoidfs_handle_t *handle, size_t mem_count,
      * unexpected BMI message.
      */
     ret = ZOIDFS_BMI_COMM_SENDU(send_msg);
+    if (ret != ZFS_OK)
+       goto read_cleanup;
 
     /* Receive the data from the IOD */
     if (pipeline_size == 0) {
@@ -3674,17 +3749,23 @@ int zoidfs_read(const zoidfs_handle_t *handle, size_t mem_count,
             /* Contiguous read */
             ret = bmi_comm_recv(peer_addr, mem_starts[0], total_size, recv_msg.tag,
                                 context, &recv_msg.actual_size);
+            if (ret != ZFS_OK)
+               goto read_cleanup;
         } else {
             /* Strided reads */
             ret = bmi_comm_recv_list(peer_addr, mem_count,
                                      mem_starts, bmi_mem_sizes,
                                      recv_msg.tag, context, total_size);
+            if (ret != ZFS_OK)
+               goto read_cleanup;
         }
     } else {
         /* Pipelining */
         ret = zoidfs_read_pipeline(peer_addr, pipeline_size,
                                    mem_count, mem_starts, bmi_mem_sizes,
                                    recv_msg.tag, context, total_size);
+        if (ret != ZFS_OK)
+           goto read_cleanup;
     }
 
 #if 0
@@ -3820,6 +3901,12 @@ static int zoidfs_read_pipeline(BMI_addr_t peer_addr, size_t pipeline_size,
         /* recv the data */
         ret = bmi_comm_recv_list(peer_addr, p_list_count, (void**)p_buf_list,
                                      p_size_list, tag, context, p_total_size);
+        free(p_buf_list);
+        free(p_size_list);
+
+        if (ret != ZFS_OK)
+           break;
+
         /* next */
         start = end;
         start_mem = end_mem;
@@ -3828,11 +3915,9 @@ static int zoidfs_read_pipeline(BMI_addr_t peer_addr, size_t pipeline_size,
             start_mem++;
             start_mem_ofs = 0;
         }
-        free(p_buf_list);
-        free(p_size_list);
         np++;
     }
-    return 0;
+    return ret;
 }
 
 /*
