@@ -3949,13 +3949,15 @@ int zoidfs_finalize(void) {
 #ifdef ZFS_BMI_FASTMEMALLOC
     if(zfs_bmi_client_sendbuf)
     {
-        free(zfs_bmi_client_sendbuf);
+        BMI_memfree (peer_addr, zfs_bmi_client_sendbuf,
+              ZFS_BMI_CLIENT_SENDBUF_LEN, BMI_SEND);
         zfs_bmi_client_sendbuf = NULL;
     }
 
     if(zfs_bmi_client_recvbuf)
     {
-        free(zfs_bmi_client_recvbuf);
+        BMI_memfree (peer_addr, zfs_bmi_client_recvbuf,
+              ZFS_BMI_CLIENT_RECVBUF_LEN, BMI_RECEIVE);
         zfs_bmi_client_recvbuf = NULL;
     }
 #endif
