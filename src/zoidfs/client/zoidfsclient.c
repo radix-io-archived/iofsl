@@ -3854,14 +3854,14 @@ int zoidfs_init(void) {
     ret = BMI_initialize(NULL, NULL, 0);
     if (ret < 0) {
         fprintf(stderr, "zoidfs_init: BMI_initialize() failed.\n");
-        exit(1);
+        return ZFSERR_OTHER;
     }
 
     /* Create a new BMI context */
     ret = BMI_open_context(&context);
     if (ret < 0) {
         fprintf(stderr, "zoidfs_init: BMI_open_context() failed.\n");
-        exit(1);
+        return ZFSERR_OTHER;
     }
 
     /*
@@ -3870,14 +3870,14 @@ int zoidfs_init(void) {
     ion_name = getenv(ION_ENV);
     if (!ion_name) {
         fprintf(stderr, "zoidfs_init: getenv(\"%s\") failed.\n", ION_ENV);
-        exit(1);
+        return ZFSERR_OTHER;
     }
 
     /* Perform an address lookup on the ION */
     ret = BMI_addr_lookup(&peer_addr, ion_name);
     if (ret < 0) {
         fprintf(stderr, "zoidfs_init: BMI_addr_lookup() failed, ion_name = %s.\n", ion_name);
-        exit(1);
+        return ZFSERR_OTHER;
     }
 
     /* setup the pipeline size */
@@ -3888,7 +3888,7 @@ int zoidfs_init(void) {
     if(ret)
     {
        fprintf(stderr, "zoidfs_init: BMI_get_info(BMI_CHECK_MAXSIZE) failed.\n");
-       exit(1);
+       return ZFSERR_OTHER;
     }
     PIPELINE_SIZE = (size_t)psiz;
 
@@ -3921,18 +3921,21 @@ int zoidfs_init(void) {
     if(!zfs_bmi_client_sendbuf)
     {
         fprintf(stderr, "zoidfs_init: could not allocate send buffer for fast mem alloc.\n");
-        exit(1);
+        return ZFSERR_OTHER;
     }
 
     zfs_bmi_client_recvbuf = BMI_memalloc(peer_addr, ZFS_BMI_CLIENT_RECVBUF_LEN, BMI_RECV);
     if(!zfs_bmi_client_recvbuf)
     {
         fprintf(stderr, "zoidfs_init: could not allocate recv buffer for fast mem alloc.\n");
-        exit(1);
+        /* cleanup buffer */
+        BMI_memfree (peer_addr, zfs_bmi_client_sendbuf,
+              ZFS_BMI_CLIENT_SENDBUF_LEN, BMI_SEND);
+        return ZFSERR_OTHER;
     }
 #endif
 
-    return 0;
+    return ZFS_OK;
 }
 
 /*
