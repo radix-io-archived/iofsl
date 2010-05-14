@@ -1,5 +1,5 @@
-#ifndef __IOFWD_RETRIEVEDBUFFER_HH__
-#define __IOFWD_RETRIEVEDBUFFER_HH__
+#ifndef IOFWD_RETRIEVEDBUFFER_HH
+#define IOFWD_RETRIEVEDBUFFER_HH
 
 #include "iofwd/BMIMemoryManager.hh"
 

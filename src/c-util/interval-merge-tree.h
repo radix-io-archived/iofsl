@@ -1,5 +1,5 @@
-#ifndef __RB_TREE_H__
-#define __RB_TREE_H__
+#ifndef RB_TREE_H
+#define RB_TREE_H
 
 #ifdef __cplusplus
 extern "C" {

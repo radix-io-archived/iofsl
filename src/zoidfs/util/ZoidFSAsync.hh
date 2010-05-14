@@ -1,5 +1,5 @@
-#ifndef __ZOIDFS_UTIL_ZOIDFSASYNC_HH__
-#define __ZOIDFS_UTIL_ZOIDFSASYNC_HH__
+#ifndef ZOIDFS_UTIL_ZOIDFSASYNC_HH
+#define ZOIDFS_UTIL_ZOIDFSASYNC_HH
 
 #include <boost/mpl/list.hpp>  // for factory
 

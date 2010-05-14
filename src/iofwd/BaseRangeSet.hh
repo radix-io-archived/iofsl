@@ -1,5 +1,5 @@
-#ifndef __SRC_IOFWD_BASERANGESET_HH__
-#define __SRC_IOFWD_BASERANGESET_HH__
+#ifndef SRC_IOFWD_BASERANGESET_HH
+#define SRC_IOFWD_BASERANGESET_HH
 
 #include "iofwd/Range.hh"
 

@@ -5,8 +5,8 @@
  * Nawab Ali <alin@cse.ohio-state.edu>
  */
 
-#ifndef _ZOIDFS_PROTO_H_
-#define _ZOIDFS_PROTO_H_
+#ifndef ZOIDFS_PROTO_H
+#define ZOIDFS_PROTO_H
 
 #include <stdint.h>
 

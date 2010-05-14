@@ -1,5 +1,5 @@
-#ifndef __IOFWD_TASKSM_NOTIMPLEMENTEDTASKSM_HH__
-#define __IOFWD_TASKSM_NOTIMPLEMENTEDTASKSM_HH__
+#ifndef IOFWD_TASKSM_NOTIMPLEMENTEDTASKSM_HH
+#define IOFWD_TASKSM_NOTIMPLEMENTEDTASKSM_HH
 
 #include "iofwd/tasksm/BaseTaskSM.hh"
 #include "iofwdutil/InjectPool.hh"

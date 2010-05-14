@@ -1,5 +1,5 @@
-#ifndef __IOFWD_TASKSM_RENAMETASKSM_HH__
-#define __IOFWD_TASKSM_RENAMETASKSM_HH__
+#ifndef IOFWD_TASKSM_RENAMETASKSM_HH
+#define IOFWD_TASKSM_RENAMETASKSM_HH
 
 #include "iofwd/tasksm/BaseTaskSM.hh"
 #include "iofwdutil/InjectPool.hh"

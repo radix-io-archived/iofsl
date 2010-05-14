@@ -1,5 +1,5 @@
-#ifndef __IOFWDUTIL_INJECTPOOL_HH__
-#define __IOFWDUTIL_INJECTPOOL_HH__
+#ifndef IOFWDUTIL_INJECTPOOL_HH
+#define IOFWDUTIL_INJECTPOOL_HH
 
 #include <boost/pool/pool_alloc.hpp>
 

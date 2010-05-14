@@ -1,5 +1,5 @@
-#ifndef __IOFWD_TASKSM_SMRETRIEVEDBUFFER_HH__
-#define __IOFWD_TASKSM_SMRETRIEVEDBUFFER_HH__
+#ifndef IOFWD_TASKSM_SMRETRIEVEDBUFFER_HH
+#define IOFWD_TASKSM_SMRETRIEVEDBUFFER_HH
 
 #include "iofwd/BMIMemoryManager.hh"
 #include "zoidfs/zoidfs.h"

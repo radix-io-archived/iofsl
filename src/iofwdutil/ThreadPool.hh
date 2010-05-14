@@ -1,5 +1,5 @@
-#ifndef __IOFWDUTIL_THREADPOOL_HH__
-#define __IOFWDUTIL_THREADPOOL_HH__
+#ifndef IOFWDUTIL_THREADPOOL_HH
+#define IOFWDUTIL_THREADPOOL_HH
 
 #include <queue>
 #include <vector>

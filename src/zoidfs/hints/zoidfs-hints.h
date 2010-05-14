@@ -1,5 +1,5 @@
-#ifndef __SRC_ZOIDFS_HINTS_ZOIDFS_HINTS_C__
-#define __SRC_ZOIDFS_HINTS_ZOIDFS_HINTS_C__
+#ifndef SRC_ZOIDFS_HINTS_ZOIDFS_HINTS_C
+#define SRC_ZOIDFS_HINTS_ZOIDFS_HINTS_C
 
 #include "zoidfs/zoidfs.h"
 

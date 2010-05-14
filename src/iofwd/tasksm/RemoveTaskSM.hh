@@ -1,5 +1,5 @@
-#ifndef __IOFWD_TASKSM_REMOVETASKSM_HH__
-#define __IOFWD_TASKSM_REMOVETASKSM_HH__
+#ifndef IOFWD_TASKSM_REMOVETASKSM_HH
+#define IOFWD_TASKSM_REMOVETASKSM_HH
 
 #include "iofwd/tasksm/BaseTaskSM.hh"
 #include "iofwdutil/InjectPool.hh"

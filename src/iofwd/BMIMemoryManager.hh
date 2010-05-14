@@ -1,5 +1,5 @@
-#ifndef __IOFWD_BMI_MEMORY_MANAGER_HH__
-#define __IOFWD_BMI_MEMORY_MANAGER_HH__
+#ifndef IOFWD_BMI_MEMORY_MANAGER_HH
+#define IOFWD_BMI_MEMORY_MANAGER_HH
 
 #include <deque>
 #include <boost/thread.hpp>

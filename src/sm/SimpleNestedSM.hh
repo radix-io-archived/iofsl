@@ -1,5 +1,5 @@
-#ifndef __HH_SM_SIMPLENESTEDSM__
-#define __HH_SM_SIMPLENESTEDSM__
+#ifndef HH_SM_SIMPLENESTEDSM
+#define HH_SM_SIMPLENESTEDSM
 
 #include "iofwdevent/CBType.hh"
 

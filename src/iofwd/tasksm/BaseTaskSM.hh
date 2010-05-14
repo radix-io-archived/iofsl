@@ -1,5 +1,5 @@
-#ifndef __IOFWD_TASKSM_BASETASKSM_HH__
-#define __IOFWD_TASKSM_BASETASKSM_HH__
+#ifndef IOFWD_TASKSM_BASETASKSM_HH
+#define IOFWD_TASKSM_BASETASKSM_HH
 
 #include "sm/SMManager.hh"
 #include "sm/SimpleSM.hh"

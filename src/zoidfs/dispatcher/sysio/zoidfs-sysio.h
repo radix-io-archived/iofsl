@@ -7,8 +7,8 @@
  *
  */
 
-#ifndef _ZOIDFS_SYSIO_H_
-#define _ZOIDFS_SYSIO_H_
+#ifndef ZOIDFS_SYSIO_H
+#define ZOIDFS_SYSIO_H
 
 #include <stdio.h>
 #include <stdlib.h>

@@ -1,5 +1,5 @@
-#ifndef __IOFWD_TASKSM_SHAREDIOCB_HH__
-#define __IOFWD_TASKSM_SHAREDIOCB_HH__
+#ifndef IOFWD_TASKSM_SHAREDIOCB_HH
+#define IOFWD_TASKSM_SHAREDIOCB_HH
 
 #include <vector>
 #include "zoidfs/zoidfs.h"

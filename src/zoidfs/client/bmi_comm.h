@@ -7,8 +7,8 @@
  * Jason Cope <copej@mcs.anl.gov>
  */
 
-#ifndef _BMI_COMM_H_
-#define _BMI_COMM_H_
+#ifndef BMI_COMM_H
+#define BMI_COMM_H
 
 #include<stdio.h>
 #include<errno.h>
