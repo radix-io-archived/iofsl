@@ -328,6 +328,7 @@ if test "x$gridftpdir" != "x" ; then
     CPPFLAGS="$OLDCPPFLAGS"
     LDFLAGS="$OLDLDFLAGS"
     LIBS="$OLDLIBS"
+    AC_DEFINE([USE_DISPATCHER_GRIDFTP],[1],[Build GridFTP zoidfs dispatcher driver])
     use_gridftp=1
 fi
 

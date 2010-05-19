@@ -199,7 +199,7 @@ int zoidfs_lookup(const zoidfs_handle_t * parent_handle,
     int hid;
     int ret; 
     zoidfs_handle_t newhandle; 
-    int usenew = 0; 
+    int usenew = 0;
 
     if (full_path)
     {

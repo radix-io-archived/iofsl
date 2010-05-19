@@ -25,7 +25,10 @@ test_xdrspeed_SOURCES = test/xdr/xdrspeed.cpp
 test_xdrspeed_LDADD = src/encoder/libencoder.a \
 		      src/iofwdutil/libiofwdutil.a
 
-
+noinst_PROGRAMS += test/lookup
+test_lookup_SOURCES = test/lookup.c
+test_lookup_LDADD = src/zoidfs/libzoidfsclient.a ${test_unit_tests_ldadd}
+test_lookup_LDFLAGS = ${test_unit_tests_ldflags}
 
 noinst_PROGRAMS += test/unit-tests/zoidfs-md-cunit test/unit-tests/zoidfs-md-cunit-local test/unit-tests/zoidfs-io-cunit \
 test/unit-tests/zoidfs-io-cunit-local

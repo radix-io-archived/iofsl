@@ -8,6 +8,10 @@
 
 #include "zoidfs/dispatcher/zint-handler.h"
 
+#ifdef USE_DISPATCHER_GRIDFTP
+#include "zoidfs/dispatcher/gridftp/zoidfs-gridftp.h"
+#endif /* USE_DISPATCHER_GRIDFTP */
+
 #ifdef USE_DISPATCHER_NOFS
 #include "zoidfs/dispatcher/nofs/zoidfs-nofs.h"
 #endif /* USE_DISPATCHER_NOFS */
@@ -34,6 +38,9 @@
 
 static zint_handler_t * zint_server_handlers_values[] =
 {
+#ifdef USE_DISPATCHER_GRIDFTP
+    &gridftp_handler,
+#endif /*  USE_DISPATCHER_GRIDFTP */
 #ifdef USE_DISPATCHER_NOFS
     &nofs_handler,
 #endif /*  USE_DISPATCHER_NOFS */
@@ -51,6 +58,9 @@ static zint_handler_t * zint_server_handlers_values[] =
 
 static char * zint_server_handlers_keys[] =
 {
+#ifdef USE_DISPATCHER_GRIDFTP
+    "gridftp",
+#endif /*  USE_DISPATCHER_GRIDFTP */
 #ifdef USE_DISPATCHER_NOFS
     "nofs",
 #endif /*  USE_DISPATCHER_NOFS */
