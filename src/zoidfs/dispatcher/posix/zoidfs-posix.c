@@ -1103,8 +1103,8 @@ static inline int zoidfs_generic_access (const zoidfs_handle_t *handle, size_t m
    size_t curfile = 0;
    size_t fileofs = 0;
 
+   int returncode = ZFS_OK;
    int ret;
-   int zfs_ret = ZFS_OK;
    Descriptor desc;
 
    /* obtain file handle */
@@ -1137,22 +1137,30 @@ static inline int zoidfs_generic_access (const zoidfs_handle_t *handle, size_t m
          ret = saferead (file, mempos, thistransfer, filepos);
 
       /* detect and set errors from IO calls */
-
-      /* for writes, check that the requested and actual write amounts match */
-      if(write)
+      if (ret != (int) thistransfer)
       {
-        if(ret < 0 || (size_t)ret != thistransfer)
-        {
-            zfs_ret = ZFSERR_IO; 
-        }
-      }
-      /* for reads, ensure that something was read */
-      else
-      {
-        if(ret < 0)
-        {
-            zfs_ret = ZFSERR_IO; 
-        }
+         size_t e;
+         // Mark rest as error
+         file_sizes[curfile] -= fileremaining;
+         // Clear rest
+         for (e = curfile+1; e < file_count; ++e)
+         {
+            file_sizes[e] = 0;
+         }
+         // Add back the bytes we could transfer but only if the call didn't
+         // indicate error
+         if (ret >= 0)
+         {
+            file_sizes[curfile] += ret;
+            // For reads, it's ok to read less than requested. For writes,
+            // it's always an error
+            returncode = (write ? ZFSERR_IO : ZFS_OK);
+         }
+         else
+         {
+            returncode = errno2zfs (errno);
+         }
+         break;
       }
 
       memofs += thistransfer;
@@ -1166,12 +1174,12 @@ static inline int zoidfs_generic_access (const zoidfs_handle_t *handle, size_t m
          ++curfile; fileofs  = 0;
       }
    }
-   assert (curfile == file_count && curmem == mem_count);
+   //assert (curfile == file_count && curmem == mem_count);
 
    /* release file desc */
    releasefd_handle (&desc);
 
-   return zfs_ret;
+   return returncode;
 }
 
 
