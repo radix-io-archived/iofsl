@@ -39,3 +39,9 @@ src_zoidfs_libzoidfs_a_SOURCES += \
 src/zoidfs/dispatcher/nofs/zoidfs-nofs.h \
 src/zoidfs/dispatcher/nofs/zoidfs-nofs.c
 endif
+
+if DISPATCH_GRIDFTP
+src_zoidfs_libzoidfs_a_SOURCES += \
+src/zoidfs/dispatcher/gridftp/zoidfs-gridftp.h \
+src/zoidfs/dispatcher/gridftp/zoidfs-gridftp.c
+endif
