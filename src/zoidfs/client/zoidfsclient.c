@@ -3072,7 +3072,7 @@ resize_cleanup:
 int zoidfs_write(const zoidfs_handle_t *handle, size_t mem_count,
                  const void *mem_starts[], const size_t mem_sizes[],
                  size_t file_count, const zoidfs_file_ofs_t file_starts[],
-                 const zoidfs_file_ofs_t file_sizes[],
+                 zoidfs_file_ofs_t file_sizes[],
                    zoidfs_op_hint_t * op_hint) {
     size_t i;
     size_t pipeline_size = 0;
@@ -3475,7 +3475,7 @@ static int zoidfs_write_pipeline(BMI_addr_t l_peer_addr, size_t pipeline_size,
 int zoidfs_read(const zoidfs_handle_t *handle, size_t mem_count,
                 void *mem_starts[], const size_t mem_sizes[],
                 size_t file_count, const zoidfs_file_ofs_t file_starts[],
-                const zoidfs_file_size_t file_sizes[],
+                zoidfs_file_size_t file_sizes[],
                    zoidfs_op_hint_t * op_hint) {
     size_t i;
     size_t pipeline_size = 0;

@@ -58,7 +58,7 @@ namespace zoidfs
                   const size_t mem_sizes[],
                   size_t file_count,
                   const zoidfs_file_ofs_t file_starts[],
-                  const zoidfs_file_size_t file_sizes[],
+                  zoidfs_file_size_t file_sizes[],
                   zoidfs_op_hint_t * hint);
 
             /**
@@ -71,7 +71,7 @@ namespace zoidfs
                   const size_t mem_sizes[],
                   size_t file_count,
                   const zoidfs_file_ofs_t file_starts[],
-                  const zoidfs_file_size_t file_sizes[],
+                  zoidfs_file_size_t file_sizes[],
                   zoidfs_op_hint_t * hint);
 
 
@@ -129,7 +129,7 @@ namespace zoidfs
                   const size_t * mem_sizes;
                   size_t file_count;
                   const zoidfs_file_ofs_t * file_starts;
-                  const zoidfs_file_size_t * file_sizes;
+                  zoidfs_file_size_t * file_sizes;
                   zoidfs_op_hint_t * hint;
 
                   boost::mutex lock_;
@@ -139,13 +139,13 @@ namespace zoidfs
             DelayedOp * newRead (const iofwdevent::CBType & cb, int * ret,
                   const zoidfs_handle_t * handle, size_t mem_count, void *
                   mem_starts[], const size_t mem_sizes[], size_t file_count,
-                  const zoidfs_file_ofs_t file_starts[], const zoidfs_file_size_t
+                  const zoidfs_file_ofs_t file_starts[], zoidfs_file_size_t
                   file_sizes[], zoidfs_op_hint_t * hint);
 
             DelayedOp * newWrite (const iofwdevent::CBType & cb, int * ret,
                   const zoidfs_handle_t * handle, size_t mem_count, const void
                   * mem_starts[], const size_t mem_sizes[], size_t file_count,
-                  const zoidfs_file_ofs_t file_starts[], const zoidfs_file_size_t
+                  const zoidfs_file_ofs_t file_starts[], zoidfs_file_size_t
                   file_sizes[], zoidfs_op_hint_t * hint);
 
              void scheduleTimer ();

@@ -276,22 +276,28 @@ int zoidfs_readlink(const zoidfs_handle_t * handle /* in:ptr */,
                     size_t buffer_length /* in:obj */,
                     zoidfs_op_hint_t * op_hint /* inout:ptr:nullok */);
 
+/**
+ * Return number of bytes read in the file_sizes array.
+ */
 int zoidfs_read(const zoidfs_handle_t * handle /* in:ptr */,
                 size_t mem_count /* in:obj */,
                 void * mem_starts[] /* out:arr2d:size=+1:zerocopy */,
                 const size_t mem_sizes[] /* in:arr:size=-2 */,
                 size_t file_count /* in:obj */,
                 const zoidfs_file_ofs_t file_starts[] /* in:arr:size=-1 */,
-                const zoidfs_file_size_t file_sizes[] /* inout:arr:size=-2 */,
+                zoidfs_file_size_t file_sizes[] /* inout:arr:size=-2 */,
                 zoidfs_op_hint_t * op_hint /* inout:ptr:nullok */);
 
+/**
+ * Returns number of bytes written in the file_sizes array.
+ */
 int zoidfs_write(const zoidfs_handle_t * handle /* in:ptr */,
                  size_t mem_count /* in:obj */,
                  const void * mem_starts[] /* in:arr2d:size=+1:zerocopy */,
                  const size_t mem_sizes[] /* in:arr:size=-2 */,
                  size_t file_count /* in:obj */,
                  const zoidfs_file_ofs_t file_starts[] /* in:arr:size=-1 */,
-                 const zoidfs_file_size_t file_sizes[] /* inout:arr:size=-2 */,
+                 zoidfs_file_size_t file_sizes[] /* inout:arr:size=-2 */,
                  zoidfs_op_hint_t * op_hint /* inout:ptr:nullok */);
 
 int zoidfs_commit(const zoidfs_handle_t * handle /* in:ptr */,
@@ -411,7 +417,7 @@ int Pzoidfs_read(const zoidfs_handle_t * handle /* in:ptr */,
                 const size_t mem_sizes[] /* in:arr:size=-2 */,
                 size_t file_count /* in:obj */,
                 const zoidfs_file_ofs_t file_starts[] /* in:arr:size=-1 */,
-                const zoidfs_file_size_t file_sizes[] /* inout:arr:size=-2 */,
+                zoidfs_file_size_t file_sizes[] /* inout:arr:size=-2 */,
                 zoidfs_op_hint_t * op_hint /* inout:ptr:nullok */);
 
 int Pzoidfs_write(const zoidfs_handle_t * handle /* in:ptr */,
@@ -420,7 +426,7 @@ int Pzoidfs_write(const zoidfs_handle_t * handle /* in:ptr */,
                  const size_t mem_sizes[] /* in:arr:size=-2 */,
                  size_t file_count /* in:obj */,
                  const zoidfs_file_ofs_t file_starts[] /* in:arr:size=-1 */,
-                 const zoidfs_file_size_t file_sizes[] /* inout:arr:size=-2 */,
+                 zoidfs_file_size_t file_sizes[] /* inout:arr:size=-2 */,
                  zoidfs_op_hint_t * op_hint /* inout:ptr:nullok */);
 
 int Pzoidfs_commit(const zoidfs_handle_t * handle /* in:ptr */,

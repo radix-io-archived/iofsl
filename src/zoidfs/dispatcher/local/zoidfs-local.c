@@ -47,7 +47,7 @@ static int zint_local_read(const zoidfs_handle_t * UNUSED(handle),
                     const size_t UNUSED(mem_sizes[]),
                     size_t UNUSED(file_count),
                     const zoidfs_file_ofs_t UNUSED(file_starts[]),
-                    const zoidfs_file_size_t UNUSED(file_sizes[]),
+                    zoidfs_file_size_t UNUSED(file_sizes[]),
                     zoidfs_op_hint_t * UNUSED(op_hint))
 {
     return ZFSERR_NOTIMPL;
@@ -59,7 +59,7 @@ static int zint_local_write(const zoidfs_handle_t * UNUSED(handle),
                      const size_t UNUSED(mem_sizes[]),
                      size_t UNUSED(file_count),
                      const zoidfs_file_ofs_t UNUSED(file_starts[]),
-                     const zoidfs_file_size_t UNUSED(file_sizes[]),
+                     zoidfs_file_size_t UNUSED(file_sizes[]),
                      zoidfs_op_hint_t * UNUSED(op_hint))
 {
     return ZFSERR_NOTIMPL;

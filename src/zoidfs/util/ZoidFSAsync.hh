@@ -53,7 +53,7 @@ class ZoidFSAsync
             const size_t mem_sizes[],
             size_t file_count,
             const zoidfs_file_ofs_t file_starts[],
-            const zoidfs_file_size_t file_sizes[],
+            zoidfs_file_size_t file_sizes[],
             zoidfs_op_hint_t * hint) =0;
 
       virtual void write(const iofwdevent::CBType & cb, int * ret, const zoidfs_handle_t * handle,
@@ -62,7 +62,7 @@ class ZoidFSAsync
             const size_t mem_sizes[],
             size_t file_count,
             const zoidfs_file_ofs_t file_starts[],
-            const zoidfs_file_size_t file_sizes[],
+            zoidfs_file_size_t file_sizes[],
             zoidfs_op_hint_t * hint) =0;
 
       virtual void commit(const iofwdevent::CBType & cb, int * ret, const zoidfs_handle_t * handle,

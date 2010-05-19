@@ -74,7 +74,7 @@ typedef int (* zoidfs_router_mpi_file_write_at_t)(MPI_File fh, MPI_Offset offset
     int count, MPI_Datatype datatype, MPI_Status * status);
 typedef int (* zoidfs_router_zoidfs_write_t)(const zoidfs_handle_t * handle, size_t mem_count,
     const void * mem_starts[], const size_t mem_sizes[], size_t file_count,
-    const zoidfs_file_ofs_t file_starts[], const zoidfs_file_size_t file_sizes[],
+    const zoidfs_file_ofs_t file_starts[], zoidfs_file_size_t file_sizes[],
     zoidfs_op_hint_t * op_hint);
 typedef int (* zoidfs_router_zoidfs_init_t)();
 typedef int (* zoidfs_router_zoidfs_finalize_t)();

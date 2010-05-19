@@ -252,7 +252,7 @@ int zoidfs_read(const zoidfs_handle_t * handle,
                 const size_t mem_sizes[],
                 size_t file_count,
                 const zoidfs_file_ofs_t file_starts[],
-                const zoidfs_file_size_t file_sizes[],
+                zoidfs_file_size_t file_sizes[],
                 zoidfs_op_hint_t * op_hint)
 {
     zint_handler_t * handler;
@@ -280,7 +280,7 @@ int zoidfs_write(const zoidfs_handle_t * handle,
                  const size_t mem_sizes[],
                  size_t file_count,
                  const zoidfs_file_ofs_t file_starts[],
-                 const zoidfs_file_size_t file_sizes[],
+                 zoidfs_file_size_t file_sizes[],
                  zoidfs_op_hint_t * op_hint)
 {
     zint_handler_t * handler;
