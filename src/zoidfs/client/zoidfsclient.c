@@ -4042,7 +4042,7 @@ int zoidfs_finalize(void) {
     if(zfs_bmi_client_recvbuf)
     {
         BMI_memfree (peer_addr, zfs_bmi_client_recvbuf,
-              ZFS_BMI_CLIENT_RECVBUF_LEN, BMI_RECEIVE);
+              ZFS_BMI_CLIENT_RECVBUF_LEN, BMI_RECV);
         zfs_bmi_client_recvbuf = NULL;
     }
 #endif
