@@ -595,7 +595,7 @@ static void zoidfs_client_router_file_domain_write(const void * nodep, const VIS
 int zoidfs_write_simple_block_layout(const zoidfs_handle_t *handle, size_t mem_count_,
                  const void *mem_starts[], const size_t mem_sizes_[],
                  size_t file_count_, const zoidfs_file_ofs_t file_starts[],
-                 const zoidfs_file_size_t file_sizes[], zoidfs_op_hint_t * op_hint) {
+                 zoidfs_file_size_t file_sizes[], zoidfs_op_hint_t * op_hint) {
     int ret = 0;
     size_t i = 0;
 
@@ -719,7 +719,7 @@ int zoidfs_write_simple_block_layout(const zoidfs_handle_t *handle, size_t mem_c
 int zoidfs_read(const zoidfs_handle_t *handle, size_t mem_count_,
                 void *mem_starts[], const size_t mem_sizes_[],
                 size_t file_count_, const zoidfs_file_ofs_t file_starts[],
-                const zoidfs_file_size_t file_sizes[], zoidfs_op_hint_t * op_hint) {
+                zoidfs_file_size_t file_sizes[], zoidfs_op_hint_t * op_hint) {
     int ret = 0;
 
     ret = Pzoidfs_read(handle, mem_count_, mem_starts, mem_sizes_, file_count_, file_starts, file_sizes, op_hint);

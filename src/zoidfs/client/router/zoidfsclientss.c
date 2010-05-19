@@ -330,9 +330,10 @@ int MPI_File_write_at_static_server(MPI_File fh, MPI_Offset offset, void * buf,
 int zoidfs_write_static_server(const zoidfs_handle_t *handle, size_t mem_count_,
                  const void *mem_starts[], const size_t mem_sizes_[],
                  size_t file_count_, const zoidfs_file_ofs_t file_starts[],
-                 const zoidfs_file_size_t file_sizes[], zoidfs_op_hint_t * op_hint)
+                 zoidfs_file_size_t file_sizes[], zoidfs_op_hint_t * op_hint)
 {
-    return Pzoidfs_write(handle, mem_count_, mem_starts, mem_sizes_, file_count_, file_starts, file_sizes, op_hint);
+    return Pzoidfs_write(handle, mem_count_, mem_starts, mem_sizes_,
+          file_count_, file_starts, file_sizes, op_hint);
 }
 
 zoidfs_router_t zoidfs_router_static_server = {

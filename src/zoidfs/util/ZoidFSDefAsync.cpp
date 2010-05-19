@@ -634,7 +634,7 @@ namespace zoidfs
          const size_t mem_sizes[],
          size_t file_count,
          const zoidfs_file_ofs_t file_starts[],
-         const zoidfs_file_size_t file_sizes[],
+         zoidfs_file_size_t file_sizes[],
          zoidfs_op_hint_t * hint)
    {
       ZoidFSDefAsyncReadWorkUnit * wu = new ZoidFSDefAsyncReadWorkUnit(cb, ret, api_.get(), tp_, handle, mem_count, mem_starts, mem_sizes, file_count, file_starts, file_sizes, hint);
@@ -652,7 +652,7 @@ namespace zoidfs
          const size_t mem_sizes[],
          size_t file_count,
          const zoidfs_file_ofs_t file_starts[],
-         const zoidfs_file_size_t file_sizes[],
+         zoidfs_file_size_t file_sizes[],
          zoidfs_op_hint_t * hint)
    {
       ZoidFSDefAsyncWriteWorkUnit * wu = new ZoidFSDefAsyncWriteWorkUnit(cb, ret, api_.get(), tp_, handle, mem_count, mem_starts, mem_sizes, file_count, file_starts, file_sizes, hint);

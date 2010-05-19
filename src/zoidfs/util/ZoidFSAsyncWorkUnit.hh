@@ -39,7 +39,7 @@ namespace zoidfs
             public:
                 ZoidFSDefAsyncWriteWorkUnit(const iofwdevent::CBType & cb, int * ret, ZoidFSAPI * api, iofwdutil::ThreadPool & tp, const zoidfs_handle_t * handle,
                     size_t mem_count, const void * mem_starts[], const size_t mem_sizes[], size_t file_count, const zoidfs_file_ofs_t file_starts[],
-                    const zoidfs_file_size_t file_sizes[], zoidfs_op_hint_t * hint) :
+                    zoidfs_file_size_t file_sizes[], zoidfs_op_hint_t * hint) :
 
                     ZoidFSDefAsyncWorkUnit(cb, ret, api, zoidfs::ZOIDFS_PROTO_WRITE, tp), handle_(handle), mem_count_(mem_count),
                     mem_starts_(mem_starts), mem_sizes_(mem_sizes), file_count_(file_count), file_starts_(file_starts),
@@ -54,7 +54,7 @@ namespace zoidfs
                 const size_t * mem_sizes_;
                 size_t file_count_;
                 const zoidfs_file_ofs_t * file_starts_;
-                const zoidfs_file_size_t * file_sizes_;
+                zoidfs_file_size_t * file_sizes_;
                 zoidfs_op_hint_t * hint_;
         };
 
@@ -124,7 +124,7 @@ namespace zoidfs
             public:
                 ZoidFSDefAsyncReadWorkUnit(const iofwdevent::CBType & cb, int * ret, ZoidFSAPI * api, iofwdutil::ThreadPool & tp, const zoidfs_handle_t * handle,
                     size_t mem_count, void * mem_starts[], const size_t mem_sizes[], size_t file_count, const zoidfs_file_ofs_t file_starts[],
-                    const zoidfs_file_size_t file_sizes[], zoidfs_op_hint_t * hint)
+                    zoidfs_file_size_t file_sizes[], zoidfs_op_hint_t * hint)
 
                 : ZoidFSDefAsyncWorkUnit(cb, ret, api, ZOIDFS_PROTO_READ, tp), handle_(handle), mem_count_(mem_count),
                     mem_starts_(mem_starts), mem_sizes_(mem_sizes), file_count_(file_count), file_starts_(file_starts),
@@ -138,7 +138,7 @@ namespace zoidfs
                 const size_t * mem_sizes_;
                 size_t file_count_;
                 const zoidfs_file_ofs_t * file_starts_;
-                const zoidfs_file_size_t * file_sizes_;
+                zoidfs_file_size_t * file_sizes_;
                 zoidfs_op_hint_t * hint_;
         };
 

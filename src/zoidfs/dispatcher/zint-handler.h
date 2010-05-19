@@ -69,7 +69,7 @@ typedef int (* zint_read_handler_t)(const zoidfs_handle_t * handle,
                                     const size_t mem_sizes[],
                                     size_t file_count,
                                     const zoidfs_file_ofs_t file_starts[],
-                                    const zoidfs_file_size_t file_sizes[],
+                                    zoidfs_file_size_t file_sizes[],
                                        zoidfs_op_hint_t * op_hint);
 
 typedef int (* zint_write_handler_t)(const zoidfs_handle_t * handle,
@@ -78,7 +78,7 @@ typedef int (* zint_write_handler_t)(const zoidfs_handle_t * handle,
                                      const size_t mem_sizes[],
                                      size_t file_count,
                                      const zoidfs_file_ofs_t file_starts[],
-                                     const zoidfs_file_size_t file_sizes[],
+                                     zoidfs_file_size_t file_sizes[],
                                        zoidfs_op_hint_t * op_hint);
 
 typedef int (* zint_commit_handler_t)(const zoidfs_handle_t * handle,

@@ -108,7 +108,7 @@ namespace zoidfs
             const size_t mem_sizes[],
             size_t file_count,
             const zoidfs_file_ofs_t file_starts[],
-            const zoidfs_file_size_t file_sizes[],
+            zoidfs_file_size_t file_sizes[],
             zoidfs_op_hint_t * hint)
       {
          pt_->read (cb, ret, handle, mem_count, mem_starts, mem_sizes, file_count,
@@ -122,7 +122,7 @@ namespace zoidfs
             const size_t mem_sizes[],
             size_t file_count,
             const zoidfs_file_ofs_t file_starts[],
-            const zoidfs_file_size_t file_sizes[],
+            zoidfs_file_size_t file_sizes[],
             zoidfs_op_hint_t * hint)
       {
          pt_->write (cb, ret, handle, mem_count, mem_starts, mem_sizes,

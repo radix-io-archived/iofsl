@@ -399,7 +399,7 @@ int zoidfs_resize(const zoidfs_handle_t *handle, uint64_t size, zoidfs_op_hint_t
 int zoidfs_write(const zoidfs_handle_t *handle, size_t mem_count_,
                  const void *mem_starts[], const size_t mem_sizes_[],
                  size_t file_count_, const zoidfs_file_ofs_t file_starts[],
-                 const zoidfs_file_size_t file_sizes[], zoidfs_op_hint_t * op_hint) {
+                 zoidfs_file_size_t file_sizes[], zoidfs_op_hint_t * op_hint) {
     int ret = 0;
 
     ZOIDFS_PROF_INC_COUNTER(zoidfs_write_call_count, zoidfs_write_mutex);
@@ -418,7 +418,7 @@ int zoidfs_write(const zoidfs_handle_t *handle, size_t mem_count_,
 int zoidfs_read(const zoidfs_handle_t *handle, size_t mem_count_,
                 void *mem_starts[], const size_t mem_sizes_[],
                 size_t file_count_, const zoidfs_file_ofs_t file_starts[],
-                const zoidfs_file_size_t file_sizes[], zoidfs_op_hint_t * op_hint) {
+                zoidfs_file_size_t file_sizes[], zoidfs_op_hint_t * op_hint) {
     int ret = 0;
 
     ZOIDFS_PROF_INC_COUNTER(zoidfs_read_call_count, zoidfs_read_mutex);
