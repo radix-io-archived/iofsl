@@ -1090,7 +1090,7 @@ static inline int safewrite (int fd, const void * buf, size_t count,
    return pwrite (fd, buf, count, filepos);
 }
 
-static inline int zoidfs_generic_access (const zoidfs_handle_t *handle, int mem_count,
+static inline int zoidfs_generic_access (const zoidfs_handle_t *handle, size_t mem_count,
                  void *mem_starts[], const size_t mem_sizes[],
                  size_t file_count, const zoidfs_file_ofs_t file_starts[],
                  zoidfs_file_size_t file_sizes[], int write,
@@ -1098,9 +1098,9 @@ static inline int zoidfs_generic_access (const zoidfs_handle_t *handle, int mem_
 {
    int err;
    int file;
-   int curmem = 0;
+   size_t curmem = 0;
    size_t memofs = 0 ;
-   int curfile = 0;
+   size_t curfile = 0;
    size_t fileofs = 0;
 
    int ret;
