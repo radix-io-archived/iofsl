@@ -8,6 +8,7 @@
 #include "NullAPI.hh"
 #include "iofwdutil/IOFWDLog.hh"
 #include "iofwdutil/Configurable.hh"
+#include "iofwdutil/atomics.hh"
 
 namespace zoidfs
 {
@@ -149,6 +150,8 @@ namespace zoidfs
          protected:
             boost::scoped_ptr<ZoidFSAPI> api_;
             iofwdutil::IOFWDLogSource * log_;
+
+            iofwdutil::fast_atomic<int> opcounter_;
       };
 
 

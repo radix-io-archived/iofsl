@@ -1,4 +1,5 @@
 #include <boost/format.hpp>
+#include <numeric>
 
 #include "iofwdutil/tools.hh"
 #include "zoidfs-util.hh"
@@ -23,7 +24,7 @@ namespace zoidfs
    {
 //===========================================================================
 
-   LogAPI::LogAPI ()
+   LogAPI::LogAPI () : opcounter_(0)
    {
    }
 
@@ -130,10 +131,15 @@ int LogAPI::read(const zoidfs_handle_t * handle,
             const zoidfs_file_size_t file_sizes[],
             zoidfs_op_hint_t * op_hint)
 {
-   LOG(format("zoidfs_read %s mem_count=%u file_count=%u")
-         % handle2string(handle) % mem_count % file_count);
+   int opid = opcounter_.fetch_and_incr();
+   LOG(format("zoidfs_read (opid %i) %s mem_count=%u file_count=%u bytes=%lu")
+         % opid % handle2string(handle) % mem_count % file_count
+         % std::accumulate (&mem_sizes[0], &mem_sizes[mem_count], 0));
    int ret = api_->read (handle, mem_count, mem_starts, mem_sizes,
          file_count, file_starts, file_sizes, op_hint);
+   LOG(format("zoidfs_read: (opid %i) ret=%i bytes_read=%lu")
+         % opid % ret % std::accumulate (&file_sizes[0],
+            &file_sizes[file_count], 0));
    checkerror(ret);
    return ret;
 }
@@ -147,10 +153,15 @@ int LogAPI::write(const zoidfs_handle_t * handle,
             const zoidfs_file_size_t file_sizes[],
             zoidfs_op_hint_t * op_hint)
 {
-   LOG(format("zoidfs_write %s mem_count=%u file_count=%u")
-         % handle2string(handle) % mem_count % file_count);
+   int opid = opcounter_.fetch_and_incr ();
+   LOG(format("zoidfs_write (op %i) %s mem_count=%u file_count=%u bytes=%lu")
+         % opid % handle2string(handle) % mem_count % file_count
+         % std::accumulate (&mem_sizes[0], &mem_sizes[mem_count], 0));
    int ret = api_->write (handle, mem_count, mem_starts,
          mem_sizes, file_count, file_starts, file_sizes, op_hint);
+   LOG(format("zoidfs_write: (op %i) ret=%i bytes_written=%lu")
+         % opid % ret % std::accumulate (&file_sizes[0],
+            &file_sizes[file_count], 0));
    checkerror(ret);
    return ret;
 }
