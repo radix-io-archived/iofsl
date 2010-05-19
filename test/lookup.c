@@ -24,6 +24,8 @@ int main(int argc, char * args[])
 
     zoidfs_create(NULL, NULL, "/tmp/gftp.create.test.txt", &sattr, &handle, &created, ZOIDFS_NO_OP_HINT);
  
+    zoidfs_remove(NULL, NULL, "/tmp/gftptest.txt.rm", NULL, ZOIDFS_NO_OP_HINT);
+
     zoidfs_finalize();
 
     return 0;
