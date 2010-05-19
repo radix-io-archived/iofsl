@@ -82,6 +82,24 @@ static void remove_cb(void *myargs, globus_ftp_client_handle_t *handle, globus_o
     globus_cond_signal(&cond);
 }
 
+static globus_bool_t dir_created;
+static globus_bool_t mkdir_done;
+static void mkdir_cb(void *myargs, globus_ftp_client_handle_t *handle, globus_object_t *error)
+{
+    if(error)
+    {
+        /* fprintf(stderr, "%s\n", globus_object_printable_to_string(error)); */
+    }
+    else
+    {
+        dir_created = GLOBUS_TRUE;
+    }
+
+    /* update done flag and signal */
+    mkdir_done = GLOBUS_TRUE;
+    globus_cond_signal(&cond);
+}
+
 static globus_bool_t file_created;
 static globus_bool_t create_done;
 static globus_bool_t create_wb_done;
@@ -504,7 +522,7 @@ static int zoidfs_gridftp_remove(const zoidfs_handle_t * UNUSED(parent_handle),
     file_removed = GLOBUS_FALSE;
     remove_done = GLOBUS_FALSE;
 
-    /* run exist test */
+    /* run delete */
     ret = globus_ftp_client_delete(&(gridftp_fh[0]), gftp_path, GLOBUS_NULL, remove_cb, GLOBUS_NULL);
     if(ret != GLOBUS_SUCCESS)
     {
@@ -593,11 +611,111 @@ static int zoidfs_gridftp_symlink(
 static int zoidfs_gridftp_mkdir(
     const zoidfs_handle_t * UNUSED(parent_handle),
     const char * UNUSED(component_name),
-    const char * UNUSED(full_path),
+    const char * full_path,
     const zoidfs_sattr_t * UNUSED(attr),
     zoidfs_cache_hint_t * UNUSED(parent_hint),
     zoidfs_op_hint_t * UNUSED(op_hint))
 {
+    globus_result_t ret;
+    globus_ftp_client_handleattr_t hattr;
+    char gftp_path[1024];
+
+    /* right now, use ftp */
+    sprintf(gftp_path, "ftp://127.0.0.1:2811%s", full_path);
+
+    /* init the handle attr */
+    ret = globus_ftp_client_handleattr_init(&hattr);
+    if(ret != GLOBUS_SUCCESS)
+    {
+        fprintf(stderr, "%s : ERROR could not init handle\n", __func__);
+        fprintf(stderr, "%s : exit\n", __func__);
+        return ZFSERR_OTHER;
+    }
+
+    /* init the operation. @TODO fix the handle */
+    ret = globus_ftp_client_operationattr_init(&(oattr[0]));
+    if(ret != GLOBUS_SUCCESS)
+    {
+        fprintf(stderr, "%s : ERROR could not init op\n", __func__);
+        fprintf(stderr, "%s : exit\n", __func__);
+        return ZFSERR_OTHER;
+    }
+
+    /* enable gridftp connection caching */
+    ret = globus_ftp_client_handleattr_set_cache_all(&hattr, GLOBUS_TRUE);
+    if(ret != GLOBUS_SUCCESS)
+    {
+        fprintf(stderr, "%s : ERROR could not cache connection\n", __func__);
+        fprintf(stderr, "%s : exit\n", __func__);
+        return ZFSERR_OTHER;
+    }
+
+    /* set the authorization params */
+    ret = globus_ftp_client_operationattr_set_authorization(&(oattr[0]), GSS_C_NO_CREDENTIAL, "copej", "", "copej", "");
+    if(ret != GLOBUS_SUCCESS)
+    {
+        fprintf(stderr, "%s : ERROR could not set authorization\n", __func__);
+        fprintf(stderr, "%s : exit\n", __func__);
+        return ZFSERR_OTHER;
+    }
+
+    /* handle init */
+    ret = globus_ftp_client_handle_init(&(gridftp_fh[0]), &hattr);
+    if(ret != GLOBUS_SUCCESS)
+    {
+        fprintf(stderr, "%s : ERROR reinint handle, %s\n", __func__, globus_object_printable_to_string(globus_error_get(ret)));
+        fprintf(stderr, "%s : exit\n", __func__);
+        return ZFSERR_OTHER;
+    }
+
+    /* setup gridftp exist test */
+    globus_mutex_init(&lock, GLOBUS_NULL);
+    globus_cond_init(&cond, GLOBUS_NULL);
+    dir_created = GLOBUS_FALSE;
+    mkdir_done = GLOBUS_FALSE;
+
+    /* run delete */
+    ret = globus_ftp_client_mkdir(&(gridftp_fh[0]), gftp_path, &(oattr[0]), mkdir_cb, GLOBUS_NULL);
+    if(ret != GLOBUS_SUCCESS)
+    {
+        fprintf(stderr, "%s : ERROR could not run gftp delete op\n", __func__);
+        fprintf(stderr, "%s : exit\n", __func__);
+        return ZFSERR_OTHER;
+    }
+
+    /* wait for the callback to finish */
+    globus_mutex_lock(&lock);
+    while (mkdir_done != GLOBUS_TRUE)
+        globus_cond_wait(&cond, &lock);
+    globus_mutex_unlock(&lock);
+
+    /* cleanup handle info */
+    ret = globus_ftp_client_handle_destroy(&(gridftp_fh[0]));
+    if(ret != GLOBUS_SUCCESS)
+    {
+        fprintf(stderr, "%s : ERROR could not destroy handle\n", __func__);
+        fprintf(stderr, "%s : exit\n", __func__);
+        return ZFSERR_OTHER;
+    }
+
+    /* cleanup handle attr info */
+    ret = globus_ftp_client_handleattr_destroy(&hattr);
+    if(ret != GLOBUS_SUCCESS)
+    {
+        fprintf(stderr, "%s : ERROR could not destroy handle attr\n", __func__);
+        fprintf(stderr, "%s : exit\n", __func__);
+        return ZFSERR_OTHER;
+    }
+
+    /* cleanup op attr info */
+    ret = globus_ftp_client_operationattr_destroy(&(oattr[0]));
+    if(ret != GLOBUS_SUCCESS)
+    {
+        fprintf(stderr, "%s : ERROR could not destroy operation attr\n", __func__);
+        fprintf(stderr, "%s : exit\n", __func__);
+        return ZFSERR_OTHER;
+    }
+
     return ZFS_OK;
 }
 

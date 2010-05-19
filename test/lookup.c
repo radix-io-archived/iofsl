@@ -26,6 +26,8 @@ int main(int argc, char * args[])
  
     zoidfs_remove(NULL, NULL, "/tmp/gftptest.txt.rm", NULL, ZOIDFS_NO_OP_HINT);
 
+    zoidfs_mkdir(NULL, NULL, "/tmp/gftptest.dir", &sattr, NULL, ZOIDFS_NO_OP_HINT);
+
     zoidfs_finalize();
 
     return 0;
