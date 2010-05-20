@@ -20,6 +20,8 @@ int main(int argc, char * args[])
     zoidfs_init();
 
     zoidfs_lookup(NULL, NULL, "/tmp/gftptest.txt", &handle, ZOIDFS_NO_OP_HINT);
+    zoidfs_lookup(NULL, NULL, "/tmp/gftptest.txt", &handle, ZOIDFS_NO_OP_HINT);
+    zoidfs_lookup(NULL, NULL, "/tmp/gftptest.txt", &handle, ZOIDFS_NO_OP_HINT);
     zoidfs_lookup(NULL, NULL, "/tmp/gftptest.txt.not", &handle, ZOIDFS_NO_OP_HINT);
 
     zoidfs_create(NULL, NULL, "/tmp/gftp.create.test.txt", &sattr, &handle, &created, ZOIDFS_NO_OP_HINT);
