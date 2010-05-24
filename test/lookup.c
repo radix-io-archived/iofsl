@@ -30,6 +30,13 @@ int main(int argc, char * args[])
 
     zoidfs_mkdir(NULL, NULL, "/tmp/gftptest.dir", &sattr, NULL, ZOIDFS_NO_OP_HINT);
 
+
+    zoidfs_lookup(NULL, NULL, "/tmp/gftpresize.txt.1", &handle, ZOIDFS_NO_OP_HINT);
+    zoidfs_resize(&handle, 1024, ZOIDFS_NO_OP_HINT);
+
+    zoidfs_lookup(NULL, NULL, "/tmp/gftpresize.txt.2", &handle, ZOIDFS_NO_OP_HINT);
+    zoidfs_resize(&handle, 10, ZOIDFS_NO_OP_HINT);
+
     zoidfs_finalize();
 
     return 0;
