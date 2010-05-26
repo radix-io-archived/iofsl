@@ -13,7 +13,7 @@ namespace iofwdutil
 
 boost::array<const char *, MAX_LEVEL> ZLog::levelNames_ =
   { { "error", "critical", "warn", "info", "debug", "debug_more",
-     "debug_extreme" } }; 
+     "debug_extreme", "trace" } };
 
 std::string ZLog::filterRegEx (const std::string & reg)
 {
@@ -42,6 +42,7 @@ ZLog::ZLog ()
    levelNames_[WARN]="warn";
    levelNames_[CRITICAL]="critical";
    levelNames_[ERROR]="error"; 
+   levelNames_[TRACE]="trace";
 }
 
 int ZLog::name2Level (const std::string & name)
