@@ -36,6 +36,8 @@ src/iofwdutil/completion/TimerResource.cpp \
 src/iofwdutil/completion/Tracker.cpp \
 src/iofwdutil/completion/WorkQueueCompletionID.cpp \
  \
+src/iofwdutil/zlog/ZLogTracer.hh \
+src/iofwdutil/zlog/ZLogTracer.cpp \
 src/iofwdutil/zlog/LevelMatch.cpp \
 src/iofwdutil/zlog/LevelParser.cpp \
 src/iofwdutil/zlog/ZLog.cpp \
