@@ -52,6 +52,8 @@ typedef struct zoidfs_gridftp_handle
     globus_bool_t write_ctl_done;
     globus_bool_t read_file;
     globus_bool_t read_ctl_done;
+    globus_bool_t renamed_file;
+    globus_bool_t rename_done;
 
     /* */
     globus_size_t bytes_written;
@@ -93,6 +95,8 @@ static zoidfs_gridftp_handle_t * zoidfs_gridftp_handle_create()
     h->write_ctl_done = GLOBUS_FALSE;
     h->read_file = GLOBUS_FALSE;
     h->read_ctl_done = GLOBUS_FALSE;
+    h->renamed_file = GLOBUS_FALSE;
+    h->rename_done = GLOBUS_FALSE;
 
     return h;
 }
@@ -254,6 +258,23 @@ static void mkdir_cb(void * myargs, globus_ftp_client_handle_t * UNUSED(handle),
 
     /* update done flag and signal */
     zgh->mkdir_done = GLOBUS_TRUE;
+    globus_cond_signal(&(zgh->cond));
+}
+
+static void rename_cb(void * myargs, globus_ftp_client_handle_t * UNUSED(handle), globus_object_t * error)
+{
+    zoidfs_gridftp_handle_t * zgh = (zoidfs_gridftp_handle_t *)myargs;
+    if(error)
+    {
+        /* fprintf(stderr, "%s\n", globus_object_printable_to_string(error)); */
+    }
+    else
+    {
+        zgh->renamed_file = GLOBUS_TRUE;
+    }
+
+    /* update done flag and signal */
+    zgh->rename_done = GLOBUS_TRUE;
     globus_cond_signal(&(zgh->cond));
 }
 
@@ -443,6 +464,106 @@ static uint64_t zoidfs_gridftp_zfs_handle_get(const zoidfs_handle_t * h)
     uint64_t * hi = (uint64_t *)(h->data + 4);
 
     return *hi;
+}
+
+static int zoidfs_gridftp_convert_filename(const zoidfs_handle_t * parent_handle,
+            const char * component_name,
+            const char * full_path,
+            char * gftp_path)
+{
+    if(full_path)
+    {
+        /*
+         * Big assumption here!
+         * GridFTP path has the following form
+         *  /transfer_type/host/port/path/to/file
+         * transfer type is ftp or gsiftp
+         */
+        unsigned int i = 0;
+        unsigned int j = 0;
+        char * str = NULL;
+        char * saveptr = NULL;
+        char gftp_path_cp[1024];
+        char * gftp_method = NULL;
+        char * gftp_host = NULL;
+        char * gftp_port = NULL;
+        char * gftp_file_path = NULL;
+
+        /* make a copy of the path */
+        strcpy(gftp_path_cp, full_path);
+
+        /* split the string into tokens */
+        for(i = 1 , str = (char *)gftp_path_cp ; ; i++, str = NULL)
+        {
+            char * token = strtok_r(str, "/", &saveptr);
+            if(token == NULL)
+            {
+                break;
+            }
+
+            /* method */
+            if(i == 1)
+            {
+                gftp_method = strdup(token);
+            }
+            /* host */
+            else if(i == 2)
+            {
+                gftp_host = strdup(token);
+            }
+            /* port */
+            else if(i == 3)
+            {
+                gftp_port = strdup(token);
+            }
+        }
+
+        /* find the start of the file path */
+        i = 0;
+        j = 0;
+        while( j < 4 && i < strlen(full_path))
+        {
+            if(full_path[i] == '/')
+            {
+                j++;
+            }
+            i++;
+        }
+        gftp_file_path = (char *)&(full_path[i - 1]);
+
+        /* right now, use ftp */
+        sprintf(gftp_path, "%s://%s:%s%s", gftp_method, gftp_host, gftp_port, gftp_file_path);
+        if(gftp_method)
+        {
+            free(gftp_method);
+            gftp_method = NULL;
+        }
+        if(gftp_host)
+        {
+            free(gftp_host);
+            gftp_host = NULL;
+        }
+        if(gftp_port)
+        {
+            free(gftp_port);
+            gftp_port = NULL;
+        }
+    }
+    else if(component_name != NULL && parent_handle != NULL)
+    {
+        zoidfs_gridftp_handle_t * pzgh = NULL;
+        uint64_t hv = zoidfs_gridftp_zfs_handle_get(parent_handle);
+
+        pzgh = zoidfs_gridftp_handle_tree_find(hv);
+
+        /* if we found the parent handle */
+        if(pzgh)
+        {
+            sprintf(gftp_path, "%s%s", pzgh->file_path, component_name);
+        }
+    }
+
+    return ZFS_OK;
 }
 
 static zoidfs_gridftp_handle_t * zoidfs_gridftp_setup_gridftp_handle(const zoidfs_handle_t * parent_handle,
@@ -1002,18 +1123,60 @@ static int zoidfs_gridftp_remove(const zoidfs_handle_t * parent_handle,
     return ZFS_OK;
 }
 
-/* TODO */
-static int zoidfs_gridftp_rename(const zoidfs_handle_t * UNUSED(from_parent_handle),
-                      const char * UNUSED(from_component_name),
-                      const char * UNUSED(from_full_path),
-                      const zoidfs_handle_t * UNUSED(to_parent_handle),
-                      const char * UNUSED(to_component_name),
-                      const char * UNUSED(to_full_path),
+static int zoidfs_gridftp_rename(const zoidfs_handle_t * from_parent_handle,
+                      const char * from_component_name,
+                      const char * from_full_path,
+                      const zoidfs_handle_t * to_parent_handle,
+                      const char * to_component_name,
+                      const char * to_full_path,
                       zoidfs_cache_hint_t * UNUSED(from_parent_hint),
                       zoidfs_cache_hint_t * UNUSED(to_parent_hint),
                       zoidfs_op_hint_t * UNUSED(op_hint))
 {
-    return ZFSERR_NOTIMPL;
+    globus_result_t ret;
+    zoidfs_gridftp_handle_t * fzgh = NULL;
+    char t_path[1024];
+
+    /* setup the connection and handles */
+    fzgh = zoidfs_gridftp_setup_gridftp_handle(from_parent_handle, from_component_name, from_full_path, NULL);
+
+    /* setup gridftp create */
+    globus_mutex_init(&(fzgh->lock), GLOBUS_NULL);
+    globus_cond_init(&(fzgh->cond), GLOBUS_NULL);
+    fzgh->renamed_file=GLOBUS_FALSE;
+    fzgh->rename_done=GLOBUS_FALSE;
+
+    /* get the new path */
+    zoidfs_gridftp_convert_filename(to_parent_handle, to_component_name, to_full_path, t_path);
+
+    /* register put  and write a 0 byte file */
+    ret = globus_ftp_client_move(&(fzgh->gftpfh), fzgh->file_path, t_path, &(fzgh->oattr), rename_cb, (void *)fzgh);
+    if(ret != GLOBUS_SUCCESS)
+    {
+        fprintf(stderr, "%s : ERROR could not register move\n", __func__);
+        fprintf(stderr, "%s : exit\n", __func__);
+        return ZFSERR_OTHER;
+    }
+
+    /* wait for the callback to finish */
+    globus_mutex_lock(&(fzgh->lock));
+    while (fzgh->rename_done != GLOBUS_TRUE)
+        globus_cond_wait(&(fzgh->cond), &(fzgh->lock));
+
+    /* remove the handle from the tree and reinsert it under the new key / path */
+    zoidfs_gridftp_handle_tree_remove( fzgh->key );
+    memcpy(fzgh->file_path, t_path, strlen(t_path) + 1);
+    fzgh->key = hash((void *)t_path, strlen(t_path) + 1, 0);
+    zoidfs_gridftp_handle_tree_add(fzgh);
+
+    globus_mutex_unlock(&(fzgh->lock));
+
+    /* check if found the handle or not */
+    if(fzgh->renamed_file != GLOBUS_TRUE)
+    {
+        return ZFSERR_OTHER;
+    }
+    return ZFS_OK;
 }
 
 /* hard links not supported by GridFTP */

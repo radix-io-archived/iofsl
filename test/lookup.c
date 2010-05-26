@@ -85,6 +85,8 @@ int main(int argc, char * args[])
         fprintf(stderr, "read data = %s\n", memcp[i]);
     }
 
+    zoidfs_rename(NULL, NULL, "/ftp/127.0.0.1/2811/tmp/gftprename.txt", NULL, NULL, "/ftp/127.0.0.1/2811/tmp/gftprename.txt.mod", NULL, NULL, ZOIDFS_NO_OP_HINT);
+
     zoidfs_finalize();
 
     for(i = 0 ; i < asize ; i++)
