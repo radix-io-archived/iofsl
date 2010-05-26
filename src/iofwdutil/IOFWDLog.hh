@@ -10,6 +10,7 @@
 #include "iofwdutil/zlog/ZLogSource.hh"
 #include "iofwdutil/zlog/ZLog.hh"
 #include "Singleton.hh"
+#include "iofwdutil/zlog/ZLogTracer.hh"
 
 namespace iofwdutil
 {
