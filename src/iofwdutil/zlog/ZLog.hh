@@ -26,6 +26,7 @@ enum
    DEBUG,
    DEBUG_MORE,
    DEBUG_EXTREME,
+   TRACE,
 
    // MAX LEVEL needs to be the number of levels in the structure
    MAX_LEVEL
@@ -116,6 +117,11 @@ class ZLog
 #define ZLOG_DEBUG_EXTREME(cl,txt)
 #endif
 
+#ifndef ZLOG_DISABLE_TRACE
+#define ZLOG_TRACE(cl,txt) ZLOG_COMMON(cl,iofwdutil::zlog::TRACE,txt)
+#else
+#define ZLOG_DEBUG_TRACE(cl,txt)
+#endif
 
 /* 
  * check if all logging is disabled... if so... redef all the logging commands 
