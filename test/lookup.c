@@ -14,30 +14,88 @@
 int main(int argc, char * args[])
 {
     zoidfs_handle_t handle;
+    zoidfs_handle_t phandle;
     zoidfs_sattr_t sattr;
     int created = 0;
+    char ** mem;
+    size_t * memsizes;
+    char ** memcp;
+    size_t * memsizescp;
+    uint64_t * file;
+    uint64_t * filesizes;
+    size_t off = 0;
+    size_t i = 0;
+    const size_t asize = 50;
+
+    file = malloc(sizeof(uint64_t) * asize);
+    filesizes = malloc(sizeof(uint64_t) * asize);
+    mem = malloc(sizeof(char *) * asize);
+    memsizes = malloc(sizeof(size_t) * asize);
+
+    memcp = malloc(sizeof(char *) * asize);
+    memsizescp = malloc(sizeof(size_t) * asize);
+
+    for(i = 0 ; i < asize ; i++)
+    {
+        char tmps[1024];
+
+        memset(tmps, '\0', 1024);
+        sprintf(tmps, "this is a test %lu", i);
+
+        mem[i] = strdup(tmps);
+        memsizes[i] = strlen(mem[i]) + 1;
+        memcp[i] = (char *)malloc(sizeof(char) * memsizes[i]);
+        memset(memcp[i], '\0', memsizes[i]);
+        memsizescp[i] = memsizes[i];
+
+        file[i] = off;
+        filesizes[i] = strlen(mem[i]) + 1;
+
+        off += filesizes[i];
+    }
 
     zoidfs_init();
 
-    zoidfs_lookup(NULL, NULL, "/tmp/gftptest.txt", &handle, ZOIDFS_NO_OP_HINT);
-    zoidfs_lookup(NULL, NULL, "/tmp/gftptest.txt", &handle, ZOIDFS_NO_OP_HINT);
-    zoidfs_lookup(NULL, NULL, "/tmp/gftptest.txt", &handle, ZOIDFS_NO_OP_HINT);
-    zoidfs_lookup(NULL, NULL, "/tmp/gftptest.txt.not", &handle, ZOIDFS_NO_OP_HINT);
+    zoidfs_lookup(NULL, NULL, "/ftp/127.0.0.1/2811/tmp", &phandle, ZOIDFS_NO_OP_HINT);
+    zoidfs_lookup(&phandle, "/gftptest.txt", NULL, &phandle, ZOIDFS_NO_OP_HINT);
+    zoidfs_lookup(NULL, NULL, "/ftp/127.0.0.1/2811/tmp/gftptest.txt", &handle, ZOIDFS_NO_OP_HINT);
+    zoidfs_lookup(NULL, NULL, "/ftp/127.0.0.1/2811/tmp/gftptest.txt", &handle, ZOIDFS_NO_OP_HINT);
+    zoidfs_lookup(NULL, NULL, "/ftp/127.0.0.1/2811/tmp/gftptest.txt", &handle, ZOIDFS_NO_OP_HINT);
+    zoidfs_lookup(NULL, NULL, "/ftp/127.0.0.1/2811/tmp/gftptest.txt.not", &handle, ZOIDFS_NO_OP_HINT);
 
-    zoidfs_create(NULL, NULL, "/tmp/gftp.create.test.txt", &sattr, &handle, &created, ZOIDFS_NO_OP_HINT);
+    zoidfs_create(NULL, NULL, "/ftp/127.0.0.1/2811/tmp/gftp.create.test.txt", &sattr, &handle, &created, ZOIDFS_NO_OP_HINT);
  
-    zoidfs_remove(NULL, NULL, "/tmp/gftptest.txt.rm", NULL, ZOIDFS_NO_OP_HINT);
+    zoidfs_remove(NULL, NULL, "/ftp/127.0.0.1/2811/tmp/gftptest.txt.rm", NULL, ZOIDFS_NO_OP_HINT);
 
-    zoidfs_mkdir(NULL, NULL, "/tmp/gftptest.dir", &sattr, NULL, ZOIDFS_NO_OP_HINT);
+    zoidfs_mkdir(NULL, NULL, "/ftp/127.0.0.1/2811/tmp/gftptest.dir", &sattr, NULL, ZOIDFS_NO_OP_HINT);
 
-
-    zoidfs_lookup(NULL, NULL, "/tmp/gftpresize.txt.1", &handle, ZOIDFS_NO_OP_HINT);
+    zoidfs_lookup(NULL, NULL, "/ftp/127.0.0.1/2811/tmp/gftpresize.txt.1", &handle, ZOIDFS_NO_OP_HINT);
     zoidfs_resize(&handle, 1024, ZOIDFS_NO_OP_HINT);
 
-    zoidfs_lookup(NULL, NULL, "/tmp/gftpresize.txt.2", &handle, ZOIDFS_NO_OP_HINT);
+    zoidfs_lookup(NULL, NULL, "/ftp/127.0.0.1/2811/tmp/gftpresize.txt.2", &handle, ZOIDFS_NO_OP_HINT);
     zoidfs_resize(&handle, 10, ZOIDFS_NO_OP_HINT);
 
+    zoidfs_lookup(NULL, NULL, "/ftp/127.0.0.1/2811/tmp/gftpwrite.txt", &handle, ZOIDFS_NO_OP_HINT);
+    zoidfs_write(&handle, asize, mem, memsizes, asize, file, filesizes, ZOIDFS_NO_OP_HINT);
+
+    zoidfs_read(&handle, asize, memcp, memsizescp, asize, file, filesizes, ZOIDFS_NO_OP_HINT);
+
+    for(i = 0 ; i < asize ; i++)
+    {
+        fprintf(stderr, "read data = %s\n", memcp[i]);
+    }
+
     zoidfs_finalize();
+
+    for(i = 0 ; i < asize ; i++)
+    {
+        free(mem[i]);
+    }
+
+    free(mem);
+    free(memsizes);
+    free(file);
+    free(filesizes);
 
     return 0;
 }
