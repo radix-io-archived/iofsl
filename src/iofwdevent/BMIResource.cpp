@@ -197,6 +197,16 @@ namespace iofwdevent
     * NOTE: Will release ue_lock_ but acquire it again before returning.
     * NOTE: Is called both from the polling thread and from the client when it
     * calls post_testunexpected
+    *
+    * @TODO: Clean this up. There is a locking issue here:
+    *     (as indicated by helgrind)
+    *     1) ue_lock_ is released but reacquired while ue_dequeue_lock_ is
+    *     held
+    *     2) In the normal case (postTestexpected): ue_lock_ is acquired
+    *     first, followed by a try on ue_dequeue_lock_
+    *     -> might deadlock?
+    *     Is probably OK since ue_dequeue_lock_ is only acquired with _try_
+    *     -> it will not block if it cannot get the lock
     */
    void BMIResource::checkUnexpected ()
    {
