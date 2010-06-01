@@ -3,7 +3,6 @@
 #include "../zint-handler.h"
 #include "c-util/tools.h"
 #include "c-util/configfile.h"
-#include <stdio.h>
 
 static int zint_local_null(void)
 {
@@ -31,8 +30,6 @@ static int zint_local_lookup(const zoidfs_handle_t * UNUSED(parent_handle),
                       zoidfs_handle_t * UNUSED(handle),
                       zoidfs_op_hint_t * UNUSED(op_hint))
 {
-    fprintf(stderr, "%s : enter\n", __func__);
-    fprintf(stderr, "%s : exit\n", __func__);
     return ZFSERR_NOTIMPL;
 }
 
