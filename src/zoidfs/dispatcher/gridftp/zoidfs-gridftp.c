@@ -14,13 +14,43 @@
 
 #include "c-util/lookup8.h"
 
+#ifdef ZOIDFS_GRIDFTP_DEBUG_ENABLED
+#define ZOIDFS_GRIDFTP_DEBUG(...) \
+    do { \
+        char __buffer[4096]; \
+        sprintf(__buffer, ##__VA_ARGS__); \
+        fprintf(stderr, "%s %s, ZOIDFS GRIDFTP DISPATCHER - DEBUG %s() %s:%i : %s\n", __DATE__, __TIME__, __func__, __FILE__, __LINE__, __buffer); \
+    }while(0)
+
+#define ZOIDFS_GRIDFTP_INFO(...) \
+    do { \
+        char __buffer[4096]; \
+        sprintf(__buffer, ##__VA_ARGS__); \
+        fprintf(stderr, "%s %s, ZOIDFS GRIDFTP DISPATCHER - INFO %s() %s:%i : %s\n", __DATE__, __TIME__, __func__, __FILE__, __LINE__, __buffer); \
+    }while(0)
+
+#define ZOIDFS_GRIDFTP_PERROR(...) \
+    do { \
+        char __buffer[4096]; \
+        char __ebuffer[2048]; \
+        strerror_r(errno, __ebuffer, 2048); \
+        sprintf(__buffer, ##__VA_ARGS__); \
+        fprintf(stderr, "%s %s, ZOIDFS GRIDFTP DISPATCHER - ERROR %s() %s:%i : %s, %s\n", __DATE__, __TIME__, __func__, __FILE__, __LINE__, __buffer, __ebuffer); \
+    }while(0)
+#else
+#define ZOIDFS_GRIDFTP_DEBUG(...)
+#define ZOIDFS_GRIDFTP_INFO(...)
+#define ZOIDFS_GRIDFTP_PERROR(...) 
+#endif
+
 /* driver configuration variables */
 static int connection_caching_enabled = 0;
 static int stripes_enabled = 0;
 static int tcp_buffer_size = 0;
 static int parallel_streams = 0; 
 
-static globus_mutex_t lookup_ctl_lock;
+/* lock for ctl ch ops */
+static globus_mutex_t zoidfs_gridftp_ctl_ch_lock;
 
 /* zoidfs gridftp op */
 typedef struct zoidfs_gridftp_op
@@ -49,12 +79,51 @@ typedef struct zoidfs_gridftp_op
     globus_bool_t renamed_file;
     globus_bool_t rename_done;
     globus_bool_t file_created_wb;
+    globus_bool_t getattr_done;
 
     /* data amounts */
     globus_size_t bytes_written;
     globus_size_t bytes_read;
 
 } zoidfs_gridftp_op_t;
+
+static zoidfs_gridftp_op_t * zoidfs_gridftp_op_create()
+{
+    /* create the op */
+    zoidfs_gridftp_op_t * op = (zoidfs_gridftp_op_t *) malloc(sizeof(zoidfs_gridftp_op_t));
+
+    /* init the locks */
+    globus_mutex_init(&(op->lock), GLOBUS_NULL);
+    globus_cond_init(&(op->cond), GLOBUS_NULL);
+
+    /* init handle flags to false */
+    op->file_exists = GLOBUS_FALSE;
+    op->exists_done = GLOBUS_FALSE;
+    op->file_created = GLOBUS_FALSE;
+    op->create_done = GLOBUS_FALSE;
+    op->create_wb_done = GLOBUS_FALSE;
+    op->file_removed = GLOBUS_FALSE;
+    op->remove_done = GLOBUS_FALSE;
+    op->dir_created = GLOBUS_FALSE;
+    op->mkdir_done = GLOBUS_FALSE;
+    op->file_resized = GLOBUS_FALSE;
+    op->resize_done = GLOBUS_FALSE;
+    op->resize_wb_done = GLOBUS_FALSE;
+    op->wrote_file = GLOBUS_FALSE;
+    op->write_ctl_done = GLOBUS_FALSE;
+    op->read_file = GLOBUS_FALSE;
+    op->read_ctl_done = GLOBUS_FALSE;
+    op->renamed_file = GLOBUS_FALSE;
+    op->rename_done = GLOBUS_FALSE;
+    op->getattr_done = GLOBUS_FALSE;
+    op->file_created_wb = GLOBUS_FALSE;
+    op->getattr_done = GLOBUS_FALSE;
+
+    op->bytes_written = 0;
+    op->bytes_read = 0;
+
+    return op;
+}
 
 /* zoidfs gridftp handle */
 typedef struct zoidfs_gridftp_handle
@@ -73,36 +142,7 @@ typedef struct zoidfs_gridftp_handle
     globus_ftp_client_handleattr_t hattr;
     globus_ftp_client_operationattr_t oattr;
 
-    /* callback locks */
-    globus_mutex_t lock;
-    globus_cond_t cond;
-
-    /* handle flags */
-    globus_bool_t file_exists;
-    globus_bool_t exists_done; 
-    globus_bool_t file_created;
-    globus_bool_t create_done; 
-    globus_bool_t create_wb_done;
-    globus_bool_t file_removed;
-    globus_bool_t remove_done;
-    globus_bool_t dir_created;
-    globus_bool_t mkdir_done;
-    globus_bool_t file_resized;
-    globus_bool_t resize_done;
-    globus_bool_t resize_wb_done;
-    globus_bool_t wrote_file;
-    globus_bool_t write_ctl_done;
-    globus_bool_t read_file;
-    globus_bool_t read_ctl_done;
-    globus_bool_t renamed_file;
-    globus_bool_t rename_done;
-    globus_bool_t getattr_done;
-    globus_bool_t file_created_wb;
-
-    /* */
-    globus_size_t bytes_written;
-    globus_size_t bytes_read;
-
+    /* is this a valid handle */
     int validHandle;
 
 } zoidfs_gridftp_handle_t;
@@ -117,35 +157,7 @@ static zoidfs_gridftp_handle_t * zoidfs_gridftp_handle_create()
 
     h->key = 0;
     h->file_path = NULL;
-    h->bytes_written = 0;
-    h->bytes_read = 0;
     h->validHandle = 0;
-
-    /* init the locks */
-    globus_mutex_init(&(h->lock), GLOBUS_NULL);
-    globus_cond_init(&(h->cond), GLOBUS_NULL);
-
-    /* init handle flags to false */    
-    h->file_exists = GLOBUS_FALSE;
-    h->exists_done = GLOBUS_FALSE;
-    h->file_created = GLOBUS_FALSE;
-    h->create_done = GLOBUS_FALSE;
-    h->create_wb_done = GLOBUS_FALSE;
-    h->file_removed = GLOBUS_FALSE;
-    h->remove_done = GLOBUS_FALSE;
-    h->dir_created = GLOBUS_FALSE;
-    h->mkdir_done = GLOBUS_FALSE;
-    h->file_resized = GLOBUS_FALSE;
-    h->resize_done = GLOBUS_FALSE;
-    h->resize_wb_done = GLOBUS_FALSE;
-    h->wrote_file = GLOBUS_FALSE;
-    h->write_ctl_done = GLOBUS_FALSE;
-    h->read_file = GLOBUS_FALSE;
-    h->read_ctl_done = GLOBUS_FALSE;
-    h->renamed_file = GLOBUS_FALSE;
-    h->rename_done = GLOBUS_FALSE;
-    h->getattr_done = GLOBUS_FALSE;
-    h->file_created_wb = GLOBUS_FALSE;
 
     return h;
 }
@@ -166,24 +178,24 @@ static void zoidfs_gridftp_handle_destroy(void * h)
         ret = globus_ftp_client_handle_destroy(&(hh->gftpfh));
         if(ret != GLOBUS_SUCCESS)
         {
-            fprintf(stderr, "%s : ERROR could not destroy handle\n", __func__);
-            fprintf(stderr, "%s : exit\n", __func__);
+            ZOIDFS_GRIDFTP_PERROR("%s : ERROR could not destroy handle\n", __func__);
+            ZOIDFS_GRIDFTP_PERROR("%s : exit\n", __func__);
         }
 
         /* cleanup handle attr info */
         ret = globus_ftp_client_handleattr_destroy(&(hh->hattr));
         if(ret != GLOBUS_SUCCESS)
         {
-            fprintf(stderr, "%s : ERROR could not destroy handle attr\n", __func__);
-            fprintf(stderr, "%s : exit\n", __func__);
+            ZOIDFS_GRIDFTP_PERROR("%s : ERROR could not destroy handle attr\n", __func__);
+            ZOIDFS_GRIDFTP_PERROR("%s : exit\n", __func__);
         }
 
         /* cleanup op attr info */
         ret = globus_ftp_client_operationattr_destroy(&(hh->oattr));
         if(ret != GLOBUS_SUCCESS)
         {
-            fprintf(stderr, "%s : ERROR could not destroy operation attr\n", __func__);
-            fprintf(stderr, "%s : exit\n", __func__);
+            ZOIDFS_GRIDFTP_PERROR("%s : ERROR could not destroy operation attr\n", __func__);
+            ZOIDFS_GRIDFTP_PERROR("%s : exit\n", __func__);
         }
 
         /* free the handle */
@@ -261,142 +273,161 @@ static int zoidfs_gridftp_handle_tree_cleanup()
 
 static void exists_cb(void * myargs, globus_ftp_client_handle_t * UNUSED(handle), globus_object_t * error)
 {
-    zoidfs_gridftp_handle_t * zgh = (zoidfs_gridftp_handle_t *)myargs;
+    zoidfs_gridftp_op_t * op = (zoidfs_gridftp_op_t *)myargs;
     if(error)
     {
-        /* fprintf(stderr, "%s\n", globus_object_printable_to_string(error)); */
+#ifdef ZOIDFS_GRIDFTP_DEBUG
+        ZOIDFS_GRIDFTP_PERROR("%s\n", globus_object_printable_to_string(error));
+#endif
     }
     else
     {
-        zgh->file_exists = GLOBUS_TRUE;
+        op->file_exists = GLOBUS_TRUE;
     }
     
     /* update done flag and signal */
-    zgh->exists_done = GLOBUS_TRUE;
-    globus_cond_signal(&(zgh->cond));
+    op->exists_done = GLOBUS_TRUE;
+    globus_cond_signal(&(op->cond));
+    ZOIDFS_GRIDFTP_PERROR("%s : signal cond\n", __func__);
 }
 
 static void remove_cb(void * myargs, globus_ftp_client_handle_t * UNUSED(handle), globus_object_t * error)
 {
-    zoidfs_gridftp_handle_t * zgh = (zoidfs_gridftp_handle_t *)myargs;
+    zoidfs_gridftp_op_t * op = (zoidfs_gridftp_op_t *)myargs;
     if(error)
     {
-        /* fprintf(stderr, "%s\n", globus_object_printable_to_string(error)); */
+#ifdef ZOIDFS_GRIDFTP_DEBUG
+        ZOIDFS_GRIDFTP_PERROR("%s\n", globus_object_printable_to_string(error));
+#endif
     }
     else
     {
-        zgh->file_removed = GLOBUS_TRUE;
+        op->file_removed = GLOBUS_TRUE;
     }
     
     /* update done flag and signal */
-    zgh->remove_done = GLOBUS_TRUE;
-    globus_cond_signal(&(zgh->cond));
+    op->remove_done = GLOBUS_TRUE;
+    globus_cond_signal(&(op->cond));
 }
 
 static void mkdir_cb(void * myargs, globus_ftp_client_handle_t * UNUSED(handle), globus_object_t * error)
 {
-    zoidfs_gridftp_handle_t * zgh = (zoidfs_gridftp_handle_t *)myargs;
+    zoidfs_gridftp_op_t * op = (zoidfs_gridftp_op_t *)myargs;
     if(error)
     {
-        /* fprintf(stderr, "%s\n", globus_object_printable_to_string(error)); */
+#ifdef ZOIDFS_GRIDFTP_DEBUG
+        ZOIDFS_GRIDFTP_PERROR("%s\n", globus_object_printable_to_string(error));
+#endif
     }
     else
     {
-        zgh->dir_created = GLOBUS_TRUE;
+        op->dir_created = GLOBUS_TRUE;
     }
 
     /* update done flag and signal */
-    zgh->mkdir_done = GLOBUS_TRUE;
-    globus_cond_signal(&(zgh->cond));
+    op->mkdir_done = GLOBUS_TRUE;
+    globus_cond_signal(&(op->cond));
 }
 
 static void rename_cb(void * myargs, globus_ftp_client_handle_t * UNUSED(handle), globus_object_t * error)
 {
-    zoidfs_gridftp_handle_t * zgh = (zoidfs_gridftp_handle_t *)myargs;
+    zoidfs_gridftp_op_t * op = (zoidfs_gridftp_op_t *)myargs;
     if(error)
     {
-        /* fprintf(stderr, "%s\n", globus_object_printable_to_string(error)); */
+#ifdef ZOIDFS_GRIDFTP_DEBUG
+        ZOIDFS_GRIDFTP_PERROR("%s\n", globus_object_printable_to_string(error));
+#endif
     }
     else
     {
-        zgh->renamed_file = GLOBUS_TRUE;
+        op->renamed_file = GLOBUS_TRUE;
     }
 
     /* update done flag and signal */
-    zgh->rename_done = GLOBUS_TRUE;
-    globus_cond_signal(&(zgh->cond));
+    op->rename_done = GLOBUS_TRUE;
+    globus_cond_signal(&(op->cond));
 }
 
 static void create_cb(void * myargs, globus_ftp_client_handle_t * UNUSED(handle), globus_object_t * error)
 {
-    zoidfs_gridftp_handle_t * zgh = (zoidfs_gridftp_handle_t *)myargs;
+    zoidfs_gridftp_op_t * op = (zoidfs_gridftp_op_t *)myargs;
     if(error)
     {
-        /* fprintf(stderr, "%s\n", globus_object_printable_to_string(error)); */
+#ifdef ZOIDFS_GRIDFTP_DEBUG
+        ZOIDFS_GRIDFTP_PERROR("%s\n", globus_object_printable_to_string(error));
+#endif
     }
     else
     {
-        zgh->file_created = GLOBUS_TRUE;
+        op->file_created = GLOBUS_TRUE;
     }
     
     /* update done flag and signal */
-    zgh->create_done = GLOBUS_TRUE;
-    globus_cond_signal(&(zgh->cond));
+    op->create_done = GLOBUS_TRUE;
+    globus_cond_signal(&(op->cond));
 }
 
 static void create_data_cb(void * myargs, globus_ftp_client_handle_t * handle, globus_object_t * error,
     globus_byte_t * buffer, globus_size_t length, globus_off_t offset, globus_bool_t UNUSED(eof))
 {
-    zoidfs_gridftp_handle_t * zgh = (zoidfs_gridftp_handle_t *)myargs;
+    zoidfs_gridftp_op_t * op = (zoidfs_gridftp_op_t *)myargs;
     if(error)
     {
-        /* fprintf(stderr, "%s\n", globus_object_printable_to_string(error)); */
+#ifdef ZOIDFS_GRIDFTP_DEBUG
+        ZOIDFS_GRIDFTP_PERROR("%s\n", globus_object_printable_to_string(error));
+#endif
     }
    
     globus_ftp_client_register_write(handle, buffer, length, offset, GLOBUS_FALSE, create_data_cb, myargs);
-    zgh->file_created_wb = GLOBUS_TRUE;
+    op->file_created_wb = GLOBUS_TRUE;
   
     /* update done flag and signal */ 
-    zgh->create_wb_done = GLOBUS_TRUE;
+    op->create_wb_done = GLOBUS_TRUE;
 }
 
 static void getattr_cb(void * myargs, globus_ftp_client_handle_t * UNUSED(handle), globus_object_t * error)
 {
-    zoidfs_gridftp_handle_t * zgh = (zoidfs_gridftp_handle_t *)myargs;
+    zoidfs_gridftp_op_t * op = (zoidfs_gridftp_op_t *)myargs;
     if(error)
     {
-        /* fprintf(stderr, "%s\n", globus_object_printable_to_string(error)); */
+#ifdef ZOIDFS_GRIDFTP_DEBUG
+        ZOIDFS_GRIDFTP_PERROR("%s\n", globus_object_printable_to_string(error));
+#endif
     }
     
     /* update done flag and signal */
-    zgh->getattr_done = GLOBUS_TRUE;
-    globus_cond_signal(&(zgh->cond));
+    op->getattr_done = GLOBUS_TRUE;
+    globus_cond_signal(&(op->cond));
 }
 
 static void resize_cb(void * myargs, globus_ftp_client_handle_t * UNUSED(handle), globus_object_t * error)
 {
-    zoidfs_gridftp_handle_t * zgh = (zoidfs_gridftp_handle_t *)myargs;
+    zoidfs_gridftp_op_t * op = (zoidfs_gridftp_op_t *)myargs;
     if(error)
     {
-        /* fprintf(stderr, "%s\n", globus_object_printable_to_string(error)); */
+#ifdef ZOIDFS_GRIDFTP_DEBUG
+        ZOIDFS_GRIDFTP_PERROR("%s\n", globus_object_printable_to_string(error));
+#endif
     }
     else
     {
-        zgh->file_resized = GLOBUS_TRUE;
+        op->file_resized = GLOBUS_TRUE;
     }
     
     /* update done flag and signal */
-    zgh->resize_done = GLOBUS_TRUE;
-    globus_cond_signal(&(zgh->cond));
+    op->resize_done = GLOBUS_TRUE;
+    globus_cond_signal(&(op->cond));
 }
 
 static void resize_data_cb(void * myargs, globus_ftp_client_handle_t * handle, globus_object_t * error,
     globus_byte_t * buffer, globus_size_t length, globus_off_t offset, globus_bool_t eof)
 {
-    zoidfs_gridftp_handle_t * zgh = (zoidfs_gridftp_handle_t *)myargs;
+    zoidfs_gridftp_op_t * op = (zoidfs_gridftp_op_t *)myargs;
     if(error)
     {
-        /* fprintf(stderr, "%s\n", globus_object_printable_to_string(error)); */
+#ifdef ZOIDFS_GRIDFTP_DEBUG
+        ZOIDFS_GRIDFTP_PERROR("%s\n", globus_object_printable_to_string(error));
+#endif
     }
     else
     {
@@ -404,22 +435,24 @@ static void resize_data_cb(void * myargs, globus_ftp_client_handle_t * handle, g
     }
   
     /* update done flag and signal */ 
-    zgh->resize_wb_done = GLOBUS_TRUE;
+    op->resize_wb_done = GLOBUS_TRUE;
 }
 
 static void write_ctl_cb(void * myargs, globus_ftp_client_handle_t * UNUSED(handle), globus_object_t * error)
 {
-    zoidfs_gridftp_handle_t * zgh = (zoidfs_gridftp_handle_t *)myargs;
+    zoidfs_gridftp_op_t * op = (zoidfs_gridftp_op_t *)myargs;
     if(error)
     {
-        /* fprintf(stderr, "%s\n", globus_object_printable_to_string(error)); */
+#ifdef ZOIDFS_GRIDFTP_DEBUG
+        ZOIDFS_GRIDFTP_PERROR("%s\n", globus_object_printable_to_string(error));
+#endif
     }
     else
     {
-        zgh->wrote_file = GLOBUS_TRUE;
+        op->wrote_file = GLOBUS_TRUE;
     }
-    zgh->write_ctl_done = GLOBUS_TRUE;
-    globus_cond_signal(&(zgh->cond));
+    op->write_ctl_done = GLOBUS_TRUE;
+    globus_cond_signal(&(op->cond));
 }
 
 static void write_data_cb(void * myargs, globus_ftp_client_handle_t * handle, globus_object_t * error,
@@ -427,12 +460,14 @@ static void write_data_cb(void * myargs, globus_ftp_client_handle_t * handle, gl
                                    globus_bool_t eof)
 {
     globus_size_t * bytes_written = NULL;
-    zoidfs_gridftp_handle_t * zgh = (zoidfs_gridftp_handle_t *)myargs;
+    zoidfs_gridftp_op_t * op = (zoidfs_gridftp_op_t *)myargs;
 
-    bytes_written = &(zgh->bytes_written);
+    bytes_written = &(op->bytes_written);
     if(error)
     {
-        /* fprintf(stderr, "%s\n", globus_object_printable_to_string(error)); */
+#ifdef ZOIDFS_GRIDFTP_DEBUG
+        ZOIDFS_GRIDFTP_PERROR("%s\n", globus_object_printable_to_string(error));
+#endif
     }
 
     *bytes_written += length;
@@ -444,17 +479,19 @@ static void write_data_cb(void * myargs, globus_ftp_client_handle_t * handle, gl
 
 static void read_ctl_cb(void * myargs, globus_ftp_client_handle_t * UNUSED(handle), globus_object_t * error)
 {
-    zoidfs_gridftp_handle_t * zgh = (zoidfs_gridftp_handle_t *)myargs;
+    zoidfs_gridftp_op_t * op = (zoidfs_gridftp_op_t *)myargs;
     if(error)
     {
-        /* fprintf(stderr, "%s\n", globus_object_printable_to_string(error)); */
+#ifdef ZOIDFS_GRIDFTP_DEBUG
+        ZOIDFS_GRIDFTP_PERROR("%s\n", globus_object_printable_to_string(error));
+#endif
     }
     else
     {
-        zgh->read_file = GLOBUS_TRUE;
+        op->read_file = GLOBUS_TRUE;
     }
-    zgh->read_ctl_done = GLOBUS_TRUE;
-    globus_cond_signal(&(zgh->cond));
+    op->read_ctl_done = GLOBUS_TRUE;
+    globus_cond_signal(&(op->cond));
 }
 
 static void read_data_cb(void * myargs, globus_ftp_client_handle_t * handle, globus_object_t * error,
@@ -462,12 +499,14 @@ static void read_data_cb(void * myargs, globus_ftp_client_handle_t * handle, glo
                                    globus_bool_t eof)
 {
     globus_size_t * bytes_read = NULL;
-    zoidfs_gridftp_handle_t * zgh = (zoidfs_gridftp_handle_t *)myargs;
+    zoidfs_gridftp_op_t * op = (zoidfs_gridftp_op_t *)myargs;
 
-    bytes_read = &(zgh->bytes_read);
+    bytes_read = &(op->bytes_read);
     if(error)
     {
-        /* fprintf(stderr, "%s\n", globus_object_printable_to_string(error)); */
+#ifdef ZOIDFS_GRIDFTP_DEBUG
+        ZOIDFS_GRIDFTP_PERROR("%s\n", globus_object_printable_to_string(error));
+#endif
     }
 
     *bytes_read += length;
@@ -488,6 +527,7 @@ int zoidfs_gridftp_filename_to_handle(const char * buf, zoidfs_handle_t ** h)
     return ZFS_OK;
 }
 
+#if 0
 static int zoidfs_gridftp_handle_to_filename (const zoidfs_handle_t * handle,
       char * buf, int bufsize, zoidfs_gridftp_handle_t ** zgh)
 {
@@ -505,6 +545,7 @@ static int zoidfs_gridftp_handle_to_filename (const zoidfs_handle_t * handle,
 
     return ZFS_OK;
 }
+#endif
 
 static int zoidfs_gridftp_zfs_handle_create(const uint64_t hv, zoidfs_handle_t * h)
 {
@@ -527,6 +568,7 @@ static int zoidfs_gridftp_convert_filename(const zoidfs_handle_t * parent_handle
             const char * full_path,
             char * gftp_path)
 {
+    /* if the full path was given, parse the path into the file path, host, port, and method */
     if(full_path)
     {
         /*
@@ -605,6 +647,7 @@ static int zoidfs_gridftp_convert_filename(const zoidfs_handle_t * parent_handle
             gftp_port = NULL;
         }
     }
+    /* else, get the parent handle and append the component name to the path */
     else if(component_name != NULL && parent_handle != NULL)
     {
         zoidfs_gridftp_handle_t * pzgh = NULL;
@@ -631,86 +674,13 @@ static zoidfs_gridftp_handle_t * zoidfs_gridftp_setup_gridftp_handle(const zoidf
     char gftp_path[1024];
     zoidfs_gridftp_handle_t * zgh = NULL;
     uint64_t hv = 0;
-    char * gftp_method = NULL;
-    char * gftp_host = NULL;
-    char * gftp_port = NULL;
-    char * gftp_file_path = NULL;
+
+    /* get the filename / path */
+    zoidfs_gridftp_convert_filename(parent_handle, component_name, full_path, &gftp_path[0]);
 
     /* we have the full path, break it into tokens */
     if(full_path)
     {
-        /*
-         * Big assumption here!
-         * GridFTP path has the following form
-         *  /transfer_type/host/port/path/to/file
-         * transfer type is ftp or gsiftp
-         */
-        unsigned int i = 0;
-        unsigned int j = 0;
-        char * str = NULL;
-        char * saveptr = NULL;
-        char gftp_path_cp[1024];
-
-        /* make a copy of the path */
-        strcpy(gftp_path_cp, full_path);
-
-        /* split the string into tokens */
-        for(i = 1 , str = (char *)gftp_path_cp ; ; i++, str = NULL)
-        {
-            char * token = strtok_r(str, "/", &saveptr);
-            if(token == NULL)
-            {
-                break;
-            }
-
-            /* method */
-            if(i == 1)
-            {
-                gftp_method = strdup(token);
-            }
-            /* host */
-            else if(i == 2)
-            {
-                gftp_host = strdup(token);
-            }
-            /* port */
-            else if(i == 3)
-            {
-                gftp_port = strdup(token);
-            }
-        }
-       
-        /* find the start of the file path */ 
-        i = 0;
-        j = 0;
-        while( j < 4 && i < strlen(full_path))
-        {
-            if(full_path[i] == '/')
-            {
-                j++;
-            }
-            i++;
-        }
-        gftp_file_path = (char *)&(full_path[i - 1]);
-
-        /* right now, use ftp */
-        sprintf(gftp_path, "%s://%s:%s%s", gftp_method, gftp_host, gftp_port, gftp_file_path);
-        if(gftp_method)
-        {
-            free(gftp_method);
-            gftp_method = NULL;
-        }
-        if(gftp_host)
-        {
-            free(gftp_host);
-            gftp_host = NULL;
-        }
-        if(gftp_port)
-        {
-            free(gftp_port);
-            gftp_port = NULL;
-        }
-
         /* hash and search for the handle */
         hv = hash((void *)gftp_path, strlen(gftp_path) + 1, 0);
         zgh = zoidfs_gridftp_handle_tree_find(hv);
@@ -725,7 +695,6 @@ static zoidfs_gridftp_handle_t * zoidfs_gridftp_setup_gridftp_handle(const zoidf
         /* if we found the parent handle */
         if(pzgh)
         {
-            sprintf(gftp_path, "%s%s", pzgh->file_path, component_name);
             hv = hash((void *)gftp_path, strlen(gftp_path) + 1, 0);
             zgh = zoidfs_gridftp_handle_tree_find(hv);
         }
@@ -758,8 +727,8 @@ static zoidfs_gridftp_handle_t * zoidfs_gridftp_setup_gridftp_handle(const zoidf
     ret = globus_ftp_client_handleattr_init(&(zgh->hattr));
     if(ret != GLOBUS_SUCCESS)
     {
-        fprintf(stderr, "%s : ERROR could not init handle\n", __func__);
-        fprintf(stderr, "%s : exit\n", __func__);
+        ZOIDFS_GRIDFTP_PERROR("%s : ERROR could not init handle\n", __func__);
+        ZOIDFS_GRIDFTP_PERROR("%s : exit\n", __func__);
         return NULL;
     }
 
@@ -767,8 +736,8 @@ static zoidfs_gridftp_handle_t * zoidfs_gridftp_setup_gridftp_handle(const zoidf
     ret = globus_ftp_client_operationattr_init(&(zgh->oattr));
     if(ret != GLOBUS_SUCCESS)
     {
-        fprintf(stderr, "%s : ERROR could not init op\n", __func__);
-        fprintf(stderr, "%s : exit\n", __func__);
+        ZOIDFS_GRIDFTP_PERROR("%s : ERROR could not init op\n", __func__);
+        ZOIDFS_GRIDFTP_PERROR("%s : exit\n", __func__);
         return NULL;
     }
 
@@ -778,8 +747,8 @@ static zoidfs_gridftp_handle_t * zoidfs_gridftp_setup_gridftp_handle(const zoidf
         ret = globus_ftp_client_handleattr_set_cache_all(&(zgh->hattr), GLOBUS_TRUE);
         if(ret != GLOBUS_SUCCESS)
         {
-            fprintf(stderr, "%s : ERROR could not cache connection\n", __func__);
-            fprintf(stderr, "%s : exit\n", __func__);
+            ZOIDFS_GRIDFTP_PERROR("%s : ERROR could not cache connection\n", __func__);
+            ZOIDFS_GRIDFTP_PERROR("%s : exit\n", __func__);
             return NULL;
         }
     }
@@ -788,8 +757,8 @@ static zoidfs_gridftp_handle_t * zoidfs_gridftp_setup_gridftp_handle(const zoidf
     ret = globus_ftp_client_operationattr_set_authorization(&(zgh->oattr), GSS_C_NO_CREDENTIAL, "copej", "", "copej", "");
     if(ret != GLOBUS_SUCCESS)
     {
-        fprintf(stderr, "%s : ERROR could not set authorization\n", __func__);
-        fprintf(stderr, "%s : exit\n", __func__);
+        ZOIDFS_GRIDFTP_PERROR("%s : ERROR could not set authorization\n", __func__);
+        ZOIDFS_GRIDFTP_PERROR("%s : exit\n", __func__);
         return NULL;
     }
 
@@ -797,8 +766,8 @@ static zoidfs_gridftp_handle_t * zoidfs_gridftp_setup_gridftp_handle(const zoidf
     ret = globus_ftp_client_handle_init(&(zgh->gftpfh), &(zgh->hattr));
     if(ret != GLOBUS_SUCCESS)
     {
-        fprintf(stderr, "%s : ERROR reinint handle, %s\n", __func__, globus_object_printable_to_string(globus_error_get(ret)));
-        fprintf(stderr, "%s : exit\n", __func__);
+        ZOIDFS_GRIDFTP_PERROR("%s : ERROR reinint handle, %s\n", __func__, globus_object_printable_to_string(globus_error_get(ret)));
+        ZOIDFS_GRIDFTP_PERROR("%s : exit\n", __func__);
         return NULL;
     }
 
@@ -818,6 +787,7 @@ static int zoidfs_gridftp_getattr(const zoidfs_handle_t * handle,
                        zoidfs_attr_t * attr,
                        zoidfs_op_hint_t * UNUSED(hint))
 {
+    int err = ZFS_OK;
     globus_result_t ret;
     zoidfs_gridftp_handle_t * zgh = NULL;
     uint64_t hkey = 0;
@@ -825,84 +795,104 @@ static int zoidfs_gridftp_getattr(const zoidfs_handle_t * handle,
     globus_abstime_t mtime;
     globus_size_t stat_buffer_size = 4096;
     globus_byte_t * stat_buffer;
+    zoidfs_gridftp_op_t * op = NULL;
 
     stat_buffer = (globus_byte_t *)malloc(stat_buffer_size * sizeof(globus_byte_t));
 
     /* get the gridftp handle from the zoidfs handle */
     hkey = zoidfs_gridftp_zfs_handle_get(handle);
     zgh = zoidfs_gridftp_handle_tree_find(hkey);
+    op = zoidfs_gridftp_op_create();
 
     if(zgh == NULL)
     {
-        fprintf(stderr, "%s : ERROR could not find the handle associated with key = %lu\n", __func__, hkey);
-        fprintf(stderr, "%s : exit\n", __func__);
-        return ZFSERR_OTHER;
+        ZOIDFS_GRIDFTP_PERROR("%s : ERROR could not find the handle associated with key = %lu\n", __func__, hkey);
+        ZOIDFS_GRIDFTP_PERROR("%s : exit\n", __func__);
+        err = ZFSERR_OTHER;
+        goto cleanup;
     }
 
-    /* setup gridftp create */
-    globus_mutex_init(&(zgh->lock), GLOBUS_NULL);
-    globus_cond_init(&(zgh->cond), GLOBUS_NULL);
-    zgh->getattr_done = GLOBUS_FALSE;
+    globus_mutex_init(&(op->lock), GLOBUS_NULL);
+    globus_cond_init(&(op->cond), GLOBUS_NULL);
+    op->getattr_done = GLOBUS_FALSE;
+
+    /* lock before ctl ch op */
+    globus_mutex_lock(&zoidfs_gridftp_ctl_ch_lock);
 
     /* get the file size */
-    ret = globus_ftp_client_size(&(zgh->gftpfh), zgh->file_path, &(zgh->oattr), &(fsize), getattr_cb, zgh);
+    ret = globus_ftp_client_size(&(zgh->gftpfh), zgh->file_path, &(zgh->oattr), &(fsize), getattr_cb, op);
     if(ret != GLOBUS_SUCCESS)
     {
-        fprintf(stderr, "%s : ERROR could not register client size\n", __func__);
-        fprintf(stderr, "%s : exit\n", __func__);
-        return ZFSERR_OTHER;
+        ZOIDFS_GRIDFTP_PERROR("%s : ERROR could not register client size\n", __func__);
+        ZOIDFS_GRIDFTP_PERROR("%s : exit\n", __func__);
+        err = ZFSERR_OTHER;
+        goto cleanup;
     }
 
     /* wait for the callback to finish */
-    globus_mutex_lock(&(zgh->lock));
-    while (zgh->getattr_done != GLOBUS_TRUE)
-        globus_cond_wait(&(zgh->cond), &(zgh->lock));
+    globus_mutex_lock(&(op->lock));
+    while (op->getattr_done != GLOBUS_TRUE)
+        globus_cond_wait(&(op->cond), &(op->lock));
     attr->size = (uint64_t)fsize;
-    globus_mutex_unlock(&(zgh->lock));
+    globus_mutex_unlock(&(op->lock));
 
-    /* get the file size */
-    zgh->getattr_done = GLOBUS_FALSE;
-    ret = globus_ftp_client_modification_time(&(zgh->gftpfh), zgh->file_path, &(zgh->oattr), &mtime, getattr_cb, zgh);
+    /* ctl ch op done, unlock */
+    globus_mutex_unlock(&zoidfs_gridftp_ctl_ch_lock);
+
+    /* get the file modification time */
+    op->getattr_done = GLOBUS_FALSE;
+    ret = globus_ftp_client_modification_time(&(zgh->gftpfh), zgh->file_path, &(zgh->oattr), &mtime, getattr_cb, op);
     if(ret != GLOBUS_SUCCESS)
     {
-        fprintf(stderr, "%s : ERROR could not register client size\n", __func__);
-        fprintf(stderr, "%s : exit\n", __func__);
-        return ZFSERR_OTHER;
+        ZOIDFS_GRIDFTP_PERROR("%s : ERROR could not register client size\n", __func__);
+        ZOIDFS_GRIDFTP_PERROR("%s : exit\n", __func__);
+        err = ZFSERR_OTHER;
+        goto cleanup;
     }
 
+    /* lock before ctl ch op */
+    globus_mutex_lock(&zoidfs_gridftp_ctl_ch_lock);
+
     /* wait for the callback to finish */
-    globus_mutex_lock(&(zgh->lock));
-    while (zgh->getattr_done != GLOBUS_TRUE)
-        globus_cond_wait(&(zgh->cond), &(zgh->lock));
+    globus_mutex_lock(&(op->lock));
+    while (op->getattr_done != GLOBUS_TRUE)
+        globus_cond_wait(&(op->cond), &(op->lock));
 
     /* update all of the times to the mtime */
     attr->mtime.seconds = mtime.tv_sec; 
     attr->mtime.nseconds = 0; 
-    //attr->mtime.nseconds = mtime.tv_usec * 1000; 
     attr->atime.seconds = mtime.tv_sec; 
     attr->atime.nseconds = 0; 
-    //attr->atime.nseconds = mtime.tv_usec * 1000; 
     attr->ctime.seconds = mtime.tv_sec; 
-    //attr->ctime.nseconds = mtime.tv_usec * 1000;
     attr->ctime.nseconds = 0;
  
-    globus_mutex_unlock(&(zgh->lock));
+    globus_mutex_unlock(&(op->lock));
 
-    /* get the file size */
-    zgh->getattr_done = GLOBUS_FALSE;
-    ret = globus_ftp_client_stat(&(zgh->gftpfh), zgh->file_path, &(zgh->oattr), &stat_buffer, &stat_buffer_size, getattr_cb, zgh);
+    /* ctl ch op done, unlock */
+    globus_mutex_unlock(&zoidfs_gridftp_ctl_ch_lock);
+
+    /* get the file stat info */
+    op->getattr_done = GLOBUS_FALSE;
+    ret = globus_ftp_client_stat(&(zgh->gftpfh), zgh->file_path, &(zgh->oattr), &stat_buffer, &stat_buffer_size, getattr_cb, op);
     if(ret != GLOBUS_SUCCESS)
     {
-        fprintf(stderr, "%s : ERROR could not register client size\n", __func__);
-        fprintf(stderr, "%s : exit\n", __func__);
-        return ZFSERR_OTHER;
+        ZOIDFS_GRIDFTP_PERROR("%s : ERROR could not register client size\n", __func__);
+        ZOIDFS_GRIDFTP_PERROR("%s : exit\n", __func__);
+        err = ZFSERR_OTHER;
+        goto cleanup;
     }
 
+    /* lock before ctl ch op */
+    globus_mutex_lock(&zoidfs_gridftp_ctl_ch_lock);
+
     /* wait for the callback to finish */
-    globus_mutex_lock(&(zgh->lock));
-    while (zgh->getattr_done != GLOBUS_TRUE)
-        globus_cond_wait(&(zgh->cond), &(zgh->lock));
-    globus_mutex_unlock(&(zgh->lock));
+    globus_mutex_lock(&(op->lock));
+    while (op->getattr_done != GLOBUS_TRUE)
+        globus_cond_wait(&(op->cond), &(op->lock));
+    globus_mutex_unlock(&(op->lock));
+
+    /* ctl ch op done, unlock */
+    globus_mutex_unlock(&zoidfs_gridftp_ctl_ch_lock);
 
     /* parse the stat info */
     char * statstr = NULL;
@@ -962,7 +952,23 @@ static int zoidfs_gridftp_getattr(const zoidfs_handle_t * handle,
             /* ignore the file name... we have it in our internal handle */
         }
     }
-    return ZFS_OK;
+
+cleanup:
+    globus_cond_destroy(&(op->cond));
+    globus_mutex_destroy(&(op->lock));
+    if(stat_buffer)
+    {
+        free(stat_buffer);
+        stat_buffer = NULL;
+    }
+
+    if(op)
+    {
+        free(op);
+        op = NULL;
+    }
+
+    return err;
 }
 
 /* TODO */
@@ -980,53 +986,70 @@ static int zoidfs_gridftp_lookup(const zoidfs_handle_t * parent_handle,
                       zoidfs_handle_t * handle,
                       zoidfs_op_hint_t * UNUSED(op_hint))
 {
+    int err = ZFS_OK;
     globus_result_t ret;
     zoidfs_gridftp_handle_t * zgh = NULL;
+    zoidfs_gridftp_op_t * op = NULL;
 
-    //globus_mutex_lock(&lookup_ctl_lock);
     /* setup the connection and handles */
     zgh = zoidfs_gridftp_setup_gridftp_handle(parent_handle, component_name, full_path, handle);
 
     /* if the handle is already valid, just return */
     if(zgh->validHandle)
     {
-        //globus_mutex_unlock(&lookup_ctl_lock);
         return ZFS_OK;
     }
 
+    op = zoidfs_gridftp_op_create();
+
     /* setup gridftp exist test */
-    globus_mutex_init(&(zgh->lock), GLOBUS_NULL);
-    globus_cond_init(&(zgh->cond), GLOBUS_NULL);
-    zgh->file_exists = GLOBUS_FALSE;
-    zgh->exists_done = GLOBUS_FALSE;
+    globus_mutex_init(&(op->lock), GLOBUS_NULL);
+    globus_cond_init(&(op->cond), GLOBUS_NULL);
+    op->file_exists = GLOBUS_FALSE;
+    op->exists_done = GLOBUS_FALSE;
+
+    /* lock before ctl ch op */
+    globus_mutex_lock(&zoidfs_gridftp_ctl_ch_lock);
 
     /* run exist test */
-    ret = globus_ftp_client_exists(&(zgh->gftpfh), zgh->file_path, &(zgh->oattr), exists_cb, (void *)zgh);
+    ret = globus_ftp_client_exists(&(zgh->gftpfh), zgh->file_path, &(zgh->oattr), exists_cb, (void *)op);
     if(ret != GLOBUS_SUCCESS)
     {
-        fprintf(stderr, "%s : ERROR could not run gftp exist op\n", __func__);
-        fprintf(stderr, "%s : exit\n", __func__);
-        return ZFSERR_OTHER;
+        ZOIDFS_GRIDFTP_PERROR("%s : ERROR could not run gftp exist op\n", __func__);
+        ZOIDFS_GRIDFTP_PERROR("%s : exit\n", __func__);
+        err = ZFSERR_OTHER;
+        goto cleanup;
     }
 
     /* wait for the callback to finish */
-    globus_mutex_lock(&(zgh->lock));
-    while (zgh->exists_done != GLOBUS_TRUE)
-        globus_cond_wait(&(zgh->cond), &(zgh->lock));
-    globus_mutex_unlock(&(zgh->lock));
+    globus_mutex_lock(&(op->lock));
+    while (op->exists_done != GLOBUS_TRUE)
+        globus_cond_wait(&(op->cond), &(op->lock));
+    globus_mutex_unlock(&(op->lock));
 
-    if(zgh->file_exists != GLOBUS_TRUE)
+    /* ctl ch op done, unlock */
+    globus_mutex_unlock(&zoidfs_gridftp_ctl_ch_lock);
+
+    if(op->file_exists != GLOBUS_TRUE)
     {
         zgh->validHandle = 1;
-        //globus_mutex_unlock(&lookup_ctl_lock);
-        return ZFSERR_EXIST;
+        err = ZFSERR_EXIST;
+        goto cleanup;
     }
-    //globus_mutex_unlock(&lookup_ctl_lock);
-   
-    return ZFS_OK;
+
+cleanup:
+    globus_cond_destroy(&(op->cond));
+    globus_mutex_destroy(&(op->lock));
+    if(op)
+    {
+        free(op);
+        op = NULL;
+    }
+ 
+    return err;
 }
 
-/* not supported by GridFTP??? */
+/* not supported */
 static int zoidfs_gridftp_readlink(const zoidfs_handle_t * UNUSED(handle),
                         char * UNUSED(buffer),
                         size_t UNUSED(buffer_length),
@@ -1044,6 +1067,7 @@ static int zoidfs_gridftp_read(const zoidfs_handle_t * handle,
                     uint64_t file_sizes[],
                     zoidfs_op_hint_t * UNUSED(op_hint))
 {
+    int err = ZFS_OK;
     globus_result_t ret;
     zoidfs_gridftp_handle_t * zgh = NULL;
     uint64_t hkey = 0;
@@ -1053,6 +1077,7 @@ static int zoidfs_gridftp_read(const zoidfs_handle_t * handle,
     size_t start_i = 0;
     size_t end_i = 0;
     char * gftp_buffer = NULL;
+    zoidfs_gridftp_op_t * op = NULL;
 
     /* get the gridftp handle from the zoidfs handle */
     hkey = zoidfs_gridftp_zfs_handle_get(handle);
@@ -1060,17 +1085,19 @@ static int zoidfs_gridftp_read(const zoidfs_handle_t * handle,
 
     if(zgh == NULL)
     {
-        fprintf(stderr, "%s : ERROR could not find the handle associated with key = %lu\n", __func__, hkey);
-        fprintf(stderr, "%s : exit\n", __func__);
-        return ZFSERR_OTHER;
+        ZOIDFS_GRIDFTP_PERROR("%s : ERROR could not find the handle associated with key = %lu\n", __func__, hkey);
+        ZOIDFS_GRIDFTP_PERROR("%s : exit\n", __func__);
+        err = ZFSERR_OTHER;
+        goto cleanup;
     }
 
+    op = zoidfs_gridftp_op_create();
+
     /* setup gridftp create */
-    //globus_mutex_lock(&lookup_ctl_lock);
-    globus_mutex_init(&(zgh->lock), GLOBUS_NULL);
-    globus_cond_init(&(zgh->cond), GLOBUS_NULL);
-    zgh->read_file = GLOBUS_FALSE;
-    zgh->read_ctl_done = GLOBUS_FALSE;
+    globus_mutex_init(&(op->lock), GLOBUS_NULL);
+    globus_cond_init(&(op->cond), GLOBUS_NULL);
+    op->read_file = GLOBUS_FALSE;
+    op->read_ctl_done = GLOBUS_FALSE;
 
     /* find the start and end offsets for this operation */
     start = file_starts[0];
@@ -1094,33 +1121,40 @@ static int zoidfs_gridftp_read(const zoidfs_handle_t * handle,
         }
     }
 
-    /* get the file size */
-    ret = globus_ftp_client_partial_get(&(zgh->gftpfh), zgh->file_path, &(zgh->oattr), GLOBUS_NULL, start, end, read_ctl_cb, zgh);
+    /* lock before ctl ch op */
+    globus_mutex_lock(&zoidfs_gridftp_ctl_ch_lock);
+
+    /* start a partial get */
+    ret = globus_ftp_client_partial_get(&(zgh->gftpfh), zgh->file_path, &(zgh->oattr), GLOBUS_NULL, start, end, read_ctl_cb, op);
     if(ret != GLOBUS_SUCCESS)
     {
-        fprintf(stderr, "%s : ERROR could not register partial get\n", __func__);
-        fprintf(stderr, "%s : exit\n", __func__);
-        return ZFSERR_OTHER;
+        ZOIDFS_GRIDFTP_PERROR("%s : ERROR could not register partial get\n", __func__);
+        ZOIDFS_GRIDFTP_PERROR("%s : exit\n", __func__);
+        err = ZFSERR_OTHER;
+        goto cleanup;
     }
 
     /* allocate the read buffer */
     gftp_buffer = (char *) malloc(sizeof(char) * (end - start));
 
     /* register the read */
-    ret = globus_ftp_client_register_read(&(zgh->gftpfh), (globus_byte_t *)gftp_buffer, (globus_size_t)(end - start), read_data_cb, (void *) zgh);
+    ret = globus_ftp_client_register_read(&(zgh->gftpfh), (globus_byte_t *)gftp_buffer, (globus_size_t)(end - start), read_data_cb, (void *) op);
     if(ret != GLOBUS_SUCCESS)
     {
-        fprintf(stderr, "%s : ERROR could not register read\n", __func__);
-        fprintf(stderr, "%s : exit\n", __func__);
-        return ZFSERR_OTHER;
+        ZOIDFS_GRIDFTP_PERROR("%s : ERROR could not register read\n", __func__);
+        ZOIDFS_GRIDFTP_PERROR("%s : exit\n", __func__);
+        err = ZFSERR_OTHER;
+        goto cleanup;
     }
 
     /* wait for the callback to finish */
-    globus_mutex_lock(&(zgh->lock));
-    while (zgh->read_ctl_done != GLOBUS_TRUE)
-        globus_cond_wait(&(zgh->cond), &(zgh->lock));
-    globus_mutex_unlock(&(zgh->lock));
-    //globus_mutex_unlock(&lookup_ctl_lock);
+    globus_mutex_lock(&(op->lock));
+    while (op->read_ctl_done != GLOBUS_TRUE)
+        globus_cond_wait(&(op->cond), &(op->lock));
+    globus_mutex_unlock(&(op->lock));
+
+    /* ctl ch op done, unlock */
+    globus_mutex_unlock(&zoidfs_gridftp_ctl_ch_lock);
 
     /* copy the buffer segments into the user args */
     for(i = 0 ; i < mem_count ; i++)
@@ -1129,10 +1163,21 @@ static int zoidfs_gridftp_read(const zoidfs_handle_t * handle,
         memcpy(mem_starts[i], &(gftp_buffer[foff]), mem_sizes[i]);
     }   
 
-    /* free the read buffer */ 
-    free(gftp_buffer);
+cleanup:
+    globus_cond_destroy(&(op->cond));
+    globus_mutex_destroy(&(op->lock));
+    if(op)
+    {
+        free(op);
+        op = NULL;
+    }
 
-    return ZFS_OK;
+    if(gftp_buffer)
+    {
+        free(gftp_buffer);
+    }
+
+    return err;
 }
 
 static int zoidfs_gridftp_write(const zoidfs_handle_t * handle,
@@ -1144,6 +1189,7 @@ static int zoidfs_gridftp_write(const zoidfs_handle_t * handle,
                      uint64_t file_sizes[],
                      zoidfs_op_hint_t * UNUSED(op_hint))
 {
+    int err = ZFS_OK;
     globus_result_t ret;
     zoidfs_gridftp_handle_t * zgh = NULL;
     uint64_t hkey = 0;
@@ -1152,6 +1198,7 @@ static int zoidfs_gridftp_write(const zoidfs_handle_t * handle,
     size_t i = 0;
     size_t start_i = 0;
     size_t end_i = 0;
+    zoidfs_gridftp_op_t * op = NULL;
 
     /* get the gridftp handle from the zoidfs handle */
     hkey = zoidfs_gridftp_zfs_handle_get(handle);
@@ -1159,17 +1206,19 @@ static int zoidfs_gridftp_write(const zoidfs_handle_t * handle,
 
     if(zgh == NULL)
     {
-        fprintf(stderr, "%s : ERROR could not find the handle associated with key = %lu\n", __func__, hkey);
-        fprintf(stderr, "%s : exit\n", __func__);
-        return ZFSERR_OTHER;
+        ZOIDFS_GRIDFTP_PERROR("%s : ERROR could not find the handle associated with key = %lu\n", __func__, hkey);
+        ZOIDFS_GRIDFTP_PERROR("%s : exit\n", __func__);
+        err = ZFSERR_OTHER;
+        goto cleanup;
     }
 
+    op = zoidfs_gridftp_op_create();
+
     /* setup gridftp create */
-    //globus_mutex_lock(&lookup_ctl_lock);
-    globus_mutex_init(&(zgh->lock), GLOBUS_NULL);
-    globus_cond_init(&(zgh->cond), GLOBUS_NULL);
-    zgh->wrote_file = GLOBUS_FALSE;
-    zgh->write_ctl_done = GLOBUS_FALSE;
+    globus_mutex_init(&(op->lock), GLOBUS_NULL);
+    globus_cond_init(&(op->cond), GLOBUS_NULL);
+    op->wrote_file = GLOBUS_FALSE;
+    op->write_ctl_done = GLOBUS_FALSE;
 
     /* find the start and end offsets for this operation */
     start = file_starts[0];
@@ -1193,13 +1242,17 @@ static int zoidfs_gridftp_write(const zoidfs_handle_t * handle,
         }
     }
 
-    /* get the file size */
-    ret = globus_ftp_client_partial_put(&(zgh->gftpfh), zgh->file_path, &(zgh->oattr), GLOBUS_NULL, start, end, write_ctl_cb, zgh);
+    /* lock before ctl ch op */
+    globus_mutex_lock(&zoidfs_gridftp_ctl_ch_lock);
+
+    /* start the partial put */
+    ret = globus_ftp_client_partial_put(&(zgh->gftpfh), zgh->file_path, &(zgh->oattr), GLOBUS_NULL, start, end, write_ctl_cb, op);
     if(ret != GLOBUS_SUCCESS)
     {
-        fprintf(stderr, "%s : ERROR could not register partial put\n", __func__);
-        fprintf(stderr, "%s : exit\n", __func__);
-        return ZFSERR_OTHER;
+        ZOIDFS_GRIDFTP_PERROR("%s : ERROR could not register partial put\n", __func__);
+        ZOIDFS_GRIDFTP_PERROR("%s : exit\n", __func__);
+        err = ZFSERR_OTHER;
+        goto cleanup;
     }
 
     /* IO */
@@ -1213,23 +1266,35 @@ static int zoidfs_gridftp_write(const zoidfs_handle_t * handle,
             eofvar = GLOBUS_TRUE;
 
         /* register the write */
-        ret = globus_ftp_client_register_write(&(zgh->gftpfh), (globus_byte_t *)mem_starts[i], (globus_size_t)mem_sizes[i], foff, eofvar, write_data_cb, (void *) zgh);
+        ret = globus_ftp_client_register_write(&(zgh->gftpfh), (globus_byte_t *)mem_starts[i], (globus_size_t)mem_sizes[i], foff, eofvar, write_data_cb, (void *) op);
         if(ret != GLOBUS_SUCCESS)
         {
-            fprintf(stderr, "%s : ERROR could not register write\n", __func__);
-            fprintf(stderr, "%s : exit\n", __func__);
-            return ZFSERR_OTHER;
+            ZOIDFS_GRIDFTP_PERROR("%s : ERROR could not register write\n", __func__);
+            ZOIDFS_GRIDFTP_PERROR("%s : exit\n", __func__);
+            err = ZFSERR_OTHER;
+            goto cleanup;
         }
     }
 
     /* wait for the callback to finish */
-    globus_mutex_lock(&(zgh->lock));
-    while (zgh->write_ctl_done != GLOBUS_TRUE)
-        globus_cond_wait(&(zgh->cond), &(zgh->lock));
-    globus_mutex_unlock(&(zgh->lock));
-    //globus_mutex_unlock(&lookup_ctl_lock);
+    globus_mutex_lock(&(op->lock));
+    while (op->write_ctl_done != GLOBUS_TRUE)
+        globus_cond_wait(&(op->cond), &(op->lock));
+    globus_mutex_unlock(&(op->lock));
 
-    return ZFS_OK;
+    /* ctl ch op done, unlock */
+    globus_mutex_unlock(&zoidfs_gridftp_ctl_ch_lock);
+
+cleanup:
+    globus_cond_destroy(&(op->cond));
+    globus_mutex_destroy(&(op->lock));
+    if(op)
+    {
+        free(op);
+        op = NULL;
+    }
+
+    return err;
 }
 
 static int zoidfs_gridftp_commit(const zoidfs_handle_t * UNUSED(handle),
@@ -1250,56 +1315,63 @@ static int zoidfs_gridftp_create(const zoidfs_handle_t * parent_handle,
     int err = ZFS_OK;
     globus_result_t ret;
     zoidfs_gridftp_handle_t * zgh = NULL;
+    zoidfs_gridftp_op_t * op = NULL;
 
-    //globus_mutex_lock(&lookup_ctl_lock);
     /* setup the connection and handles */
     zgh = zoidfs_gridftp_setup_gridftp_handle(parent_handle, component_name, full_path, handle);
 
     /* if the handle is already valid, just return */
     if(zgh->validHandle)
     {
-        //globus_mutex_unlock(&lookup_ctl_lock);
         return ZFS_OK;
     }
 
-    /* setup gridftp create */
-    globus_mutex_init(&(zgh->lock), GLOBUS_NULL);
-    globus_cond_init(&(zgh->cond), GLOBUS_NULL);
-    zgh->file_created=GLOBUS_FALSE;
-    zgh->create_done=GLOBUS_FALSE;
-    zgh->create_wb_done=GLOBUS_FALSE;
+    op = zoidfs_gridftp_op_create();
 
-    /* register put  and write a 0 byte file */
-    zgh->create_done = GLOBUS_FALSE;
-    ret = globus_ftp_client_partial_put(&(zgh->gftpfh), zgh->file_path, &(zgh->oattr), GLOBUS_NULL, 0, 0, create_cb, (void *)zgh);
+    /* setup gridftp create */
+    globus_mutex_init(&(op->lock), GLOBUS_NULL);
+    globus_cond_init(&(op->cond), GLOBUS_NULL);
+    op->file_created = GLOBUS_FALSE;
+    op->create_done = GLOBUS_FALSE;
+    op->create_wb_done = GLOBUS_FALSE;
+
+    /* lock before ctl ch op */
+    globus_mutex_lock(&zoidfs_gridftp_ctl_ch_lock);
+
+    /* start a partial put */
+    op->create_done = GLOBUS_FALSE;
+    ret = globus_ftp_client_partial_put(&(zgh->gftpfh), zgh->file_path, &(zgh->oattr), GLOBUS_NULL, 0, 0, create_cb, (void *)op);
     if(ret != GLOBUS_SUCCESS)
     {
-        fprintf(stderr, "%s : ERROR could not register put\n", __func__);
-        fprintf(stderr, "%s : exit\n", __func__);
-        //globus_mutex_unlock(&lookup_ctl_lock);
-        return ZFSERR_OTHER;
+        ZOIDFS_GRIDFTP_PERROR("%s : ERROR could not register put\n", __func__);
+        ZOIDFS_GRIDFTP_PERROR("%s : exit\n", __func__);
+        err = ZFSERR_OTHER;
+        goto cleanup;
     }
     
     /* issue a write */
-    zgh->file_created_wb = GLOBUS_FALSE;
+    op->file_created_wb = GLOBUS_FALSE;
     globus_byte_t buf= (globus_byte_t)'\0';
-    ret = globus_ftp_client_register_write(&(zgh->gftpfh), (globus_byte_t *)&buf, 0, (globus_off_t)0, GLOBUS_TRUE, create_data_cb, (void *)zgh);
+    ret = globus_ftp_client_register_write(&(zgh->gftpfh), (globus_byte_t *)&buf, 0, (globus_off_t)0, GLOBUS_TRUE, create_data_cb, (void *)op);
     if(ret != GLOBUS_SUCCESS)
     {
-        fprintf(stderr, "%s : ERROR could not register write op\n", __func__);
-        fprintf(stderr, "%s : exit\n", __func__);
-        //globus_mutex_unlock(&lookup_ctl_lock);
-        return ZFSERR_OTHER;
+        ZOIDFS_GRIDFTP_PERROR("%s : ERROR could not register write op\n", __func__);
+        ZOIDFS_GRIDFTP_PERROR("%s : exit\n", __func__);
+        err = ZFSERR_OTHER;
+        goto cleanup;
     }
 
     /* wait for the callback to finish */
-    globus_mutex_lock(&(zgh->lock));
-    while (zgh->create_done != GLOBUS_TRUE)
-        globus_cond_wait(&(zgh->cond), &(zgh->lock));
-    globus_mutex_unlock(&(zgh->lock));
+    globus_mutex_lock(&(op->lock));
+    while (op->create_done != GLOBUS_TRUE)
+        globus_cond_wait(&(op->cond), &(op->lock));
+    globus_mutex_unlock(&(op->lock));
+
+    /* ctl ch op done, unlock */
+    globus_mutex_unlock(&zoidfs_gridftp_ctl_ch_lock);
 
     /* check if found the handle or not */
-    if(zgh->file_created == GLOBUS_TRUE)
+    if(op->file_created == GLOBUS_TRUE)
     {
         *created = 1;
         zgh->validHandle = 1;
@@ -1309,7 +1381,15 @@ static int zoidfs_gridftp_create(const zoidfs_handle_t * parent_handle,
         *created = 0;
         err = ZFSERR_OTHER;
     }
-    //globus_mutex_unlock(&lookup_ctl_lock);
+
+cleanup:
+    globus_cond_destroy(&(op->cond));
+    globus_mutex_destroy(&(op->lock));
+    if(op)
+    {
+        free(op);
+        op = NULL;
+    }
 
     return err;
 }
@@ -1320,42 +1400,60 @@ static int zoidfs_gridftp_remove(const zoidfs_handle_t * parent_handle,
                       zoidfs_cache_hint_t * UNUSED(parent_hint),
                       zoidfs_op_hint_t * UNUSED(op_hint))
 {
+    int err = ZFS_OK;
     globus_result_t ret;
     zoidfs_gridftp_handle_t * zgh = NULL;
+    zoidfs_gridftp_op_t * op = NULL;
 
     /* setup the connection and handles */
     zgh = zoidfs_gridftp_setup_gridftp_handle(parent_handle, component_name, full_path, NULL);
 
+    op = zoidfs_gridftp_op_create();
+
     /* setup gridftp exist test */
-    //globus_mutex_lock(&lookup_ctl_lock);
-    globus_mutex_init(&(zgh->lock), GLOBUS_NULL);
-    globus_cond_init(&(zgh->cond), GLOBUS_NULL);
-    zgh->file_removed = GLOBUS_FALSE;
-    zgh->remove_done = GLOBUS_FALSE;
+    globus_mutex_init(&(op->lock), GLOBUS_NULL);
+    globus_cond_init(&(op->cond), GLOBUS_NULL);
+    op->file_removed = GLOBUS_FALSE;
+    op->remove_done = GLOBUS_FALSE;
+
+    /* lock before ctl ch op */
+    globus_mutex_lock(&zoidfs_gridftp_ctl_ch_lock);
 
     /* run delete */
-    ret = globus_ftp_client_delete(&(zgh->gftpfh), zgh->file_path, GLOBUS_NULL, remove_cb, zgh);
+    ret = globus_ftp_client_delete(&(zgh->gftpfh), zgh->file_path, GLOBUS_NULL, remove_cb, op);
     if(ret != GLOBUS_SUCCESS)
     {
-        fprintf(stderr, "%s : ERROR could not run gftp delete op\n", __func__);
-        fprintf(stderr, "%s : exit\n", __func__);
-        return ZFSERR_OTHER;
+        ZOIDFS_GRIDFTP_PERROR("%s : ERROR could not run gftp delete op\n", __func__);
+        ZOIDFS_GRIDFTP_PERROR("%s : exit\n", __func__);
+        err = ZFSERR_OTHER;
+        goto cleanup;
     }
 
     /* wait for the callback to finish */
-    globus_mutex_lock(&(zgh->lock));
-    while (zgh->remove_done != GLOBUS_TRUE)
-        globus_cond_wait(&(zgh->cond), &(zgh->lock));
-    globus_mutex_unlock(&(zgh->lock));
-    //globus_mutex_unlock(&lookup_ctl_lock);
+    globus_mutex_lock(&(op->lock));
+    while (op->remove_done != GLOBUS_TRUE)
+        globus_cond_wait(&(op->cond), &(op->lock));
+    globus_mutex_unlock(&(op->lock));
+
+    /* ctl ch op done, unlock */
+    globus_mutex_unlock(&zoidfs_gridftp_ctl_ch_lock);
 
     /* if file was not removed, err */
-    if(zgh->file_removed != GLOBUS_TRUE)
+    if(op->file_removed != GLOBUS_TRUE)
     {
-        return ZFSERR_OTHER;
+        err = ZFSERR_OTHER;
     }
 
-    return ZFS_OK;
+cleanup:
+    globus_cond_destroy(&(op->cond));
+    globus_mutex_destroy(&(op->lock));
+    if(op)
+    {
+        free(op);
+        op = NULL;
+    }
+
+    return err;
 }
 
 static int zoidfs_gridftp_rename(const zoidfs_handle_t * from_parent_handle,
@@ -1368,35 +1466,42 @@ static int zoidfs_gridftp_rename(const zoidfs_handle_t * from_parent_handle,
                       zoidfs_cache_hint_t * UNUSED(to_parent_hint),
                       zoidfs_op_hint_t * UNUSED(op_hint))
 {
+    int err = ZFS_OK;
     globus_result_t ret;
     zoidfs_gridftp_handle_t * fzgh = NULL;
+    zoidfs_gridftp_op_t * op = NULL;
     char t_path[1024];
 
     /* setup the connection and handles */
     fzgh = zoidfs_gridftp_setup_gridftp_handle(from_parent_handle, from_component_name, from_full_path, NULL);
-
+    op = zoidfs_gridftp_op_create();
+    
     /* setup gridftp create */
-    globus_mutex_init(&(fzgh->lock), GLOBUS_NULL);
-    globus_cond_init(&(fzgh->cond), GLOBUS_NULL);
-    fzgh->renamed_file=GLOBUS_FALSE;
-    fzgh->rename_done=GLOBUS_FALSE;
+    globus_mutex_init(&(op->lock), GLOBUS_NULL);
+    globus_cond_init(&(op->cond), GLOBUS_NULL);
+    op->renamed_file = GLOBUS_FALSE;
+    op->rename_done = GLOBUS_FALSE;
 
     /* get the new path */
     zoidfs_gridftp_convert_filename(to_parent_handle, to_component_name, to_full_path, t_path);
 
-    /* register put  and write a 0 byte file */
+    /* lock before ctl ch op */
+    globus_mutex_lock(&zoidfs_gridftp_ctl_ch_lock);
+
+    /* start the move */
     ret = globus_ftp_client_move(&(fzgh->gftpfh), fzgh->file_path, t_path, &(fzgh->oattr), rename_cb, (void *)fzgh);
     if(ret != GLOBUS_SUCCESS)
     {
-        fprintf(stderr, "%s : ERROR could not register move\n", __func__);
-        fprintf(stderr, "%s : exit\n", __func__);
-        return ZFSERR_OTHER;
+        ZOIDFS_GRIDFTP_PERROR("%s : ERROR could not register move\n", __func__);
+        ZOIDFS_GRIDFTP_PERROR("%s : exit\n", __func__);
+        err = ZFSERR_OTHER;
+        goto cleanup;
     }
 
     /* wait for the callback to finish */
-    globus_mutex_lock(&(fzgh->lock));
-    while (fzgh->rename_done != GLOBUS_TRUE)
-        globus_cond_wait(&(fzgh->cond), &(fzgh->lock));
+    globus_mutex_lock(&(op->lock));
+    while (op->rename_done != GLOBUS_TRUE)
+        globus_cond_wait(&(op->cond), &(op->lock));
 
     /* remove the handle from the tree and reinsert it under the new key / path */
     zoidfs_gridftp_handle_tree_remove( fzgh->key );
@@ -1404,14 +1509,27 @@ static int zoidfs_gridftp_rename(const zoidfs_handle_t * from_parent_handle,
     fzgh->key = hash((void *)t_path, strlen(t_path) + 1, 0);
     zoidfs_gridftp_handle_tree_add(fzgh);
 
-    globus_mutex_unlock(&(fzgh->lock));
+    globus_mutex_unlock(&(op->lock));
+
+    /* ctl ch op done, unlock */
+    globus_mutex_unlock(&zoidfs_gridftp_ctl_ch_lock);
 
     /* check if found the handle or not */
-    if(fzgh->renamed_file != GLOBUS_TRUE)
+    if(op->renamed_file != GLOBUS_TRUE)
     {
-        return ZFSERR_OTHER;
+        err = ZFSERR_OTHER;
     }
-    return ZFS_OK;
+
+cleanup:
+    globus_cond_destroy(&(op->cond));
+    globus_mutex_destroy(&(op->lock));
+    if(op)
+    {
+        free(op);
+        op = NULL;
+    }
+
+    return err;
 }
 
 /* hard links not supported by GridFTP */
@@ -1452,40 +1570,59 @@ static int zoidfs_gridftp_mkdir(
     zoidfs_cache_hint_t * UNUSED(parent_hint),
     zoidfs_op_hint_t * UNUSED(op_hint))
 {
+    int err = ZFS_OK;
     globus_result_t ret;
     zoidfs_gridftp_handle_t * zgh = NULL;
+    zoidfs_gridftp_op_t * op = NULL;
 
     /* setup the connection and handles */
     zgh = zoidfs_gridftp_setup_gridftp_handle(parent_handle, component_name, full_path, NULL);
+    op = zoidfs_gridftp_op_create();
 
     /* setup gridftp exist test */
-    globus_mutex_init(&(zgh->lock), GLOBUS_NULL);
-    globus_cond_init(&(zgh->cond), GLOBUS_NULL);
-    zgh->dir_created = GLOBUS_FALSE;
-    zgh->mkdir_done = GLOBUS_FALSE;
+    globus_mutex_init(&(op->lock), GLOBUS_NULL);
+    globus_cond_init(&(op->cond), GLOBUS_NULL);
+    op->dir_created = GLOBUS_FALSE;
+    op->mkdir_done = GLOBUS_FALSE;
 
-    /* run delete */
-    ret = globus_ftp_client_mkdir(&(zgh->gftpfh), zgh->file_path, &(zgh->oattr), mkdir_cb, (void *)zgh);
+    /* lock before ctl ch op */
+    globus_mutex_lock(&zoidfs_gridftp_ctl_ch_lock);
+
+    /* run mkdir */
+    ret = globus_ftp_client_mkdir(&(zgh->gftpfh), zgh->file_path, &(zgh->oattr), mkdir_cb, (void *)op);
     if(ret != GLOBUS_SUCCESS)
     {
-        fprintf(stderr, "%s : ERROR could not run gftp delete op\n", __func__);
-        fprintf(stderr, "%s : exit\n", __func__);
-        return ZFSERR_OTHER;
+        ZOIDFS_GRIDFTP_PERROR("%s : ERROR could not run gftp delete op\n", __func__);
+        ZOIDFS_GRIDFTP_PERROR("%s : exit\n", __func__);
+        err = ZFSERR_OTHER;
+        goto cleanup;
     }
 
     /* wait for the callback to finish */
-    globus_mutex_lock(&(zgh->lock));
-    while (zgh->mkdir_done != GLOBUS_TRUE)
-        globus_cond_wait(&(zgh->cond), &(zgh->lock));
-    globus_mutex_unlock(&(zgh->lock));
+    globus_mutex_lock(&(op->lock));
+    while (op->mkdir_done != GLOBUS_TRUE)
+        globus_cond_wait(&(op->cond), &(op->lock));
+    globus_mutex_unlock(&(op->lock));
+
+    /* ctl ch op done, unlock */
+    globus_mutex_unlock(&zoidfs_gridftp_ctl_ch_lock);
 
     /* if dir was not created, err */
-    if(zgh->dir_created != GLOBUS_TRUE)
+    if(op->dir_created != GLOBUS_TRUE)
     {
-        return ZFSERR_OTHER;
+        err = ZFSERR_OTHER;
     }
 
-    return ZFS_OK;
+cleanup:
+    globus_cond_destroy(&(op->cond));
+    globus_mutex_destroy(&(op->lock));
+    if(op)
+    {
+        free(op);
+        op = NULL;
+    }
+
+    return err;
 }
 
 /* TODO */
@@ -1504,8 +1641,10 @@ static int zoidfs_gridftp_resize(const zoidfs_handle_t * handle,
                       uint64_t size,
                       zoidfs_op_hint_t * UNUSED(op_hint))
 {
+    int err = ZFS_OK;
     globus_result_t ret;
     zoidfs_gridftp_handle_t * zgh = NULL;
+    zoidfs_gridftp_op_t * op = NULL;
     uint64_t hkey = 0;
     globus_off_t fsize = 0;
 
@@ -1515,123 +1654,187 @@ static int zoidfs_gridftp_resize(const zoidfs_handle_t * handle,
 
     if(zgh == NULL)
     {
-        fprintf(stderr, "%s : ERROR could not find the handle associated with key = %lu\n", __func__, hkey);
-        fprintf(stderr, "%s : exit\n", __func__);
-        return ZFSERR_OTHER;
+        ZOIDFS_GRIDFTP_PERROR("%s : ERROR could not find the handle associated with key = %lu\n", __func__, hkey);
+        ZOIDFS_GRIDFTP_PERROR("%s : exit\n", __func__);
+        err = ZFSERR_OTHER;
+        goto cleanup;
     }
 
+    op = zoidfs_gridftp_op_create();
+
     /* setup gridftp create */
-    globus_mutex_init(&(zgh->lock), GLOBUS_NULL);
-    globus_cond_init(&(zgh->cond), GLOBUS_NULL);
-    zgh->file_resized = GLOBUS_FALSE;
-    zgh->resize_done = GLOBUS_FALSE;
-    zgh->resize_wb_done = GLOBUS_FALSE;
+    globus_mutex_init(&(op->lock), GLOBUS_NULL);
+    globus_cond_init(&(op->cond), GLOBUS_NULL);
+    op->file_resized = GLOBUS_FALSE;
+    op->resize_done = GLOBUS_FALSE;
+    op->resize_wb_done = GLOBUS_FALSE;
+
+    /* lock before ctl ch op */
+    globus_mutex_lock(&zoidfs_gridftp_ctl_ch_lock);
 
     /* get the file size */
-    ret = globus_ftp_client_size(&(zgh->gftpfh), zgh->file_path, &(zgh->oattr), &(fsize), resize_cb, zgh);
+    ret = globus_ftp_client_size(&(zgh->gftpfh), zgh->file_path, &(zgh->oattr), &(fsize), resize_cb, op);
     if(ret != GLOBUS_SUCCESS)
     {
-        fprintf(stderr, "%s : ERROR could not register client size\n", __func__);
-        fprintf(stderr, "%s : exit\n", __func__);
-        return ZFSERR_OTHER;
+        ZOIDFS_GRIDFTP_PERROR("%s : ERROR could not register client size\n", __func__);
+        ZOIDFS_GRIDFTP_PERROR("%s : exit\n", __func__);
+        err = ZFSERR_OTHER;
+        goto cleanup;
     }
 
     /* wait for the callback to finish */
-    globus_mutex_lock(&(zgh->lock));
-    while (zgh->resize_done != GLOBUS_TRUE)
-        globus_cond_wait(&(zgh->cond), &(zgh->lock));
-    globus_mutex_unlock(&(zgh->lock));
+    globus_mutex_lock(&(op->lock));
+    while (op->resize_done != GLOBUS_TRUE)
+        globus_cond_wait(&(op->cond), &(op->lock));
+    globus_mutex_unlock(&(op->lock));
+
+    /* ctl ch op done, unlock */
+    globus_mutex_unlock(&zoidfs_gridftp_ctl_ch_lock);
 
     /* two cases:
      *  1) new size < old size
      *  2) new size > old size
      */
 
+    /* for the old size < new size case 
+     *  1) do a partial put on the file for byte range size - 1, size 
+     *  2) write 1 byte at offset size - 1
+     */ 
     if(fsize < (globus_off_t)size)
     {
         globus_byte_t buffer = (globus_byte_t)'\0';
-        zgh->resize_done = GLOBUS_FALSE;
+        op->resize_done = GLOBUS_FALSE;
         
-        ret = globus_ftp_client_partial_put(&(zgh->gftpfh), zgh->file_path, &(zgh->oattr), GLOBUS_NULL, (globus_off_t)size - 1, (globus_off_t)size, resize_cb, (void *)zgh); 
+        /* lock before ctl ch op */
+        globus_mutex_lock(&zoidfs_gridftp_ctl_ch_lock);
+
+        /* start a partial put */
+        ret = globus_ftp_client_partial_put(&(zgh->gftpfh), zgh->file_path, &(zgh->oattr), GLOBUS_NULL, (globus_off_t)size - 1, (globus_off_t)size, resize_cb, (void *)op); 
         if(ret != GLOBUS_SUCCESS)
         {
-            fprintf(stderr, "%s : ERROR could not register resize partial put\n", __func__);
-            fprintf(stderr, "%s : exit\n", __func__);
-            return ZFSERR_OTHER;
+            ZOIDFS_GRIDFTP_PERROR("%s : ERROR could not register resize partial put\n", __func__);
+            ZOIDFS_GRIDFTP_PERROR("%s : exit\n", __func__);
+            err = ZFSERR_OTHER;
+            goto cleanup;
         }
 
-        ret = globus_ftp_client_register_write(&(zgh->gftpfh), (globus_byte_t *)&buffer, 1, (globus_off_t)(size - 1), GLOBUS_TRUE, resize_data_cb, (void *)zgh); 
+        /* register a write */
+        ret = globus_ftp_client_register_write(&(zgh->gftpfh), (globus_byte_t *)&buffer, 1, (globus_off_t)(size - 1), GLOBUS_TRUE, resize_data_cb, (void *)op); 
         if(ret != GLOBUS_SUCCESS)
         {
-            fprintf(stderr, "%s : ERROR could not register resize partial put\n", __func__);
-            fprintf(stderr, "%s : exit\n", __func__);
-            return ZFSERR_OTHER;
+            ZOIDFS_GRIDFTP_PERROR("%s : ERROR could not register resize partial put\n", __func__);
+            ZOIDFS_GRIDFTP_PERROR("%s : exit\n", __func__);
+            err = ZFSERR_OTHER;
+            goto cleanup;
         }
 
         /* wait for the callback to finish */
-        globus_mutex_lock(&(zgh->lock));
-        while (zgh->resize_done != GLOBUS_TRUE)
-            globus_cond_wait(&(zgh->cond), &(zgh->lock));
-        globus_mutex_unlock(&(zgh->lock));
+        globus_mutex_lock(&(op->lock));
+        while (op->resize_done != GLOBUS_TRUE)
+            globus_cond_wait(&(op->cond), &(op->lock));
+        globus_mutex_unlock(&(op->lock));
+
+        /* ctl ch op done, unlock */
+        globus_mutex_unlock(&zoidfs_gridftp_ctl_ch_lock);
     } 
+    /* for the old size > new size case 
+     *  1) move original file to backup file 
+     *  2) copy (through 3rd party transfer) size data from 0, size - 1
+     *   from backup file to new file 
+     *  2) delete backup file  
+     */ 
     else if(fsize > (globus_off_t)size)
     {
-        zgh->resize_done = GLOBUS_FALSE;
+        op->resize_done = GLOBUS_FALSE;
         char * urlbak = NULL;
 
         /* make a backup of the old file */
         urlbak = (char *)malloc(sizeof(char) * strlen(zgh->file_path) + 5);
         sprintf(urlbak, "%s.bak", zgh->file_path);
         
-        ret = globus_ftp_client_move(&(zgh->gftpfh), zgh->file_path, urlbak, &(zgh->oattr), resize_cb, (void *)zgh); 
+        /* lock before ctl ch op */
+        globus_mutex_lock(&zoidfs_gridftp_ctl_ch_lock);
+
+        /* start a move */
+        ret = globus_ftp_client_move(&(zgh->gftpfh), zgh->file_path, urlbak, &(zgh->oattr), resize_cb, (void *)op); 
         if(ret != GLOBUS_SUCCESS)
         {
-            fprintf(stderr, "%s : ERROR could not register resize partial put\n", __func__);
-            fprintf(stderr, "%s : exit\n", __func__);
-            return ZFSERR_OTHER;
+            ZOIDFS_GRIDFTP_PERROR("%s : ERROR could not register resize partial put\n", __func__);
+            ZOIDFS_GRIDFTP_PERROR("%s : exit\n", __func__);
+            err = ZFSERR_OTHER;
+            goto cleanup;
         }
 
         /* wait for the callback to finish */
-        globus_mutex_lock(&(zgh->lock));
-        while (zgh->resize_done != GLOBUS_TRUE)
-            globus_cond_wait(&(zgh->cond), &(zgh->lock));
-        globus_mutex_unlock(&(zgh->lock));
+        globus_mutex_lock(&(op->lock));
+        while (op->resize_done != GLOBUS_TRUE)
+            globus_cond_wait(&(op->cond), &(op->lock));
+        globus_mutex_unlock(&(op->lock));
+
+        /* ctl ch op done, unlock */
+        globus_mutex_unlock(&zoidfs_gridftp_ctl_ch_lock);
 
         /* transfer part of the file back to the orig file name */
-        zgh->resize_done = GLOBUS_FALSE;
+        op->resize_done = GLOBUS_FALSE;
+        
+        /* lock before ctl ch op */
+        globus_mutex_lock(&zoidfs_gridftp_ctl_ch_lock);
+
+        /* regsiter partial 3rd party transfer */
         ret = globus_ftp_client_partial_third_party_transfer(&(zgh->gftpfh), urlbak, &(zgh->oattr), zgh->file_path, &(zgh->oattr), GLOBUS_NULL, 0, (globus_off_t)size, resize_cb, (void *)zgh);
         if(ret != GLOBUS_SUCCESS)
         {
-            fprintf(stderr, "%s : ERROR could not register resize partial put\n", __func__);
-            fprintf(stderr, "%s : exit\n", __func__);
-            return ZFSERR_OTHER;
+            ZOIDFS_GRIDFTP_PERROR("%s : ERROR could not register resize partial put\n", __func__);
+            ZOIDFS_GRIDFTP_PERROR("%s : exit\n", __func__);
+            err = ZFSERR_OTHER;
+            goto cleanup;
         }
 
         /* wait for the callback to finish */
-        globus_mutex_lock(&(zgh->lock));
-        while (zgh->resize_done != GLOBUS_TRUE && zgh->resize_wb_done != GLOBUS_TRUE)
-            globus_cond_wait(&(zgh->cond), &(zgh->lock));
-        globus_mutex_unlock(&(zgh->lock));
+        globus_mutex_lock(&(op->lock));
+        while (op->resize_done != GLOBUS_TRUE && op->resize_wb_done != GLOBUS_TRUE)
+            globus_cond_wait(&(op->cond), &(op->lock));
+        globus_mutex_unlock(&(op->lock));
+
+        /* ctl ch op done, unlock */
+        globus_mutex_unlock(&zoidfs_gridftp_ctl_ch_lock);
 
         /* delete the old file (in the bak url) */
-        zgh->resize_done = GLOBUS_FALSE;
-        ret = globus_ftp_client_delete(&(zgh->gftpfh), urlbak, &(zgh->oattr), resize_cb, (void *)zgh);
+        op->resize_done = GLOBUS_FALSE;
+        
+        /* lock before ctl ch op */
+        globus_mutex_lock(&zoidfs_gridftp_ctl_ch_lock);
+
+        /* run the delete */
+        ret = globus_ftp_client_delete(&(zgh->gftpfh), urlbak, &(zgh->oattr), resize_cb, (void *)op);
         if(ret != GLOBUS_SUCCESS)
         {
-            fprintf(stderr, "%s : ERROR could not register resize partial put\n", __func__);
-            fprintf(stderr, "%s : exit\n", __func__);
-            return ZFSERR_OTHER;
+            ZOIDFS_GRIDFTP_PERROR("%s : ERROR could not register resize partial put\n", __func__);
+            ZOIDFS_GRIDFTP_PERROR("%s : exit\n", __func__);
+            err = ZFSERR_OTHER;
+            goto cleanup;
         }
 
         /* wait for the callback to finish */
-        globus_mutex_lock(&(zgh->lock));
-        while (zgh->resize_done != GLOBUS_TRUE)
-            globus_cond_wait(&(zgh->cond), &(zgh->lock));
-        globus_mutex_unlock(&(zgh->lock));
+        globus_mutex_lock(&(op->lock));
+        while (op->resize_done != GLOBUS_TRUE)
+            globus_cond_wait(&(op->cond), &(op->lock));
+        globus_mutex_unlock(&(op->lock));
 
+        /* ctl ch op done, unlock */
+        globus_mutex_unlock(&zoidfs_gridftp_ctl_ch_lock);
     }
 
-    return ZFS_OK;
+cleanup:
+    globus_cond_destroy(&(op->cond));
+    globus_mutex_destroy(&(op->lock));
+    if(op)
+    {
+        free(op);
+        op = NULL;
+    }
+
+    return err;
 }
 
 static int zoidfs_gridftp_resolve_path(const char * gridftp_path,
@@ -1656,8 +1859,11 @@ static int zoidfs_gridftp_resolve_path(const char * gridftp_path,
 
 static int zoidfs_gridftp_init(void)
 {
-    globus_mutex_init(&lookup_ctl_lock, GLOBUS_NULL);
+    /* init the gftp lib */
     globus_module_activate(GLOBUS_FTP_CLIENT_MODULE);
+
+    /* setup the ctl ch lock */
+    globus_mutex_init(&zoidfs_gridftp_ctl_ch_lock, GLOBUS_NULL);
     return ZFS_OK;
 }
 
@@ -1666,7 +1872,12 @@ static int zoidfs_gridftp_finalize(void)
     /* cleanup the handle tree */
     zoidfs_gridftp_handle_tree_cleanup();
 
+    /* shutdown the gftp lib */
     globus_module_deactivate(GLOBUS_FTP_CLIENT_MODULE);
+
+    /* setup the ctl ch lock */
+    globus_mutex_destroy(&zoidfs_gridftp_ctl_ch_lock);
+
     return ZFS_OK;
 }
 
