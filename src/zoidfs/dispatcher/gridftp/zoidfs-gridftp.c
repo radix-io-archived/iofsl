@@ -47,7 +47,10 @@
 static int connection_caching_enabled = 0;
 static int stripes_enabled = 0;
 static int tcp_buffer_size = 0;
-static int parallel_streams = 0; 
+static int parallel_streams = 0;
+static char * zoidfs_gridftp_userpass = NULL;
+static char * zoidfs_gridftp_username = NULL;
+static char * zoidfs_gridftp_subject = NULL;
 
 /* lock for ctl ch ops */
 static globus_mutex_t zoidfs_gridftp_ctl_ch_lock;
@@ -754,7 +757,7 @@ static zoidfs_gridftp_handle_t * zoidfs_gridftp_setup_gridftp_handle(const zoidf
     }
 
     /* set the authorization params */
-    ret = globus_ftp_client_operationattr_set_authorization(&(zgh->oattr), GSS_C_NO_CREDENTIAL, "copej", "", "copej", "");
+    ret = globus_ftp_client_operationattr_set_authorization(&(zgh->oattr), GSS_C_NO_CREDENTIAL, zoidfs_gridftp_username, zoidfs_gridftp_userpass, zoidfs_gridftp_username, zoidfs_gridftp_subject);
     if(ret != GLOBUS_SUCCESS)
     {
         ZOIDFS_GRIDFTP_PERROR("%s : ERROR could not set authorization\n", __func__);
@@ -1688,9 +1691,6 @@ static int zoidfs_gridftp_resize(const zoidfs_handle_t * handle,
         globus_cond_wait(&(op->cond), &(op->lock));
     globus_mutex_unlock(&(op->lock));
 
-    /* ctl ch op done, unlock */
-    globus_mutex_unlock(&zoidfs_gridftp_ctl_ch_lock);
-
     /* two cases:
      *  1) new size < old size
      *  2) new size > old size
@@ -1705,9 +1705,6 @@ static int zoidfs_gridftp_resize(const zoidfs_handle_t * handle,
         globus_byte_t buffer = (globus_byte_t)'\0';
         op->resize_done = GLOBUS_FALSE;
         
-        /* lock before ctl ch op */
-        globus_mutex_lock(&zoidfs_gridftp_ctl_ch_lock);
-
         /* start a partial put */
         ret = globus_ftp_client_partial_put(&(zgh->gftpfh), zgh->file_path, &(zgh->oattr), GLOBUS_NULL, (globus_off_t)size - 1, (globus_off_t)size, resize_cb, (void *)op); 
         if(ret != GLOBUS_SUCCESS)
@@ -1734,8 +1731,6 @@ static int zoidfs_gridftp_resize(const zoidfs_handle_t * handle,
             globus_cond_wait(&(op->cond), &(op->lock));
         globus_mutex_unlock(&(op->lock));
 
-        /* ctl ch op done, unlock */
-        globus_mutex_unlock(&zoidfs_gridftp_ctl_ch_lock);
     } 
     /* for the old size > new size case 
      *  1) move original file to backup file 
@@ -1752,9 +1747,6 @@ static int zoidfs_gridftp_resize(const zoidfs_handle_t * handle,
         urlbak = (char *)malloc(sizeof(char) * strlen(zgh->file_path) + 5);
         sprintf(urlbak, "%s.bak", zgh->file_path);
         
-        /* lock before ctl ch op */
-        globus_mutex_lock(&zoidfs_gridftp_ctl_ch_lock);
-
         /* start a move */
         ret = globus_ftp_client_move(&(zgh->gftpfh), zgh->file_path, urlbak, &(zgh->oattr), resize_cb, (void *)op); 
         if(ret != GLOBUS_SUCCESS)
@@ -1771,17 +1763,11 @@ static int zoidfs_gridftp_resize(const zoidfs_handle_t * handle,
             globus_cond_wait(&(op->cond), &(op->lock));
         globus_mutex_unlock(&(op->lock));
 
-        /* ctl ch op done, unlock */
-        globus_mutex_unlock(&zoidfs_gridftp_ctl_ch_lock);
-
         /* transfer part of the file back to the orig file name */
         op->resize_done = GLOBUS_FALSE;
         
-        /* lock before ctl ch op */
-        globus_mutex_lock(&zoidfs_gridftp_ctl_ch_lock);
-
         /* regsiter partial 3rd party transfer */
-        ret = globus_ftp_client_partial_third_party_transfer(&(zgh->gftpfh), urlbak, &(zgh->oattr), zgh->file_path, &(zgh->oattr), GLOBUS_NULL, 0, (globus_off_t)size, resize_cb, (void *)zgh);
+        ret = globus_ftp_client_partial_third_party_transfer(&(zgh->gftpfh), urlbak, &(zgh->oattr), zgh->file_path, &(zgh->oattr), GLOBUS_NULL, 0, (globus_off_t)size, resize_cb, (void *)op);
         if(ret != GLOBUS_SUCCESS)
         {
             ZOIDFS_GRIDFTP_PERROR("%s : ERROR could not register resize partial put\n", __func__);
@@ -1792,18 +1778,12 @@ static int zoidfs_gridftp_resize(const zoidfs_handle_t * handle,
 
         /* wait for the callback to finish */
         globus_mutex_lock(&(op->lock));
-        while (op->resize_done != GLOBUS_TRUE && op->resize_wb_done != GLOBUS_TRUE)
+        while (op->resize_done != GLOBUS_TRUE)
             globus_cond_wait(&(op->cond), &(op->lock));
         globus_mutex_unlock(&(op->lock));
 
-        /* ctl ch op done, unlock */
-        globus_mutex_unlock(&zoidfs_gridftp_ctl_ch_lock);
-
         /* delete the old file (in the bak url) */
         op->resize_done = GLOBUS_FALSE;
-        
-        /* lock before ctl ch op */
-        globus_mutex_lock(&zoidfs_gridftp_ctl_ch_lock);
 
         /* run the delete */
         ret = globus_ftp_client_delete(&(zgh->gftpfh), urlbak, &(zgh->oattr), resize_cb, (void *)op);
@@ -1820,10 +1800,10 @@ static int zoidfs_gridftp_resize(const zoidfs_handle_t * handle,
         while (op->resize_done != GLOBUS_TRUE)
             globus_cond_wait(&(op->cond), &(op->lock));
         globus_mutex_unlock(&(op->lock));
-
-        /* ctl ch op done, unlock */
-        globus_mutex_unlock(&zoidfs_gridftp_ctl_ch_lock);
     }
+
+    /* ctl ch op done, unlock */
+    globus_mutex_unlock(&zoidfs_gridftp_ctl_ch_lock);
 
 cleanup:
     globus_cond_destroy(&(op->cond));
@@ -1869,6 +1849,18 @@ static int zoidfs_gridftp_init(void)
 
 static int zoidfs_gridftp_finalize(void)
 {
+    if(zoidfs_gridftp_username)
+    {
+        free(zoidfs_gridftp_username);
+        zoidfs_gridftp_username = NULL;
+    }
+
+    if(zoidfs_gridftp_userpass)
+    {
+        free(zoidfs_gridftp_userpass);
+        zoidfs_gridftp_userpass = NULL;
+    }
+
     /* cleanup the handle tree */
     zoidfs_gridftp_handle_tree_cleanup();
 
@@ -1916,6 +1908,16 @@ static int zoidfs_gridftp_set_options(ConfigHandle c, SectionHandle s)
     cf_getKey(c, s, "tcpbuffersize", keyvalue, keysize + 1);
     tcp_buffer_size = atoi(keyvalue);
     free(keyvalue);
+
+    /* get credentials */
+    keysize = cf_getKey(c, s, "username", NULL, 0);
+    zoidfs_gridftp_username = (char *)malloc(sizeof(char) * (keysize + 1));
+    cf_getKey(c, s, "username", zoidfs_gridftp_username, keysize + 1);
+    keysize = cf_getKey(c, s, "userpass", NULL, 0);
+    zoidfs_gridftp_userpass = (char *)malloc(sizeof(char) * (keysize + 1));
+    cf_getKey(c, s, "userpass", zoidfs_gridftp_userpass, keysize + 1);
+    zoidfs_gridftp_subject = (char *)malloc(sizeof(char) * 1);
+    zoidfs_gridftp_subject[0] = '\0';
 
     return ZFS_OK;
 }
