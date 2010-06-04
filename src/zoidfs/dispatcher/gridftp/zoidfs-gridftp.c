@@ -482,9 +482,7 @@ static void write_data_cb(void * myargs, globus_ftp_client_handle_t * handle, gl
         return;
     }
 
-    fprintf(stderr, "%s : length = %lu bytes_written = %lu\n", __func__, length, *bytes_written);
     *bytes_written += length;
-    fprintf(stderr, "%s : bytes_written = %lu\n", __func__, *bytes_written);
     if(!eof)
     {
         globus_ftp_client_register_write(handle, buffer, length, offset, GLOBUS_TRUE, write_data_cb, (void *)bytes_written);
@@ -758,7 +756,6 @@ static zoidfs_gridftp_handle_t * zoidfs_gridftp_setup_gridftp_handle(const zoidf
     /* enable gridftp connection caching */
     if(connection_caching_enabled)
     {
-        fprintf(stderr, "%f : connection_caching_enabled\n", __func__);
         ret = globus_ftp_client_handleattr_set_cache_all(&(zgh->hattr), GLOBUS_TRUE);
         if(ret != GLOBUS_SUCCESS)
         {
@@ -860,7 +857,6 @@ static int zoidfs_gridftp_getattr(const zoidfs_handle_t * handle,
     globus_cond_init(&(op->cond), GLOBUS_NULL);
     op->getattr_done = GLOBUS_FALSE;
 
-#if 0
     /* lock before ctl ch op */
     globus_mutex_lock(&zoidfs_gridftp_ctl_ch_lock);
 
@@ -915,7 +911,7 @@ static int zoidfs_gridftp_getattr(const zoidfs_handle_t * handle,
 
     /* ctl ch op done, unlock */
     globus_mutex_unlock(&zoidfs_gridftp_ctl_ch_lock);
-#endif
+
     /* lock before ctl ch op */
     globus_mutex_lock(&zoidfs_gridftp_ctl_ch_lock);
 
@@ -1304,7 +1300,6 @@ static int zoidfs_gridftp_write(const zoidfs_handle_t * handle,
         globus_mutex_unlock(&zoidfs_gridftp_ctl_ch_lock);
         goto cleanup;
     }
-    fprintf(stderr, "%s : partial put\n", __func__);
 
     /* IO */
     for(i = 0 ; i  < mem_count ; i++)
@@ -1317,7 +1312,6 @@ static int zoidfs_gridftp_write(const zoidfs_handle_t * handle,
             eofvar = GLOBUS_TRUE;
 
         /* register the write */
-        fprintf(stderr, "%s : register write, foff = %lu\n", __func__, foff);
         ret = globus_ftp_client_register_write(&(zgh->gftpfh), (globus_byte_t *)mem_starts[i], (globus_size_t)mem_sizes[i], foff, eofvar, write_data_cb, (void *) op);
         if(ret != GLOBUS_SUCCESS)
         {
