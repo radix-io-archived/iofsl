@@ -117,6 +117,14 @@ requesthandler {
         filesystem = "/dev/shm/sysio";
     }
 
+    gridftp {
+        username = "copej";
+        userpass = "";
+        subject = "";
+        enableconnectioncache = "1";
+        parallelstreams = "4";
+    }
+
     //
     // options for the local handler
     //
