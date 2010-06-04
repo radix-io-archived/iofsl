@@ -148,6 +148,9 @@ typedef struct zoidfs_gridftp_handle
     /* is this a valid handle */
     int validHandle;
 
+    /* handle lock */
+    globus_mutex_t lock;
+
 } zoidfs_gridftp_handle_t;
 
 /* handle create and destroy funcs */
@@ -161,6 +164,9 @@ static zoidfs_gridftp_handle_t * zoidfs_gridftp_handle_create()
     h->key = 0;
     h->file_path = NULL;
     h->validHandle = 0;
+
+    /* init the handle lock */
+    globus_mutex_init(&(h->lock), GLOBUS_NULL);
 
     return h;
 }
@@ -454,8 +460,10 @@ static void write_ctl_cb(void * myargs, globus_ftp_client_handle_t * UNUSED(hand
     {
         op->wrote_file = GLOBUS_TRUE;
     }
+    globus_mutex_lock(&(op->lock));
     op->write_ctl_done = GLOBUS_TRUE;
     globus_cond_signal(&(op->cond));
+    globus_mutex_unlock(&(op->lock));
 }
 
 static void write_data_cb(void * myargs, globus_ftp_client_handle_t * handle, globus_object_t * error,
@@ -471,9 +479,12 @@ static void write_data_cb(void * myargs, globus_ftp_client_handle_t * handle, gl
 #ifdef ZOIDFS_GRIDFTP_DEBUG
         ZOIDFS_GRIDFTP_PERROR("%s\n", globus_object_printable_to_string(error));
 #endif
+        return;
     }
 
+    fprintf(stderr, "%s : length = %lu bytes_written = %lu\n", __func__, length, *bytes_written);
     *bytes_written += length;
+    fprintf(stderr, "%s : bytes_written = %lu\n", __func__, *bytes_written);
     if(!eof)
     {
         globus_ftp_client_register_write(handle, buffer, length, offset, GLOBUS_TRUE, write_data_cb, (void *)bytes_written);
@@ -747,6 +758,7 @@ static zoidfs_gridftp_handle_t * zoidfs_gridftp_setup_gridftp_handle(const zoidf
     /* enable gridftp connection caching */
     if(connection_caching_enabled)
     {
+        fprintf(stderr, "%f : connection_caching_enabled\n", __func__);
         ret = globus_ftp_client_handleattr_set_cache_all(&(zgh->hattr), GLOBUS_TRUE);
         if(ret != GLOBUS_SUCCESS)
         {
@@ -754,6 +766,34 @@ static zoidfs_gridftp_handle_t * zoidfs_gridftp_setup_gridftp_handle(const zoidf
             ZOIDFS_GRIDFTP_PERROR("%s : exit\n", __func__);
             return NULL;
         }
+    }
+
+    /* set the ftp parallelism */
+    globus_ftp_control_parallelism_t pftp;
+    pftp.mode = GLOBUS_FTP_CONTROL_PARALLELISM_FIXED;
+    if(parallel_streams <= 0)
+    {
+        pftp.fixed.size = 1;
+    }
+    else
+    {
+        pftp.fixed.size = parallel_streams;
+    }
+    ret = globus_ftp_client_operationattr_set_parallelism(&(zgh->oattr), &pftp);
+    if(ret != GLOBUS_SUCCESS)
+    {
+        ZOIDFS_GRIDFTP_PERROR("%s : ERROR could not set ftp parallelism\n", __func__);
+        ZOIDFS_GRIDFTP_PERROR("%s : exit\n", __func__);
+        return NULL;
+    } 
+
+    /* set the mode to extended so we can support out of order transfers */
+    ret = globus_ftp_client_operationattr_set_mode(&(zgh->oattr), GLOBUS_FTP_CONTROL_MODE_EXTENDED_BLOCK);
+    if(ret != GLOBUS_SUCCESS)
+    {
+        ZOIDFS_GRIDFTP_PERROR("%s : ERROR could not set mode\n", __func__);
+        ZOIDFS_GRIDFTP_PERROR("%s : exit\n", __func__);
+        return NULL;
     }
 
     /* set the authorization params */
@@ -815,10 +855,12 @@ static int zoidfs_gridftp_getattr(const zoidfs_handle_t * handle,
         goto cleanup;
     }
 
+    globus_mutex_lock(&(zgh->lock));
     globus_mutex_init(&(op->lock), GLOBUS_NULL);
     globus_cond_init(&(op->cond), GLOBUS_NULL);
     op->getattr_done = GLOBUS_FALSE;
 
+#if 0
     /* lock before ctl ch op */
     globus_mutex_lock(&zoidfs_gridftp_ctl_ch_lock);
 
@@ -873,6 +915,9 @@ static int zoidfs_gridftp_getattr(const zoidfs_handle_t * handle,
 
     /* ctl ch op done, unlock */
     globus_mutex_unlock(&zoidfs_gridftp_ctl_ch_lock);
+#endif
+    /* lock before ctl ch op */
+    globus_mutex_lock(&zoidfs_gridftp_ctl_ch_lock);
 
     /* get the file stat info */
     op->getattr_done = GLOBUS_FALSE;
@@ -884,9 +929,6 @@ static int zoidfs_gridftp_getattr(const zoidfs_handle_t * handle,
         err = ZFSERR_OTHER;
         goto cleanup;
     }
-
-    /* lock before ctl ch op */
-    globus_mutex_lock(&zoidfs_gridftp_ctl_ch_lock);
 
     /* wait for the callback to finish */
     globus_mutex_lock(&(op->lock));
@@ -942,7 +984,7 @@ static int zoidfs_gridftp_getattr(const zoidfs_handle_t * handle,
         /* parse the file size */
         else if(j == 5)
         {
-            /* we already did this... skip */
+            attr->size = atoi(token); 
         }
         /* parse the timestamp */
         else if(j == 6 || j ==7 || j == 8)
@@ -957,6 +999,7 @@ static int zoidfs_gridftp_getattr(const zoidfs_handle_t * handle,
     }
 
 cleanup:
+    globus_mutex_unlock(&(zgh->lock));
     globus_cond_destroy(&(op->cond));
     globus_mutex_destroy(&(op->lock));
     if(stat_buffer)
@@ -1003,6 +1046,7 @@ static int zoidfs_gridftp_lookup(const zoidfs_handle_t * parent_handle,
         return ZFS_OK;
     }
 
+    globus_mutex_lock(&(zgh->lock));
     op = zoidfs_gridftp_op_create();
 
     /* setup gridftp exist test */
@@ -1041,6 +1085,7 @@ static int zoidfs_gridftp_lookup(const zoidfs_handle_t * parent_handle,
     }
 
 cleanup:
+    globus_mutex_unlock(&(zgh->lock));
     globus_cond_destroy(&(op->cond));
     globus_mutex_destroy(&(op->lock));
     if(op)
@@ -1214,6 +1259,7 @@ static int zoidfs_gridftp_write(const zoidfs_handle_t * handle,
         err = ZFSERR_OTHER;
         goto cleanup;
     }
+    globus_mutex_lock(&(zgh->lock));
 
     op = zoidfs_gridftp_op_create();
 
@@ -1255,13 +1301,15 @@ static int zoidfs_gridftp_write(const zoidfs_handle_t * handle,
         ZOIDFS_GRIDFTP_PERROR("%s : ERROR could not register partial put\n", __func__);
         ZOIDFS_GRIDFTP_PERROR("%s : exit\n", __func__);
         err = ZFSERR_OTHER;
+        globus_mutex_unlock(&zoidfs_gridftp_ctl_ch_lock);
         goto cleanup;
     }
+    fprintf(stderr, "%s : partial put\n", __func__);
 
     /* IO */
     for(i = 0 ; i  < mem_count ; i++)
     {
-        globus_bool_t eofvar = GLOBUS_FALSE;
+        globus_bool_t eofvar = GLOBUS_TRUE;
         globus_off_t foff = file_starts[i];
 
         /* if this is the last element to write, pass EOF == TRUE */
@@ -1269,12 +1317,14 @@ static int zoidfs_gridftp_write(const zoidfs_handle_t * handle,
             eofvar = GLOBUS_TRUE;
 
         /* register the write */
+        fprintf(stderr, "%s : register write, foff = %lu\n", __func__, foff);
         ret = globus_ftp_client_register_write(&(zgh->gftpfh), (globus_byte_t *)mem_starts[i], (globus_size_t)mem_sizes[i], foff, eofvar, write_data_cb, (void *) op);
         if(ret != GLOBUS_SUCCESS)
         {
             ZOIDFS_GRIDFTP_PERROR("%s : ERROR could not register write\n", __func__);
             ZOIDFS_GRIDFTP_PERROR("%s : exit\n", __func__);
             err = ZFSERR_OTHER;
+            globus_mutex_unlock(&zoidfs_gridftp_ctl_ch_lock);
             goto cleanup;
         }
     }
@@ -1296,6 +1346,7 @@ cleanup:
         free(op);
         op = NULL;
     }
+    globus_mutex_unlock(&(zgh->lock));
 
     return err;
 }
@@ -1329,6 +1380,7 @@ static int zoidfs_gridftp_create(const zoidfs_handle_t * parent_handle,
         return ZFS_OK;
     }
 
+    globus_mutex_lock(&(zgh->lock));
     op = zoidfs_gridftp_op_create();
 
     /* setup gridftp create */
@@ -1386,6 +1438,7 @@ static int zoidfs_gridftp_create(const zoidfs_handle_t * parent_handle,
     }
 
 cleanup:
+    globus_mutex_unlock(&(zgh->lock));
     globus_cond_destroy(&(op->cond));
     globus_mutex_destroy(&(op->lock));
     if(op)
