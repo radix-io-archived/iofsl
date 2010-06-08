@@ -508,12 +508,12 @@ static void resize_data_cb(void * myargs, globus_ftp_client_handle_t * handle, g
 
 static void write_ctl_cb(void * myargs, globus_ftp_client_handle_t * UNUSED(handle), globus_object_t * error)
 {
-    //cmtfprintf(stderr, "%s : enter arg = %p\n", __func__, myargs);
+    ZOIDFS_GRIDFTP_INFO(stderr, "%s : enter arg = %p\n", __func__, myargs);
     zoidfs_gridftp_op_t * op = (zoidfs_gridftp_op_t *)myargs;
     if(error)
     {
 #ifdef ZOIDFS_GRIDFTP_DEBUG
-        //cmtfprintf(stderr, "%s\n", globus_object_printable_to_string(error));
+        ZOIDFS_GRIDFTP_INFO(stderr, "%s\n", globus_object_printable_to_string(error));
 #endif
     }
     else
@@ -524,7 +524,7 @@ static void write_ctl_cb(void * myargs, globus_ftp_client_handle_t * UNUSED(hand
     op->write_ctl_done = GLOBUS_TRUE;
     globus_cond_signal(&(op->cond));
     globus_mutex_unlock(&(op->lock));
-    //cmtfprintf(stderr, "%s : exit\n", __func__);
+    ZOIDFS_GRIDFTP_INFO(stderr, "%s : exit\n", __func__);
 }
 
 static void write_data_cb(void * myargs, globus_ftp_client_handle_t * handle, globus_object_t * error,
@@ -534,7 +534,7 @@ static void write_data_cb(void * myargs, globus_ftp_client_handle_t * handle, gl
     globus_size_t * bytes_written = NULL;
     zoidfs_gridftp_op_t * op = (zoidfs_gridftp_op_t *)myargs;
 
-    //cmtfprintf(stderr, "%s : enter arg = %p, off = %lu, length = %lu, tb = %lu\n", __func__, myargs, offset, length, op->total_bytes);
+    ZOIDFS_GRIDFTP_INFO(stderr, "%s : enter arg = %p, off = %lu, length = %lu, tb = %lu\n", __func__, myargs, offset, length, op->total_bytes);
 
     bytes_written = &(op->bytes_written);
     if(error)
@@ -550,11 +550,11 @@ static void write_data_cb(void * myargs, globus_ftp_client_handle_t * handle, gl
     //*bytes_written += length;
     if(!eof)
     {
-        ////cmtfprintf(stderr, "%s : op tb = %lu, bw = %lu\n", __func__, op->total_bytes, *bytes_written);
+        //ZOIDFS_GRIDFTP_INFO(stderr, "%s : op tb = %lu, bw = %lu\n", __func__, op->total_bytes, *bytes_written);
         //globus_ftp_client_register_write(handle, buffer, length, offset, GLOBUS_TRUE, write_data_cb, myargs);
     }
-    //cmtfprintf(stderr, "%s : op tb = %lu, bw = %lu\n", __func__, op->total_bytes, *bytes_written);
-    //cmtfprintf(stderr, "%s : exit\n", __func__);
+    ZOIDFS_GRIDFTP_INFO(stderr, "%s : op tb = %lu, bw = %lu\n", __func__, op->total_bytes, *bytes_written);
+    ZOIDFS_GRIDFTP_INFO(stderr, "%s : exit\n", __func__);
 }
 
 static void read_ctl_cb(void * myargs, globus_ftp_client_handle_t * UNUSED(handle), globus_object_t * error)
@@ -1339,7 +1339,7 @@ static int zoidfs_gridftp_write(const zoidfs_handle_t * handle,
 
     for( i = 0 ; i < file_count ; i++)
     {
-        //cmtfprintf(stderr, "%s : i = %i, file_starts[%i] = %lu, file_sizes[%i] = %lu\n", __func__, i, i, file_starts[i], i, file_sizes[i]);
+        ZOIDFS_GRIDFTP_INFO(stderr, "%s : i = %i, file_starts[%i] = %lu, file_sizes[%i] = %lu\n", __func__, i, i, file_starts[i], i, file_sizes[i]);
     }
 
     /* find the start and end offsets for this operation */
@@ -1365,13 +1365,13 @@ static int zoidfs_gridftp_write(const zoidfs_handle_t * handle,
         }
         op->total_bytes += file_sizes[i];
     }
-    //cmtfprintf(stderr, "%s : start_i = %i, start = %lu, end_i = %i, end = %lu, tb = %lu\n", __func__, start_i, start, end_i, end, op->total_bytes);
+    ZOIDFS_GRIDFTP_INFO(stderr, "%s : start_i = %i, start = %lu, end_i = %i, end = %lu, tb = %lu\n", __func__, start_i, start, end_i, end, op->total_bytes);
 
     /* lock before ctl ch op */
     globus_mutex_lock(&zoidfs_gridftp_ctl_ch_lock);
 
     /* start the partial put */
-    //cmtfprintf(stderr, "%s : register partial put start = %lu, end = %lu\n", __func__, start, end);
+    ZOIDFS_GRIDFTP_INFO(stderr, "%s : register partial put start = %lu, end = %lu\n", __func__, start, end);
     ret = globus_ftp_client_partial_put(&(zgh->gftpfh), zgh->file_path, &(zgh->oattr), GLOBUS_NULL, start, end, write_ctl_cb, op);
     if(ret != GLOBUS_SUCCESS)
     {
@@ -1399,15 +1399,15 @@ static int zoidfs_gridftp_write(const zoidfs_handle_t * handle,
         if(i == end_i)
         {
             eofvar = GLOBUS_TRUE;
-            //cmtfprintf(stderr, "%s : eof! foff = %lu\n", __func__, foff);
+            ZOIDFS_GRIDFTP_INFO(stderr, "%s : eof! foff = %lu\n", __func__, foff);
         }
         else
         {
-            //cmtfprintf(stderr, "%s : not eof, foff = %lu\n", __func__, foff);
+            ZOIDFS_GRIDFTP_INFO(stderr, "%s : not eof, foff = %lu\n", __func__, foff);
         }
 
         /* register the write */
-        //cmtfprintf(stderr, "%s : register write j = %i i = %i off = %lu, length = %lu, mem = %p, tb = %lu, op = %p\n", __func__, j, i, foff, mem_sizes[i], mem_starts[i], op->total_bytes, op);
+        ZOIDFS_GRIDFTP_INFO(stderr, "%s : register write j = %i i = %i off = %lu, length = %lu, mem = %p, tb = %lu, op = %p\n", __func__, j, i, foff, mem_sizes[i], mem_starts[i], op->total_bytes, op);
         ret = globus_ftp_client_register_write(&(zgh->gftpfh), (globus_byte_t *)mem_starts[i], (globus_size_t)mem_sizes[i], foff, eofvar, write_data_cb, (void *) op);
         if(ret != GLOBUS_SUCCESS)
         {
@@ -1422,7 +1422,7 @@ static int zoidfs_gridftp_write(const zoidfs_handle_t * handle,
     free(sortdata);
 
     // do the eof
-    //cmtfprintf(stderr, "%s : register write i = %i off = %lu, length = %lu, mem = %p, tb = %lu, op = %p\n", __func__, end_i, file_starts[end_i], mem_sizes[end_i], mem_starts[end_i], op->total_bytes, op);
+    ZOIDFS_GRIDFTP_INFO(stderr, "%s : register write i = %i off = %lu, length = %lu, mem = %p, tb = %lu, op = %p\n", __func__, end_i, file_starts[end_i], mem_sizes[end_i], mem_starts[end_i], op->total_bytes, op);
     ret = globus_ftp_client_register_write(&(zgh->gftpfh), (globus_byte_t *)mem_starts[end_i], (globus_size_t)mem_sizes[end_i], (globus_off_t)file_starts[end_i], GLOBUS_TRUE, write_data_cb, (void *) op);
         if(ret != GLOBUS_SUCCESS)
         {
@@ -1437,9 +1437,9 @@ static int zoidfs_gridftp_write(const zoidfs_handle_t * handle,
     globus_mutex_lock(&(op->lock));
     while (op->write_ctl_done != GLOBUS_TRUE)
     {
-        //cmtfprintf(stderr, "%s : wait for signal\n", __func__);
+        ZOIDFS_GRIDFTP_INFO(stderr, "%s : wait for signal\n", __func__);
         globus_cond_wait(&(op->cond), &(op->lock));
-        //cmtfprintf(stderr, "%s : recv'd signal\n", __func__);
+        ZOIDFS_GRIDFTP_INFO(stderr, "%s : recv'd signal\n", __func__);
     }
     globus_mutex_unlock(&(op->lock));
 
