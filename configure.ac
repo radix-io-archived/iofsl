@@ -136,6 +136,7 @@ AC_HEADER_STDC
 AC_CHECK_HEADERS([stdlib.h string.h unistd.h execinfo.h pthread.h])
 
 
+# note that we should be using the C++ boost inttypes header instead.
 # Checks for typedefs, structures, and compiler characteristics.
 AC_C_CONST
 AC_C_INLINE
@@ -290,6 +291,53 @@ AC_SUBST([BMI_CPPFLAGS])
 AC_SUBST([BMI_LDFLAGS])
 AC_SUBST([BMI_LIBS])
 
+#
+# GridFTP
+#
+DISPATCH_GRIDFTP=0
+GRIDFTP_CPPFLAGS=
+GRIDFTP_CFLAGS=
+GRIDFTP_LIBS=
+GRIDFTP_LDFLAGS=
+
+AC_ARG_WITH([gridftp],[AS_HELP_STRING([--with-gridftp@<:@=DIR@:>@],
+                        [location of GridFTP library])],
+                   [gridftpdir=$withval])
+
+
+use_gridftp=0
+if test "x$gridftpdir" != "x" ; then
+    GRIDFTP_CPPFLAGS="-I${gridftpdir}/include/gcc64dbgpthr"
+    GRIDFTP_LIBS="-lglobus_ftp_client_gcc64dbgpthr -lglobus_ftp_control_gcc64dbgpthr -lglobus_ftp_control_gcc64dbgpthr -lglobus_io_gcc64dbgpthr -lgssapi_error_gcc64dbgpthr -lglobus_gss_assist_gcc64dbgpthr -lglobus_gssapi_gsi_gcc64dbgpthr -lglobus_gsi_proxy_core_gcc64dbgpthr -lglobus_gsi_credential_gcc64dbgpthr -lglobus_gsi_callback_gcc64dbgpthr -lglobus_oldgaa_gcc64dbgpthr -lglobus_gsi_sysconfig_gcc64dbgpthr -lglobus_gsi_cert_utils_gcc64dbgpthr -lglobus_openssl_gcc64dbgpthr -lglobus_xio_gcc64dbgpthr -lglobus_openssl_error_gcc64dbgpthr -lglobus_callout_gcc64dbgpthr -lglobus_proxy_ssl_gcc64dbgpthr -lglobus_common_gcc64dbgpthr -lltdl_gcc64dbgpthr"
+    GRIDFTP_LDFLAGS="-L${gridftpdir}/lib"
+
+    OLDCPPFLAGS="$CPPFLAGS"
+    OLDLDFLAGS="$LDFLAGS"
+    OLDLIBS="$LIBS"
+    CPPFLAGS="$CPPFLAGS $GRIDFTP_CPPFLAGS"
+    LDFLAGS="$LDFLAGS $GRIDFTP_LDFLAGS"
+    LIBS="$GRIDFTP_LIBS"
+
+    AC_LANG_PUSH([C])
+    AC_CHECK_LIB([globus_ftp_client_gcc64dbgpthr], [globus_ftp_client_handle_init],[],
+             [AC_MSG_ERROR([Could not find usable gridftp library!])])
+    AC_CHECK_LIB([globus_ftp_control_gcc64dbgpthr], [globus_ftp_control_handle_init],[],
+             [AC_MSG_ERROR([Could not find usable gridftp library!])])
+    AC_LANG_POP
+
+    CPPFLAGS="$OLDCPPFLAGS"
+    LDFLAGS="$OLDLDFLAGS"
+    LIBS="$OLDLIBS"
+    AC_DEFINE([USE_DISPATCHER_GRIDFTP],[1],[Build GridFTP zoidfs dispatcher driver])
+    use_gridftp=1
+fi
+
+AC_SUBST([GRIDFTP_CPPFLAGS])
+AC_SUBST([GRIDFTP_LDFLAGS])
+AC_SUBST([GRIDFTP_LIBS])
+AM_CONDITIONAL([DISPATCH_GRIDFTP],[test ${use_gridftp} == 1])
+
+#
 # Check for differences in size_t and bmi_size_t
 AC_CHECK_SIZEOF([size_t])
 AC_CHECK_SIZEOF([int64_t]) # bmi_size_t equivalent
@@ -500,10 +548,10 @@ fi
 #
 # save the ZFS_DISPATCHER flags
 #
-ZFS_DISPATCHER_CFLAGS="${SYSIO_CFLAGS} ${PVFS2_CFLAGS}"
-ZFS_DISPATCHER_CPPFLAGS="${SYSIO_CPPFLAGS} -D_LARGEFILE64_SOURCE -DHAVE_POSIX_1003_READLINK -D__USE_LARGEFILE64 ${PVFS2_CPPFLAGS}"
-ZFS_DISPATCHER_LDFLAGS="${SYSIO_LDFLAGS} ${PVFS2_LDFLAGS}"
-ZFS_DISPATCHER_LIBS="${SYSIO_LIBS} ${PVFS2_LIBS} ${SYSIO_LIBS}"
+ZFS_DISPATCHER_CFLAGS="${SYSIO_CFLAGS} ${PVFS2_CFLAGS} ${GRIDFTP_CFLAGS}"
+ZFS_DISPATCHER_CPPFLAGS="${SYSIO_CPPFLAGS} -D_LARGEFILE64_SOURCE -DHAVE_POSIX_1003_READLINK -D__USE_LARGEFILE64 ${PVFS2_CPPFLAGS} ${GRIDFTP_CPPFLAGS}"
+ZFS_DISPATCHER_LDFLAGS="${SYSIO_LDFLAGS} ${PVFS2_LDFLAGS} ${GRIDFTP_LDFLAGS}"
+ZFS_DISPATCHER_LIBS="${SYSIO_LIBS} ${PVFS2_LIBS} ${SYSIO_LIBS} ${GRIDFTP_LIBS}"
 
 AC_SUBST([ZFS_DISPATCHER_CFLAGS])
 AC_SUBST([ZFS_DISPATCHER_CPPFLAGS])
@@ -523,14 +571,36 @@ AX_FINDLIBEXT
 # macro defines BOOST_CPPFLAGS, BOOST_LDFLAGS
 # and BOOST_THREAD_LIB, BOOST_REGEX_LIB, ...
 # is already subst
-AX_BOOST_BASE([1.35])
+AX_BOOST_BASE([1.36])
 AX_BOOST_THREAD
 AX_BOOST_PROGRAM_OPTIONS
 AX_BOOST_REGEX
 AX_BOOST_DATE_TIME
 AX_BOOST_UNIT_TEST_FRAMEWORK
 
+OLD_CPPFLAGS="$CPPFLAGS"
+CPPFLAGS="$CPPFLAGS $BOOST_CPPFLAGS"
 AX_BOOST_SPIRIT_OLD
+CPPFLAGS="$OLD_CPPFLAGS"
+
+dnl =========================================================================
+dnl  gcc attribute support
+dnl =========================================================================
+
+AC_CACHE_CHECK([whether __attribute__ allowed],
+pac_cv_gnu_attr_unused,[
+AC_TRY_COMPILE([int foo(int) __attribute__ ((unused));],[int a;],
+pac_cv_gnu_attr_unused=yes,pac_cv_gnu_attr_unused=no)])
+
+dnl AC_CACHE_CHECK([whether __attribute__((format)) allowed],
+dnl pac_cv_gnu_attr_format,[
+dnl AC_TRY_COMPILE([int foo(char *,...) __attribute__ ((format(printf,1,2)));],[int a;],
+dnl pac_cv_gnu_attr_format=yes,pac_cv_gnu_attr_format=no)])
+
+if test "$pac_cv_gnu_attr_unused" = "yes" ; then
+    AC_DEFINE(HAVE_GCC_ATTRIBUTE_UNUSED,[1],
+              [Define if GNU __attribute__ unused is supported])
+fi
 
 dnl =========================================================================
 dnl  Valgrind

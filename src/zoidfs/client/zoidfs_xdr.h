@@ -6,8 +6,8 @@
  * Dries Kimpe <dkimpe@mcs.anl.gov>
  */
 
-#ifndef _ZOIDFS_XDR_H_
-#define _ZOIDFS_XDR_H_
+#ifndef ZOIDFS_XDR_H
+#define ZOIDFS_XDR_H
 
 #include<stdio.h>
 #include<string.h>

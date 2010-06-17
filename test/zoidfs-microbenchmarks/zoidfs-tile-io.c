@@ -20,6 +20,7 @@
 #include <sys/time.h>
 
 #include "zoidfs/zoidfs.h"
+#include "zoidfs/hints/zoidfs-hints.h"
 
 /* default values for runtime parameters */
 enum {
@@ -351,7 +352,15 @@ int main(int argc,
             exit(1);
 	    }
 	    else {
+            //zoidfs_op_hint_t * write_hint  = zoidfs_hint_init(1);
+            /* enable pipeline */
+            //zoidfs_hint_add(&write_hint, strdup(ZOIDFS_ENABLE_PIPELINE), strdup("0"), 16, ZOIDFS_HINTS_ZC);
+            /* disable pipeline */
+            /*zoidfs_hint_add(&write_hint, strdup(ZOIDFS_ENABLE_PIPELINE), strdup("0"), 16, ZOIDFS_HINTS_ZC);*/
+            //zoidfs_hint_add(&write_hint, strdup(ZOIDFS_PIPELINE_SIZE), strdup("8000000"), 16, ZOIDFS_HINTS_ZC);
 		    ret = zoidfs_write(&fh, mem_count, (const void **)mem_starts, mem_sizes, file_count, file_starts, file_sizes, ZOIDFS_NO_OP_HINT);
+		    //ret = zoidfs_write(&fh, mem_count, (const void **)mem_starts, mem_sizes, file_count, file_starts, file_sizes, write_hint);
+            //zoidfs_hint_destroy(&write_hint);
 	    }
 	}
 	else {

@@ -7,6 +7,7 @@
 #include <csignal>
 #include "iofwdutil/IOFWDLog.hh"
 #include "SMClient.hh"
+#include "iofwdutil/ThreadPool.hh"
 
 namespace sm
 {
@@ -14,11 +15,15 @@ namespace sm
 
 /**
  * SMManager acts as the scheduler and execution context for a collection 
- * of entities that typically need to run for a small amount of times
+ * of entities that typically need to run for a small amount of time
  * before they go back to sleep.
  *
- * The client uses a shared pointer so it will be freed automatically when 
+ * The client uses a shared pointer so it will be freed automatically when
  * it can no longer be rescheduled.
+ *
+ * @TODO: remove old code from when SMManager still had a thread of its own.
+ * @TODO: schedule could use boost::bind with an intrusive_ptr to avoid
+ *        new SMHelper()
  */
 class SMManager
 {
@@ -27,8 +32,7 @@ public:
    /**
     * Construct an SMManager with the specified number of worker threads.
     */
-   SMManager (size_t threads);
-
+   SMManager (size_t threads  = 0);
 
    /**
     * Queue an item for execution.
@@ -36,13 +40,17 @@ public:
     */
    void schedule (SMClient * client);
 
-   /// Stop all worker threads
-   void stopThreads ();
-
-   /// Start specified number of worker threads
-   void startThreads (size_t threads = 0);
+   /**
+    * Immediately execute the client until it blocks.
+    * If -- after execution -- the client reference count
+    * == 0, it will be deleted.
+    */
+   void runNow (SMClient * client);
 
    ~SMManager ();
+
+   void startThreads();
+   void stopThreads();
 
 protected:
 
@@ -64,6 +72,26 @@ protected:
    sig_atomic_t finish_;
 
    iofwdutil::zlog::ZLogSource & log_;
+
+   /* wrapper for the SM ops sent to the ThreadPool */
+   struct SMHelper
+   {
+      SMHelper(SMClient * client) : client_(client)
+      {
+      }
+
+      /* after running the SM, force the SM client to deallocate */ 
+      void run()
+      {
+         client_->execute();
+         client_.reset(0);
+      }
+
+      protected:
+         SMClientSharedPtr client_;
+   };
+
+
 };
 
 //===========================================================================

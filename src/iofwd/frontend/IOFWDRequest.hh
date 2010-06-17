@@ -18,24 +18,26 @@
 
 #include "iofwd/Request.hh"
 #include "iofwdutil/typestorage.hh"
-#include "iofwdutil/completion/CompletionID.hh"
-
-#include "iofwdutil/completion/BMIResource.hh"
 
 #include "iofwdutil/IOFWDLog.hh"
-
-using iofwdutil::completion::CompletionID;
+#include "IOFWDResources.hh"
 
 namespace iofwd
 {
    namespace frontend
    {
+//===========================================================================
 
+
+/**
+ * \brief IOFWDRequest provides common functionality to all the
+ *        IOFWDxxxRequest implementations.
+ */
 class IOFWDRequest
 {
 public:
-   IOFWDRequest (iofwdutil::bmi::BMIContext & bmi, const BMI_unexpected_info & info,
-         iofwdutil::completion::BMIResource & bmires);
+   IOFWDRequest (const BMI_unexpected_info & info,
+         IOFWDResources & res);
 
    /// Release the memory of the incoming request
    void freeRawRequest ();
@@ -55,9 +57,11 @@ protected:
 
    void decodeFileSpec (FileInfo & info)
    {
+      // @TODO: This probably needs to go!
       memset(info.parent_handle.data, 0, sizeof(uint8_t) * 32);
       memset(info.full_path, 0, ZOIDFS_PATH_MAX);
       memset(info.component_name, 0, ZOIDFS_NAME_MAX);
+
       process(req_reader_, encoder::FileSpecHelper (&info.parent_handle,
               info.component_name, info.full_path));
    }
@@ -71,9 +75,12 @@ protected:
 
 protected:
 
-   // Convenience functions for simple requests (lookup, mkdir, ... )
+   /** 
+    * Temporary helper function until we can remove CompletionID related
+    * stuff. After it is removed, this can move into simpleReply
+    */
    template <typename SENDOP>
-   CompletionID * simpleReply (const SENDOP & op)
+   void simpleReplyCommon (const SENDOP & op)
    {
       encoder::xdr::XDRSizeProcessor s;
       applyTypes (s, op);
@@ -83,25 +90,72 @@ protected:
       // Since we have actual data we can use the actual size as the
       // upper bound for the required memory for the XDR encoding.
       // Note that the actual encoded data size might still be smaller,
-      // if not all type encoders return actual lower bounds on the size.
+      // if not all type encoders return accurate lower bounds on the size.
       beginReply (s.size().getActualSize());
       applyTypes (reply_writer_, op);
+   }
 
-      return sendReply ();
+   /**
+    * \brief Convenience function for simple requests that respond with only
+    *        send back one message to the client.
+    *
+    */
+   template <typename SENDOP>
+   void simpleReply (const iofwdevent::CBType & cb, const SENDOP & op)
+   {
+      simpleReplyCommon (op);
+      sendReply (cb);
+   }
+
+   /**
+    * \brief Send full reply is status is OK, only status otherwise
+    *
+    * Encodes code, and if code == ZFS_OK encodes op.
+    * Sends the resulting buffer using sendReply.
+    *
+    * This function was added to avoid the 
+    *   if (getResultCode() == ZFS_OK)
+    *       simpleReply (getResultCode << ....)
+    *   else
+    *       simpleReply (getResultCode << ....)
+    *
+    */
+   template <typename SENDOP>
+   void simpleOptReply (const iofwdevent::CBType & cb, int code,
+         const SENDOP & op)
+   {
+      encoder::xdr::XDRSizeProcessor s;
+
+      // We encode ZFS returncodes using int32_t (even though the C prototype
+      // type is 'int')
+      s << static_cast<int32_t>(code);
+
+      if (code == zoidfs::ZFS_OK)
+      {
+         applyTypes (s, op);
+      }
+
+      beginReply (s.size().getActualSize());
+
+      reply_writer_ << static_cast<int32_t> (code);
+      if (code == zoidfs::ZFS_OK)
+      {
+         applyTypes (reply_writer_, op);
+      }
+
+      sendReply (cb);
    }
 
    /// Start reply of at most maxsize data
    void beginReply (size_t maxsize);
 
    /// Send the buffer in reply writer
-   CompletionID * sendReply ();
+   void sendReply (const iofwdevent::CBType & cb);
 
 protected:
-   /// Send a reply back to the client; low-level function
-   CompletionID * ll_sendReply (const void * buf, size_t bufsize,
-         bmi_buffer_type);
 
-protected:
+   /// Some general resources such as bmi, timer, ...
+   IOFWDResources & r_;
 
    // BMI connection
    iofwdutil::bmi::BMIContext & bmi_;
@@ -120,13 +174,9 @@ protected:
    encoder::xdr::XDRWriter reply_writer_;
 
    iofwdutil::bmi::BMIBuffer buffer_send_;
-
-   iofwdutil::completion::BMIResource & bmires_;
-
-   static iofwdutil::zlog::ZLogSource & log_;
 };
 
-
+//===========================================================================
    }
 }
 

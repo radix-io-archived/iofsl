@@ -3,7 +3,6 @@
 
 #include "Request.hh"
 #include "zoidfs/util/zoidfs-wrapped.hh"
-#include "iofwdutil/completion/CompletionID.hh"
 
 namespace iofwd
 {
@@ -25,9 +24,6 @@ public:
       Request (opid)
    {
    }
-   virtual ~LookupRequest ()
-   {
-   }
 
    /**
     * Retrieve the request input parameters 
@@ -38,7 +34,8 @@ public:
     * Reply with the handle or 0 if an error occurred and the handle does not
     * need to be transmitted
     */
-   virtual iofwdutil::completion::CompletionID * reply (const zoidfs::zoidfs_handle_t * handle) = 0; 
+   virtual void reply (const CBType & cb, const zoidfs::zoidfs_handle_t *
+         handle) = 0;
 }; 
 
 

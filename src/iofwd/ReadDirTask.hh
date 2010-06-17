@@ -6,11 +6,12 @@
 #include "ReadDirRequest.hh"
 #include "TaskHelper.hh"
 #include "zoidfs/util/ZoidFSAPI.hh"
+#include "iofwdutil/InjectPool.hh"
 
 namespace iofwd
 {
 
-class ReadDirTask : public TaskHelper<ReadDirRequest>
+class ReadDirTask : public TaskHelper<ReadDirRequest>, public iofwdutil::InjectPool<ReadDirTask>
 {
 public:
    ReadDirTask (ThreadTaskParam & p)
@@ -26,14 +27,20 @@ public:
        const ReadDirRequest::ReqParam & p = request_.decodeParam ();
        zoidfs::zoidfs_cache_hint_t parent_hint;
        size_t entry_count = p.entry_count;
-       int ret = api_->readdir (p.handle, p.cookie, &entry_count,
+       int ret;
+
+       api_->readdir (block_, &ret, p.handle, p.cookie, &entry_count,
                                 p.entries, p.flags, &parent_hint, p.op_hint);
-       request_.setReturnCode (ret); 
-       std::auto_ptr<iofwdutil::completion::CompletionID> id (request_.reply (entry_count, p.entries, &parent_hint));
-       id->wait ();
+       block_.wait ();
+
+       request_.setReturnCode (ret);
+
+       block_.reset();
+       request_.reply ((block_), entry_count, p.entries, &parent_hint);
+       block_.wait ();
   }
 
-}; 
+};
 
 }
 

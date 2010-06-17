@@ -2,51 +2,43 @@
 #define IOFWD_TASKHELPER_HH
 
 #include "Task.hh"
-#include "iofwdutil/completion/BMIResource.hh"
-#include "BMIBufferPool.hh"
-#include "iofwd/RequestPoolAllocator.hh"
+#include "iofwdevent/SingleCompletion.hh"
+#include "zoidfs/util/ZoidFSAsync.hh"
 
-namespace zoidfs
-{
-   class ZoidFSAPI;
-   class ZoidFSAsyncAPI;
-}
 
 namespace iofwd
 {
 
-class RequestScheduler;
-class BufferPool;
-
+/**
+ * This class was originally introduced to reduce the number of parameters
+ * that needed to be passed to each constructed Task. However, over time that
+ * number has gone down so this helper class is less helpful.
+ *
+ * It still saves on typing since any parameter that needs to be passed to the
+ * TaskHelper can be stored here, avoiding the need to change all the
+ * constructors of the thread tasks.
+ */
 class ThreadTaskParam
 {
 public:
    Request   *                          req;
-   boost::function<void (Task*)>        resched;
-   zoidfs::ZoidFSAPI *                  api;
-   zoidfs::ZoidFSAsyncAPI *             async_api;
-   RequestScheduler *                   sched;
-   BMIBufferPool *                         bpool;
-   iofwdutil::completion::BMIResource & bmi;
+   zoidfs::util::ZoidFSAsync *                  api;
 
-   ThreadTaskParam (Request * r,
-      boost::function<void (Task*)> r2,
-      zoidfs::ZoidFSAPI * a1,
-      zoidfs::ZoidFSAsyncAPI * a2,
-      RequestScheduler * s,
-      BMIBufferPool * bp,
-      iofwdutil::completion::BMIResource & b)
-      : req(r), resched(r2), api(a1), async_api(a2), sched(s), bpool(bp), bmi(b)
+   ThreadTaskParam (Request * r, 
+      zoidfs::util::ZoidFSAsync * a1)
+      : req(r), api(a1)
    {
    }
 
-} ;
+} ; 
 
-template <typename T>
 
 /**
  * Helper class for Threaded tasks.
+ *
+ * This is an easy way to inject a member/parameter in each thread task.
  */
+template <typename T>
 class TaskHelper : public Task
 {
    public:
@@ -54,15 +46,13 @@ class TaskHelper : public Task
        * The task takes ownership of the request
        */
       TaskHelper (ThreadTaskParam & param)
-         : Task (param.resched), request_ (static_cast<T &> (*param.req)),
-           api_ (param.api), async_api_(param.async_api), sched_(param.sched),
-           bpool_(param.bpool), bmi_ (param.bmi)
+         : request_ (static_cast<T &> (*param.req)), 
+           api_ (param.api)
       {
 #ifndef NDEBUG
          // This will throw if the request is not of the expected type
-         dynamic_cast<T &> (*param.req);
+         dynamic_cast<T &> (*param.req); 
 #endif
-        setTaskAllocType(false);
       }
 
       T * getRequest ()
@@ -71,25 +61,18 @@ class TaskHelper : public Task
       ~TaskHelper ()
       {
          // The task owns the request and needs to destroy it
-#ifndef USE_REQUEST_ALLOC_POOL
          delete (&request_);
-#else
-        /* explicit call to request destructor and let the mem pool reclaim the request mem */
-        request_.~Request();
-        iofwd::RequestPoolAllocator::instance().deallocate(&request_);
-#endif
       }
 
    protected:
-      T & request_;
+      T & request_; 
 
-      zoidfs::ZoidFSAPI * api_;
-      zoidfs::ZoidFSAsyncAPI * async_api_;
-      RequestScheduler * sched_;
-      BMIBufferPool * bpool_;
-      iofwdutil::completion::BMIResource & bmi_;
+      zoidfs::util::ZoidFSAsync * api_;
+
+      // All (almost?) threaded tasks call a blocking function at some point.
+      // Declaring it here saves on typing.
+      iofwdevent::SingleCompletion block_;
 };
-
 
 
 }

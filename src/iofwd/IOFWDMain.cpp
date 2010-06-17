@@ -20,8 +20,12 @@ IOFWDMain::IOFWDMain (bool notrap, const iofwdutil::ConfigFile & co)
 
 void IOFWDMain::boot ()
 {
+   ZLOG_DEBUG (mainlog_, "Starting Resources");
+   resources_.reset (new Resources ());
+
    ZLOG_DEBUG (mainlog_, "Starting IOFWD Frontend"); 
-   frontend_.reset (new frontend::IOFWDFrontend (bmires_));
+
+   frontend_.reset (new frontend::IOFWDFrontend (*resources_));
    
    frontend_->setConfig (config_.openSectionDefault ("frontend"));
 
@@ -30,7 +34,6 @@ void IOFWDMain::boot ()
    // Set handler for frontend
    requesthandler_.reset (new DefRequestHandler(config_.openSectionDefault("requesthandler"))); 
    frontend_->setHandler (requesthandler_.get());
-
 
    // Start frontend and begin accepting requests
    frontend_->run ();
@@ -42,7 +45,18 @@ void IOFWDMain::shutdown ()
    ZLOG_DEBUG (mainlog_, "Stopping IOFWD Frontend"); 
    frontend_->destroy (); 
 
-   requesthandler_.reset (); 
+   requesthandler_.reset ();
+
+   ZLOG_DEBUG (mainlog_, "Stopping resources...");
+   resources_.reset (0);
+
+   ZLOG_DEBUG (mainlog_, "Stopping thread pool...");
+   iofwdutil::ThreadPool::instance().reset(); 
+   delete &iofwdutil::ThreadPool::instance();
+
+   ZLOG_DEBUG (mainlog_, "Stopping BMI memory manager...");
+   iofwd::BMIMemoryManager::instance().reset(); 
+   delete &iofwd::BMIMemoryManager::instance();
 }
 
 

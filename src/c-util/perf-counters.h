@@ -1,5 +1,5 @@
-#ifndef __CUTIL_PERF_COUNTERS_H__
-#define __CUTIL_PERF_COUNTERS_H__
+#ifndef CUTIL_PERF_COUNTERS_H
+#define CUTIL_PERF_COUNTERS_H
 
 #ifdef __cplusplus
 extern "C" {

@@ -6,11 +6,12 @@
 #include "SymLinkRequest.hh"
 #include "TaskHelper.hh"
 #include "zoidfs/util/ZoidFSAPI.hh"
+#include "iofwdutil/InjectPool.hh"
 
 namespace iofwd
 {
 
-class SymLinkTask : public TaskHelper<SymLinkRequest>
+class SymLinkTask : public TaskHelper<SymLinkRequest>, public iofwdutil::InjectPool<SymLinkTask>
 {
 public:
    SymLinkTask (ThreadTaskParam & p)
@@ -23,18 +24,24 @@ public:
 
    void run ()
    {
-       const SymLinkRequest::ReqParam & p = request_.decodeParam (); 
+       const SymLinkRequest::ReqParam & p = request_.decodeParam ();
        zoidfs::zoidfs_cache_hint_t from_parent_hint;
        zoidfs::zoidfs_cache_hint_t to_parent_hint;
-       int ret = api_->symlink (p.from_parent_handle, p.from_component_name, p.from_full_path,
+       int ret;
+       
+       api_->symlink (block_, &ret, p.from_parent_handle, p.from_component_name, p.from_full_path,
                                 p.to_parent_handle, p.to_component_name, p.to_full_path,
                                 p.sattr, &from_parent_hint, &to_parent_hint, p.op_hint);
-       request_.setReturnCode (ret); 
-       std::auto_ptr<iofwdutil::completion::CompletionID> id (request_.reply ( &from_parent_hint, &to_parent_hint ));
-       id->wait ();
+       block_.wait ();
+
+       request_.setReturnCode (ret);
+
+       block_.reset();
+       request_.reply ((block_), &from_parent_hint, &to_parent_hint );
+       block_.wait ();
   }
 
-}; 
+};
 
 }
 

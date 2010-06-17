@@ -13,12 +13,11 @@ public:
    NotImplementedRequest (int opid)
       : Request (opid)
    {
-   }
-   virtual ~NotImplementedRequest ()
-   {
+      // NotImplementedRequest always fails with the same error code.
+      setReturnCode (zoidfs::ZFSERR_NOTIMPL);
    }
 
-   virtual void reply () = 0; 
+   virtual void reply (const CBType & cb) = 0;
 
 };
 

@@ -1,14 +1,17 @@
 #ifndef IOFWDUTIL_CONFIGFILE_HH
 #define IOFWDUTIL_CONFIGFILE_HH
 
-#include "c-util/configfile.h"
-#include "ConfigContainer.hh"
-#include "CFKeyMissingException.hh"
+#include <boost/optional.hpp>
 #include <boost/utility.hpp>
 #include <boost/smart_ptr.hpp>
+#include <boost/algorithm/string.hpp>
 #include <boost/lexical_cast.hpp>
 #include <string>
 #include <vector>
+
+#include "c-util/configfile.h"
+#include "ConfigContainer.hh"
+#include "CFKeyMissingException.hh"
 
 namespace iofwdutil
 {
@@ -67,34 +70,57 @@ public:
    SectionHandle getSectionHandle () const;
 
 protected:
+
+   template <typename T>
+   static inline T our_lexical_cast (const std::string & s);
+
    ConfigFile (const ConfigFile & parent, SectionHandle h);
 
    // Called to throw exception
    void error (const std::string & s) const;
+
+   boost::optional<std::string> getKeyOptional (const char * name) const;
+
+   boost::optional<ConfigFile> openSectionOptional (const char * name) const;
 
 protected:
    boost::intrusive_ptr<ConfigContainer> configfile_;
    boost::intrusive_ptr<ConfigContainer> configsection_;
 };
 
+template <typename T>
+T ConfigFile::our_lexical_cast (const std::string & s)
+{
+   return boost::lexical_cast<T> (s);
+}
+
+
+template <>
+inline bool ConfigFile::our_lexical_cast<bool> (const std::string & s)
+{
+   if (boost::iequals (s,"true") || boost::iequals(s,"yes"))
+      return true;
+   if (boost::iequals (s,"false") || boost::iequals(s,"no"))
+      return false;
+
+   return boost::lexical_cast<bool> (s);
+}
 
 template <typename T>
 T ConfigFile::getKeyAs (const char * name) const
 {
-   return boost::lexical_cast<T> (getKey (name));
+   return our_lexical_cast<T> (getKey (name));
 }
+
 
 template <typename T>
 T ConfigFile::getKeyAsDefault (const char * name, const T & def) const
 {
-   try
-   {
-   return boost::lexical_cast<T> (getKey (name));
-   }
-   catch (const CFKeyMissingException & e)
-   {
+   boost::optional<std::string> ret (getKeyOptional(name));
+   if (!ret)
       return def;
-   }
+   else
+      return our_lexical_cast<T> (*ret);
 }
 
 

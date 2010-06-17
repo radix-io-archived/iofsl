@@ -1,5 +1,5 @@
-#ifndef __MERGE_RB_INTERVAL_TREE_HH__
-#define __MERGE_RB_INTERVAL_TREE_HH__
+#ifndef MERGE_RB_INTERVAL_TREE_HH
+#define MERGE_RB_INTERVAL_TREE_HH
 
 #include "c-util/interval-merge-tree.h"
 

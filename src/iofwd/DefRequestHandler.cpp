@@ -9,10 +9,8 @@
 #include "ThreadTasks.hh"
 #include "iofwdutil/workqueue/WorkItem.hh"
 #include "zoidfs/zoidfs-proto.h"
-#include "zoidfs/util/ZoidFSAsyncAPI.hh"
-#include "RequestScheduler.hh"
-
-#include "iofwd/TaskPoolHelper.hh"
+#include "iofwdutil/Factory.hh"
+#include "iofwdutil/FactoryException.hh"
 
 using namespace iofwdutil;
 using namespace iofwdutil::workqueue;
@@ -22,106 +20,134 @@ namespace iofwd
 {
 //===========================================================================
 
-DefRequestHandler::DefRequestHandler (const iofwdutil::ConfigFile & c)
-   : log_ (IOFWDLog::getSource ("defreqhandler")), config_(c)
+DefRequestHandler::DefRequestHandler (const iofwdutil::ConfigFile & cf)
+   : log_ (IOFWDLog::getSource ("defreqhandler")), config_(cf), event_mode_(EVMODE_SM)
 {
-   iofwdutil::ConfigFile csec;
-   if (api_.init(config_.openSectionDefault ("zoidfsapi")) != zoidfs::ZFS_OK)
+   //
+   // Get async API
+   //
+   const iofwdutil::ConfigFile zoidfssection (config_.openSectionDefault ("zoidfsapi"));
+   const std::string apiname = zoidfssection.getKeyAsDefault<std::string>("name","defasync");
+   try
+   {
+      ZLOG_INFO (log_, format("Loading using async API '%s'") % apiname);
+      api_.reset (iofwdutil::Factory<
+                        std::string,
+                        zoidfs::util::ZoidFSAsync>::construct (apiname)());
+   }
+   catch (FactoryException & e)
+   {
+      ZLOG_ERROR(log_, format("No async API called '%s' registered!") %
+            apiname);
+      throw;
+   }
+
+   // We configure the API using its own subsection 
+   iofwdutil::Configurable::configure_if_needed (api_.get(),
+         zoidfssection.openSectionDefault(apiname.c_str()));
+
+   if (api_->init() != zoidfs::ZFS_OK)
+   {
+      // @TODO: make this real exception
       throw "ZoidFSAPI::init() failed";
+   }
 
-   csec = config_.openSectionDefault("zoidfsasyncapi");
-   async_api_ = new zoidfs::ZoidFSAsyncAPI(&api_,
-                                           csec.getKeyAsDefault("minthreadnum", 0),
-                                           csec.getKeyAsDefault("maxthreadnum", 100));
-   sched_ = new RequestScheduler(async_api_, config_.openSectionDefault ("requestscheduler"));
-   bpool_ = new BMIBufferPool(config_.openSectionDefault("bmibufferpool"));
+   /* start thread pool */
+   iofwdutil::ConfigFile lc = config_.openSectionDefault ("threadpool");
+   iofwdutil::ThreadPool::instance().setMinThreadCount(lc.getKeyAsDefault("minnumthreads", 0));
+   iofwdutil::ThreadPool::instance().setMaxThreadCount(lc.getKeyAsDefault("maxnumthreads", 0));
+   iofwdutil::ThreadPool::instance().start();
 
-   csec = config_.openSectionDefault("workqueue");
+   /* get the event mode */
+   lc = config_.openSectionDefault ("events");
+   const std::string mode = lc.getKeyDefault("mode", "SM");
+   if(mode == "SM")
+   {
+      ZLOG_INFO(log_, "Using SM mode");
+      event_mode_ = EVMODE_SM;
+   }
+   else if (mode == "TASK")
+   {
+      ZLOG_INFO(log_, "Using TASK mode");
+      event_mode_ = EVMODE_TASK;
+   }
+   else
+   {
+      ZLOG_WARN(log_, format("Invalid mode '%s' in [events]; Defaulting to SM")
+            % mode);
+      event_mode_ = EVMODE_SM;
+   }
+
+   /* start the BMI memory manager */
+   lc = config_.openSectionDefault("bmimemorymanager");
+   iofwd::BMIMemoryManager::instance().setMaxNumBuffers(lc.getKeyAsDefault("maxnumbuffers", 0));
+   iofwd::BMIMemoryManager::instance().start();
+
+   iofwdutil::ConfigFile csec = config_.openSectionDefault("workqueue");
    workqueue_normal_.reset (new PoolWorkQueue (csec.getKeyAsDefault("minthreadnum", 0),
                                                csec.getKeyAsDefault("maxthreadnum", 100)));
    workqueue_fast_.reset (new SynchronousWorkQueue ());
-   boost::function<void (Task *)> f = boost::lambda::bind
-      (&DefRequestHandler::reschedule, this, boost::lambda::_1);
 
-   tpool_ = new TaskPool(config_.openSectionDefault("taskpool"), f);
-   taskfactory_.reset (new ThreadTasks (f, &api_, async_api_, sched_, bpool_, tpool_));
-}
+   taskfactory_.reset (new ThreadTasks (api_.get()));
 
-void DefRequestHandler::reschedule (Task * t)
-{
-   workqueue_normal_->queueWork (t);
+   taskSMFactory_.reset(new iofwd::tasksm::TaskSMFactory(api_.get(), smm_));
 }
 
 DefRequestHandler::~DefRequestHandler ()
 {
-   std::vector<WorkItem *> items;
-   ZLOG_INFO (log_, "Waiting for normal workqueue to complete all work...");
-   workqueue_normal_->waitAll (items);
-   for_each (items.begin(), items.end(), boost::lambda::bind(delete_ptr(), boost::lambda::_1));
+   /* if this is the state machine mode, shutdown the state machine manager */
+   if(event_mode_ == EVMODE_SM)
+   {
+        /* nothing to do */
+   }
+   /* if this is the task mode, clear out the work queues before shutdown */
+   else if(event_mode_ == EVMODE_TASK)
+   {
+        std::vector<WorkItem *> items;
+        ZLOG_INFO (log_, "Waiting for normal workqueue to complete all work...");
+        workqueue_normal_->waitAll (items);
+        for_each (items.begin(), items.end(), boost::lambda::bind(delete_ptr(), boost::lambda::_1));
 
-   items.clear();
-   ZLOG_INFO (log_, "Waiting for fast workqueue to complete all work...");
-   workqueue_fast_->waitAll (items);
-   for_each (items.begin(), items.end(), boost::lambda::bind(delete_ptr(), boost::lambda::_1));
+        items.clear();
+        ZLOG_INFO (log_, "Waiting for fast workqueue to complete all work...");
+        workqueue_fast_->waitAll (items);
+        for_each (items.begin(), items.end(), boost::lambda::bind(delete_ptr(), boost::lambda::_1));
+   }
 
-   delete sched_;
-   delete bpool_;
-   delete tpool_;
-
-   api_.finalize();
-   delete async_api_;
+   api_->finalize();
 }
 
 void DefRequestHandler::handleRequest (int count, Request ** reqs)
 {
-   ZLOG_DEBUG(log_, str(format("handleRequest: %u requests") % count));
-   for (int i=0; i<count; ++i)
-   {
-      Task * task = (*taskfactory_) (reqs[i]);
+    ZLOG_DEBUG(log_, str(format("handleRequest: %u requests") % count));
+    for (int i=0; i<count; ++i)
+    {
+        if(event_mode_ == EVMODE_SM)
+        {
+            (*taskSMFactory_)(reqs[i]);
+        }
+        else if(event_mode_ == EVMODE_TASK)
+        {
+            Task * task = (*taskfactory_) (reqs[i]);
+            if (task->isFast())
+                workqueue_fast_->queueWork (task);
+            else
+                workqueue_normal_->queueWork (task);
+        }
+    }
 
-      // TODO: workqueues are supposed to return some handle so that we can
-      // test which requests completed. That way that requesthandler can
-      // reschedule requests and free completed requests
-      iofwdutil::completion::CompletionID * id;
-      if (task->isFast())
-         id = workqueue_fast_->queueWork (task);
-      else
-         id = workqueue_normal_->queueWork (task);
-      delete id;
-   }
-
-   // Cleanup completed requests
-   workqueue_normal_->testAll (completed_);
-   workqueue_fast_->testAll (completed_);
-   for (unsigned int i=0; i<completed_.size(); ++i)
-   {
-      // we know only requesttasks can be put on the workqueues
-      if (static_cast<Task*>(completed_[i])->getStatus() ==
-            Task::STATUS_DONE)
-      {
-#ifndef USE_TASK_POOL_ALLOCATOR
-#ifdef USE_IOFWD_TASK_POOL 
-         /* if this task was allocated from the pool, put it back on the pool */
-         if(static_cast<Task*>(completed_[i])->getTaskAllocType() == true)
-         {
-            static_cast<Task*>(completed_[i])->cleanup();
-         }
-         /* else, delete it */
-         else
-         {
-            delete (completed_[i]);
-         }
-#else
-            delete (completed_[i]);
-#endif
-#else
-        /* invoke the destructor and then add the mem back the task memory pool */
-        static_cast<Task *>(completed_[i])->~Task();
-        iofwd::TaskPoolAllocator::instance().deallocate(static_cast<Task *>(completed_[i]));
-#endif
-      }
-   }
-   completed_.clear ();
+    if(event_mode_ == EVMODE_TASK)
+    {
+        // Cleanup completed requests
+        workqueue_normal_->testAll (completed_);
+        workqueue_fast_->testAll (completed_);
+        for (unsigned int i=0; i<completed_.size(); ++i)
+        {
+           // we know only requesttasks can be put on the workqueues
+           delete (completed_[i]);
+        }
+        completed_.clear ();
+    }
 }
 
 //===========================================================================

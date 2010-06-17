@@ -6,11 +6,12 @@
 #include "CreateRequest.hh"
 #include "TaskHelper.hh"
 #include "zoidfs/util/ZoidFSAPI.hh"
+#include "iofwdutil/InjectPool.hh"
 
 namespace iofwd
 {
 
-class CreateTask : public TaskHelper<CreateRequest>
+class CreateTask : public TaskHelper<CreateRequest>, public iofwdutil::InjectPool<CreateTask>
 {
 public:
    CreateTask (ThreadTaskParam & p)
@@ -26,11 +27,17 @@ public:
        const CreateRequest::ReqParam & p = request_.decodeParam ();
        zoidfs::zoidfs_handle_t handle;
        int created;
-       int ret = api_->create (p.parent_handle, p.component_name,
+       int ret;
+
+       api_->create (block_, &ret, p.parent_handle, p.component_name,
                                p.full_path, p.attr, &handle, &created, p.op_hint);
+       block_.wait ();
+
        request_.setReturnCode (ret);
-       std::auto_ptr<iofwdutil::completion::CompletionID> id (request_.reply ( (ret  == zoidfs::ZFS_OK ? &handle : 0), created));
-       id->wait ();
+
+       block_.reset();
+       request_.reply ((block_), (ret  == zoidfs::ZFS_OK ? &handle : 0), created);
+       block_.wait ();
   }
 
 };

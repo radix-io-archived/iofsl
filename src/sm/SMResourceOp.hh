@@ -1,9 +1,11 @@
 #ifndef SM_SMRESOURCEOP_HH
 #define SM_SMRESOURCEOP_HH
 
+#include <boost/bind.hpp>
 #include <csignal>
-#include "iofwdevent/ResourceOp.hh"
+
 #include "SMResourceClient.hh"
+#include "iofwdevent/Resource.hh"
 
 
 namespace sm
@@ -20,10 +22,29 @@ class SMManager;
  * The entity needs to be an instance of SMResourceClient, having a
  * method receiving the result of the nonblocking operation.
  */
-class SMResourceOp : public iofwdevent::ResourceOp
+class SMResourceOp
 {
 public:
    SMResourceOp (SMManager * manager);
+
+
+   void callback (int status)
+   {
+      switch (status)
+      {
+         case iofwdevent::COMPLETED:
+            success ();
+            break;
+         case iofwdevent::CANCELLED:
+            cancel ();
+            break;
+         default:
+            ALWAYS_ASSERT(false);
+      }
+   }
+
+   iofwdevent::CBType callbackRef ()
+   { return boost::bind (&SMResourceOp::callback, boost::ref(*this), _1); }
 
    virtual void success ();
 

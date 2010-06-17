@@ -4,7 +4,6 @@
 #include <boost/pool/pool_alloc.hpp>
 #include <boost/intrusive/slist.hpp>
 #include <boost/thread.hpp>
-#include "ResourceOp.hh"
 #include "iofwdutil/assert.hh"
 #include "Resource.hh"
 
@@ -19,9 +18,14 @@ namespace iofwdevent
  * It can be used to limit the number of outstanding transactions, memory, ...
  *
  * The resource does not use an internal thread and does not need to be
- * polled.
+ * polled. As such, it can be created and stored inside the classes that want
+ * to use it.
  *
- * Currently does FIFO order.
+ * Currently does FIFO order; Locks are released before calling the callback,
+ * so concurrent callbacks are possible. If multiple threads are used, and
+ * some threads are adding tokens when there are multiple threads requesting
+ * tokens, a strict FIFO order can no longer be guaranteed.
+ *
  */
 class TokenResource : public Resource
 {
@@ -36,10 +40,12 @@ public:
 
    virtual bool started () const;
 
+   virtual bool cancel (Handle h);
+
    /**
     * Submit request for tokencount tokens.
     */
-   inline void request (ResourceOp * id, size_t tokencount);
+   inline Handle request (const CBType & cb, size_t tokencount);
 
    /**
     * Non-blocking token request. Returns true if allocated, false
@@ -58,6 +64,12 @@ public:
    inline void add_tokens (size_t tokencount);
 
    /**
+    * Add more tokens to the system, but make sure the total number of tokens
+    * doesn't exceed limit.
+    */
+   inline void add_tokens_limit (size_t tokencount, size_t limit);
+
+   /**
     * Return number of free tokens
     */
    inline size_t get_tokencount () const
@@ -74,13 +86,13 @@ protected:
    class TokenRequest
    {
     public:
-       TokenRequest (ResourceOp * o, size_t tokens)
-          : op_(o), tokens_(tokens)
+       TokenRequest (const CBType & cb, size_t tokens)
+          : cb_(cb), tokens_(tokens)
        {
        }
 
-      ResourceOp *   op_;
-      size_t         tokens_;
+      CBType   cb_;
+      size_t   tokens_;
 
       // we use an intrusive linked list to queue the requests.
       boost::intrusive::slist_member_hook<> list_hook_;
@@ -99,19 +111,17 @@ protected:
 
    // Do a quick check to see if we need to notify a waiting client
    //  Needs to be called with lock held
-   inline void check ();
+   //  Sets the callback if one can be completed
+   inline bool check (iofwdevent::CBType & t);
 
    // Service next client; Needs to be called with lock held
-   void notify_next ();
+   bool notify_next (iofwdevent::CBType & t);
 
 protected:
    // Protect access to waitresource
    mutable boost::mutex lock_;
 
-   boost::fast_pool_allocator<TokenRequest> pool_;
-
    size_t tokens_available_;
-   size_t waiting_;
 
    RequestList waitlist_;
 
@@ -122,12 +132,40 @@ protected:
 
 void TokenResource::add_tokens (size_t tokens)
 {
-   boost::mutex::scoped_lock l(lock_);
-   tokens_available_ += tokens;
-   check ();
+   return add_tokens_limit (tokens, 0);
 }
 
-void TokenResource::request (ResourceOp * id, size_t tokencount)
+/**
+ * Add tokens but don't let the amount of free tokens go over limit.
+ * Note: when using add_tokens_limit, requests for more than limit will never
+ * complete.
+ */
+void TokenResource::add_tokens_limit (size_t tokens, size_t limit)
+{
+   if (!tokens)
+      return;
+
+   iofwdevent::CBType cb;
+   boost::mutex::scoped_lock l(lock_);
+   if (limit)
+   {
+      if (tokens_available_ >= limit)
+         return;
+      tokens_available_ += std::min (limit - tokens_available_, tokens);
+   }
+   else
+   {
+      tokens_available_ += tokens;
+   }
+
+   if (check (cb))
+   {
+      l.unlock ();
+      cb (COMPLETED);
+   }
+}
+
+Resource::Handle TokenResource::request (const CBType & cb, size_t tokencount)
 {
    ASSERT(started_);
 
@@ -136,17 +174,18 @@ void TokenResource::request (ResourceOp * id, size_t tokencount)
    // Cannot call try_request; already have lock
    if (try_request_unlocked (tokencount))
    {
+      // Unlock before calling callback, so if the callback requests more
+      // tokens we don't deadlock.
+      l.unlock ();
       // obtained tokens -> call callback
-      id->success ();
-      return;
+      cb (COMPLETED);
+      return 0;
    }
 
    // Could not get tokens -> put on waitlist
-   // the pool allocator is protected by the lock_;
-   void * f_raw = pool_.allocate ();
-   ALWAYS_ASSERT(f_raw);
-   TokenRequest * f = new (f_raw) TokenRequest (id, tokencount);
+   TokenRequest * f = new  TokenRequest (cb, tokencount);
    waitlist_.push_back (*f);
+   return f;
 }
 
 bool TokenResource::try_request (size_t t)
@@ -178,21 +217,28 @@ bool TokenResource::try_request_unlocked (size_t tokencount)
 
 void TokenResource::release (size_t tokencount)
 {
-   ASSERT(started_);
-
+   CBType t;
    boost::mutex::scoped_lock l (lock_);
 
+   ASSERT(started_);
+
    tokens_available_ += tokencount;
-   check ();
+   if (check (t))
+   {
+      l.unlock ();
+      t (COMPLETED);
+   }
 }
 
-void TokenResource::check ()
+bool TokenResource::check (iofwdevent::CBType & t)
 {
    if (waitlist_.empty())
-      return;
+      return false;
 
    if (waitlist_.front().tokens_ <= tokens_available_)
-      notify_next ();
+      return notify_next (t);
+
+   return false;
 }
 
 //===========================================================================

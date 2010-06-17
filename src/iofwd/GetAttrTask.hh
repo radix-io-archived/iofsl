@@ -6,11 +6,12 @@
 #include "GetAttrRequest.hh"
 #include "TaskHelper.hh"
 #include "zoidfs/util/ZoidFSAPI.hh"
+#include "iofwdutil/InjectPool.hh"
 
 namespace iofwd
 {
 
-class GetAttrTask : public TaskHelper<GetAttrRequest>
+class GetAttrTask : public TaskHelper<GetAttrRequest>, public iofwdutil::InjectPool<GetAttrTask>
 {
 public:
    GetAttrTask (ThreadTaskParam & p)
@@ -24,10 +25,16 @@ public:
    void run ()
    {
        const GetAttrRequest::ReqParam & p = request_.decodeParam ();
-       int ret = api_->getattr (p.handle, p.attr, p.op_hint);
+       int ret;
+
+       api_->getattr ((block_), &ret, p.handle, p.attr, p.op_hint);
+       block_.wait ();
+
        request_.setReturnCode (ret);
-       std::auto_ptr<iofwdutil::completion::CompletionID> id (request_.reply ( (ret  == zoidfs::ZFS_OK ? p.attr : 0)));
-       id->wait ();
+
+       block_.reset();
+       request_.reply ((block_), (ret  == zoidfs::ZFS_OK ? p.attr : 0));
+       block_.wait ();
   }
 
 };

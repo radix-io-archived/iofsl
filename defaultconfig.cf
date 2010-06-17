@@ -1,9 +1,9 @@
 
-log { 
+log {
   // By default, 2 sinks (stdout and stderr) are available
   // as is the default filter ('default')
   // Without additional config, all output goes to stderr
-  // with a default loglevel of INFO. 
+  // with a default loglevel of INFO.
   // Note that the default loglevel can be changed by using
   // the IOFWD_LOGLEVEL variable
 
@@ -12,7 +12,7 @@ log {
   sinks = ( "tmpfile" );
   filters = ( );
 
-  tmpfile { 
+  tmpfile {
      sinktype = "file";
   }
 
@@ -31,16 +31,64 @@ frontend {
 requesthandler {
   //
   // zoidfs api options
-  // 
+  //
   zoidfsapi {
+
+    name = "requestscheduler";
+    //name = "defasync";
+
+    requestscheduler {
+        //
+        // request scheduler modes
+        //  fifo - schedule requests as they arrive
+        //  merge - attempt to merge requests
+        //
+        schedalgo = "merge";
+
+        //
+        // list io batch size
+        //  upper limit on the number of non contig ops
+        //  the scheduler will issue in a single zoidfs read or write
+        //
+        batchsize = "16";
+
+        api = "defasync";
+
+        rangesched {
+            //
+            // request mereger type
+            //  hierarchical: list of ranges merged 
+            //  intervaltree: red-black interval tree
+            //  default: hierarchical
+            //
+            merger = "hierarchical";
+
+            hierarchical {
+                // no special config options
+            }
+            
+            //
+            // hbrr quantum 
+            //
+            defquantum = "8";
+        }
+
+    defasync {
+      //blocking_api = "zoidfs";
+      blocking_api = "log";
+      use_thread_pool = "TrUe";
+
+    log {
+      blocking_api = "zoidfs";
+
+      zoidfs {
     //
     // the handlers to be loaded at runtime
     //  if a specified handler is not available,
     //  it is ignored
     //  default: LOCAL
     //
-    handlers = "POSIX,SYSIO,PVFS2,NOFS,LOCAL";
-    //handlers = "NOFS,LOCAL";
+    handlers = ("POSIX","SYSIO","PVFS2","NOFS","LOCAL");
 
     //
     // options for the nofs handler
@@ -69,32 +117,49 @@ requesthandler {
         filesystem = "/dev/shm/sysio";
     }
 
+    gridftp {
+        username = "copej";
+        userpass = "";
+        subject = "";
+        enableconnectioncache = "1";
+        parallelstreams = "4";
+    }
+
     //
     // options for the local handler
     //
     local {
     }
 
+      }
+    }
+    }
+    }
+
+
   }
 
   //
-  // zoidfs asynchronous api options
+  // threadpool config
   //
-  zoidfsasyncapi {
-    minthreadnum = "0";
-    maxthreadnum = "100";
+  threadpool {
+      minnumthreads = "4";
+      maxnumthreads = "16";
+  }
+
+  //
+  // event handler options
+  //  TASK - IOFWD tasks
+  //  SM - IOFWD state machines
+  //
+  events {
+      mode = "SM";
   }
 
   //
   // bmi buffer pool options
   //
-  bmibufferpool {
-    //
-    // size of individual bmi buffers
-    //  default: 0
-    //
-    buffersize = "8388608";
-
+  bmimemorymanager {
     //
     // the max number of bmi buffers that are used at any
     //  point in time
@@ -108,14 +173,4 @@ requesthandler {
     maxthreadnum = "100";
   }
 
-  taskpool {
-    //
-    // The max number of tasks to preallocate per operation
-    // 
-    numtasks = "256";
-  }
-
-  requestscheduler {
-    schedalgo = "merge";
-  }
 }

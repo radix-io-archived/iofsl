@@ -27,19 +27,12 @@ const IOFWDSetAttrRequest::ReqParam & IOFWDSetAttrRequest::decodeParam ()
    return param_;
 }
 
-iofwdutil::completion::CompletionID * IOFWDSetAttrRequest::reply (const zoidfs::zoidfs_attr_t * attr)
+void IOFWDSetAttrRequest::reply (const CBType & cb, const zoidfs::zoidfs_attr_t * attr)
 {
    // If success, send the return code followed by the attr;
    // Otherwise send the return code.
-   if (getReturnCode() == zoidfs::ZFS_OK)
-   {
-      ASSERT (attr);
-      return simpleReply (TSSTART << (int32_t) getReturnCode() << *attr);
-   }
-   else
-   {
-      return simpleReply (TSSTART << (int32_t) getReturnCode());
-   }
+   ASSERT (getReturnCode() != zoidfs::ZFS_OK || attr);
+   simpleOptReply (cb, getReturnCode(), TSSTART << *attr);
 }
 
 IOFWDSetAttrRequest::~IOFWDSetAttrRequest ()

@@ -5,7 +5,6 @@
 #include <unistd.h>
 #include <csignal>
 #include "iofwdutil/assert.hh"
-#include "iofwdutil/bmi/BMI.hh"
 #include "IOFWDFrontend.hh"
 #include "encoder/xdr/XDRReader.hh"
 #include "iofwdutil/bmi/BMIUnexpectedBuffer.hh"
@@ -33,8 +32,6 @@
 #include "IOFWDReadRequest.hh"
 #include "IOFWDLinkRequest.hh"
 
-#include "iofwd/RequestPoolAllocator.hh"
-
 using namespace iofwdutil::bmi;
 using namespace iofwdutil;
 using namespace zoidfs;
@@ -50,73 +47,18 @@ namespace iofwd
 namespace
 {
 //===========================================================================
-
-class IOFW
-{
-public:
-   IOFW (IOFWDFrontend & fe, iofwdutil::completion::BMIResource & bmires);
-
-   void run ();
-
-   void setHandler (RequestHandler * h) { handler_ = h; }
-
-   // Called when we should stop...
-   void destroy ();
-
-   ~IOFW ();
-
-protected:
-   enum {
-      BATCH_SIZE = 64, // The number of unexpected requests we accept
-      MAX_IDLE   = 1000 // How long to wait for a request (ms)
-   };
-
-   void handleIncoming (int count, const BMI_unexpected_info * info);
-
-protected:
-   IOFWDFrontend & fe_;
-   iofwdutil::bmi::BMI & bmi_;
-   iofwdutil::bmi::BMIContextPtr bmictx_;
-
-private:
-   // We put the structure here not to burden the stack
-   // The front-end is singlethreaded anyway
-   BMI_unexpected_info info_[BATCH_SIZE];
-
-   volatile sig_atomic_t stop_;
-
-   RequestHandler * handler_;
-
-
-protected:
-   size_t req_minsize_;         // minimum size of valid incoming request
-
-   IOFWDLogSource & log_;
-
-   iofwdutil::completion::BMIResource & bmires_;
-
-};
-
 // ==========================================================================
 // map op id to IOFWDRequest
 
-typedef Request * (*mapfunc_t) ( iofwdutil::bmi::BMIContext & bmi,
+typedef Request * (*mapfunc_t) (
       int i, const BMI_unexpected_info & info,
-      iofwdutil::completion::BMIResource & res);
+      IOFWDResources & res);
+
 
 template <typename T>
-static inline Request * newreq (iofwdutil::bmi::BMIContext & bmi,
-      int i, const BMI_unexpected_info & info,
-      iofwdutil::completion::BMIResource & res)
-{
-#ifndef USE_REQUEST_POOL_ALLOCATOR
-    return new T (bmi, i, info, res );
-#else
-    /* get memory location from the pool and allocate a new Request using placement new */
-    Request * rloc = iofwd::RequestPoolAllocator::instance().allocate(i);
-    return new (rloc) T(bmi, i, info, res);
-#endif
-}
+static inline Request * newreq (int i, const BMI_unexpected_info & info,
+      IOFWDResources & res)
+{ return new T (i, info, res); }
 
 static boost::array<mapfunc_t, ZOIDFS_PROTO_MAX> map_ = {
    {
@@ -140,30 +82,78 @@ static boost::array<mapfunc_t, ZOIDFS_PROTO_MAX> map_ = {
 };
 
 // ==========================================================================
+//===========================================================================
+}
 
-IOFW::IOFW (IOFWDFrontend & fe, iofwdutil::completion::BMIResource & res)
-   : fe_ (fe), bmi_ (iofwdutil::bmi::BMI::get()),
-   stop_ (false),
-   handler_(NULL),
-   req_minsize_(encoder::xdr::getXDRSize<uint32_t>().getActualSize()),
-   log_ (IOFWDLog::getSource ("iofwdfrontend")),
-   bmires_ (res)
+//===========================================================================
+//===========================================================================
+//===========================================================================
+
+IOFWDFrontend::IOFWDFrontend (Resources & r)
+   : log_(IOFWDLog::getSource ("iofwdfrontend")),
+   r_(r),
+   stop_(false),
+   req_minsize_(encoder::xdr::getXDRSize (uint32_t ()).getActualSize()),
+   res_ (r_, log_)
 {
+}
+
+IOFWDFrontend::~IOFWDFrontend ()
+{
+   ZLOG_INFO (log_, "Shutting down BMI...");
+   if (BMI::isCreated ())
+      BMI::get().finalize ();
+}
+
+void IOFWDFrontend::init ()
+{
+   ZLOG_DEBUG (log_, "Initializing BMI");
+
+   std::string ion = config_.getKeyDefault ("listen", "");
+   char * ion_name = getenv("ZOIDFS_ION_NAME");
+   if (ion_name)
+      ion = ion_name;
+
+   if (ion.empty())
+   {
+     ZLOG_ERROR (log_, format("ZOIDFS_ION_NAME is empty"));
+     throw ConfigException ("No ION_NAME specified!");
+   }
+
+   // IOFW uses bmi, so we need to supply init params here
+   ZLOG_INFO (log_, format("Server listening on %s") % ion);
+   //BMI::setInitServer ("tcp://127.0.0.1:1234");
+   BMI::setInitServer (ion.c_str());
 
    // Make sure we have a context open
-    bmictx_ = bmi_.openContext ();
+   bmictx_ = iofwdutil::bmi::BMI::get().openContext ();
+
+   res_.bmictx_ = bmictx_;
+
+   stop_ = false;
 }
 
-IOFW::~IOFW ()
+void IOFWDFrontend::run()
 {
+   ALWAYS_ASSERT (handler_);
+
+   post_testunexpected ();
 }
 
-void IOFW::handleIncoming (int count, const BMI_unexpected_info  * info )
+void IOFWDFrontend::destroy ()
+{
+   stop_ = true;
+   ZLOG_INFO (log_, "Cancelling IOFWDFrontend testunexpected resource call");
+   r_.rbmi_.cancel (unexpected_handle_);
+}
+
+void IOFWDFrontend::handleIncoming (int count, const BMI_unexpected_info  * info )
 {
    ASSERT (count <= BATCH_SIZE);
 
    Request *  reqs[BATCH_SIZE];
    int ok = 0;
+
    encoder::xdr::XDRReader reader;
 
    int32_t opid;
@@ -202,94 +192,38 @@ void IOFW::handleIncoming (int count, const BMI_unexpected_info  * info )
       {
          // Request now owns the BMI buffer
          ALWAYS_ASSERT(map_[opid]);
-         reqs[ok++] = map_[opid] (*bmictx_.get(), opid, info[i], bmires_);
+         reqs[ok++] = map_[opid] (opid, info[i], res_);
       }
    }
    handler_->handleRequest (ok, &reqs[0]);
 }
 
-void IOFW::run ()
+void IOFWDFrontend::post_testunexpected ()
 {
-   ZLOG_INFO(log_, "IOFW thread running");
+   if (stop_)
+      return;
 
+   unexpected_handle_ = r_.rbmi_.post_testunexpected
+      (boost::bind (&IOFWDFrontend::newUnexpected,
+            boost::ref(*this), _1), info_.size(), &ue_count_, &info_[0]);
+}
+
+/**
+ * This method is called by iofwdevent::BMIResource when an unexpected message
+ * comes in.
+ */
+void IOFWDFrontend::newUnexpected (int status)
+{
+   if (status == iofwdevent::COMPLETED)
+   {
+      if (ue_count_ != 0)
+      {
+         handleIncoming (ue_count_, &info_[0]);
+      }
+   }
    // Wait
-   while (!stop_)
-   {
-      const int count = bmi_.testUnexpected (BATCH_SIZE, &info_[0],MAX_IDLE);
-      if (count)
-         handleIncoming (count, &info_[0]);
-   }
-}
-
-void IOFW::destroy ()
-{
-   ZLOG_DEBUG(log_, "Notifying listening thread to shut down");
-   stop_ = true;
-}
-
-//===========================================================================
-}
-
-
-//===========================================================================
-//===========================================================================
-//===========================================================================
-
-IOFWDFrontend::IOFWDFrontend (iofwdutil::completion::BMIResource & res)
-   : log_(IOFWDLog::getSource ("iofwdfrontend")),
-   bmires_ (res)
-{
-}
-
-IOFWDFrontend::~IOFWDFrontend ()
-{
-   ZLOG_INFO (log_, "Shutting down BMI...");
-   if (BMI::isCreated ())
-      BMI::get().finalize ();
-}
-
-void IOFWDFrontend::init ()
-{
-   ZLOG_DEBUG (log_, "Initializing BMI");
-
-   std::string ion = config_.getKeyDefault ("listen", "");
-   char * ion_name = getenv("ZOIDFS_ION_NAME");
-   if (ion_name)
-      ion = ion_name;
-
-   if (ion.empty())
-   {
-     ZLOG_ERROR (log_, format("ZOIDFS_ION_NAME is empty"));
-     throw ConfigException ("No ION_NAME specified!");
-   }
-
-   // IOFW uses bmi, so we need to supply init params here
-   ZLOG_INFO (log_, format("Server listening on %s") % ion);
-   //BMI::setInitServer ("tcp://127.0.0.1:1234");
-   BMI::setInitServer (ion.c_str());
-
-   // initialize BMI
-   IOFW * o = new IOFW (*this, bmires_);
-   impl_ = o;
-}
-
-void IOFWDFrontend::run()
-{
-   ALWAYS_ASSERT (impl_);
-   IOFW * o = (IOFW *) impl_;
-   ALWAYS_ASSERT (handler_);
-   o->setHandler (handler_);
-   implthread_.reset (new boost::thread(boost::bind (&IOFW::run , o)));
-}
-
-void IOFWDFrontend::destroy ()
-{
-   static_cast<IOFW *> (impl_)->destroy ();
-
-   ZLOG_INFO (log_, "Waiting for IOFWD frontend to shut down...");
-   implthread_->join ();
-   implthread_.reset ();
-   delete (static_cast<IOFW*> (impl_));
+   if (!stop_)
+      post_testunexpected();
 }
 
 //===========================================================================

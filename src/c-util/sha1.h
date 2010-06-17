@@ -21,8 +21,8 @@
  *
  */
 
-#ifndef _SHA1_H_
-#define _SHA1_H_
+#ifndef SHA1_H
+#define SHA1_H
 
 /* 
  *  This structure will hold context information for the hashing

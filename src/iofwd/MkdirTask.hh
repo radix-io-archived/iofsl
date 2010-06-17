@@ -6,11 +6,12 @@
 #include "MkdirRequest.hh"
 #include "TaskHelper.hh"
 #include "zoidfs/util/ZoidFSAPI.hh"
+#include "iofwdutil/InjectPool.hh"
 
 namespace iofwd
 {
 
-class MkdirTask : public TaskHelper<MkdirRequest>
+class MkdirTask : public TaskHelper<MkdirRequest>, public iofwdutil::InjectPool<MkdirTask>
 {
 public:
    MkdirTask (ThreadTaskParam & p)
@@ -23,16 +24,22 @@ public:
 
    void run ()
    {
-       const MkdirRequest::ReqParam & p = request_.decodeParam (); 
+       const MkdirRequest::ReqParam & p = request_.decodeParam ();
        zoidfs::zoidfs_cache_hint_t hint;
-       int ret = api_->mkdir (p.parent_handle, p.component_name,
+       int ret;
+
+       api_->mkdir (block_, &ret, p.parent_handle, p.component_name,
                               p.full_path, p.sattr, &hint, p.op_hint);
-       request_.setReturnCode (ret); 
-       std::auto_ptr<iofwdutil::completion::CompletionID> id (request_.reply (&hint));
-       id->wait ();
+       block_.wait ();
+
+       request_.setReturnCode (ret);
+
+       block_.reset();
+       request_.reply ((block_), &hint);
+       block_.wait();
   }
 
-}; 
+};
 
 }
 

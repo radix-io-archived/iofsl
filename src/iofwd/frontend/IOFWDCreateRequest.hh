@@ -4,6 +4,7 @@
 #include "zoidfs/util/zoidfs-wrapped.hh"
 #include "IOFWDRequest.hh"
 #include "iofwd/CreateRequest.hh"
+#include "iofwdutil/InjectPool.hh"
 
 namespace iofwd
 {
@@ -13,18 +14,20 @@ namespace iofwd
 
 class IOFWDCreateRequest
    : public IOFWDRequest,
-     public CreateRequest
+     public CreateRequest,
+     public iofwdutil::InjectPool<IOFWDCreateRequest>
 {
 public:
-   IOFWDCreateRequest (iofwdutil::bmi::BMIContext & bmi, int opid, const BMI_unexpected_info & info,
-         iofwdutil::completion::BMIResource & res)
-      : IOFWDRequest (bmi, info,res), CreateRequest (opid), op_hint_(NULL)
+   IOFWDCreateRequest (int opid, const BMI_unexpected_info & info,
+         IOFWDResources & res)
+      : IOFWDRequest (info,res), CreateRequest (opid), op_hint_(NULL)
    {
    }
 
    virtual const ReqParam & decodeParam () ;
 
-   virtual iofwdutil::completion::CompletionID * reply (const zoidfs::zoidfs_handle_t * handle, int created);
+   virtual void reply (const CBType & cb, const zoidfs::zoidfs_handle_t *
+         handle, int created);
 
    virtual ~IOFWDCreateRequest ();
 

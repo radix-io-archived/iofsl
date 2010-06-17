@@ -33,6 +33,16 @@ sandbox_patest_SOURCES = sandbox/patest.cpp
 sandbox_patest_LDADD = $(sandbox_ldadd)
 sandbox_patest_LDFLAGS = $(sandbox_ldflags)
 
+EXTRA_PROGRAMS += sandbox/hatest
+sandbox_hatest_SOURCES = sandbox/hatest.cpp
+sandbox_hatest_LDADD = $(sandbox_ldadd)
+sandbox_hatest_LDFLAGS = $(sandbox_ldflags)
+
+EXTRA_PROGRAMS += sandbox/bindtest
+sandbox_bindtest_SOURCES = sandbox/bindtest.cpp
+sandbox_bindtest_LDFLAGS = $(sandbox_ldflags)
+sandbox_bindtest_LDADD = $(sandbox_ldadd)
+
 EXTRA_PROGRAMS += sandbox/recordparam
 sandbox_recordparam_SOURCES = sandbox/recordparam.cpp
 sandbox_recordparam_LDFLAGS = $(sandbox_ldflags)
@@ -44,37 +54,6 @@ sandbox_regex_LDFLAGS = $(sandbox_ldflags)
 EXTRA_PROGRAMS += sandbox/sc
 sandbox_sc_SOURCES = sandbox/sc.cpp
 sandbox_sc_LDFLAGS = $(sandbox_ldflags)
-
-EXTRA_PROGRAMS += sandbox/TestSM
-sandbox_TestSM_SOURCES = sandbox/TestSM.cpp
-sandbox_TestSM_LDFLAGS = $(sandbox_ldflags)
-
-EXTRA_PROGRAMS += sandbox/TestSM_async
-sandbox_TestSM_async_SOURCES = sandbox/TestSM_async.cpp
-sandbox_TestSM_async_LDFLAGS = $(sandbox_ldflags)
-
-# Note: := should not be used, is GNU make
-
-EXTRA_PROGRAMS += sandbox/LookupSMTest
-sandbox_LookupSMTest_SOURCES = sandbox/LookupSMTest.cpp
-sandbox_LookupSMTest_LDFLAGS = $(sandbox_ldflags)
-sandbox_LookupSMTest_LDADD = $(top_builddir)/src/sm/libiofwdsm.a $(sandbox_ldadd) \
-            $(top_builddir)/src/sm/libsm.a \
-			$(top_builddir)/src/iofwdevent/libiofwdevent.a
-
-EXTRA_PROGRAMS += sandbox/LookupSMTestClient
-sandbox_LookupSMTestClient_SOURCES = sandbox/LookupSMTestClient.cpp
-sandbox_LookupSMTestClient_LDFLAGS = $(sandbox_ldflags)
-sandbox_LookupSMTestClient_LDADD = $(top_builddir)/src/sm/libiofwdsm.a  \
-            $(top_builddir)/src/sm/libsm.a \
-			$(top_builddir)/src/iofwdevent/libiofwdevent.a $(sandbox_ldadd)
-
-EXTRA_PROGRAMS += sandbox/LookupSMTest2
-sandbox_LookupSMTest2_SOURCES = sandbox/LookupSMTest2.cpp
-sandbox_LookupSMTest2_LDFLAGS = $(sandbox_ldflags)
-sandbox_LookupSMTest2_LDADD = $(top_builddir)/src/sm/libiofwdsm.a  \
-            $(top_builddir)/src/sm/libsm.a \
-			$(top_builddir)/src/iofwdevent/libiofwdevent.a $(sandbox_ldadd)
 
 EXTRA_PROGRAMS += sandbox/zoidfs-hints
 sandbox_zoidfs_hints_SOURCES = sandbox/zoidfs-hints.c
@@ -118,6 +97,12 @@ sandbox_smmanager_LDADD = $(top_builddir)/src/sm/libsm.a \
 			  $(top_builddir)/src/iofwdevent/libiofwdevent.a \
 			  $(top_builddir)/src/iofwdutil/libiofwdutil.a \
 			  $(BMI_LIBS)
+
+EXTRA_PROGRAMS += sandbox/factory
+sandbox_factory_SOURCES = sandbox/factory.cpp
+sandbox_factory_LDFLAGS = $(sandbox_ldflags)
+sandbox_factory_LDADD = $(top_builddir)/src/iofwdutil/libiofwdutil.a
+
 
 #if HAVE_MPI
 #EXTRA_PROGRAMS += sandbox/mpi-server

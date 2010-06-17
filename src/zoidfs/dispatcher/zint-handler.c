@@ -8,6 +8,10 @@
 
 #include "zoidfs/dispatcher/zint-handler.h"
 
+#ifdef USE_DISPATCHER_GRIDFTP
+#include "zoidfs/dispatcher/gridftp/zoidfs-gridftp.h"
+#endif /* USE_DISPATCHER_GRIDFTP */
+
 #ifdef USE_DISPATCHER_NOFS
 #include "zoidfs/dispatcher/nofs/zoidfs-nofs.h"
 #endif /* USE_DISPATCHER_NOFS */
@@ -34,6 +38,9 @@
 
 static zint_handler_t * zint_server_handlers_values[] =
 {
+#ifdef USE_DISPATCHER_GRIDFTP
+    &gridftp_handler,
+#endif /*  USE_DISPATCHER_GRIDFTP */
 #ifdef USE_DISPATCHER_NOFS
     &nofs_handler,
 #endif /*  USE_DISPATCHER_NOFS */
@@ -51,6 +58,9 @@ static zint_handler_t * zint_server_handlers_values[] =
 
 static char * zint_server_handlers_keys[] =
 {
+#ifdef USE_DISPATCHER_GRIDFTP
+    "gridftp",
+#endif /*  USE_DISPATCHER_GRIDFTP */
 #ifdef USE_DISPATCHER_NOFS
     "nofs",
 #endif /*  USE_DISPATCHER_NOFS */
@@ -75,21 +85,8 @@ static unsigned int ZINT_HANDLERS_COUNT = 0;
 static zint_handler_t ** zint_handlers = NULL;
 static char ** zint_handlers_keys = NULL;
 
-/* convert the string to lower case */
-static int zint_str_tolower(char * str)
-{
-    unsigned int i = 0;
-
-    for( i = 0 ; i < strlen(str) ; i++)
-    {
-        str[i] = tolower(str[i]);
-    }
-
-    return ZFS_OK;
-}
-
 /* setup the server handlers based on the user handlers */
-int zint_setup_handlers(int n, char * user_handlers[])
+int zint_setup_handlers(int n, const char * user_handlers[])
 {
     int i = 0;
     unsigned int j = 0;
@@ -99,10 +96,11 @@ int zint_setup_handlers(int n, char * user_handlers[])
     /* was the local handler specified */
     for( i = 0 ; i < n ; i++)
     {
-        zint_str_tolower(user_handlers[i]);
-        if(strcmp(user_handlers[i], zint_server_handlers_keys[ZINT_SERVER_HANDLERS_LOCAL_INDEX]) != 0)
+        if(strcasecmp(user_handlers[i],
+                 zint_server_handlers_keys[ZINT_SERVER_HANDLERS_LOCAL_INDEX])
+              != 0)
         {
-           hsize++;
+           ++hsize;
         }
     }
 
@@ -120,8 +118,10 @@ int zint_setup_handlers(int n, char * user_handlers[])
         {
             /* if the user requested this server handler, add it to the list */
             /* if the requested handler was local, ignore since it is forced to be the last handle */
-            if(strcmp(zint_server_handlers_keys[j], user_handlers[i]) == 0 &&
-                strcmp(zint_server_handlers_keys[ZINT_SERVER_HANDLERS_LOCAL_INDEX], user_handlers[i]) != 0)
+            if(strcasecmp(zint_server_handlers_keys[j], user_handlers[i]) == 0
+                  &&
+                strcasecmp(zint_server_handlers_keys[ZINT_SERVER_HANDLERS_LOCAL_INDEX],
+                   user_handlers[i]) != 0)
             {
                 zint_handlers[ZINT_HANDLERS_COUNT] = zint_server_handlers_values[j];
                 zint_handlers_keys[ZINT_HANDLERS_COUNT] = zint_server_handlers_keys[j];

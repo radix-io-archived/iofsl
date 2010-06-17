@@ -43,4 +43,8 @@ src/c-util/txt_configfile.h \
 src/c-util/interval-merge-tree.h \
 src/c-util/interval-merge-tree.c \
 src/c-util/perf-counters.h \
-src/c-util/perf-counters.c
+src/c-util/perf-counters.c \
+src/c-util/lookup3.h \
+src/c-util/lookup3.c \
+src/c-util/lookup8.h \
+src/c-util/lookup8.c

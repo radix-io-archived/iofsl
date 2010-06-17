@@ -8,12 +8,7 @@ src_sm_libsm_a_LIBLDFLAGS = \
     @BOOST_REGEX_LIB@
 
 src_sm_libsm_a_SOURCES = \
-src/sm/IOFWDExceptionTranslator.hh \
-src/sm/IOFWDLookupStateMachine.cpp \
-src/sm/IOFWDLookupStateMachine.hh \
-src/sm/IOFWDState.hh \
-src/sm/IOFWDStateEvents.hh \
-src/sm/IOFWDStateMachine.hh \
+src/sm/sm-fwd.hh \
 src/sm/SM.cpp \
 src/sm/SM.hh \
 src/sm/SMClient.cpp \
@@ -24,27 +19,8 @@ src/sm/SMResourceClient.cpp \
 src/sm/SMResourceClient.hh \
 src/sm/SMResourceOp.cpp \
 src/sm/SMResourceOp.hh \
-src/sm/SM_OLD.hh 
-
-#
-# Boost SM support
-#
-noinst_LIBRARIES += src/sm/libiofwdsm.a
-
-src_sm_libiofwdsm_a_LIBLDFLAGS =        \
-    @BOOST_PROGRAM_OPTIONS_LDFLAGS@     \
-    @BOOST_DATE_TIME_LDFLAGS@           \
-    @BOOST_REGEX_LDFLAGS@               \
-    @BOOST_THREAD_LDFLAGS@              \
-    @BOOST_PROGRAM_OPTIONS_LIBS@        \
-    @BOOST_DATE_TIME_LIBS@              \
-    @BOOST_THREAD_LIBS@                 \
-    @BOOST_REGEX_LIBS@
-
-src_sm_libiofwdsm_a_SOURCES =           \
-	src/sm/IOFWDLookupStateMachine.cpp  \
-	src/sm/IOFWDState.hh                \
-	src/sm/IOFWDStateEvents.hh          \
-	src/sm/IOFWDStateMachine.hh         \
-	src/sm/IOFWDExceptionTranslator.hh  \
-	src/sm/IOFWDLookupStateMachine.hh
+src/sm/SM_OLD.hh \
+src/sm/SimpleSM.hh \
+src/sm/SimpleSM.cpp \
+src/sm/SimpleNestedSM.hh \
+src/sm/SimpleSlots.hh

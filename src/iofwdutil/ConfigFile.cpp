@@ -1,7 +1,8 @@
-#include "ConfigFile.hh"
 #include <boost/format.hpp>
 #include <boost/utility.hpp>
+
 #include "c-util/configstoreadapter.h"
+#include "ConfigFile.hh"
 
 // @TODO:
 //  get decent error codes in cf_getKey/... so we can differentiate
@@ -87,19 +88,8 @@ void ConfigFile::error (const std::string & strs) const
    throw strs;
 }
 
-ConfigFile ConfigFile::openSectionDefault (const char * name, const ConfigFile & def) const
-{
-   try
-   {
-      return openSection (name);
-   }
-   catch (const CFKeyMissingException & e)
-   {
-      return def;
-   }
-}
-
-ConfigFile ConfigFile::openSection (const char * name) const
+boost::optional<ConfigFile> ConfigFile::openSectionOptional (const char *
+      name) const
 {
    SectionHandle newhandle;
 
@@ -107,13 +97,31 @@ ConfigFile ConfigFile::openSection (const char * name) const
             getSectionHandle(),
             name, &newhandle) < 0)
    {
-      throw CFKeyMissingException (name);
+      return boost::optional<ConfigFile> ();
    }
    return ConfigFile (*this, newhandle);
 }
 
+ConfigFile ConfigFile::openSectionDefault (const char * name, const ConfigFile & def) const
+{
+   boost::optional<ConfigFile> ret (openSectionOptional (name));
+   if (ret)
+      return *ret;
+   else
+      return def;
+}
 
-std::string ConfigFile::getKey (const char * name) const
+ConfigFile ConfigFile::openSection (const char * name) const
+{
+   boost::optional<ConfigFile> ret (openSectionOptional (name));
+   if (ret)
+      return *ret;
+   else
+      throw CFKeyMissingException (name);
+}
+
+boost::optional<std::string> ConfigFile::getKeyOptional (const char * name)
+   const
 {
    int keysize;
 
@@ -122,7 +130,7 @@ std::string ConfigFile::getKey (const char * name) const
          getSectionHandle(), name, 0, 0);
 
    if (keysize < 0)
-      throw CFKeyMissingException (name);
+      return boost::optional<std::string>();
 
    if (keysize == 0)
       return std::string ();
@@ -133,19 +141,24 @@ std::string ConfigFile::getKey (const char * name) const
    ALWAYS_ASSERT(keysize > 0);
 
    return std::string (&buf[0]);
-   
+ }
+
+std::string ConfigFile::getKey (const char * name) const
+{
+   boost::optional<std::string> ret (getKeyOptional (name));
+   if (!ret)
+      throw CFKeyMissingException (name);
+   else
+      return *ret;
 }
 
 std::string ConfigFile::getKeyDefault (const char * name, const std::string & def) const
 {
-   try 
-   {
-      return getKey (name);
-   }
-   catch (const CFKeyMissingException & e)
-   {
+   boost::optional<std::string> ret (getKeyOptional (name));
+   if (!ret)
       return def;
-   }
+   else
+      return *ret;
 }
 
 std::vector<std::string> ConfigFile::getMultiKey (const char * name) const

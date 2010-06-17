@@ -7,11 +7,27 @@
  * Jason Cope <copej@mcs.anl.gov>
  */
 
+#include "src/zoidfs/zoidfs.h"
 #include "bmi_comm.h"
+
+/**
+ * Take a BMI error code and return a zoidfs error instead.
+ * @TODO: needs to be expanded once we have proper transport/network
+ * error codes in zoidfs.h (see ticket #57)
+ */
+static int bmi2zfs (int ret)
+{
+   if (ret < 0)
+      return ZFSERR_OTHER;
+   else
+      return ret;
+}
+
 
 /*
  * bmi_comm_send
  * Synchronous call for sending messages using BMI.
+ * Returns ZFS_OK if OK, ZFS error code otherwise.
  */
 int bmi_comm_send(BMI_addr_t peer_addr, const void *buffer, bmi_size_t buflen,
                   bmi_msg_tag_t tag, bmi_context_id context) {
@@ -25,26 +41,28 @@ int bmi_comm_send(BMI_addr_t peer_addr, const void *buffer, bmi_size_t buflen,
                         NULL, context, NULL);
     if (ret < 0) {
         fprintf(stderr, "bmi_comm_send: BMI_post_send() failed.\n");
-        exit(1);
+        return bmi2zfs(ret);
     } else if (ret == 0) {
         do {
-            ret = BMI_test(op_id, &outcount, &error_code, &actual_size, NULL,
-                           MAX_IDLE_TIME, context);
+            ret = BMI_testcontext(1, &op_id, &outcount, &error_code, &actual_size, NULL, MAX_IDLE_TIME, context);
         } while (ret == 0 && outcount == 0);
 
         if (ret < 0 || error_code != 0) {
             fprintf(stderr, "bmi_comm_send: Data send failed.\n");
-            exit(1);
+            if (error_code)
+               return bmi2zfs(error_code);
+            else
+               return bmi2zfs (ret);
         }
 
         if (actual_size != buflen) {
             fprintf(stderr, "bmi_comm_send: Expected %ld but received %lu\n",
                     buflen, actual_size);
-            exit(1);
+            return ZFSERR_OTHER;
         }
     }
 
-    return 0;
+    return ZFS_OK;
 }
 
 /*
@@ -75,7 +93,7 @@ int bmi_comm_isend_wait(bmi_op_id_t op_id, bmi_size_t buflen, bmi_context_id con
     bmi_error_code_t error_code;
 
     do {
-        ret = BMI_test(op_id, &outcount, &error_code, &actual_size, NULL, MAX_IDLE_TIME, context);
+        ret = BMI_testcontext(1, &op_id, &outcount, &error_code, &actual_size, NULL, MAX_IDLE_TIME, context);
     } while (ret == 0 && outcount == 0);
 
     if (ret < 0 || error_code != 0)
@@ -108,20 +126,22 @@ int bmi_comm_recv(BMI_addr_t peer_addr, void *buffer, bmi_size_t buflen,
                         BMI_PRE_ALLOC, tag, NULL, context, NULL);
     if (ret < 0) {
         fprintf(stderr, "bmi_comm_recv: BMI_post_recv() failed.\n");
-        exit(1);
+        return bmi2zfs(ret);
     } else if (ret == 0) {
         do {
-            ret = BMI_test(op_id, &outcount, &error_code, actual_size, NULL,
-                           MAX_IDLE_TIME, context);
+            ret = BMI_testcontext(1, &op_id, &outcount, &error_code, actual_size, NULL, MAX_IDLE_TIME, context);
         } while (ret == 0 && outcount == 0);
 
         if (ret < 0 || error_code != 0) {
             fprintf(stderr, "bmi_comm_recv: Data receive failed.\n");
-            exit(1);
+            if (error_code)
+               return bmi2zfs(error_code);
+            else
+               return bmi2zfs(ret);
         }
     }
 
-    return 0;
+    return ZFS_OK;
 }
 
 /*
@@ -133,7 +153,7 @@ int bmi_comm_irecv_wait(bmi_op_id_t op_id, bmi_size_t * actual_size, bmi_context
     bmi_error_code_t error_code;
 
     do {
-        ret = BMI_test(op_id, &outcount, &error_code, actual_size, NULL, MAX_IDLE_TIME, context);
+        ret = BMI_testcontext(1, &op_id, &outcount, &error_code, actual_size, NULL, MAX_IDLE_TIME, context);
     } while (ret == 0 && outcount == 0);
 
     if (ret < 0 || error_code != 0)
@@ -179,26 +199,28 @@ int bmi_comm_sendu(BMI_addr_t peer_addr, const void *buffer, bmi_size_t buflen,
                                   BMI_PRE_ALLOC, tag, NULL, context, NULL);
     if (ret < 0) {
         fprintf(stderr, "bmi_comm_sendu: BMI_post_sendunexpected() failed.\n");
-        exit(1);
+        return bmi2zfs(ret);
     } else if (ret == 0) {
         do {
-            ret = BMI_test(op_id, &outcount, &error_code, &actual_size, NULL,
-                           MAX_IDLE_TIME, context);
+            ret = BMI_testcontext(1, &op_id, &outcount, &error_code, &actual_size, NULL, MAX_IDLE_TIME, context);
         } while (ret == 0 && outcount == 0);
 
         if (ret < 0 || error_code != 0) {
             fprintf(stderr, "bmi_comm_sendu: Data send failed.\n");
-            exit(1);
+            if (error_code)
+               return bmi2zfs (error_code);
+            else
+               return bmi2zfs (ret);
         }
 
         if (actual_size != buflen) {
             fprintf(stderr, "bmi_comm_sendu: Expected %ld but received %lu\n",
                     buflen, actual_size);
-            exit(1);
+            return ZFSERR_OTHER;
         }
     }
 
-    return 0;
+    return ZFS_OK;
 }
 
 int bmi_comm_isendu(BMI_addr_t peer_addr, const void *buffer, bmi_size_t buflen,
@@ -224,8 +246,7 @@ int bmi_comm_isendu_wait(bmi_size_t buflen, bmi_context_id context, bmi_op_id_t 
     bmi_error_code_t error_code;
 
     do {
-        ret = BMI_test(op_id, &outcount, &error_code, &actual_size, NULL,
-        MAX_IDLE_TIME, context);
+        ret = BMI_testcontext(1, &op_id, &outcount, &error_code, &actual_size, NULL, MAX_IDLE_TIME, context);
     } while (ret == 0 && outcount == 0);
 
     if (ret < 0 || error_code != 0) {
@@ -300,26 +321,28 @@ int bmi_comm_send_list(BMI_addr_t peer_addr, size_t list_count,
                              tag, NULL, context, NULL);
     if (ret < 0) {
         fprintf(stderr, "bmi_comm_send_list: BMI_post_send() failed.\n");
-        exit(1);
+        return bmi2zfs(ret);
     } else if (ret == 0) {
         do {
-            ret = BMI_test(op_id, &outcount, &error_code, &actual_size, NULL,
-                           MAX_IDLE_TIME, context);
+            ret = BMI_testcontext(1, &op_id, &outcount, &error_code, &actual_size, NULL, MAX_IDLE_TIME, context);
         } while (ret == 0 && outcount == 0);
 
         if (ret < 0 || error_code != 0) {
             fprintf(stderr, "bmi_comm_send_list: Data send failed. %d\n", error_code);
-            exit(1);
+            if (error_code)
+               return bmi2zfs(error_code);
+            else
+               return bmi2zfs (ret);
         }
 
         if (actual_size != total_size) {
             fprintf(stderr, "bmi_comm_send_list: Expected %ld but received %lu\n",
                     total_size, actual_size);
-            exit(1);
+            return ZFSERR_OTHER;
         }
     }
 
-    return 0;
+    return ZFS_OK;
 }
 
 int bmi_comm_isend_list(BMI_addr_t peer_addr, size_t list_count,
@@ -347,8 +370,7 @@ int bmi_comm_isend_list_wait(bmi_op_id_t op_id, bmi_context_id context, bmi_size
 
     do
     {
-        ret = BMI_test(op_id, &outcount, &error_code, &actual_size, NULL,
-                       MAX_IDLE_TIME, context);
+        ret = BMI_testcontext(1, &op_id, &outcount, &error_code, &actual_size, NULL, MAX_IDLE_TIME, context);
     }while (ret == 0 && outcount == 0);
 
     if (ret < 0 || error_code != 0) {
@@ -384,16 +406,18 @@ int bmi_comm_recv_list(BMI_addr_t peer_addr, size_t list_count,
                              tag, NULL, context, NULL);
     if (ret < 0) {
         fprintf(stderr, "bmi_comm_recv_list: BMI_post_recv_list() failed.\n");
-        exit(1);
+        return bmi2zfs(ret);
     } else if (ret == 0) {
         do {
-            ret = BMI_test(op_id, &outcount, &error_code, &actual_size, NULL,
-                           MAX_IDLE_TIME, context);
+            ret = BMI_testcontext(1, &op_id, &outcount, &error_code, &actual_size, NULL, MAX_IDLE_TIME, context);
         } while (ret == 0 && outcount == 0);
 
         if (ret < 0 || error_code != 0) {
             fprintf(stderr, "bmi_comm_recv_list: Data receive failed.\n");
-            exit(1);
+            if (error_code)
+               return bmi2zfs(error_code);
+            else
+               return bmi2zfs (ret);
         }
     }
 
@@ -413,7 +437,7 @@ int bmi_comm_irecv_list(BMI_addr_t peer_addr, size_t list_count,
     if (ret < 0)
     {
         fprintf(stderr, "bmi_comm_recv_list: BMI_post_recv_list() failed.\n");
-        exit(1);
+        return 1;
     }
 
     return ret ? 1 : 0;
@@ -426,13 +450,12 @@ int bmi_comm_irecv_list_wait(bmi_op_id_t op_id, bmi_context_id context, bmi_size
 
     do
     {
-        ret = BMI_test(op_id, &outcount, &error_code, actual_size, NULL,
-                       MAX_IDLE_TIME, context);
+        ret = BMI_testcontext(1, &op_id, &outcount, &error_code, actual_size, NULL, MAX_IDLE_TIME, context);
     }while (ret == 0 && outcount == 0);
 
     if (ret < 0 || error_code != 0) {
         fprintf(stderr, "bmi_comm_recv_list: Data receive failed.\n");
-        exit(1);
+        return 1;
     }
 
     return 0;

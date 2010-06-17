@@ -3,6 +3,7 @@
 
 #include "IOFWDRequest.hh"
 #include "iofwd/ResizeRequest.hh"
+#include "iofwdutil/InjectPool.hh"
 
 namespace iofwd
 {
@@ -12,18 +13,19 @@ namespace iofwd
 
 class IOFWDResizeRequest
   : public ResizeRequest,
-    public IOFWDRequest
+    public IOFWDRequest,
+    public iofwdutil::InjectPool<IOFWDResizeRequest>
 {
 public:
-   IOFWDResizeRequest (iofwdutil::bmi::BMIContext & bmi, int opid, const BMI_unexpected_info & info,
-         iofwdutil::completion::BMIResource & res)
-      : ResizeRequest(opid), IOFWDRequest (bmi, info, res), op_hint_(NULL)
+   IOFWDResizeRequest (int opid, const BMI_unexpected_info & info,
+         IOFWDResources & res)
+      : ResizeRequest(opid), IOFWDRequest (info, res), op_hint_(NULL)
    {
    }
 
    virtual const ReqParam & decodeParam ();
 
-   virtual iofwdutil::completion::CompletionID * reply ();
+   virtual void reply (const CBType & cb);
 
    virtual ~IOFWDResizeRequest ();
 

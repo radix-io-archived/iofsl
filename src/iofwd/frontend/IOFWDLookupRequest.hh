@@ -4,7 +4,7 @@
 #include "zoidfs/util/zoidfs-wrapped.hh"
 #include "IOFWDRequest.hh"
 #include "iofwd/LookupRequest.hh"
-
+#include "iofwdutil/InjectPool.hh"
 
 namespace iofwd
 {
@@ -12,29 +12,30 @@ namespace iofwd
    {
 //===========================================================================
 
-class IOFWDLookupRequest 
-   : public IOFWDRequest, 
-     public LookupRequest
+class IOFWDLookupRequest
+   : public IOFWDRequest,
+     public LookupRequest,
+     public iofwdutil::InjectPool<IOFWDLookupRequest>
 {
 public:
-   IOFWDLookupRequest (iofwdutil::bmi::BMIContext & bmi, int opid, const BMI_unexpected_info & info,
-         iofwdutil::completion::BMIResource & res)
-      : IOFWDRequest (bmi, info,res), LookupRequest (opid), op_hint_(NULL)
+   IOFWDLookupRequest (int opid, const BMI_unexpected_info & info,
+         IOFWDResources & res)
+      : IOFWDRequest (info,res), LookupRequest (opid), op_hint_(NULL)
    {
    }
 
-   virtual const ReqParam & decodeParam () ; 
+   virtual const ReqParam & decodeParam () ;
 
-   virtual iofwdutil::completion::CompletionID * reply (const zoidfs::zoidfs_handle_t * handle); 
+   virtual void reply (const CBType & cb, const zoidfs::zoidfs_handle_t * handle);
 
-   virtual ~IOFWDLookupRequest (); 
+   virtual ~IOFWDLookupRequest ();
 
-   
+
 protected:
-   ReqParam param_; 
+   ReqParam param_;
    FileInfo info_;
-   zoidfs::zoidfs_op_hint_t * op_hint_; 
-}; 
+   zoidfs::zoidfs_op_hint_t * op_hint_;
+};
 
 //===========================================================================
    }

@@ -3,7 +3,6 @@
 
 #include "Request.hh"
 #include "zoidfs/util/zoidfs-wrapped.hh"
-#include "iofwdutil/completion/CompletionID.hh"
 
 namespace iofwd
 {
@@ -26,9 +25,6 @@ public:
       Request (opid)
    {
    }
-   virtual ~MkdirRequest ()
-   {
-   }
 
    /**
     * Retrieve the request input parameters 
@@ -38,8 +34,12 @@ public:
    /**
     * Reply with the handle or 0 if an error occurred and the handle does not
     * need to be transmitted
+    *
+    * TODO: Check this. From the signature, it seems like the new handle is
+    * not returned. It would probably make sense to do so.
     */
-   virtual iofwdutil::completion::CompletionID * reply (const zoidfs::zoidfs_cache_hint_t * parent_hint) = 0; 
+   virtual void reply (const CBType & cb, 
+         const zoidfs::zoidfs_cache_hint_t * parent_hint) = 0;
 }; 
 
 

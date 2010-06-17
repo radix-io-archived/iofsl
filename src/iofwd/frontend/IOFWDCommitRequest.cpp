@@ -6,6 +6,7 @@ namespace iofwd
    {
 //===========================================================================
 
+      // @TODO: make op_hint a C++ class so no explicit destruction is needed.
 IOFWDCommitRequest::~IOFWDCommitRequest ()
 {
     if(op_hint_)
@@ -30,9 +31,9 @@ const IOFWDCommitRequest::ReqParam & IOFWDCommitRequest::decodeParam ()
    return param_;
 }
 
-iofwdutil::completion::CompletionID * IOFWDCommitRequest::reply ()
+void IOFWDCommitRequest::reply (const CBType & cb)
 {
-   return simpleReply (TSSTART << (int32_t) getReturnCode ()); 
+   simpleReply (cb, TSSTART << (int32_t) getReturnCode ());
 }
 
 //===========================================================================

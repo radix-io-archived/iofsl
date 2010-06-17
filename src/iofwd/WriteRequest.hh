@@ -3,14 +3,12 @@
 
 #include "Request.hh"
 #include "zoidfs/zoidfs.h"
-#include "iofwdutil/completion/CompletionID.hh"
 #include "iofwdutil/bmi/BMI.hh"
 #include "iofwdutil/bmi/BMIAddr.hh"
 #include "iofwdutil/bmi/BMIBuffer.hh"
 
 namespace iofwd
 {
-   
    /**
     * @TODO This is wrong.
     * The Read/Write Request cannot expose transport specific details.
@@ -20,44 +18,56 @@ namespace iofwd
     *
     *  cannot be here.
     *
-    *  @TODO Remove CompletionID * stuff
     */
-class WriteRequest : public Request 
+class WriteRequest : public Request
 {
 public:
-  typedef struct
+  typedef struct ReqParam_
   {
      zoidfs::zoidfs_handle_t * handle;
      size_t mem_count;
      char ** mem_starts;
      size_t * mem_sizes;
+     size_t mem_total_size;
+     bmi_size_t mem_expected_size;
+     bmi_size_t * bmi_mem_sizes;
      size_t file_count;
      zoidfs::zoidfs_file_ofs_t * file_starts;
      zoidfs::zoidfs_file_ofs_t * file_sizes;
      size_t pipeline_size;
      zoidfs::zoidfs_op_hint_t * op_hint;
+
+     /* decoded hint values */
+     bool op_hint_pipeline_enabled;
+
+     size_t max_buffer_size;
+
+     ReqParam_() : handle(NULL), mem_count(0), mem_starts(NULL), mem_sizes(NULL), mem_total_size(0), mem_expected_size(0),
+        bmi_mem_sizes(NULL), file_count(0), file_starts(NULL), file_sizes(NULL), pipeline_size(0), op_hint(NULL), op_hint_pipeline_enabled(true), max_buffer_size(0)
+     {
+     }
+
   } ReqParam;
 
   WriteRequest (int opid)
      : Request (opid)
   {
   }
-  virtual ~WriteRequest ()
-  {
-  }
 
-  virtual const ReqParam & decodeParam () = 0;
+  virtual ReqParam & decodeParam () = 0;
 
-  virtual iofwdutil::completion::CompletionID * reply () = 0;
+  virtual void reply(const CBType & cb) = 0;
 
   // for normal mode
-  virtual iofwdutil::completion::CompletionID * recvBuffers() = 0;
+  virtual void recvBuffers(const CBType & cb) = 0;
 
   // for pipeline mode
-  virtual iofwdutil::completion::CompletionID * recvPipelineBuffer(iofwdutil::bmi::BMIBuffer * buf, size_t size) = 0;
+  virtual void recvPipelineBufferCB(iofwdevent::CBType cb, iofwdutil::bmi::BMIBuffer * buf, size_t size) = 0;
 
   virtual iofwdutil::bmi::BMIAddr getRequestAddr() = 0;
-}; 
+
+  virtual void initRequestParams(ReqParam & p, void * bufferMem) = 0;
+};
 
 }
 

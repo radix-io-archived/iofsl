@@ -2,6 +2,7 @@
 #include <boost/test/unit_test.hpp>
 #include <boost/bind.hpp>
 #include <boost/format.hpp>
+#include "iofwdevent/DummyResource.hh"
 #include "iofwdevent/SingleCompletion.hh"
 #include "ThreadSafety.hh"
 
@@ -18,6 +19,8 @@ struct SCFixture {
     
     SingleCompletion comp;
 
+    DummyResource dummy_;
+
     bool completed_;
 
     size_t counter_;
@@ -33,9 +36,12 @@ BOOST_FIXTURE_TEST_CASE( singlethreaded_test, SCFixture )
 {
     BOOST_TEST_MESSAGE("Testing singlethreaded SingleCompletion::test");
 
+    // arm SingleComp object.
 
+
+    dummy_.defer (comp, COMPLETED);
     BOOST_CHECK_TS (!comp.test ());
-    comp.success ();
+    dummy_.complete ();
     BOOST_CHECK_TS (comp.test ());
     
 }
@@ -49,7 +55,7 @@ BOOST_FIXTURE_TEST_CASE( singlethreaded_wait, SCFixture )
    BOOST_TEST_MESSAGE("Checking early complete");
     
     // Here the operation completes before we call wait
-    comp.success ();
+    dummy_.immediate (comp, COMPLETED);
 
     boost::system_time t1 = boost::get_system_time ();
 
@@ -78,6 +84,10 @@ static void multithreaded_test_helper1 (SingleCompletion & comp,
 BOOST_FIXTURE_TEST_CASE( multithreaded_test, SCFixture )
 {
     BOOST_TEST_MESSAGE("Thread busy polling test...");
+       
+    
+    // NEed to arm the SingleCompletion obj first
+    dummy_.defer (comp, COMPLETED);
 
     // We use a barrier to make sure the testing thread is running before
     // we complete the SingleCompletion
@@ -90,7 +100,7 @@ BOOST_FIXTURE_TEST_CASE( multithreaded_test, SCFixture )
 
        bar.wait ();
 
-       comp.success ();
+       dummy_.complete ();
 
        group.join_all ();
     }
@@ -116,6 +126,10 @@ BOOST_FIXTURE_TEST_CASE( multithreaded_test2, SCFixture )
    boost::barrier bar (THREADCOUNT + 1);
    {
       boost::thread_group group;
+      
+      // Need to arm the SingleCompletion object by using it as a callback
+      // before calling test/wait on it.
+      dummy_.defer (comp, COMPLETED);
 
       for (size_t i=0; i<THREADCOUNT; ++i)
       {
@@ -126,7 +140,7 @@ BOOST_FIXTURE_TEST_CASE( multithreaded_test2, SCFixture )
 
 
       // We complete the operation before the threads wait
-      comp.success ();
+      dummy_.complete ();
       completed_ = true;
 
       bar.wait ();
@@ -191,6 +205,8 @@ static void mt3_helper (SCFixture & f, bool wait, bool mixed)
       boost::thread_group group;
 
       boost::barrier bar (THREADCOUNT + 1);
+      
+      f.dummy_.defer (f.comp, COMPLETED);
 
       for (size_t i=0; i<THREADCOUNT; ++i)
       {
@@ -216,8 +232,7 @@ static void mt3_helper (SCFixture & f, bool wait, bool mixed)
       BOOST_TEST_MESSAGE_TS("Master thread completing SingleCompletion");
 
       f.completed_ = true;
-      f.comp.success ();
-
+      f.dummy_.complete ();
 
       BOOST_TEST_MESSAGE_TS("Master thread waiting for helper threads to "
             "join...");
@@ -232,20 +247,17 @@ static void mt3_helper (SCFixture & f, bool wait, bool mixed)
 
 BOOST_FIXTURE_TEST_CASE( multithreaded_test3, SCFixture )
 {
-   //comp.success ();
    mt3_helper (*this, true, false);
 }
 
 
 BOOST_FIXTURE_TEST_CASE( multithreaded_test4, SCFixture )
 {
-   //comp.success ();
    mt3_helper (*this, false, false);
 }
 
 BOOST_FIXTURE_TEST_CASE( multithreaded_test5, SCFixture )
 {
-   //comp.success ();
    mt3_helper (*this, false, true);
 }
 

@@ -46,7 +46,7 @@ public:
    bool reschedule ()
    {
       op_.rearm (SMResourceClientSharedPtr(this));
-      info_.timer_.createTimer (&op_, 1000);
+      info_.timer_.createTimer (op_.callbackRef(), 1000);
 
       return false;
    }

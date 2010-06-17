@@ -4,6 +4,7 @@
 #include "zoidfs/util/zoidfs-wrapped.hh"
 #include "IOFWDRequest.hh"
 #include "iofwd/ReadDirRequest.hh"
+#include "iofwdutil/InjectPool.hh"
 
 namespace iofwd
 {
@@ -13,20 +14,22 @@ namespace iofwd
 
 class IOFWDReadDirRequest
    : public IOFWDRequest,
-     public ReadDirRequest
+     public ReadDirRequest,
+     public iofwdutil::InjectPool<IOFWDReadDirRequest>
 {
 public:
-   IOFWDReadDirRequest (iofwdutil::bmi::BMIContext & bmi, int opid, const BMI_unexpected_info & info,
-         iofwdutil::completion::BMIResource & res)
-      : IOFWDRequest (bmi, info,res), ReadDirRequest (opid), entries_ (NULL), op_hint_(NULL)
+   IOFWDReadDirRequest (int opid, const BMI_unexpected_info & info,
+         IOFWDResources & res)
+      : IOFWDRequest (info,res), ReadDirRequest (opid), entries_ (NULL),
+      op_hint_(NULL)
    {
    }
 
    virtual const ReqParam & decodeParam () ;
 
-   virtual iofwdutil::completion::CompletionID * reply (uint32_t entry_count,
-                                                        zoidfs::zoidfs_dirent_t * entries,
-                                                        zoidfs::zoidfs_cache_hint_t * cache);
+   virtual void reply (const CBType & cb, uint32_t entry_count,
+                                   zoidfs::zoidfs_dirent_t * entries,
+                                   zoidfs::zoidfs_cache_hint_t * cache);
 
    virtual ~IOFWDReadDirRequest ();
 

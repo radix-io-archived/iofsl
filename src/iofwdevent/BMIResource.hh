@@ -6,11 +6,10 @@ extern "C"
 #include <bmi.h>
 }
 
-#include <boost/pool/pool.hpp>
-#include <deque>
-
+#include <boost/intrusive/slist.hpp>
+#include <boost/pool/pool_alloc.hpp>
+#include "iofwdutil/tools.hh"
 #include "ThreadedResource.hh"
-#include "ResourceOp.hh"
 #include "iofwdutil/assert.hh"
 #include "iofwdutil/IOFWDLog.hh"
 
@@ -46,13 +45,19 @@ namespace iofwdevent
 
          virtual void stop ();
 
+         virtual bool cancel (Handle h);
+
       protected:
          // Note: don't store objects in here, mempool doesn't
          // destruct/construct properly
          struct BMIEntry
          {
-            ResourceOp * op;
-            bmi_size_t * actual;
+            BMIEntry (const CBType & c, bmi_size_t * a)
+              : cb(c), actual(a)
+            { }
+
+            CBType              cb;
+            bmi_size_t *        actual;
          };
 
       protected:
@@ -73,34 +78,33 @@ namespace iofwdevent
 
          /**
           * Translate BMI error code into exception
-          * (which will be tunneled into the ResourceOp)
+          * (which will be tunneled into the Callback)
           */
-         void handleBMIError (ResourceOp * u, int bmiret);
-
+         void handleBMIError (const CBType & cb, int bmiret);
          /**
           * Return new BMI entry
           */
-         inline BMIEntry * newEntry (ResourceOp * u, bmi_size_t * actual = 0);
+         inline BMIEntry * newEntry (const CBType & cb, bmi_size_t * actual = 0);
 
          /**
-          * CHeck for normal BMI errors not associated with requests
+          * Check for normal BMI errors not associated with requests
           */
          inline void checkBMI (int ret) { ALWAYS_ASSERT(ret >= 0); };
 
-         void completeUnexpectedClient (size_t count);
-
-         void checkUnexpected ();
-
       public:
 
-         inline void post_send (ResourceOp * u, BMI_addr_t dest,
+         inline void get_info(BMI_addr_t dest,
+               int option,
+               void * inout_param);
+
+         inline void post_send (const CBType &  u, BMI_addr_t dest,
                const void * buffer,
                bmi_size_t size,
                enum bmi_buffer_type buffer_type,
                bmi_msg_tag_t tag,
                bmi_hint hints);
 
-         inline void post_recv(ResourceOp * u, BMI_addr_t src,
+         inline void post_recv(const CBType &  u, BMI_addr_t src,
                void *buffer,
                bmi_size_t expected_size,
                bmi_size_t * actual_size,
@@ -108,7 +112,7 @@ namespace iofwdevent
                bmi_msg_tag_t tag,
                bmi_hint hints);
 
-         inline void post_send_list(ResourceOp * u, BMI_addr_t dest,
+         inline void post_send_list(const CBType &  u, BMI_addr_t dest,
                const void *const *buffer_list,
                const bmi_size_t* size_list,
                int list_count,
@@ -118,7 +122,7 @@ namespace iofwdevent
                bmi_msg_tag_t tag,
                bmi_hint hints);
 
-         inline void post_recv_list(ResourceOp * u,
+         inline void post_recv_list(const CBType &  u,
                BMI_addr_t src,
                void *const *buffer_list,
                const bmi_size_t *size_list,
@@ -129,7 +133,7 @@ namespace iofwdevent
                bmi_msg_tag_t tag,
                bmi_hint hints);
 
-         inline void post_sendunexpected_list(ResourceOp * u,
+         inline void post_sendunexpected_list(const CBType &  u,
 				 BMI_addr_t dest,
 				 const void *const *buffer_list,
 				 const bmi_size_t *size_list,
@@ -141,7 +145,7 @@ namespace iofwdevent
                                  bmi_hint hints);
 
 
-         inline void post_sendunexpected(ResourceOp * u,
+         inline void post_sendunexpected(const CBType &  u,
 			    BMI_addr_t dest,
 			    const void *buffer,
 			    bmi_size_t size,
@@ -152,7 +156,7 @@ namespace iofwdevent
          /**
           * Post testunexpected call.
           */
-         void testunexpected (ResourceOp * u,
+         Handle post_testunexpected (const CBType &  u,
                int incount,
                int * outcount,
                BMI_unexpected_info * info);
@@ -161,24 +165,47 @@ namespace iofwdevent
        protected:
          bmi_context_id context_;
 
-         // Note: not object pool, no destructor/constructor will be called
-         boost::pool<> mempool_;
-
-         // Memory for unexpected messages when nobody is accepting them
-         boost::pool<> unexpectedpool_;
-
-         struct UnexpectedClient
+         struct UnexpectedMessage :
+            public boost::intrusive::slist_base_hook<>
          {
-            ResourceOp * op;
+            UnexpectedMessage (const BMI_unexpected_info & i)
+               : info_ (i)
+            {
+            }
+
+            BMI_unexpected_info info_;
+         };
+
+         struct UnexpectedClient :
+            public boost::intrusive::slist_base_hook<>
+         {
+            CBType op;
             int   incount;
             int * outcount;
             BMI_unexpected_info * info;
+            size_t sequence;
 
             UnexpectedClient  () {}
 
-            UnexpectedClient (ResourceOp * o,
-                  int in, int * out, BMI_unexpected_info *i)
-               : op (o), incount(in), outcount(out), info(i)
+            UnexpectedClient (const CBType &  o,
+                  int in, int * out, BMI_unexpected_info *i,
+                  size_t seq)
+               : op (o), incount(in), outcount(out), info(i),
+               sequence(seq)
+            {
+            }
+         };
+
+         struct ue_ready_disposer
+         {
+            void operator () (UnexpectedMessage * UNUSED(v))
+            {
+            }
+         };
+
+         struct ue_clientlist_disposer
+         {
+            void operator () (UnexpectedClient * UNUSED(v))
             {
             }
          };
@@ -186,28 +213,46 @@ namespace iofwdevent
          // Lock for the unexpected structures
          boost::mutex ue_lock_;
 
-         std::vector<BMI_unexpected_info> ue_info_;
-         std::deque<UnexpectedClient> ue_clientlist_;
-         std::queue<BMI_unexpected_info *> ue_ready_;
+         // Intrusive single linked list with support for push_back
+         // (cache_last -> true)
+         typedef boost::intrusive::slist<UnexpectedClient,
+            boost::intrusive::cache_last<true>,
+            boost::intrusive::constant_time_size<true> > UEClientListType;
+
+         UEClientListType ue_clientlist_;
+
+         // slist for storing messages until somebody asks for them.
+         // We want to take them from BMI, since as long as unexpected
+         // messages are present BMI_testcontext returns early.
+         boost::intrusive::slist<UnexpectedMessage,
+            boost::intrusive::cache_last<true>,
+            boost::intrusive::constant_time_size<true> > ue_ready_;
+
+         size_t ue_sequence_;
+
+         boost::pool<> ue_message_pool_;
+         boost::pool<> ue_client_pool_;
 
          iofwdutil::zlog::ZLogSource & log_;
 
        protected:
-         static
-         size_t accumulate_helper (size_t other, const UnexpectedClient & in);
+         static size_t accumulate_helper (size_t other,
+               const UnexpectedClient & in);
 
+         void completeUnexpectedClient (const UnexpectedClient & client);
 
+         void checkUnexpected ();
+
+         void checkNewUEMessages ();
 
    };
 
    //===========================================================================
 
-   BMIResource::BMIEntry * BMIResource::newEntry (ResourceOp * u,
+   BMIResource::BMIEntry * BMIResource::newEntry (const CBType &  u,
          bmi_size_t * actual)
    {
-      BMIEntry * e = (BMIEntry *) mempool_.malloc ();
-      e->op = u;
-      e->actual = actual;
+      BMIEntry * e = new BMIEntry (u, actual);
       return e;
    }
 
@@ -217,18 +262,18 @@ namespace iofwdevent
       {
          if (bmiret >= 0)
          {
-            e->op->success ();
+            e->cb (COMPLETED);
          }
          else
          {
-            handleBMIError (e->op, bmiret);
+            handleBMIError (e->cb, bmiret);
          }
       }
       catch (...)
       {
-         ALWAYS_ASSERT(false && "ResourceOp should not throw");
+         ALWAYS_ASSERT(false && "Callback should not throw");
       }
-      mempool_.free (e);
+      delete (e);
    }
 
 
@@ -244,7 +289,7 @@ namespace iofwdevent
       completeEntry (e, bmiret);
    }
 
-   void BMIResource::post_send (ResourceOp * u, BMI_addr_t dest,
+   void BMIResource::post_send (const CBType &  u, BMI_addr_t dest,
          const void * buffer,
          bmi_size_t size,
          enum bmi_buffer_type buffer_type,
@@ -258,7 +303,7 @@ namespace iofwdevent
    }
 
 
-   void BMIResource::post_sendunexpected_list(ResourceOp * u,
+   void BMIResource::post_sendunexpected_list(const CBType &  u,
          BMI_addr_t dest,
          const void *const *buffer_list,
          const bmi_size_t *size_list,
@@ -277,7 +322,7 @@ namespace iofwdevent
     }
 
 
-   void BMIResource::post_sendunexpected(ResourceOp * u,
+   void BMIResource::post_sendunexpected(const CBType &  u,
          BMI_addr_t dest,
          const void *buffer,
          bmi_size_t size,
@@ -292,7 +337,7 @@ namespace iofwdevent
 }
 
 
-   void BMIResource::post_recv(ResourceOp * u, BMI_addr_t src,
+   void BMIResource::post_recv(const CBType &  u, BMI_addr_t src,
          void *buffer,
          bmi_size_t expected_size,
          bmi_size_t * actual_size,
@@ -307,7 +352,14 @@ namespace iofwdevent
                actual_size, buffer_type, tag, e, context_, hints));
    }
 
-   void BMIResource::post_send_list(ResourceOp * u, BMI_addr_t dest,
+   void BMIResource::get_info(BMI_addr_t dst,
+         int option, 
+         void * inout_param)
+   {
+      checkBMI(BMI_get_info(dst, option, inout_param));
+   }
+
+   void BMIResource::post_send_list(const CBType &  u, BMI_addr_t dest,
          const void *const *buffer_list,
          const bmi_size_t* size_list,
          int list_count,
@@ -324,7 +376,7 @@ namespace iofwdevent
                total_size, buffer_type, tag, e, context_, hints));
    }
 
-   void BMIResource::post_recv_list(ResourceOp * u,
+   void BMIResource::post_recv_list(const CBType &  u,
          BMI_addr_t src,
          void *const *buffer_list,
          const bmi_size_t *size_list,

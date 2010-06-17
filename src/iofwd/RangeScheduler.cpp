@@ -32,37 +32,28 @@ bool FIFORangeScheduler::dequeue(ChildRange ** r)
 
 //===========================================================================
 
-#define DEFAULT_QUANTUM 8
-
 struct HandleQueue
 {
   RangeType type;
   const zoidfs::zoidfs_handle_t * handle;
-  RangeSet * rs;
-  HierarchicalRangeSet * hrs;
-  IntervalTreeRangeSet * itrs;
+  BaseRangeSet * brs;
   int quantum;
 };
 
 void MergeRangeScheduler::io_enqueue(ChildRange * r)
 {
   tr1::unordered_map<const zoidfs::zoidfs_handle_t*, HandleQueue*>& m_ = (r->type_ == RANGE_READ) ? rm_ : wm_;
+  BaseRangeSet * brs = NULL;
   if (m_.find(r->handle_) == m_.end()) {
     // if no HandleQueue exists for r.handle, create new one
     HandleQueue * hq = new HandleQueue();
     hq->type = r->type_;
     hq->handle = r->handle_;
-    hq->quantum = DEFAULT_QUANTUM;
+    hq->quantum = default_quantum_;
 
-#ifdef ITRS
-    IntervalTreeRangeSet * itrs = new IntervalTreeRangeSet();
-    itrs->add(r);
-    hq->itrs = itrs;
-#else
-    HierarchicalRangeSet * hrs = new HierarchicalRangeSet();
-    hrs->add(r);
-    hq->hrs = hrs;
-#endif /* #ifdef ITRS */
+    brs = createRangeSet();
+    brs->add(r);
+    hq->brs = brs;
 
     q_.push_back(hq);
     m_[hq->handle] = hq;
@@ -71,14 +62,8 @@ void MergeRangeScheduler::io_enqueue(ChildRange * r)
     // add to its RangeSet.
     HandleQueue * hq = m_.find(r->handle_)->second;
 
-#ifdef ITRS
-    IntervalTreeRangeSet * itrs = hq->itrs;
-    itrs->add(r);
-#else
-    HierarchicalRangeSet * hrs = hq->hrs;
-    hrs->add(r);
-#endif /* #ifdef ITRS */
-
+    brs = hq->brs;
+    brs->add(r);
   }
 }
 
@@ -86,46 +71,28 @@ bool MergeRangeScheduler::io_dequeue(ChildRange ** r)
 {
   if (q_.empty()) return false;
 
+  BaseRangeSet * brs = NULL;
   HandleQueue * hq = q_.front();
   tr1::unordered_map<const zoidfs::zoidfs_handle_t*, HandleQueue*>& m_ = (hq->type == RANGE_READ) ? rm_ : wm_;
   assert(m_.find(hq->handle) != m_.end());
 
-#ifdef ITRS
-  IntervalTreeRangeSet * itrs = hq->itrs;
-  assert(!itrs->empty());
-  itrs->pop_front(r);
-#else
-  HierarchicalRangeSet * hrs = hq->hrs;
-  assert(!hrs->empty());
-  hrs->pop_front(r);
-  //fprintf(stderr, "pop_front = %p\n", *r);
-#endif /* #ifdef ITRS */
+  brs = hq->brs;
+  assert(!brs->empty());
+  brs->get(r);
 
   hq->quantum--;
-#ifdef ITRS
-  if (hq->quantum > 0 && !itrs->empty()) {
-#else
-  if (hq->quantum > 0 && !hrs->empty()) {
-#endif /* #ifdef ITRS */
+  if (hq->quantum > 0 && !brs->empty()) {
     // do nothing
-#ifdef ITRS
-  } else if (hq->quantum == 0 && !itrs->empty()) {
-#else
-  } else if (hq->quantum == 0 && !hrs->empty()) {
-#endif /* #ifdef ITRS */
+  } else if (hq->quantum == 0 && !brs->empty()) {
     // turn to another queue
-    hq->quantum = DEFAULT_QUANTUM;
+    hq->quantum = default_quantum_;
     q_.pop_front();
     q_.push_back(hq);
   } else {
     // delete queue
     q_.pop_front();
     m_.erase(hq->handle);
-#ifdef ITRS
-    delete hq->itrs;
-#else
-    delete hq->hrs;
-#endif /* #ifdef ITRS */
+    delete hq->brs;
     delete hq;    
   }
 

@@ -1,5 +1,5 @@
-#ifndef __RB_TREE_H__
-#define __RB_TREE_H__
+#ifndef RB_TREE_H
+#define RB_TREE_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -30,6 +30,8 @@ extern "C" {
 #define RB_TREE_INTERVAL_SAME 5
 
 #define RB_TREE_NODE_POOL_SIZE_MAX 16
+
+#define RB_TREE_CONSUME 2
 
 /* data types */
 
@@ -89,6 +91,7 @@ struct interval_merge_tree_node
     interval_merge_tree_interval_ll_t * ll_tail;
     char color;
     char node_pool;
+    struct interval_merge_tree_node * consumer;
 };
 typedef struct interval_merge_tree_node interval_merge_tree_node_t;
 

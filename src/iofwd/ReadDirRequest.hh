@@ -3,7 +3,6 @@
 
 #include "Request.hh"
 #include "zoidfs/util/zoidfs-wrapped.hh"
-#include "iofwdutil/completion/CompletionID.hh"
 
 namespace iofwd
 {
@@ -27,9 +26,6 @@ public:
       Request (opid)
    {
    }
-   virtual ~ReadDirRequest ()
-   {
-   }
 
    /**
     * Retrieve the request input parameters 
@@ -40,9 +36,9 @@ public:
     * Reply with the handle or 0 if an error occurred and the handle does not
     * need to be transmitted
     */
-   virtual iofwdutil::completion::CompletionID * reply (uint32_t entry_count,
-                                                        zoidfs::zoidfs_dirent_t * entries,
-                                                        zoidfs::zoidfs_cache_hint_t * cache) = 0;
+   virtual void reply (const CBType & cb, uint32_t entry_count,
+                                zoidfs::zoidfs_dirent_t * entries,
+                                zoidfs::zoidfs_cache_hint_t * cache) = 0;
 }; 
 
 

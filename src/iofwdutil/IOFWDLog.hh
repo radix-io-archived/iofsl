@@ -27,12 +27,12 @@ namespace iofwdutil
 {
 //===========================================================================
 
-using boost::format; 
+using boost::format;
 
-typedef zlog::ZLogSource IOFWDLogSource; 
+typedef zlog::ZLogSource IOFWDLogSource;
 
 class IOFWDLog : public Singleton<IOFWDLog>
-{ 
+{
 
    friend class Singleton<IOFWDLog>;
 
@@ -40,16 +40,16 @@ public:
 
     static zlog::ZLogSource & getSource (const char * sourcename = "default")
     {
-       return IOFWDLog::instance().getSourceInt (sourcename); 
+       return IOFWDLog::instance().getSourceInt (sourcename);
     }
-    
-    
+
+
     // Has to be public for scoped_ptr
-    ~IOFWDLog (); 
+    ~IOFWDLog ();
 
 private:
-  
-    IOFWDLog (); 
+
+    IOFWDLog ();
 
 
     zlog::ZLogSource & getSourceInt (const char * name)
@@ -65,27 +65,27 @@ private:
 
     zlog::ZLogSource * createSource (const char * name);
 
-    void setDefaultConfig (zlog::ZLogSource & source); 
+    void setDefaultConfig (zlog::ZLogSource & source);
 
-    //void loadRules (); 
+    //void loadRules ();
 
-    void setLogLevelOverride (const std::string & str); 
+    void setLogLevelOverride (const std::string & str);
 
-    void createDefaultSinks (); 
+    void createDefaultSinks ();
 
-    void createDefaultFilters (); 
+    void createDefaultFilters ();
 
-    void applyLogLevelOverride (zlog::ZLogSource & source); 
+    void applyLogLevelOverride (zlog::ZLogSource & source);
 
 private:
-    typedef std::map<std::string, zlog::ZLogSource *> SourceMapType; 
-    SourceMapType sources_; 
+    typedef std::map<std::string, zlog::ZLogSource *> SourceMapType;
+    SourceMapType sources_;
 
-    std::auto_ptr<zlog::ZLogConfigurator> configurator_; 
+    std::auto_ptr<zlog::ZLogConfigurator> configurator_;
 
-    unsigned int default_loglevel_; 
+    unsigned int default_loglevel_;
 
-    std::vector<std::pair<std::string, unsigned int> > loglevel_override_; 
+    std::vector<std::pair<std::string, unsigned int> > loglevel_override_;
 
     boost::mutex lock_;
 };

@@ -12,15 +12,32 @@ namespace sm
 {
 //===========================================================================
 
+void SMManager::runNow (SMClient * client)
+{
+   // This is here so the client gets deleted if it runs to completion
+   // in this method.
+   SMClientSharedPtr ptr (client);
+   do
+   {
+      ZLOG_DEBUG_MORE(log_,format("SMManager runNow client %p") % (void*) client);
+   } while (client->execute ());
+}
+
 void SMManager::schedule (SMClient * client)
 {
    ZLOG_DEBUG_MORE(log_,format("Scheduling client %p") % (void*) client);
 
-   boost::mutex::scoped_lock l (lock_);
+   iofwdutil::ThreadPool::instance().addWorkUnit(new SMHelper(client), &SMHelper::run, iofwdutil::ThreadPool::HIGH, true);
+}
 
-   worklist_.push (SMClientSharedPtr (client));
-   // Notify a worker thread.
-   cond_.notify_one ();
+void SMManager::startThreads()
+{
+    iofwdutil::ThreadPool::instance().start();
+}
+
+void SMManager::stopThreads()
+{
+    iofwdutil::ThreadPool::instance().reset();
 }
 
 void SMManager::workerMain ()
@@ -73,38 +90,6 @@ void SMManager::workerMain ()
    }
    
    ZLOG_DEBUG_EXTREME(log_, "Worker thread exiting");
-}
-
-void SMManager::startThreads (size_t count)
-{
-   ALWAYS_ASSERT(workers_.empty());
-
-   if (!count)
-      count = threads_;
-
-   ZLOG_DEBUG(log_, format("Starting %i threads...") % count);
-   workers_.reserve (count);
-   for (size_t i=0; i<count; ++i)
-   {
-      workers_.push_back (
-            new boost::thread (boost::bind (&SMManager::workerMain, this)));
-   }
-}
-
-void SMManager::stopThreads ()
-{
-   ZLOG_DEBUG(log_, "Stopping threads...");
-   finish_ = true;
-
-   {
-      boost::mutex::scoped_lock l(lock_);
-      cond_.notify_all ();
-   }
-   for_each (workers_.begin(), workers_.end(),
-         boost::bind(&boost::thread::join, _1));
-   for_each (workers_.begin(), workers_.end(),
-         boost::bind(&operator delete, _1));
-   workers_.clear();
 }
 
 SMManager::~SMManager ()

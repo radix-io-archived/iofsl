@@ -4,6 +4,7 @@
 #include "zoidfs/util/zoidfs-wrapped.hh"
 #include "IOFWDRequest.hh"
 #include "iofwd/ReadLinkRequest.hh"
+#include "iofwdutil/InjectPool.hh"
 
 namespace iofwd
 {
@@ -13,19 +14,21 @@ namespace iofwd
 
 class IOFWDReadLinkRequest
    : public IOFWDRequest,
-     public ReadLinkRequest
+     public ReadLinkRequest,
+     public iofwdutil::InjectPool<IOFWDReadLinkRequest>
 {
 public:
-   IOFWDReadLinkRequest (iofwdutil::bmi::BMIContext & bmi, int opid, const BMI_unexpected_info & info,
-         iofwdutil::completion::BMIResource & res)
-      : IOFWDRequest (bmi, info,res), ReadLinkRequest (opid), op_hint_(NULL)
+   IOFWDReadLinkRequest (int opid, const BMI_unexpected_info & info,
+         IOFWDResources & res)
+      : IOFWDRequest (info,res), ReadLinkRequest (opid), op_hint_(NULL)
    {
    }
 
    virtual const ReqParam & decodeParam () ;
 
-   virtual iofwdutil::completion::CompletionID * reply (const char * buffer,
-                                                        uint64_t buffer_length);
+   /// @TODO: Why is buffer_length 64 bit????
+   virtual void reply (const CBType & cb, const char * buffer,
+                                         size_t buffer_length);
 
    virtual ~IOFWDReadLinkRequest ();
 

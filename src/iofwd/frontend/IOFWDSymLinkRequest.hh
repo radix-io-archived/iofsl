@@ -4,7 +4,7 @@
 #include "zoidfs/util/zoidfs-wrapped.hh"
 #include "IOFWDRequest.hh"
 #include "iofwd/SymLinkRequest.hh"
-
+#include "iofwdutil/InjectPool.hh"
 
 namespace iofwd
 {
@@ -14,19 +14,21 @@ namespace iofwd
 
 class IOFWDSymLinkRequest
    : public IOFWDRequest,
-     public SymLinkRequest
+     public SymLinkRequest,
+     public iofwdutil::InjectPool<IOFWDSymLinkRequest>
 {
 public:
-   IOFWDSymLinkRequest (iofwdutil::bmi::BMIContext & bmi, int opid, const BMI_unexpected_info & info,
-         iofwdutil::completion::BMIResource & res)
-      : IOFWDRequest (bmi, info,res), SymLinkRequest (opid), op_hint_(NULL)
+   IOFWDSymLinkRequest (int opid, const BMI_unexpected_info & info,
+         IOFWDResources & res)
+      : IOFWDRequest (info,res), SymLinkRequest (opid), op_hint_(NULL)
    {
    }
 
    virtual const ReqParam & decodeParam () ;
 
-   virtual iofwdutil::completion::CompletionID * reply (const zoidfs::zoidfs_cache_hint_t * from_parent_hint,
-                                                        const zoidfs::zoidfs_cache_hint_t * to_parent_hint);
+   virtual void reply (const CBType & cb,
+                       const zoidfs::zoidfs_cache_hint_t * from_parent_hint,
+                       const zoidfs::zoidfs_cache_hint_t * to_parent_hint);
 
    virtual ~IOFWDSymLinkRequest ();
 

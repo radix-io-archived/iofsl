@@ -1,9 +1,6 @@
 #include "WriteTask.hh"
 #include "zoidfs/util/ZoidFSAPI.hh"
-#include "zoidfs/util/ZoidFSAsyncAPI.hh"
 #include "zoidfs/zoidfs-proto.h"
-#include "RequestScheduler.hh"
-#include "BMIBufferPool.hh"
 
 #include <vector>
 #include <deque>
@@ -16,277 +13,306 @@ namespace iofwd
 {
 //===========================================================================
 
-struct RetrievedBuffer
+void WriteTask::runNormalMode(WriteRequest::ReqParam & p)
 {
-  BMIBufferAllocCompletionID * alloc_id;
-  uint64_t siz;
-  uint64_t off;
-  iofwdutil::completion::CompletionID * io_id;
+   // setup the BMI memory wrappers
+   rbuffer_ = new RetrievedBuffer*[1];
+   rbuffer_[0] = new RetrievedBuffer(request_.getRequestAddr(), iofwdutil::bmi::BMI::ALLOC_RECEIVE, total_bytes_);
+   rbuffer_[0]->reinit();
 
-  // for async request
-  const char ** mem_starts;
-  size_t * mem_sizes;
-  uint64_t * file_starts;
-  uint64_t * file_sizes;
-};
+   // get a BMI buffer
+   block_.reset();
+   iofwd::BMIMemoryManager::instance().alloc(block_, rbuffer_[0]->buffer);
+   block_.wait();
 
-namespace {
-void releaseRetrievedBuffer(RetrievedBuffer& b)
-{
-   delete b.alloc_id;
-   delete b.io_id;
-   delete[] b.mem_starts;
-   delete[] b.mem_sizes;
-   delete[] b.file_starts;
-   delete[] b.file_sizes;
-}
-}
+   // init the task params
+   request_.initRequestParams(p, rbuffer_[0]->buffer->getMemory());
+   
+   // issue recvBuffers w/ callback
+   block_.reset();
+   request_.recvBuffers((block_));
+   block_.wait();
 
-void WriteTask::runNormalMode(const WriteRequest::ReqParam & p)
-{
-#ifdef USE_IOFWD_TASK_POOL
-   std::auto_ptr<iofwdutil::completion::CompletionID> recv_id (request_->recvBuffers ());
-#else
-   std::auto_ptr<iofwdutil::completion::CompletionID> recv_id (request_.recvBuffers ());
-#endif
-   recv_id->wait ();
+   /* issue the write */
+   int ret;
+   block_.reset();
+   api_->write((block_), &ret,  p.handle, p.mem_count, 
+         const_cast<const void**>(reinterpret_cast<void**>(p.mem_starts)), p.mem_sizes,
+         p.file_count, p.file_starts, p.file_sizes, p.op_hint); 
+   block_.wait();
 
-   // p.mem_sizes is uint64_t array, but ZoidFSAPI::write() takes size_t array
-   // for its arguments. Therefore, in (sizeof(size_t) != sizeof(uint64_t))
-   // environment (32bit), p.mem_sizes is not valid for size_t array.
-   // We allocate temporary buffer to fix this problem.
-   size_t * tmp_mem_sizes = (size_t*)p.mem_sizes;
-   bool need_size_t_workaround = (sizeof(size_t) != sizeof(uint64_t));
-   if (need_size_t_workaround) {
-      tmp_mem_sizes = new size_t[p.mem_count];
-      for (uint32_t i = 0; i < p.mem_count; i++)
-         tmp_mem_sizes[i] = p.mem_sizes[i];
-   }
+   /* deallocate the buffer */
+   iofwd::BMIMemoryManager::instance().dealloc(rbuffer_[0]->buffer);
 
-   std::auto_ptr<iofwdutil::completion::CompletionID> io_id (sched_->enqueueWrite (
-      p.handle, (size_t)p.mem_count,
-      (const void**)p.mem_starts, tmp_mem_sizes,
-      p.file_starts, p.file_sizes, p.op_hint));
-   io_id->wait ();
-   int ret = zoidfs::ZFS_OK;
-#ifdef USE_IOFWD_TASK_POOL
-   request_->setReturnCode (ret);
-#else
-   request_.setReturnCode (ret);
-#endif
+   /* setup the return code */
+   request_.setReturnCode(ret);
 
-   if (need_size_t_workaround)
-      delete[] tmp_mem_sizes;
-
-#ifdef USE_IOFWD_TASK_POOL
-   std::auto_ptr<iofwdutil::completion::CompletionID> reply_id (request_->reply ());
-#else
-   std::auto_ptr<iofwdutil::completion::CompletionID> reply_id (request_.reply ());
-#endif
-   reply_id->wait ();
+   // issue reply w/ callback
+   block_.reset();
+   request_.reply((block_));
+   block_.wait();
 }
 
-iofwdutil::completion::CompletionID * WriteTask::execPipelineIO(const WriteRequest::ReqParam & p,
-   RetrievedBuffer * b)
+void WriteTask::computePipelineFileSegments(const WriteRequest::ReqParam & p)
 {
-   const char * p_buf = (char *)b->alloc_id->get_buf()->get();
-   const uint64_t p_offset = b->off;
-   const uint64_t p_size = b->siz;
-   const uint64_t * file_starts = p.file_starts;
-   const uint64_t * file_sizes = p.file_sizes;
+    const zoidfs::zoidfs_file_ofs_t * file_starts = p.file_starts;
+    const zoidfs::zoidfs_file_size_t * file_sizes = p.file_sizes;
 
-   uint32_t st_file = 0, en_file = 0;
-   uint64_t st_fileofs = 0, en_fileofs = 0;
-   {
-     bool st_ok = false;
-     bool en_ok = false;
-     uint32_t cur_file = 0;
-     uint64_t cur_ofs = p_offset;
-     while (!(st_ok && en_ok)) {
-       const uint64_t st = p_offset;
-       const uint64_t en = p_offset + p_size;
-       assert(cur_file < p.file_count);
-       if (cur_ofs <= st && st < cur_ofs + file_sizes[cur_file]) {
-         st_file = cur_file;
-         st_fileofs = st - cur_ofs;
-         st_ok = true;
-       }
-       if (cur_ofs < en && en <= cur_ofs + file_sizes[cur_file]) {
-         en_file = cur_file;
-         en_fileofs = en - cur_ofs;
-         en_ok = true;
-         assert(st_ok);
-         break;
-       }
-       cur_ofs += file_sizes[cur_file];
-       cur_file++;
-     }
-     assert(st_file <= en_file);
-   }
+    size_t cur_pipe_ofs = 0;
+    int cur_file_index = 0;
+    int num_pipe_segments = 0;
+    size_t cur_pipe_buffer_size = pipeline_size_;
+    zoidfs::zoidfs_file_size_t cur_file_size = file_sizes[cur_file_index];
+    zoidfs::zoidfs_file_ofs_t cur_file_start = file_starts[cur_file_index];
+    size_t cur_mem_offset = 0;
+    int cur_pipe = 0;
 
-   size_t p_file_count = en_file + 1 - st_file;
-   uint64_t * p_file_starts = new uint64_t[p_file_count];
-   uint64_t * p_file_sizes = new uint64_t[p_file_count];
-   if (st_file == en_file) {
-      p_file_starts[0] = file_starts[st_file] + st_fileofs;
-      assert(en_fileofs > st_fileofs);
-      p_file_sizes[0] = en_fileofs - st_fileofs;
-   } else {
-      for (uint32_t i = st_file; i <= en_file; i++) {
-         if (i == st_file) {
-            p_file_starts[i - st_file] = file_starts[i] + st_fileofs;
-            p_file_sizes[i - st_file] = file_sizes[i] - st_fileofs;
-         } else if (i == en_file) {
-            p_file_starts[i - st_file] = file_starts[i];
-            p_file_sizes[i - st_file] = en_fileofs;
-         } else {
-            p_file_starts[i - st_file] = file_starts[i];
-            p_file_sizes[i - st_file] = file_sizes[i];
-         }
-      }
-   }
+    /* while there is still data to process in this op */
+    p_segments.push_back(0);
+    p_segments_start.push_back(0);
+    while(cur_pipe_ofs < total_bytes_)
+    {
+        /* setup the file sizes */
+        cur_file_size = file_sizes[cur_file_index];
+        cur_file_start = file_starts[cur_file_index];
 
-   // issue async I/O
-   uint64_t cur = 0;
-   const char ** mem_starts = new const char*[p_file_count];
-   size_t * mem_sizes = new size_t[p_file_count];
-   for (size_t i = 0; i < p_file_count; i++) {
-     mem_starts[i] = p_buf + cur;
-     mem_sizes[i] = p_file_sizes[i];
-     cur += p_file_sizes[i];
-   }
-   iofwdutil::completion::CompletionID * id = sched_->enqueueWrite (
-      p.handle, p_file_count, (const void**)mem_starts, mem_sizes,
-      p_file_starts, p_file_sizes, p.op_hint);
-   /*
-   iofwdutil::completion::CompletionID * id = async_api_->async_write (
-      p.handle, p_file_count, (const void**)mem_starts, mem_sizes,
-      p_file_count, p_file_starts, p_file_sizes);
-   */
-   b->mem_starts = mem_starts;
-   b->mem_sizes = mem_sizes;
-   b->file_starts = p_file_starts;
-   b->file_sizes = p_file_sizes;
+        while(cur_file_size > 0)
+        {
+            /* if the data left in the current file is large than the remaining pipeline buffer */
+            if(cur_file_size > cur_pipe_buffer_size)
+            {
+                /* update the pipeline segment data */
+                p_file_sizes.push_back(cur_pipe_buffer_size);
+                p_file_starts.push_back(cur_file_start);
+                p_mem_offsets.push_back(cur_mem_offset);
+                p_segments[cur_pipe] += 1;
 
-   return id;
+                cur_file_start += cur_pipe_buffer_size;
+
+                cur_file_size -= cur_pipe_buffer_size;
+                cur_pipe_ofs += cur_pipe_buffer_size;
+                cur_pipe_buffer_size = pipeline_size_;
+                cur_pipe++;
+                p_segments.push_back(0);
+                cur_mem_offset = 0;
+                num_pipe_segments++;
+                p_segments_start.push_back(num_pipe_segments);
+            }
+            else
+            {
+                /* update the pipeline segment data */
+                p_file_sizes.push_back(cur_file_size);
+                p_file_starts.push_back(cur_file_start);
+                p_mem_offsets.push_back(cur_mem_offset);
+                p_segments[cur_pipe] += 1;
+
+                cur_file_start += cur_file_size;
+
+                cur_pipe_buffer_size -= cur_file_size;
+                cur_pipe_ofs += cur_file_size;
+                cur_mem_offset += cur_file_size;
+                cur_file_size = 0;
+                cur_file_index++;
+                num_pipe_segments++;
+            }
+        }
+    }
+}
+
+void WriteTask::getBMIBuffer(int index)
+{
+    /* request a BMI buffer */
+    block_.reset();
+    iofwd::BMIMemoryManager::instance().alloc(block_, rbuffer_[index]->buffer);
+
+    /* set the callback and wait */
+    block_.wait();
+}
+
+void WriteTask::recvPipelineBuffer(int index)
+{
+    /* if there is still data to be recieved */
+    block_.reset();
+    p_siz_ = std::min(pipeline_size_, total_bytes_ - cur_recv_bytes_);
+    request_.recvPipelineBufferCB(block_, rbuffer_[index]->buffer->getBMIBuffer(), p_siz_);
+
+    /* set the callback and wait */
+    block_.wait();
+}
+
+void WriteTask::execPipelineIO(const WriteRequest::ReqParam & p)
+{
+    int index = 0;
+    int pipe_write_ops_posted = total_pipeline_ops_;
+    int pipe_write_ops_done = total_pipeline_ops_;
+    int pipe_recv_ops = total_pipeline_ops_;
+    int pipe_buffer_ops = total_pipeline_ops_;
+
+    /* while the pipeline operation is not done... */
+    while( (pipe_write_ops_posted > 0) || (pipe_write_ops_done > 0) || (pipe_recv_ops > 0) || pipe_buffer_ops > 0)
+    {
+        /* get a buffer */
+        if(pipe_buffer_ops > 0)
+        {
+            getBMIBuffer(index);
+            pipe_buffer_ops--;
+        }
+
+        /* recv data into a buffer */
+        if(pipe_recv_ops > 0)
+        {
+            recvPipelineBuffer(index);
+            pipe_recv_ops--;
+        }
+
+        /* post a write op */
+        if(pipe_write_ops_posted > 0)
+        {
+            postWrite(p, index);
+            pipe_write_ops_posted--;
+
+            /* add the pipeline op to the lookup vector */
+            pipeline_ops_.push_back(index);
+
+            /* advance to the next pipeline op */
+            index++;
+        }
+
+        /* check and see if any pending writes completed */
+        if(pipe_write_ops_done > 0)
+        {
+            /* iterate over the pipeline op vector */
+            unsigned int i = 0;
+            while(i < pipeline_ops_.size())
+            {
+                /* get the index we are going to test */
+                int cur = pipeline_ops_[i];
+
+                /* if this block completed */
+                if(pipeline_blocks_[cur]->test())
+                {
+                    /* reset the pipeline block */
+                    pipeline_blocks_[cur]->wait();
+
+                    /* update the count */
+                    pipe_write_ops_done--;
+
+                    /* dealloc the buffer */
+                    iofwd::BMIMemoryManager::instance().dealloc(rbuffer_[cur]->buffer);
+
+                    /* remove the completed op from the pipeline op list */
+                    pipeline_ops_.erase(pipeline_ops_.begin() + i);
+                }
+                else
+                {
+                    /* update the counter */
+                    i++;
+                }
+            }
+        }
+    }
+
+    /* check for completed write ops after all of the ops have been posted */
+    while(pipe_write_ops_done > 0)
+    {
+        /* iterate over the pipeline op vector */
+        unsigned int i = 0;
+        while(i < pipeline_ops_.size())
+        {
+            /* get the index we are going to test */
+            int cur = pipeline_ops_[i];
+
+            /* if this block completed */
+            if(pipeline_blocks_[cur]->test())
+            {
+                /* reset the pipeline block */
+                pipeline_blocks_[cur]->reset();
+ 
+                /* update the count */
+                pipe_write_ops_done--;
+
+                /* dealloc the buffer */
+                iofwd::BMIMemoryManager::instance().dealloc(rbuffer_[cur]->buffer);
+
+                /* remove the completed op from the pipeline op list */
+                pipeline_ops_.erase(pipeline_ops_.begin() + i);
+            }
+            else
+            {
+                /* update the counter */
+                i++;
+            }
+        }
+    }
+}
+
+void WriteTask::runPostWriteCB(int status, BMIMemoryAlloc * buffer, int index, iofwdevent::CBType cb)
+{
+    iofwd::BMIMemoryManager::instance().dealloc(buffer);
+
+    /* update the ret code */
+    if(*(rbuffer_[index]->ret) != zoidfs::ZFS_OK)
+    {
+        ret_ = *(rbuffer_[index]->ret);
+    }
+
+    cb(status);
+}
+
+void WriteTask::postWrite(const WriteRequest::ReqParam & p, int index)
+{ 
+    const char * p_buf = (char *)rbuffer_[index]->buffer->getMemory();
+    int p_seg_start = p_segments_start[index];
+    int p_file_count = p_segments[index];
+    int * ret = new int(0);
+
+    /* setup segment data structures */
+    zoidfs::zoidfs_file_ofs_t * file_starts = new zoidfs::zoidfs_file_ofs_t[p_file_count];
+    zoidfs::zoidfs_file_size_t * file_sizes = new zoidfs::zoidfs_file_size_t[p_file_count];
+    const char ** mem_starts = new const char*[p_file_count];
+    size_t * mem_sizes = new size_t[p_file_count];
+
+    for (int i = 0; i < p_file_count; i++)
+    {
+        /* find the index into the pipeline data */
+        int p_index = p_seg_start + i;
+
+        /* compute the I/O offsets for this data */
+        mem_starts[i] = p_buf + p_mem_offsets[p_index];
+        mem_sizes[i] = p_file_sizes[p_index];
+        file_starts[i] = p_file_starts[p_index];
+        file_sizes[i] = p_file_sizes[p_index];
+    }
+
+    rbuffer_[index]->mem_starts = mem_starts;
+    rbuffer_[index]->mem_sizes = mem_sizes;
+    rbuffer_[index]->file_starts = file_starts;
+    rbuffer_[index]->file_sizes = file_sizes;
+    rbuffer_[index]->ret = ret;
+
+    /* update the byte transfer count */
+    cur_recv_bytes_ += p_siz_;
+
+    iofwdevent::CBType pcb = *(pipeline_blocks_[index]);
+    boost::function<void(int)> bmmCB = boost::bind(&iofwd::WriteTask::runPostWriteCB, 
+            this, 0, rbuffer_[index]->buffer, index, pcb);
+
+    /* enqueue the write */
+    api_->write (
+        bmmCB, ret, p.handle, p_file_count, (const void**)mem_starts, mem_sizes,
+        p_file_count, file_starts, file_sizes, p.op_hint);
 }
 
 void WriteTask::runPipelineMode(const WriteRequest::ReqParam & p)
 {
-   // TODO: aware of system-wide memory consumption
-   uint64_t pipeline_bytes = bpool_->pipeline_size();
-   BMIBufferAllocCompletionID * alloc_id = NULL;
-
-   // The life cycle of buffers is like follows:
-   // from alloc -> NetworkRecv -> rx_q -> ZoidI/O -> io_q -> back to alloc
-   deque<RetrievedBuffer> rx_q;
-   deque<RetrievedBuffer> io_q;
-
-   uint64_t cur_recv_bytes = 0;
-   uint64_t total_bytes = 0;
-   for (uint32_t i = 0; i < p.mem_count; i++)
-      total_bytes += p.mem_sizes[i];
-
-   // iterate until retrieving all buffers
-   while (cur_recv_bytes < total_bytes) {
-     uint64_t p_siz = std::min(pipeline_bytes, total_bytes - cur_recv_bytes);
-     iofwdutil::completion::CompletionID * rx_id = NULL;
-
-     // issue I/O requests for already retrieved buffers in rx_q
-     while (!rx_q.empty()) {
-       RetrievedBuffer b = rx_q.front();
-       assert(b.alloc_id != NULL);
-       rx_q.pop_front();
-
-       b.io_id = execPipelineIO(p, &b);
-       io_q.push_back(b);
-     }
-
-     // try to alloc buffer
-     if (alloc_id == NULL)
-#ifdef USE_IOFWD_TASK_POOL
-       alloc_id = bpool_->alloc(request_->getRequestAddr(), iofwdutil::bmi::BMI::ALLOC_RECEIVE);
-#else
-       alloc_id = bpool_->alloc(request_.getRequestAddr(), iofwdutil::bmi::BMI::ALLOC_RECEIVE);
-#endif
-     // issue recv requests for next pipeline buffer
-     if (alloc_id != NULL && alloc_id->test(10)) {
-#ifdef USE_IOFWD_TASK_POOL
-       rx_id = request_->recvPipelineBuffer(alloc_id->get_buf(), p_siz);
-#else
-       rx_id = request_.recvPipelineBuffer(alloc_id->get_buf(), p_siz);
-#endif
-     }
-
-     // check I/O requests completion in io_q
-     for (deque<RetrievedBuffer>::iterator it = io_q.begin(); it != io_q.end();) {
-       RetrievedBuffer& b = *it;
-       iofwdutil::completion::CompletionID * io_id = b.io_id;
-       if (io_id->test(10)) {
-         assert(io_id != NULL);
-         releaseRetrievedBuffer(b);
-         it = io_q.erase(it);
-       } else {
-         ++it;
-       }
-     }
-
-     // wait for retrieving buffer
-     if (rx_id != NULL) {
-       rx_id->wait();
-       delete rx_id;
-
-       RetrievedBuffer b;
-       b.alloc_id = alloc_id;
-       b.siz = p_siz;
-       b.off = cur_recv_bytes;
-       b.io_id = NULL;
-       b.mem_starts = NULL;
-       b.mem_sizes = NULL;
-       b.file_starts = NULL;
-       b.file_sizes = NULL;
-       rx_q.push_back(b);
-
-       // advance to retrieve the next pipeline
-       cur_recv_bytes += p_siz;
-       alloc_id = NULL;
-     }
-   }
-
-   // issue remaining I/O requests
-   while (!rx_q.empty()) {
-     RetrievedBuffer b = rx_q.front();
-     assert(b.alloc_id != NULL);
-     rx_q.pop_front();
-
-     b.io_id = execPipelineIO(p, &b);
-     io_q.push_back(b);
-   }
-
-   // wait remaining I/O requests
-   while (!io_q.empty()) {
-     RetrievedBuffer b = io_q.front();
-     io_q.pop_front();
-
-     iofwdutil::completion::CompletionID * io_id = b.io_id;
-     assert(io_id != NULL);
-     io_id->wait();
-     releaseRetrievedBuffer(b);
-   }
+   // run the pipeline IO transfer code
+   execPipelineIO(p);
 
    // reply status
-#ifdef USE_IOFWD_TASK_POOL
-   request_->setReturnCode(zoidfs::ZFS_OK);
-#else
-   request_.setReturnCode(zoidfs::ZFS_OK);
-#endif
-
-#ifdef USE_IOFWD_TASK_POOL
-   std::auto_ptr<iofwdutil::completion::CompletionID> reply_id (request_->reply ());
-#else
-   std::auto_ptr<iofwdutil::completion::CompletionID> reply_id (request_.reply ());
-#endif
-   reply_id->wait ();
+   request_.setReturnCode(ret_);
+   block_.reset();
+   request_.reply((block_));
+   block_.wait();
 }
 
 //===========================================================================

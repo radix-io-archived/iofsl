@@ -1,5 +1,5 @@
-#ifndef __SRC_ZOIDFS_HINTS_ZOIDFS_HINTS_C__
-#define __SRC_ZOIDFS_HINTS_ZOIDFS_HINTS_C__
+#ifndef SRC_ZOIDFS_HINTS_ZOIDFS_HINTS_C
+#define SRC_ZOIDFS_HINTS_ZOIDFS_HINTS_C
 
 #include "zoidfs/zoidfs.h"
 
@@ -12,6 +12,12 @@ namespace zoidfs
    extern "C"
    {
 #endif /* __cplusplus */
+
+/* predefined hints */
+#define ZOIDFS_HINT_ENABLED (char*)"1"
+#define ZOIDFS_HINT_DISABLED (char*)"0"
+#define ZOIDFS_ENABLE_PIPELINE (char*)"ZOIDFS_ENABLE_PIPELINE"
+#define ZOIDFS_PIPELINE_SIZE (char*)"ZOIDFS_PIPELINE_SIZE"
 
 /* create and initialize the hint list */
 zoidfs_op_hint_t * zoidfs_hint_init(int size);

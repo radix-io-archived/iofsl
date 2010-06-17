@@ -2,52 +2,70 @@
 #define IOFWDEVENT_TIMERRESOURCE_HH
 
 #include <boost/thread.hpp>
+#include <boost/unordered_map.hpp>
 #include <queue>
 #include <csignal>
-#include <boost/pool/object_pool.hpp>
 #include <boost/thread/thread_time.hpp>
+#include <set>
+#include <map>
 
 #include "iofwdutil/assert.hh"
-#include "ResourceOp.hh"
+#include "iofwdutil/Singleton.hh"
 #include "Resource.hh"
 #include "ThreadedResource.hh"
-#include "iofwdutil/IOFWDLog.hh"
+#include "iofwdutil/IOFWDLog-fwd.hh"
 
 namespace iofwdevent
 {
 //===========================================================================
 
-class TimerResource : public ThreadedResource
+class TimerResource : public ThreadedResource,
+                      public iofwdutil::Singleton<TimerResource>
 {
 public:
    TimerResource ();
 
    virtual ~TimerResource ();
 
-   void createTimer (ResourceOp * id, unsigned int mstimeout);
+   Handle createTimer (const CBType & cb, unsigned int mstimeout);
 
+   // Cancel timer
+   virtual bool cancel (Handle h);
 
    /// TimerResource needs to do some extra cleanup on stop.
    virtual void stop ();
 
 protected:
-   struct TimerEntry
-   {
-      TimerEntry (ResourceOp * u, const boost::system_time & a)
-         : userdata_(u), alarm_(a) { }
+   typedef unsigned int seq_type_t;
 
-      ResourceOp * userdata_;
+   struct TimerEntry 
+   {
+      TimerEntry (seq_type_t seq)
+         : sequence_(seq)
+      {
+      }
+
+      TimerEntry (const CBType & cb, const boost::system_time & a,
+            seq_type_t seq)
+         : cb_(cb), alarm_(a), sequence_(seq) { }
+
+      CBType cb_;
       boost::system_time alarm_;
+      seq_type_t sequence_;
    };
 
-   /// Comparison operator for the heap
-   class TimerComp
+   // Compare the sequence ID's of 
+   /*struct IDComp
    {
-      public:
+      bool operator () (const TimerEntry * v1, const TimerEntry * v2)
+      { return v1->sequence_ > v2->sequence_; }
+   }; */
+
+   /// Comparison operator for the heap
+   struct TimerComp
+   {
          bool operator () (const TimerEntry * v1, const TimerEntry * v2)
-         {
-            return v1->alarm_ > v2->alarm_;
-         }
+         { return v1->alarm_ > v2->alarm_; }
    };
 
 
@@ -60,25 +78,23 @@ protected:
    /// Needs to be called with lock held
    const boost::system_time & peekNext () const
    {
-      ASSERT(queue_.size());
-      return queue_.top()->alarm_;
+      ASSERT(!queue_.empty());
+      return (*queue_.begin())->alarm_;
    }
 
 protected:
-   /// Lock to protect memory pool
-   boost::mutex pool_lock_;
+   typedef std::set<TimerEntry *, TimerComp>  QueueType;
+   typedef boost::unordered_map<seq_type_t, TimerEntry *> IDMapType;
 
-   /// Memory pool for the timer entries
-   boost::object_pool<TimerEntry> mempool_;
+   QueueType queue_;
+   IDMapType ids_;
 
-   /// Comparison functor for queue_;
-   TimerComp comp_;
+   iofwdutil::IOFWDLogSource & log_;
 
-   /// Priority queue to order the alarms
-   std::priority_queue<TimerEntry *,
-      std::vector<TimerEntry *>, TimerComp> queue_;
+   seq_type_t sequence_;
 
-   iofwdutil::zlog::ZLogSource & log_;
+   // pointer to the timer entry currently being executed by the worker thread
+   TimerEntry * executing_;
 };
 
 

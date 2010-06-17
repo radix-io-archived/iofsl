@@ -900,17 +900,8 @@ int zoidfs_xdr_hint_size(zoidfs_op_hint_t * op_hint)
 
     return size;
 }
-
 /* pipline config */
-#ifndef PIPELINE_SIZE
-#define PIPELINE_SIZE (1024 * 1024 * 8)
-#endif /* #ifndef PIPELINE_SIZE */
-
-/* make sure pipeline is less than or equal to ZOIDFS_BUFFER_MAX */
-#if PIPELINE_SIZE > ZOIDFS_BUFFER_MAX
-#undef PIPELINE_SIZE
-#define PIPELINE_SIZE ZOIDFS_BUFFER_MAX
-#endif /* #if PIPELINE_SIZE > ZOIDFS_BUFFER_MAX */
+static bmi_size_t PIPELINE_SIZE = 8388608;
 
 /* reuse a static buffer */
 #ifdef ZFS_BMI_FASTMEMALLOC
@@ -1004,12 +995,20 @@ int zoidfs_null(void) {
     send_msg.bmi_comp_id = ret;
 #else
     ret = ZOIDFS_BMI_COMM_SENDU(send_msg);
+    if (ret != ZFS_OK)
+    {
+       goto null_cleanup;
+    }
 #endif
 
 #ifdef ZFS_USE_NB_BMI_COMM
     ret = ZOIDFS_BMI_COMM_IRECV_WAIT(recv_msg);
 #else
     ret = ZOIDFS_BMI_COMM_RECV(recv_msg);
+    if (ret != ZFS_OK)
+    {
+       goto null_cleanup;
+    }
 #endif
 
     /* Decode the ION response */
@@ -1109,6 +1108,8 @@ int zoidfs_getattr(const zoidfs_handle_t *handle, zoidfs_attr_t *attr, zoidfs_op
     send_msg.bmi_comp_id = ret;
 #else
     ret = ZOIDFS_BMI_COMM_SENDU(send_msg);
+    if (ret != ZFS_OK)
+       goto getattr_cleanup;
 #endif
 
     /* Do a BMI receive in recvbuf */
@@ -1116,6 +1117,8 @@ int zoidfs_getattr(const zoidfs_handle_t *handle, zoidfs_attr_t *attr, zoidfs_op
     ret = ZOIDFS_BMI_COMM_IRECV_WAIT(recv_msg);
 #else
     ret = ZOIDFS_BMI_COMM_RECV(recv_msg);
+    if (ret != ZFS_OK)
+       goto getattr_cleanup;
 #endif
 
     /* Decode the ION response */
@@ -1222,12 +1225,16 @@ int zoidfs_setattr(const zoidfs_handle_t *handle, const zoidfs_sattr_t *sattr,
     send_msg.bmi_comp_id = ret;
 #else
     ret = ZOIDFS_BMI_COMM_SENDU(send_msg);
+    if (ret != ZFS_OK)
+       goto setattr_cleanup;
 #endif
 
 #ifdef ZFS_USE_NB_BMI_COMM
     ret = ZOIDFS_BMI_COMM_IRECV_WAIT(recv_msg);
 #else
     ret = ZOIDFS_BMI_COMM_RECV(recv_msg);
+    if (ret != ZFS_OK)
+       goto setattr_cleanup;
 #endif
 
     /* Decode the ION response */
@@ -1342,6 +1349,8 @@ int zoidfs_readlink(const zoidfs_handle_t *handle, char *buffer,
     send_msg.bmi_comp_id = ret;
 #else
     ret = ZOIDFS_BMI_COMM_SENDU(send_msg);
+    if (ret != ZFS_OK)
+       goto readlink_cleanup;
 #endif
 
     /* Do a BMI receive in recvbuf */
@@ -1349,6 +1358,8 @@ int zoidfs_readlink(const zoidfs_handle_t *handle, char *buffer,
     ret = ZOIDFS_BMI_COMM_IRECV_WAIT(recv_msg);
 #else
     ret = ZOIDFS_BMI_COMM_RECV(recv_msg);
+    if (ret != ZFS_OK)
+       goto readlink_cleanup;
 #endif
 
 
@@ -1512,6 +1523,8 @@ int zoidfs_lookup(const zoidfs_handle_t *parent_handle,
     send_msg.bmi_comp_id = ret;
 #else
     ret = ZOIDFS_BMI_COMM_SENDU(send_msg);
+    if (ret != ZFS_OK)
+       goto lookup_cleanup;
 #endif
 
     /* Do a BMI receive in recvbuf */
@@ -1519,6 +1532,8 @@ int zoidfs_lookup(const zoidfs_handle_t *parent_handle,
     ret = ZOIDFS_BMI_COMM_IRECV_WAIT(recv_msg);
 #else
     ret = ZOIDFS_BMI_COMM_RECV(recv_msg);
+    if (ret != ZFS_OK)
+       goto lookup_cleanup;
 #endif
 
     /* Decode the ION response */
@@ -1676,6 +1691,8 @@ int zoidfs_remove(const zoidfs_handle_t *parent_handle,
     send_msg.bmi_comp_id = ret;
 #else
     ret = ZOIDFS_BMI_COMM_SENDU(send_msg);
+    if (ret != ZFS_OK)
+       goto remove_cleanup;
 #endif
 
     /* Do a BMI receive in recvbuf */
@@ -1683,6 +1700,8 @@ int zoidfs_remove(const zoidfs_handle_t *parent_handle,
     ret = ZOIDFS_BMI_COMM_IRECV_WAIT(recv_msg);
 #else
     ret = ZOIDFS_BMI_COMM_RECV(recv_msg);
+    if (ret != ZFS_OK)
+       goto remove_cleanup;
 #endif
 
     /* Decode the ION response */
@@ -1782,6 +1801,8 @@ int zoidfs_commit(const zoidfs_handle_t *handle,
     send_msg.bmi_comp_id = ret;
 #else
     ret = ZOIDFS_BMI_COMM_SENDU(send_msg);
+    if (ret != ZFS_OK)
+       goto commit_cleanup;
 #endif
 
     /* Do a BMI receive in recvbuf */
@@ -1789,6 +1810,8 @@ int zoidfs_commit(const zoidfs_handle_t *handle,
     ret = ZOIDFS_BMI_COMM_IRECV_WAIT(recv_msg);
 #else
     ret = ZOIDFS_BMI_COMM_RECV(recv_msg);
+    if (ret != ZFS_OK)
+       goto commit_cleanup;
 #endif
 
     /* Decode the ION response */
@@ -1939,6 +1962,8 @@ int zoidfs_create(const zoidfs_handle_t *parent_handle,
     send_msg.bmi_comp_id = ret;
 #else
     ret = ZOIDFS_BMI_COMM_SENDU(send_msg);
+    if (ret != ZFS_OK)
+       goto create_cleanup;
 #endif
 
     /* Do a BMI receive in recvbuf */
@@ -1946,6 +1971,8 @@ int zoidfs_create(const zoidfs_handle_t *parent_handle,
     ret = ZOIDFS_BMI_COMM_IRECV_WAIT(recv_msg);
 #else
     ret = ZOIDFS_BMI_COMM_RECV(recv_msg);
+    if (ret != ZFS_OK)
+       goto create_cleanup;
 #endif
 
     /* Decode the ION response */
@@ -2158,6 +2185,8 @@ int zoidfs_rename(const zoidfs_handle_t *from_parent_handle,
     send_msg.bmi_comp_id = ret;
 #else
     ret = ZOIDFS_BMI_COMM_SENDU(send_msg);
+    if (ret != ZFS_OK)
+       goto rename_cleanup;
 #endif
 
     /* Do a BMI receive in recvbuf */
@@ -2165,6 +2194,8 @@ int zoidfs_rename(const zoidfs_handle_t *from_parent_handle,
     ret = ZOIDFS_BMI_COMM_IRECV_WAIT(recv_msg);
 #else
     ret = ZOIDFS_BMI_COMM_RECV(recv_msg);
+    if (ret != ZFS_OK)
+       goto rename_cleanup;
 #endif
 
     /* Decode the ION response */
@@ -2383,6 +2414,8 @@ int zoidfs_link(const zoidfs_handle_t *from_parent_handle,
     send_msg.bmi_comp_id = ret;
 #else
     ret = ZOIDFS_BMI_COMM_SENDU(send_msg);
+    if (ret != ZFS_OK)
+       goto link_cleanup;
 #endif
 
     /* Do a BMI receive in recvbuf */
@@ -2390,6 +2423,8 @@ int zoidfs_link(const zoidfs_handle_t *from_parent_handle,
     ret = ZOIDFS_BMI_COMM_IRECV_WAIT(recv_msg);
 #else
     ret = ZOIDFS_BMI_COMM_RECV(recv_msg);
+    if (ret != ZFS_OK)
+       goto link_cleanup;
 #endif
 
     /* Decode the ION response */
@@ -2613,6 +2648,8 @@ int zoidfs_symlink(const zoidfs_handle_t *from_parent_handle,
     send_msg.bmi_comp_id = ret;
 #else
     ret = ZOIDFS_BMI_COMM_SENDU(send_msg);
+    if (ret != ZFS_OK)
+       goto symlink_cleanup;
 #endif
 
     /* Do a BMI receive in recvbuf */
@@ -2620,6 +2657,8 @@ int zoidfs_symlink(const zoidfs_handle_t *from_parent_handle,
     ret = ZOIDFS_BMI_COMM_IRECV_WAIT(recv_msg);
 #else
     ret = ZOIDFS_BMI_COMM_RECV(recv_msg);
+    if (ret != ZFS_OK)
+       goto symlink_cleanup;
 #endif
 
     /* Decode the ION response */
@@ -2796,6 +2835,8 @@ int zoidfs_mkdir(const zoidfs_handle_t *parent_handle,
     send_msg.bmi_comp_id = ret;
 #else
     ret = ZOIDFS_BMI_COMM_SENDU(send_msg);
+    if (ret != ZFS_OK)
+       goto mkdir_cleanup;
 #endif
 
     /* Do a BMI receive in recvbuf */
@@ -2803,6 +2844,8 @@ int zoidfs_mkdir(const zoidfs_handle_t *parent_handle,
     ret = ZOIDFS_BMI_COMM_IRECV_WAIT(recv_msg);
 #else
     ret = ZOIDFS_BMI_COMM_RECV(recv_msg);
+    if (ret != ZFS_OK)
+       goto mkdir_cleanup;
 #endif
 
     /* Decode the ION response */
@@ -2949,6 +2992,8 @@ int zoidfs_readdir(const zoidfs_handle_t *parent_handle,
     send_msg.bmi_comp_id = ret;
 #else
     ret = ZOIDFS_BMI_COMM_SENDU(send_msg);
+    if (ret != ZFS_OK)
+       goto readdir_cleanup;
 #endif
 
     /* Do a BMI receive in recvbuf */
@@ -2956,6 +3001,8 @@ int zoidfs_readdir(const zoidfs_handle_t *parent_handle,
     ret = ZOIDFS_BMI_COMM_IRECV_WAIT(recv_msg);
 #else
     ret = ZOIDFS_BMI_COMM_RECV(recv_msg);
+    if (ret != ZFS_OK)
+       goto readdir_cleanup;
 #endif
 
     /* Decode the ION response */
@@ -3023,7 +3070,7 @@ readdir_cleanup:
  * zoidfs_resize
  * This function resizes the file associated with the file handle.
  */
-int zoidfs_resize(const zoidfs_handle_t *handle, uint64_t size,
+int zoidfs_resize(const zoidfs_handle_t *handle, zoidfs_file_size_t size,
                    zoidfs_op_hint_t * op_hint) {
     int ret = ZFS_OK;
     zoidfs_send_msg_t send_msg;
@@ -3085,6 +3132,8 @@ int zoidfs_resize(const zoidfs_handle_t *handle, uint64_t size,
     send_msg.bmi_comp_id = ret;
 #else
     ret = ZOIDFS_BMI_COMM_SENDU(send_msg);
+    if (ret != ZFS_OK)
+       goto resize_cleanup;
 #endif
 
     /* Do a BMI receive in recvbuf */
@@ -3092,6 +3141,8 @@ int zoidfs_resize(const zoidfs_handle_t *handle, uint64_t size,
     ret = ZOIDFS_BMI_COMM_IRECV_WAIT(recv_msg);
 #else
     ret = ZOIDFS_BMI_COMM_RECV(recv_msg);
+    if (ret != ZFS_OK)
+       goto resize_cleanup;
 #endif
 
     /* Decode the ION response */
@@ -3128,7 +3179,7 @@ resize_cleanup:
 int zoidfs_write(const zoidfs_handle_t *handle, size_t mem_count,
                  const void *mem_starts[], const size_t mem_sizes[],
                  size_t file_count, const zoidfs_file_ofs_t file_starts[],
-                 zoidfs_file_ofs_t file_sizes[],
+                 const zoidfs_file_ofs_t file_sizes[],
                    zoidfs_op_hint_t * op_hint) {
     size_t i;
     size_t pipeline_size = 0;
@@ -3141,6 +3192,8 @@ int zoidfs_write(const zoidfs_handle_t *handle, size_t mem_count,
     zoidfs_send_msg_data_t send_msg_data;
     zoidfs_recv_msg_t recv_msg;
     bmi_size_t * bmi_mem_sizes = NULL;
+    char * op_hint_pipeline_size = NULL;
+    size_t op_hint_pipeline_size_req = 0;
 
     /* init the zoidfs xdr data */
     ZOIDFS_SEND_MSG_INIT(send_msg, ZOIDFS_PROTO_WRITE);
@@ -3194,6 +3247,16 @@ int zoidfs_write(const zoidfs_handle_t *handle, size_t mem_count,
         goto write_cleanup;
     }
 
+    /* check if a pipeline size was set in the hint */
+    if((op_hint_pipeline_size = zoidfs_hint_get(&op_hint, ZOIDFS_PIPELINE_SIZE)) != NULL)
+    {
+        op_hint_pipeline_size_req = atoi(op_hint_pipeline_size);
+    }
+    else
+    {
+        op_hint_pipeline_size_req = (size_t)-1;
+    }
+
     /* 
      * if we have a list of mem to write, alloc a buffer of bmi_mem_sizes
      * fill it, compute the total mem size, and determine if pipeline is applicable
@@ -3206,8 +3269,8 @@ int zoidfs_write(const zoidfs_handle_t *handle, size_t mem_count,
         {
             bmi_mem_sizes[i] = (bmi_size_t)mem_sizes[i];
             total_size += bmi_mem_sizes[i];
-            if (mem_sizes[i] > ZOIDFS_BUFFER_MAX)
-                pipeline_size = PIPELINE_SIZE;
+            if(mem_sizes[i] > (size_t)zfsmin((size_t)PIPELINE_SIZE, op_hint_pipeline_size_req))
+                pipeline_size = (size_t)zfsmin((size_t)PIPELINE_SIZE, op_hint_pipeline_size_req);
         }
     }
     else
@@ -3220,9 +3283,9 @@ int zoidfs_write(const zoidfs_handle_t *handle, size_t mem_count,
      * and setup the memory size buffer for pipeline mode 
      */
     
-    if (total_size >= PIPELINE_SIZE)
+    if (total_size >= (bmi_size_t)zfsmin((size_t)PIPELINE_SIZE, op_hint_pipeline_size_req))
     {
-        pipeline_size = PIPELINE_SIZE;
+        pipeline_size = (size_t)zfsmin((size_t)PIPELINE_SIZE, op_hint_pipeline_size_req);
         if(!bmi_mem_sizes)
         {
             bmi_mem_sizes = (bmi_size_t *)malloc(sizeof(bmi_size_t) * mem_count);
@@ -3283,6 +3346,8 @@ int zoidfs_write(const zoidfs_handle_t *handle, size_t mem_count,
      * unexpected BMI message.
      */
     ret = ZOIDFS_BMI_COMM_SENDU(send_msg);
+    if (ret != ZFS_OK)
+       goto write_cleanup;
 
     /* Send the data using an expected BMI message */
     if (pipeline_size == 0) {
@@ -3297,6 +3362,8 @@ int zoidfs_write(const zoidfs_handle_t *handle, size_t mem_count,
 #else
             ret = bmi_comm_send(peer_addr, mem_starts[0], mem_sizes[0],
                                 send_msg_data.tag, context);
+            if (ret != ZFS_OK)
+               goto write_cleanup;
 #endif
         } else {
 #ifdef ZFS_USE_NB_BMI_COMM
@@ -3310,6 +3377,8 @@ int zoidfs_write(const zoidfs_handle_t *handle, size_t mem_count,
             ret = bmi_comm_send_list(peer_addr,
                                      mem_count, mem_starts, bmi_mem_sizes, send_msg.tag,
                                      context, total_size);
+            if (ret != ZFS_OK)
+               goto write_cleanup;
 #endif
         }
     } else {
@@ -3317,12 +3386,16 @@ int zoidfs_write(const zoidfs_handle_t *handle, size_t mem_count,
         ret = zoidfs_write_pipeline(peer_addr, pipeline_size,
                                     mem_count, mem_starts, bmi_mem_sizes,
                                     send_msg.tag, context, total_size);
+        if (ret != ZFS_OK)
+           goto write_cleanup;
     }
 
 #ifdef ZFS_USE_NB_BMI_COMM
     ret = ZOIDFS_BMI_COMM_IRECV_WAIT(recv_msg);
 #else
     ret = ZOIDFS_BMI_COMM_RECV(recv_msg);
+    if (ret != ZFS_OK)
+       goto write_cleanup;
 #endif
 
     /* Decode the ION response */
@@ -3475,6 +3548,11 @@ static int zoidfs_write_pipeline(BMI_addr_t peer_addr, size_t pipeline_size,
         /* send the data */
         ret = bmi_comm_send_list(peer_addr, p_list_count, (const void**)p_buf_list,
                                      p_size_list, tag, context, p_total_size);
+        free(p_buf_list);
+        free(p_size_list);
+
+        if (ret != ZFS_OK)
+           break;
 
         /* next */
         start = end;
@@ -3484,12 +3562,10 @@ static int zoidfs_write_pipeline(BMI_addr_t peer_addr, size_t pipeline_size,
             start_mem++;
             start_mem_ofs = 0;
         }
-        free(p_buf_list);
-        free(p_size_list);
         np++;
     }
 
-    return 0;
+    return ret;
 }
 
 /*
@@ -3499,7 +3575,7 @@ static int zoidfs_write_pipeline(BMI_addr_t peer_addr, size_t pipeline_size,
 int zoidfs_read(const zoidfs_handle_t *handle, size_t mem_count,
                 void *mem_starts[], const size_t mem_sizes[],
                 size_t file_count, const zoidfs_file_ofs_t file_starts[],
-                zoidfs_file_size_t file_sizes[],
+                const zoidfs_file_size_t file_sizes[],
                    zoidfs_op_hint_t * op_hint) {
     size_t i;
     size_t pipeline_size = 0;
@@ -3511,6 +3587,8 @@ int zoidfs_read(const zoidfs_handle_t *handle, size_t mem_count,
     zoidfs_send_msg_t send_msg;
     zoidfs_recv_msg_t recv_msg;
     bmi_size_t * bmi_mem_sizes = NULL;
+    char * op_hint_pipeline_size = NULL;
+    size_t op_hint_pipeline_size_req = 0;
 
     /* init the zoidfs xdr data */
     ZOIDFS_SEND_MSG_INIT(send_msg, ZOIDFS_PROTO_READ);
@@ -3531,6 +3609,16 @@ int zoidfs_read(const zoidfs_handle_t *handle, size_t mem_count,
         goto read_cleanup;
     }
 
+    /* check if a pipeline size was set in the hint */
+    if((op_hint_pipeline_size = zoidfs_hint_get(&op_hint, ZOIDFS_PIPELINE_SIZE)) != NULL)
+    {
+        op_hint_pipeline_size_req = atoi(op_hint_pipeline_size);
+    }
+    else
+    {
+        op_hint_pipeline_size_req = (size_t)-1;
+    }
+
     /* 
      * if we have a list of mem to write, alloc a buffer of bmi_mem_sizes
      * fill it, compute the total mem size, and determine if pipeline is applicable
@@ -3543,8 +3631,8 @@ int zoidfs_read(const zoidfs_handle_t *handle, size_t mem_count,
         {
             bmi_mem_sizes[i] = (bmi_size_t)mem_sizes[i];
             total_size += bmi_mem_sizes[i];
-            if (mem_sizes[i] > ZOIDFS_BUFFER_MAX)
-                pipeline_size = PIPELINE_SIZE;
+            if (mem_sizes[i] > (size_t)zfsmin((size_t)PIPELINE_SIZE, op_hint_pipeline_size_req))
+                pipeline_size = (size_t)zfsmin((size_t)PIPELINE_SIZE, op_hint_pipeline_size_req);
         }
     }
     else
@@ -3556,9 +3644,9 @@ int zoidfs_read(const zoidfs_handle_t *handle, size_t mem_count,
      * if the total size is greater than the pipeline size, set the pipeline size
      * and setup the memory size buffer for pipeline mode 
      */
-    if (total_size >= PIPELINE_SIZE)
+    if (total_size >= (bmi_size_t)zfsmin((size_t)PIPELINE_SIZE, op_hint_pipeline_size_req))
     {
-        pipeline_size = PIPELINE_SIZE;
+        pipeline_size = (size_t)zfsmin((size_t)PIPELINE_SIZE, op_hint_pipeline_size_req);
         if(!bmi_mem_sizes)
         {
             bmi_mem_sizes = (bmi_size_t *)malloc(sizeof(bmi_size_t) * mem_count);
@@ -3651,6 +3739,8 @@ int zoidfs_read(const zoidfs_handle_t *handle, size_t mem_count,
      * unexpected BMI message.
      */
     ret = ZOIDFS_BMI_COMM_SENDU(send_msg);
+    if (ret != ZFS_OK)
+       goto read_cleanup;
 
     /* Receive the data from the IOD */
     if (pipeline_size == 0) {
@@ -3659,17 +3749,23 @@ int zoidfs_read(const zoidfs_handle_t *handle, size_t mem_count,
             /* Contiguous read */
             ret = bmi_comm_recv(peer_addr, mem_starts[0], total_size, recv_msg.tag,
                                 context, &recv_msg.actual_size);
+            if (ret != ZFS_OK)
+               goto read_cleanup;
         } else {
             /* Strided reads */
             ret = bmi_comm_recv_list(peer_addr, mem_count,
                                      mem_starts, bmi_mem_sizes,
                                      recv_msg.tag, context, total_size);
+            if (ret != ZFS_OK)
+               goto read_cleanup;
         }
     } else {
         /* Pipelining */
         ret = zoidfs_read_pipeline(peer_addr, pipeline_size,
                                    mem_count, mem_starts, bmi_mem_sizes,
                                    recv_msg.tag, context, total_size);
+        if (ret != ZFS_OK)
+           goto read_cleanup;
     }
 
 #if 0
@@ -3805,6 +3901,12 @@ static int zoidfs_read_pipeline(BMI_addr_t peer_addr, size_t pipeline_size,
         /* recv the data */
         ret = bmi_comm_recv_list(peer_addr, p_list_count, (void**)p_buf_list,
                                      p_size_list, tag, context, p_total_size);
+        free(p_buf_list);
+        free(p_size_list);
+
+        if (ret != ZFS_OK)
+           break;
+
         /* next */
         start = end;
         start_mem = end_mem;
@@ -3813,11 +3915,9 @@ static int zoidfs_read_pipeline(BMI_addr_t peer_addr, size_t pipeline_size,
             start_mem++;
             start_mem_ofs = 0;
         }
-        free(p_buf_list);
-        free(p_size_list);
         np++;
     }
-    return 0;
+    return ret;
 }
 
 /*
@@ -3826,6 +3926,7 @@ static int zoidfs_read_pipeline(BMI_addr_t peer_addr, size_t pipeline_size,
  */
 int zoidfs_init(void) {
     int ret = ZFS_OK;
+    char * pipeline_size = NULL;
 
 #ifdef ZFS_USE_XDR_SIZE_CACHE
     /* get the values for the size cache */
@@ -3838,14 +3939,14 @@ int zoidfs_init(void) {
     ret = BMI_initialize(NULL, NULL, 0);
     if (ret < 0) {
         fprintf(stderr, "zoidfs_init: BMI_initialize() failed.\n");
-        exit(1);
+        return ZFSERR_OTHER;
     }
 
     /* Create a new BMI context */
     ret = BMI_open_context(&context);
     if (ret < 0) {
         fprintf(stderr, "zoidfs_init: BMI_open_context() failed.\n");
-        exit(1);
+        return ZFSERR_OTHER;
     }
 
     /*
@@ -3854,14 +3955,42 @@ int zoidfs_init(void) {
     ion_name = getenv(ION_ENV);
     if (!ion_name) {
         fprintf(stderr, "zoidfs_init: getenv(\"%s\") failed.\n", ION_ENV);
-        exit(1);
+        return ZFSERR_OTHER;
     }
 
     /* Perform an address lookup on the ION */
     ret = BMI_addr_lookup(&peer_addr, ion_name);
     if (ret < 0) {
         fprintf(stderr, "zoidfs_init: BMI_addr_lookup() failed, ion_name = %s.\n", ion_name);
-        exit(1);
+        return ZFSERR_OTHER;
+    }
+
+    /* setup the pipeline size */
+
+    /* ask BMI for the max buffer size it can handle... */
+    int psiz = 0;
+    ret = BMI_get_info(peer_addr, BMI_CHECK_MAXSIZE, (void *)&psiz);
+    if(ret)
+    {
+       fprintf(stderr, "zoidfs_init: BMI_get_info(BMI_CHECK_MAXSIZE) failed.\n");
+       return ZFSERR_OTHER;
+    }
+    PIPELINE_SIZE = (size_t)psiz;
+
+    /* check the for the PIPELINE_SIZE env variable */
+    pipeline_size = getenv(PIPELINE_SIZE_ENV);
+    if(pipeline_size)
+    {
+        int requested = atoi (pipeline_size);
+        if (requested > psiz)
+        {
+           fprintf (stderr, "zoidfs_init: reducing pipelinesize to BMI max"
+                 " (%i bytes)\n", psiz);
+        }
+        else
+        {
+           PIPELINE_SIZE = requested;
+        }
     }
 
 #ifdef HAVE_BMI_ZOID_TIMEOUT
@@ -3877,18 +4006,21 @@ int zoidfs_init(void) {
     if(!zfs_bmi_client_sendbuf)
     {
         fprintf(stderr, "zoidfs_init: could not allocate send buffer for fast mem alloc.\n");
-        exit(1);
+        return ZFSERR_OTHER;
     }
 
     zfs_bmi_client_recvbuf = BMI_memalloc(peer_addr, ZFS_BMI_CLIENT_RECVBUF_LEN, BMI_RECV);
     if(!zfs_bmi_client_recvbuf)
     {
         fprintf(stderr, "zoidfs_init: could not allocate recv buffer for fast mem alloc.\n");
-        exit(1);
+        /* cleanup buffer */
+        BMI_memfree (peer_addr, zfs_bmi_client_sendbuf,
+              ZFS_BMI_CLIENT_SENDBUF_LEN, BMI_SEND);
+        return ZFSERR_OTHER;
     }
 #endif
 
-    return 0;
+    return ZFS_OK;
 }
 
 /*
@@ -3902,13 +4034,15 @@ int zoidfs_finalize(void) {
 #ifdef ZFS_BMI_FASTMEMALLOC
     if(zfs_bmi_client_sendbuf)
     {
-        free(zfs_bmi_client_sendbuf);
+        BMI_memfree (peer_addr, zfs_bmi_client_sendbuf,
+              ZFS_BMI_CLIENT_SENDBUF_LEN, BMI_SEND);
         zfs_bmi_client_sendbuf = NULL;
     }
 
     if(zfs_bmi_client_recvbuf)
     {
-        free(zfs_bmi_client_recvbuf);
+        BMI_memfree (peer_addr, zfs_bmi_client_recvbuf,
+              ZFS_BMI_CLIENT_RECVBUF_LEN, BMI_RECV);
         zfs_bmi_client_recvbuf = NULL;
     }
 #endif

@@ -2,9 +2,6 @@
 #define IOFWD_SETATTRREQUEST_HH
 
 #include "Request.hh"
-#include "iofwdutil/completion/CompletionID.hh"
-
-// #include "SetAttrRequestSM.hh"
 
 namespace iofwd
 {
@@ -24,12 +21,10 @@ public:
       : Request (opid)
    {
    }
-   virtual ~SetAttrRequest ()
-   {
-   }
 
    virtual const ReqParam & decodeParam () = 0;
-   virtual iofwdutil::completion::CompletionID * reply (const zoidfs::zoidfs_attr_t * attr) = 0;
+   virtual void reply (const CBType & cb,
+         const zoidfs::zoidfs_attr_t * attr) = 0;
 }; 
 
 }

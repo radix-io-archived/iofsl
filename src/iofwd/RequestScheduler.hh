@@ -8,19 +8,15 @@
 #include <boost/smart_ptr.hpp>
 
 #include "zoidfs/zoidfs.h"
-#include "iofwdutil/zlog/ZLogSource.hh"
+#include "zoidfs/util/ZoidFSDefAsync.hh"
 #include "Range.hh"
 #include "iofwdutil/ConfigFile.hh"
-
-namespace iofwdutil {
-  namespace completion {
-    class CompletionID;
-    class CompositeCompletionID;
-  }
-}
-namespace zoidfs {
-  class ZoidFSAsyncAPI;
-}
+#include "iofwdevent/CBType.hh"
+#include "iofwdutil/tools.hh"
+#include "sm/SimpleSlots.hh"
+#include "zoidfs/util/ZoidFSAsyncPT.hh"
+#include "iofwdutil/Configurable.hh"
+#include "iofwdutil/IOFWDLog-fwd.hh"
 
 namespace iofwd
 {
@@ -29,37 +25,68 @@ class WriteRequest;
 class ReadRequest;
 class RangeScheduler;
 
-class RequestScheduler
+class RequestScheduler : public zoidfs::util::ZoidFSAsyncPT,
+                         public iofwdutil::Configurable
 {
 public:
-  RequestScheduler(zoidfs::ZoidFSAsyncAPI * async_api, const iofwdutil::ConfigFile & c);
+  RequestScheduler ();
+
   virtual ~RequestScheduler();
 
-  iofwdutil::completion::CompletionID * enqueueWrite(
-     zoidfs::zoidfs_handle_t * handle, size_t count,
-     const void ** mem_starts, size_t * mem_sizes,
-     uint64_t * file_starts, uint64_t * file_sizes, zoidfs::zoidfs_op_hint_t * op_hint);
+  void configure (const iofwdutil::ConfigFile & config);
 
-  iofwdutil::completion::CompletionID * enqueueRead(
-     zoidfs::zoidfs_handle_t * handle, size_t count,
-     void ** mem_starts, size_t * mem_sizes,
-     uint64_t * file_starts, uint64_t * file_sizes, zoidfs::zoidfs_op_hint_t * op_hint);
+  void write (const iofwdevent::CBType & cb, int * ret, const
+        zoidfs::zoidfs_handle_t * handle, size_t count, const void **
+        mem_starts, const size_t * mem_sizes, size_t file_count, const
+        zoidfs::zoidfs_file_ofs_t file_starts[], const
+        zoidfs::zoidfs_file_size_t file_sizes[], zoidfs::zoidfs_op_hint_t *
+        op_hint);
+
+  void read (const iofwdevent::CBType & cb, int * ret, const
+        zoidfs::zoidfs_handle_t * handle, size_t count, void * mem_starts[],
+        const size_t mem_sizes[], size_t file_count, const
+        zoidfs::zoidfs_file_ofs_t file_starts[], const
+        zoidfs::zoidfs_file_size_t file_sizes[], zoidfs::zoidfs_op_hint_t *
+        op_hint);
 
 protected:
-  void run();
+
+    /* ThreadPool helper for the RequestScheduler */
+    class ReqSchedHelper
+    {
+        public:
+            ReqSchedHelper(RequestScheduler * rs) : rs_(rs)
+            {
+            }
+
+            ~ReqSchedHelper()
+            {
+            }
+
+            void run()
+            {
+                rs_->run(false);
+            }
+
+        protected:
+            RequestScheduler * rs_;
+    };
+
+  void run(bool waitForWork);
   void issue(std::vector<ChildRange *>& rs);
-  void notifyConsumer();
+  void issueWait(int status);
 
 private:
-  iofwdutil::zlog::ZLogSource & log_;
+  iofwdutil::IOFWDLogSource & log_;
 
-  boost::scoped_ptr<boost::thread> consumethread_;
   boost::mutex lock_;
-  boost::condition_variable ready_;
-  bool exiting;
+  bool exiting_;
 
-  zoidfs::ZoidFSAsyncAPI * async_api_;
   boost::scoped_ptr<RangeScheduler> range_sched_;
+
+  bool schedActive_;
+
+  int batch_size_;
 };
 
 }

@@ -2,9 +2,6 @@
 #define IOFWD_NULLREQUEST_HH
 
 #include "Request.hh"
-#include "iofwdutil/completion/CompletionID.hh"
-
-// #include "NullRequestSM.hh"
 
 namespace iofwd
 {
@@ -12,17 +9,13 @@ namespace iofwd
 class NullRequest : public Request
 {
 public:
-   NullRequest (int opid) 
+   NullRequest (int opid)
       : Request (opid)
    {
    }
-   virtual ~NullRequest ()
-   {
-   }
 
-   virtual iofwdutil::completion::CompletionID * reply () = 0; 
-
-}; 
+   virtual void reply (const CBType & cb) = 0;
+};
 
 }
 

@@ -46,8 +46,8 @@ static int zint_local_read(const zoidfs_handle_t * UNUSED(handle),
                     void * UNUSED(mem_starts[]),
                     const size_t UNUSED(mem_sizes[]),
                     size_t UNUSED(file_count),
-                    const uint64_t UNUSED(file_starts[]),
-                    uint64_t UNUSED(file_sizes[]),
+                    const zoidfs_file_ofs_t UNUSED(file_starts[]),
+                    const zoidfs_file_size_t UNUSED(file_sizes[]),
                     zoidfs_op_hint_t * UNUSED(op_hint))
 {
     return ZFSERR_NOTIMPL;
@@ -58,8 +58,8 @@ static int zint_local_write(const zoidfs_handle_t * UNUSED(handle),
                      const void * UNUSED(mem_starts[]),
                      const size_t UNUSED(mem_sizes[]),
                      size_t UNUSED(file_count),
-                     const uint64_t UNUSED(file_starts[]),
-                     uint64_t UNUSED(file_sizes[]),
+                     const zoidfs_file_ofs_t UNUSED(file_starts[]),
+                     const zoidfs_file_size_t UNUSED(file_sizes[]),
                      zoidfs_op_hint_t * UNUSED(op_hint))
 {
     return ZFSERR_NOTIMPL;
@@ -155,7 +155,7 @@ static int zint_local_readdir(const zoidfs_handle_t * UNUSED(parent_handle),
 }
 
 static int zint_local_resize(const zoidfs_handle_t * UNUSED(handle),
-                      uint64_t UNUSED(size),
+                      zoidfs_file_size_t UNUSED(size),
                       zoidfs_op_hint_t * UNUSED(op_hint))
 {
     return ZFSERR_NOTIMPL;

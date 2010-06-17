@@ -6,10 +6,13 @@ src_iofwdutil_libiofwdutil_a_LIBLDFLAGS = \
     @BOOST_PROGRAM_OPTIONS_LIB@ \
     @BOOST_DATE_TIME_LIB@ \
     @BOOST_THREAD_LIB@ \
-    @BOOST_REGEX_LIB@ 
+    @BOOST_REGEX_LIB@
 
 
 src_iofwdutil_libiofwdutil_a_SOURCES = \
+src/iofwdutil/Configurable.hh \
+src/iofwdutil/Configurable.cpp \
+src/iofwdutil/LinkHelper.hh \
 src/iofwdutil/completion/BMICompletionID.hh \
 src/iofwdutil/completion/BMIResource.hh \
 src/iofwdutil/completion/BMISendID.hh \
@@ -96,7 +99,9 @@ src/iofwdutil/workqueue/WorkQueueBase.hh \
 src/iofwdutil/CFKeyMissingException.hh \
 src/iofwdutil/ConfigContainer.hh \
 src/iofwdutil/ConfigFile.hh \
+src/iofwdutil/HybridAllocator.hh \
 src/iofwdutil/IOFWDLog.hh \
+src/iofwdutil/IOFWDLog-fwd.hh \
 src/iofwdutil/IntrusiveHelper.hh \
 src/iofwdutil/Singleton.hh \
 src/iofwdutil/TimeVal.hh \
@@ -123,6 +128,15 @@ src/iofwdutil/signals.cpp \
 src/iofwdutil/boost-spirit.hh \
 src/iofwdutil/PerfCounters.hh \
 src/iofwdutil/PerfCounters.cpp \
+src/iofwdutil/ThreadPool.hh \
+src/iofwdutil/ThreadPool.cpp \
+src/iofwdutil/InjectPool.hh \
+\
+src/iofwdutil/Factory.hh \
+src/iofwdutil/FactoryAutoRegister.hh \
+src/iofwdutil/CreateMethod.hh \
+src/iofwdutil/FactoryException.hh \
+src/iofwdutil/FactoryHelper.hh \
 \
 src/iofwdutil/atomics.hh \
 \

@@ -11,12 +11,19 @@ src_zoidfs_libzoidfs_util_a_LIBLDFLAGS = \
 #    ${top_builddir}/src/zoidfs/libzoidfshints.a
 
 src_zoidfs_libzoidfs_util_a_SOURCES = \
+src/zoidfs/util/RateLimiterAsync.hh \
+src/zoidfs/util/RateLimiterAsync.cpp \
+src/zoidfs/util/ZoidFSSyncAdapter.cpp \
+src/zoidfs/util/ZoidFSSyncAdapter.hh \
+src/zoidfs/util/ZoidFSAsyncPT.cpp \
+src/zoidfs/util/ZoidFSAsyncPT.hh \
 src/zoidfs/util/zoidfs-c-util.h \
 src/zoidfs/util/zoidfs-c-util.c \
 src/zoidfs/util/LogAPI.cpp \
 src/zoidfs/util/NullAPI.cpp \
 src/zoidfs/util/ZoidFSAPI.cpp \
-src/zoidfs/util/ZoidFSAsyncAPI.cpp \
+src/zoidfs/util/ZoidFSAsync.cpp \
+src/zoidfs/util/ZoidFSDefAsync.cpp \
 src/zoidfs/util/ZoidFSSync.cpp \
 src/zoidfs/util/zoidfs-util.cpp \
 src/zoidfs/util/FileSpecHelper.hh \
@@ -25,11 +32,15 @@ src/zoidfs/util/LogAPI.hh \
 src/zoidfs/util/NullAPI.hh \
 src/zoidfs/util/ThreadPool.hh \
 src/zoidfs/util/ZoidFSAPI.hh \
-src/zoidfs/util/ZoidFSAsyncAPI.hh \
+src/zoidfs/util/ZoidFSAsync.hh \
+src/zoidfs/util/ZoidFSDefAsync.hh \
 src/zoidfs/util/ZoidFSSync.hh \
 src/zoidfs/util/zoidfs-util.hh \
 src/zoidfs/util/zoidfs-wrapped.hh \
 src/zoidfs/util/ZoidFSHints.hh \
 src/zoidfs/util/ZoidFSHints.cpp \
 src/zoidfs/util/zoidfs-xdr.hh \
-src/zoidfs/util/zoidfs-ops.hh
+src/zoidfs/util/zoidfs-ops.hh \
+src/zoidfs/util/zoidfs-ops.cpp \
+src/zoidfs/util/ZoidFSBlockAsync.hh \
+src/zoidfs/util/ZoidFSBlockAsync.cpp

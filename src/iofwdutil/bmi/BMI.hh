@@ -6,6 +6,7 @@
 #include <boost/assert.hpp>
 #include "BMIContext.hh"
 #include "iofwdutil/assert.hh"
+#include "iofwdutil/Singleton.hh"
 
 extern "C"
 {
@@ -20,27 +21,27 @@ namespace iofwdutil
 //===========================================================================
 
    // Forward
-   class BMIContext; 
-   class BMIAddr; 
+   class BMIContext;
+   class BMIAddr;
 
    /**
     * OO Interface to BMI library
     */
-   class BMI 
+   class BMI : public Singleton<BMI>
    {
    public:
-      enum AllocType { ALLOC_SEND = ::BMI_SEND, ALLOC_RECEIVE = ::BMI_RECV }; 
+      enum AllocType { ALLOC_SEND = ::BMI_SEND, ALLOC_RECEIVE = ::BMI_RECV };
    public:
-      /** 
+      /**
        * Needs to be called before get() to make sure that we can provide
        * correct paramaters to BMI initialize
        */
       static void  setInitParams (const char * list,
-            const char * listen, int flags); 
+            const char * listen, int flags);
 
 
       /**
-       * Start a listening socket on the specified address 
+       * Start a listening socket on the specified address
        */
       static void setInitServer (const char * listen);
 
@@ -48,75 +49,70 @@ namespace iofwdutil
        * Determine method from address and initialize BMI as a client
        * using that method.
        */
-      static void setInitClient (); 
+      static void setInitClient ();
 
-      static bool isCreated () 
-      { return created_; }; 
+      static bool isCreated ()
+      { return created_; };
 
       static BMI & get ()
       {
-         // NOTE: not thread safe
-         static BMI singleton; 
-         created_ = true;
-         BOOST_ASSERT (initparams_); 
-         return singleton; 
+        return instance();
       }
 
-      BMI (); 
+      BMI ();
 
-      ~BMI (); 
+      ~BMI ();
 
-      BMIContextPtr openContext (); 
+      BMIContextPtr openContext ();
 
       void * alloc (BMIAddr addr, size_t memsize, AllocType type )
       {
-         void * ret = BMI_memalloc (addr, memsize, static_cast<bmi_op_type>(type)); 
-         ASSERT(ret); 
-         return ret; 
+         void * ret = BMI_memalloc (addr, memsize, static_cast<bmi_op_type>(type));
+         ASSERT(ret);
+         return ret;
       }
-      
+
       void free (BMIAddr addr, void * buffer, size_t memsize, AllocType type)
       {
-         check(BMI_memfree(addr, buffer, memsize, static_cast<bmi_op_type>(type))); 
+         check(BMI_memfree(addr, buffer, memsize, static_cast<bmi_op_type>(type)));
       }
 
       int testUnexpected (int in, struct BMI_unexpected_info * info,
             int max_idle);
-      
-      
+
+
       // Shut down BMI
-      void finalize (); 
+      void finalize ();
 
    protected:
       friend class BMIContext;
-      friend class BMIAddr; 
-      friend class BMIOp; 
+      friend class BMIAddr;
+      friend class BMIOp;
 
-      inline 
+      inline
       static int check (int retcode)
       {
          if (retcode>=0)
-            return retcode; 
-         
-         return handleBMIError (retcode); 
+            return retcode;
+
+         return handleBMIError (retcode);
       }
 
       static int handleBMIError (int retcode);
 
-      static std::string addressToMethod (const char * addr); 
+      static std::string addressToMethod (const char * addr);
 
 
    protected:
-      static std::string methodlist_; 
-      static std::string listen_; 
-      static int         flags_; 
-      static bool        initparams_; 
+      static std::string methodlist_;
+      static std::string listen_;
+      static int         flags_;
+      static bool        initparams_;
 
-      bool active_; 
+      bool active_;
 
       static bool created_;
-
-   }; 
+   };
 
 
 

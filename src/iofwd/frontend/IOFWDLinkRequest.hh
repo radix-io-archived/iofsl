@@ -4,7 +4,7 @@
 #include "zoidfs/util/zoidfs-wrapped.hh"
 #include "IOFWDRequest.hh"
 #include "iofwd/LinkRequest.hh"
-
+#include "iofwdutil/InjectPool.hh"
 
 namespace iofwd
 {
@@ -14,19 +14,21 @@ namespace iofwd
 
 class IOFWDLinkRequest
    : public IOFWDRequest,
-     public LinkRequest
+     public LinkRequest,
+     public iofwdutil::InjectPool<IOFWDLinkRequest>
 {
 public:
-   IOFWDLinkRequest (iofwdutil::bmi::BMIContext & bmi, int opid, const BMI_unexpected_info & info,
-         iofwdutil::completion::BMIResource & res)
-      : IOFWDRequest (bmi, info,res), LinkRequest (opid), op_hint_(NULL)
+   IOFWDLinkRequest (int opid, const BMI_unexpected_info & info,
+         IOFWDResources & res)
+      : IOFWDRequest (info,res), LinkRequest (opid), op_hint_(NULL)
    {
    }
 
    virtual const ReqParam & decodeParam () ;
 
-   virtual iofwdutil::completion::CompletionID * reply (const zoidfs::zoidfs_cache_hint_t * from_parent_hint,
-                                                        const zoidfs::zoidfs_cache_hint_t * to_parent_hint);
+   virtual void reply (const CBType & cb,
+                       const zoidfs::zoidfs_cache_hint_t * from_parent_hint,
+                       const zoidfs::zoidfs_cache_hint_t * to_parent_hint);
 
    virtual ~IOFWDLinkRequest ();
 

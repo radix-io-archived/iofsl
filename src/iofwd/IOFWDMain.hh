@@ -2,10 +2,11 @@
 #define IOFWD_IOFWDMAIN_HH
 
 #include <memory>
+
 #include "frontend/IOFWDFrontend.hh"
 #include "iofwdutil/zlog/ZLogSource.hh"
-#include "iofwdutil/completion/BMIResource.hh"
 #include "iofwdutil/ConfigFile.hh"
+#include "Resources.hh"
 
 namespace iofwd
 {
@@ -38,7 +39,8 @@ protected:
 
    iofwdutil::zlog::ZLogSource & mainlog_;
 
-   iofwdutil::completion::BMIResource bmires_;
+   // ===== Resources ====
+   std::auto_ptr<Resources> resources_;
 
    // If set, don't catch CTRL-C and don't protect threads from signals
    bool notrap_;

@@ -263,8 +263,16 @@ void * run_test(void * t)
             if(d->client)
             {
                 /* warmup */
-                bmi_comm_send(peer_addr, sendbuf, buflen[i], 1, context[d->tid]);
-                bmi_comm_recv(peer_addr, recvbuf, buflen[i], 0, context[d->tid], &actual_size);
+		if(buflen[i] <= ZOIDFS_BUFFER_MAX)
+		{
+		    bmi_comm_send(peer_addr, sendbuf, buflen[i], 1, context[d->tid]);
+		    bmi_comm_recv(peer_addr, recvbuf, buflen[i], 0, context[d->tid], &actual_size);
+		}
+		else
+		{
+		    bmi_comm_send(peer_addr, sendbuf, ZOIDFS_BUFFER_MAX, 1, context[d->tid]);
+		    bmi_comm_recv(peer_addr, recvbuf, ZOIDFS_BUFFER_MAX, 0, context[d->tid], &actual_size);
+		}
 
                 /* sync here */
                 pthread_barrier_wait(&tbarr);
@@ -279,19 +287,19 @@ void * run_test(void * t)
                         bmi_comm_recv(peer_addr, recvbuf, buflen[i], 0, context[d->tid], &actual_size);
                         if((bmi_size_t)buflen[i] != actual_size)
                         {
-                            fprintf(stderr, "buflen != actual_size, buflen = %lu, actual_size = %lu\n", buflen[i], actual_size);
+                            fprintf(stderr, "buflen != actual_size, buflen = %lu, actual_size = %llu\n", buflen[i], actual_size);
                         }
                     }
                 }
                 else
                 {
-                    for(j = 0 ; j < numitr[i] * buflen[i] / ZOIDFS_BUFFER_MAX ; j++)
+                    for(j = 0 ; j < numitr[i] * (buflen[i] / ZOIDFS_BUFFER_MAX) ; j++)
                     {
                         bmi_comm_send(peer_addr, sendbuf, ZOIDFS_BUFFER_MAX, 1, context[d->tid]);
                         bmi_comm_recv(peer_addr, recvbuf, ZOIDFS_BUFFER_MAX, 0, context[d->tid], &actual_size);
-                        if((bmi_size_t)buflen[i] != actual_size)
+                        if(ZOIDFS_BUFFER_MAX != actual_size)
                         {
-                            fprintf(stderr, "buflen != actual_size, buflen = %lu, actual_size = %lu\n", buflen[i], actual_size);
+                            fprintf(stderr, "buflen != actual_size, buflen = %lu, actual_size = %llu\n", ZOIDFS_BUFFER_MAX, actual_size);
                         }
                     }
                 }
@@ -312,8 +320,16 @@ void * run_test(void * t)
                 /* warmup */
                 for(k = 0 ; k < num_threads ; k++)
                 {
-                    bmi_comm_recv(peer_addr, recvbuf, buflen[i], 1, context[d->tid], &actual_size);
-                    bmi_comm_send(peer_addr, sendbuf, buflen[i], 0, context[d->tid]);
+		    if(buflen[i] <= ZOIDFS_BUFFER_MAX)
+		    {
+			bmi_comm_recv(peer_addr, recvbuf, buflen[i], 1, context[d->tid], &actual_size);
+			bmi_comm_send(peer_addr, sendbuf, buflen[i], 0, context[d->tid]);
+		    }
+		    else
+		    {
+			bmi_comm_recv(peer_addr, recvbuf, ZOIDFS_BUFFER_MAX, 1, context[d->tid], &actual_size);
+			bmi_comm_send(peer_addr, sendbuf, ZOIDFS_BUFFER_MAX, 0, context[d->tid]);
+		    }
                 }
 
                 size_t j = 0;
@@ -327,22 +343,22 @@ void * run_test(void * t)
                             bmi_comm_send(peer_addr, sendbuf, buflen[i], 0, context[d->tid]);
                             if((bmi_size_t)buflen[i] != actual_size)
                             {
-                                fprintf(stderr, "buflen != actual_size, buflen = %lu, actual_size = %lu\n", buflen[i], actual_size);
+                                fprintf(stderr, "buflen != actual_size, buflen = %lu, actual_size = %llu\n", buflen[i], actual_size);
                             }
                         }
                     }
                 }
                 else
                 {
-                    for(j = 0 ; j < numitr[i] * buflen[i] / ZOIDFS_BUFFER_MAX ; j++)
+                    for(j = 0 ; j < numitr[i] * (buflen[i] / ZOIDFS_BUFFER_MAX) ; j++)
                     {
                         for(k = 0 ; k < num_threads ; k++)
                         {
-                            bmi_comm_recv(peer_addr, recvbuf, buflen[i], 1, context[d->tid], &actual_size);
-                            bmi_comm_send(peer_addr, sendbuf, buflen[i], 0, context[d->tid]);
-                            if((bmi_size_t)buflen[i] != actual_size)
+                            bmi_comm_recv(peer_addr, recvbuf, ZOIDFS_BUFFER_MAX, 1, context[d->tid], &actual_size);
+                            bmi_comm_send(peer_addr, sendbuf, ZOIDFS_BUFFER_MAX, 0, context[d->tid]);
+                            if(ZOIDFS_BUFFER_MAX != actual_size)
                             {
-                                fprintf(stderr, "buflen != actual_size, buflen = %lu, actual_size = %lu\n", buflen[i], actual_size);
+                                fprintf(stderr, "buflen != actual_size, buflen = %lu, actual_size = %llu\n", ZOIDFS_BUFFER_MAX, actual_size);
                             }
                         }
                     }
@@ -392,8 +408,16 @@ void * run_test(void * t)
         }
         else
         {
-            BMI_memfree(peer_addr, sendbuf, buflen[i], BMI_SEND);
-            BMI_memfree(peer_addr, recvbuf, buflen[i], BMI_RECV);
+            if(buflen[i] <= ZOIDFS_BUFFER_MAX)
+	    {
+		BMI_memfree(peer_addr, sendbuf, buflen[i], BMI_SEND);
+		BMI_memfree(peer_addr, recvbuf, buflen[i], BMI_RECV);
+	    }
+	    else
+	    {
+		BMI_memfree(peer_addr, sendbuf, ZOIDFS_BUFFER_MAX, BMI_SEND);
+		BMI_memfree(peer_addr, recvbuf, ZOIDFS_BUFFER_MAX, BMI_RECV);
+	    }
         }
     }
 

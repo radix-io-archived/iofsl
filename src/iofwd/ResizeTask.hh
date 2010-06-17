@@ -6,11 +6,12 @@
 #include "ResizeRequest.hh"
 #include "TaskHelper.hh"
 #include "zoidfs/util/ZoidFSAPI.hh"
+#include "iofwdutil/InjectPool.hh"
 
 namespace iofwd
 {
 
-class ResizeTask : public TaskHelper<ResizeRequest>
+class ResizeTask : public TaskHelper<ResizeRequest>, public iofwdutil::InjectPool<ResizeTask>
 {
 public:
    ResizeTask (ThreadTaskParam & p)
@@ -24,12 +25,18 @@ public:
    void run ()
    {
       const ResizeRequest::ReqParam & p = request_.decodeParam ();
-      int ret = api_->resize (p.handle, p.size, p.op_hint);
+      int ret;
+
+      api_->resize (block_, &ret, p.handle, p.size, p.op_hint);
+      block_.wait ();
+
       request_.setReturnCode (ret);
-      std::auto_ptr<iofwdutil::completion::CompletionID> id (request_.reply ());
-      id->wait ();
+
+      block_.reset();
+      request_.reply ((block_));
+      block_.wait ();
    }
-}; 
+};
 
 }
 

@@ -1,5 +1,5 @@
-#ifndef __IOFWDUTIL_PERF_COUNTERS_HH__
-#define __IOFWDUTIL_PERF_COUNTERS_HH__
+#ifndef IOFWDUTIL_PERF_COUNTERS_HH
+#define IOFWDUTIL_PERF_COUNTERS_HH
 
 #include <map>
 #include <string>

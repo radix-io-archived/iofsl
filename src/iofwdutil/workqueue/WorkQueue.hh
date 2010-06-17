@@ -3,8 +3,6 @@
 
 #include <vector>
 
-#include "iofwdutil/completion/CompletionID.hh"
-
 namespace iofwdutil
 {
    namespace workqueue
@@ -23,7 +21,7 @@ class WorkQueue
 {
 public:
 
-   virtual iofwdutil::completion::CompletionID * queueWork (WorkItem * work) = 0; 
+   virtual void queueWork (WorkItem * work) = 0; 
 
    /// Returns true if work is still in progress
    virtual bool isBusy () const = 0;  

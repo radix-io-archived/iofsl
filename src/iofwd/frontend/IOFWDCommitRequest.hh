@@ -3,6 +3,7 @@
 
 #include "IOFWDRequest.hh"
 #include "iofwd/CommitRequest.hh"
+#include "iofwdutil/InjectPool.hh"
 
 namespace iofwd
 {
@@ -13,18 +14,19 @@ namespace iofwd
 
 class IOFWDCommitRequest
   : public CommitRequest,
-    public IOFWDRequest
+    public IOFWDRequest,
+    public iofwdutil::InjectPool<IOFWDCommitRequest>
 {
 public:
-   IOFWDCommitRequest (iofwdutil::bmi::BMIContext & bmi, int opid, const BMI_unexpected_info & info,
-         iofwdutil::completion::BMIResource & res)
-      : CommitRequest(opid), IOFWDRequest (bmi, info, res), op_hint_(NULL)
+   IOFWDCommitRequest (int opid, const BMI_unexpected_info & info,
+         IOFWDResources & res)
+      : CommitRequest(opid), IOFWDRequest (info, res), op_hint_(NULL)
    {
    }
 
    virtual const ReqParam & decodeParam ();
 
-   virtual iofwdutil::completion::CompletionID * reply ();
+   virtual void reply (const CBType & cb);
 
    virtual ~IOFWDCommitRequest ();
 

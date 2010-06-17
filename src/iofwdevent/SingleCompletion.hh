@@ -1,9 +1,12 @@
 #ifndef IOFWDEVENT_SINGLECOMPLETION_HH
 #define IOFWDEVENT_SINGLECOMPLETION_HH
 
+#include <boost/function.hpp>
 #include <boost/thread.hpp>
+#include <boost/utility.hpp>
 #include <csignal>
-#include "ResourceOp.hh"
+
+#include "iofwdevent/Resource.hh"
 #include "iofwdutil/assert.hh"
 
 namespace iofwdevent
@@ -11,20 +14,61 @@ namespace iofwdevent
 //===========================================================================
 
    /**
-    * This class enables a thread to block until a ResourceOp completes.
+    * This class enables a thread to block until an operation completes.
     * After the operation completes, it can be reused for another operation.
+    *
+    * Cannot be copied for two reasons:
+    *    1) When using as functor, the user really doesn't want to copy the
+    *       functor (and complete the copy) -> force failure is boost::ref
+    *       isn't use
+    *    2) boost::mutex cannot be copied anyway.
     *
     * @TODO: exception transport
     */
-   class SingleCompletion : public ResourceOp
+   class SingleCompletion : public boost::noncopyable
    {
    public:
 
-      virtual void success ();
+      /**
+       * THis operator detects when somebody uses us as a callback.
+       * In this case, indicate that we're expecting a call and change
+       * status to WAITING
+       */
+      operator CBType ()
+      {
+         // no lock needed since nobody can call us until we return
+         // from this function.
+         ALWAYS_ASSERT (status_ == UNUSED);
+         status_ = WAITING;
+         return CBType(boost::ref(*this));
+      }
 
-      virtual void cancel ();
+      /**
+       * \brief: CBType compatible functor signature.
+       */
+      void operator () (int status)
+      {
+         ALWAYS_ASSERT(status_ == WAITING);
+         switch (status)
+         {
+            case COMPLETED:
+               success ();
+               break;
+            case CANCELLED:
+               cancel ();
+               break;
+            default:
+               ALWAYS_ASSERT(false);
+         }
+      }
 
-      //virtual void exception ();
+   protected:
+
+      void success ();
+
+      void cancel ();
+
+      void exception ();
    public:
       SingleCompletion ();
 
@@ -47,7 +91,7 @@ namespace iofwdevent
          boost::mutex::scoped_lock l (lock_);
 
          ASSERT(status_ != WAITING);
-         status_ = WAITING;
+         status_ = UNUSED;
          // Need to reset any stored exception here
       }
 
@@ -59,7 +103,7 @@ namespace iofwdevent
       void checkStatus ();
    protected:
 
-      enum { SUCCESS = 0, CANCEL, EXCEPTION, WAITING };
+      enum { UNUSED = 0, SUCCESS, CANCEL, EXCEPTION, WAITING };
       sig_atomic_t status_;
 
       boost::mutex lock_;

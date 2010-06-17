@@ -2,15 +2,13 @@
 #define IOFWD_THREADTASKS_HH
 
 #include <boost/function.hpp>
-#include "iofwdutil/completion/BMIResource.hh"
-#include "iofwd/BMIBufferPool.hh"
-#include "iofwd/TaskPool.hh"
-#include "iofwd/TaskPoolAllocator.hh"
 
 namespace zoidfs
 {
-   class ZoidFSAPI;
-   class ZoidFSAsyncAPI;
+   namespace util
+   {
+   class ZoidFSAsync;
+   }
 }
 
 namespace iofwd
@@ -18,10 +16,7 @@ namespace iofwd
 //===========================================================================
 
 class Task;
-class Request;
-class RequestScheduler;
-class BufferPool;
-class TaskPool;
+class Request; 
 
 /**
  * Task factory that generates task which block until complete.
@@ -30,34 +25,16 @@ class ThreadTasks
 {
 public:
 
-   ThreadTasks (boost::function<void (Task *)> & resched,
-         zoidfs::ZoidFSAPI * api,
-         zoidfs::ZoidFSAsyncAPI * async_api,
-         RequestScheduler * sched,
-         BMIBufferPool * bpool,
-         TaskPool * tpool)
-      : reschedule_(resched), api_(api), async_api_(async_api), sched_(sched),
-        bpool_(bpool), tpool_(tpool)
-   {
-   }
-
-   ~ThreadTasks()
+   ThreadTasks (
+         zoidfs::util::ZoidFSAsync * api)
+      : api_(api)
    {
    }
 
    Task * operator () (Request * req);
 
 protected:
-   boost::function<void (Task *)> reschedule_;
-
-   zoidfs::ZoidFSAPI * api_;
-   zoidfs::ZoidFSAsyncAPI * async_api_;
-   RequestScheduler * sched_;
-   BMIBufferPool * bpool_;
-   TaskPool * tpool_;
-
-   iofwdutil::completion::ContextBase ctx_;
-   iofwdutil::completion::BMIResource bmi_;
+   zoidfs::util::ZoidFSAsync * api_;
 };
 
 //===========================================================================

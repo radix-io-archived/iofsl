@@ -319,13 +319,10 @@ int gencache_key_add (gencache_handle handle, gencache_key_t key, gencache_value
    gencache_instance_t * gc = (gencache_instance_t *) handle;
    gencache_priv_value_t * item = 0;
 
+   pthread_mutex_lock (&gc->lock);
 
    assert ((unsigned int) gc->count ==
             (unsigned int) hash_table_num_entries (gc->hash));
-
-
-   pthread_mutex_lock (&gc->lock);
-
 
    tmp = (gencache_lookup_internal (gc, key) != 0);
 
@@ -390,10 +387,11 @@ int gencache_key_add (gencache_handle handle, gencache_key_t key, gencache_value
 
 
 exit:
-   pthread_mutex_unlock (&gc->lock);
 
    assert ((unsigned int) gc->count ==
             (unsigned int) hash_table_num_entries (gc->hash));
+
+   pthread_mutex_unlock (&gc->lock);
 
    return ret;
 }

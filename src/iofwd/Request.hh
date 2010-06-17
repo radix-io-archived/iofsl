@@ -1,6 +1,8 @@
 #ifndef IOFWD_REQUEST_HH
 #define IOFWD_REQUEST_HH
 
+#include "iofwdevent/CBType.hh"
+
 namespace iofwd
 {
 //===========================================================================
@@ -12,6 +14,7 @@ namespace iofwd
 class Request
 {
 public:
+   typedef iofwdevent::CBType CBType;
 
    Request (int opid);
 
@@ -37,7 +40,8 @@ public:
    int getReturnCode () const
    { return returncode_; }
 
-   virtual ~Request ();
+   // Virtual destructor needed
+   virtual ~Request () {};
 
    void setAllocID(int id)
    {

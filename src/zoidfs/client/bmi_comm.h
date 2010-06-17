@@ -7,8 +7,8 @@
  * Jason Cope <copej@mcs.anl.gov>
  */
 
-#ifndef _BMI_COMM_H_
-#define _BMI_COMM_H_
+#ifndef BMI_COMM_H
+#define BMI_COMM_H
 
 #include<stdio.h>
 #include<errno.h>
@@ -19,6 +19,7 @@
 
 #define MAX_IDLE_TIME (3600*1000)
 #define ION_ENV "ZOIDFS_ION_NAME"
+#define PIPELINE_SIZE_ENV "ZOIDFS_PIPELINE_SIZE"
 
 /* blocking ZoidFS BMI wrappers */
 int bmi_comm_send(BMI_addr_t, const void *, bmi_size_t, bmi_msg_tag_t,

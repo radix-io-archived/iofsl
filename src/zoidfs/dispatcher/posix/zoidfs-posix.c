@@ -1066,7 +1066,8 @@ static int zoidfs_posix_readdir(const zoidfs_handle_t * handle,
  * zoidfs_resize
  * This function resizes the file associated with the file handle.
  */
-static int zoidfs_posix_resize(const zoidfs_handle_t *handle, uint64_t size, zoidfs_op_hint_t * UNUSED(op_hint))
+static int zoidfs_posix_resize(const zoidfs_handle_t *handle,
+      zoidfs_file_size_t size, zoidfs_op_hint_t * UNUSED(op_hint))
 {
    char buf[ZOIDFS_PATH_MAX];
 
@@ -1091,8 +1092,8 @@ static inline int safewrite (int fd, const void * buf, size_t count,
 
 static inline int zoidfs_generic_access (const zoidfs_handle_t *handle, int mem_count,
                  void *mem_starts[], const size_t mem_sizes[],
-                 int file_count, const uint64_t file_starts[],
-                 uint64_t file_sizes[], int write,
+                 int file_count, const zoidfs_file_ofs_t file_starts[],
+                 const zoidfs_file_size_t file_sizes[], int write,
                  zoidfs_op_hint_t * UNUSED(op_hint))
 {
    int err;
@@ -1160,8 +1161,8 @@ static inline int zoidfs_generic_access (const zoidfs_handle_t *handle, int mem_
  */
 static int zoidfs_posix_write(const zoidfs_handle_t *handle, size_t mem_count,
                  const void *mem_starts[], const size_t mem_sizes[],
-                 size_t file_count, const uint64_t file_starts[],
-                 uint64_t file_sizes[], zoidfs_op_hint_t * op_hint)
+                 size_t file_count, const zoidfs_file_ofs_t file_starts[],
+                 const zoidfs_file_size_t file_sizes[], zoidfs_op_hint_t * op_hint)
 {
     return zoidfs_generic_access (handle, mem_count,
           (void ** ) mem_starts, mem_sizes, file_count, file_starts, file_sizes, 1, op_hint);
@@ -1174,7 +1175,8 @@ static int zoidfs_posix_write(const zoidfs_handle_t *handle, size_t mem_count,
  */
 static int zoidfs_posix_read(const zoidfs_handle_t *handle, size_t mem_count,
                 void *mem_starts[], const size_t mem_sizes[], size_t file_count,
-                const uint64_t file_starts[], uint64_t file_sizes[], zoidfs_op_hint_t * op_hint)
+                const zoidfs_file_ofs_t file_starts[],
+                const zoidfs_file_size_t file_sizes[], zoidfs_op_hint_t * op_hint)
 {
     return zoidfs_generic_access (handle, mem_count,
           mem_starts, mem_sizes, file_count, file_starts, file_sizes, 0, op_hint);

@@ -6,9 +6,11 @@ src_iofwd_iofwd_LDADD = \
 	src/zoidfs/libzoidfs-util.a \
 	src/zoidfs/libzoidfsprofile.a \
 	src/zoidfs/libzoidfs.a \
+	src/sm/libsm.a \
 	src/iofwdutil/libiofwdutil.a \
 	src/c-util/libc-util.a \
 	src/zoidfs/libzoidfshints.a \
+	src/iofwdevent/libiofwdevent.a \
 	@BOOST_PROGRAM_OPTIONS_LIB@ \
 	@BOOST_DATE_TIME_LIB@ \
 	@BOOST_THREAD_LIB@ \
@@ -22,14 +24,13 @@ src_iofwd_iofwd_LDFLAGS = \
     @BMI_LDFLAGS@
 
 src_iofwd_iofwd_SOURCES = \
-src/iofwd/BufferPool.cpp \
-src/iofwd/BMIBufferPool.cpp \
+src/iofwd/FactoryHelper.hh \
+src/iofwd/FactoryHelper.cpp \
 src/iofwd/DefRequestHandler.cpp \
-src/iofwd/DefRequestItem.cpp \
 src/iofwd/IOFWDMain.cpp \
 src/iofwd/Range.cpp \
 src/iofwd/RangeScheduler.cpp \
-src/iofwd/RangeSet.cpp \
+src/iofwd/HierarchicalRangeSet.cpp \
 src/iofwd/IntervalTreeRangeSet.cpp \
 src/iofwd/ReadTask.cpp \
 src/iofwd/Request.cpp \
@@ -39,15 +40,14 @@ src/iofwd/Task.cpp \
 src/iofwd/ThreadTasks.cpp \
 src/iofwd/WriteTask.cpp \
 src/iofwd/iofwd.cpp \
-src/iofwd/BufferPool.hh \
-src/iofwd/BMIBufferPool.hh \
+src/iofwd/BMIMemoryManager.hh \
+src/iofwd/BMIMemoryManager.cpp \
 src/iofwd/CommitRequest.hh \
 src/iofwd/CommitTask.hh \
 src/iofwd/ConfigException.hh \
 src/iofwd/CreateRequest.hh \
 src/iofwd/CreateTask.hh \
 src/iofwd/DefRequestHandler.hh \
-src/iofwd/DefRequestItem.hh \
 src/iofwd/GetAttrRequest.hh \
 src/iofwd/GetAttrTask.hh \
 src/iofwd/IOFWDMain.hh \
@@ -64,7 +64,8 @@ src/iofwd/NullRequestSM.hh \
 src/iofwd/NullTask.hh \
 src/iofwd/Range.hh \
 src/iofwd/RangeScheduler.hh \
-src/iofwd/RangeSet.hh \
+src/iofwd/BaseRangeSet.hh \
+src/iofwd/HierarchicalRangeSet.hh \
 src/iofwd/IntervalTreeRangeSet.hh \
 src/iofwd/ReadDirRequest.hh \
 src/iofwd/ReadDirTask.hh \
@@ -78,26 +79,51 @@ src/iofwd/RenameRequest.hh \
 src/iofwd/RenameTask.hh \
 src/iofwd/Request.hh \
 src/iofwd/RequestHandler.hh \
-src/iofwd/RequestPoolAllocator.hh \
-src/iofwd/RequestPoolAllocator.cpp \
 src/iofwd/RequestScheduler.hh \
 src/iofwd/ResizeRequest.hh \
 src/iofwd/ResizeTask.hh \
+src/iofwd/RetrievedBuffer.hh \
 src/iofwd/SetAttrRequest.hh \
 src/iofwd/SetAttrTask.hh \
 src/iofwd/SymLinkRequest.hh \
 src/iofwd/SymLinkTask.hh \
 src/iofwd/Task.hh \
 src/iofwd/TaskHelper.hh \
-src/iofwd/TaskPool.hh \
-src/iofwd/TaskPool.cpp \
-src/iofwd/TaskPoolAllocator.hh \
-src/iofwd/TaskPoolAllocator.cpp \
-src/iofwd/TaskPoolHelper.hh \
 src/iofwd/ThreadTasks.hh \
 src/iofwd/WriteRequest.hh \
 src/iofwd/WriteTask.hh \
+src/iofwd/Resources.hh \
 \
+src/iofwd/tasksm/BaseTaskSM.hh \
+src/iofwd/tasksm/CreateTaskSM.hh \
+src/iofwd/tasksm/CommitTaskSM.hh \
+src/iofwd/tasksm/LookupTaskSM.hh \
+src/iofwd/tasksm/LinkTaskSM.hh \
+src/iofwd/tasksm/SymLinkTaskSM.hh \
+src/iofwd/tasksm/MkdirTaskSM.hh \
+src/iofwd/tasksm/NullTaskSM.hh \
+src/iofwd/tasksm/NotImplementedTaskSM.hh \
+src/iofwd/tasksm/ReadLinkTaskSM.hh \
+src/iofwd/tasksm/ReadDirTaskSM.hh \
+src/iofwd/tasksm/RenameTaskSM.hh \
+src/iofwd/tasksm/RemoveTaskSM.hh \
+src/iofwd/tasksm/ResizeTaskSM.hh \
+src/iofwd/tasksm/SetAttrTaskSM.hh \
+src/iofwd/tasksm/GetAttrTaskSM.hh \
+src/iofwd/tasksm/WriteTaskSM.hh \
+src/iofwd/tasksm/WriteTaskSM.cpp \
+src/iofwd/tasksm/ReadTaskSM.hh \
+src/iofwd/tasksm/ReadTaskSM.cpp \
+src/iofwd/tasksm/SMRetrievedBuffer.hh \
+src/iofwd/tasksm/SMRetrievedBuffer.cpp \
+src/iofwd/tasksm/SharedIOCB.hh \
+src/iofwd/tasksm/SharedIOCB.cpp \
+src/iofwd/tasksm/IOCBWrapper.hh \
+src/iofwd/tasksm/IOCBWrapper.cpp \
+src/iofwd/tasksm/TaskSMFactory.hh \
+src/iofwd/tasksm/TaskSMFactory.cpp \
+\
+src/iofwd/frontend/IOFWDResources.hh \
 src/iofwd/frontend/Frontend.cpp \
 src/iofwd/frontend/IOFWDCommitRequest.cpp \
 src/iofwd/frontend/IOFWDCreateRequest.cpp \

@@ -3,7 +3,6 @@
 
 #include "Request.hh"
 #include "zoidfs/util/zoidfs-wrapped.hh"
-#include "iofwdutil/completion/CompletionID.hh"
 
 namespace iofwd
 {
@@ -31,9 +30,6 @@ public:
       Request (opid)
    {
    }
-   virtual ~SymLinkRequest ()
-   {
-   }
 
    /**
     * Retrieve the request input parameters
@@ -44,8 +40,9 @@ public:
     * Reply with the handle or 0 if an error occurred and the handle does not
     * need to be transmitted
     */
-   virtual iofwdutil::completion::CompletionID * reply (const zoidfs::zoidfs_cache_hint_t * from_parent_hint,
-                                                        const zoidfs::zoidfs_cache_hint_t * to_parent_hint) = 0;
+   virtual void reply (const CBType & cb,
+        const zoidfs::zoidfs_cache_hint_t * from_parent_hint,
+        const zoidfs::zoidfs_cache_hint_t * to_parent_hint) = 0;
 };
 
 //===========================================================================
