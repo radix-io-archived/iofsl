@@ -34,7 +34,6 @@ public:
 #ifdef TRACE_SERVER_MEM_ALLOC_SIZE
    inline void * operator new(size_t s)
    {
-        fprintf(stderr, "Task size %lu\n", s);
         return malloc(s);
    }
 
