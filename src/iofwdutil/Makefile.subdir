@@ -141,4 +141,8 @@ src/iofwdutil/FactoryHelper.hh \
 src/iofwdutil/atomics.hh \
 \
 src/iofwdutil/rm/IntervalMergeTree.hh \
-src/iofwdutil/rm/IntervalMergeTree.cpp
+src/iofwdutil/rm/IntervalMergeTree.cpp \
+\
+src/iofwdutil/mm/IOFWDMemoryManager.hh \
+src/iofwdutil/mm/BMIMemoryManager.hh \
+src/iofwdutil/mm/BMIMemoryManager.cpp

@@ -6,19 +6,10 @@
 #include "iofwdutil/bmi/BMI.hh"
 #include "iofwdutil/bmi/BMIAddr.hh"
 #include "iofwdutil/bmi/BMIBuffer.hh"
+#include "iofwd/RetrievedBuffer.hh"
 
 namespace iofwd
 {
-   /**
-    * @TODO This is wrong.
-    * The Read/Write Request cannot expose transport specific details.
-    * They are here to hide those details from the tasks!
-    * 
-    *  virtual iofwdutil::bmi::BMIAddr getRequestAddr()
-    *
-    *  cannot be here.
-    *
-    */
 class WriteRequest : public Request
 {
 public:
@@ -59,14 +50,18 @@ public:
   virtual void reply(const CBType & cb) = 0;
 
   // for normal mode
-  virtual void recvBuffers(const CBType & cb) = 0;
+  virtual void recvBuffers(const CBType & cb, RetrievedBuffer * rb) = 0;
 
   // for pipeline mode
-  virtual void recvPipelineBufferCB(iofwdevent::CBType cb, iofwdutil::bmi::BMIBuffer * buf, size_t size) = 0;
+  virtual void recvPipelineBufferCB(iofwdevent::CBType cb, RetrievedBuffer * rb, size_t size) = 0;
 
-  virtual iofwdutil::bmi::BMIAddr getRequestAddr() = 0;
+  //virtual iofwdutil::bmi::BMIAddr getRequestAddr() = 0;
 
   virtual void initRequestParams(ReqParam & p, void * bufferMem) = 0;
+
+  virtual void allocateBuffer(iofwdevent::CBType cb, RetrievedBuffer * rb) = 0;
+
+  virtual void releaseBuffer(RetrievedBuffer * rb) = 0;
 };
 
 }

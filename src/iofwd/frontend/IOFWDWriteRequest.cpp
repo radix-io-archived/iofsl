@@ -177,23 +177,40 @@ void IOFWDWriteRequest::initRequestParams(ReqParam & p, void * bufferMem)
     }
 }
 
-void IOFWDWriteRequest::recvBuffers(const CBType & cb)
+void IOFWDWriteRequest::allocateBuffer(iofwdevent::CBType cb, RetrievedBuffer * rb)
+{
+    /* allocate the buffer wrapper */
+    rb->buffer_ = new iofwdutil::mm::BMIMemoryAlloc(addr_, iofwdutil::bmi::BMI::ALLOC_RECEIVE, rb->getsize());
+
+    iofwdutil::mm::BMIMemoryManager::instance().alloc(cb, rb->buffer_);
+}
+
+void IOFWDWriteRequest::releaseBuffer(RetrievedBuffer * rb)
+{
+    iofwdutil::mm::BMIMemoryManager::instance().dealloc(rb->buffer_);
+
+    /* delete the buffer */
+    delete rb->buffer_;
+}
+
+void IOFWDWriteRequest::recvBuffers(const CBType & cb, RetrievedBuffer * rb)
 {
     param_.mem_expected_size = 0;
 
 #if SIZEOF_SIZE_T == SIZEOF_INT64_T
    r_.rbmi_.post_recv_list(cb, addr_, reinterpret_cast<void*const*>(param_.mem_starts), reinterpret_cast<const bmi_size_t *>(param_.mem_sizes),
-                            param_.mem_count, param_.mem_total_size, &(param_.mem_expected_size), bmi_buffer_->bmiType(), tag_, 0);
+                            param_.mem_count, param_.mem_total_size, &(param_.mem_expected_size), dynamic_cast<iofwdutil::mm::BMIMemoryAlloc *>(rb->buffer_)->bmiType(), tag_, 0);
 #else
    r_.rbmi_.post_recv_list (cb, addr_, reinterpret_cast<void*const*>(param_.mem_starts), reinterpret_cast<const bmi_size_t*>(param_.bmi_mem_sizes),
-                            param_.mem_count, param_.mem_total_size, &(param_.mem_expected_size), bmi_buffer_->bmiType(), tag_, 0);
+                            param_.mem_count, param_.mem_total_size, &(param_.mem_expected_size), dynamic_cast<iofwdutil::mm::BMIMemoryAlloc *>(rb->buffer_)->bmiType(), tag_, 0);
 #endif
 }
 
-void IOFWDWriteRequest::recvPipelineBufferCB(iofwdevent::CBType cb, iofwdutil::bmi::BMIBuffer * buf, size_t size)
+void IOFWDWriteRequest::recvPipelineBufferCB(iofwdevent::CBType cb, RetrievedBuffer * rb, size_t size)
 {
    param_.mem_expected_size = 0;
-   r_.rbmi_.post_recv(cb, addr_, (char *)buf->get(), size, &(param_.mem_expected_size), buf->bmiType(), tag_, 0);
+   r_.rbmi_.post_recv(cb, addr_, dynamic_cast<iofwdutil::mm::BMIMemoryAlloc *>(rb->buffer_)->getMemory(), size, &(param_.mem_expected_size), 
+        dynamic_cast<iofwdutil::mm::BMIMemoryAlloc *>(rb->buffer_)->bmiType(), tag_, 0);
 }
 
 void IOFWDWriteRequest::reply(const CBType & cb)

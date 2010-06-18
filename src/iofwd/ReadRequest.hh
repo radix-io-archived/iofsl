@@ -6,17 +6,10 @@
 #include "zoidfs/zoidfs.h"
 #include "iofwdutil/bmi/BMIBuffer.hh"
 #include "iofwdevent/CBType.hh"
+#include "iofwd/RetrievedBuffer.hh"
 
 namespace iofwd
 {
-   /**
-    * @TODO This is wrong.
-    * The Read/Write Request cannot expose transport specific details.
-    * They are here to hide those details from the tasks!
-    * Solution: cast the interface in terms of functionality and not
-    * transport specific things.
-    * There cannot be a getRequestAddr() function.
-    */
 class ReadRequest : public Request
 {
 public:
@@ -56,14 +49,16 @@ public:
    virtual void reply(const CBType & cb) = 0;
 
    // for normal mode
-   virtual void sendBuffers(const CBType & cb) = 0;
+   virtual void sendBuffers(const iofwdevent::CBType & cb, RetrievedBuffer * rb) = 0;
 
    // for pipeline mode
-   virtual void sendPipelineBufferCB(iofwdevent::CBType cb, iofwdutil::bmi::BMIBuffer * buf, size_t size) = 0;
-
-   virtual iofwdutil::bmi::BMIAddr getRequestAddr() = 0;
+   virtual void sendPipelineBufferCB(const iofwdevent::CBType cb, RetrievedBuffer * rb, size_t size) = 0;
 
    virtual void initRequestParams(ReqParam & p, void * bufferMem) = 0;
+
+   virtual void allocateBuffer(iofwdevent::CBType cb, RetrievedBuffer * rb) = 0;
+
+   virtual void releaseBuffer(RetrievedBuffer * rb) = 0;
 };
 
 }

@@ -53,10 +53,6 @@ void IOFWDMain::shutdown ()
    ZLOG_DEBUG (mainlog_, "Stopping thread pool...");
    iofwdutil::ThreadPool::instance().reset(); 
    delete &iofwdutil::ThreadPool::instance();
-
-   ZLOG_DEBUG (mainlog_, "Stopping BMI memory manager...");
-   iofwd::BMIMemoryManager::instance().reset(); 
-   delete &iofwd::BMIMemoryManager::instance();
 }
 
 

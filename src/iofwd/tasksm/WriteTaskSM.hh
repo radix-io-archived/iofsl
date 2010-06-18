@@ -7,9 +7,7 @@
 #include "iofwdutil/tools.hh"
 #include "iofwd/TaskHelper.hh"
 #include "iofwdutil/InjectPool.hh"
-#include "iofwd/tasksm/SMRetrievedBuffer.hh"
 #include "iofwd/WriteRequest.hh"
-#include "iofwd/BMIMemoryManager.hh"
 #include "iofwdevent/MultiCompletion.hh"
 
 #include "zoidfs/zoidfs.h"
@@ -51,9 +49,8 @@ class WriteTaskSM : public sm::SimpleSM< WriteTaskSM >, public iofwdutil::Inject
             if(p.pipeline_size == 0 || !p.op_hint_pipeline_enabled)
             {
                 /* setup the rbuffer variable */
-                rbuffer_ = new SMRetrievedBuffer*[1];
-                rbuffer_[0] = new SMRetrievedBuffer(request_.getRequestAddr(), iofwdutil::bmi::BMI::ALLOC_RECEIVE, total_bytes_);
-                rbuffer_[0]->reinit();
+                rbuffer_ = new RetrievedBuffer*[1];
+                rbuffer_[0] = new RetrievedBuffer(total_bytes_);
                 total_buffers_ = 1;
                 setNextMethod(&WriteTaskSM::postAllocateSingleBuffer);
             }
@@ -68,34 +65,33 @@ class WriteTaskSM : public sm::SimpleSM< WriteTaskSM >, public iofwdutil::Inject
 
                 /* setup the rbuffer variable */
                 bool lastBufferIsPartial = (total_bytes_ % pipeline_size_ == 0 ? false : true);
-                rbuffer_ = new SMRetrievedBuffer*[total_pipeline_ops_];
+                rbuffer_ = new RetrievedBuffer*[total_pipeline_ops_];
                 for(int i = 0 ; i < total_pipeline_ops_ ; i++)
                 {
                     if(lastBufferIsPartial && i + 1 == total_pipeline_ops_)
                     {
-                        rbuffer_[i] = new SMRetrievedBuffer(request_.getRequestAddr(), iofwdutil::bmi::BMI::ALLOC_RECEIVE, total_bytes_ % pipeline_size_);
+                        rbuffer_[i] = new RetrievedBuffer(total_bytes_ % pipeline_size_);
                     }
                     else
                     {
-                        rbuffer_[i] = new SMRetrievedBuffer(request_.getRequestAddr(), iofwdutil::bmi::BMI::ALLOC_RECEIVE, pipeline_size_);
+                        rbuffer_[i] = new RetrievedBuffer(pipeline_size_);
                     }
-                    rbuffer_[i]->reinit();
                 }
     
                 /* transition to the allocate buffer state */
-                setNextMethod(&WriteTaskSM::postAllocateBMIBuffer);
+                setNextMethod(&WriteTaskSM::postAllocateBuffer);
             }
         }
     
         void postAllocateSingleBuffer(int UNUSED(status))
         {
-            getSingleBMIBuffer();
+            getSingleBuffer();
         }
 
         void waitAllocateSingleBuffer(int UNUSED(status))
         {
             // init the task params
-            request_.initRequestParams(p, rbuffer_[0]->buffer->getMemory());
+            request_.initRequestParams(p, rbuffer_[0]->buffer_->getMemory());
 
             setNextMethod(&WriteTaskSM::postRecvInputBuffers);
         }
@@ -119,7 +115,7 @@ class WriteTaskSM : public sm::SimpleSM< WriteTaskSM >, public iofwdutil::Inject
         void waitEnqueueWrite(int UNUSED(status))
         {
             /* free the buffer */
-            iofwd::BMIMemoryManager::instance().dealloc(rbuffer_[0]->buffer);
+            request_.releaseBuffer(rbuffer_[0]);
 
             setNextMethod(&WriteTaskSM::postReply);
         }
@@ -138,18 +134,18 @@ class WriteTaskSM : public sm::SimpleSM< WriteTaskSM >, public iofwdutil::Inject
 
         /*
          * below is a very simple pipeline state machine...
-         *  1) allocate a BMI buffer
+         *  1) allocate a buffer
          *  2) recv pipeline data into buffer
          *  3) write buffer to disk
          *  4) go back to 1) unless all data was recv'ed from the client
          */
 
-        void postAllocateBMIBuffer(int UNUSED(status))
+        void postAllocateBuffer(int UNUSED(status))
         {
-            getBMIBuffer();
+            getBuffer();
         }
 
-        void waitAllocateBMIBuffer(int UNUSED(status))
+        void waitAllocateBuffer(int UNUSED(status))
         {
             setNextMethod(&WriteTaskSM::postRecvPipelineBuffer);
         }
@@ -187,15 +183,14 @@ class WriteTaskSM : public sm::SimpleSM< WriteTaskSM >, public iofwdutil::Inject
                 cur_recv_bytes_ += p_siz_;
 
                 /* dealloc the buffer */
-                iofwd::BMIMemoryManager::instance().dealloc(rbuffer_[cw_post_index_]->buffer);
+                request_.releaseBuffer(rbuffer_[cw_post_index_]);
                 cw_post_index_++;
 
                 /* if we still have pipeline data to fetch go back to the allocate buffer state */
                 if(cur_recv_bytes_ < total_bytes_)
                 {
                     /* reset the rbuffer variable */
-                    rbuffer_[cw_post_index_]->reinit();
-                    setNextMethod(&WriteTaskSM::postAllocateBMIBuffer);
+                    setNextMethod(&WriteTaskSM::postAllocateBuffer);
                 }
                 /* else, we are done... reply to the client */
                 else
@@ -211,8 +206,7 @@ class WriteTaskSM : public sm::SimpleSM< WriteTaskSM >, public iofwdutil::Inject
                 if(cur_recv_bytes_ < total_bytes_)
                 {
                     /* reset the rbuffer variable */
-                    rbuffer_[cw_post_index_]->reinit();
-                    setNextMethod(&WriteTaskSM::postAllocateBMIBuffer);
+                    setNextMethod(&WriteTaskSM::postAllocateBuffer);
                 }
             }
         }
@@ -226,8 +220,8 @@ class WriteTaskSM : public sm::SimpleSM< WriteTaskSM >, public iofwdutil::Inject
         void reply();
 
         /* pipeline mode operations */
-        void getBMIBuffer();
-        void getSingleBMIBuffer();
+        void getBuffer();
+        void getSingleBuffer();
         void recvPipelineBuffer();
         void execPipelineIO();
         void waitWriteBarrier(int status);
@@ -251,7 +245,7 @@ class WriteTaskSM : public sm::SimpleSM< WriteTaskSM >, public iofwdutil::Inject
         int io_ops_done_;
         int cw_post_index_;
 
-        SMRetrievedBuffer ** rbuffer_;
+        RetrievedBuffer ** rbuffer_;
 
         unsigned int mode_;
 

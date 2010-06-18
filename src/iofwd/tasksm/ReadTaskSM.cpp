@@ -37,7 +37,7 @@ namespace iofwd
     void ReadTaskSM::sendBuffers()
     {
         /* issue the send buffer */
-        request_.sendBuffers(slots_[READ_SLOT]);
+        request_.sendBuffers(slots_[READ_SLOT], rbuffer_[0]);
 
         /* set the callback */
         slots_.wait(READ_SLOT, &ReadTaskSM::waitSendInputBuffers);
@@ -141,7 +141,7 @@ namespace iofwd
 
     void ReadTaskSM::execPipelineIO()
     {
-        const char * p_buf = (char *)rbuffer_[cw_post_index_]->buffer->getMemory();
+        const char * p_buf = (char *)rbuffer_[cw_post_index_]->buffer_->getMemory();
         int p_seg_start = p_segments_start[cw_post_index_];
         size_t p_file_count = p_segments[cw_post_index_];
         int * ret = new int(0);
@@ -212,9 +212,8 @@ namespace iofwd
             if(cur_sent_bytes_ < total_bytes_)
             {
                 /* issue the barrier wait */
-                rbuffer_[cw_post_index_]->reinit();
                 slots_.wait(my_slot, &ReadTaskSM::readBarrier);
-                setNextMethod(&ReadTaskSM::postAllocateBMIBuffer);
+                setNextMethod(&ReadTaskSM::postAllocateBuffer);
             }
             /* else, wait for the barrier */
             else
@@ -239,19 +238,19 @@ void ReadTaskSM::readBarrier(int UNUSED(status))
     }
 }
 
-void ReadTaskSM::getBMIBuffer()
+void ReadTaskSM::getBuffer()
 {
-    /* request a BMI buffer */
-    iofwd::BMIMemoryManager::instance().alloc(slots_[READ_SLOT], rbuffer_[cw_post_index_]->buffer);
+    /* request a buffer */
+    request_.allocateBuffer(slots_[READ_SLOT], rbuffer_[cw_post_index_]);
 
     /* set the callback and wait */
-    slots_.wait(READ_SLOT, &ReadTaskSM::waitAllocateBMIBuffer);
+    slots_.wait(READ_SLOT, &ReadTaskSM::waitAllocateBuffer);
 }
 
-void ReadTaskSM::getSingleBMIBuffer()
+void ReadTaskSM::getSingleBuffer()
 {
-    /* request a BMI buffer */
-    iofwd::BMIMemoryManager::instance().alloc(slots_[READ_SLOT], rbuffer_[0]->buffer);
+    /* request a buffer */
+    request_.allocateBuffer(slots_[READ_SLOT], rbuffer_[0]);
 
     /* set the callback and wait */
     slots_.wait(READ_SLOT, &ReadTaskSM::waitAllocateSingleBuffer);
@@ -263,7 +262,7 @@ void ReadTaskSM::sendPipelineBuffer()
     // from alloc -> NetworkRecv -> rx_q -> ZoidI/O -> io_q -> back to alloc
 
     /* if there is still data to be recieved */
-    request_.sendPipelineBufferCB(slots_[READ_SLOT], rbuffer_[cw_post_index_]->buffer->getBMIBuffer(), p_siz_);
+    request_.sendPipelineBufferCB(slots_[READ_SLOT], rbuffer_[cw_post_index_], p_siz_);
 
     /* set the callback and wait */
     slots_.wait(READ_SLOT, &ReadTaskSM::waitSendPipelineBuffer);

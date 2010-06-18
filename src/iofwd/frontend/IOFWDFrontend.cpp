@@ -32,6 +32,8 @@
 #include "IOFWDReadRequest.hh"
 #include "IOFWDLinkRequest.hh"
 
+#include "iofwdutil/mm/BMIMemoryManager.hh"
+
 using namespace iofwdutil::bmi;
 using namespace iofwdutil;
 using namespace zoidfs;
@@ -100,6 +102,10 @@ IOFWDFrontend::IOFWDFrontend (Resources & r)
 
 IOFWDFrontend::~IOFWDFrontend ()
 {
+   ZLOG_INFO (log_, "Stopping BMI memory manager...");
+   iofwdutil::mm::BMIMemoryManager::instance().reset();
+   delete &iofwdutil::mm::BMIMemoryManager::instance();
+
    ZLOG_INFO (log_, "Shutting down BMI...");
    if (BMI::isCreated ())
       BMI::get().finalize ();
@@ -131,6 +137,12 @@ void IOFWDFrontend::init ()
    res_.bmictx_ = bmictx_;
 
    stop_ = false;
+
+   /* start the BMI memory manager */
+   ZLOG_INFO (log_, "Starting BMI memory manager...");
+   iofwdutil::ConfigFile lc = config_.openSectionDefault("bmimemorymanager");
+   iofwdutil::mm::BMIMemoryManager::instance().setMaxNumBuffers(lc.getKeyAsDefault("maxnumbuffers", 0));
+   iofwdutil::mm::BMIMemoryManager::instance().start();
 }
 
 void IOFWDFrontend::run()

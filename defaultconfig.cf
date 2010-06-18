@@ -22,6 +22,18 @@ log {
 frontend {
   listen = "tcp://127.0.0.1:1234";
 
+  //
+  // bmi buffer pool options
+  //
+  bmimemorymanager {
+    //
+    // the max number of bmi buffers that are used at any
+    //  point in time
+    //  default: 0
+    //
+    maxnumbuffers = "100";
+  }
+
 }
 
 //
@@ -154,18 +166,6 @@ requesthandler {
   //
   events {
       mode = "SM";
-  }
-
-  //
-  // bmi buffer pool options
-  //
-  bmimemorymanager {
-    //
-    // the max number of bmi buffers that are used at any
-    //  point in time
-    //  default: 0
-    //
-    maxnumbuffers = "100";
   }
 
   workqueue {

@@ -78,11 +78,6 @@ DefRequestHandler::DefRequestHandler (const iofwdutil::ConfigFile & cf)
       event_mode_ = EVMODE_SM;
    }
 
-   /* start the BMI memory manager */
-   lc = config_.openSectionDefault("bmimemorymanager");
-   iofwd::BMIMemoryManager::instance().setMaxNumBuffers(lc.getKeyAsDefault("maxnumbuffers", 0));
-   iofwd::BMIMemoryManager::instance().start();
-
    iofwdutil::ConfigFile csec = config_.openSectionDefault("workqueue");
    workqueue_normal_.reset (new PoolWorkQueue (csec.getKeyAsDefault("minthreadnum", 0),
                                                csec.getKeyAsDefault("maxthreadnum", 100)));

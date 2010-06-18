@@ -1,17 +1,18 @@
 #ifndef IOFWD_TASKSM_SMRETRIEVEDBUFFER_HH
 #define IOFWD_TASKSM_SMRETRIEVEDBUFFER_HH
 
-#include "iofwd/BMIMemoryManager.hh"
+#include "iofwd/IOFWDMemoryManager.hh"
 #include "zoidfs/zoidfs.h"
+#include "iofwd/RetrievedBuffer.hh"
 
 namespace iofwd
 {
     namespace tasksm
     {
 
-struct SMRetrievedBuffer
+struct SMRetrievedBuffer : public iofwd::RetrievedBuffer
 {
-    BMIMemoryAlloc * buffer;
+    IOFWDMemoryAlloc * buffer_;
     zoidfs::zoidfs_file_size_t siz;
     size_t p_siz;
     zoidfs::zoidfs_file_ofs_t off;
@@ -22,26 +23,12 @@ struct SMRetrievedBuffer
     const zoidfs::zoidfs_file_ofs_t * file_starts;
     const zoidfs::zoidfs_file_size_t * file_sizes;
     int * ret;
-    iofwdutil::bmi::BMIAddr addr_;
-    iofwdutil::bmi::BMI::AllocType allocType_;
 
-    SMRetrievedBuffer(iofwdutil::bmi::BMIAddr addr, iofwdutil::bmi::BMI::AllocType allocType, size_t p_size);
+    SMRetrievedBuffer(size_t p_size);
     ~SMRetrievedBuffer();
-
-    /* before this object is used / reused  reinit it */
-    void reinit()
-    {
-        /* cleanup any old data stuctures */
-        cleanup();
-
-        /* allocate a new BMIBufferWrapper */
-        buffer = new BMIMemoryAlloc(addr_, allocType_, p_siz);
-    }
 
     void cleanup()
     {
-        if(buffer)
-            delete buffer;
         if(mem_starts)
             delete [] mem_starts;
         if(mem_sizes)

@@ -40,8 +40,6 @@ src/iofwd/Task.cpp \
 src/iofwd/ThreadTasks.cpp \
 src/iofwd/WriteTask.cpp \
 src/iofwd/iofwd.cpp \
-src/iofwd/BMIMemoryManager.hh \
-src/iofwd/BMIMemoryManager.cpp \
 src/iofwd/CommitRequest.hh \
 src/iofwd/CommitTask.hh \
 src/iofwd/ConfigException.hh \
@@ -114,8 +112,6 @@ src/iofwd/tasksm/WriteTaskSM.hh \
 src/iofwd/tasksm/WriteTaskSM.cpp \
 src/iofwd/tasksm/ReadTaskSM.hh \
 src/iofwd/tasksm/ReadTaskSM.cpp \
-src/iofwd/tasksm/SMRetrievedBuffer.hh \
-src/iofwd/tasksm/SMRetrievedBuffer.cpp \
 src/iofwd/tasksm/SharedIOCB.hh \
 src/iofwd/tasksm/SharedIOCB.cpp \
 src/iofwd/tasksm/IOCBWrapper.hh \

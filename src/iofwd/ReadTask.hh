@@ -11,7 +11,6 @@
 #include "iofwdevent/SingleCompletion.hh"
 #include "iofwd/RetrievedBuffer.hh"
 #include "zoidfs/zoidfs.h"
-#include "iofwd/BMIMemoryManager.hh"
 
 namespace iofwd
 {
@@ -61,8 +60,7 @@ public:
       {
          /* setup the rbuffer variable */
          rbuffer_ = new RetrievedBuffer*[1];
-         rbuffer_[0] = new RetrievedBuffer(request_.getRequestAddr(), iofwdutil::bmi::BMI::ALLOC_SEND, total_bytes_);
-         rbuffer_[0]->reinit();
+         rbuffer_[0] = new RetrievedBuffer(total_bytes_);
          total_buffers_ = 1;
          runNormalMode(p);
       }
@@ -82,13 +80,12 @@ public:
             {
                 if(lastBufferIsPartial && i + 1 == total_pipeline_ops_)
                 {
-                    rbuffer_[i] = new RetrievedBuffer(request_.getRequestAddr(), iofwdutil::bmi::BMI::ALLOC_SEND, total_bytes_ % pipeline_size_);
+                    rbuffer_[i] = new RetrievedBuffer(total_bytes_ % pipeline_size_);
                 }
                 else
                 {
-                    rbuffer_[i] = new RetrievedBuffer(request_.getRequestAddr(), iofwdutil::bmi::BMI::ALLOC_SEND, pipeline_size_);
+                    rbuffer_[i] = new RetrievedBuffer(pipeline_size_);
                 }
-                rbuffer_[i]->reinit();
             }
 
             /* setup the pipeline blocks */
@@ -108,7 +105,6 @@ private:
    void runPipelineMode(const ReadRequest::ReqParam & p);
    void execPipelineIO(const ReadRequest::ReqParam & p);
    void postRead(const ReadRequest::ReqParam & p, int index);
-   void getBMIBuffer(int index);
    void computePipelineFileSegments(const ReadRequest::ReqParam & p);
    void sendPipelineBuffer(int index);
    void runPostReadCB(int status, int index, iofwdevent::CBType cb);

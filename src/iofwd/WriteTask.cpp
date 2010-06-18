@@ -15,22 +15,21 @@ namespace iofwd
 
 void WriteTask::runNormalMode(WriteRequest::ReqParam & p)
 {
-   // setup the BMI memory wrappers
+   // setup the memory wrappers
    rbuffer_ = new RetrievedBuffer*[1];
-   rbuffer_[0] = new RetrievedBuffer(request_.getRequestAddr(), iofwdutil::bmi::BMI::ALLOC_RECEIVE, total_bytes_);
-   rbuffer_[0]->reinit();
+   rbuffer_[0] = new RetrievedBuffer(total_bytes_);
 
-   // get a BMI buffer
+   // get a buffer
    block_.reset();
-   iofwd::BMIMemoryManager::instance().alloc(block_, rbuffer_[0]->buffer);
+   request_.allocateBuffer(block_, rbuffer_[0]);
    block_.wait();
 
    // init the task params
-   request_.initRequestParams(p, rbuffer_[0]->buffer->getMemory());
+   request_.initRequestParams(p, rbuffer_[0]->buffer_->getMemory());
    
    // issue recvBuffers w/ callback
    block_.reset();
-   request_.recvBuffers((block_));
+   request_.recvBuffers((block_), rbuffer_[0]);
    block_.wait();
 
    /* issue the write */
@@ -42,7 +41,7 @@ void WriteTask::runNormalMode(WriteRequest::ReqParam & p)
    block_.wait();
 
    /* deallocate the buffer */
-   iofwd::BMIMemoryManager::instance().dealloc(rbuffer_[0]->buffer);
+   request_.releaseBuffer(rbuffer_[0]);
 
    /* setup the return code */
    request_.setReturnCode(ret);
@@ -119,22 +118,12 @@ void WriteTask::computePipelineFileSegments(const WriteRequest::ReqParam & p)
     }
 }
 
-void WriteTask::getBMIBuffer(int index)
-{
-    /* request a BMI buffer */
-    block_.reset();
-    iofwd::BMIMemoryManager::instance().alloc(block_, rbuffer_[index]->buffer);
-
-    /* set the callback and wait */
-    block_.wait();
-}
-
 void WriteTask::recvPipelineBuffer(int index)
 {
     /* if there is still data to be recieved */
     block_.reset();
     p_siz_ = std::min(pipeline_size_, total_bytes_ - cur_recv_bytes_);
-    request_.recvPipelineBufferCB(block_, rbuffer_[index]->buffer->getBMIBuffer(), p_siz_);
+    request_.recvPipelineBufferCB(block_, rbuffer_[index], p_siz_);
 
     /* set the callback and wait */
     block_.wait();
@@ -154,7 +143,9 @@ void WriteTask::execPipelineIO(const WriteRequest::ReqParam & p)
         /* get a buffer */
         if(pipe_buffer_ops > 0)
         {
-            getBMIBuffer(index);
+            block_.reset();
+            request_.allocateBuffer((block_), rbuffer_[index]);
+            block_.wait();
             pipe_buffer_ops--;
         }
 
@@ -197,9 +188,6 @@ void WriteTask::execPipelineIO(const WriteRequest::ReqParam & p)
                     /* update the count */
                     pipe_write_ops_done--;
 
-                    /* dealloc the buffer */
-                    iofwd::BMIMemoryManager::instance().dealloc(rbuffer_[cur]->buffer);
-
                     /* remove the completed op from the pipeline op list */
                     pipeline_ops_.erase(pipeline_ops_.begin() + i);
                 }
@@ -231,9 +219,6 @@ void WriteTask::execPipelineIO(const WriteRequest::ReqParam & p)
                 /* update the count */
                 pipe_write_ops_done--;
 
-                /* dealloc the buffer */
-                iofwd::BMIMemoryManager::instance().dealloc(rbuffer_[cur]->buffer);
-
                 /* remove the completed op from the pipeline op list */
                 pipeline_ops_.erase(pipeline_ops_.begin() + i);
             }
@@ -246,9 +231,9 @@ void WriteTask::execPipelineIO(const WriteRequest::ReqParam & p)
     }
 }
 
-void WriteTask::runPostWriteCB(int status, BMIMemoryAlloc * buffer, int index, iofwdevent::CBType cb)
+void WriteTask::runPostWriteCB(int status, RetrievedBuffer * rb, int index, iofwdevent::CBType cb)
 {
-    iofwd::BMIMemoryManager::instance().dealloc(buffer);
+    request_.releaseBuffer(rb);
 
     /* update the ret code */
     if(*(rbuffer_[index]->ret) != zoidfs::ZFS_OK)
@@ -261,7 +246,7 @@ void WriteTask::runPostWriteCB(int status, BMIMemoryAlloc * buffer, int index, i
 
 void WriteTask::postWrite(const WriteRequest::ReqParam & p, int index)
 { 
-    const char * p_buf = (char *)rbuffer_[index]->buffer->getMemory();
+    const char * p_buf = (char *)rbuffer_[index]->buffer_->getMemory();
     int p_seg_start = p_segments_start[index];
     int p_file_count = p_segments[index];
     int * ret = new int(0);
@@ -295,7 +280,7 @@ void WriteTask::postWrite(const WriteRequest::ReqParam & p, int index)
 
     iofwdevent::CBType pcb = *(pipeline_blocks_[index]);
     boost::function<void(int)> bmmCB = boost::bind(&iofwd::WriteTask::runPostWriteCB, 
-            this, 0, rbuffer_[index]->buffer, index, pcb);
+            this, 0, rbuffer_[index], index, pcb);
 
     /* enqueue the write */
     api_->write (

@@ -177,27 +177,43 @@ void IOFWDReadRequest::initRequestParams(ReqParam & p, void * bufferMem)
 
 }
 
-void IOFWDReadRequest::sendBuffers(const CBType & cb)
+void IOFWDReadRequest::sendBuffers(const iofwdevent::CBType & cb, RetrievedBuffer * rb)
 {
 #if SIZEOF_SIZE_T == SIZEOF_INT64_T
    /* Send the mem_sizes_ array */
-   r_.rbmi_.post_send_list(cb, addr_, reinterpret_cast<void*const*>(param_.mem_starts), reinterpret_cast<const bmi_size_t *>(param_.mem_sizes),
-                            param_.mem_count, param_.mem_total_size, bmi_buffer_->bmiType(), tag_, 0);
+   r_.rbmi_.post_send_list(cb, addr_, reinterpret_cast<const void*const*>(param_.mem_starts), reinterpret_cast<const bmi_size_t *>(param_.mem_sizes),
+                            param_.mem_count, param_.mem_total_size, dynamic_cast<iofwdutil::mm::BMIMemoryAlloc *>(rb->buffer_)->bmiType(), tag_, 0);
 #else
    /* Send the bmi_mem_sizes_ array */
-   r_.rbmi_.post_send_list(cb, addr_, reinterpret_cast<void*const*>(param_.mem_starts), reinterpret_cast<const bmi_size_t *>(param_.bmi_mem_sizes),
-                            param_.mem_count, param_.mem_total_size, bmi_buffer_->bmiType(), tag_, 0);
+   r_.rbmi_.post_send_list(cb, addr_, reinterpret_cast<const void*const*>(param_.mem_starts), reinterpret_cast<const bmi_size_t *>(param_.bmi_mem_sizes),
+                            param_.mem_count, param_.mem_total_size, dynamic_cast<iofwdutil::mm::BMIMemoryAlloc *>(rb->buffer_)->bmiType(), tag_, 0);
 #endif
 }
 
-void IOFWDReadRequest::sendPipelineBufferCB(iofwdevent::CBType cb, iofwdutil::bmi::BMIBuffer * buf, size_t size)
+void IOFWDReadRequest::sendPipelineBufferCB(const iofwdevent::CBType cb, RetrievedBuffer * rb, size_t size)
 {
-   r_.rbmi_.post_send(cb, addr_, (char *)buf->get(), size, buf->bmiType(), tag_, 0);
+   r_.rbmi_.post_send(cb, addr_, (const void *)dynamic_cast<iofwdutil::mm::BMIMemoryAlloc *>(rb->buffer_)->getMemory(), size, dynamic_cast<iofwdutil::mm::BMIMemoryAlloc *>(rb->buffer_)->bmiType(), tag_, 0);
 }
 
 void IOFWDReadRequest::reply(const CBType & cb)
 {
    simpleOptReply(cb, getReturnCode(), TSSTART << encoder::EncVarArray(param_.file_sizes, param_.file_count));
+}
+
+void IOFWDReadRequest::allocateBuffer(iofwdevent::CBType cb, RetrievedBuffer * rb)
+{
+    /* allocate the buffer wrapper */
+    rb->buffer_ = new iofwdutil::mm::BMIMemoryAlloc(addr_, iofwdutil::bmi::BMI::ALLOC_SEND, rb->getsize());
+
+    iofwdutil::mm::BMIMemoryManager::instance().alloc(cb, rb->buffer_);
+}
+
+void IOFWDReadRequest::releaseBuffer(RetrievedBuffer * rb)
+{
+    iofwdutil::mm::BMIMemoryManager::instance().dealloc(rb->buffer_);
+
+    /* delete the buffer */
+    delete rb->buffer_;
 }
 
 //===========================================================================

@@ -1,14 +1,16 @@
-#include "iofwd/BMIMemoryManager.hh"
+#include "iofwdutil/mm/BMIMemoryManager.hh"
 
 #include <cassert>
 
 using namespace std;
 
-namespace iofwd
+namespace iofwdutil
 {
+    namespace mm
+    {
 
 BMIMemoryAlloc::BMIMemoryAlloc(iofwdutil::bmi::BMIAddr addr, iofwdutil::bmi::BMI::AllocType allocType, size_t bufferSize)
-    : allocated_(false), numTokens_(0), bufferSize_(bufferSize), memory_(NULL), addr_(addr), allocType_(allocType)
+    : IOFWDMemoryAlloc(), allocated_(false), numTokens_(0), bufferSize_(bufferSize), memory_(NULL), addr_(addr), allocType_(allocType)
 {
 }
 
@@ -101,8 +103,8 @@ BMIMemoryManager::BMIMemoryManager()
 }
 
 /* static variables for the mem manager */
-int iofwd::BMIMemoryManager::numTokens_ = 0;
-boost::mutex iofwd::BMIMemoryManager::bmm_setup_mutex_;
+int iofwdutil::mm::BMIMemoryManager::numTokens_ = 0;
+boost::mutex iofwdutil::mm::BMIMemoryManager::bmm_setup_mutex_;
 
 void BMIMemoryManager::setMaxNumBuffers(int numTokens)
 {
@@ -144,10 +146,10 @@ BMIMemoryManager::~BMIMemoryManager()
 /*
  * This is the public buffer allocation method
  */
-void BMIMemoryManager::alloc(iofwdevent::CBType cb, BMIMemoryAlloc * memAlloc)
+void BMIMemoryManager::alloc(iofwdevent::CBType cb, IOFWDMemoryAlloc * memAlloc)
 {
     /* construct the mem manager callback */
-    boost::function<void(int)> bmmCB = boost::bind(&iofwd::BMIMemoryManager::runBufferAllocCB, this, _1, memAlloc, cb);
+    boost::function<void(int)> bmmCB = boost::bind(&iofwdutil::mm::BMIMemoryManager::runBufferAllocCB, this, _1, dynamic_cast<BMIMemoryAlloc *>(memAlloc), cb);
 
     /* get the tokens */
     tokens_->request(boost::bind(bmmCB, 0), 1);
@@ -156,7 +158,7 @@ void BMIMemoryManager::alloc(iofwdevent::CBType cb, BMIMemoryAlloc * memAlloc)
 /*
  * This is the public buffer deallocation method
  */
-void BMIMemoryManager::dealloc(BMIMemoryAlloc * memAlloc)
+void BMIMemoryManager::dealloc(IOFWDMemoryAlloc * memAlloc)
 {
     /* free the BMI memory */
     memAlloc->dealloc();
@@ -164,5 +166,5 @@ void BMIMemoryManager::dealloc(BMIMemoryAlloc * memAlloc)
     /* return the tokens */
     tokens_->release(1);
 }
-
+    }
 }

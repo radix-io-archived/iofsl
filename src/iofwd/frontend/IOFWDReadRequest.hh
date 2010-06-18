@@ -32,17 +32,14 @@ public:
    virtual void reply(const CBType & cb);
 
    // for normal mode
-   virtual void sendBuffers(const CBType & cb);
+   virtual void sendBuffers(const iofwdevent::CBType & cb, RetrievedBuffer * rb);
 
    // for pipeline mode
-   virtual void sendPipelineBufferCB(iofwdevent::CBType cb, iofwdutil::bmi::BMIBuffer * buf, size_t size);
-
-   virtual iofwdutil::bmi::BMIAddr getRequestAddr()
-   {
-      return addr_;
-   }
+   virtual void sendPipelineBufferCB(const iofwdevent::CBType cb, RetrievedBuffer * rb, size_t size);
 
    virtual void initRequestParams(ReqParam & p, void * bufferMem);
+   virtual void allocateBuffer(iofwdevent::CBType cb, RetrievedBuffer * rb);
+   virtual void releaseBuffer(RetrievedBuffer * rb);
 
 private:
    ReqParam param_;

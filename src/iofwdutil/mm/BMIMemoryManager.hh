@@ -11,7 +11,7 @@
 #include "iofwdevent/TokenResource.hh"
 #include "iofwdutil/Singleton.hh"
 #include "boost/thread/mutex.hpp"
-
+#include "iofwdutil/mm/IOFWDMemoryManager.hh"
 /*
  * The following classes are replacements for the BMIMemoryPool and MemoryPool
  *  classes. The old memory pools weren't really memory pools... more like
@@ -51,14 +51,16 @@
  *  should be a specialized version of the general memory manager. The token
  *  management could be improved as well as the interface.
  */
-namespace iofwd
+namespace iofwdutil
 {
+    namespace mm
+    {
 
 /* forward decls */
 class BMIMemoryManager;
 
 /* wrapper for a single BMI memory allocation from the BMIMemoryManager*/
-class BMIMemoryAlloc
+class BMIMemoryAlloc : public IOFWDMemoryAlloc
 {
     public:
         BMIMemoryAlloc(iofwdutil::bmi::BMIAddr addr, iofwdutil::bmi::BMI::AllocType allocType, size_t bufferSize_);
@@ -66,26 +68,30 @@ class BMIMemoryAlloc
         ~BMIMemoryAlloc();
 
         /* is the buffer allocated? */
-        bool allocated() const;
+        virtual bool allocated() const;
 
         /* get the memory buffer start */
-        void * getMemory() const;
+        virtual void * getMemory() const;
 
         /* get the bmi memory buffer */
         iofwdutil::bmi::BMIBuffer * getBMIBuffer() const;
 
         /* get the memory buffer start */
-        size_t getMemorySize() const;
+        virtual size_t getMemorySize() const;
 
         /* get the number of tokens held by this alloc */
-        size_t getNumTokens() const;
+        virtual size_t getNumTokens() const;
 
+        virtual void alloc(int numTokens);
+        virtual void dealloc();
+
+        bmi_buffer_type bmiType()
+        {
+            return memory_->bmiType();
+        }
     protected:
         /* friends that can invoke the alloc and dealloc methods */
         friend class BMIMemoryManager;
-
-        void alloc(int numTokens);
-        void dealloc();
 
         /* allocation valid flag */
         bool allocated_;
@@ -103,7 +109,7 @@ class BMIMemoryAlloc
 };
 
 /* allocation manager for BMI buffers */
-class BMIMemoryManager : public iofwdutil::Singleton < BMIMemoryManager > 
+class BMIMemoryManager : public IOFWDMemoryManager, public iofwdutil::Singleton < BMIMemoryManager > 
 {
     public:
         BMIMemoryManager();
@@ -111,10 +117,10 @@ class BMIMemoryManager : public iofwdutil::Singleton < BMIMemoryManager >
         void setup(const iofwdutil::ConfigFile & c);
 
         /* submit a buffer request */
-        void alloc(iofwdevent::CBType cb, BMIMemoryAlloc * memAlloc_);
+        void alloc(iofwdevent::CBType cb, IOFWDMemoryAlloc * memAlloc_);
 
         /* return a buffer to the manager */
-        void dealloc(BMIMemoryAlloc * memAlloc_);
+        void dealloc(IOFWDMemoryAlloc * memAlloc_);
 
         /* start the memory manager */
         void start();
@@ -139,7 +145,7 @@ class BMIMemoryManager : public iofwdutil::Singleton < BMIMemoryManager >
         static int numTokens_;
         static boost::mutex bmm_setup_mutex_;
 };
-
+    }
 }
 
 #endif

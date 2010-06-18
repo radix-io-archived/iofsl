@@ -12,16 +12,17 @@ namespace iofwd
 
 void ReadTask::runNormalMode(ReadRequest::ReqParam & p)
 {
-   // get a BMI buffer
+   int ret;
+
+   // get a buffer
    block_.reset();
-   iofwd::BMIMemoryManager::instance().alloc(block_, rbuffer_[0]->buffer);
+   request_.allocateBuffer((block_), rbuffer_[0]);
    block_.wait();
 
    // init the task params
-   request_.initRequestParams(p, rbuffer_[0]->buffer->getMemory());
+   request_.initRequestParams(p, rbuffer_[0]->getptr());
 
    // issue the read request
-   int ret;
    block_.reset();
    api_->read(block_, &ret, p.handle, p.mem_count, p.mem_starts,
          p.mem_sizes, p.file_count, p.file_starts, p.file_sizes, p.op_hint);
@@ -31,11 +32,11 @@ void ReadTask::runNormalMode(ReadRequest::ReqParam & p)
 
    // send buffers w/ callback
    block_.reset();
-   request_.sendBuffers((block_));
+   request_.sendBuffers((block_), rbuffer_[0]);
    block_.wait();
 
    /* deallocate the buffer after the send */
-   iofwd::BMIMemoryManager::instance().dealloc(rbuffer_[0]->buffer);
+   request_.releaseBuffer(rbuffer_[0]);
 
    // send reply w/ callback
    block_.reset();
@@ -111,28 +112,18 @@ void ReadTask::computePipelineFileSegments(const ReadRequest::ReqParam & p)
     }
 }
 
-void ReadTask::getBMIBuffer(int index)
-{
-    /* request a BMI buffer */
-    block_.reset();
-    iofwd::BMIMemoryManager::instance().alloc(block_, rbuffer_[index]->buffer);
-
-    /* set the callback and wait */
-    block_.wait();
-}
-
 void ReadTask::sendPipelineBuffer(int index)
 {
     /* if there is still data to be recieved */
     block_.reset();
     p_siz_ = std::min(pipeline_size_, total_bytes_ - cur_sent_bytes_);
-    request_.sendPipelineBufferCB(block_, rbuffer_[index]->buffer->getBMIBuffer(), p_siz_);
+    request_.sendPipelineBufferCB(block_, rbuffer_[index], p_siz_);
 
     /* set the callback and wait */
     block_.wait();
 
     /* dealloc the buffer */
-    iofwd::BMIMemoryManager::instance().dealloc(rbuffer_[index]->buffer);
+    request_.releaseBuffer(rbuffer_[index]);
 
     /* update the byte transfer count */
     cur_sent_bytes_ += p_siz_;
@@ -159,7 +150,9 @@ void ReadTask::execPipelineIO(const ReadRequest::ReqParam & p)
         /* get a buffer */
         if(pipe_buffer_ops > 0)
         {
-            getBMIBuffer(index);
+            block_.reset();
+            request_.allocateBuffer(block_, rbuffer_[index]);
+            block_.wait();
             pipe_buffer_ops--;
         }
 
@@ -299,7 +292,7 @@ void ReadTask::runPostReadCB(int status, int index, iofwdevent::CBType cb)
 
 void ReadTask::postRead(const ReadRequest::ReqParam & p, int index)
 {
-    char * p_buf = (char *)rbuffer_[index]->buffer->getMemory();
+    char * p_buf = (char *)rbuffer_[index]->buffer_->getMemory();
     int p_seg_start = p_segments_start[index];
     int p_file_count = p_segments[index];
     int * ret = new int(0);

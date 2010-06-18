@@ -2,7 +2,6 @@
 #define IOFWD_TASKSM_TASKSMFACTORY_HH
 
 #include <boost/function.hpp>
-#include "iofwd/BMIMemoryManager.hh"
 #include "sm/SMManager.hh"
 #include "iofwd/Request.hh"
 

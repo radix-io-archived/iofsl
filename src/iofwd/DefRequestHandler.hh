@@ -7,7 +7,6 @@
 
 #include "iofwdutil/IOFWDLog.hh"
 #include "iofwd/RequestHandler.hh"
-#include "iofwd/BMIMemoryManager.hh"
 #include "iofwd/ThreadTasks.hh"
 #include "zoidfs/util/LogAPI.hh"
 #include "iofwdutil/ConfigFile.hh"

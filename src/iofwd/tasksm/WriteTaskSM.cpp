@@ -39,7 +39,7 @@ namespace iofwd
     void WriteTaskSM::recvBuffers()
     {
         /* issue the recv buffer */
-        request_.recvBuffers(slots_[WRITE_SLOT]);
+        request_.recvBuffers(slots_[WRITE_SLOT], rbuffer_[0]);
 
         /* set the callback */
         slots_.wait(WRITE_SLOT, &WriteTaskSM::waitRecvInputBuffers);
@@ -144,7 +144,7 @@ namespace iofwd
 
     void WriteTaskSM::execPipelineIO()
     {
-        const char * p_buf = (char *)rbuffer_[cw_post_index_]->buffer->getMemory();
+        const char * p_buf = (char *)rbuffer_[cw_post_index_]->buffer_->getMemory();
         int p_seg_start = p_segments_start[cw_post_index_];
         size_t p_file_count = p_segments[cw_post_index_]; 
         int * ret = new int(0);
@@ -234,7 +234,7 @@ void WriteTaskSM::writeDoneCB(int UNUSED(status), int my_slot)
     }
 
     /* free the buffer */
-    iofwd::BMIMemoryManager::instance().dealloc(rbuffer_[my_slot]->buffer);
+    request_.releaseBuffer(rbuffer_[my_slot]);
 
     if(count == total_pipeline_ops_)
     {
@@ -256,19 +256,19 @@ void WriteTaskSM::waitWriteBarrier(int UNUSED(status))
     }
 }
 
-void WriteTaskSM::getBMIBuffer()
+void WriteTaskSM::getBuffer()
 {
-    /* request a BMI buffer */
-    iofwd::BMIMemoryManager::instance().alloc(slots_[WRITE_SLOT], rbuffer_[cw_post_index_]->buffer);
+    /* request a buffer */
+    request_.allocateBuffer(slots_[WRITE_SLOT], rbuffer_[cw_post_index_]);
 
     /* set the callback and wait */
-    slots_.wait(WRITE_SLOT, &WriteTaskSM::waitAllocateBMIBuffer);
+    slots_.wait(WRITE_SLOT, &WriteTaskSM::waitAllocateBuffer);
 }
 
-void WriteTaskSM::getSingleBMIBuffer()
+void WriteTaskSM::getSingleBuffer()
 {
-    /* request a BMI buffer */
-    iofwd::BMIMemoryManager::instance().alloc(slots_[WRITE_SLOT], rbuffer_[0]->buffer);
+    /* request a buffer */
+    request_.allocateBuffer(slots_[WRITE_SLOT], rbuffer_[0]);
 
     /* set the callback and wait */
     slots_.wait(WRITE_SLOT, &WriteTaskSM::waitAllocateSingleBuffer);
@@ -278,7 +278,7 @@ void WriteTaskSM::recvPipelineBuffer()
 {
     /* if there is still data to be recieved */
     p_siz_ = std::min(pipeline_size_, total_bytes_ - cur_recv_bytes_);
-    request_.recvPipelineBufferCB(slots_[WRITE_SLOT], rbuffer_[cw_post_index_]->buffer->getBMIBuffer(), p_siz_);
+    request_.recvPipelineBufferCB(slots_[WRITE_SLOT], rbuffer_[cw_post_index_], p_siz_);
 
     /* set the callback and wait */
     slots_.wait(WRITE_SLOT, &WriteTaskSM::waitRecvPipelineBuffer);
