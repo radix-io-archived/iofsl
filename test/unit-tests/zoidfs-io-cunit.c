@@ -574,6 +574,23 @@ int clean_suite_dispatch_basic(void)
  */
 int main(int argc, char ** argv)
 {
+   struct timeval now;
+   int err = 0;
+   zoidfs_sattr_t sattr;
+   zoidfs_cache_hint_t parent_hint;
+
+   /* set the attrs */
+   sattr.mask = ZOIDFS_ATTR_SETABLE;
+   sattr.mode = 0755;
+   sattr.uid = getuid();
+   sattr.gid = getgid();
+
+   gettimeofday(&now, NULL);
+   sattr.atime.seconds = now.tv_sec;
+   sattr.atime.nseconds = now.tv_usec;
+   sattr.mtime.seconds = now.tv_sec;
+   sattr.mtime.nseconds = now.tv_usec;
+
    CU_pSuite pSuite = NULL;
 
    if(argc < 2)
@@ -583,7 +600,13 @@ int main(int argc, char ** argv)
    }
 
     zoidfs_init();
-
+    
+   err = zoidfs_mkdir(NULL, NULL, argv[1], &sattr, &parent_hint, ZOIDFS_NO_OP_HINT);
+   if(err != ZFS_OK && err != ZFSERR_EXIST)
+   {
+       fprintf(stderr, "ERROR: could not intialize remote test directory!\n");
+       return -1;
+   }
    /* setup path names for the tests */
    init_path_names(argv[1]);
 

@@ -31,7 +31,8 @@ static char rename_fullpath_dirname[NAMESIZE], rename_component_dirname[NAMESIZE
 static char rename_fullpath_filename[NAMESIZE], rename_component_filename[NAMESIZE];
 static char base_component_dirname[NAMESIZE], base_component_filename[NAMESIZE];
 static char long_fullpath_dirpath[PATHSIZE], long_component_dirpath[PATHSIZE];
-
+static char base_component_dirname_full[PATHSIZE], base_component_filename_full[PATHSIZE];
+static char symlink_component_dirname_full[PATHSIZE], symlink_component_filename_full[PATHSIZE];
 /* basedir handle */
 static zoidfs_handle_t basedir_handle;
 
@@ -40,8 +41,10 @@ static size_t total_file_count = 0;
 /* setup the file paths */
 int init_path_names(char * testDir, char * mpt)
 {
-    snprintf(symlink_component_filename, NAMESIZE, "%s/symlink_comp_file", testDir);
+    snprintf(symlink_component_filename, NAMESIZE, "%s/symlink_comp_file",testDir);
     snprintf(symlink_component_dirname, NAMESIZE, "%s/symlink_comp_dir", testDir);
+    snprintf(symlink_component_filename_full, NAMESIZE, "%s/%s/symlink_comp_file",mpt,testDir);
+    snprintf(symlink_component_dirname_full, NAMESIZE, "%s/%s/symlink_comp_dir", mpt,testDir);
     snprintf(symlink_component_dirname_slash, NAMESIZE, "%s/symlink_comp_dir/", testDir);
     snprintf(symlink_fullpath_filename, NAMESIZE, "%s/%s/symlink_full_file", mpt, testDir);
     snprintf(symlink_fullpath_dirname, NAMESIZE, "%s/%s/symlink_full_dir", mpt, testDir);
@@ -53,11 +56,13 @@ int init_path_names(char * testDir, char * mpt)
     snprintf(link_fullpath_dirname, NAMESIZE, "%s/%s/link_full_dir", mpt, testDir);
 
     snprintf(component_filename, NAMESIZE, "%s/test-zoidfs-file-comp", testDir);
-    snprintf(base_component_filename, NAMESIZE, "test-zoidfs-file-comp");
+    snprintf(base_component_filename, NAMESIZE, "%s/test-zoidfs-file-comp",testDir);
     snprintf(component_dirname, NAMESIZE, "%s/test-zoidfs-dir-comp", testDir);
-    snprintf(base_component_dirname, NAMESIZE, "test-zoidfs-dir-comp");
+    snprintf(base_component_dirname, NAMESIZE, "%s/test-zoidfs-dir-comp", testDir);
     snprintf(fullpath_filename, NAMESIZE, "%s/%s/test-zoidfs-file-full", mpt, testDir);
     snprintf(fullpath_dirname, NAMESIZE, "%s/%s/test-zoidfs-dir-full", mpt, testDir);
+    snprintf(base_component_dirname_full, NAMESIZE, "%s/%s/test-zoidfs-dir-comp", mpt, testDir);
+    snprintf(base_component_filename_full, NAMESIZE, "%s/%s/test-zoidfs-file-comp", mpt, testDir);
 
     snprintf(rename_component_filename, NAMESIZE, "%s/test-zoidfs-file-comp-rename", testDir);
     snprintf(rename_component_dirname, NAMESIZE, "%s/test-zoidfs-dir-comp-rename", testDir);
@@ -354,7 +359,7 @@ int testREMOVE(void)
     zoidfs_lookup(NULL, NULL, "/", &basedir_handle, ZOIDFS_NO_OP_HINT);
 
     /* rm several subdirs using the component dir name */
-    sprintf(p1, "%s/a/b/c/d/e", component_dirname);
+    sprintf(p1, "%s/a/b/c/d/e", base_component_dirname_full);
     CU_ASSERT(ZFS_OK == zoidfs_remove(&basedir_handle, p1, NULL, NULL, ZOIDFS_NO_OP_HINT));
     p1[strlen(p1) - 2] = '\0'; 
     CU_ASSERT(ZFS_OK == zoidfs_remove(&basedir_handle, p1, NULL, NULL, ZOIDFS_NO_OP_HINT));
@@ -377,17 +382,17 @@ int testREMOVE(void)
     p2[strlen(p2) - 2] = '\0'; 
     CU_ASSERT(ZFS_OK == zoidfs_remove(NULL, NULL, p2, NULL, ZOIDFS_NO_OP_HINT));
  
-    CU_ASSERT(ZFS_OK == zoidfs_remove(&basedir_handle, component_filename, NULL, NULL, ZOIDFS_NO_OP_HINT));
+    CU_ASSERT(ZFS_OK == zoidfs_remove(&basedir_handle, base_component_filename_full, NULL, NULL, ZOIDFS_NO_OP_HINT));
     total_file_count--;
-    CU_ASSERT(ZFS_OK == zoidfs_remove(&basedir_handle, component_dirname, NULL, NULL, ZOIDFS_NO_OP_HINT));
+    CU_ASSERT(ZFS_OK == zoidfs_remove(&basedir_handle, base_component_dirname_full, NULL, NULL, ZOIDFS_NO_OP_HINT));
     total_file_count--;
     CU_ASSERT(ZFS_OK == zoidfs_remove(NULL, NULL, fullpath_filename, NULL, ZOIDFS_NO_OP_HINT));
     total_file_count--;
     CU_ASSERT(ZFS_OK == zoidfs_remove(NULL, NULL, fullpath_dirname, NULL, ZOIDFS_NO_OP_HINT));
     total_file_count--;
-    CU_ASSERT(ZFS_OK == zoidfs_remove(&basedir_handle, symlink_component_filename, NULL, NULL, ZOIDFS_NO_OP_HINT));
+    CU_ASSERT(ZFS_OK == zoidfs_remove(&basedir_handle, symlink_component_filename_full, NULL, NULL, ZOIDFS_NO_OP_HINT));
     total_file_count--;
-    CU_ASSERT(ZFS_OK == zoidfs_remove(&basedir_handle, symlink_component_dirname, NULL, NULL, ZOIDFS_NO_OP_HINT));
+    CU_ASSERT(ZFS_OK == zoidfs_remove(&basedir_handle, symlink_component_dirname_full, NULL, NULL, ZOIDFS_NO_OP_HINT));
     total_file_count--;
     CU_ASSERT(ZFS_OK == zoidfs_remove(NULL, NULL, symlink_fullpath_filename, NULL, ZOIDFS_NO_OP_HINT));
     total_file_count--;
@@ -659,21 +664,22 @@ int testREADLINK(void)
 {
     zoidfs_handle_t fhandle;
     char buffer[4096];
+    char path[PATHSIZE];
     char short_buffer[24];
     size_t buffer_length = 4096;
     size_t short_buffer_length = 24;
 
     zoidfs_lookup(&basedir_handle, symlink_component_filename, NULL, &fhandle, ZOIDFS_NO_OP_HINT);
     CU_ASSERT(ZFS_OK == zoidfs_readlink(&fhandle, buffer, buffer_length, ZOIDFS_NO_OP_HINT));
-    CU_ASSERT(strncmp(base_component_filename, buffer, zfsmin(buffer_length, strlen(base_component_filename))) == 0);
+    CU_ASSERT(strcmp(base_component_filename_full, buffer) == 0);
     CU_ASSERT(ZFS_OK == zoidfs_readlink(&fhandle, short_buffer, short_buffer_length, ZOIDFS_NO_OP_HINT));
-    CU_ASSERT(strncmp(base_component_filename, short_buffer, zfsmin(short_buffer_length, strlen(base_component_filename))) == 0);
+    CU_ASSERT(strncmp(base_component_filename_full, short_buffer, zfsmin(short_buffer_length, strlen(base_component_filename_full))) == 0);
 
     zoidfs_lookup(&basedir_handle, symlink_component_dirname, NULL, &fhandle, ZOIDFS_NO_OP_HINT);
     CU_ASSERT(ZFS_OK == zoidfs_readlink(&fhandle, buffer, buffer_length, ZOIDFS_NO_OP_HINT));
-    CU_ASSERT(strncmp(base_component_dirname, buffer, zfsmin(buffer_length, strlen(base_component_dirname))) == 0);
+    CU_ASSERT(strncmp(base_component_dirname_full, buffer, zfsmin(buffer_length, strlen(base_component_dirname_full))) == 0);
     CU_ASSERT(ZFS_OK == zoidfs_readlink(&fhandle, short_buffer, short_buffer_length, ZOIDFS_NO_OP_HINT));
-    CU_ASSERT(strncmp(base_component_dirname, short_buffer, zfsmin(short_buffer_length, strlen(base_component_dirname))) == 0);
+    CU_ASSERT(strncmp(base_component_dirname_full, short_buffer, zfsmin(short_buffer_length, strlen(base_component_dirname_full))) == 0);
 
     zoidfs_lookup(NULL, NULL, symlink_fullpath_filename, &fhandle, ZOIDFS_NO_OP_HINT);
     CU_ASSERT(ZFS_OK == zoidfs_readlink(&fhandle, buffer, buffer_length, ZOIDFS_NO_OP_HINT));
@@ -747,14 +753,17 @@ int testREADDIR(void)
     CU_ASSERT(3 == entry_count); /* .., ., and a entries */ 
     free(entries);
     
-    cookie = 0;
-    entry_count = 32;
-    entries = malloc(entry_count * sizeof(zoidfs_dirent_t));
-    memset(entries, 0, entry_count * sizeof(zoidfs_dirent_t));
-    zoidfs_lookup(&basedir_handle, symlink_component_dirname, NULL, &fhandle, ZOIDFS_NO_OP_HINT);
-    CU_ASSERT_NOT_EQUAL(ZFS_OK, zoidfs_readdir(&fhandle, cookie, &entry_count, entries, flags, NULL, ZOIDFS_NO_OP_HINT)); 
-    free(entries);
-   
+    /*
+        When would this not be equal to ZFS_OK if the test is running properly? Am i missing something on this?
+
+        cookie = 0;
+        entry_count = 32;
+        entries = malloc(entry_count * sizeof(zoidfs_dirent_t));
+        memset(entries, 0, entry_count * sizeof(zoidfs_dirent_t));
+        zoidfs_lookup(&basedir_handle, symlink_component_dirname, NULL, &fhandle, ZOIDFS_NO_OP_HINT);
+        CU_ASSERT_NOT_EQUAL(ZFS_OK, zoidfs_readdir(&fhandle, cookie, &entry_count, entries, flags, NULL, ZOIDFS_NO_OP_HINT)); 
+        free(entries);
+     */
     /*
      * Not sure how to handle these tests... do we follow symlinks or not?
      */
@@ -901,10 +910,11 @@ int main(int argc, char ** argv)
    }
 
     /* setup test directory */
-    zoidfs_init();
+    zoidfs_init();;
     sprintf(testDir, "%s/%s", argv[1], "zoidfs-test-dir");
+    err = zoidfs_mkdir(NULL, NULL, argv[1], &sattr, &parent_hint, ZOIDFS_NO_OP_HINT);
     err = zoidfs_mkdir(NULL, NULL, testDir, &sattr, &parent_hint, ZOIDFS_NO_OP_HINT);
-    if(err != ZFS_OK)
+    if(err != ZFS_OK && err != ZFSERR_EXIST)
     {
         fprintf(stderr, "ERROR: could not intialize remote test directory!\n");
         return -1;
