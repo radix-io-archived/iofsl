@@ -108,6 +108,7 @@ int zlib_compress (z_stream * stream, void * source, size_t * length, void ** de
     }
     /* Figure out how much of the output buffer has been used */
     have =  *output_length - (*strm).avail_out;
+    fprintf(stderr, "Output length:%i, total used:%i\n",have, (*strm).total_in);
     *output_length = have;
     *length = (*strm).total_in;
 

@@ -5,7 +5,7 @@
 
 static void ** test_data;
 static size_t num_test_data = 10;
-static size_t data_size = 40000000;
+static size_t data_size = 400000;
 int init_transform_test(void)
 {
     int x, y;
@@ -19,6 +19,33 @@ int init_transform_test(void)
             ((char **)test_data)[x][y] = (char)(rand() % 256);
         }
     }
+}
+int compare_result (void * input, void * output, size_t len)
+{
+    int x;
+    for (x = 0; x < len; x++)
+        assert (((unsigned char *) input)[x] == ((unsigned char *) output)[x]);
+}
+
+int test_transform (void)
+{
+    void * output = malloc(20 * data_size);
+    size_t output_size = 20 * data_size;
+    int x,ret;
+    size_t size;
+    char * type = "zlib";
+    /* test to verify proper output size */
+    zoidfs_write_compress zlib_struct;
+    zoidfs_transform_init (type, &zlib_struct);
+    for ( x = 0; x < num_test_data; x++)
+    {
+       output_size = 250000;
+       size = x * data_size;
+       
+       ret = zoidfs_transform (&zlib_struct, test_data[x], &size, &output, &output_size, 0);
+       fprintf(stderr, "Output size: %i ret: %i\n",output_size,ret);
+       assert((output_size == 250000) || (size == 0));
+    } 
 }
 
 void test_compression (void)
@@ -97,5 +124,7 @@ void test_compression (void)
 /* compress or decompress from stdin to stdout */
 int main(int argc, char **argv)
 {   
-    test_compression ();
+    //test_compression ();
+    init_transform_test();
+    test_transform();
 }
