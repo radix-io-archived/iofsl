@@ -89,7 +89,7 @@ int zlib_compress (z_stream * stream, void * source, size_t * length, void ** de
     (*strm).next_out = finished;
 
     /* Compress the data */
-    if (close == Z_FINISH)
+    if (close == Z_FINISH || close == ZOIDFS_CLOSE )
     { 
         ret = deflate(strm, Z_FINISH );
         if (ret == Z_STREAM_END)
