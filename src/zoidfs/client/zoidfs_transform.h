@@ -10,6 +10,7 @@
 #define ZOIDFS_OUTPUT_FULL      43
 #define ZOIDFS_FLUSH            500
 #define ZOIDFS_CLOSE            501
+#define ZOIDFS_BUF_ERROR        Z_BUF_ERROR
 typedef struct
 {
     int(*transform)(void *, void **, size_t *, void **, size_t *, int);

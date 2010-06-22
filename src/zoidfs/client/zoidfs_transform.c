@@ -2,21 +2,56 @@
 extern int zlib_compress_hook (void * stream, void ** source, size_t * length, void ** dest,
                                size_t * output_length, int close);
 
+int passthrough (void * stream, void ** source, size_t * length, void ** dest,
+                 size_t * output_length, int close)
+{
+    (*dest) = (*source);
+    if (*output_length > *length)
+    {
+        *output_length =  *output_length - *length;
+        *length = 0;
+    }
+    else
+    {
+        *output_length = 0;
+        *length = *length - *output_length;           
+    }
+    return ZOIDFS_BUF_ERROR;
+}
+
+
 int zoidfs_transform_init (char * type, zoidfs_write_compress * comp)
 {
     int x;
-    int level = 0;
+    int level = -1;
     (*comp).intern_buf = NULL;
     (*comp).buf_position = 0;
     (*comp).type = type;
-    compress_init (type,level,&(*comp).compression_struct);
     if (strcmp("zlib",type) == 0)
     { 
+        compress_init (type,level,&(*comp).compression_struct);
         (*comp).transform = &zlib_compress_hook;
-    }               
+    }   
+    else if (strcmp("nocompression",type) == 0)
+    {
+        (*comp).transform = &passthrough;                    
+    }
     return 0;
 }
 
+int zoidfs_transform_change_transform (char * type, zoidfs_write_compress * comp)
+{
+    int level = -1;
+    if (strcmp("zlib",type) == 0)
+    { 
+        compress_init (type,level,&(*comp).compression_struct);
+        (*comp).transform = &zlib_compress_hook;
+    }      
+    else if (strcmp("nocompression",type) == 0)
+    {
+        (*comp).transform = &passthrough;                    
+    }
+}
 void zoidfs_transform_destroy (zoidfs_write_compress * comp)
 {
     if (strcmp((*comp).type,"zlib") == 0)
@@ -36,10 +71,7 @@ int zoidfs_transform (zoidfs_write_compress * compression, void ** input,
            defined in the initialization function */
         ret = (*compression).transform ((*compression).compression_struct, 
                                         input, input_length, output, output_len, 
-                                        flush); 
-        //fprintf(stderr, "input_len: %i, output_len: %i, input ptr: %i, output ptr: %i ret: %i\n",
-        //                *input_length, *output_len, *input, *output,ret);
-            
+                                        flush);             
         if (ret == Z_STREAM_END)  
             return ZOIDFS_COMPRESSION_DONE;       
     }
@@ -50,4 +82,5 @@ int zoidfs_transform (zoidfs_write_compress * compression, void ** input,
         return ZOIDFS_CONT;
     return ZOIDFS_CONT;
 }
+
 
