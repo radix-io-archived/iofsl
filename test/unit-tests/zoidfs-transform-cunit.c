@@ -59,21 +59,21 @@ void test_transform_zlib (void)
 
     /* test to verify proper output size */
     zoidfs_write_compress zlib_struct;
-    zoidfs_transform_init (type, &zlib_struct);
-    /*
+
+    zoidfs_transform_init (type, &zlib_struct);    
     output_size = 250000;
     size = 0;
     ret = zoidfs_transform (&zlib_struct, test_data[x], &size, &output, &output_size, 0);
-    assert(output_size == 0);
-    assert(ret == ZOIDFS_CONT);
+    CU_ASSERT(ret == ZOIDFS_CONT);
     for ( x = 1; x < num_test_data; x++)
     {
        output_size = 250000;
        size = x * data_size;
        ret = zoidfs_transform (&zlib_struct, test_data[x], &size, &output, &output_size, 0);
-       assert(output_size == 250000);
-    } */
+       CU_ASSERT(output_size == 0);
+    } 
     zoidfs_transform_destroy (&zlib_struct);    
+
     zoidfs_transform_init (type, &zlib_struct);
     output_size = 60 * data_size;
     size_t prev_size = 60 * data_size;
@@ -101,16 +101,11 @@ void test_transform_zlib (void)
 
     output -= output_total;
     decompress_and_compare ( output, output_total, total_len);
-    /*
-    size_t compressed_len = output_total;
-    output_size = 18000000;
-    void * tmp = malloc(18000000);
-    void * decompress;    
-    decompress_init ("zlib", &decompress);
-    int retval = zlib_decompress (output, &compressed_len,  
-                                  &tmp, &output_size, 
-                                  decompress, 1);
-    */
+
+    zoidfs_transform_destroy (&zlib_struct);
+    zoidfs_transform_init (type, &zlib_struct);    
+    
+    
 }
 
 int main()
