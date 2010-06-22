@@ -16,7 +16,7 @@ int init_transform_test(void)
         test_data[x] = malloc(x * data_size * sizeof(char));
         for ( y = 0; y < x * data_size; y++)
         {
-            ((char **)test_data)[x][y] = (char)(rand() % 256);
+            ((char **)test_data)[x][y] = (char)'a' + x;
         }
     }
 }
@@ -56,19 +56,41 @@ int test_transform (void)
     output_size = 60 * data_size;
     size_t prev_size = 60 * data_size;
     size_t total_len =0;    
+    size_t output_total = 0;
+    printf("Starting output location: %u\n",output);
     for ( x = 1; x < num_test_data; x++)
     {
        size = x * data_size;
        total_len += size;
-       ret = zoidfs_transform (&zlib_struct, test_data[x], &size, &output, &output_size, 0);
-       printf("Current output size: %i the retrurn: %i total length %i\n", output_size,ret, total_len);
+       ret = zoidfs_transform (&zlib_struct, test_data[x], &size, 
+                               &output, &output_size, 0);
+       printf("Current output size: %i the retrurn: %i total length %i\n", 
+              output_size,ret, total_len);
+       output += (prev_size - output_size);
+       output_total += (prev_size - output_size);
+       prev_size = output_size;
     }   
     do 
     {
-        ret = zoidfs_transform (&zlib_struct, test_data[x], &size, &output, &output_size, Z_FINISH);
-        printf("Current output size: %i the retrurn: %i total length %i\n", output_size,ret, total_len);
+        ret = zoidfs_transform (&zlib_struct, test_data[x], &size, &output, 
+                                &output_size, Z_FINISH);
+        output += (prev_size - output_size);
+        output_total +=(prev_size - output_size);
+        prev_size = output_size;
     } while (ret != ZOIDFS_COMPRESSION_DONE);  
-    printf("TOTAL OUTPUT SIZE: %i\n", prev_size-output_size);
+    printf("Stats: Compressed Length: %i, Uncompressed: %i ptrloc: %u\n",
+            (prev_size - output_size), total_len, output);
+
+    size_t compressed_len = output_total;
+    output -= output_total;
+    output_size = 18000000;
+    void * tmp = malloc(18000000);
+    void * decompress;    
+    decompress_init ("zlib", &decompress);
+    int retval = zlib_decompress (output, &compressed_len,  
+                                  &tmp, &output_size, 
+                                  decompress, 1);
+    printf("The return value is %i\n",retval);  
 }
 
 void test_cmpression (void)
