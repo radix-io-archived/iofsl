@@ -21,16 +21,22 @@ int zoidfs_transform (zoidfs_write_compress * compression, void * input,
                       int flush)
 {
     int ret;
+    /* Calculate the total_input so for for the compression */
     size_t total_input = (*compression).buf_position + *input_length;
+    /* Stores how much output is left in the output buffer */
     size_t output_buf_left = *buf_len;
-    size_t tmp;
+    /* Reads until there is some sort of buffer error */    
     while (ret != Z_BUF_ERROR)
     {  
+        /* Compress's the file based on some sort of compression scheme 
+           defined in the initialization function */
         ret = (*compression).transform ((*compression).compression_struct, 
                                         input, input_length, output, buf_len, 
-                                        flush);       
-        tmp = *input_length;
+                                        flush);     
+        /* Calculates the remaining buffer to read in */  
         *input_length = total_input - *input_length;
+        /* If the input length goes negitive for some reason assume zero
+           This happens in ZLIB when the end of the input buffer is reached */
         if ((int)*input_length < 0)
             *input_length = 0;
         output_buf_left = output_buf_left - *buf_len;
@@ -40,6 +46,7 @@ int zoidfs_transform (zoidfs_write_compress * compression, void * input,
         else if (ret == Z_STREAM_END)  
             return ZOIDFS_COMPRESSION_DONE;       
     }
+    
     if ((int)*input_length > 0)
         return ZOIDFS_OUTPUT_FULL;
     else if (*buf_len > 0)

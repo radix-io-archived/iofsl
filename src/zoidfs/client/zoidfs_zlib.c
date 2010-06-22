@@ -94,7 +94,7 @@ int zlib_compress (z_stream * stream, void * source, size_t * length, void ** de
         ret = deflate(strm, Z_FINISH );
         if (ret == Z_STREAM_END)
         {
-            (void)deflateEnd(&strm); 
+            (void)deflateEnd(strm); 
         }
     }
     else if (close == Z_FULL_FLUSH || close == ZOIDFS_FLUSH)
@@ -107,7 +107,6 @@ int zlib_compress (z_stream * stream, void * source, size_t * length, void ** de
     }
     /* Figure out how much of the output buffer has been used */
     have =  *output_length - (*strm).avail_out;
-    fprintf(stderr, "Output length:%i, avail: %i, total used:%i\n",have,(*strm).avail_out, (*strm).total_in);
     *output_length = have;
     *length = (*strm).total_in;
 

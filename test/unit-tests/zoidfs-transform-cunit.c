@@ -19,15 +19,37 @@ int init_transform_test(void)
             ((char **)test_data)[x][y] = (char)'a' + x;
         }
     }
+    return 0;
 }
-int compare_result (void * input, void * output, size_t len)
+int clean_transform_test(void)
 {
     int x;
-    for (x = 0; x < len; x++)
-        assert (((unsigned char *) input)[x] == ((unsigned char *) output)[x]);
+    for (x = 0; x < num_test_data; x++)
+        free(test_data[x]);
+    return 0;
 }
-
-int test_transform (void)
+void decompress_and_compare (void * output, size_t output_total, size_t output_size)
+{
+    size_t compressed_len = output_total;
+    void * tmp = malloc(output_size);
+    void * decompress;    
+    int x , y, loc = 0;
+    decompress_init ("zlib", &decompress);
+    int retval = zlib_decompress (output, &compressed_len,  
+                                  &tmp, &output_size, 
+                                  decompress, 1);    
+    CU_ASSERT(retval == Z_STREAM_END);
+    for ( x = 0; x < num_test_data; x++)
+    {
+        for ( y = 0; y < x * data_size; y++)
+        {
+            CU_ASSERT (((unsigned char *)tmp)[loc] == ((unsigned char **)test_data)[x][y]);
+            loc++;
+        }
+    }
+}
+    
+void test_transform_zlib (void)
 {
     void * output = malloc(200 * data_size);
     size_t output_size = 20 * data_size;
@@ -57,19 +79,17 @@ int test_transform (void)
     size_t prev_size = 60 * data_size;
     size_t total_len =0;    
     size_t output_total = 0;
-    printf("Starting output location: %u\n",output);
     for ( x = 1; x < num_test_data; x++)
     {
        size = x * data_size;
        total_len += size;
        ret = zoidfs_transform (&zlib_struct, test_data[x], &size, 
                                &output, &output_size, 0);
-       printf("Current output size: %i the retrurn: %i total length %i\n", 
-              output_size,ret, total_len);
        output += (prev_size - output_size);
        output_total += (prev_size - output_size);
        prev_size = output_size;
     }   
+
     do 
     {
         ret = zoidfs_transform (&zlib_struct, test_data[x], &size, &output, 
@@ -78,11 +98,11 @@ int test_transform (void)
         output_total +=(prev_size - output_size);
         prev_size = output_size;
     } while (ret != ZOIDFS_COMPRESSION_DONE);  
-    printf("Stats: Compressed Length: %i, Uncompressed: %i ptrloc: %u\n",
-            (prev_size - output_size), total_len, output);
 
-    size_t compressed_len = output_total;
     output -= output_total;
+    decompress_and_compare ( output, output_total, total_len);
+    /*
+    size_t compressed_len = output_total;
     output_size = 18000000;
     void * tmp = malloc(18000000);
     void * decompress;    
@@ -90,86 +110,35 @@ int test_transform (void)
     int retval = zlib_decompress (output, &compressed_len,  
                                   &tmp, &output_size, 
                                   decompress, 1);
-    printf("The return value is %i\n",retval);  
+    */
 }
 
-void test_cmpression (void)
+int main()
 {
-    int z;
-    /* generate some testing data */
-    void * test_data = malloc(5000);
-    unsigned char * set_data = test_data;
-    for ( z = 0; z < 5000; z++)
-    {
-         set_data[z] = (unsigned char)z;
-    }
-    
-    /* Simple compression test case */
-    size_t cur_allocation = 0;
-    void * storage_buffer = malloc(10000);
-    int data_size  = 5000;
-    int msg_length = data_size;             /* length of the input buffer               */
-    void * output = malloc(50000);          /* buffer that stores the compressed output */
-    int output_length = 150;                /* size of the output buffer to create      */
-    void * compression;                     /* stores the compression struct            */
-    compress_init ("zlib", &compression);   /* Initializes the compression stream       */
-    int loc = 0;
-    int retval;
+   CU_pSuite pSuite = NULL;
 
-    void * decompress;
-    decompress_init ("zlib", &decompress);
+   /* initialize the CUnit test registry */
+   if (CUE_SUCCESS != CU_initialize_registry())
+      return CU_get_error();
 
-    do                                      /* Compress the data                        */
-    { 
-        output_length = 150;
-        if ((int)msg_length > 0)
-        {
-            retval = zlib_compress (compression, test_data, &msg_length,  
-                           &output, &output_length, 
-                            0);
-        }
-        else
-        {
-            msg_length = 0;
-            retval = zlib_compress (compression, test_data, &msg_length,  
-                               &output, &output_length, 
-                               1);
-            msg_length = 0;
-        }
-        for (z = cur_allocation; z < cur_allocation + output_length; z++)
-        {
-            ((unsigned char *) storage_buffer)[z] = ((unsigned char *)output)[z - cur_allocation];
-        }
-        cur_allocation += output_length;
-        data_size = data_size - msg_length; 
-        msg_length = data_size; 
-    } while (retval != Z_STREAM_END);
-    FILE * test = fopen("testfile.x","w");
-    fwrite(storage_buffer,1,cur_allocation, test);
-    fclose(test);
-    printf("current allocation %i\n", cur_allocation);
-    size_t compressed_len = cur_allocation;
-    msg_length = compressed_len;
-    cur_allocation = 0;
-    retval = -111;
-    size_t total = 0;
-    output_length = 5000;
-    printf("Locations\nstorage buf: %i\nmsg_length: %i\noutput length: %i\n", 
-            storage_buffer, msg_length, output_length);
-    retval = zlib_decompress ( storage_buffer, &msg_length,  
-                   &output, &output_length, 
-                   decompress, 1);
-    int x = 0;
-    for (x = 0; x < 5000; x ++)
-    {
-        assert ((unsigned char) x == ((unsigned char *) output)[x]);
-    }
-}
+   /* add a suite to the registry */
+   pSuite = CU_add_suite("Transform Test", init_transform_test, clean_transform_test);
+   if (NULL == pSuite) {
+      CU_cleanup_registry();
+      return CU_get_error();
+   }
 
-/* compress or decompress from stdin to stdout */
-int main(int argc, char **argv)
-{   
-    //test_compression ();
-    init_transform_test();
-    test_transform();
+   /* add the tests to the suite */
+   /* NOTE - ORDER IS IMPORTANT - MUST TEST fread() AFTER fprintf() */
+   if ((NULL == CU_add_test(pSuite, "test of transform zlib", test_transform_zlib)))
+   {
+      CU_cleanup_registry();
+      return CU_get_error();
+   }
+
+   /* Run all tests using the CUnit Basic interface */
+   CU_basic_set_mode(CU_BRM_VERBOSE);
+   CU_basic_run_tests();
+   CU_cleanup_registry();
+   return CU_get_error();
 }
