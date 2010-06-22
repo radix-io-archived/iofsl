@@ -16,7 +16,7 @@ int init_transform_test(void)
         test_data[x] = malloc(x * data_size * sizeof(char));
         for ( y = 0; y < x * data_size; y++)
         {
-            ((char **)test_data)[x][y] = (char)'a' + x;
+            ((char **)test_data)[x][y] = (char)'a'+x;
         }
     }
     return 0;
@@ -31,6 +31,7 @@ int clean_transform_test(void)
 void decompress_and_compare (void * output, size_t output_total, size_t output_size)
 {
     size_t compressed_len = output_total;
+    size_t expected = output_size;
     void * tmp = malloc(output_size);
     void * decompress;    
     int x , y, loc = 0;
@@ -48,6 +49,7 @@ void decompress_and_compare (void * output, size_t output_total, size_t output_s
             loc++;
         }
     }
+    free(tmp);
 }
     
 void test_transform_zlib (void)
@@ -59,14 +61,13 @@ void test_transform_zlib (void)
     int x,ret;
     size_t total_len = 0;    
     size_t output_total = 0;
-
     /* test to verify proper output size */
     zoidfs_write_compress zlib_struct;
 
     zoidfs_transform_init (type, &zlib_struct);    
     output_size = 250000;
     size = 0;
-
+    
     /* Verify that zoidfs_transform returns ZOIDFS_CONT when no output is passed in */
     ret = zoidfs_transform (&zlib_struct, test_data[x], &size, &output, &output_size, ZOIDFS_CONT);
     CU_ASSERT(ret == ZOIDFS_CONT);
@@ -75,17 +76,14 @@ void test_transform_zlib (void)
     CU_ASSERT(output_size == 249998);
 
     /* Check to make sure full 250000 buffers are coming back */
-    for ( x = 1; x < num_test_data; x++)
+    for ( x = 1; x < num_test_data ; x++)
     {
        output_size = 250000;
        size = x * data_size;
-       ret = zoidfs_transform (&zlib_struct, test_data[x], &size, &output, &output_size, ZOIDFS_CONT);
+       ret = zoidfs_transform (&zlib_struct, &test_data[x], &size, &output, &output_size, ZOIDFS_CONT);
        CU_ASSERT(output_size == 0);
        CU_ASSERT(ret == ZOIDFS_OUTPUT_FULL);
     } 
-
-    zoidfs_transform_destroy (&zlib_struct);    
-
 
     /* Test to verify that the data being produced by zoidfs_transform is 
        valid */
@@ -95,40 +93,62 @@ void test_transform_zlib (void)
 
     for ( x = 1; x < num_test_data; x++)
     {
-       /* Gets the size for this chunk of data*/
+       /* Gets the size for this chunk of data */
        size = x * data_size;
        /* Adds the length of this uncompressed chunk to the total for
           all uncompressed data */
        total_len += size;
-       /* Do the actual compression */
-       ret = zoidfs_transform (&zlib_struct, test_data[x], &size, 
+       /* Do the actual compression */ 
+       ret = zoidfs_transform (&zlib_struct, &test_data[x], &size, 
                                &output, &output_size, ZOIDFS_CONT);
-       /* Move the output buffer pointer to simulate a change in buffers */
-       output += (prev_size - output_size);
-       /* Update how much output has been obtained */
-       output_total += (prev_size - output_size);
-       /* Set the previous buffer size */
-       prev_size = output_size;
     }   
     /* Grab any data left in the buffers and close the stream */
     do 
     {
-        ret = zoidfs_transform (&zlib_struct, test_data[x], &size, &output, 
+        ret = zoidfs_transform (&zlib_struct, &test_data[x], &size, &output, 
                                 &output_size, ZOIDFS_CLOSE);
-        output += (prev_size - output_size);
-        output_total +=(prev_size - output_size);
-        prev_size = output_size;
-    } while (ret != ZOIDFS_COMPRESSION_DONE);  
 
+    } while (ret != ZOIDFS_COMPRESSION_DONE);  
+    output -= (prev_size - output_size);
     /* Roll back the pointer and send to decompression and comparison testing
        function */
     output -= output_total;
-    decompress_and_compare ( output, output_total, total_len);
+    decompress_and_compare ( output, (prev_size - output_size), total_len);
     
-    /* Destroy the world */
-    zoidfs_transform_destroy (&zlib_struct); 
+    zoidfs_transform_init (type, &zlib_struct);
+    output_size = 150;    
+    prev_size = output_size; 
+    x = 1;
+    size =  x * data_size;
+    int close = ZOIDFS_CONT;
+    size_t total_output_size = 0;
+    do 
+    {
+       ret = zoidfs_transform (&zlib_struct, &test_data[x], &size, 
+                               &output, &output_size, close);
+       CU_ASSERT(ret != -2);
+       if (ret == -2)
+         break;
+       total_output_size += (150 - output_size);
+       output_size = 150;
+       if ( size == 0)
+       {
+            if ( x < num_test_data - 1 )
+            {
+                x++;
+                size =  x * data_size;
+            }
+            else
+            {
+                close = ZOIDFS_CLOSE;
+            }
+        }
+    } while(ret != ZOIDFS_COMPRESSION_DONE);
+    output -= total_output_size;   
+    decompress_and_compare ( output, total_output_size, total_len); 
 
 
+    
 }
 
 int main()

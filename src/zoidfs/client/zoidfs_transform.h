@@ -12,7 +12,7 @@
 #define ZOIDFS_CLOSE            501
 typedef struct
 {
-    int(*transform)(void *, void *, size_t *, void **, size_t *, int);
+    int(*transform)(void *, void **, size_t *, void **, size_t *, int);
     void * compression_struct;
     void * type;
     void * intern_buf;

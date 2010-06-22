@@ -1,5 +1,5 @@
 #include "zoidfs_transform.h"
-int compress_init (char * type, void ** library)
+int compress_init (char * type, int level, void ** library)
 {
     int ret; 
     void ** ret_value;
@@ -74,20 +74,21 @@ int zlib_compress_hook (void * stream, void * source, size_t * length, void ** d
 {
     return zlib_compress((z_stream *)stream, source, length, dest, output_length, close);
 }
-int zlib_compress (z_stream * stream, void * source, size_t * length, void ** dest,
+int zlib_compress (z_stream * stream, void ** source, size_t * length, void ** dest,
                    size_t * output_length, int close)
 {
     int ret;
     size_t have;
     /* Malloc the buffer that will recieve the compress data */
+    void * input = (*source);
     void * finished = (*dest); 
     z_stream * strm = stream;
     /* Setup the zlib buffers */
     (*strm).avail_in = *length;
-    (*strm).next_in = source;
+    (*strm).next_in = input;
     (*strm).avail_out = *output_length;
     (*strm).next_out = finished;
-
+    //fprintf(stderr,"zlib output_left: %i, input_left: %i\n",(*strm).avail_out,(*strm).avail_in);
     /* Compress the data */
     if (close == Z_FINISH || close == ZOIDFS_CLOSE )
     { 
@@ -106,15 +107,16 @@ int zlib_compress (z_stream * stream, void * source, size_t * length, void ** de
         ret = deflate(strm, Z_NO_FLUSH );
     }
     /* Figure out how much of the output buffer has been used */
-    have =  *output_length - (*strm).avail_out;
-    *output_length = have;
-    *length = (*strm).total_in;
+    finished += (*output_length - (*strm).avail_out);
+    //input += (*length - (*strm).avail_in); 
+    *output_length = (*strm).avail_out;
+    *length = (*strm).avail_in;
 
     /* set the ourput buffer */
     (*dest) = finished;
+    (*source) = input;
     return ret;
 }
-
 int zlib_decompress (void * source, size_t * length, void ** dest,
                      size_t * output_length, z_stream * stream, int close)
 {
