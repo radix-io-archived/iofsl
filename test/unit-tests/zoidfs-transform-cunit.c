@@ -29,26 +29,49 @@ int compare_result (void * input, void * output, size_t len)
 
 int test_transform (void)
 {
-    void * output = malloc(20 * data_size);
+    void * output = malloc(200 * data_size);
     size_t output_size = 20 * data_size;
     int x,ret;
     size_t size;
     char * type = "zlib";
+
     /* test to verify proper output size */
     zoidfs_write_compress zlib_struct;
     zoidfs_transform_init (type, &zlib_struct);
-    for ( x = 0; x < num_test_data; x++)
+    /*
+    output_size = 250000;
+    size = 0;
+    ret = zoidfs_transform (&zlib_struct, test_data[x], &size, &output, &output_size, 0);
+    assert(output_size == 0);
+    assert(ret == ZOIDFS_CONT);
+    for ( x = 1; x < num_test_data; x++)
     {
        output_size = 250000;
        size = x * data_size;
-       
        ret = zoidfs_transform (&zlib_struct, test_data[x], &size, &output, &output_size, 0);
-       fprintf(stderr, "Output size: %i ret: %i\n",output_size,ret);
-       assert((output_size == 250000) || (size == 0));
-    } 
+       assert(output_size == 250000);
+    } */
+    
+    zoidfs_transform_init (type, &zlib_struct);
+    output_size = 60 * data_size;
+    size_t prev_size = 60 * data_size;
+    size_t total_len =0;    
+    for ( x = 1; x < num_test_data; x++)
+    {
+       size = x * data_size;
+       total_len += size;
+       ret = zoidfs_transform (&zlib_struct, test_data[x], &size, &output, &output_size, 0);
+       printf("Current output size: %i the retrurn: %i total length %i\n", output_size,ret, total_len);
+    }   
+    do 
+    {
+        ret = zoidfs_transform (&zlib_struct, test_data[x], &size, &output, &output_size, Z_FINISH);
+        printf("Current output size: %i the retrurn: %i total length %i\n", output_size,ret, total_len);
+    } while (ret != ZOIDFS_COMPRESSION_DONE);  
+    printf("TOTAL OUTPUT SIZE: %i\n", prev_size-output_size);
 }
 
-void test_compression (void)
+void test_cmpression (void)
 {
     int z;
     /* generate some testing data */

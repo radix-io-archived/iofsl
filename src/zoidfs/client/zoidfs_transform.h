@@ -11,7 +11,7 @@
 #define ZOIDFS_COMPRESSION_DONE 41
 #define ZOIDFS_CONT             40
 #define ZOIDFS_OUTPUT_FULL      43
-
+#define ZOIDFS_FLUSH            500
 typedef struct
 {
     int(*transform)(void *, void *, size_t *, void **, size_t *, int);
