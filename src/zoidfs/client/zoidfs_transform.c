@@ -7,7 +7,7 @@ int zoidfs_transform_init (char * type, zoidfs_write_compress * comp)
     int x;
     (*comp).intern_buf = NULL;
     (*comp).buf_position = 0;
-
+    (*comp).type = type;
     compress_init (type,&(*comp).compression_struct);
     if (strcmp("zlib",type) == 0)
     { 
@@ -15,6 +15,14 @@ int zoidfs_transform_init (char * type, zoidfs_write_compress * comp)
     }               
     return 0;
 }
+
+void zoidfs_transform_destroy (zoidfs_write_compress * comp)
+{
+    if (strcmp((*comp).type,"zlib") == 0)
+    {
+        (void)deflateEnd((*comp).compression_struct);
+    }
+} 
 
 int zoidfs_transform (zoidfs_write_compress * compression, void * input, 
                       size_t * input_length, void * output, size_t * buf_len,

@@ -73,7 +73,7 @@ void test_transform_zlib (void)
        ret = zoidfs_transform (&zlib_struct, test_data[x], &size, &output, &output_size, 0);
        assert(output_size == 250000);
     } */
-    
+    zoidfs_transform_destroy (&zlib_struct);    
     zoidfs_transform_init (type, &zlib_struct);
     output_size = 60 * data_size;
     size_t prev_size = 60 * data_size;

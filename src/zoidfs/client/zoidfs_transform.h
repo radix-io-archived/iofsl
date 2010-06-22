@@ -16,6 +16,7 @@ typedef struct
 {
     int(*transform)(void *, void *, size_t *, void **, size_t *, int);
     void * compression_struct;
+    void * type;
     void * intern_buf;
     size_t buf_position;
 } zoidfs_write_compress;
