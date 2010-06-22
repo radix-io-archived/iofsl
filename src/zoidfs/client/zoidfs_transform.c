@@ -1,164 +1,51 @@
 #include "zoidfs_transform.h"
+extern int zlib_compress_hook (void * stream, void * source, size_t * length, void ** dest,
+                               size_t * output_length, int close);
 
-zoidfs_write_compress init_compression (char * type, void ** input_buffers, 
-                                        size_t input_buf_len[], size_t num_input_bufs,
-                                        size_t pipeline)
+zoidfs_write_compress init_compression (char * type)
 {
     int x;
     zoidfs_write_compress comp;
-    compress_init (type,&comp.comp_struct);
-    comp.input_buffers = input_buffers;
-    comp.input_buf_len = input_buf_len;
-    comp.input_num_buffers = num_input_bufs;
-    comp.output_buf = malloc(pipeline);
-    comp.input_remaining = malloc(sizeof(size_t) * num_input_bufs);
-    for (x = 0; x < num_input_bufs; x++)
-    {
-        comp.input_remaining[x] = comp.input_buf_len[x];
-    }
-    comp.pipeline_size = pipeline;
-    comp.current_buf = 0;
+
+    compress_init (type,&comp.compression_struct);
+    if (strcmp("zlib",type) == 0)
+    { 
+        comp.transform = &zlib_compress_hook;
+    }               
     return comp;
 }
 
-int zoidfs_compress  (zoidfs_write_compress compression)
+int zoidfs_transform (zoidfs_write_compress compression, void * input, 
+                      size_t * input_length, void * output, size_t * buf_len,
+                      int flush)
 {
-    int i,ret;
-    int close = 0;
-    size_t remaining = 0; 
-    size_t total_buf_size = 0;   
-    size_t output_size = compression.pipeline_size;
-    for (i = compression.current_buf; i < compression.input_buf_len; i++)
-    {
-        ret = compress_buffer (compression);
-        /* If the return indicates the buffer is not full, continue on with
-           next buffer */
-        if (ret == ZOIDFS_CONT)
-            compression.current_buf++;
-        /* If the compression is complete, reset the output buffer pointer and
-           return */
-        else if (ret == ZOIDFS_COMPRESSION_DONE)
-        {
-            compression.output_buf -= compression.output_buf_size;
-            return ZOIDFS_COMPRESSION_DONE;
-        }
-        /* If there is no more room in the buffer return to the caller */
-        else
-        {
-            compression.output_buf -= compression.output_buf_size;
-            return ZOIDFS_CONT;
-        }
-    }
-}
-int compress_buffer (zoidfs_write_compress compression)
-{
+    size_t prev_position = *buf_len;
     int ret;
-    int buf_num = compression.current_buf;
-    int close = 0;
-    size_t output_size = compression.pipeline_size - compression.output_buf_size;
-    size_t buf_left = compression.input_remaining[buf_num];
-    do {
-        /* compress the stream  */
-        ret = zlib_compress(compression.input_buffers[buf_num], &buf_left,
-                            &compression.output_buf, &output_size, 
-                            compression.comp_struct, close);  
-        /* Add to the current size of the output buffer by the amount outputted by compress */  
-        compression.output_buf_size += output_size;
-        /* Update the remaining amount of data in this buffer */
-        compression.input_remaining[buf_num] = compression.input_buf_len[buf_num] - buf_left;
-        /* Move the output buffer pointer up */
-        compression.output_buf += output_size;
-        /* If the output buffer is full return */
-        if (compression.output_buf_size == compression.pipeline_size)
-        {
-            return ZOIDFS_BUF_FULL;
-        }
-        /* If there is no more input flush so we can get the position in the output stream 
-           for metadata purpose's */
-        if (compression.input_remaining[buf_num] == 0)
-        {
-            if (buf_num == compression.input_num_buffers)
-                close = Z_FINISH;
-            else if (close != Z_FULL_FLUSH)
-                close = Z_FULL_FLUSH;
-            /* Possibly change this to Z_OK if deflace and be determined to always return
-               the full internal buffer on compress call with Z_FULL_FLUSH settings */
-            else if (ret ==  Z_BUF_ERROR)
-                return ZOIDFS_CONT;
-            else if (ret == Z_STREAM_END)
-                return ZOIDFS_COMPRESSION_DONE;
-        }
-    } while (ret == Z_OK);
-    return ret;
-} 
 
-int compress_init (char * type, void ** library)
-{
-    int ret; 
-    void ** ret_value;
-    
-    if (strcmp(type,"zlib") == 0)
-    {
-        /* What level of compression to user (static for now) */
-        int level = 0;
-
-        /* Create the required zlib structure */
-        z_stream * tmp = malloc(sizeof(z_stream));
-        (*tmp).zalloc = Z_NULL;
-        (*tmp).zfree = Z_NULL;
-        (*tmp).opaque = Z_NULL;
-
-        /* set mode to compress with compression level */
-        ret = deflateInit(tmp, level);
-
-        /* check if everything is ok */
-        if (ret != Z_OK)
-            return ret;
-        ret_value = (void *)tmp;
-    }
-    /* No other compressions in use, exiting */
+    if (compression.intern_buf == output)
+        output += compression.buf_position;
     else
     {
-        return -1;
+        compression.intern_buf = output;
+        compression.buf_position = 0;
     }
-    
-    /* Set the library pointer to point to the struct */
-    (*library) = ret_value;     
-    return 0;
-}
 
-int decompress_init (char * type, void ** library)
-{
-    int ret; 
-    void ** ret_value;
-    
-    if (strcmp(type,"zlib") == 0)
+    while (*input_length > 0 && *buf_len > 0)
     {
-        /* Create the required zlib structure */
-        z_stream * tmp = malloc(sizeof(z_stream));
-        (*tmp).zalloc = Z_NULL;
-        (*tmp).zfree = Z_NULL;
-        (*tmp).opaque = Z_NULL;
-        (*tmp).avail_in = 0;
-        (*tmp).next_in = Z_NULL;
-        /* set mode to compress with compression level */
-        ret = inflateInit(tmp);
-
-        /* check if everything is ok */
+        ret = compression.transform (compression.compression_struct, input, input_length,
+                                     output, buf_len, flush);
+        compression.buf_position += (prev_position - *buf_len);
+        prev_position += *buf_len;
+        output += compression.buf_position;
         if (ret != Z_OK)
-        {
-            printf("ERROR");
             return ret;
-        }
-
-        ret_value = (void *)tmp;
     }
-    else
-    {
-        return -1;
-    }
-    /* Set the library pointer to point to the struct */
-    (*library) = ret_value;     
-    return 0;    
+    
+    if (*input_length > 0)
+        return ZOIDFS_OUTPUT_FULL;
+    else if (*buf_len > 0)
+        return ZOIDFS_CONT;
+    
+    return ZOIDFS_CONT;
 }
 

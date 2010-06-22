@@ -1,5 +1,26 @@
 #include "zoidfs/client/zoidfs_transform.h"
 #include "CUnit/Basic.h"
+#include <stdio.h>
+#include <stdlib.h>
+
+static void ** test_data;
+static size_t num_test_data = 10;
+static size_t data_size = 40000000;
+int init_transform_test(void)
+{
+    int x, y;
+    srand((unsigned)time(NULL));
+    test_data = malloc(num_test_data * sizeof(char *));
+    for ( x = 0; x < num_test_data; x++)
+    {
+        test_data[x] = malloc(x * data_size * sizeof(char));
+        for ( y = 0; y < x * data_size; y++)
+        {
+            ((char **)test_data)[x][y] = (char)(rand() % 256);
+        }
+    }
+}
+
 void test_compression (void)
 {
     int z;
@@ -15,9 +36,9 @@ void test_compression (void)
     size_t cur_allocation = 0;
     void * storage_buffer = malloc(10000);
     int data_size  = 5000;
-    int msg_length = data_size;          /* length of the input buffer               */
-    void * output = malloc(50000);                          /* buffer that stores the compressed output */
-    int output_length = 150;             /* size of the output buffer to create      */
+    int msg_length = data_size;             /* length of the input buffer               */
+    void * output = malloc(50000);          /* buffer that stores the compressed output */
+    int output_length = 150;                /* size of the output buffer to create      */
     void * compression;                     /* stores the compression struct            */
     compress_init ("zlib", &compression);   /* Initializes the compression stream       */
     int loc = 0;
@@ -31,16 +52,16 @@ void test_compression (void)
         output_length = 150;
         if ((int)msg_length > 0)
         {
-            retval = zlib_compress (test_data, &msg_length,  
+            retval = zlib_compress (compression, test_data, &msg_length,  
                            &output, &output_length, 
-                           compression, 0);
+                            0);
         }
         else
         {
             msg_length = 0;
-            retval = zlib_compress (test_data, &msg_length,  
+            retval = zlib_compress (compression, test_data, &msg_length,  
                                &output, &output_length, 
-                               compression, 1);
+                               1);
             msg_length = 0;
         }
         for (z = cur_allocation; z < cur_allocation + output_length; z++)

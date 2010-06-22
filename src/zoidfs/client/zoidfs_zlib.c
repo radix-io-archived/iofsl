@@ -1,6 +1,81 @@
 #include "zoidfs_transform.h"
-int zlib_compress (void * source, size_t * length, void ** dest,
-                   size_t * output_length, z_stream * stream, int close)
+int compress_init (char * type, void ** library)
+{
+    int ret; 
+    void ** ret_value;
+    
+    if (strcmp(type,"zlib") == 0)
+    {
+        /* What level of compression to user (static for now) */
+        int level = 0;
+
+        /* Create the required zlib structure */
+        z_stream * tmp = malloc(sizeof(z_stream));
+        (*tmp).zalloc = Z_NULL;
+        (*tmp).zfree = Z_NULL;
+        (*tmp).opaque = Z_NULL;
+
+        /* set mode to compress with compression level */
+        ret = deflateInit(tmp, level);
+
+        /* check if everything is ok */
+        if (ret != Z_OK)
+            return ret;
+        ret_value = (void *)tmp;
+    }
+    /* No other compressions in use, exiting */
+    else
+    {
+        return -1;
+    }
+    
+    /* Set the library pointer to point to the struct */
+    (*library) = ret_value;     
+    return 0;
+}
+
+int decompress_init (char * type, void ** library)
+{
+    int ret; 
+    void ** ret_value;
+    
+    if (strcmp(type,"zlib") == 0)
+    {
+        /* Create the required zlib structure */
+        z_stream * tmp = malloc(sizeof(z_stream));
+        (*tmp).zalloc = Z_NULL;
+        (*tmp).zfree = Z_NULL;
+        (*tmp).opaque = Z_NULL;
+        (*tmp).avail_in = 0;
+        (*tmp).next_in = Z_NULL;
+        /* set mode to compress with compression level */
+        ret = inflateInit(tmp);
+
+        /* check if everything is ok */
+        if (ret != Z_OK)
+        {
+            printf("ERROR");
+            return ret;
+        }
+
+        ret_value = (void *)tmp;
+    }
+    else
+    {
+        return -1;
+    }
+    /* Set the library pointer to point to the struct */
+    (*library) = ret_value;     
+    return 0;    
+}
+
+int zlib_compress_hook (void * stream, void * source, size_t * length, void ** dest,
+                        size_t * output_length, int close)
+{
+    return zlib_compress((z_stream *)stream, source, length, dest, output_length, close);
+}
+int zlib_compress (z_stream * stream, void * source, size_t * length, void ** dest,
+                   size_t * output_length, int close)
 {
     int ret;
     size_t have;
