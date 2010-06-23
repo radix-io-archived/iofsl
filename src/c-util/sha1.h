@@ -27,6 +27,9 @@
 /* 
  *  This structure will hold context information for the hashing
  *  operation
+ *
+ *  TODO: This doesn't seem to be 32/64 bit safe! (seems to assume unsigned is
+ *  always 4 bytes)
  */
 typedef struct SHA1Context
 {
