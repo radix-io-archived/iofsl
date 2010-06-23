@@ -56,10 +56,13 @@ src/c-util/hash/chash_none.h \
 src/c-util/hash/chash_sha1.h \
 src/c-util/hash/chash_sha1.c
 
-if HAVE_ZLIB
+#if HAVE_ZLIB
 src_c_util_libc_util_a_SOURCES += \
 src/c-util/hash/chash_crc32.h \
 src/c-util/hash/chash_crc32.c \
 src/c-util/hash/chash_adler32.h \
-src/c-util/hash/chash_adler32.c
-endif
+src/c-util/hash/chash_adler32.c \
+src/c-util/transform/zoidfs_transform.h \
+src/c-util/transform/zoidfs_transform.c \
+src/c-util/transform/zoidfs_zlib.c
+#endif
