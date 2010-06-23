@@ -3344,7 +3344,53 @@ int zoidfs_write(const zoidfs_handle_t *handle, size_t mem_count,
     /*
      * Send the encoded function parameters to the ION daemon using an
      * unexpected BMI message.
-     */
+     *
+
+    char * type = "zlib";
+    void * buffer = malloc(pipeline_size);
+    size_t buf_size = pipeline_size;
+    size_t close = ZOIDFS_CONT;
+    zoidfs_transform_init (type, &zlib_struct);
+    size_t num_test_data = list_count;
+    int x = 0;
+    size = bmi_size_list[0];
+    do 
+    {
+       /* Transform the buffer *
+       ret = zoidfs_transform (&zlib_struct, &buf_list[x], &size, 
+                               &buffer, &buf_size, close);
+
+       /* send the data and reset the buffer positions *
+       if (buf_size == 0 || ret == ZOIDFS_COMPRESSION_DONE)
+       {
+            /* Move the output buffer pointer back *
+            buffer -= (pipeline_size - buf_size);
+            /* send the data *
+            ret = bmi_comm_send(peer_addr, buffer, (pipeline_size - buf_size), tag, context);
+            /* update the total output size (testing use) *
+            total_output_size += (pipeline_size - buf_size);
+            /* reset the output buffer size *
+            buf_size = pipeline_size;
+       }
+       if (ret == -2)
+         break;
+       /* if there is no more input in this buffer*
+       if ( size == 0)
+       {   
+            /* if there are additional buffers move on *
+            if ( x < num_test_data - 1 )
+            {
+                x++;
+                size = bmi_size_list[x];
+            }
+            /* Else close the stream and send the remaining data *
+            else
+            {
+                close = ZOIDFS_CLOSE;
+            }
+        }
+    } while(ret != ZOIDFS_COMPRESSION_DONE);
+*/
     ret = ZOIDFS_BMI_COMM_SENDU(send_msg);
     if (ret != ZFS_OK)
        goto write_cleanup;
@@ -3460,30 +3506,21 @@ static int zoidfs_write_pipeline(BMI_addr_t peer_addr, size_t pipeline_size,
                                  size_t list_count, const void ** buf_list,
                                  const bmi_size_t bmi_size_list[], bmi_msg_tag_t tag,
                                  bmi_context_id context, bmi_size_t total_size) {
-    /* 
-        int close = ZOIDFS_CONT;
-    void ** buf_list = test_data;
-    size_t bmi_size_list[num_test_data];
-    for (x = 0; x < num_test_data; x++)
-        bmi_size_list[x] = x * data_size;
+    /*
+    int close = ZOIDFS_CONT;
     size = bmi_size_list[0]; 
-    size_t pipeline_size = 4000;
-    size_t rem_pipeline_size = 4000;
+    size_t rem_pipeline_size = pipeline_size;
     void * buffer = malloc(4000);
-    size_t buf_size = 4000;
+    size_t buf_size = pipeline_size;
     size_t total_output_size = 0;    
     zoidfs_transform_init (type, &zlib_struct);    
-    x = 0;
-    int y = 0;
+    
+    int x = 0, y = 0;
     do 
     {
        /* Transform the buffer *
-       printf("Output left: %i, buf left: %i, x: %i\n",
-                buf_size, size, x);       
        ret = zoidfs_transform (&zlib_struct, &buf_list[x], &size, 
                                &buffer, &buf_size, close);
-       printf("Output left: %i, buf left: %i, x: %i\n",
-                buf_size, size, x);
        CU_ASSERT(ret != -2);
        buffer -= (rem_pipeline_size - buf_size);
        rem_pipeline_size = buf_size; 
@@ -3493,10 +3530,6 @@ static int zoidfs_write_pipeline(BMI_addr_t peer_addr, size_t pipeline_size,
             /* Move the output buffer pointer back 
             buffer -= (rem_pipeline_size - buf_size);
             /* send the data 
-            for (y = 0; y <  (pipeline_size - buf_size); y++)
-                ((unsigned char *)output)[y] = ((unsigned char *)buffer)[y];
-            output += (pipeline_size - buf_size);
-            printf("Buffer size: %i %i\n", (pipeline_size - buf_size),x);
             //ret = bmi_comm_send(peer_addr, buffer, (pipeline_size - buf_size), tag, context);
             /* update the total output size (testing use) 
             total_output_size += (pipeline_size - buf_size);
