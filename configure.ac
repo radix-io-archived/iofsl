@@ -714,6 +714,33 @@ AC_TRY_COMPILE(
 CPPLAGS="$CPPFLAGS_OLD"
 
 dnl =========================================================================
+dnl ========= Check for ZLib support (for hash functions) ===================
+dnl =========================================================================
+
+ZLIB_LDFLAGS=
+ZLIB_CFLAGS=
+ZLIB_CPPFLAGS=
+ZLIB_LIBS=
+PKG_CHECK_MODULES([ZLib],[zlib],[use_zlib=1],[use_zlib=0])
+ZLIB_LDFLAGS="$ZLib_LDFLAGS"
+ZLIB_CFLAGS="$ZLib_CFLAGS"
+ZLIB_CPPFLAGS="$ZLib_CPPFLAGS"
+ZLIB_LIBS="$ZLib_LIBS"
+AC_SUBST([ZLIB_LDFLAGS])
+AC_SUBST([ZLIB_CFLAGS])
+AC_SUBST([ZLIB_CPPFLAGS])
+AC_SUBST([ZLIB_LIBS])
+AM_CONDITIONAL([HAVE_ZLIB],[test "x${use_zlib}" == "x1"])
+if test "x${use_zlib}" == "x1" ; then
+      AC_DEFINE([HAVE_ZLIB], [1], [If zlib is available])
+      CPPFLAGS="$CPPFLAGS $ZLib_CPPFLAGS"
+      LDFLAGS="$LDFLAGS $ZLib_LDFLAGS"
+      CFLAGS="$CFLAGS $ZLib_CFLAGS"
+      LIBS="$LIBS $ZLib_LIBS"
+fi
+
+
+dnl =========================================================================
 dnl =========================================================================
 dnl =========================================================================
 
