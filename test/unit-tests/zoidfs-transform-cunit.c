@@ -4,6 +4,7 @@
 #include <stdlib.h>
 
 static void ** test_data;
+
 static size_t num_test_data = 10;
 static size_t data_size = 400000;
 int init_transform_test(void)
