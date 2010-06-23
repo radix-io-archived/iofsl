@@ -35,7 +35,7 @@ test/unit-tests/zoidfs-io-cunit-local test/unit-tests/zoidfs-transform-cunit
 
 test_unit_tests_zoidfs_transform_cunit_SOURCES = test/unit-tests/zoidfs-transform-cunit.c 
 test_unit_tests_zoidfs_transform_cunit_LDADD = src/zoidfs/libzoidfsclient.a ${test_unit_tests_ldadd}
-test_unit_tests_zoidfs_transform_cunit_LDFLAGS = -lz ${test_unit_tests_ldflags}
+test_unit_tests_zoidfs_transform_cunit_LDFLAGS =  ${test_unit_tests_ldflags}
  
 test_unit_tests_zoidfs_md_cunit_SOURCES = test/unit-tests/zoidfs-md-cunit.c
 test_unit_tests_zoidfs_md_cunit_LDADD = src/zoidfs/libzoidfsclient.a ${test_unit_tests_ldadd}
