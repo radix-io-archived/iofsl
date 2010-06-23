@@ -13,7 +13,7 @@ test_unit_tests_ldadd =          \
     ${top_builddir}/src/zoidfs/libzoidfshints.a \
     @CUNIT_LIBS@                 \
     @ZFS_DISPATCHER_LIBS@ \
-    @BMI_LIBS@
+    @BMI_LIBS@      
 
 test_unit_tests_ldflags =        \
     @CUNIT_LDFLAGS@              \
@@ -31,11 +31,14 @@ test_zoidfs_gridftp_test_LDADD = src/zoidfs/libzoidfsclient.a ${test_unit_tests_
 test_zoidfs_gridftp_test_LDFLAGS = ${test_unit_tests_ldflags}
 
 noinst_PROGRAMS += test/unit-tests/zoidfs-md-cunit test/unit-tests/zoidfs-md-cunit-local test/unit-tests/zoidfs-io-cunit \
-test/unit-tests/zoidfs-io-cunit-local test/unit-tests/zoidfs-transform-cunit
-
+test/unit-tests/zoidfs-io-cunit-local
+if HAVE_ZLIB
+test_unit_tests_zoidfs_transform_cunit_CFLAGS = "-DHAVE_ZLIB"
 test_unit_tests_zoidfs_transform_cunit_SOURCES = test/unit-tests/zoidfs-transform-cunit.c 
 test_unit_tests_zoidfs_transform_cunit_LDADD = src/zoidfs/libzoidfsclient.a ${test_unit_tests_ldadd}
 test_unit_tests_zoidfs_transform_cunit_LDFLAGS =  ${test_unit_tests_ldflags}
+noinst_PROGRAMS += test/unit-tests/zoidfs-transform-cunit
+endif
  
 test_unit_tests_zoidfs_md_cunit_SOURCES = test/unit-tests/zoidfs-md-cunit.c
 test_unit_tests_zoidfs_md_cunit_LDADD = src/zoidfs/libzoidfsclient.a ${test_unit_tests_ldadd}

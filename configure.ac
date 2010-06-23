@@ -733,7 +733,7 @@ AC_SUBST([ZLIB_LIBS])
 AM_CONDITIONAL([HAVE_ZLIB],[test "x${use_zlib}" == "x1"])
 if test "x${use_zlib}" == "x1" ; then
       AC_DEFINE([HAVE_ZLIB], [1], [If zlib is available])
-      CPPFLAGS="$CPPFLAGS $ZLib_CPPFLAGS"
+      CPPFLAGS="$CPPFLAGS $ZLib_CPPFLAGS -DHAVE_ZLIB"
       LDFLAGS="$LDFLAGS $ZLib_LDFLAGS"
       CFLAGS="$CFLAGS $ZLib_CFLAGS"
       LIBS="$LIBS $ZLib_LIBS"

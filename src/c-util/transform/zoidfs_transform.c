@@ -1,4 +1,5 @@
 #include "zoidfs_transform.h"
+
 extern int zlib_compress_hook (void * stream, void ** source, size_t * length, void ** dest,
                                size_t * output_length, int close);
 
@@ -19,7 +20,6 @@ int passthrough (void * stream, void ** source, size_t * length, void ** dest,
     return ZOIDFS_BUF_ERROR;
 }
 
-
 int zoidfs_transform_init (char * type, zoidfs_write_compress * comp)
 {
     int x;
@@ -29,8 +29,13 @@ int zoidfs_transform_init (char * type, zoidfs_write_compress * comp)
     (*comp).type = type;
     if (strcmp("zlib",type) == 0)
     { 
-        compress_init (type,level,&(*comp).compression_struct);
-        (*comp).transform = &zlib_compress_hook;
+        #ifdef HAVE_ZLIB
+            compress_init (type,level,&(*comp).compression_struct);
+            (*comp).transform = &zlib_compress_hook;
+        #else
+            printf("Error! Zlib library is not availible!\n");
+            return -1;
+        #endif
     }   
     else if (strcmp("nocompression",type) == 0)
     {
@@ -44,8 +49,13 @@ int zoidfs_transform_change_transform (char * type, zoidfs_write_compress * comp
     int level = -1;
     if (strcmp("zlib",type) == 0)
     { 
+        #ifdef HAVE_ZLIB
         compress_init (type,level,&(*comp).compression_struct);
         (*comp).transform = &zlib_compress_hook;
+        #else
+            printf("Error! Zlib library is not availible!\n");
+            return -1;
+        #endif        
     }      
     else if (strcmp("nocompression",type) == 0)
     {
@@ -65,14 +75,14 @@ int zoidfs_transform (zoidfs_write_compress * compression, void ** input,
                       int flush)
 {
     int ret = 0;
-    while (ret != Z_BUF_ERROR)
+    while (ret != ZOIDFS_BUF_ERROR)
     {  
         /* Compress's the file based on some sort of compression scheme 
            defined in the initialization function */
         ret = (*compression).transform ((*compression).compression_struct, 
                                         input, input_length, output, output_len, 
                                         flush);             
-        if (ret == Z_STREAM_END)  
+        if (ret == ZOIDFS_STREAM_END)  
             return ZOIDFS_COMPRESSION_DONE;       
     }
     

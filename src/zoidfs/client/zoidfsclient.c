@@ -20,7 +20,7 @@
 #include "c-util/tools.h"
 #include <assert.h>
 #include <pthread.h>
-
+#include "c-util/transform/zoidfs_transform.h"
 static char *ion_name;
 static BMI_addr_t peer_addr;
 static bmi_context_id context;
@@ -3344,53 +3344,8 @@ int zoidfs_write(const zoidfs_handle_t *handle, size_t mem_count,
     /*
      * Send the encoded function parameters to the ION daemon using an
      * unexpected BMI message.
-     *
+     */
 
-    char * type = "zlib";
-    void * buffer = malloc(pipeline_size);
-    size_t buf_size = pipeline_size;
-    size_t close = ZOIDFS_CONT;
-    zoidfs_transform_init (type, &zlib_struct);
-    size_t num_test_data = list_count;
-    int x = 0;
-    size = bmi_size_list[0];
-    do 
-    {
-       /* Transform the buffer *
-       ret = zoidfs_transform (&zlib_struct, &buf_list[x], &size, 
-                               &buffer, &buf_size, close);
-
-       /* send the data and reset the buffer positions *
-       if (buf_size == 0 || ret == ZOIDFS_COMPRESSION_DONE)
-       {
-            /* Move the output buffer pointer back *
-            buffer -= (pipeline_size - buf_size);
-            /* send the data *
-            ret = bmi_comm_send(peer_addr, buffer, (pipeline_size - buf_size), tag, context);
-            /* update the total output size (testing use) *
-            total_output_size += (pipeline_size - buf_size);
-            /* reset the output buffer size *
-            buf_size = pipeline_size;
-       }
-       if (ret == -2)
-         break;
-       /* if there is no more input in this buffer*
-       if ( size == 0)
-       {   
-            /* if there are additional buffers move on *
-            if ( x < num_test_data - 1 )
-            {
-                x++;
-                size = bmi_size_list[x];
-            }
-            /* Else close the stream and send the remaining data *
-            else
-            {
-                close = ZOIDFS_CLOSE;
-            }
-        }
-    } while(ret != ZOIDFS_COMPRESSION_DONE);
-*/
     ret = ZOIDFS_BMI_COMM_SENDU(send_msg);
     if (ret != ZFS_OK)
        goto write_cleanup;
@@ -3506,59 +3461,58 @@ static int zoidfs_write_pipeline(BMI_addr_t peer_addr, size_t pipeline_size,
                                  size_t list_count, const void ** buf_list,
                                  const bmi_size_t bmi_size_list[], bmi_msg_tag_t tag,
                                  bmi_context_id context, bmi_size_t total_size) {
-    /*
-    int close = ZOIDFS_CONT;
-    size = bmi_size_list[0]; 
+    #ifdef HAVE_ZLIB
+    int ret, close;
+    zoidfs_write_compress zlib_struct;
+    char * type = "zlib";
+    size_t num_test_data = list_count;
+    size_t size = bmi_size_list[0];
     size_t rem_pipeline_size = pipeline_size;
-    void * buffer = malloc(4000);
+    void * buffer = malloc(pipeline_size);
     size_t buf_size = pipeline_size;
-    size_t total_output_size = 0;    
     zoidfs_transform_init (type, &zlib_struct);    
-    
-    int x = 0, y = 0;
+    int x = 0;
+    int y = 0;
     do 
     {
-       /* Transform the buffer *
+       /* Transform the buffer */
        ret = zoidfs_transform (&zlib_struct, &buf_list[x], &size, 
                                &buffer, &buf_size, close);
-       CU_ASSERT(ret != -2);
-       buffer -= (rem_pipeline_size - buf_size);
-       rem_pipeline_size = buf_size; 
-       /* send the data and reset the buffer positions 
+       /* send the data and reset the buffer positions */
        if (buf_size == 0 || ret == ZOIDFS_COMPRESSION_DONE)
        {
-            /* Move the output buffer pointer back 
-            buffer -= (rem_pipeline_size - buf_size);
-            /* send the data 
-            //ret = bmi_comm_send(peer_addr, buffer, (pipeline_size - buf_size), tag, context);
-            /* update the total output size (testing use) 
-            total_output_size += (pipeline_size - buf_size);
-            /* reset the output buffer size 
+            /* Move the output buffer pointer back */
+            buffer -= (pipeline_size - buf_size);
+            /* send the data */
+            ret = bmi_comm_send(peer_addr, buffer, (pipeline_size - buf_size), tag, context);
+            /* update the total output size (testing use) */
+            /* reset the output buffer size */
             buf_size = pipeline_size;
             rem_pipeline_size = pipeline_size;
        }
        if (ret == -2)
          break;
-       /* if there is no more input in this buffer
+       /* if there is no more input in this buffer*/
        if ( size == 0)
        {   
-            /* if there are additional buffers move on 
+            /* if there are additional buffers move on */
             if ( x < num_test_data - 1 )
             {
                 x++;
                 size = bmi_size_list[x];
             }
-            /* Else close the stream and send the remaining data 
+            /* Else close the stream and send the remaining data */
             else
             {
                 close = ZOIDFS_CLOSE;
             }
         }
     } while(ret != ZOIDFS_COMPRESSION_DONE);
-    printf("done\n length: %i\n",total_output_size);
-    decompress_and_compare ( output, total_output_size, total_len);
-    */
-    
+    if (ret == ZOIDFS_COMPRESSION_DONE)
+        ret = ZFS_OK;
+    else 
+        ret = -1;
+    #else
     int np = 0;
     int ret = ZFS_OK;
     bmi_size_t i;
@@ -3663,7 +3617,7 @@ static int zoidfs_write_pipeline(BMI_addr_t peer_addr, size_t pipeline_size,
         }
         np++;
     }
-
+    #endif
     return ret;
 }
 
@@ -4019,6 +3973,7 @@ static int zoidfs_read_pipeline(BMI_addr_t peer_addr, size_t pipeline_size,
     }
     return ret;
 }
+
 
 /*
  * zoidfs_init

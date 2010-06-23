@@ -7,6 +7,7 @@ static void ** test_data;
 
 static size_t num_test_data = 10;
 static size_t data_size = 400000;
+
 int init_transform_test(void)
 {
     int x, y;
@@ -31,6 +32,7 @@ int clean_transform_test(void)
 }
 void decompress_and_compare (void * output, size_t output_total, size_t output_size)
 {
+    #ifdef HAVE_ZLIB
     size_t compressed_len = output_total;
     size_t expected = output_size;
     void * tmp = malloc(output_size);
@@ -45,17 +47,30 @@ void decompress_and_compare (void * output, size_t output_total, size_t output_s
     {
         for ( y = 0; y < x * data_size; y++)
         {
-            //printf("hello");
             if (((unsigned char *)tmp)[loc] != ((unsigned char **)test_data)[x][y])
-                CU_ASSERT (((unsigned char *)tmp)[loc] == ((unsigned char **)test_data)[x][y])
+            {
+                printf("Im wrong at loc: %i\n",loc);
+                assert (((unsigned char *)tmp)[loc] == ((unsigned char **)test_data)[x][y]);
+                //assert (((unsigned char *)tmp)[loc] == ((unsigned char **)test_data)[x][y]);
+            }
             loc++;
         }
     }
-    free(tmp);
-}
     
+    free(tmp);
+    #else
+    printf("Only zlib is supported for this test at this time\n");
+    #endif
+}
+void test_zoidfs_client_send (void)
+{
+    int x = 0;
+
+
+}
 void test_transform_zlib (void)
 {
+    #ifdef HAVE_ZLIB
     char * type = "zlib";
     void * output = malloc(200 * data_size);
     size_t output_size = 20 * data_size;
@@ -148,7 +163,9 @@ void test_transform_zlib (void)
     } while(ret != ZOIDFS_COMPRESSION_DONE);
     output -= total_output_size;   
     decompress_and_compare ( output, total_output_size, total_len); 
-     
+    #else
+    printf("Only zlib is supported for this test at this time\n");
+    #endif
     
 }
 
@@ -169,7 +186,7 @@ int main()
 
    /* add the tests to the suite */
    /* NOTE - ORDER IS IMPORTANT - MUST TEST fread() AFTER fprintf() */
-   if ((NULL == CU_add_test(pSuite, "test of transform zlib", test_transform_zlib)))
+   if ((NULL == CU_add_test(pSuite, "test of transform zlib", test_zoidfs_client_send)))
    {
       CU_cleanup_registry();
       return CU_get_error();

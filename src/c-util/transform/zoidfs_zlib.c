@@ -96,6 +96,7 @@ int zlib_compress (z_stream * stream, void ** source, size_t * length, void ** d
         if (ret == Z_STREAM_END)
         {
             (void)deflateEnd(strm); 
+            ret = ZOIDFS_STREAM_END;
         }
     }
     else if (close == Z_FULL_FLUSH || close == ZOIDFS_FLUSH)
@@ -115,6 +116,8 @@ int zlib_compress (z_stream * stream, void ** source, size_t * length, void ** d
     /* set the ourput buffer */
     (*dest) = finished;
     (*source) = input;
+    if (ret == Z_BUF_ERROR)
+        return ZOIDFS_BUF_ERROR;
     return ret;
 }
 int zlib_decompress (void * source, size_t * length, void ** dest,
