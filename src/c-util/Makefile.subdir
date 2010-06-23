@@ -34,8 +34,6 @@ src/c-util/gencache.c \
 src/c-util/gencache.h \
 src/c-util/hash-table.c \
 src/c-util/hash-table.h \
-src/c-util/sha1.c \
-src/c-util/sha1.h \
 src/c-util/tools.c \
 src/c-util/tools.h \
 src/c-util/txt_configfile.c \
@@ -47,4 +45,21 @@ src/c-util/perf-counters.c \
 src/c-util/lookup3.h \
 src/c-util/lookup3.c \
 src/c-util/lookup8.h \
-src/c-util/lookup8.c
+src/c-util/lookup8.c \
+src/c-util/sha1.c \
+src/c-util/sha1.h \
+\
+src/c-util/hash/chash.h \
+src/c-util/hash/chash.c \
+src/c-util/hash/chash_none.c \
+src/c-util/hash/chash_none.h \
+src/c-util/hash/chash_sha1.h \
+src/c-util/hash/chash_sha1.c
+
+if HAVE_ZLIB
+src_c_util_libc_util_a_SOURCES += \
+src/c-util/hash/chash_crc32.h \
+src/c-util/hash/chash_crc32.c \
+src/c-util/hash/chash_adler32.h \
+src/c-util/hash/chash_adler32.c
+endif
