@@ -741,6 +741,32 @@ fi
 
 
 dnl =========================================================================
+dnl ========= Check for OpenSSL support (for hash functions) ================
+dnl =========================================================================
+
+OPENSSL_LDFLAGS=
+OPENSSL_CFLAGS=
+OPENSSL_CPPFLAGS=
+OPENSSL_LIBS=
+PKG_CHECK_MODULES([OpenSSL],[openssl],[use_openssl=1],[use_openssl=0])
+OPENSSL_LDFLAGS="$OpenSSL_LDFLAGS"
+OPENSSL_CFLAGS="$OpenSSL_CFLAGS"
+OPENSSL_CPPFLAGS="$OpenSSL_CPPFLAGS"
+OPENSSL_LIBS="$OpenSSL_LIBS"
+AC_SUBST([OPENSSL_LDFLAGS])
+AC_SUBST([OPENSSL_CFLAGS])
+AC_SUBST([OPENSSL_CPPFLAGS])
+AC_SUBST([OPENSSL_LIBS])
+AM_CONDITIONAL([HAVE_OPENSSL],[test "x${use_openssl}" == "x1"])
+if test "x${use_openssl}" == "x1" ; then
+      AC_DEFINE([HAVE_OPENSSL], [1], [If OpenSSL is available])
+      CPPFLAGS="$CPPFLAGS $OpenSSL_CPPFLAGS"
+      LDFLAGS="$LDFLAGS $OpenSSL_LDFLAGS"
+      CFLAGS="$CFLAGS $OpenSSL_CFLAGS"
+      LIBS="$LIBS $OpenSSL_LIBS"
+fi
+
+dnl =========================================================================
 dnl =========================================================================
 dnl =========================================================================
 
