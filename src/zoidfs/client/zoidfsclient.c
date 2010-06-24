@@ -16,7 +16,7 @@
 #include "zoidfs/zoidfs-proto.h"
 #include "zoidfs/hints/zoidfs-hints.h"
 #include "iofwd_config.h"
-
+#include "c-util/hash/chash.h"
 #include "c-util/tools.h"
 #include <assert.h>
 #include <pthread.h>
@@ -25,6 +25,7 @@ static char *ion_name;
 static BMI_addr_t peer_addr;
 static bmi_context_id context;
 static char * compression_type = "zlib";
+static char * hash_type = "sha1";
 /* conditional compilation flags */
 /*#define ZFS_USE_XDR_SIZE_CACHE
 #define ZFS_BMI_FASTMEMALLOC*/
@@ -3280,6 +3281,22 @@ int zoidfs_write(const zoidfs_handle_t *handle, size_t mem_count,
     {
         total_size = (bmi_size_t)mem_sizes[0];
     }
+
+    /* Calculate CRC */
+    int x,y;
+    char * hash_value = malloc(256);
+    char * hash_string = malloc(256 + strlen(hash_type) + 1);
+    HashHandle crc_hash = chash_lookup(hash_type);
+    for (x = 0; x < mem_count; x++)
+    {
+        ret = chash_process (crc_hash, mem_starts[x], mem_sizes[x]);    
+    }    
+    ret = chash_get(crc_hash,hash_value, 256);
+    sprintf(hash_string,"%s:%s:", hash_type,hash_value);
+    zoidfs_hint_add( &op_hint , strdup("crc"), strdup(hash_string),
+                     strlen(hash_string), ZOIDFS_HINTS_ZC);
+    free(hash_value);
+    free(hash_string);
 #ifdef ZOIDFS_COMPRESSION
     if (pipeline_size == 0)
     {
@@ -3414,7 +3431,7 @@ int zoidfs_write(const zoidfs_handle_t *handle, size_t mem_count,
     size_t input_buf_size;
     zoidfs_write_compress zlib_struct;
     size_t buf_size;
-    int x = 0, y = 0;
+    x = 0, y = 0;
     /*
      * Send the encoded function parameters to the ION daemon using an
      * unexpected BMI message.

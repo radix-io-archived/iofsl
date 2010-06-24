@@ -2,8 +2,8 @@
 #include <string.h>
 
 #include "c-util/tools.h"
-#include "chash_sha1.h"
 #include "c-util/sha1.h"
+#include "chash_sha1.h"
 
 static int chash_sha1_reset (HashHandle h)
 {
@@ -45,7 +45,7 @@ static int chash_sha1_get (HashHandle h, void * dest,
    return 0;
 }
 
-struct HashFunctionImpl chash_none = {
+struct HashFunctionImpl chash_sha1 = {
    .reset = &chash_sha1_reset,
    .getsize= &chash_sha1_getsize,
    .init = &chash_sha1_init,
