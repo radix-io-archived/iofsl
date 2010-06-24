@@ -3472,6 +3472,7 @@ static int zoidfs_write_pipeline(BMI_addr_t peer_addr, size_t pipeline_size,
     size_t buf_size = pipeline_size;
     zoidfs_transform_init (type, &zlib_struct);    
     int x = 0;
+
     int y = 0;
     do 
     {
@@ -3786,8 +3787,6 @@ int zoidfs_read(const zoidfs_handle_t *handle, size_t mem_count,
     if((ret = zoidfs_xdr_encode_hint(&send_msg, op_hint)) != ZFS_OK) {
         goto read_cleanup;
     }
-    printf("send message size: %i", send_msg.sendbuflen);
-
     /*
      * Send the encoded function parameters to the ION daemon using an
      * unexpected BMI message.

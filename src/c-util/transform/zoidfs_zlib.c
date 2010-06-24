@@ -7,7 +7,7 @@ int compress_init (char * type, int level, void ** library)
     if (strcmp(type,"zlib") == 0)
     {
         /* What level of compression to user (static for now) */
-        int level = 0;
+        int level = -1;
 
         /* Create the required zlib structure */
         z_stream * tmp = malloc(sizeof(z_stream));
