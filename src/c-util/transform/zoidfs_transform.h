@@ -2,6 +2,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <assert.h>
+#include "iofwd_config.h"
 #ifdef HAVE_ZLIB
 #include "zlib.h"
 #endif

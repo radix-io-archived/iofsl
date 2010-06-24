@@ -24,7 +24,7 @@
 static char *ion_name;
 static BMI_addr_t peer_addr;
 static bmi_context_id context;
-
+static char * compression_type = "zlib";
 /* conditional compilation flags */
 /*#define ZFS_USE_XDR_SIZE_CACHE
 #define ZFS_BMI_FASTMEMALLOC*/
@@ -3353,6 +3353,57 @@ int zoidfs_write(const zoidfs_handle_t *handle, size_t mem_count,
     /* Send the data using an expected BMI message */
     if (pipeline_size == 0) {
         /* No Pipelining */
+#ifdef HAVE_ZLIB
+        size_t cur_buf_length = 0;
+        size_t init_buf_size = 16777216;
+        int ret, close = ZOIDFS_CONT;
+        zoidfs_write_compress zlib_struct;
+        size_t num_test_data = mem_count;
+        size_t size = mem_sizes[0];
+        void * buffer = malloc(init_buf_size);
+        size_t buf_size = init_buf_size;
+        zoidfs_transform_init (compression_type, &zlib_struct);    
+        int x = 0;
+        int y = 0;
+        do 
+        {
+           /* Transform the buffer */
+           ret = zoidfs_transform (&zlib_struct, &mem_starts[x], &size, 
+                                   &buffer, &buf_size, close);
+           /* send the data and reset the buffer positions */
+            
+           if (buf_size == 0 || ret == ZOIDFS_COMPRESSION_DONE)
+           {
+                cur_buf_length += (init_buf_size - buf_size);
+                buffer -= cur_buf_length;
+                buffer = realloc(buffer, cur_buf_length + init_buf_size);
+                buffer += cur_buf_length;
+                buf_size = init_buf_size;
+           }
+           if (ret == -2)
+             break;
+           /* if there is no more input in this buffer*/
+           if ( size == 0)
+           {   
+                /* if there are additional buffers move on */
+                if ( x < num_test_data - 1 )
+                {
+                    x++;
+                    size = mem_sizes[x];
+                }
+                /* Else close the stream and send the remaining data */
+                else
+                {
+                    close = ZOIDFS_CLOSE;
+                }
+            }
+        } while(ret != ZOIDFS_COMPRESSION_DONE);
+        buffer -= cur_buf_length;
+        send_msg_data.sendbuflen = cur_buf_length;
+        ret = bmi_comm_send(peer_addr, buffer, cur_buf_length,
+                             send_msg_data.tag, context);
+        free(buffer);
+#else
         if (mem_count == 1) {
             /* Contiguous write */
 #ifdef ZFS_USE_NB_BMI_COMM
@@ -3381,7 +3432,9 @@ int zoidfs_write(const zoidfs_handle_t *handle, size_t mem_count,
             if (ret != ZFS_OK)
                goto write_cleanup;
 #endif
+
         }
+#endif
     } else {
         /* Pipelining */
         ret = zoidfs_write_pipeline(peer_addr, pipeline_size,
@@ -3463,14 +3516,14 @@ static int zoidfs_write_pipeline(BMI_addr_t peer_addr, size_t pipeline_size,
                                  bmi_context_id context, bmi_size_t total_size) {
     #ifdef HAVE_ZLIB
     int ret, close;
+
     zoidfs_write_compress zlib_struct;
-    char * type = "zlib";
     size_t num_test_data = list_count;
     size_t size = bmi_size_list[0];
     size_t rem_pipeline_size = pipeline_size;
     void * buffer = malloc(pipeline_size);
     size_t buf_size = pipeline_size;
-    zoidfs_transform_init (type, &zlib_struct);    
+    zoidfs_transform_init (compression_type, &zlib_struct);    
     int x = 0;
 
     int y = 0;
