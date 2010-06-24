@@ -3182,6 +3182,7 @@ int zoidfs_write(const zoidfs_handle_t *handle, size_t mem_count,
                  const zoidfs_file_ofs_t file_sizes[],
                    zoidfs_op_hint_t * op_hint) {
     size_t i;
+    size_t total_len;
     size_t pipeline_size = 0;
     bmi_size_t total_size = 0;
     zoidfs_size_t_array_transfer_t mem_sizes_transfer;
@@ -3279,7 +3280,72 @@ int zoidfs_write(const zoidfs_handle_t *handle, size_t mem_count,
     {
         total_size = (bmi_size_t)mem_sizes[0];
     }
-
+#ifdef ZOIDFS_COMPRESSION
+    if (pipeline_size == 0)
+    {
+        total_len = 0;
+        /* Set the initial buffer size. 16MB was chosen because it is
+            the maximum expected send size for tcp. BMI_CHECK_MAXSIZE
+            was not used because its value can exceed 2GB on certain
+            systems                                                  */
+        size_t init_buf_size = 16777216;
+        /* Sets the input buffer size to the first memory location   */
+        input_buf_size = mem_sizes[0];
+        /* malloc a buffer to the init_buf_size (will be expanded if 
+           needed)                                                   */
+        void * buffer = malloc(init_buf_size);
+        /* Set the buffer size tracker to be the same size as the 
+           init_buf_size                                             */
+        buf_size = init_buf_size;
+        /* initialize the compression                                */
+        ret = zoidfs_transform_init (compression_type, &zlib_struct);    
+        /* If there is some issue... panic                           */
+        if (ret == -1)
+            goto write_cleanup;
+        x = 0;
+        y = 0;
+        do 
+        {
+           /* Transform the buffer */
+           ret = zoidfs_transform (&zlib_struct, &mem_starts[x], &input_buf_size, 
+                                   &buffer, &buf_size, close);
+           /* if the output (compressed) buffer is full expand it */
+           if (buf_size == 0 || ret == ZOIDFS_COMPRESSION_DONE)
+           {
+                total_len += (init_buf_size - input_buf_size);
+                buffer -= total_len;
+                if (ret != ZOIDFS_COMPRESSION_DONE)
+                    buffer = realloc(buffer, total_len + init_buf_size);
+                buffer += total_len;
+                buf_size = init_buf_size;
+           }
+               
+           if (ret == ZOIDFS_TRANSFORM_ERROR)
+                goto write_cleanup
+           /* if there is no more input in this buffer*/
+           if ( input_buf_size == 0)
+           {   
+                /* if there are additional buffers move on */
+                if ( x < mem_count - 1 )
+                {
+                    x++;
+                    input_buf_size = mem_sizes[x];
+                }
+                /* Else close the stream and send the remaining data */
+                else
+                {
+                    close = ZOIDFS_CLOSE;
+                }
+            }
+        } while(ret != ZOIDFS_COMPRESSION_DONE);
+        buffer -= total_len;
+        char * compress_len_string[100]; 
+        size_t non_pipeline_len = total_len;        
+        sprintf(compress_len_string,"%d",total_len);
+        zoidfs_hint_add( &op_hint , strdup("compressed-length"), strdup(compress_len_string),
+                     strlen(compress_len_string), ZOIDFS_HINTS_ZC);
+    }
+#endif 
     /* 
      * if the total size is greater than the pipeline size, set the pipeline size
      * and setup the memory size buffer for pipeline mode 
@@ -3349,7 +3415,6 @@ int zoidfs_write(const zoidfs_handle_t *handle, size_t mem_count,
     zoidfs_write_compress zlib_struct;
     size_t buf_size;
     int x = 0, y = 0;
-    size_t total_len;
     /*
      * Send the encoded function parameters to the ION daemon using an
      * unexpected BMI message.
@@ -3407,10 +3472,17 @@ int zoidfs_write(const zoidfs_handle_t *handle, size_t mem_count,
     } while(ret != ZOIDFS_COMPRESSION_DONE || buf_size == 0);
     /* a copy used to copy the buffer to the send buffer, this
        is used because it is unknown whether or not there is a send
-       unexpected list function */    
+       unexpected list function */ 
+    send_msg.sendbuf += send_msg.sendbuflen;
     for (x = 0; x < y; x++)
+    {
         strncpy(send_msg.sendbuf,list_buffer[y],buf_count[y]);            
+        send_msg.sendbuf += buf_count[y];    
+    }
+    send_msg.sendbuf -= (send_msg.sendbuflen + total_len);
+    send_msg.sendbuflen = (send_msg.sendbuflen + total_len);
     /* Send the buffer */
+    
     ret = ZOIDFS_BMI_COMM_SENDU(send_msg);
     free(list_buffer);
 #else
@@ -3423,65 +3495,8 @@ int zoidfs_write(const zoidfs_handle_t *handle, size_t mem_count,
     if (pipeline_size == 0) {
         /* No Pipelining */
 #ifdef ZOIDFS_COMPRESSION
-        total_len = 0;
-        /* Set the initial buffer size. 16MB was chosen because it is
-            the maximum expected send size for tcp. BMI_CHECK_MAXSIZE
-            was not used because its value can exceed 2GB on certain
-            systems                                                  */
-        size_t init_buf_size = 16777216;
-        /* Sets the input buffer size to the first memory location   */
-        input_buf_size = mem_sizes[0];
-        /* malloc a buffer to the init_buf_size (will be expanded if 
-           needed)                                                   */
-        void * buffer = malloc(init_buf_size);
-        /* Set the buffer size tracker to be the same size as the 
-           init_buf_size                                             */
-        buf_size = init_buf_size;
-        /* initialize the compression                                */
-        ret = zoidfs_transform_init (compression_type, &zlib_struct);    
-        /* If there is some issue... panic                           */
-        if (ret == -1)
-            goto write_cleanup;
-        x = 0;
-        y = 0;
-        do 
-        {
-           /* Transform the buffer */
-           ret = zoidfs_transform (&zlib_struct, &mem_starts[x], &input_buf_size, 
-                                   &buffer, &buf_size, close);
-           /* if the output (compressed) buffer is full expand it */
-           if (buf_size == 0 || ret == ZOIDFS_COMPRESSION_DONE)
-           {
-                total_len += (init_buf_size - input_buf_size);
-                buffer -= total_len;
-                if (ret != ZOIDFS_COMPRESSION_DONE)
-                    buffer = realloc(buffer, total_len + init_buf_size);
-                buffer += total_len;
-                buf_size = init_buf_size;
-           }
-               
-           if (ret == ZOIDFS_TRANSFORM_ERROR)
-                goto write_cleanup
-           /* if there is no more input in this buffer*/
-           if ( input_buf_size == 0)
-           {   
-                /* if there are additional buffers move on */
-                if ( x < mem_count - 1 )
-                {
-                    x++;
-                    input_buf_size = mem_sizes[x];
-                }
-                /* Else close the stream and send the remaining data */
-                else
-                {
-                    close = ZOIDFS_CLOSE;
-                }
-            }
-        } while(ret != ZOIDFS_COMPRESSION_DONE);
-        buffer -= total_len;
-        zoidfs_hint_add ( ZOIDFS_HINTS_ZC
         send_msg_data.sendbuflen = total_len;
-        ret = bmi_comm_send(peer_addr, buffer, total_len,
+        ret = bmi_comm_send(peer_addr, buffer, non_pipeline_len,
                              send_msg_data.tag, context);
         free(buffer);
 #else
