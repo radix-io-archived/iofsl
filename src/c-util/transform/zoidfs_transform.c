@@ -87,7 +87,9 @@ int zoidfs_transform (zoidfs_write_compress * compression, void ** input,
                                         input, input_length, output, output_len, 
                                         flush);             
         if (ret == ZOIDFS_STREAM_END)  
-            return ZOIDFS_COMPRESSION_DONE;       
+            return ZOIDFS_COMPRESSION_DONE; 
+        else if (ret == ZOIDFS_TRANSFORM_ERROR)
+            return ret;      
     }
     
     if ((int)*input_length > 0)
@@ -96,5 +98,3 @@ int zoidfs_transform (zoidfs_write_compress * compression, void ** input,
         return ZOIDFS_CONT;
     return ZOIDFS_CONT;
 }
-
-

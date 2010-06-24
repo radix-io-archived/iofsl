@@ -65,8 +65,76 @@ void decompress_and_compare (void * output, size_t output_total, size_t output_s
 void test_zoidfs_client_send (void)
 {
     int x = 0;
+    void ** mem_starts = test_data;
+    size_t mem_count = num_test_data;
+    size_t mem_sizes[num_test_data];
+    size_t total_len = 0;    
+    for (x = 0; x < num_test_data; x++)
+    {
+        mem_sizes[x] = x * data_size;
+        total_len += x * data_size;
+    }
+    size_t size = mem_sizes[0];
 
+    int ret, close = ZOIDFS_CONT;
+    zoidfs_write_compress zlib_struct;
+    char * type = "nocompression";
+    size_t buf_size = 16000, max_buf = 16000;
+    zoidfs_transform_init (type, &zlib_struct);    
+    x = 0;
+    int y = 0;
 
+    void ** buffer;
+    size_t buf_count[mem_count];
+    buffer = malloc(mem_count);
+    total_len = 0;  
+    do 
+    {
+       /* Transform the buffer */
+       ret = zoidfs_transform (&zlib_struct, &mem_starts[x], &size, 
+                               &buffer[y], &buf_size, close);
+       printf("Buf size: %i, size: %i\n",buf_size,size);
+       printf("Running\n");       
+       /* send the data and reset the buffer positions */
+       if (size == 0 && buf_size != 0)
+       {
+            buf_count[y] = mem_sizes[y];
+            buffer[y] -= mem_sizes[y];
+            total_len += mem_sizes[y];
+            y++;
+            x++;     
+            printf("i moved\n");
+       }   
+       if (buf_size == 0 || ret == ZOIDFS_COMPRESSION_DONE)
+       {
+            buf_count[y] = max_buf - total_len;
+    printf("%p %p\n",mem_starts[1],buffer[1]);
+            printf("buf count = %i\n",buf_count[y]);
+            buffer[y] -= buf_count[y];
+    printf("%p %p\n",mem_starts[1],buffer[1]);
+            total_len += buf_count[y];
+            break;
+       }
+        
+       /* if there is no more input in this buffer*/
+       if ( size == 0)
+       {   
+            /* if there are additional buffers move on */
+            if ( x < mem_count - 1 )
+            {
+                printf("X: %i\n",x);
+                size = mem_sizes[x];
+            }
+        }
+    } while(ret != ZOIDFS_COMPRESSION_DONE || buf_size == 0);
+    printf("%p %p\n",test_data[0],buffer[0]);
+    //assert(test_data[0] == buffer[0]);
+    //assert(test_data[1] == buffer[1]);
+    assert(buf_count[0] == 0);
+    assert(buf_count[1] == 16000);
+    printf("%p %p\n",(mem_starts[1]),buffer[1]);
+    //test_data[1] += 16000;
+    assert((mem_starts[1] - 16000) ==  buffer[1]);
 }
 void test_transform_zlib (void)
 {
@@ -98,7 +166,8 @@ void test_transform_zlib (void)
        output_size = 250000;
        size = x * data_size;
        ret = zoidfs_transform (&zlib_struct, &test_data[x], &size, &output, &output_size, ZOIDFS_CONT);
-       CU_ASSERT(output_size == 0);
+        printf("Output_size = %i\n",output_size);       
+        CU_ASSERT(output_size == 0);
        CU_ASSERT(ret == ZOIDFS_OUTPUT_FULL);
     } 
 
@@ -143,9 +212,12 @@ void test_transform_zlib (void)
     {
        ret = zoidfs_transform (&zlib_struct, &test_data[x], &size, 
                                &output, &output_size, close);
-       CU_ASSERT(ret != -2);
-       if (ret == -2)
+       CU_ASSERT(ret != ZOIDFS_TRANSFORM_ERROR);
+       if (ret == ZOIDFS_TRANSFORM_ERROR)
+       {
+         printf("Hello");
          break;
+       }
        total_output_size += (150 - output_size);
        output_size = 150;
        if ( size == 0)
@@ -186,7 +258,7 @@ int main()
 
    /* add the tests to the suite */
    /* NOTE - ORDER IS IMPORTANT - MUST TEST fread() AFTER fprintf() */
-   if ((NULL == CU_add_test(pSuite, "test of transform zlib", test_zoidfs_client_send)))
+   if ((NULL == CU_add_test(pSuite, "test of transform zlib",  test_transform_zlib)))
    {
       CU_cleanup_registry();
       return CU_get_error();
