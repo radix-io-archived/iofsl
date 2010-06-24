@@ -9,14 +9,18 @@ int passthrough (void * stream, void ** source, size_t * length, void ** dest,
     (*dest) = (*source);
     if (*output_length > *length)
     {
+        (*source) += *length;
         *output_length =  *output_length - *length;
+        (*dest) += *length;
         *length = 0;
     }
     else
     {
-        *output_length = 0;
-        *length = *length - *output_length;           
-    }
+        (*source) += *output_length;
+        *length = *length - *output_length;        
+        (*dest) += *output_length;
+        *output_length = 0;           
+    } 
     return ZOIDFS_BUF_ERROR;
 }
 
@@ -37,7 +41,7 @@ int zoidfs_transform_init (char * type, zoidfs_write_compress * comp)
             return -1;
         #endif
     }   
-    else if (strcmp("nocompression",type) == 0)
+    else if (strcmp("passthrough",type) == 0)
     {
         (*comp).transform = &passthrough;                    
     }
@@ -57,7 +61,7 @@ int zoidfs_transform_change_transform (char * type, zoidfs_write_compress * comp
             return -1;
         #endif        
     }      
-    else if (strcmp("nocompression",type) == 0)
+    else if (strcmp("passthrough",type) == 0)
     {
         (*comp).transform = &passthrough;                    
     }
