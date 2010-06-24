@@ -3357,7 +3357,9 @@ int zoidfs_write(const zoidfs_handle_t *handle, size_t mem_count,
     /* set up the buffer size */
     buf_size = BMI_GET_UNEXP_SIZE, max_buf = buf_size;
     /* sets up the compression (in this case passthrough is used */
-    zoidfs_transform_init ("passthrough", &zlib_struct);    
+    ret = zoidfs_transform_init ("passthrough", &zlib_struct);    
+    if (ret == -1)
+        goto write_cleanup;
     /* Sets up a buffer to hold pointers to the output data 
        (** used for passthrough so that no memory copys are needed) */
     void ** list_buffer;
@@ -3417,13 +3419,26 @@ int zoidfs_write(const zoidfs_handle_t *handle, size_t mem_count,
     /* Send the data using an expected BMI message */
     if (pipeline_size == 0) {
         /* No Pipelining */
-#ifdef HAVE_ZLIB
+#ifdef ZOIDFS_COMPRESSION
         total_len = 0;
+        /* Set the initial buffer size. 16MB was chosen because it is
+            the maximum expected send size for tcp. BMI_CHECK_MAXSIZE
+            was not used because its value can exceed 2GB on certain
+            systems                                                  */
         size_t init_buf_size = 16777216;
+        /* Sets the input buffer size to the first memory location   */
         input_buf_size = mem_sizes[0];
+        /* malloc a buffer to the init_buf_size (will be expanded if 
+           needed)                                                   */
         void * buffer = malloc(init_buf_size);
+        /* Set the buffer size tracker to be the same size as the 
+           init_buf_size                                             */
         buf_size = init_buf_size;
-        zoidfs_transform_init (compression_type, &zlib_struct);    
+        /* initialize the compression                                */
+        ret = zoidfs_transform_init (compression_type, &zlib_struct);    
+        /* If there is some issue... panic                           */
+        if (ret == -1)
+            goto write_cleanup;
         x = 0;
         y = 0;
         do 
@@ -3431,18 +3446,19 @@ int zoidfs_write(const zoidfs_handle_t *handle, size_t mem_count,
            /* Transform the buffer */
            ret = zoidfs_transform (&zlib_struct, &mem_starts[x], &input_buf_size, 
                                    &buffer, &buf_size, close);
-           /* send the data and reset the buffer positions */
-            
+           /* if the output (compressed) buffer is full expand it */
            if (buf_size == 0 || ret == ZOIDFS_COMPRESSION_DONE)
            {
                 total_len += (init_buf_size - input_buf_size);
                 buffer -= total_len;
-                buffer = realloc(buffer, total_len + init_buf_size);
+                if (ret != ZOIDFS_COMPRESSION_DONE)
+                    buffer = realloc(buffer, total_len + init_buf_size);
                 buffer += total_len;
                 buf_size = init_buf_size;
            }
-           if (ret == -2)
-             break;
+               
+           if (ret == ZOIDFS_TRANSFORM_ERROR)
+                goto write_cleanup
            /* if there is no more input in this buffer*/
            if ( input_buf_size == 0)
            {   
@@ -3575,16 +3591,16 @@ static int zoidfs_write_pipeline(BMI_addr_t peer_addr, size_t pipeline_size,
                                  size_t list_count, const void ** buf_list,
                                  const bmi_size_t bmi_size_list[], bmi_msg_tag_t tag,
                                  bmi_context_id context, bmi_size_t total_size) {
-    #ifdef HAVE_ZLIB
-    int ret, close;
-
+    #ifdef ZOIDFS_COMPRESSION
+    int ret, close = ZOIDFS_CONT;
+    /* stores the compression struct */
     zoidfs_write_compress zlib_struct;
-    size_t num_test_data = list_count;
     size_t size = bmi_size_list[0];
-    size_t rem_pipeline_size = pipeline_size;
     void * buffer = malloc(pipeline_size);
     size_t buf_size = pipeline_size;
-    zoidfs_transform_init (compression_type, &zlib_struct);    
+    ret = zoidfs_transform_init (compression_type, &zlib_struct);    
+    if (ret == -1)
+        return ret;    
     int x = 0;
 
     int y = 0;
@@ -3603,15 +3619,14 @@ static int zoidfs_write_pipeline(BMI_addr_t peer_addr, size_t pipeline_size,
             /* update the total output size (testing use) */
             /* reset the output buffer size */
             buf_size = pipeline_size;
-            rem_pipeline_size = pipeline_size;
        }
-       if (ret == -2)
-         break;
+       if (ret == ZOIDFS_TRANSFORM_ERROR)
+         return -1;
        /* if there is no more input in this buffer*/
        if ( size == 0)
        {   
             /* if there are additional buffers move on */
-            if ( x < num_test_data - 1 )
+            if ( x < list_count - 1 )
             {
                 x++;
                 size = bmi_size_list[x];
