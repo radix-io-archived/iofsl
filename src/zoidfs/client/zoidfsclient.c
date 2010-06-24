@@ -3200,6 +3200,8 @@ int zoidfs_write(const zoidfs_handle_t *handle, size_t mem_count,
     ZOIDFS_SEND_MSG_DATA_INIT(send_msg_data);
     ZOIDFS_RECV_MSG_INIT(recv_msg);
 
+    zoidfs_hint_add( &op_hint , strdup("compression"), strdup(compression_type),
+                     strlen(compression_type), ZOIDFS_HINTS_ZC);
     /* init the transfer array wrappers */ 
     mem_sizes_transfer.data = (void *)mem_sizes;
     mem_sizes_transfer.len = mem_count;
@@ -3300,6 +3302,7 @@ int zoidfs_write(const zoidfs_handle_t *handle, size_t mem_count,
      * Encode the function parameters using XDR. We will NOT encode
      * the data.
      */
+
     ZOIDFS_SEND_XDR_MEMCREATE(send_msg);
     if ((ret = zoidfs_xdr_processor(ZFS_OP_ID_T, &send_msg.zoidfs_op_id, &send_msg.send_xdr)) != ZFS_OK) {
         
@@ -3476,6 +3479,7 @@ int zoidfs_write(const zoidfs_handle_t *handle, size_t mem_count,
             }
         } while(ret != ZOIDFS_COMPRESSION_DONE);
         buffer -= total_len;
+        zoidfs_hint_add ( ZOIDFS_HINTS_ZC
         send_msg_data.sendbuflen = total_len;
         ret = bmi_comm_send(peer_addr, buffer, total_len,
                              send_msg_data.tag, context);
