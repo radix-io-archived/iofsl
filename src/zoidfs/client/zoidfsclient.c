@@ -3202,8 +3202,32 @@ int zoidfs_write(const zoidfs_handle_t *handle, size_t mem_count,
     ZOIDFS_SEND_MSG_DATA_INIT(send_msg_data);
     ZOIDFS_RECV_MSG_INIT(recv_msg);
 
+    /* If op_hint was not specified, create a new hint structure */
+    if (zoidfs_hint_num_elements(&op_hint) == 0)
+        op_hint = zoidfs_hint_init(2);
+
+    /* Add the compression hint */
     zoidfs_hint_add( &op_hint , strdup("compression"), strdup(compression_type),
                      strlen(compression_type), ZOIDFS_HINTS_ZC);
+
+    /* Calculate CRC */
+    int x,y;
+    char * hash_value = malloc(256);
+    char * hash_string = malloc(256 + strlen(hash_type) + 1);
+    HashHandle crc_hash = chash_lookup(hash_type);
+    for (x = 0; x < mem_count; x++)
+    {
+        ret = chash_process (crc_hash, mem_starts[x], mem_sizes[x]);    
+    }    
+    ret = chash_get(crc_hash,hash_value, 256);
+    sprintf(hash_string,"%s:%s", hash_type,hash_value);
+    zoidfs_hint_add( &op_hint , strdup("crc"), strdup(hash_string),
+                     strlen(hash_string), ZOIDFS_HINTS_ZC);
+    free(hash_value);
+    free(hash_string);
+
+
+
     /* init the transfer array wrappers */ 
     mem_sizes_transfer.data = (void *)mem_sizes;
     mem_sizes_transfer.len = mem_count;
@@ -3281,22 +3305,6 @@ int zoidfs_write(const zoidfs_handle_t *handle, size_t mem_count,
     {
         total_size = (bmi_size_t)mem_sizes[0];
     }
-
-    /* Calculate CRC */
-    int x,y;
-    char * hash_value = malloc(256);
-    char * hash_string = malloc(256 + strlen(hash_type) + 1);
-    HashHandle crc_hash = chash_lookup(hash_type);
-    for (x = 0; x < mem_count; x++)
-    {
-        ret = chash_process (crc_hash, mem_starts[x], mem_sizes[x]);    
-    }    
-    ret = chash_get(crc_hash,hash_value, 256);
-    sprintf(hash_string,"%s:%s", hash_type,hash_value);
-    zoidfs_hint_add( &op_hint , strdup("crc"), strdup(hash_string),
-                     strlen(hash_string), ZOIDFS_HINTS_ZC);
-    free(hash_value);
-    free(hash_string);
 
 
 #ifdef ZOIDFS_COMPRESSION
