@@ -145,4 +145,9 @@ src/iofwdutil/rm/IntervalMergeTree.cpp \
 \
 src/iofwdutil/mm/IOFWDMemoryManager.hh \
 src/iofwdutil/mm/BMIMemoryManager.hh \
-src/iofwdutil/mm/BMIMemoryManager.cpp
+src/iofwdutil/mm/BMIMemoryManager.cpp \
+\
+src/iofwdutil/transform/GenericTransform.hh \
+src/iofwdutil/transform/GenericTransform.cpp \
+src/iofwdutil/transform/IOFWDZLib.hh \
+src/iofwdutil/transform/IOFWDZLib.cpp
