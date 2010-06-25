@@ -3292,11 +3292,13 @@ int zoidfs_write(const zoidfs_handle_t *handle, size_t mem_count,
         ret = chash_process (crc_hash, mem_starts[x], mem_sizes[x]);    
     }    
     ret = chash_get(crc_hash,hash_value, 256);
-    sprintf(hash_string,"%s:%s:", hash_type,hash_value);
+    sprintf(hash_string,"%s:%s", hash_type,hash_value);
     zoidfs_hint_add( &op_hint , strdup("crc"), strdup(hash_string),
                      strlen(hash_string), ZOIDFS_HINTS_ZC);
     free(hash_value);
     free(hash_string);
+
+
 #ifdef ZOIDFS_COMPRESSION
     if (pipeline_size == 0)
     {
