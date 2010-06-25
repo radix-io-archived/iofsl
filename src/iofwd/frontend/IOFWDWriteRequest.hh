@@ -34,9 +34,13 @@ public:
 
    // for normal mode
    virtual void recvBuffers(const CBType & cb, RetrievedBuffer * rb);
+   virtual void recvComplete(int recvStatus);
 
    // for pipeline mode
    virtual void recvPipelineBufferCB(iofwdevent::CBType cb, RetrievedBuffer * rb, size_t size);
+#if 0
+   virtual void recvPipelineComplete(iofwdevent::CBType cb);
+#endif
 
    virtual void initRequestParams(ReqParam & p, void * bufferMem);
 

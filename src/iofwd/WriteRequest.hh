@@ -7,6 +7,7 @@
 #include "iofwdutil/bmi/BMIAddr.hh"
 #include "iofwdutil/bmi/BMIBuffer.hh"
 #include "iofwd/RetrievedBuffer.hh"
+#include "iofwdutil/transform/IOFWDZLib.hh"
 
 namespace iofwd
 {
@@ -15,6 +16,12 @@ class WriteRequest : public Request
 public:
   typedef struct ReqParam_
   {
+     iofwdutil::iofwdtransform::GenericTransform *GenTransform;
+     CBType UserCB;
+     char *compressMem;
+     int current_read_buf;
+     size_t compressed_size;
+
      zoidfs::zoidfs_handle_t * handle;
      size_t mem_count;
      char ** mem_starts;
@@ -30,6 +37,7 @@ public:
 
      /* decoded hint values */
      bool op_hint_pipeline_enabled;
+     bool op_hint_compress_enabled;
 
      size_t max_buffer_size;
 
@@ -51,6 +59,7 @@ public:
 
   // for normal mode
   virtual void recvBuffers(const CBType & cb, RetrievedBuffer * rb) = 0;
+  virtual void recvComplete(int recvStatus) = 0;
 
   // for pipeline mode
   virtual void recvPipelineBufferCB(iofwdevent::CBType cb, RetrievedBuffer * rb, size_t size) = 0;

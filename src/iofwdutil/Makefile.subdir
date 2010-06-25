@@ -148,6 +148,5 @@ src/iofwdutil/mm/BMIMemoryManager.hh \
 src/iofwdutil/mm/BMIMemoryManager.cpp \
 \
 src/iofwdutil/transform/GenericTransform.hh \
-src/iofwdutil/transform/GenericTransform.cpp \
 src/iofwdutil/transform/IOFWDZLib.hh \
 src/iofwdutil/transform/IOFWDZLib.cpp

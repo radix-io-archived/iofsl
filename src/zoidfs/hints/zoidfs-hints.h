@@ -14,10 +14,12 @@ namespace zoidfs
 #endif /* __cplusplus */
 
 /* predefined hints */
-#define ZOIDFS_HINT_ENABLED (char*)"1"
-#define ZOIDFS_HINT_DISABLED (char*)"0"
+#define ZOIDFS_HINT_ENABLED    (char*)"1"
+#define ZOIDFS_HINT_DISABLED   (char*)"0"
 #define ZOIDFS_ENABLE_PIPELINE (char*)"ZOIDFS_ENABLE_PIPELINE"
-#define ZOIDFS_PIPELINE_SIZE (char*)"ZOIDFS_PIPELINE_SIZE"
+#define ZOIDFS_PIPELINE_SIZE   (char*)"ZOIDFS_PIPELINE_SIZE"
+#define ZOIDFS_ENABLE_COMPRESS (char*)"ZOIDFS_ENABLE_COMPRESS"
+#define ZOIDFS_COMPRESS_SIZE   (char*)"ZOIDFS_COMPRESS_SIZE"
 
 /* create and initialize the hint list */
 zoidfs_op_hint_t * zoidfs_hint_init(int size);
