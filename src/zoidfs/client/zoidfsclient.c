@@ -3204,17 +3204,11 @@ int zoidfs_write(const zoidfs_handle_t *handle, size_t mem_count,
 
     /* If op_hint was not specified, create a new hint structure */
     if (zoidfs_hint_num_elements(&op_hint) == 0)
-        op_hint = zoidfs_hint_init(3);
+        op_hint = zoidfs_hint_init(2);
 
     /* Add the compression hint */
     zoidfs_hint_add( &op_hint , strdup("compression"), strdup(compression_type),
                      strlen(compression_type), ZOIDFS_HINTS_ZC);
-
-    /* Hint for compressed length (this must be added here because we must 
-        have this hint included in the calculation of the header size before we
-        send it) */
-    zoidfs_hint_add( &op_hint , strdup("compressed-length"), strdup("0000000000000"),
-                     13, ZOIDFS_HINTS_ZC);
 
     /* Calculate CRC */
     int x,y;
