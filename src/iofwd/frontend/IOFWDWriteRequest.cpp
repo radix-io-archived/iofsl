@@ -216,13 +216,13 @@ void IOFWDWriteRequest::initRequestParams(ReqParam & p, void * bufferMem)
 	if(NULL == param_.compressed_mem)
 	  throw "IOFWDWriteRequest::initRequestParams() failed (new char [])!";
 
-	//param_.transform_buf = new param_.buf* [1024];
+	//param_.transform_buf = new param_.buf [1024];
 	if(NULL == param_.transform_buf)
 	  throw "IOFWDWriteRequest::initRequestParams() failed (new param_.buf [])!";
 	for(int ii = 0; ii < 1024; ii++)
 	{
-	  param_.transform_buf[ii]->buf = NULL;
-	  param_.transform_buf[ii]->byte_count = 0;
+	  param_.transform_buf[ii].buf = NULL;
+	  param_.transform_buf[ii].byte_count = 0;
 	}
 	param_.transform_consume_buf = 0;
 	param_.transform_buf_count = 0;
@@ -331,34 +331,34 @@ void IOFWDWriteRequest::recvPipelineComplete(int recvStatus)
    }
 
 decompress:
-   if(0 == param_.transform_buf[param_.transform_buf_count]->byte_count)
+   if(0 == param_.transform_buf[param_.transform_buf_count].byte_count)
    {
       // output buffer is new
-      param_.transform_buf[param_.transform_buf_count]->buf = new char [param_.pipeline_size];
-      if(NULL == param_.transform_buf[param_.transform_buf_count]->buf)
+      param_.transform_buf[param_.transform_buf_count].buf = new char [param_.pipeline_size];
+      if(NULL == param_.transform_buf[param_.transform_buf_count].buf)
 	  throw "IOFWDWriteRequest::initRequestParams() failed (new param_.buf [])!";
       param_.GenTransform->transform(param_.compressed_mem,
 	  param_.pipeline_size,
-	  param_.transform_buf[param_.transform_buf_count]->buf,
+	  param_.transform_buf[param_.transform_buf_count].buf,
 	  param_.pipeline_size,
 	  &outBytes,
 	  &outState,
 	  false);
    }
-   if(param_.transform_buf[param_.transform_buf_count]->byte_count < param_.pipeline_size)
+   if(param_.transform_buf[param_.transform_buf_count].byte_count < param_.pipeline_size)
    {
       // output buffer is partially filled
       param_.GenTransform->transform(param_.compressed_mem,
 	  param_.pipeline_size,
-	  param_.transform_buf[param_.transform_buf_count]->buf,
-	  param_.pipeline_size-param_.transform_buf[param_.transform_buf_count]->byte_count,
+	  param_.transform_buf[param_.transform_buf_count].buf,
+	  param_.pipeline_size-param_.transform_buf[param_.transform_buf_count].byte_count,
 	  &outBytes,
 	  &outState,
 	  false);
    }
 
-   param_.transform_buf[param_.transform_buf_count]->byte_count += outBytes;
-   if(param_.transform_buf[param_.transform_buf_count]->byte_count == param_.pipeline_size)
+   param_.transform_buf[param_.transform_buf_count].byte_count += outBytes;
+   if(param_.transform_buf[param_.transform_buf_count].byte_count == param_.pipeline_size)
       param_.transform_buf_count++;
 
    if(iofwdutil::iofwdtransform::CONSUME_OUTBUF == outState)
@@ -371,9 +371,9 @@ decompress:
       if(param_.transform_consume_buf == param_.transform_buf_count)
 	 return;
       memcpy(param_.transform_mem,
-	  param_.transform_buf[param_.transform_consume_buf]->buf,
-	  param_.transform_buf[param_.transform_consume_buf]->byte_count);
-      delete []param_.transform_buf[param_.transform_consume_buf]->buf;
+	  param_.transform_buf[param_.transform_consume_buf].buf,
+	  param_.transform_buf[param_.transform_consume_buf].byte_count);
+      delete []param_.transform_buf[param_.transform_consume_buf].buf;
       param_.transform_consume_buf++;
       param_.UserCB(recvStatus);
    }
@@ -382,9 +382,9 @@ decompress:
       if(param_.transform_consume_buf == param_.transform_buf_count)
 	 return;
       memcpy(param_.transform_mem,
-	  param_.transform_buf[param_.transform_consume_buf]->buf,
-	  param_.transform_buf[param_.transform_consume_buf]->byte_count);
-      delete []param_.transform_buf[param_.transform_consume_buf]->buf;
+	  param_.transform_buf[param_.transform_consume_buf].buf,
+	  param_.transform_buf[param_.transform_consume_buf].byte_count);
+      delete []param_.transform_buf[param_.transform_consume_buf].buf;
       param_.transform_consume_buf++;
       param_.UserCB(recvStatus);
    }

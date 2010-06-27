@@ -26,7 +26,7 @@ public:
 	char *buf;
 	int byte_count;
      }buf;
-     buf **transform_buf;
+     buf *transform_buf;
      int transform_consume_buf;
      int transform_buf_count;
 
