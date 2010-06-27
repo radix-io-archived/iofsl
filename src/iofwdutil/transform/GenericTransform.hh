@@ -15,9 +15,9 @@ namespace iofwdutil
   namespace iofwdtransform
   {
 
-    enum
+    enum state
     {
-      CONSUME_OUTBUF = 10,
+      CONSUME_OUTBUF = 100,
       SUPPLY_INBUF,
       TRANSFORM_STREAM_ERROR,
       TRANSFORM_STREAM_END

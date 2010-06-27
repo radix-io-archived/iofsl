@@ -13,11 +13,6 @@ namespace iofwdutil
     class ZLib : public GenericTransform
     {
       protected:
-	enum state
-	{
-	  READ_DATA = 100,
-	  PASS_SAME_INBUF
-	};
 	state    decompress_state;
 	bool     outbuf_partially_filled;
 	z_stream stream;

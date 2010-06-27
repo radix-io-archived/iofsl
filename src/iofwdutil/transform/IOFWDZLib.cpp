@@ -17,7 +17,7 @@ namespace iofwdutil
       stream.avail_in = 0;
       stream.next_in = Z_NULL;
 
-      decompress_state = READ_DATA;
+      decompress_state = SUPPLY_INBUF;
       outbuf_partially_filled = false;
 
       ret = inflateInit(&stream);
@@ -46,11 +46,11 @@ namespace iofwdutil
       int have = 0;
       int ret = 0;
 
-      if(READ_DATA == decompress_state)
+      if(SUPPLY_INBUF == decompress_state)
       {
 	stream.avail_in = inSize;
 	if(0 == stream.avail_in) {
-	  *outState = SUPPLY_INBUF;
+	  *outState = decompress_state = SUPPLY_INBUF;
 	  return;
 	}
 	stream.next_in = (Bytef*)inBuf;
@@ -70,7 +70,7 @@ namespace iofwdutil
 	case Z_DATA_ERROR:
 	case Z_MEM_ERROR:
 	  inflateEnd(&stream);
-	  *outState = TRANSFORM_STREAM_ERROR;
+	  *outState = decompress_state = TRANSFORM_STREAM_ERROR;
 	  return;
       }
 
@@ -79,26 +79,25 @@ namespace iofwdutil
       if(have == outSize)
       {
 	outbuf_partially_filled = false;
-	*outState = CONSUME_OUTBUF;
+	decompress_state = CONSUME_OUTBUF;
       } 
       else if(have == 0)
       {
 	outbuf_partially_filled = false;
-	*outState = SUPPLY_INBUF;
+	decompress_state = SUPPLY_INBUF;
       }
       else
       {
 	outbuf_partially_filled = true;
-	*outState = SUPPLY_INBUF;
+	decompress_state = SUPPLY_INBUF;
       }
 
-      if(0 == stream.avail_out)
-	decompress_state = PASS_SAME_INBUF;
-      else
-	decompress_state = READ_DATA;
-
       if(Z_STREAM_END == ret)
-	*outState = TRANSFORM_STREAM_END;
+      {
+	decompress_state = TRANSFORM_STREAM_END;
+      }
+
+      *outState = decompress_state;
 
     }
 
