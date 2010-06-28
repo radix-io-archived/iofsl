@@ -24,6 +24,7 @@
 static char *ion_name;
 static BMI_addr_t peer_addr;
 static bmi_context_id context;
+static char * compression_type_enabled;
 /* conditional compilation flags */
 /*#define ZFS_USE_XDR_SIZE_CACHE
 #define ZFS_BMI_FASTMEMALLOC*/
@@ -3204,6 +3205,10 @@ int zoidfs_write(const zoidfs_handle_t *handle, size_t mem_count,
     size_t size = 0, max_buf = 0;
     size_t pipeline_length = 0, non_pipeline_len = 0 ;
     char * buffer;
+    int x,y;
+    char * hash_value = malloc(256);
+    char * hash_string = malloc(256 + strlen(hash_type) + 1);
+
     /* init the zoidfs xdr data */
     ZOIDFS_SEND_MSG_INIT(send_msg, ZOIDFS_PROTO_WRITE);
     ZOIDFS_SEND_MSG_DATA_INIT(send_msg_data);
@@ -3218,9 +3223,9 @@ int zoidfs_write(const zoidfs_handle_t *handle, size_t mem_count,
     /* else: check to see if the user has specified a compression/crc or not */
     else
     {
-        compression_type = zoidfs_hint_get(&op_hint, "compression");
-        hash_type = zoidfs_hint_get(&op_hint, "crc");
-        header_stuffing = zoidfs_hint_get(&op_hint, "header_stuffing");
+        compression_type_enabled = compression_type = zoidfs_hint_get(&op_hint, "ZOIDFS_TRANSFORM");
+        hash_type = zoidfs_hint_get(&op_hint, "ZOIDFS_CRC");
+        header_stuffing = zoidfs_hint_get(&op_hint, "ZOIDFS_HEADER_STUFFING");
         if (!hash_type)
         {
             hash_type = strdup("sha1"); 
@@ -3230,13 +3235,10 @@ int zoidfs_write(const zoidfs_handle_t *handle, size_t mem_count,
     /* Hint for compressed length (this must be added here because we must 
         have this hint included in the calculation of the header size before we
         send it) */
-    zoidfs_hint_add( &op_hint , strdup("compressed-length"), strdup("0000000000000"),
+    zoidfs_hint_add( &op_hint , strdup("ZOIDFS_TRANSFORM_LENGTH"), strdup("0000000000000"),
                      13, ZOIDFS_HINTS_ZC);
 
     /* Calculate CRC */
-    int x,y;
-    char * hash_value = malloc(256);
-    char * hash_string = malloc(256 + strlen(hash_type) + 1);
     HashHandle crc_hash = chash_lookup(hash_type);
     for (x = 0; x < mem_count; x++)
     {
@@ -3244,13 +3246,12 @@ int zoidfs_write(const zoidfs_handle_t *handle, size_t mem_count,
     }    
     ret = chash_get(crc_hash,hash_value, 256);
     sprintf(hash_string,"%s:%s", hash_type,hash_value);
-    zoidfs_hint_add( &op_hint , strdup("crc"), strdup(hash_string),
+    zoidfs_hint_add( &op_hint , strdup("ZOIDFS_CRC"), strdup(hash_string),
                      strlen(hash_string), ZOIDFS_HINTS_ZC);
+
     free(hash_value);
     free(hash_string);
     free(hash_type);
-
-
 
     /* init the transfer array wrappers */ 
     mem_sizes_transfer.data = (void *)mem_sizes;
@@ -3392,10 +3393,10 @@ int zoidfs_write(const zoidfs_handle_t *handle, size_t mem_count,
                 }
             } while(ret != ZOIDFS_COMPRESSION_DONE);
             buffer -= total_len;
-            char * compress_len_string[100]; 
+            char compress_len_string[100]; 
             size_t non_pipeline_len = total_len;        
             sprintf(compress_len_string,"%d",total_len);
-            zoidfs_hint_add( &op_hint , strdup("compressed-length"), strdup(compress_len_string),
+            zoidfs_hint_add( &op_hint , strdup("ZOIDFS_TRANSFORM_LENGTH"), strdup(compress_len_string),
                              strlen(compress_len_string), ZOIDFS_HINTS_ZC);
         }
     }
@@ -3666,8 +3667,10 @@ static int zoidfs_write_pipeline(BMI_addr_t peer_addr, size_t pipeline_size,
                                  size_t list_count, const void ** buf_list,
                                  const bmi_size_t bmi_size_list[], bmi_msg_tag_t tag,
                                  bmi_context_id context, bmi_size_t total_size) {
-    #ifdef ZOIDFS_COMPRESSION
-    int ret, close = ZOIDFS_CONT;
+    int ret;    
+    if (compression_type_enabled != NULL)
+    {
+    int close = ZOIDFS_CONT;
     /* stores the compression struct */
     zoidfs_write_compress zlib_struct;
     size_t size = bmi_size_list[0];
@@ -3717,7 +3720,8 @@ static int zoidfs_write_pipeline(BMI_addr_t peer_addr, size_t pipeline_size,
         ret = ZFS_OK;
     else 
         ret = -1;
-    #else
+    } else {
+
     int np = 0;
     int ret = ZFS_OK;
     bmi_size_t i;
@@ -3822,7 +3826,7 @@ static int zoidfs_write_pipeline(BMI_addr_t peer_addr, size_t pipeline_size,
         }
         np++;
     }
-    #endif
+    }
     return ret;
 }
 
