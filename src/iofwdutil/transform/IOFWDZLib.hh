@@ -2,7 +2,7 @@
 #define IOFWDUTIL_ZLIB_HH
 
 #include "iofwdutil/transform/GenericTransform.hh"
-
+#include <cstdio>
 
 namespace iofwdutil
 {
