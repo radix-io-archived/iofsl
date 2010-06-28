@@ -18,8 +18,9 @@ namespace zoidfs
 #define ZOIDFS_HINT_DISABLED   (char*)"0"
 #define ZOIDFS_ENABLE_PIPELINE (char*)"ZOIDFS_ENABLE_PIPELINE"
 #define ZOIDFS_PIPELINE_SIZE   (char*)"ZOIDFS_PIPELINE_SIZE"
-#define ZOIDFS_ENABLE_COMPRESS (char*)"ZOIDFS_ENABLE_COMPRESS"
-#define ZOIDFS_COMPRESS_SIZE   (char*)"ZOIDFS_COMPRESS_SIZE"
+#define ZOIDFS_TRANSFORM       (char*)"ZOIDFS_TRANSFORM"
+#define ZOIDFS_COMPRESSED_SIZE (char*)"ZOIDFS_COMPRESSED_SIZE"
+#define ZOIDFS_TRANSFORM_ZLIB  (char*)"ZOIDFS_TRANSFORM_ZLIB"
 
 /* create and initialize the hint list */
 zoidfs_op_hint_t * zoidfs_hint_init(int size);

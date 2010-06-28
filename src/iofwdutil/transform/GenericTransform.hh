@@ -31,6 +31,7 @@ namespace iofwdutil
 	virtual void transform(const void *const inBuf, const size_t inSize,
 			       void *outBuf, const size_t outSize, size_t *outBytes,
 			       int *outState, const bool flushFlag) = 0;
+	virtual state getDecompressState() = 0;
 	typedef boost::mpl::list<> FACTORY_SIGNATURE;
     };
 

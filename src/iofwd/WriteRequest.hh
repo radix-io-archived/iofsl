@@ -16,20 +16,6 @@ class WriteRequest : public Request
 public:
   typedef struct ReqParam_
   {
-     iofwdutil::iofwdtransform::GenericTransform *GenTransform;
-     CBType UserCB;
-     char *compressed_mem;
-     size_t compressed_size;
-     char *transform_mem;
-     typedef struct _buf
-     {
-	char *buf;
-	int byte_count;
-     }buf;
-     buf *transform_buf;
-     int transform_consume_buf;
-     int transform_buf_count;
-
      zoidfs::zoidfs_handle_t * handle;
      size_t mem_count;
      char ** mem_starts;
@@ -45,7 +31,6 @@ public:
 
      /* decoded hint values */
      bool op_hint_pipeline_enabled;
-     bool op_hint_compress_enabled;
 
      size_t max_buffer_size;
 

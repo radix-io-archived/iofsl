@@ -34,6 +34,11 @@ namespace iofwdutil
     }
 
 
+    state ZLib::getDecompressState()
+    {
+      return decompress_state;
+    }
+
     void ZLib::transform(const void *const inBuf,
 			 const size_t inSize,
 			 void *outBuf,

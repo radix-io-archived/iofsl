@@ -19,6 +19,22 @@ class IOFWDWriteRequest
      public WriteRequest,
      public iofwdutil::InjectPool<IOFWDWriteRequest>
 {
+  protected:
+     iofwdutil::iofwdtransform::GenericTransform *GenTransform;
+     CBType UserCB;
+     char   *compressed_mem;
+     size_t compressed_size;
+     char   *transform_mem;
+     typedef struct _buf
+     {
+	char *buf;
+	int byte_count;
+     }buf;
+     buf *transform_buf;
+     int transform_consume_buf;
+     int transform_buf_count;
+     bool op_hint_compress_enabled;
+
 public:
    IOFWDWriteRequest (int opid, const BMI_unexpected_info & info,
          IOFWDResources & res)
