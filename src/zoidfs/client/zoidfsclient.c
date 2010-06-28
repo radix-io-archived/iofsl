@@ -3181,6 +3181,7 @@ int zoidfs_write(const zoidfs_handle_t *handle, size_t mem_count,
                  size_t file_count, const zoidfs_file_ofs_t file_starts[],
                  const zoidfs_file_ofs_t file_sizes[],
                    zoidfs_op_hint_t * op_hint) {
+
     size_t i;
     size_t total_len;
     size_t pipeline_size = 0;
@@ -3207,8 +3208,6 @@ int zoidfs_write(const zoidfs_handle_t *handle, size_t mem_count,
     char * buffer;
     int x,y;
     char * hash_value = malloc(256);
-    char * hash_string = malloc(256 + strlen(hash_type) + 1);
-
     /* init the zoidfs xdr data */
     ZOIDFS_SEND_MSG_INIT(send_msg, ZOIDFS_PROTO_WRITE);
     ZOIDFS_SEND_MSG_DATA_INIT(send_msg_data);
@@ -3231,7 +3230,6 @@ int zoidfs_write(const zoidfs_handle_t *handle, size_t mem_count,
             hash_type = strdup("sha1"); 
         }      
     }
-
     /* Hint for compressed length (this must be added here because we must 
         have this hint included in the calculation of the header size before we
         send it) */
@@ -3245,6 +3243,7 @@ int zoidfs_write(const zoidfs_handle_t *handle, size_t mem_count,
         ret = chash_process (crc_hash, mem_starts[x], mem_sizes[x]);    
     }    
     ret = chash_get(crc_hash,hash_value, 256);
+    char * hash_string = malloc(256 + strlen(hash_type) + 1);
     sprintf(hash_string,"%s:%s", hash_type,hash_value);
     zoidfs_hint_add( &op_hint , strdup("ZOIDFS_CRC"), strdup(hash_string),
                      strlen(hash_string), ZOIDFS_HINTS_ZC);
@@ -3329,7 +3328,6 @@ int zoidfs_write(const zoidfs_handle_t *handle, size_t mem_count,
     {
         total_size = (bmi_size_t)mem_sizes[0];
     }
-
 
     /* Does the compression of the data in advance if its not pipelined */
     if (compression_type != NULL)
