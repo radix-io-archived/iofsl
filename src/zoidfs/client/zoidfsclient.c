@@ -26,6 +26,7 @@ static BMI_addr_t peer_addr;
 static bmi_context_id context;
 static char * compression_type;
 static char * crc_type;
+static char * header_stuffing;
 /* conditional compilation flags */
 /*#define ZFS_USE_XDR_SIZE_CACHE
 #define ZFS_BMI_FASTMEMALLOC*/
@@ -3198,10 +3199,8 @@ int zoidfs_write(const zoidfs_handle_t *handle, size_t mem_count,
     bmi_size_t * bmi_mem_sizes = NULL;
     char * op_hint_pipeline_size = NULL;
     size_t op_hint_pipeline_size_req = 0;
-    char * compression_type = NULL;
     char * hint;
     size_t input_buf_size, buf_size;
-    char * header_stuffing = NULL;
     int close;
     size_t size = 0, max_buf = 0;
     size_t pipeline_length = 0, non_pipeline_len = 0 ;
@@ -3219,10 +3218,7 @@ int zoidfs_write(const zoidfs_handle_t *handle, size_t mem_count,
         //op_hint = zoidfs_hint_init(2);
     }
     /* else: check to see if the user has specified a compression/crc or not */
-    else
-    {
-        header_stuffing = zoidfs_hint_get(&op_hint, "ZOIDFS_HEADER_STUFFING");
-    }
+
     /* Hint for compressed length (this must be added here because we must 
         have this hint included in the calculation of the header size before we
         send it) */
@@ -4180,6 +4176,14 @@ int zoidfs_init(void) {
     int ret = ZFS_OK;
     char * pipeline_size = NULL;
 
+    crc_type = getenv(ZOIDFS_CRC);
+    if (!crc_type)
+        crc_type = strdup("sha1");
+
+    compression_type = getenv(ZOIDFS_TRANSFORM);
+
+    header_stuffing =  getenv(ZOIDFS_HEADER_STUFFING);
+
 #ifdef ZFS_USE_XDR_SIZE_CACHE
     /* get the values for the size cache */
     zoidfs_xdr_size_processor_cache_init();
@@ -4244,13 +4248,6 @@ int zoidfs_init(void) {
            PIPELINE_SIZE = requested;
         }
     }
-
-    crc_type = getenv(ZOIDFS_CRC);
-    if (!crc_type)
-        crc_type = strdup("sha1");
-
-    compression_type = getenv(ZOIDFS_TRANSFORM);
-
 #ifdef HAVE_BMI_ZOID_TIMEOUT
     {
 	int timeout = 3600 * 1000;
