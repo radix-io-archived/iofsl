@@ -3648,6 +3648,51 @@ write_cleanup:
     return ret;
 }
 
+int zoidfs_write_transform (zoidfs_write_compress * zlib_struct,
+                                   size_t * pipeline_size, 
+                                   size_t list_count, 
+                                   void ** buf_list,
+                                   size_t bmi_size_list[],
+                                   void ** buffer, int * close)
+{
+    size_t size = bmi_size_list[0];
+    size_t buf_size = *pipeline_size;
+    int x = 0, y = 0, ret;
+    do 
+    {
+       /* Transform the buffer */
+       ret = zoidfs_transform (zlib_struct, &buf_list[x], &size, 
+                               buffer, &buf_size, *close);
+        /* send the data and reset the buffer positions */
+       if (buf_size == 0 || ret == ZOIDFS_COMPRESSION_DONE)
+       {
+            /* Move the output buffer pointer back */
+            (*buffer) -= (*pipeline_size - buf_size);
+            bmi_size_list[x] = size;
+            /* send the data */            
+            (*pipeline_size) = (*pipeline_size - buf_size);
+       }
+       if (ret == ZOIDFS_TRANSFORM_ERROR)
+         return ret;
+       /* if there is no more input in this buffer*/
+       if ( size == 0)
+       {   
+            /* if there are additional buffers move on */
+            if ( x < list_count - 1 )
+            {
+                bmi_size_list[x] = 0;
+                x++;
+                size = bmi_size_list[x];
+            }
+            /* Else close the stream and send the remaining data */
+            else
+            {
+                (*close) = ZOIDFS_CLOSE;
+            }
+        }
+    } while(ret != ZOIDFS_COMPRESSION_DONE && buf_size != 0);
+    return ret;
+}
 
 static int zoidfs_write_pipeline(BMI_addr_t peer_addr, size_t pipeline_size,
                                  size_t list_count, const void ** buf_list,
