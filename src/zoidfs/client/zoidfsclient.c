@@ -3242,34 +3242,34 @@ int zoidfs_write(const zoidfs_handle_t *handle, size_t mem_count,
 
     free(hash_value);
     free(hash_string);
-    
+
     if (compression_type != NULL)
     {
         if (pipeline_size == 0)
         {
+            zoidfs_transform_init (compression_type, &zlib_struct);
             /* Create temporary non-const varibles for transform */
             x = 0;
             /* size of the desired compressed output */
-            max_buf = 1600000;
+            max_buf = 16000;
             size_t  bmi_sizes[mem_count];
-            void ** buf_list_tmp = malloc(mem_count);
+            void ** buf_list_tmp = malloc(sizeof(char *) * mem_count);
             for (x = 0; x < mem_count; x++)
             {
                 bmi_sizes[x] = mem_sizes[x];
                 buf_list_tmp[x] = mem_starts[x];
                 transform_output_sizes[x] = max_buf;                
             }
-
             /* Hold the close flag for transform */
             close = ZOIDFS_CONT;
             /* return value for bmi_comm_send */
             int bmi_comm_ret = 0;
             x = 0;        
             /* initialize the transform */
-            zoidfs_transform_init (compression_type, &zlib_struct);    
             do 
             {
                 transform_buffer[x] = malloc(max_buf);
+                fprintf(stderr,"IM HERE4");             
                 /* Preform the transform */
                 ret = zoidfs_write_transform  (&zlib_struct, &transform_output_sizes[x], 
                                                mem_count, buf_list_tmp,
