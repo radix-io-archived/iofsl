@@ -24,7 +24,7 @@
 static char *ion_name;
 static BMI_addr_t peer_addr;
 static bmi_context_id context;
-static char * compression_type_enabled;
+static char * compression_type;
 static char * crc_type;
 /* conditional compilation flags */
 /*#define ZFS_USE_XDR_SIZE_CACHE
@@ -3221,7 +3221,6 @@ int zoidfs_write(const zoidfs_handle_t *handle, size_t mem_count,
     /* else: check to see if the user has specified a compression/crc or not */
     else
     {
-        compression_type_enabled = compression_type = zoidfs_hint_get(&op_hint, "ZOIDFS_TRANSFORM");
         header_stuffing = zoidfs_hint_get(&op_hint, "ZOIDFS_HEADER_STUFFING");
     }
     /* Hint for compressed length (this must be added here because we must 
@@ -3659,7 +3658,7 @@ static int zoidfs_write_pipeline(BMI_addr_t peer_addr, size_t pipeline_size,
                                  const bmi_size_t bmi_size_list[], bmi_msg_tag_t tag,
                                  bmi_context_id context, bmi_size_t total_size) {
     int ret;    
-    if (compression_type_enabled != NULL)
+    if (compression_type != NULL)
     {
     int close = ZOIDFS_CONT;
     /* stores the compression struct */
@@ -4249,6 +4248,8 @@ int zoidfs_init(void) {
     crc_type = getenv(ZOIDFS_CRC);
     if (!crc_type)
         crc_type = strdup("sha1");
+
+    compression_type = getenv(ZOIDFS_TRANSFORM);
 
 #ifdef HAVE_BMI_ZOID_TIMEOUT
     {
