@@ -31,10 +31,10 @@ int zoidfs_transform_init (char * type, zoidfs_write_compress * comp)
     (*comp).intern_buf = NULL;
     (*comp).buf_position = 0;
     (*comp).type = type;
-    if (strcmp("zlib",type) == 0)
+    if (strcmp("ZLIB:",type) == 0)
     { 
         #ifdef HAVE_ZLIB
-            compress_init (type,level,&(*comp).compression_struct);
+            compress_init ("zlib",level,&(*comp).compression_struct);
             (*comp).transform = &zlib_compress_hook;
         #else
             printf("Error! Zlib library is not availible!\n");

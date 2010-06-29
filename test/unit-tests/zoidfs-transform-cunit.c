@@ -2,6 +2,9 @@
 #include "CUnit/Basic.h"
 #include <stdio.h>
 #include <stdlib.h>
+#include "zoidfs/zoidfs.h"
+#include "zoidfs/zoidfs-proto.h"
+#include "iofwd_config.h"
 
 static void ** test_data;
 
@@ -63,7 +66,7 @@ void decompress_and_compare (void * output, size_t output_total, size_t output_s
     #endif
 }
 
-int zoidfs_write_transform (zoidfs_write_compress * zlib_struct,
+int zoidfs_write_transformss (zoidfs_write_compress * zlib_struct,
                                    size_t * pipeline_size, 
                                    size_t list_count, 
                                    void ** buf_list,
@@ -110,71 +113,18 @@ int zoidfs_write_transform (zoidfs_write_compress * zlib_struct,
 }
 void test_zoidfs_client_send (void)
 {
-    int x = 0;
-    void ** mem_starts = test_data;
-    size_t mem_count = num_test_data;
-    size_t mem_sizes[num_test_data];
-    size_t total_len = 0;  
-    int pipeline_size = 0;
-    size_t max_buf;
-    int ret;
-    int close;  
-    for (x = 0; x < num_test_data; x++)
-    {
-        mem_sizes[x] = x * data_size;
-        total_len += x * data_size;
-    }
-    size_t size = mem_sizes[0];
-    size_t  transform_count = 0;
-    void ** transform_buffer = malloc(mem_count);
-    size_t  transform_output_sizes[mem_count];
-    char * compression_type = "zlib";    
-    zoidfs_write_compress zlib_struct;
-    if (compression_type != NULL)
-    {
-        if (pipeline_size == 0)
-        {
-            zoidfs_transform_init (compression_type, &zlib_struct);
-            /* Create temporary non-const varibles for transform */
-            x = 0;
-            /* size of the desired compressed output */
-            max_buf = 16000;
-            size_t  bmi_sizes[mem_count];
-            void ** buf_list_tmp = malloc(sizeof(char *) * mem_count);
-            for (x = 0; x < mem_count; x++)
-            {
-                bmi_sizes[x] = mem_sizes[x];
-                buf_list_tmp[x] = mem_starts[x];
-                transform_output_sizes[x] = max_buf;                
-            }
-            /* Hold the close flag for transform */
-            close = ZOIDFS_CONT;
-            /* return value for bmi_comm_send */
-            int bmi_comm_ret = 0;
-            x = 0;        
-            /* initialize the transform */
-            do 
-            {
-                transform_buffer[x] = malloc(max_buf);
-                fprintf(stderr,"IM HERE4");             
-                /* Preform the transform */
-                ret = zoidfs_write_transform  (&zlib_struct, &transform_output_sizes[x], 
-                                               mem_count, buf_list_tmp,
-                                               bmi_sizes, &transform_buffer[x], &close);              
-                total_len += transform_output_sizes[x];                
-                /* if there is an issue return */
-                if (ret == ZOIDFS_TRANSFORM_ERROR)
-                    break;
-                x++;                
-            /* run until all data has been sent */
-            } while (ret != ZOIDFS_COMPRESSION_DONE);        
-            transform_count = x;
-        }
-    }
-    FILE * f = fopen("/tmp/testbin.bin","w");
-    for (x = 0; x < transform_count; x++)
-        fwrite(transform_buffer[x],1,transform_output_sizes[x],f);
-    fclose(f);
+    
+    zoidfs_handle_t handle; 
+    int created; 
+    zoidfs_sattr_t attr; 
+    zoidfs_init();
+
+    zoidfs_create (0, 0, "/tmp/testfile.bin", &attr, &handle, &created, ZOIDFS_NO_OP_HINT);
+
+    //FILE * f = fopen("/tmp/testbin.bin","w");
+    //for (x = 0; x < transform_count; x++)
+    //    fwrite(transform_buffer[x],1,transform_output_sizes[x],f);
+    //fclose(f);
 }   
 void test_transform_zlib (void)
 {

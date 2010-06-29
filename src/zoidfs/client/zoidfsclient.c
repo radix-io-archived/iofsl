@@ -3237,23 +3237,30 @@ int zoidfs_write(const zoidfs_handle_t *handle, size_t mem_count,
         ret = chash_process (crc_hash, mem_starts[x], mem_sizes[x]);    
     }    
     ret = chash_get(crc_hash,hash_value, 256);
+    
     char * hash_string = malloc(ret + strlen(crc_type) + 1);
     snprintf(hash_string,ret + strlen(crc_type) + 1, "%s:%s", crc_type,hash_value);
     zoidfs_hint_add( &op_hint , strdup("ZOIDFS_CRC"), strdup(hash_string),
-                     strlen(crc_type) + ret, ZOIDFS_HINTS_ZC);
+                     strlen(crc_type) + ret +1, ZOIDFS_HINTS_ZC);
 
     free(hash_value);
     free(hash_string);
 
     if (compression_type != NULL)
     {
+        fprintf(stderr,"COMPRESSION!!!!\n");
         if (pipeline_size == 0)
         {
+            fprintf(stderr,"Non-pipeline!!!!\n");
             zoidfs_transform_init (compression_type, &zlib_struct);
             /* Create temporary non-const varibles for transform */
             x = 0;
+            total_len = 0;
+            max_buf = 0;
             /* size of the desired compressed output */
-            max_buf = PIPELINE_SIZE;
+            //for (x = 0; x < mem_count; x++)
+            //    max_buf += mem_sizes[x];
+            max_buf = 16000000;
             size_t  bmi_sizes[mem_count];
             void ** buf_list_tmp = malloc(sizeof(char *) * mem_count);
             for (x = 0; x < mem_count; x++)
@@ -3285,8 +3292,10 @@ int zoidfs_write(const zoidfs_handle_t *handle, size_t mem_count,
             transform_count = x;
             char compress_len_string[100]; 
             sprintf(compress_len_string,"%d",total_len);
-            zoidfs_hint_add( &op_hint , strdup("ZOIDFS_TRANSFORM_LENGTH"), strdup(compress_len_string),
+            zoidfs_hint_add( &op_hint , strdup(ZOIDFS_COMPRESSED_SIZE), strdup(compress_len_string),
                              strlen(compress_len_string), ZOIDFS_HINTS_ZC);
+            zoidfs_hint_add( &op_hint , strdup("ZOIDFS_TRANSFORM"), strdup(compression_type),
+                             strlen(compression_type), ZOIDFS_HINTS_ZC);
         }
     }
     /* init the transfer array wrappers */ 
@@ -3516,15 +3525,13 @@ int zoidfs_write(const zoidfs_handle_t *handle, size_t mem_count,
         /* No Pipelining */
         if (compression_type != NULL)
         {
-            for(x=0; x < transform_count; x++)
-            {
-                send_msg_data.sendbuflen = total_len;
-                ret = bmi_comm_send(peer_addr, transform_buffer[x], 
-                                    transform_output_sizes[x],
-                                    send_msg_data.tag, context);
-            
+
+            fprintf (stderr, "Total len: %i %i\n", total_len,transform_count);
+            ret = bmi_comm_send_list(peer_addr, transform_count, transform_buffer, 
+                                     transform_output_sizes,
+                                     send_msg_data.tag, context, total_len);
+            for(x = 0; x < transform_count; x++)
                 free(transform_buffer[x]);
-            }
             free(transform_buffer);
         }
         else

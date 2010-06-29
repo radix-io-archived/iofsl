@@ -114,12 +114,13 @@ IOFWDWriteRequest::ReqParam & IOFWDWriteRequest::decodeParam ()
 	{
 	    // The rest of the tokens do not matter --> once you get the compression type
 	    // check for the compressed size and that's it
-	    if(strcasecmp(token, ZOIDFS_TRANSFORM_ZLIB) == 0)
+	    if(strcmp(token, "ZLIB") == 0)
 	    {
 		op_hint_compress_enabled = true;
 		char *compressed_size_str =
 		  zoidfs::util::ZoidFSHintGet(&(param_.op_hint), ZOIDFS_COMPRESSED_SIZE);
 		compressed_size = (size_t)atol(compressed_size_str);
+        printf("Compression size: %i\n",compressed_size);
 	    }
 	}
         else
@@ -333,12 +334,13 @@ void IOFWDWriteRequest::recvComplete(int recvStatus)
    int outState = 0;
    size_t outBytes = 0;
 
+   fprintf(stderr,"me\n");
+
    if(false == op_hint_compress_enabled)
    {
       // You should never have called this call back at all
       throw "IOFWDWriteRequest::recvComplete() failed (Wrong Callback)!";
    }
-
    for(i = 0; i < param_.mem_count; i++)
    {
       GenTransform->transform(compressed_mem[0],
