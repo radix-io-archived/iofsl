@@ -42,7 +42,7 @@ static int chash_sha1_get (HashHandle h, void * dest,
 {
    ALWAYS_ASSERT(destsize >= 20);
    memcpy (dest, &((SHA1Context*) h->data)->Message_Digest[0], 20);
-   return 0;
+   return 20;
 }
 
 struct HashFunctionImpl chash_sha1 = {

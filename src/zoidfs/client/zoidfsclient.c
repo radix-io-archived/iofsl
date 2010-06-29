@@ -3218,15 +3218,17 @@ int zoidfs_write(const zoidfs_handle_t *handle, size_t mem_count,
     /* If op_hint was not specified, create a new hint structure */
     if (zoidfs_hint_num_elements(&op_hint) == 0)
     {
-        //op_hint = zoidfs_hint_init(2);
+        op_hint = zoidfs_hint_init(1);
     }
+    else
+        printf("Hello im here\n");
     /* else: check to see if the user has specified a compression/crc or not */
 
     /* Hint for compressed length (this must be added here because we must 
         have this hint included in the calculation of the header size before we
         send it) */
-    zoidfs_hint_add( &op_hint , strdup("ZOIDFS_TRANSFORM_LENGTH"), strdup("0000000000000"),
-                     13, ZOIDFS_HINTS_ZC);
+    //zoidfs_hint_add( &op_hint , strdup("ZOIDFS_TRANSFORM_LENGTH"), strdup("0000000000000"),
+    //                 13, ZOIDFS_HINTS_ZC);
 
     /* Calculate CRC */
     HashHandle crc_hash = chash_lookup(crc_type);
@@ -3235,10 +3237,10 @@ int zoidfs_write(const zoidfs_handle_t *handle, size_t mem_count,
         ret = chash_process (crc_hash, mem_starts[x], mem_sizes[x]);    
     }    
     ret = chash_get(crc_hash,hash_value, 256);
-    char * hash_string = malloc(256 + strlen(crc_type) + 1);
-    sprintf(hash_string,"%s:%s", crc_type,hash_value);
+    char * hash_string = malloc(ret + strlen(crc_type) + 1);
+    snprintf(hash_string,ret + strlen(crc_type) + 1, "%s:%s", crc_type,hash_value);
     zoidfs_hint_add( &op_hint , strdup("ZOIDFS_CRC"), strdup(hash_string),
-                     strlen(hash_string), ZOIDFS_HINTS_ZC);
+                     strlen(crc_type) + ret, ZOIDFS_HINTS_ZC);
 
     free(hash_value);
     free(hash_string);
