@@ -3248,10 +3248,8 @@ int zoidfs_write(const zoidfs_handle_t *handle, size_t mem_count,
 
     if (compression_type != NULL)
     {
-        fprintf(stderr,"COMPRESSION!!!!\n");
         if (pipeline_size == 0)
         {
-            fprintf(stderr,"Non-pipeline!!!!\n");
             zoidfs_transform_init (compression_type, &zlib_struct);
             /* Create temporary non-const varibles for transform */
             x = 0;
