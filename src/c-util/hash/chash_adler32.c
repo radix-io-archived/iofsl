@@ -42,7 +42,7 @@ static int chash_adler32_get (HashHandle h, void * dest, size_t destsize)
    return sizeof(uint32_t);
 }
 
-struct HashFunctionImpl chash_none = {
+struct HashFunctionImpl chash_adler32 = {
    .reset = &chash_adler32_reset,
    .getsize= &chash_adler32_getsize,
    .init = &chash_adler32_init,
