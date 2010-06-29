@@ -3251,13 +3251,13 @@ int zoidfs_write(const zoidfs_handle_t *handle, size_t mem_count,
             /* Create temporary non-const varibles for transform */
             x = 0;
             /* size of the desired compressed output */
-            max_buf = 16000;
+            max_buf = PIPELINE_SIZE;
             size_t  bmi_sizes[mem_count];
             void ** buf_list_tmp = malloc(sizeof(char *) * mem_count);
             for (x = 0; x < mem_count; x++)
             {
-                bmi_sizes[x] = mem_sizes[x];
-                buf_list_tmp[x] = mem_starts[x];
+                bmi_sizes[x] = (size_t) mem_sizes[x];
+                buf_list_tmp[x] =(void *)  mem_starts[x];
                 transform_output_sizes[x] = max_buf;                
             }
             /* Hold the close flag for transform */
@@ -3269,7 +3269,6 @@ int zoidfs_write(const zoidfs_handle_t *handle, size_t mem_count,
             do 
             {
                 transform_buffer[x] = malloc(max_buf);
-                fprintf(stderr,"IM HERE4");             
                 /* Preform the transform */
                 ret = zoidfs_write_transform  (&zlib_struct, &transform_output_sizes[x], 
                                                mem_count, buf_list_tmp,
@@ -3693,7 +3692,7 @@ static int zoidfs_write_pipeline(BMI_addr_t peer_addr, size_t pipeline_size,
         for (x = 0; x < list_count; x++)
         {
             bmi_sizes[x] = bmi_size_list[x];
-            buf_list_tmp[x] = buf_list[x];
+            buf_list_tmp[x] = (void *)buf_list[x];
         }
 
         /* Hold the close flag for transform */
