@@ -57,6 +57,7 @@ public:
   // for pipeline mode
   virtual void recvPipelineBufferCB(iofwdevent::CBType cb, RetrievedBuffer * rb, size_t size) = 0;
   virtual void recvPipelineComplete(int recvStatus) = 0;
+  virtual void dummyPipelineComplete(int recvStatus) = 0;
 
   //virtual iofwdutil::bmi::BMIAddr getRequestAddr() = 0;
 

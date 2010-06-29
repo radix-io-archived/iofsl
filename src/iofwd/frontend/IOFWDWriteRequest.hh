@@ -20,20 +20,33 @@ class IOFWDWriteRequest
      public iofwdutil::InjectPool<IOFWDWriteRequest>
 {
   protected:
+     // shared state
      iofwdutil::iofwdtransform::GenericTransform *GenTransform;
-     CBType UserCB;
-     char   *compressed_mem;
+     CBType *UserCB;
+     bool op_hint_compress_enabled;
+     bool op_hint_headstuff_enabled;
+
+     // non pipelined state
      size_t compressed_size;
-     char   *transform_mem;
+
+     // pipelined state
+     int user_callbacks;
+     char **compressed_mem;
+     int compressed_mem_count;
+     int compressed_mem_consume;
+
      typedef struct _buf
      {
 	char *buf;
 	int byte_count;
      }buf;
-     buf *transform_buf;
-     int transform_consume_buf;
-     int transform_buf_count;
-     bool op_hint_compress_enabled;
+     buf *transform_mem;
+     int transform_mem_count;
+
+     pthread_mutex_t imp;
+     pthread_cond_t icv;
+     pthread_mutex_t omp;
+     pthread_cond_t ocv;
 
 public:
    IOFWDWriteRequest (int opid, const BMI_unexpected_info & info,
@@ -55,6 +68,7 @@ public:
    // for pipeline mode
    virtual void recvPipelineBufferCB(iofwdevent::CBType cb, RetrievedBuffer * rb, size_t size);
    virtual void recvPipelineComplete(int recvStatus);
+   virtual void dummyPipelineComplete(int recvStatus);
 
    virtual void initRequestParams(ReqParam & p, void * bufferMem);
 

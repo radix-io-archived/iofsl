@@ -103,21 +103,22 @@ IOFWDWriteRequest::ReqParam & IOFWDWriteRequest::decodeParam ()
    }
 
    // Memory param_.op_hint is freed in the class destructor
-   char *enable_compress = zoidfs::util::ZoidFSHintGet(&(param_.op_hint), ZOIDFS_TRANSFORM);
-   if(NULL != enable_compress)
+   char *enable_transform = zoidfs::util::ZoidFSHintGet(&(param_.op_hint), ZOIDFS_TRANSFORM);
+   if(NULL != enable_transform)
    {
         char *token = NULL, *saveptr = NULL;
 
-	token = strtok_r(enable_compress, ":", &saveptr);
+	token = strtok_r(enable_transform, ":", &saveptr);
 
 	if(NULL != token)
 	{
 	    // The rest of the tokens do not matter --> once you get the compression type
 	    // check for the compressed size and that's it
-	    if(strcmp(token, ZOIDFS_TRANSFORM_ZLIB) == 0)
+	    if(strcasecmp(token, ZOIDFS_TRANSFORM_ZLIB) == 0)
 	    {
 		op_hint_compress_enabled = true;
-		char *compressed_size_str = zoidfs::util::ZoidFSHintGet(&(param_.op_hint), ZOIDFS_COMPRESSED_SIZE);
+		char *compressed_size_str =
+		  zoidfs::util::ZoidFSHintGet(&(param_.op_hint), ZOIDFS_COMPRESSED_SIZE);
 		compressed_size = (size_t)atol(compressed_size_str);
 	    }
 	}
@@ -130,6 +131,24 @@ IOFWDWriteRequest::ReqParam & IOFWDWriteRequest::decodeParam ()
    else
    {
         op_hint_compress_enabled = false;
+   }
+
+   char * enable_header_stuffing = zoidfs::util::ZoidFSHintGet(&(param_.op_hint), ZOIDFS_ENABLE_HEADER_STUFFING);
+   if(enable_header_stuffing)
+   {
+        if(strcmp(enable_pipeline, ZOIDFS_HINT_ENABLED) == 0)
+        {
+            op_hint_headstuff_enabled = true;
+        }
+        else
+        {
+            op_hint_headstuff_enabled = false;
+        }
+   }
+   /* keep pipelining enabled by default */
+   else
+   {
+        op_hint_headstuff_enabled = true;
    }
 
    // init the rest of the write request params to 0
@@ -150,14 +169,6 @@ void IOFWDWriteRequest::initRequestParams(ReqParam & p, void * bufferMem)
     // allocate buffer for normal mode
     if (param_.pipeline_size == 0)
     {
-	if(true == op_hint_compress_enabled)
-	{
-	    GenTransform = new iofwdutil::iofwdtransform::ZLib;
-	    compressed_mem = new char[compressed_size];
-	    if(NULL == compressed_mem)
-	      throw "IOFWDWriteRequest::initRequestParams() failed!";
-	}
-
         char * mem = NULL;
         for(size_t i = 0 ; i < param_.mem_count ; i++)
         {
@@ -218,26 +229,85 @@ void IOFWDWriteRequest::initRequestParams(ReqParam & p, void * bufferMem)
         }
 
         p = param_;
+
+	if(true == op_hint_compress_enabled)
+	{
+	    GenTransform = new iofwdutil::iofwdtransform::ZLib;
+
+	    compressed_mem = new char* [1];
+	    if(NULL == compressed_mem)
+	      throw "IOFWDWriteRequest::initRequestParams() new char* [] failed!";
+
+	    compressed_mem[0] = new char [param_.mem_total_size];
+	    if(NULL == compressed_mem[0])
+	      throw "IOFWDWriteRequest::initRequestParams() new char [] failed!";
+
+	    compressed_mem_count = 0;
+
+	    UserCB = new CBType[1];
+	    if(NULL == UserCB)
+	      throw "IOFWDWriteRequest::initRequestParams() new CBType[] failed!";
+
+	    UserCB[0] = NULL;
+
+	    user_callbacks = 0;
+
+	    transform_mem = NULL;
+	    transform_mem_count = 0;
+	}
+
     }
     else
     {
-	compressed_mem = new char[param_.pipeline_size];
-	if(NULL == compressed_mem)
-	  throw "IOFWDWriteRequest::initRequestParams() failed (new char [])!";
-
-	// 1024 is an exaggeration. It is assuming that one compressed buffer
-	// can decompress into 1024 pending decompressed buffers
-	// code will crash if the number of pending decompressed buffers >= 1024
-	transform_buf = new buf [1024];
-	if(NULL == transform_buf)
-	  throw "IOFWDWriteRequest::initRequestParams() failed (new param_.buf [])!";
-	for(int ii = 0; ii < 1024; ii++)
+	if(true == op_hint_compress_enabled)
 	{
-	  transform_buf[ii].buf = NULL;
-	  transform_buf[ii].byte_count = 0;
+	    compressed_mem = new char*[16];
+	    if(NULL == compressed_mem)
+	      throw "IOFWDWriteRequest::initRequestParams() failed (new char* [])!";
+
+	    for(int ii = 0; ii < 16; ii++)
+	    {
+	      compressed_mem[ii] = new char [param_.pipeline_size];
+	      if(NULL == compressed_mem[ii])
+		throw "IOFWDWriteRequest::initRequestParams() new char [] failed!";
+	    }
+
+	    compressed_mem_consume = 0;
+	    compressed_mem_count = 0;
+
+	    transform_mem = new buf [16];
+	    if(NULL == transform_mem)
+	      throw "IOFWDWriteRequest::initRequestParams() failed (new buf [])!";
+
+	    for(int ii = 0; ii < 16; ii++)
+	    {
+	      transform_mem[ii].buf = NULL;
+	      transform_mem[ii].byte_count = 0;
+	    }
+
+	    transform_mem_count = 0;
+
+	    UserCB = new CBType[16];
+	    if(NULL == UserCB)
+	      throw "IOFWDWriteRequest::initRequestParams() new CBType[] failed!";
+
+	    for(int ii = 0; ii < 16; ii++)
+	      UserCB[ii] = NULL;
+
+	    user_callbacks = 0;
+
+	    if(0 != pthread_mutex_init(&imp, NULL))
+	      throw "IOFWDWriteRequest::initRequestParams() pthread_mutex_init() failed!";
+
+	    if(0 != pthread_cond_init(&icv, NULL))
+	      throw "IOFWDWriteRequest::initRequestParams() pthread_cond_init() failed!";
+
+	    if(0 != pthread_mutex_init(&omp, NULL))
+	      throw "IOFWDWriteRequest::initRequestParams() pthread_mutex_init() failed!";
+
+	    if(0 != pthread_cond_init(&ocv, NULL))
+	      throw "IOFWDWriteRequest::initRequestParams() pthread_cond_init() failed!";
 	}
-	transform_consume_buf = 0;
-	transform_buf_count = 0;
     }
 }
 
@@ -271,7 +341,7 @@ void IOFWDWriteRequest::recvComplete(int recvStatus)
 
    for(i = 0; i < param_.mem_count; i++)
    {
-      GenTransform->transform(compressed_mem,
+      GenTransform->transform(compressed_mem[0],
 	compressed_size,
 	param_.mem_starts[i],
 	param_.mem_sizes[i],
@@ -288,7 +358,10 @@ void IOFWDWriteRequest::recvComplete(int recvStatus)
 	  // This will normally occur only when i = parma_.mem_count
 	  // at the end of the decompression
 	  // call the user callback stored previously
-	  UserCB(recvStatus);
+	  // there should be only one callback
+	  if(user_callbacks > 1)
+	    throw "IOFWDWriteRequest::recvComplete() Multiple user call backs in non pipelined case!";
+	  UserCB[0](recvStatus);
 	  break; // Control will never reach this place
       }
       else if(iofwdutil::iofwdtransform::SUPPLY_INBUF == outState)
@@ -321,13 +394,23 @@ void IOFWDWriteRequest::recvBuffers(const CBType & cb, RetrievedBuffer * rb)
     {
       CBType transformCB = boost::bind(&IOFWDWriteRequest::recvComplete, boost::ref(this), _1);
 
-      UserCB = cb;
+      // There should never be more than one call backs in the non-pipelined case
+      UserCB[user_callbacks++] = cb;
+
+      if(user_callbacks > 1)
+	throw "IOFWDWriteRequest::recvBuffers() Multiple user call backs in non pipelined case!";
+
 #if SIZEOF_SIZE_T == SIZEOF_INT64_T
-      r_.rbmi_.post_recv_list(transformCB, addr_, reinterpret_cast<void*const*>(compressed_mem), reinterpret_cast<const bmi_size_t *>(compressed_size), 1, param_.mem_total_size, &(param_.mem_expected_size), dynamic_cast<iofwdutil::mm::BMIMemoryAlloc *>(rb->buffer_)->bmiType(), tag_, 0);
+      r_.rbmi_.post_recv_list(transformCB, addr_, reinterpret_cast<void*const*>(compressed_mem), reinterpret_cast<const bmi_size_t*>(&compressed_size), 1, param_.mem_total_size, &(param_.mem_expected_size), dynamic_cast<iofwdutil::mm::BMIMemoryAlloc *>(rb->buffer_)->bmiType(), tag_, 0);
 #else
-      r_.rbmi_.post_recv_list(transformCB, addr_, reinterpret_cast<void*const*>(compressed_mem), reinterpret_cast<const bmi_size_t*>(compressed_size), 1, param_.mem_total_size, &(param_.mem_expected_size), dynamic_cast<iofwdutil::mm::BMIMemoryAlloc *>(rb->buffer_)->bmiType(), tag_, 0);
+      r_.rbmi_.post_recv_list(transformCB, addr_, reinterpret_cast<void*const*>(compressed_mem), reinterpret_cast<const bmi_size_t*>(&compressed_size), 1, param_.mem_total_size, &(param_.mem_expected_size), dynamic_cast<iofwdutil::mm::BMIMemoryAlloc *>(rb->buffer_)->bmiType(), tag_, 0);
 #endif
     }
+}
+
+void IOFWDWriteRequest::dummyPipelineComplete(int recvStatus)
+{
+   compressed_mem_count++;
 }
 
 void IOFWDWriteRequest::recvPipelineComplete(int recvStatus)
@@ -337,81 +420,83 @@ void IOFWDWriteRequest::recvPipelineComplete(int recvStatus)
    size_t outBytes = 0;
 
    if(false == op_hint_compress_enabled)
-   {
-      // You should never have called this call back at all
       throw "IOFWDWriteRequest::recvComplete() failed (Wrong Callback)!";
-   }
 
-decompress:
-   // This 'if' is present to ensure that you do not try to decompress data when there is no input data
-   // this happens when all the input buffers are already consumed and all the user is doing is only 
-   if(iofwdutil::iofwdtransform::TRANSFORM_STREAM_END != GenTransform->getDecompressState())
+   compressed_mem_count++;
+
+   while(iofwdutil::iofwdtransform::TRANSFORM_STREAM_END != GenTransform->getDecompressState())
    {
-      if(0 == transform_buf[transform_buf_count].byte_count)
+decompress:
+      if(0 == transform_mem[transform_mem_count].byte_count)
       {
 	  // output buffer is new
-	  transform_buf[transform_buf_count].buf = new char [param_.pipeline_size];
-	  if(NULL == transform_buf[transform_buf_count].buf)
-	      throw "IOFWDWriteRequest::initRequestParams() failed (new param_.buf [])!";
-	  GenTransform->transform(compressed_mem,
-	      param_.pipeline_size,
-	      transform_buf[transform_buf_count].buf,
+	  pthread_mutex_lock(&omp);
+	  if(transform_mem_count == user_callbacks)
+	    pthread_cond_wait(&ocv, &omp);
+	  pthread_mutex_unlock(&omp);
+
+	  GenTransform->transform(compressed_mem[compressed_mem_consume],
+	      param_.mem_expected_size,
+	      transform_mem[transform_mem_count].buf,
 	      param_.pipeline_size,
 	      &outBytes,
 	      &outState,
 	      false);
       }
-      if(transform_buf[transform_buf_count].byte_count < param_.pipeline_size)
+      else if(transform_mem[transform_mem_count].byte_count < param_.pipeline_size)
       {
 	  // output buffer is partially filled
-	  GenTransform->transform(compressed_mem,
-	      param_.pipeline_size,
-	      transform_buf[transform_buf_count].buf,
-	      param_.pipeline_size-transform_buf[transform_buf_count].byte_count,
+	  GenTransform->transform(compressed_mem[compressed_mem_consume],
+	      param_.mem_expected_size,
+	      transform_mem[transform_mem_count].buf,
+	      param_.pipeline_size-transform_mem[transform_mem_count].byte_count,
 	      &outBytes,
 	      &outState,
 	      false);
       }
 
-      transform_buf[transform_buf_count].byte_count += outBytes;
-      if(transform_buf[transform_buf_count].byte_count == param_.pipeline_size)
-	  transform_buf_count++;
-   }
-   else
-   {
-      outState = iofwdutil::iofwdtransform::TRANSFORM_STREAM_END;
+      transform_mem[transform_mem_count].byte_count += outBytes;
+      if(transform_mem[transform_mem_count].byte_count == param_.pipeline_size)
+	  transform_mem_count++;
+
+      if(iofwdutil::iofwdtransform::CONSUME_OUTBUF == outState)
+      {
+	  goto decompress;
+      }
+      else if(iofwdutil::iofwdtransform::TRANSFORM_STREAM_END == outState)
+      {
+	break;
+      }
+      else if(iofwdutil::iofwdtransform::SUPPLY_INBUF == outState)
+      {
+	// Supply new input data
+	// In the last packet it may or may not be param_.pipeline_size
+	// find out how the code knows about this size
+	// assume for now that even if the last packet contains
+	// less than param_.pipeline_size bytes, the sender fills it with zeros
+	// In order to avoid possible recursion, use a dummy call back rather than yourself
+	CBType dummyCB = boost::bind(&IOFWDWriteRequest::dummyPipelineComplete, boost::ref(this), _1);
+
+	r_.rbmi_.post_recv(dummyCB, addr_, reinterpret_cast<iofwdutil::mm::BMIMemoryAlloc *>(compressed_mem[compressed_mem_count++]), param_.pipeline_size, &(param_.mem_expected_size), BMI_EXT_ALLOC, tag_, 0);
+      }
+      else if (iofwdutil::iofwdtransform::TRANSFORM_STREAM_ERROR == outState)
+      {
+	  // There's no easy way out ;-)
+	  throw "IOFWDWriteRequest::recvComplete() failed (TRANSFORM_STREAM_ERROR in Pipelined Mode)!";
+      }
    }
 
-   if(iofwdutil::iofwdtransform::CONSUME_OUTBUF == outState)
+   if(iofwdutil::iofwdtransform::TRANSFORM_STREAM_END == GenTransform->getDecompressState())
    {
-      // decompress until the input buffer is completely consumed
-      goto decompress;
-   }
-   else if(iofwdutil::iofwdtransform::TRANSFORM_STREAM_END == outState)
-   {
-      if(transform_consume_buf == transform_buf_count)
-	 return;
-      memcpy(transform_mem,
-	  transform_buf[transform_consume_buf].buf,
-	  transform_buf[transform_consume_buf].byte_count);
-      delete []transform_buf[transform_consume_buf].buf;
-      transform_consume_buf++;
-      UserCB(recvStatus);
-   }
-   else if(iofwdutil::iofwdtransform::SUPPLY_INBUF == outState)
-   {
-      if(transform_consume_buf == transform_buf_count)
-	 return;
-      memcpy(transform_mem,
-	  transform_buf[transform_consume_buf].buf,
-	  transform_buf[transform_consume_buf].byte_count);
-      delete []transform_buf[transform_consume_buf].buf;
-      transform_consume_buf++;
-      UserCB(recvStatus);
-   }
-   else if (iofwdutil::iofwdtransform::TRANSFORM_STREAM_ERROR == outState)
-   {
-      throw "IOFWDWriteRequest::recvComplete() failed (TRANSFORM_STREAM_ERROR in Pipelined Mode)!";
+      if(transform_mem_count != user_callbacks)
+      {
+	throw "IOFWDWriteRequest::recvPipelineComplete() transform_mem_count != user_callbacks";
+      }
+
+      // decompressed data has already been copied into
+      // the o/p buffers specified by the user
+      for(int ii = 0; ii < transform_mem_count; ii++)
+	UserCB[ii](recvStatus);
    }
 }
 
@@ -428,10 +513,14 @@ void IOFWDWriteRequest::recvPipelineBufferCB(iofwdevent::CBType cb, RetrievedBuf
    {
       CBType transformCB = boost::bind(&IOFWDWriteRequest::recvPipelineComplete, boost::ref(this), _1);
 
-      transform_mem = (char*)rb->buffer_->getMemory();
-      UserCB = cb;
+      transform_mem[user_callbacks].buf = (char*)rb->buffer_->getMemory();
+      transform_mem[user_callbacks].byte_count = 0;
+      UserCB[user_callbacks] = cb;
+      user_callbacks++;
 
-      r_.rbmi_.post_recv(transformCB, addr_, reinterpret_cast<iofwdutil::mm::BMIMemoryAlloc *>(compressed_mem), size, &(param_.mem_expected_size), dynamic_cast<iofwdutil::mm::BMIMemoryAlloc *>(rb->buffer_)->bmiType(), tag_, 0);
+      // call post_recv only for the first user call back
+      if(1 == user_callbacks)
+	  r_.rbmi_.post_recv(transformCB, addr_, reinterpret_cast<iofwdutil::mm::BMIMemoryAlloc *>(compressed_mem[0]), size, &(param_.mem_expected_size), BMI_EXT_ALLOC, tag_, 0);
    }
 }
 
@@ -443,50 +532,3 @@ void IOFWDWriteRequest::reply(const CBType & cb)
 //===========================================================================
    }
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#if 0
-   // This code is more efficient
-   // Since we know that param_.mem_sizes
-   // is a contiguous buffer in memory
-   // you don't loop => just decompress it in one go
-   if(false == param_.op_hint_compress_enabled)
-   {
-decompress_again:
-      param_.GenTransform->transform(param_.compressed_mem,
-	  param_.compressed_size,
-	  param_.mem_starts[0],
-	  param_.mem_total_size,
-	  &outBytes,
-	  &outState,
-	  true);
-
-      if(iofwdutil::iofwdtransform::TRANSFORM_STREAM_END == outState)
-      {
-	  param_.UserCB(recvStatus);
-	  goto exit_recvComplete;
-      }
-
-      if(iofwdutil::iofwdtransform::CONSUME_OUTBUF == outState)
-      {
-	  param_.UserCB(recvStatus);
-	  goto exit_recvComplete;
-      }
-      goto decompress_again;
-   }
-#endif
