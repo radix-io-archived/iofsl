@@ -14,7 +14,6 @@ namespace zoidfs
 #endif /* __cplusplus */
 
 /* predefined hints */
-
 #define ZOIDFS_HINT_ENABLED    (char*)"1"
 #define ZOIDFS_HINT_DISABLED   (char*)"0"
 #define ZOIDFS_ENABLE_PIPELINE (char*)"ZOIDFS_ENABLE_PIPELINE"
@@ -23,7 +22,6 @@ namespace zoidfs
 #define ZOIDFS_COMPRESSED_SIZE (char*)"ZOIDFS_COMPRESSED_SIZE"
 #define ZOIDFS_TRANSFORM_ZLIB  (char*)"ZOIDFS_TRANSFORM_ZLIB"
 #define ZOIDFS_CRC             (char*)"ZOIDFS_CRC"
-#define ZOIDFS_HEADER_STUFFING (char*)"ZOIDFS_HEADER_STUFFING"
 #define ZOIDFS_ENABLE_HEADER_STUFFING (char*)"ZOIDFS_ENABLE_HEADER_STUFFING"
 
 /* create and initialize the hint list */
