@@ -3204,6 +3204,9 @@ int zoidfs_write(const zoidfs_handle_t *handle, size_t mem_count,
     int close;
     size_t size = 0, max_buf = 0;
     size_t pipeline_length = 0, non_pipeline_len = 0 ;
+    size_t  transform_count = 0;
+    void ** transform_buffer = malloc(mem_count);
+    size_t  transform_output_sizes[mem_count];
     char * buffer;
     int x,y;
     char * hash_value = malloc(256);
@@ -3239,7 +3242,52 @@ int zoidfs_write(const zoidfs_handle_t *handle, size_t mem_count,
 
     free(hash_value);
     free(hash_string);
+    
+    if (compression_type != NULL)
+    {
+        if (pipeline_size == 0)
+        {
+            /* Create temporary non-const varibles for transform */
+            x = 0;
+            /* size of the desired compressed output */
+            max_buf = 1600000;
+            size_t  bmi_sizes[mem_count];
+            void ** buf_list_tmp = malloc(mem_count);
+            for (x = 0; x < mem_count; x++)
+            {
+                bmi_sizes[x] = mem_sizes[x];
+                buf_list_tmp[x] = mem_starts[x];
+                transform_output_sizes[x] = max_buf;                
+            }
 
+            /* Hold the close flag for transform */
+            close = ZOIDFS_CONT;
+            /* return value for bmi_comm_send */
+            int bmi_comm_ret = 0;
+            x = 0;        
+            /* initialize the transform */
+            zoidfs_transform_init (compression_type, &zlib_struct);    
+            do 
+            {
+                transform_buffer[x] = malloc(max_buf);
+                /* Preform the transform */
+                ret = zoidfs_write_transform  (&zlib_struct, &transform_output_sizes[x], 
+                                               mem_count, buf_list_tmp,
+                                               bmi_sizes, &transform_buffer[x], &close);              
+                total_len += transform_output_sizes[x];                
+                /* if there is an issue return */
+                if (ret == ZOIDFS_TRANSFORM_ERROR)
+                    break;
+                x++;                
+            /* run until all data has been sent */
+            } while (ret != ZOIDFS_COMPRESSION_DONE);        
+            transform_count = x;
+            char compress_len_string[100]; 
+            sprintf(compress_len_string,"%d",total_len);
+            zoidfs_hint_add( &op_hint , strdup("ZOIDFS_TRANSFORM_LENGTH"), strdup(compress_len_string),
+                             strlen(compress_len_string), ZOIDFS_HINTS_ZC);
+        }
+    }
     /* init the transfer array wrappers */ 
     mem_sizes_transfer.data = (void *)mem_sizes;
     mem_sizes_transfer.len = mem_count;
@@ -3317,75 +3365,6 @@ int zoidfs_write(const zoidfs_handle_t *handle, size_t mem_count,
         total_size = (bmi_size_t)mem_sizes[0];
     }
 
-    /* Does the compression of the data in advance if its not pipelined */
-    if (compression_type != NULL)
-    {
-        if (pipeline_size == 0)
-        {
-            total_len = 0;
-            /* Set the initial buffer size. 16MB was chosen because it is
-                the maximum expected send size for tcp. BMI_CHECK_MAXSIZE
-                was not used because its value can exceed 2GB on certain
-                systems                                                  */
-            size_t init_buf_size = 16777216;
-            /* Sets the input buffer size to the first memory location   */
-            input_buf_size = mem_sizes[0];
-            /* malloc a buffer to the init_buf_size (will be expanded if 
-               needed)                                                   */
-            void * buffer = malloc(init_buf_size);
-            /* Set the buffer size tracker to be the same size as the 
-               init_buf_size                                             */
-            buf_size = init_buf_size;
-            /* initialize the compression                                */
-            ret = zoidfs_transform_init (compression_type, &zlib_struct);    
-            /* If there is some issue... panic                           */
-            if (ret == -1)
-                goto write_cleanup;
-            x = 0;
-            y = 0;
-            do 
-            {
-               /* Transform the buffer */
-               ret = zoidfs_transform (&zlib_struct, &mem_starts[x], &input_buf_size, 
-                                       &buffer, &buf_size, close);
-               /* if the output (compressed) buffer is full expand it */
-               if (buf_size == 0 || ret == ZOIDFS_COMPRESSION_DONE)
-               {
-                    total_len += (init_buf_size - input_buf_size);
-                    buffer -= total_len;
-                    if (ret != ZOIDFS_COMPRESSION_DONE)
-                        buffer = realloc(buffer, total_len + init_buf_size);
-                    buffer += total_len;
-                    buf_size = init_buf_size;
-               }
-                   
-
-               if (ret == ZOIDFS_TRANSFORM_ERROR)
-                    goto write_cleanup;
-               /* if there is no more input in this buffer*/
-               if ( input_buf_size == 0)
-               {   
-                    /* if there are additional buffers move on */
-                    if ( x < mem_count - 1 )
-                    {
-                        x++;
-                        input_buf_size = mem_sizes[x];
-                    }
-                    /* Else close the stream and send the remaining data */
-                    else
-                    {
-                        close = ZOIDFS_CLOSE;
-                    }
-                }
-            } while(ret != ZOIDFS_COMPRESSION_DONE);
-            buffer -= total_len;
-            char compress_len_string[100]; 
-            size_t non_pipeline_len = total_len;        
-            sprintf(compress_len_string,"%d",total_len);
-            zoidfs_hint_add( &op_hint , strdup("ZOIDFS_TRANSFORM_LENGTH"), strdup(compress_len_string),
-                             strlen(compress_len_string), ZOIDFS_HINTS_ZC);
-        }
-    }
     /* 
      * if the total size is greater than the pipeline size, set the pipeline size
      * and setup the memory size buffer for pipeline mode 
@@ -3536,10 +3515,16 @@ int zoidfs_write(const zoidfs_handle_t *handle, size_t mem_count,
         /* No Pipelining */
         if (compression_type != NULL)
         {
-            send_msg_data.sendbuflen = total_len;
-            ret = bmi_comm_send(peer_addr, buffer, non_pipeline_len,
-                                 send_msg_data.tag, context);
-            free(buffer);
+            for(x=0; x < transform_count; x++)
+            {
+                send_msg_data.sendbuflen = total_len;
+                ret = bmi_comm_send(peer_addr, transform_buffer[x], 
+                                    transform_output_sizes[x],
+                                    send_msg_data.tag, context);
+            
+                free(transform_buffer[x]);
+            }
+            free(transform_buffer);
         }
         else
         {
@@ -3701,56 +3686,49 @@ static int zoidfs_write_pipeline(BMI_addr_t peer_addr, size_t pipeline_size,
     int ret;    
     if (compression_type != NULL)
     {
-    int close = ZOIDFS_CONT;
-    /* stores the compression struct */
-    zoidfs_write_compress zlib_struct;
-    size_t size = bmi_size_list[0];
-    void * buffer = malloc(pipeline_size);
-    size_t buf_size = pipeline_size;
-    //ret = zoidfs_transform_init (compression_type, &zlib_struct);    
-    if (ret == -1)
-        return ret;    
-    int x = 0;
-
-    int y = 0;
-    do 
-    {
-       /* Transform the buffer */
-       ret = zoidfs_transform (&zlib_struct, &buf_list[x], &size, 
-                               &buffer, &buf_size, close);
-       /* send the data and reset the buffer positions */
-       if (buf_size == 0 || ret == ZOIDFS_COMPRESSION_DONE)
-       {
-            /* Move the output buffer pointer back */
-            buffer -= (pipeline_size - buf_size);
-            /* send the data */
-            ret = bmi_comm_send(peer_addr, buffer, (pipeline_size - buf_size), tag, context);
-            /* update the total output size (testing use) */
-            /* reset the output buffer size */
-            buf_size = pipeline_size;
-       }
-       if (ret == ZOIDFS_TRANSFORM_ERROR)
-         return -1;
-       /* if there is no more input in this buffer*/
-       if ( size == 0)
-       {   
-            /* if there are additional buffers move on */
-            if ( x < list_count - 1 )
-            {
-                x++;
-                size = bmi_size_list[x];
-            }
-            /* Else close the stream and send the remaining data */
-            else
-            {
-                close = ZOIDFS_CLOSE;
-            }
+        /* Create temporary non-const varibles for transform */
+        int x;
+        size_t  bmi_sizes[list_count];
+        void ** buf_list_tmp = malloc(list_count);
+        for (x = 0; x < list_count; x++)
+        {
+            bmi_sizes[x] = bmi_size_list[x];
+            buf_list_tmp[x] = buf_list[x];
         }
-    } while(ret != ZOIDFS_COMPRESSION_DONE);
-    if (ret == ZOIDFS_COMPRESSION_DONE)
-        ret = ZFS_OK;
-    else 
-        ret = -1;
+
+        /* Hold the close flag for transform */
+        int close = ZOIDFS_CONT;
+        /* stores the compression struct */
+        zoidfs_write_compress zlib_struct;
+        /* size of the desired compressed output */
+        size_t pipe_size = pipeline_size;
+        /* buffer to put the compressed output into */
+        void * buffer = malloc(pipeline_size);
+        /* return value for bmi_comm_send */
+        int bmi_comm_ret = 0;        
+        /* initialize the transform */
+        zoidfs_transform_init (compression_type, &zlib_struct);    
+
+        do 
+        {
+            /* Preform the transform (strange bug here) */
+            //ret = zoidfs_write_transform  (&zlib_struct, &pipe_size, 
+            //                               list_count, buf_list_tmp,
+            //                               bmi_sizes, &buffer, &close);              
+            /* if there is an issue return */
+            if (ret == ZOIDFS_TRANSFORM_ERROR)
+                break;
+
+            /* send the data */
+            //bmi_comm_ret = bmi_comm_send(peer_addr, buffer, pipe_size, tag, context);  
+
+        /* run until all data has been sent */
+        } while (ret != ZOIDFS_COMPRESSION_DONE);        
+        if (ret == ZOIDFS_COMPRESSION_DONE)
+            return ZFS_OK;
+        else
+            return -1;
+
     } else {
 
     int np = 0;
