@@ -21,7 +21,7 @@ namespace zoidfs
 #define ZOIDFS_TRANSFORM       (char*)"ZOIDFS_TRANSFORM"
 #define ZOIDFS_COMPRESSED_SIZE (char*)"ZOIDFS_COMPRESSED_SIZE"
 #define ZOIDFS_TRANSFORM_ZLIB  (char*)"ZOIDFS_TRANSFORM_ZLIB"
-
+#define ZOIDFS_CRC             (char*)"ZOIDFS_CRC"
 /* create and initialize the hint list */
 zoidfs_op_hint_t * zoidfs_hint_init(int size);
 

@@ -25,6 +25,7 @@ static char *ion_name;
 static BMI_addr_t peer_addr;
 static bmi_context_id context;
 static char * compression_type_enabled;
+static char * crc_type;
 /* conditional compilation flags */
 /*#define ZFS_USE_XDR_SIZE_CACHE
 #define ZFS_BMI_FASTMEMALLOC*/
@@ -3198,7 +3199,6 @@ int zoidfs_write(const zoidfs_handle_t *handle, size_t mem_count,
     char * op_hint_pipeline_size = NULL;
     size_t op_hint_pipeline_size_req = 0;
     char * compression_type = NULL;
-    char * hash_type;
     char * hint;
     size_t input_buf_size, buf_size;
     char * header_stuffing = NULL;
@@ -3217,18 +3217,12 @@ int zoidfs_write(const zoidfs_handle_t *handle, size_t mem_count,
     if (zoidfs_hint_num_elements(&op_hint) == 0)
     {
         //op_hint = zoidfs_hint_init(2);
-        hash_type = strdup("sha1"); 
     }
     /* else: check to see if the user has specified a compression/crc or not */
     else
     {
         compression_type_enabled = compression_type = zoidfs_hint_get(&op_hint, "ZOIDFS_TRANSFORM");
-        hash_type = zoidfs_hint_get(&op_hint, "ZOIDFS_CRC");
         header_stuffing = zoidfs_hint_get(&op_hint, "ZOIDFS_HEADER_STUFFING");
-        if (!hash_type)
-        {
-            hash_type = strdup("sha1"); 
-        }      
     }
     /* Hint for compressed length (this must be added here because we must 
         have this hint included in the calculation of the header size before we
@@ -3237,20 +3231,19 @@ int zoidfs_write(const zoidfs_handle_t *handle, size_t mem_count,
                      13, ZOIDFS_HINTS_ZC);
 
     /* Calculate CRC */
-    HashHandle crc_hash = chash_lookup(hash_type);
+    HashHandle crc_hash = chash_lookup(crc_type);
     for (x = 0; x < mem_count; x++)
     {
         ret = chash_process (crc_hash, mem_starts[x], mem_sizes[x]);    
     }    
     ret = chash_get(crc_hash,hash_value, 256);
-    char * hash_string = malloc(256 + strlen(hash_type) + 1);
-    sprintf(hash_string,"%s:%s", hash_type,hash_value);
+    char * hash_string = malloc(256 + strlen(crc_type) + 1);
+    sprintf(hash_string,"%s:%s", crc_type,hash_value);
     zoidfs_hint_add( &op_hint , strdup("ZOIDFS_CRC"), strdup(hash_string),
                      strlen(hash_string), ZOIDFS_HINTS_ZC);
 
     free(hash_value);
     free(hash_string);
-    free(hash_type);
 
     /* init the transfer array wrappers */ 
     mem_sizes_transfer.data = (void *)mem_sizes;
@@ -4252,6 +4245,10 @@ int zoidfs_init(void) {
            PIPELINE_SIZE = requested;
         }
     }
+
+    crc_type = getenv(ZOIDFS_CRC);
+    if (!crc_type)
+        crc_type = strdup("sha1");
 
 #ifdef HAVE_BMI_ZOID_TIMEOUT
     {
