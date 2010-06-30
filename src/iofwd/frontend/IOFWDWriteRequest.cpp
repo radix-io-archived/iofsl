@@ -428,8 +428,15 @@ void IOFWDWriteRequest::recvBuffers(const CBType & cb, RetrievedBuffer * rb)
       if(user_callbacks > 1)
 	throw "IOFWDWriteRequest::recvBuffers() Multiple user call backs in non pipelined case!";
 
+      STATIC_ASSERT(sizeof(bmi_size_t) == sizeof(size_t));
+
 #if SIZEOF_SIZE_T == SIZEOF_INT64_T
-      r_.rbmi_.post_recv_list(transformCB, addr_, reinterpret_cast<void*const*>(compressed_mem), reinterpret_cast<const bmi_size_t*>(&compressed_size), 1, param_.mem_total_size, &(param_.mem_expected_size), dynamic_cast<iofwdutil::mm::BMIMemoryAlloc *>(rb->buffer_)->bmiType(), tag_, 0);
+      r_.rbmi_.post_recv_list(transformCB, addr_,
+            reinterpret_cast<void*const*>(compressed_mem),
+            reinterpret_cast<const bmi_size_t*>(&compressed_size), 1,
+            param_.mem_total_size, &(param_.mem_expected_size),
+            dynamic_cast<iofwdutil::mm::BMIMemoryAlloc
+            *>(rb->buffer_)->bmiType(), tag_, 0);
 #else
       r_.rbmi_.post_recv_list(transformCB, addr_, reinterpret_cast<void*const*>(compressed_mem), reinterpret_cast<const bmi_size_t*>(&compressed_size), 1, param_.mem_total_size, &(param_.mem_expected_size), dynamic_cast<iofwdutil::mm::BMIMemoryAlloc *>(rb->buffer_)->bmiType(), tag_, 0);
 #endif
