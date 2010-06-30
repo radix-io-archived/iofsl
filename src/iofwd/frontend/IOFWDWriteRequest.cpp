@@ -457,6 +457,11 @@ void IOFWDWriteRequest::dummyPipelineComplete(int recvStatus)
    compressed_mem_count++;
 }
 
+void IOFWDWriteRequest::dummyPipelineComplete(int recvStatus)
+{
+   compressed_mem_count++;
+}
+
 void IOFWDWriteRequest::recvPipelineComplete(int recvStatus)
 {
    fprintf(stderr, "==> %s:(%s):%d\n", __FILE__, __func__, __LINE__);
