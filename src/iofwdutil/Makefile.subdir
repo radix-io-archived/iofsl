@@ -160,16 +160,16 @@ src/iofwdutil/mm/BMIMemoryManager.hh \
 src/iofwdutil/mm/BMIMemoryManager.cpp \
 \
 src/iofwdutil/transform/GenericTransform.hh \
-src/iofwdutil/transform/GenericTransform.cpp \
-src/iofwdutil/transform/IOFWDZLib.hh \
-src/iofwdutil/transform/IOFWDZLib.cpp
+src/iofwdutil/transform/GenericTransform.cpp
 
 if HAVE_ZLIB
 src_iofwdutil_libiofwdutil_a_SOURCES += \
 src/iofwdutil/hash/Adler32.hh \
 src/iofwdutil/hash/Adler32.cpp \
 src/iofwdutil/hash/CRC32.hh \
-src/iofwdutil/hash/CRC32.cpp
+src/iofwdutil/hash/CRC32.cpp \
+src/iofwdutil/transform/IOFWDZLib.hh \
+src/iofwdutil/transform/IOFWDZLib.cpp
 endif
 
 if HAVE_OPENSSL
