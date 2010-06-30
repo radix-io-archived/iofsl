@@ -21,7 +21,7 @@ class IOFWDWriteRequest
 {
   protected:
      // shared state
-     iofwdutil::iofwdtransform::GenericTransform *GenTransform;
+     iofwdutil::transform::GenericTransform * GenTransform;
      CBType *UserCB;
      bool op_hint_compress_enabled;
      bool op_hint_headstuff_enabled;

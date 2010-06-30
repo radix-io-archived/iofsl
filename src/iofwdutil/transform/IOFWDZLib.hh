@@ -13,7 +13,7 @@ extern "C"
 namespace iofwdutil
 {
 
-  namespace iofwdtransform
+  namespace transform
   {
     //=======================================================================
 

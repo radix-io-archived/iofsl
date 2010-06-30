@@ -8,7 +8,7 @@ using boost::format;
 namespace iofwdutil
 {
 
-  namespace iofwdtransform
+  namespace transform
   {
 
     ZLib::ZLib()

@@ -238,7 +238,7 @@ void IOFWDWriteRequest::initRequestParams(ReqParam & p, void * bufferMem)
 
 	if(true == op_hint_compress_enabled)
 	{
-	    GenTransform = new iofwdutil::iofwdtransform::ZLib;
+	    GenTransform = new iofwdutil::transform::ZLib ();
 
 	    compressed_mem = new char* [1];
 	    if(NULL == compressed_mem)
@@ -271,7 +271,7 @@ void IOFWDWriteRequest::initRequestParams(ReqParam & p, void * bufferMem)
     {
 	if(true == op_hint_compress_enabled)
 	{
-	    GenTransform = new iofwdutil::iofwdtransform::ZLib;
+	    GenTransform = new iofwdutil::transform::ZLib ();
 	    if(NULL == GenTransform)
 	      throw "IOFWDWriteRequest::initRequestParams() failed (new iofwdutil::iofwdtransform::ZLib)!";
 
@@ -374,11 +374,11 @@ void IOFWDWriteRequest::recvComplete(int recvStatus)
 	&outState,
 	false);
 
-      if(iofwdutil::iofwdtransform::CONSUME_OUTBUF == outState)
+      if(iofwdutil::transform::CONSUME_OUTBUF == outState)
       {
 	  continue;
       }
-      else if(iofwdutil::iofwdtransform::TRANSFORM_STREAM_END == outState)
+      else if(iofwdutil::transform::TRANSFORM_STREAM_END == outState)
       {
 	  // This will normally occur only when i = parma_.mem_count
 	  // at the end of the decompression
@@ -389,12 +389,12 @@ void IOFWDWriteRequest::recvComplete(int recvStatus)
 	  UserCB[0](recvStatus);
 	  break; // Control will never reach this place
       }
-      else if(iofwdutil::iofwdtransform::SUPPLY_INBUF == outState)
+      else if(iofwdutil::transform::SUPPLY_INBUF == outState)
       {
 	  // In the non-pipelined case, we cannot have this return status
 	  throw "IOFWDWriteRequest::recvComplete() failed (SUPPLY_INBUF in Normal Mode)!";
       }
-      else if (iofwdutil::iofwdtransform::TRANSFORM_STREAM_ERROR == outState)
+      else if (iofwdutil::transform::TRANSFORM_STREAM_ERROR == outState)
       {
 	  throw "IOFWDWriteRequest::recvComplete() failed (TRANSFORM_STREAM_ERROR in Normal Mode)!";
       }
@@ -470,7 +470,7 @@ void IOFWDWriteRequest::recvPipelineComplete(int recvStatus)
    pthread_cond_signal(&icv);
    pthread_mutex_unlock(&imp);
 
-   while(iofwdutil::iofwdtransform::TRANSFORM_STREAM_END !=
+   while(iofwdutil::transform::TRANSFORM_STREAM_END !=
          GenTransform->getTransformState ())
    {
 decompress:
@@ -510,15 +510,15 @@ decompress:
       if(transform_mem[transform_mem_count].byte_count == param_.pipeline_size)
 	  transform_mem_count++;
 
-      if(iofwdutil::iofwdtransform::CONSUME_OUTBUF == outState)
+      if(iofwdutil::transform::CONSUME_OUTBUF == outState)
       {
 	  goto decompress;
       }
-      else if(iofwdutil::iofwdtransform::TRANSFORM_STREAM_END == outState)
+      else if(iofwdutil::transform::TRANSFORM_STREAM_END == outState)
       {
 	break;
       }
-      else if(iofwdutil::iofwdtransform::SUPPLY_INBUF == outState)
+      else if(iofwdutil::transform::SUPPLY_INBUF == outState)
       {
 	CBType dummyCB = boost::bind(&IOFWDWriteRequest::dummyPipelineComplete,
 	    boost::ref(this), _1);
@@ -532,13 +532,13 @@ decompress:
 	    &(param_.mem_expected_size),
 	    BMI_EXT_ALLOC, tag_, 0);
       }
-      else if (iofwdutil::iofwdtransform::TRANSFORM_STREAM_ERROR == outState)
+      else if (iofwdutil::transform::TRANSFORM_STREAM_ERROR == outState)
       {
 	  throw "IOFWDWriteRequest::recvComplete() failed (TRANSFORM_STREAM_ERROR in Pipelined Mode)!";
       }
    }
 
-   if(iofwdutil::iofwdtransform::TRANSFORM_STREAM_END ==
+   if(iofwdutil::transform::TRANSFORM_STREAM_END ==
          GenTransform->getTransformState ())
    {
       if(transform_mem_count != user_callbacks)

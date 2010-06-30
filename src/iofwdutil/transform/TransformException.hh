@@ -2,7 +2,7 @@
 
 namespace iofwdutil
 {
-   namespace iofwdtransform
+   namespace transform
    {
       //=====================================================================
 
