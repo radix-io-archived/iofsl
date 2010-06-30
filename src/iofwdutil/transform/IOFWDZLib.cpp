@@ -1,5 +1,9 @@
-#include "iofwdutil/transform/IOFWDZLib.hh"
+#include <boost/format.hpp>
 
+#include "iofwdutil/transform/IOFWDZLib.hh"
+#include "TransformException.hh"
+
+using boost::format;
 
 namespace iofwdutil
 {
@@ -23,7 +27,8 @@ namespace iofwdutil
       ret = inflateInit(&stream);
       if(Z_OK != ret) {
         // Need to throw exception
-        fprintf(stderr, "%s:(%s):%d inflateInit() returned error = %d\n", __FILE__, __func__, __LINE__, ret);
+        throw TransformException (str(format("inflateInit() returned error"
+                   " %d") % ret));
       }
     }
 

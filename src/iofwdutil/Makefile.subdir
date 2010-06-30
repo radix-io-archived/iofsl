@@ -160,7 +160,9 @@ src/iofwdutil/mm/BMIMemoryManager.hh \
 src/iofwdutil/mm/BMIMemoryManager.cpp \
 \
 src/iofwdutil/transform/GenericTransform.hh \
-src/iofwdutil/transform/GenericTransform.cpp
+src/iofwdutil/transform/GenericTransform.cpp \
+src/iofwdutil/transform/TransformException.cpp \
+src/iofwdutil/transform/TransformException.hh
 
 if HAVE_ZLIB
 src_iofwdutil_libiofwdutil_a_SOURCES += \
