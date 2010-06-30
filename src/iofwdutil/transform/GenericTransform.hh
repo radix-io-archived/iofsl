@@ -1,7 +1,6 @@
 #ifndef IOFWDUTIL_GENERICTRANSFORM_HH
 #define IOFWDUTIL_GENERICTRANSFORM_HH
 
-#include <zlib.h>
 #include "iofwdutil/Factory.hh"
 #include "iofwdutil/FactoryException.hh"
 #include "iofwdutil/FactoryAutoRegister.hh"

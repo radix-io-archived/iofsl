@@ -1,7 +1,12 @@
 #ifndef IOFWDUTIL_ZLIB_HH
 #define IOFWDUTIL_ZLIB_HH
 
-#include <cstdio>
+
+extern "C"
+{
+#include <zlib.h>
+}
+
 #include "iofwdutil/transform/GenericTransform.hh"
 #include "iofwdutil/assert.hh"
 
