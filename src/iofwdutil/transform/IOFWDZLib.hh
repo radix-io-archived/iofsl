@@ -28,7 +28,7 @@ namespace iofwdutil
                       void *outBuf, size_t outSize, size_t *outBytes,
                       int *outState, bool flushFlag);
 
-        virtual state getDecompressState() const;
+        virtual state getTransformState () const;
 
         virtual ~ZLib();
     };

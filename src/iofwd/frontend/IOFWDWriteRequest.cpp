@@ -426,7 +426,8 @@ void IOFWDWriteRequest::recvPipelineComplete(int recvStatus)
 
    compressed_mem_count++;
 
-   while(iofwdutil::iofwdtransform::TRANSFORM_STREAM_END != GenTransform->getDecompressState())
+   while(iofwdutil::iofwdtransform::TRANSFORM_STREAM_END !=
+         GenTransform->getTransformState ())
    {
 decompress:
       if(0 == transform_mem[transform_mem_count].byte_count)
@@ -488,7 +489,8 @@ decompress:
       }
    }
 
-   if(iofwdutil::iofwdtransform::TRANSFORM_STREAM_END == GenTransform->getDecompressState())
+   if(iofwdutil::iofwdtransform::TRANSFORM_STREAM_END ==
+         GenTransform->getTransformState ())
    {
       if(transform_mem_count != user_callbacks)
       {

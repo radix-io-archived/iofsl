@@ -49,7 +49,7 @@ namespace iofwdutil
         /**
          * Return state of the transformation engine
          */
-        virtual state getDecompressState() const = 0;
+        virtual state getTransformState () const = 0;
 
 
         virtual ~GenericTransform ();

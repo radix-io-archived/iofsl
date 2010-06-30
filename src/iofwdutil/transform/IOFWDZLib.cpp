@@ -34,7 +34,7 @@ namespace iofwdutil
     }
 
 
-    state ZLib::getDecompressState() const
+    state ZLib::getTransformState () const
     {
       return decompress_state;
     }
