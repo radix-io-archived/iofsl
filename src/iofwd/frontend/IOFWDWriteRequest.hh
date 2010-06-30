@@ -30,10 +30,11 @@ class IOFWDWriteRequest
      size_t compressed_size;
 
      // pipelined state
-     int user_callbacks;
+     volatile int user_callbacks;
      char **compressed_mem;
-     int compressed_mem_count;
-     int compressed_mem_consume;
+     volatile int compressed_mem_count;
+     volatile int compressed_mem_consume;
+     volatile int num_input_bufs;
 
      typedef struct _buf
      {
@@ -41,7 +42,8 @@ class IOFWDWriteRequest
 	int byte_count;
      }buf;
      buf *transform_mem;
-     int transform_mem_count;
+     volatile int transform_mem_count;
+     volatile int transform_mem_consume;
 
      pthread_mutex_t imp;
      pthread_cond_t icv;

@@ -13,6 +13,7 @@ namespace iofwd
 
 IOFWDWriteRequest::~IOFWDWriteRequest ()
 {
+   fprintf(stderr, "==> %s:(%s):%d\n", __FILE__, __func__, __LINE__);
 
 #ifndef USE_TASK_HA
    if (param_.mem_starts)
@@ -45,10 +46,12 @@ IOFWDWriteRequest::~IOFWDWriteRequest ()
       zoidfs::util::ZoidFSHintDestroy(&(param_.op_hint));
    if(bmi_buffer_)
       delete bmi_buffer_;
+   fprintf(stderr, "<== %s:(%s):%d\n", __FILE__, __func__, __LINE__);
 }
 
 IOFWDWriteRequest::ReqParam & IOFWDWriteRequest::decodeParam ()
 {
+   fprintf(stderr, "==> %s:(%s):%d\n", __FILE__, __func__, __LINE__);
 
    // init the handle
    process (req_reader_, handle_);
@@ -120,7 +123,7 @@ IOFWDWriteRequest::ReqParam & IOFWDWriteRequest::decodeParam ()
 		char *compressed_size_str =
 		  zoidfs::util::ZoidFSHintGet(&(param_.op_hint), ZOIDFS_COMPRESSED_SIZE);
 		compressed_size = (size_t)atol(compressed_size_str);
-        printf("Compression size: %i\n",compressed_size);
+		fprintf(stderr, "%s:(%s):%d compressed_size = %d\n", __FILE__, __func__, __LINE__, compressed_size);
 	    }
 	}
         else
@@ -162,11 +165,13 @@ IOFWDWriteRequest::ReqParam & IOFWDWriteRequest::decodeParam ()
    // get the max buffer size from BMI
    r_.rbmi_.get_info(addr_, BMI_CHECK_MAXSIZE, static_cast<void *>(&param_.max_buffer_size));
 
+   fprintf(stderr, "<== %s:(%s):%d\n", __FILE__, __func__, __LINE__);
    return param_;
 }
 
 void IOFWDWriteRequest::initRequestParams(ReqParam & p, void * bufferMem)
 {
+    fprintf(stderr, "==> %s:(%s):%d\n", __FILE__, __func__, __LINE__);
     // allocate buffer for normal mode
     if (param_.pipeline_size == 0)
     {
@@ -239,11 +244,14 @@ void IOFWDWriteRequest::initRequestParams(ReqParam & p, void * bufferMem)
 	    if(NULL == compressed_mem)
 	      throw "IOFWDWriteRequest::initRequestParams() new char* [] failed!";
 
-	    compressed_mem[0] = new char [param_.mem_total_size];
+	    fprintf(stderr, "%s:(%s):%d param_.mem_total_size = %d\n", __FILE__, __func__, __LINE__, param_.mem_total_size);
+	    compressed_mem[0] = new char [compressed_size];
 	    if(NULL == compressed_mem[0])
 	      throw "IOFWDWriteRequest::initRequestParams() new char [] failed!";
 
 	    compressed_mem_count = 0;
+	    compressed_mem_consume = 0;
+	    num_input_bufs = 0;
 
 	    UserCB = new CBType[1];
 	    if(NULL == UserCB)
@@ -255,6 +263,7 @@ void IOFWDWriteRequest::initRequestParams(ReqParam & p, void * bufferMem)
 
 	    transform_mem = NULL;
 	    transform_mem_count = 0;
+	    transform_mem_consume = 0;
 	}
 
     }
@@ -262,6 +271,10 @@ void IOFWDWriteRequest::initRequestParams(ReqParam & p, void * bufferMem)
     {
 	if(true == op_hint_compress_enabled)
 	{
+	    GenTransform = new iofwdutil::iofwdtransform::ZLib;
+	    if(NULL == GenTransform)
+	      throw "IOFWDWriteRequest::initRequestParams() failed (new iofwdutil::iofwdtransform::ZLib)!";
+
 	    compressed_mem = new char*[16];
 	    if(NULL == compressed_mem)
 	      throw "IOFWDWriteRequest::initRequestParams() failed (new char* [])!";
@@ -275,6 +288,7 @@ void IOFWDWriteRequest::initRequestParams(ReqParam & p, void * bufferMem)
 
 	    compressed_mem_consume = 0;
 	    compressed_mem_count = 0;
+	    num_input_bufs = 0;
 
 	    transform_mem = new buf [16];
 	    if(NULL == transform_mem)
@@ -287,6 +301,7 @@ void IOFWDWriteRequest::initRequestParams(ReqParam & p, void * bufferMem)
 	    }
 
 	    transform_mem_count = 0;
+	    transform_mem_consume = 0;
 
 	    UserCB = new CBType[16];
 	    if(NULL == UserCB)
@@ -308,33 +323,41 @@ void IOFWDWriteRequest::initRequestParams(ReqParam & p, void * bufferMem)
 
 	    if(0 != pthread_cond_init(&ocv, NULL))
 	      throw "IOFWDWriteRequest::initRequestParams() pthread_cond_init() failed!";
+
+	    compressed_size = 0;
 	}
     }
+    fprintf(stderr, "<== %s:(%s):%d\n", __FILE__, __func__, __LINE__);
 }
 
 void IOFWDWriteRequest::allocateBuffer(iofwdevent::CBType cb, RetrievedBuffer * rb)
 {
+    fprintf(stderr, "==> %s:(%s):%d\n", __FILE__, __func__, __LINE__);
     /* allocate the buffer wrapper */
     rb->buffer_ = new iofwdutil::mm::BMIMemoryAlloc(addr_, iofwdutil::bmi::BMI::ALLOC_RECEIVE, rb->getsize());
 
     iofwdutil::mm::BMIMemoryManager::instance().alloc(cb, rb->buffer_);
+    fprintf(stderr, "<== %s:(%s):%d\n", __FILE__, __func__, __LINE__);
 }
 
 void IOFWDWriteRequest::releaseBuffer(RetrievedBuffer * rb)
 {
+    fprintf(stderr, "==> %s:(%s):%d\n", __FILE__, __func__, __LINE__);
     iofwdutil::mm::BMIMemoryManager::instance().dealloc(rb->buffer_);
 
     /* delete the buffer */
     delete rb->buffer_;
+    fprintf(stderr, "<== %s:(%s):%d\n", __FILE__, __func__, __LINE__);
 }
 
 void IOFWDWriteRequest::recvComplete(int recvStatus)
 {
+   fprintf(stderr, "==> %s:(%s):%d\n", __FILE__, __func__, __LINE__);
    int i = 0;
    int outState = 0;
    size_t outBytes = 0;
 
-   fprintf(stderr,"me\n");
+   fprintf(stderr, "me\n");
 
    if(false == op_hint_compress_enabled)
    {
@@ -376,10 +399,13 @@ void IOFWDWriteRequest::recvComplete(int recvStatus)
 	  throw "IOFWDWriteRequest::recvComplete() failed (TRANSFORM_STREAM_ERROR in Normal Mode)!";
       }
    }
+
+   fprintf(stderr, "<== %s:(%s):%d\n", __FILE__, __func__, __LINE__);
 }
 
 void IOFWDWriteRequest::recvBuffers(const CBType & cb, RetrievedBuffer * rb)
 {
+    fprintf(stderr, "==> %s:(%s):%d\n", __FILE__, __func__, __LINE__);
     param_.mem_expected_size = 0;
 
     if(false == op_hint_compress_enabled)
@@ -408,15 +434,22 @@ void IOFWDWriteRequest::recvBuffers(const CBType & cb, RetrievedBuffer * rb)
       r_.rbmi_.post_recv_list(transformCB, addr_, reinterpret_cast<void*const*>(compressed_mem), reinterpret_cast<const bmi_size_t*>(&compressed_size), 1, param_.mem_total_size, &(param_.mem_expected_size), dynamic_cast<iofwdutil::mm::BMIMemoryAlloc *>(rb->buffer_)->bmiType(), tag_, 0);
 #endif
     }
+    fprintf(stderr, "<== %s:(%s):%d\n", __FILE__, __func__, __LINE__);
 }
 
 void IOFWDWriteRequest::dummyPipelineComplete(int recvStatus)
 {
+   fprintf(stderr, "==> %s:(%s):%d\n", __FILE__, __func__, __LINE__);
+   pthread_mutex_lock(&imp);
    compressed_mem_count++;
+   pthread_cond_signal(&icv);
+   pthread_mutex_unlock(&imp);
+   fprintf(stderr, "<== %s:(%s):%d\n", __FILE__, __func__, __LINE__);
 }
 
 void IOFWDWriteRequest::recvPipelineComplete(int recvStatus)
 {
+   fprintf(stderr, "==> %s:(%s):%d\n", __FILE__, __func__, __LINE__);
    int i = 0;
    int outState = 0;
    size_t outBytes = 0;
@@ -424,7 +457,11 @@ void IOFWDWriteRequest::recvPipelineComplete(int recvStatus)
    if(false == op_hint_compress_enabled)
       throw "IOFWDWriteRequest::recvComplete() failed (Wrong Callback)!";
 
+   pthread_mutex_lock(&imp);
    compressed_mem_count++;
+   num_input_bufs = compressed_mem_count;
+   pthread_cond_signal(&icv);
+   pthread_mutex_unlock(&imp);
 
    while(iofwdutil::iofwdtransform::TRANSFORM_STREAM_END !=
          GenTransform->getTransformState ())
@@ -432,7 +469,11 @@ void IOFWDWriteRequest::recvPipelineComplete(int recvStatus)
 decompress:
       if(0 == transform_mem[transform_mem_count].byte_count)
       {
-	  // output buffer is new
+	  pthread_mutex_lock(&imp);
+	  if(compressed_mem_consume == compressed_mem_count)
+	    pthread_cond_wait(&icv, &imp);
+	  pthread_mutex_unlock(&imp);
+
 	  pthread_mutex_lock(&omp);
 	  if(transform_mem_count == user_callbacks)
 	    pthread_cond_wait(&ocv, &omp);
@@ -458,13 +499,18 @@ decompress:
 	      false);
       }
 
+      pthread_mutex_lock(&omp);
       transform_mem[transform_mem_count].byte_count += outBytes;
       if(transform_mem[transform_mem_count].byte_count == param_.pipeline_size)
 	  transform_mem_count++;
+      pthread_cond_signal(&ocv);
+      pthread_mutex_unlock(&omp);
 
       if(iofwdutil::iofwdtransform::CONSUME_OUTBUF == outState)
       {
-	  goto decompress;
+	if(transform_mem_consume < transform_mem_count)
+	  UserCB[transform_mem_consume++](recvStatus);
+	goto decompress;
       }
       else if(iofwdutil::iofwdtransform::TRANSFORM_STREAM_END == outState)
       {
@@ -472,19 +518,20 @@ decompress:
       }
       else if(iofwdutil::iofwdtransform::SUPPLY_INBUF == outState)
       {
-	// Supply new input data
-	// In the last packet it may or may not be param_.pipeline_size
-	// find out how the code knows about this size
-	// assume for now that even if the last packet contains
-	// less than param_.pipeline_size bytes, the sender fills it with zeros
-	// In order to avoid possible recursion, use a dummy call back rather than yourself
-	CBType dummyCB = boost::bind(&IOFWDWriteRequest::dummyPipelineComplete, boost::ref(this), _1);
+	CBType dummyCB = boost::bind(&IOFWDWriteRequest::dummyPipelineComplete,
+	    boost::ref(this), _1);
 
-	r_.rbmi_.post_recv(dummyCB, addr_, reinterpret_cast<iofwdutil::mm::BMIMemoryAlloc *>(compressed_mem[compressed_mem_count++]), param_.pipeline_size, &(param_.mem_expected_size), BMI_EXT_ALLOC, tag_, 0);
+	compressed_mem_consume++;
+
+	r_.rbmi_.post_recv(dummyCB,
+	    addr_,
+	    reinterpret_cast<iofwdutil::mm::BMIMemoryAlloc *>(&(compressed_mem[num_input_bufs++])),
+	    param_.pipeline_size,
+	    &(param_.mem_expected_size),
+	    BMI_EXT_ALLOC, tag_, 0);
       }
       else if (iofwdutil::iofwdtransform::TRANSFORM_STREAM_ERROR == outState)
       {
-	  // There's no easy way out ;-)
 	  throw "IOFWDWriteRequest::recvComplete() failed (TRANSFORM_STREAM_ERROR in Pipelined Mode)!";
       }
    }
@@ -502,10 +549,12 @@ decompress:
       for(int ii = 0; ii < transform_mem_count; ii++)
 	UserCB[ii](recvStatus);
    }
+   fprintf(stderr, "<== %s:(%s):%d\n", __FILE__, __func__, __LINE__);
 }
 
 void IOFWDWriteRequest::recvPipelineBufferCB(iofwdevent::CBType cb, RetrievedBuffer * rb, size_t size)
 {
+   fprintf(stderr, "==> %s:(%s):%d\n", __FILE__, __func__, __LINE__);
    param_.mem_expected_size = 0;
 
    if(false == op_hint_compress_enabled)
@@ -526,11 +575,14 @@ void IOFWDWriteRequest::recvPipelineBufferCB(iofwdevent::CBType cb, RetrievedBuf
       if(1 == user_callbacks)
 	  r_.rbmi_.post_recv(transformCB, addr_, reinterpret_cast<iofwdutil::mm::BMIMemoryAlloc *>(compressed_mem[0]), size, &(param_.mem_expected_size), BMI_EXT_ALLOC, tag_, 0);
    }
+   fprintf(stderr, "<== %s:(%s):%d\n", __FILE__, __func__, __LINE__);
 }
 
 void IOFWDWriteRequest::reply(const CBType & cb)
 {
+   fprintf(stderr, "==> %s:(%s):%d\n", __FILE__, __func__, __LINE__);
    simpleOptReply(cb, getReturnCode(), TSSTART << encoder::EncVarArray(param_.file_sizes, param_.file_count));
+   fprintf(stderr, "<== %s:(%s):%d\n", __FILE__, __func__, __LINE__);
 }
 
 //===========================================================================
