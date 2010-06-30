@@ -3,15 +3,15 @@
 
 namespace iofwdutil
 {
+   namespace iofwdtransform
+   {
+      //======================================================================
 
-  namespace iofwdtransform
-  {
+      GenericTransform::~GenericTransform()
+      {
+      }
 
-    GenericTransform::GenericTransform()
-    {
-    }
-
-  }
-
+      //======================================================================
+   }
 }
 
