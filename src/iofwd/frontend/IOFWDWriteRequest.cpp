@@ -117,7 +117,7 @@ IOFWDWriteRequest::ReqParam & IOFWDWriteRequest::decodeParam ()
 	{
 	    // The rest of the tokens do not matter --> once you get the compression type
 	    // check for the compressed size and that's it
-	    if(strcmp(token, "ZLIB") == 0)
+	    if(strcasecmp(token, ZOIDFS_TRANSFORM_ZLIB) == 0)
 	    {
 		op_hint_compress_enabled = true;
 		char *compressed_size_str =
@@ -447,6 +447,11 @@ void IOFWDWriteRequest::dummyPipelineComplete(int recvStatus)
    fprintf(stderr, "<== %s:(%s):%d\n", __FILE__, __func__, __LINE__);
 }
 
+void IOFWDWriteRequest::dummyPipelineComplete(int recvStatus)
+{
+   compressed_mem_count++;
+}
+
 void IOFWDWriteRequest::recvPipelineComplete(int recvStatus)
 {
    fprintf(stderr, "==> %s:(%s):%d\n", __FILE__, __func__, __LINE__);
@@ -499,18 +504,13 @@ decompress:
 	      false);
       }
 
-      pthread_mutex_lock(&omp);
       transform_mem[transform_mem_count].byte_count += outBytes;
       if(transform_mem[transform_mem_count].byte_count == param_.pipeline_size)
 	  transform_mem_count++;
-      pthread_cond_signal(&ocv);
-      pthread_mutex_unlock(&omp);
 
       if(iofwdutil::iofwdtransform::CONSUME_OUTBUF == outState)
       {
-	if(transform_mem_consume < transform_mem_count)
-	  UserCB[transform_mem_consume++](recvStatus);
-	goto decompress;
+	  goto decompress;
       }
       else if(iofwdutil::iofwdtransform::TRANSFORM_STREAM_END == outState)
       {
