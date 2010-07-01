@@ -107,7 +107,12 @@ private:
 /**
  * Helper for easy tracing
  */
-#define ZLOG_AUTOTRACE_DEFAULT ZLOG_AUTOTRACE(iofwdutil::IOFWDLog::getSource())
+
+/// Default log name
+#define ZLOG_DEFAULT iofwdutil::IOFWDLog::getSource()
+
+/// Autotrace to default log
+#define ZLOG_AUTOTRACE_DEFAULT ZLOG_AUTOTRACE(ZLOG_DEFAULT)
 
 //===========================================================================
 }
