@@ -22,7 +22,11 @@ class IOFWDWriteRequest
   protected:
      // shared state
      iofwdutil::transform::GenericTransform * GenTransform;
-     CBType *UserCB;
+
+     // variables start with a lowercase letter; Instance variables end with
+     // '_'
+     iofwdevent::CBType *  userCB_;
+
      bool op_hint_compress_enabled;
      bool op_hint_headstuff_enabled;
 

@@ -253,11 +253,11 @@ void IOFWDWriteRequest::initRequestParams(ReqParam & p, void * bufferMem)
 	    compressed_mem_consume = 0;
 	    num_input_bufs = 0;
 
-	    UserCB = new CBType[1];
-	    if(NULL == UserCB)
+	    userCB_ = new CBType[1];
+	    if(NULL == userCB_)
 	      throw "IOFWDWriteRequest::initRequestParams() new CBType[] failed!";
 
-	    UserCB[0] = NULL;
+	    userCB_[0] = NULL;
 
 	    user_callbacks = 0;
 
@@ -303,12 +303,12 @@ void IOFWDWriteRequest::initRequestParams(ReqParam & p, void * bufferMem)
 	    transform_mem_count = 0;
 	    transform_mem_consume = 0;
 
-	    UserCB = new CBType[16];
-	    if(NULL == UserCB)
+	    userCB_ = new CBType[16];
+	    if(NULL == userCB_)
 	      throw "IOFWDWriteRequest::initRequestParams() new CBType[] failed!";
 
 	    for(int ii = 0; ii < 16; ii++)
-	      UserCB[ii] = NULL;
+	      userCB_[ii] = NULL;
 
 	    user_callbacks = 0;
 
@@ -386,7 +386,7 @@ void IOFWDWriteRequest::recvComplete(int recvStatus)
 	  // there should be only one callback
 	  if(user_callbacks > 1)
 	    throw "IOFWDWriteRequest::recvComplete() Multiple user call backs in non pipelined case!";
-	  UserCB[0](recvStatus);
+	  userCB_[0](recvStatus);
 	  break; // Control will never reach this place
       }
       else if(iofwdutil::transform::SUPPLY_INBUF == outState)
@@ -423,7 +423,7 @@ void IOFWDWriteRequest::recvBuffers(const CBType & cb, RetrievedBuffer * rb)
       CBType transformCB = boost::bind(&IOFWDWriteRequest::recvComplete, boost::ref(this), _1);
 
       // There should never be more than one call backs in the non-pipelined case
-      UserCB[user_callbacks++] = cb;
+      userCB_[user_callbacks++] = cb;
 
       if(user_callbacks > 1)
 	throw "IOFWDWriteRequest::recvBuffers() Multiple user call backs in non pipelined case!";
@@ -549,7 +549,7 @@ decompress:
       // decompressed data has already been copied into
       // the o/p buffers specified by the user
       for(int ii = 0; ii < transform_mem_count; ii++)
-	UserCB[ii](recvStatus);
+	userCB_[ii](recvStatus);
    }
    fprintf(stderr, "<== %s:(%s):%d\n", __FILE__, __func__, __LINE__);
 }
@@ -570,7 +570,7 @@ void IOFWDWriteRequest::recvPipelineBufferCB(iofwdevent::CBType cb, RetrievedBuf
 
       transform_mem[user_callbacks].buf = (char*)rb->buffer_->getMemory();
       transform_mem[user_callbacks].byte_count = 0;
-      UserCB[user_callbacks] = cb;
+      userCB_[user_callbacks] = cb;
       user_callbacks++;
 
       // call post_recv only for the first user call back
