@@ -39,8 +39,11 @@ class IOFWDLog : public Singleton<IOFWDLog>
 
 public:
 
-    static zlog::ZLogSource & getSource (const char * sourcename = "default")
+    static zlog::ZLogSource & getSource (const char * sourcename = 0)
     {
+       if (!sourcename)
+          return IOFWDLog::instance().getDefaultSource ();
+
        return IOFWDLog::instance().getSourceInt (sourcename);
     }
 
@@ -52,6 +55,10 @@ private:
 
     IOFWDLog ();
 
+    zlog::ZLogSource & getDefaultSource ()
+    {
+       return *default_;
+    }
 
     zlog::ZLogSource & getSourceInt (const char * name)
     {
@@ -87,6 +94,8 @@ private:
     unsigned int default_loglevel_;
 
     std::vector<std::pair<std::string, unsigned int> > loglevel_override_;
+
+    zlog::ZLogSource * default_;
 
     boost::mutex lock_;
 };
