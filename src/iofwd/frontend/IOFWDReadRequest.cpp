@@ -91,6 +91,7 @@ IOFWDReadRequest::ReqParam & IOFWDReadRequest::decodeParam ()
         else
         {
             param_.op_hint_pipeline_enabled = false;
+            param_.pipeline_size = 0;
         }
    }
    /* keep pipelining enabled by default */
