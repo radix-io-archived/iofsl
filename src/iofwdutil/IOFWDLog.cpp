@@ -52,7 +52,19 @@ IOFWDLog::IOFWDLog ()
 
    // Set log levels from env
    if (getenv ("IOFWD_LOGLEVEL"))
-      setLogLevelOverride (getenv("IOFWD_LOGLEVEL")); 
+   {
+      try
+      {
+         setLogLevelOverride (getenv("IOFWD_LOGLEVEL")); 
+      }
+      catch (...)
+      {
+         // cerr deadlocks? Probably since this can be called before main and
+         // before cerr is initialized.
+         fprintf(stderr, "Invalid log level specification"
+               " in IOFWD_LOGLEVEL environment! Ignoring...\n");
+      }
+   }
 
    // We don't need to free source, we don't own it.
    default_ = &getSourceInt ("default");
