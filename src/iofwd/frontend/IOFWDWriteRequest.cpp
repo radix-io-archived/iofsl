@@ -13,8 +13,6 @@ namespace iofwd
 
 IOFWDWriteRequest::~IOFWDWriteRequest ()
 {
-   fprintf(stderr, "==> %s:(%s):%d\n", __FILE__, __func__, __LINE__);
-
 #ifndef USE_TASK_HA
    if (param_.mem_starts)
       delete [] param_.mem_starts;
@@ -46,13 +44,10 @@ IOFWDWriteRequest::~IOFWDWriteRequest ()
       zoidfs::util::ZoidFSHintDestroy(&(param_.op_hint));
    if(bmi_buffer_)
       delete bmi_buffer_;
-   fprintf(stderr, "<== %s:(%s):%d\n", __FILE__, __func__, __LINE__);
 }
 
 IOFWDWriteRequest::ReqParam & IOFWDWriteRequest::decodeParam ()
 {
-   fprintf(stderr, "==> %s:(%s):%d\n", __FILE__, __func__, __LINE__);
-
    // init the handle
    process (req_reader_, handle_);
 
@@ -124,7 +119,6 @@ IOFWDWriteRequest::ReqParam & IOFWDWriteRequest::decodeParam ()
 		char *compressed_size_str =
 		  zoidfs::util::ZoidFSHintGet(&(param_.op_hint), ZOIDFS_COMPRESSED_SIZE);
 		compressed_size = (size_t)atol(compressed_size_str);
-		fprintf(stderr, "%s:(%s):%d compressed_size = %d\n", __FILE__, __func__, __LINE__, compressed_size);
 	    }
 	}
         else
@@ -166,13 +160,11 @@ IOFWDWriteRequest::ReqParam & IOFWDWriteRequest::decodeParam ()
    // get the max buffer size from BMI
    r_.rbmi_.get_info(addr_, BMI_CHECK_MAXSIZE, static_cast<void *>(&param_.max_buffer_size));
 
-   fprintf(stderr, "<== %s:(%s):%d\n", __FILE__, __func__, __LINE__);
    return param_;
 }
 
 void IOFWDWriteRequest::initRequestParams(ReqParam & p, void * bufferMem)
 {
-    fprintf(stderr, "==> %s:(%s):%d\n", __FILE__, __func__, __LINE__);
     // allocate buffer for normal mode
     if (param_.pipeline_size == 0)
     {
@@ -245,7 +237,6 @@ void IOFWDWriteRequest::initRequestParams(ReqParam & p, void * bufferMem)
 	    if(NULL == compressed_mem)
 	      throw "IOFWDWriteRequest::initRequestParams() new char* [] failed!";
 
-	    fprintf(stderr, "%s:(%s):%d param_.mem_total_size = %d\n", __FILE__, __func__, __LINE__, param_.mem_total_size);
 	    compressed_mem[0] = new char [compressed_size];
 	    if(NULL == compressed_mem[0])
 	      throw "IOFWDWriteRequest::initRequestParams() new char [] failed!";
@@ -328,37 +319,29 @@ void IOFWDWriteRequest::initRequestParams(ReqParam & p, void * bufferMem)
 	    compressed_size = 0;
 	}
     }
-    fprintf(stderr, "<== %s:(%s):%d\n", __FILE__, __func__, __LINE__);
 }
 
 void IOFWDWriteRequest::allocateBuffer(iofwdevent::CBType cb, RetrievedBuffer * rb)
 {
-    fprintf(stderr, "==> %s:(%s):%d\n", __FILE__, __func__, __LINE__);
     /* allocate the buffer wrapper */
     rb->buffer_ = new iofwdutil::mm::BMIMemoryAlloc(addr_, iofwdutil::bmi::BMI::ALLOC_RECEIVE, rb->getsize());
 
     iofwdutil::mm::BMIMemoryManager::instance().alloc(cb, rb->buffer_);
-    fprintf(stderr, "<== %s:(%s):%d\n", __FILE__, __func__, __LINE__);
 }
 
 void IOFWDWriteRequest::releaseBuffer(RetrievedBuffer * rb)
 {
-    fprintf(stderr, "==> %s:(%s):%d\n", __FILE__, __func__, __LINE__);
     iofwdutil::mm::BMIMemoryManager::instance().dealloc(rb->buffer_);
 
     /* delete the buffer */
     delete rb->buffer_;
-    fprintf(stderr, "<== %s:(%s):%d\n", __FILE__, __func__, __LINE__);
 }
 
 void IOFWDWriteRequest::recvComplete(int recvStatus)
 {
-   fprintf(stderr, "==> %s:(%s):%d\n", __FILE__, __func__, __LINE__);
    int i = 0;
    int outState = 0;
    size_t outBytes = 0;
-
-   fprintf(stderr, "me\n");
 
    if(false == op_hint_compress_enabled)
    {
@@ -401,12 +384,10 @@ void IOFWDWriteRequest::recvComplete(int recvStatus)
       }
    }
 
-   fprintf(stderr, "<== %s:(%s):%d\n", __FILE__, __func__, __LINE__);
 }
 
 void IOFWDWriteRequest::recvBuffers(const CBType & cb, RetrievedBuffer * rb)
 {
-    fprintf(stderr, "==> %s:(%s):%d\n", __FILE__, __func__, __LINE__);
     param_.mem_expected_size = 0;
 
     if(false == op_hint_compress_enabled)
@@ -421,7 +402,7 @@ void IOFWDWriteRequest::recvBuffers(const CBType & cb, RetrievedBuffer * rb)
     }
     else
     {
-      CBType transformCB = boost::bind(&IOFWDWriteRequest::recvComplete, boost::ref(this), _1);
+      CBType transformCB = boost::bind(&IOFWDWriteRequest::recvComplete, boost::ref(*this), _1);
 
       // There should never be more than one call backs in the non-pipelined case
       userCB_[user_callbacks++] = cb;
@@ -442,22 +423,18 @@ void IOFWDWriteRequest::recvBuffers(const CBType & cb, RetrievedBuffer * rb)
       r_.rbmi_.post_recv_list(transformCB, addr_, reinterpret_cast<void*const*>(compressed_mem), reinterpret_cast<const bmi_size_t*>(&compressed_size), 1, param_.mem_total_size, &(param_.mem_expected_size), dynamic_cast<iofwdutil::mm::BMIMemoryAlloc *>(rb->buffer_)->bmiType(), tag_, 0);
 #endif
     }
-    fprintf(stderr, "<== %s:(%s):%d\n", __FILE__, __func__, __LINE__);
 }
 
 void IOFWDWriteRequest::dummyPipelineComplete(int recvStatus)
 {
-   fprintf(stderr, "==> %s:(%s):%d\n", __FILE__, __func__, __LINE__);
    pthread_mutex_lock(&imp);
    compressed_mem_count++;
    pthread_cond_signal(&icv);
    pthread_mutex_unlock(&imp);
-   fprintf(stderr, "<== %s:(%s):%d\n", __FILE__, __func__, __LINE__);
 }
 
 void IOFWDWriteRequest::recvPipelineComplete(int recvStatus)
 {
-   fprintf(stderr, "==> %s:(%s):%d\n", __FILE__, __func__, __LINE__);
    int i = 0;
    int outState = 0;
    size_t outBytes = 0;
@@ -522,7 +499,7 @@ decompress:
       else if(iofwdutil::transform::SUPPLY_INBUF == outState)
       {
 	CBType dummyCB = boost::bind(&IOFWDWriteRequest::dummyPipelineComplete,
-	    boost::ref(this), _1);
+	    boost::ref(*this), _1);
 
 	compressed_mem_consume++;
 
@@ -552,12 +529,10 @@ decompress:
       for(int ii = 0; ii < transform_mem_count; ii++)
 	userCB_[ii](recvStatus);
    }
-   fprintf(stderr, "<== %s:(%s):%d\n", __FILE__, __func__, __LINE__);
 }
 
 void IOFWDWriteRequest::recvPipelineBufferCB(iofwdevent::CBType cb, RetrievedBuffer * rb, size_t size)
 {
-   fprintf(stderr, "==> %s:(%s):%d\n", __FILE__, __func__, __LINE__);
    param_.mem_expected_size = 0;
 
    if(false == op_hint_compress_enabled)
@@ -567,7 +542,7 @@ void IOFWDWriteRequest::recvPipelineBufferCB(iofwdevent::CBType cb, RetrievedBuf
    }
    else
    {
-      CBType transformCB = boost::bind(&IOFWDWriteRequest::recvPipelineComplete, boost::ref(this), _1);
+      CBType transformCB = boost::bind(&IOFWDWriteRequest::recvPipelineComplete, boost::ref(*this), _1);
 
       transform_mem[user_callbacks].buf = (char*)rb->buffer_->getMemory();
       transform_mem[user_callbacks].byte_count = 0;
@@ -578,14 +553,11 @@ void IOFWDWriteRequest::recvPipelineBufferCB(iofwdevent::CBType cb, RetrievedBuf
       if(1 == user_callbacks)
 	  r_.rbmi_.post_recv(transformCB, addr_, reinterpret_cast<iofwdutil::mm::BMIMemoryAlloc *>(compressed_mem[0]), size, &(param_.mem_expected_size), BMI_EXT_ALLOC, tag_, 0);
    }
-   fprintf(stderr, "<== %s:(%s):%d\n", __FILE__, __func__, __LINE__);
 }
 
 void IOFWDWriteRequest::reply(const CBType & cb)
 {
-   fprintf(stderr, "==> %s:(%s):%d\n", __FILE__, __func__, __LINE__);
    simpleOptReply(cb, getReturnCode(), TSSTART << encoder::EncVarArray(param_.file_sizes, param_.file_count));
-   fprintf(stderr, "<== %s:(%s):%d\n", __FILE__, __func__, __LINE__);
 }
 
 //===========================================================================
