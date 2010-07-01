@@ -56,7 +56,7 @@ public:
       for (size_t i = 0; i < p.mem_count; i++)
           total_bytes_ += p.mem_sizes[i];
 
-      if (p.pipeline_size == 0 || !p.op_hint_pipeline_enabled)
+      if (p.pipeline_size == 0)
       {
          /* this doesn't pipeline, but is a special case of the pipeline mode */
          total_buffers_ = 1;

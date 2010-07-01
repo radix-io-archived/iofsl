@@ -45,7 +45,7 @@ class ReadTaskSM : public sm::SimpleSM< ReadTaskSM >, public iofwdutil::InjectPo
             for (size_t i = 0; i < p.mem_count; i++)
                 total_bytes_ += p.mem_sizes[i];
 
-            if(p.pipeline_size == 0 || !p.op_hint_pipeline_enabled)
+            if(p.pipeline_size == 0)
             {
                 /* setup the rbuffer variable */
                 rbuffer_ = new RetrievedBuffer*[1];

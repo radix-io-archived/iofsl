@@ -46,8 +46,10 @@ class WriteTaskSM : public sm::SimpleSM< WriteTaskSM >, public iofwdutil::Inject
             for (size_t i = 0; i < p.mem_count; i++)
                 total_bytes_ += p.mem_sizes[i];
 
-            if(p.pipeline_size == 0 || !p.op_hint_pipeline_enabled)
+            fprintf(stderr, "%s: pipeline check, psize = %lu, p enabled = %i\n", __func__, p.pipeline_size, p.op_hint_pipeline_enabled);
+            if(p.pipeline_size == 0)
             {
+                fprintf(stderr, "%s: pipeline disabled, running normal mode\n", __func__);
                 /* setup the rbuffer variable */
                 rbuffer_ = new RetrievedBuffer*[1];
                 rbuffer_[0] = new RetrievedBuffer(total_bytes_);
@@ -56,6 +58,7 @@ class WriteTaskSM : public sm::SimpleSM< WriteTaskSM >, public iofwdutil::Inject
             }
             else
             {
+                fprintf(stderr, "%s: pipeline enabled, running pipeline mode\n", __func__);
                 /* compute the total number of concurrent pipeline ops */
                 pipeline_size_ = std::min(p.max_buffer_size, p.pipeline_size);
                 total_pipeline_ops_ = (int)ceil(1.0 * total_bytes_ / pipeline_size_);
