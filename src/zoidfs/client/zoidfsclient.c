@@ -3691,7 +3691,7 @@ static int zoidfs_write_pipeline(BMI_addr_t peer_addr, size_t pipeline_size,
                                  size_t list_count, const void ** buf_list,
                                  const bmi_size_t bmi_size_list[], bmi_msg_tag_t tag,
                                  bmi_context_id context, bmi_size_t total_size) {
-    int ret;    
+    int ret = ZFS_OK;
     if (compression_type != NULL)
     {
         /* Create temporary non-const varibles for transform */
@@ -3740,7 +3740,6 @@ static int zoidfs_write_pipeline(BMI_addr_t peer_addr, size_t pipeline_size,
     } else {
 
     int np = 0;
-    int ret = ZFS_OK;
     bmi_size_t i;
     bmi_size_t bmi_pipeline_size = (bmi_size_t)pipeline_size;
     bmi_size_t start = 0;
