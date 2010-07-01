@@ -5,6 +5,7 @@
 #include "iofwd_config.h"
 #ifdef HAVE_ZLIB
 #include "zlib.h"
+#include "zoidfs_zlib.h"
 #endif
 #define SET_BINARY_MODE(file)
 #define ZOIDFS_TRANSFORM_ERROR  -9
@@ -25,3 +26,7 @@ typedef struct
     size_t buf_position;
 } zoidfs_write_compress;
 
+int zoidfs_transform_init (char * type, zoidfs_write_compress * comp);
+int zoidfs_transform (zoidfs_write_compress * compression, void ** input, 
+                      size_t * input_length, void ** output, size_t * output_len,
+                      int flush);

@@ -69,7 +69,7 @@ int decompress_init (char * type, void ** library)
     return 0;    
 }
 
-int zlib_compress_hook (void * stream, void * source, size_t * length, void ** dest,
+int zlib_compress_hook (void * stream, void ** source, size_t * length, void ** dest,
                         size_t * output_length, int close)
 {
     return zlib_compress((z_stream *)stream, source, length, dest, output_length, close);
@@ -78,7 +78,6 @@ int zlib_compress (z_stream * stream, void ** source, size_t * length, void ** d
                    size_t * output_length, int close)
 {
     int ret;
-    size_t have;
     /* Malloc the buffer that will recieve the compress data */
     void * input = (*source);
     void * finished = (*dest); 

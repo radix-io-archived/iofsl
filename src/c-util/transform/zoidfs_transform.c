@@ -1,8 +1,5 @@
 #include "zoidfs_transform.h"
 
-extern int zlib_compress_hook (void * stream, void ** source, size_t * length, void ** dest,
-                               size_t * output_length, int close);
-
 int passthrough (void * stream, void ** source, size_t * length, void ** dest,
                  size_t * output_length, int close)
 {
@@ -26,7 +23,6 @@ int passthrough (void * stream, void ** source, size_t * length, void ** dest,
 
 int zoidfs_transform_init (char * type, zoidfs_write_compress * comp)
 {
-    int x;
     int level = -1;
     (*comp).intern_buf = NULL;
     (*comp).buf_position = 0;
@@ -50,6 +46,9 @@ int zoidfs_transform_init (char * type, zoidfs_write_compress * comp)
 
 int zoidfs_transform_change_transform (char * type, zoidfs_write_compress * comp)
 {
+    fprintf(stderr,"Change Transform Not Implimented\n");
+    return -1;
+/*
     int level = -1;
     if (strcmp("zlib",type) == 0)
     { 
@@ -65,6 +64,7 @@ int zoidfs_transform_change_transform (char * type, zoidfs_write_compress * comp
     {
         (*comp).transform = &passthrough;                    
     }
+*/
 }
 void zoidfs_transform_destroy (zoidfs_write_compress * comp)
 {
