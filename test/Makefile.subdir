@@ -85,8 +85,13 @@ test/zoidfs-microbenchmarks/mkdir-thput test/zoidfs-microbenchmarks/mkdir-thput-
 test/zoidfs-microbenchmarks/lookup-thput-local test/zoidfs-microbenchmarks/getattr-thput test/zoidfs-microbenchmarks/getattr-thput-local \
 test/zoidfs-microbenchmarks/setattr-thput test/zoidfs-microbenchmarks/setattr-thput-local test/zoidfs-microbenchmarks/remove-thput \
 test/zoidfs-microbenchmarks/remove-thput-local test/zoidfs-microbenchmarks/null-thput test/zoidfs-microbenchmarks/null-thput-local \
-test/zoidfs-microbenchmarks/zoidfs-tile-io test/zoidfs-microbenchmarks/zoidfs-tile-io-local
+test/zoidfs-microbenchmarks/zoidfs-tile-io test/zoidfs-microbenchmarks/zoidfs-tile-io-local test/zoidfs-microbenchmarks/zoidfs-test-compress
 
+test_zoidfs_microbenchmarks_zoidfs_test_compress_SOURCES = test/zoidfs-microbenchmarks/zoidfs-test-compress.c
+test_zoidfs_microbenchmarks_zoidfs_test_compress_LDADD = src/zoidfs/libzoidfsclient.a ${test_microbenchmarks_ldadd}
+test_zoidfs_microbenchmarks_zoidfs_test_compress_LDFLAGS = ${test_microbenchmarks_ldflags}
+test_zoidfs_microbenchmarks_zoidfs_test_compress_CFLAGS = -DHAVE_GETOPT_LONG 
+ 
 test_zoidfs_microbenchmarks_zoidfs_tile_io_SOURCES = test/zoidfs-microbenchmarks/zoidfs-tile-io.c
 test_zoidfs_microbenchmarks_zoidfs_tile_io_LDADD = src/zoidfs/libzoidfsclient.a ${test_microbenchmarks_ldadd}
 test_zoidfs_microbenchmarks_zoidfs_tile_io_LDFLAGS = ${test_microbenchmarks_ldflags}
