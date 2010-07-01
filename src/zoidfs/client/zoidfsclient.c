@@ -3245,7 +3245,9 @@ int zoidfs_write(const zoidfs_handle_t *handle, size_t mem_count,
 
     free(hash_value);
     free(hash_string);
-
+    if (pipeline_size == 0)
+       zoidfs_hint_add( &op_hint , strdup(ZOIDFS_ENABLE_PIPELINE), strdup("0"),
+                        2, ZOIDFS_HINTS_ZC);
     if (compression_type != NULL)
     {
         if (pipeline_size == 0)
