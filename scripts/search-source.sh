@@ -7,4 +7,4 @@ else
 fi
 
 cd $DIR
-find . -iname \*.cpp -o -iname \*.hh | xargs grep $*
+find . -iname \*.cpp -o -iname \*.hh | xargs grep "$*"
