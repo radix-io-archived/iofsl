@@ -100,6 +100,12 @@ private:
     boost::mutex lock_;
 };
 
+
+/**
+ * Helper for easy tracing
+ */
+#define ZLOG_AUTOTRACE_DEFAULT ZLOG_AUTOTRACE(iofwdutil::IOFWDLog::getSource())
+
 //===========================================================================
 }
 
