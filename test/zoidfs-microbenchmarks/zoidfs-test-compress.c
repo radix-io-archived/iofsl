@@ -240,6 +240,7 @@ int main(int argc, char * args[])
         if(ret != ZFS_OK)
         {
             fprintf(stderr, "error: could not create file, path = %s, err = %i\n", path, ret);
+            MPI_Abort(MPI_COMM_WORLD, -1);
         }
 
         /* wait for the other procs */
@@ -255,6 +256,7 @@ int main(int argc, char * args[])
         if(ret != ZFS_OK)
         {
             fprintf(stderr, "error: could not lookup file, path = %s, err = %i\n", path, ret);
+            MPI_Abort(MPI_COMM_WORLD, -1);
         }
     }
 
@@ -269,6 +271,7 @@ int main(int argc, char * args[])
         if(ret != ZFS_OK)
         {
             fprintf(stderr, "error: could not write data, err = %i\n", ret);
+            MPI_Abort(MPI_COMM_WORLD, -1);
         }
         etime += (MPI_Wtime() - stime);
     }
@@ -306,6 +309,7 @@ int main(int argc, char * args[])
         if(ret != ZFS_OK)
         {
             fprintf(stderr, "error: could not remove file = %s, err = %i\n", path, ret);
+            MPI_Abort(MPI_COMM_WORLD, -1);
         }
     }
 
