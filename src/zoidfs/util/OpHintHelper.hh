@@ -108,10 +108,10 @@ namespace encoder
             char * value = NULL;
 
             process (p, key_len);
-            key = (char *)malloc(sizeof(char) * key_len);
+            key = (char *)malloc((sizeof(char) * key_len) + 1);
             process (p, EncString(key, key_len));
             process (p, value_len);
-            value = (char *)malloc(sizeof(char) * value_len);
+            value = (char *)malloc((sizeof(char) * value_len) + 1);
             process (p, EncString(value, value_len));
             zoidfs::util::ZoidFSHintAdd(h.op_hint_, key, value, value_len, ZOIDFS_HINTS_ZC);
          }
