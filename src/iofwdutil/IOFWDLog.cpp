@@ -43,7 +43,8 @@ zlog::ZLogSource * IOFWDLog::createSource (const char * name)
 
 IOFWDLog::IOFWDLog ()
    : configurator_ (new ZLogConfigurator ()),
-     default_loglevel_(INFO)
+     default_loglevel_(INFO),
+     default_(0)
 {
    createDefaultSinks (); 
    createDefaultFilters (); 
@@ -51,6 +52,9 @@ IOFWDLog::IOFWDLog ()
    // Set log levels from env
    if (getenv ("IOFWD_LOGLEVEL"))
       setLogLevelOverride (getenv("IOFWD_LOGLEVEL")); 
+
+   // We don't need to free source, we don't own it.
+   default_ = &getSourceInt ("default");
 }
 
 void IOFWDLog::createDefaultFilters ()
