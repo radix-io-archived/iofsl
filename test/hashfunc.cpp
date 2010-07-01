@@ -2,6 +2,7 @@
 #include <boost/format.hpp>
 #include <boost/program_options.hpp>
 #include <boost/scoped_ptr.hpp>
+#include <boost/scoped_array.hpp>
 
 #include "iofwdutil/hash/HashFactory.hh"
 #include "iofwdutil/hash/SHA1Simple.hh"
