@@ -343,6 +343,7 @@ void IOFWDWriteRequest::releaseBuffer(RetrievedBuffer * rb)
 
     /* delete the buffer */
     delete rb->buffer_;
+    fprintf(stderr, "<== %s:(%s):%d\n", __FILE__, __func__, __LINE__);
 }
 
 void IOFWDWriteRequest::recvComplete(int recvStatus)
