@@ -212,9 +212,6 @@ void IOFWDReadRequest::allocateBuffer(iofwdevent::CBType cb, RetrievedBuffer * r
 void IOFWDReadRequest::releaseBuffer(RetrievedBuffer * rb)
 {
     iofwdutil::mm::BMIMemoryManager::instance().dealloc(rb->buffer_);
-
-    /* delete the buffer */
-    delete rb->buffer_;
 }
 
 //===========================================================================
