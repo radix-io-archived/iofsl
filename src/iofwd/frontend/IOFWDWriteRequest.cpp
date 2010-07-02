@@ -12,7 +12,6 @@ namespace iofwd
 
 IOFWDWriteRequest::~IOFWDWriteRequest ()
 {
-
 #ifndef USE_TASK_HA
    if (param_.mem_starts)
       delete [] param_.mem_starts;
@@ -189,6 +188,9 @@ void IOFWDWriteRequest::allocateBuffer(iofwdevent::CBType cb, RetrievedBuffer * 
 void IOFWDWriteRequest::releaseBuffer(RetrievedBuffer * rb)
 {
     iofwdutil::mm::BMIMemoryManager::instance().dealloc(rb->buffer_);
+
+    delete rb->buffer_;
+    rb->buffer_ = NULL;
 }
 
 void IOFWDWriteRequest::recvBuffers(const CBType & cb, RetrievedBuffer * rb)
