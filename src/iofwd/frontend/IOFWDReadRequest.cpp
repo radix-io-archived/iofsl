@@ -37,9 +37,6 @@ IOFWDReadRequest::~IOFWDReadRequest ()
 #endif
    if(param_.op_hint)
       zoidfs::util::ZoidFSHintDestroy(&(param_.op_hint));
-   if(bmi_buffer_)
-      delete bmi_buffer_;
-
 }
 
 //

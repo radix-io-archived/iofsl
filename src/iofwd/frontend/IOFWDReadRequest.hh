@@ -22,7 +22,7 @@ class  IOFWDReadRequest
 public:
    IOFWDReadRequest (int opid, const BMI_unexpected_info & info,
          IOFWDResources & res)
-      : IOFWDRequest (info,res), ReadRequest (opid), bmi_buffer_(NULL)
+      : IOFWDRequest (info,res), ReadRequest (opid)
    {
    }
    virtual ~IOFWDReadRequest ();
@@ -45,7 +45,6 @@ private:
    ReqParam param_;
    iofwdutil::HybridAllocator<4096> h;
    zoidfs::zoidfs_handle_t handle_;
-   iofwdutil::bmi::BMIBuffer * bmi_buffer_;
 };
 
 //===========================================================================
