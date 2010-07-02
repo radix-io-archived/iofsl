@@ -26,8 +26,15 @@ IOFWDWriteRequest::~IOFWDWriteRequest ()
       delete[] param_.bmi_mem_sizes;
    // NULL check not really required since freeing a NULL
    // ptr is just doing a return from the function
-   delete []compressed_mem;
-   delete GenTransform;
+   if(true == op_hint_compress_enabled)
+   {
+      if(0 == param_.pipeline_size)
+      {
+	  delete []compressed_mem;
+	  delete GenTransform;
+	  delete []userCB_;
+      }
+   }
 #else
    if (param_.mem_starts)
       h.hafree(param_.mem_starts);
