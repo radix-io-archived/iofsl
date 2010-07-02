@@ -51,8 +51,7 @@ IOFWDWriteRequest::~IOFWDWriteRequest ()
 #endif
    if(param_.op_hint)
       zoidfs::util::ZoidFSHintDestroy(&(param_.op_hint));
-   if(bmi_buffer_)
-      delete bmi_buffer_;
+   fprintf(stderr, "<== %s:(%s):%d\n", __FILE__, __func__, __LINE__);
 }
 
 IOFWDWriteRequest::ReqParam & IOFWDWriteRequest::decodeParam ()
@@ -342,13 +341,9 @@ void IOFWDWriteRequest::releaseBuffer(RetrievedBuffer * rb)
 {
     iofwdutil::mm::BMIMemoryManager::instance().dealloc(rb->buffer_);
 
-<<<<<<< HEAD
     /* delete the buffer */
     delete rb->buffer_;
-=======
-    delete rb->buffer_;
     rb->buffer_ = NULL;
->>>>>>> adjust how the memory buffers are released by the request and mm
     fprintf(stderr, "<== %s:(%s):%d\n", __FILE__, __func__, __LINE__);
 }
 
