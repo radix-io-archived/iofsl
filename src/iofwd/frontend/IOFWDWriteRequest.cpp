@@ -30,6 +30,7 @@ IOFWDWriteRequest::~IOFWDWriteRequest ()
    {
       if(0 == param_.pipeline_size)
       {
+	  delete compressed_mem[0];
 	  delete []compressed_mem;
 	  delete GenTransform;
 	  delete []userCB_;
