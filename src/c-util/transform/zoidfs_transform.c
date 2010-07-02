@@ -33,10 +33,30 @@ int zoidfs_transform_init (char * type, zoidfs_write_compress * comp)
             compress_init ("zlib",level,&(*comp).compression_struct);
             (*comp).transform = &zlib_compress_hook;
         #else
-            printf("Error! Zlib library is not availible!\n");
+            fprintf(stderr,"Error! Zlib library is not availible!\n");
             return -1;
         #endif
-    }   
+    }
+    else if (strcmp("BZIP:",type) == 0)
+    {
+        #ifdef HAVE_BZLIB
+            bzip_compress_init (&(*comp).compression_struct,(*comp).total_in);
+            (*comp).transform = &bzip_compress_hook;
+        #else
+            fprintf(stderr,"ERROR! bzip library is not availible!\n");
+            return -1;
+        #endif   
+    }
+    else if (strcmp("LZF:",type) == 0)
+    {
+        #ifdef HAVE_LZF
+            lzf_compress_init (&(*comp).compression_struct,(*comp).total_in);
+            (*comp).transform = &lzf_compress_hook;
+        #else
+            fprintf(stderr,"ERROR! LZF library is not availible!\n");
+            return -1;
+        #endif
+    }
     else if (strcmp("passthrough",type) == 0)
     {
         (*comp).transform = &passthrough;                    
@@ -44,33 +64,11 @@ int zoidfs_transform_init (char * type, zoidfs_write_compress * comp)
     return 0;
 }
 
-int zoidfs_transform_change_transform (char * type, zoidfs_write_compress * comp)
-{
-    fprintf(stderr,"Change Transform Not Implimented\n");
-    return -1;
-/*
-    int level = -1;
-    if (strcmp("zlib",type) == 0)
-    { 
-        #ifdef HAVE_ZLIB
-        compress_init (type,level,&(*comp).compression_struct);
-        (*comp).transform = &zlib_compress_hook;
-        #else
-            printf("Error! Zlib library is not availible!\n");
-            return -1;
-        #endif        
-    }      
-    else if (strcmp("passthrough",type) == 0)
-    {
-        (*comp).transform = &passthrough;                    
-    }
-*/
-}
 void zoidfs_transform_destroy (zoidfs_write_compress * comp)
 {
-    if (strcmp((*comp).type,"zlib") == 0)
+    if (strcmp((*comp).type,"ZLIB:") == 0 || strcmp((*comp).type,"BZIP:") == 0)
     {
-        //(void)deflateEnd((*comp).compression_struct);
+        free((*comp).compression_struct);        
     }
 } 
 
@@ -79,6 +77,7 @@ int zoidfs_transform (zoidfs_write_compress * compression, void ** input,
                       int flush)
 {
     int ret = 0;
+
     while (ret != ZOIDFS_BUF_ERROR)
     {  
         /* Compress's the file based on some sort of compression scheme 
@@ -91,7 +90,6 @@ int zoidfs_transform (zoidfs_write_compress * compression, void ** input,
         else if (ret == ZOIDFS_TRANSFORM_ERROR)
             return ret;      
     }
-    
     if ((int)*input_length > 0)
         return ZOIDFS_OUTPUT_FULL;
     else if (*output_len > 0)

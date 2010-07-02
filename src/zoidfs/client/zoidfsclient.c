@@ -3302,9 +3302,10 @@ int zoidfs_write(const zoidfs_handle_t *handle, size_t mem_count,
             total_len = 0;
             max_buf = 0;
             /* size of the desired compressed output */
-            //for (x = 0; x < mem_count; x++)
-            //    max_buf += mem_sizes[x];
-            max_buf = 16000000;
+            for (x = 0; x < mem_count; x++)
+                max_buf += mem_sizes[x];
+            if (max_buf > BMI_CHECK_MAXSIZE)
+                max_buf = BMI_CHECK_MAXSIZE;
             size_t  bmi_sizes[mem_count];
             void ** buf_list_tmp = malloc(sizeof(char *) * mem_count);
             for (x = 0; x < mem_count; x++)

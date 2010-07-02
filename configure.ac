@@ -741,6 +741,33 @@ fi
 
 
 dnl =========================================================================
+dnl ========= Check for BZLIB support (for compression)      ================
+dnl =========================================================================
+
+
+BZLIB_LDFLAGS=
+BZLIB_CFLAGS=
+BZLIB_CPPFLAGS=
+BZLIB_LIBS=
+PKG_CHECK_MODULES([BZLIB],[BZLIB],[use_bzlib=1],[use_bzlib=0])
+BZLIB_LDFLAGS="$BZLIB_LDFLAGS"
+BZLIB_CFLAGS="$BZLIB_CFLAGS"
+BZLIB_CPPFLAGS="$BZLIB_CPPFLAGS"
+BZLIB_LIBS="$BZLIB_LIBS"
+AC_SUBST([BZLIB_LDFLAGS])
+AC_SUBST([BZLIB_CFLAGS])
+AC_SUBST([BZLIB_CPPFLAGS])
+AC_SUBST([BZLIB_LIBS])
+AM_CONDITIONAL([HAVE_BZLIB],[test "x${use_bzlib}" == "x1"])
+if test "x${use_bzlib}" == "x1" ; then
+      AC_DEFINE([HAVE_BZLIB], [1], [If bzlib is available])
+      CPPFLAGS="$CPPFLAGS $BZLIB_CPPFLAGS"
+      LDFLAGS="$LDFLAGS $BZLIB_LDFLAGS"
+      CFLAGS="$CFLAGS $BZLIB_CFLAGS"
+      LIBS="$LIBS $BZLIB_LIBS"
+fi
+
+dnl =========================================================================
 dnl ========= Check for OpenSSL support (for hash functions) ================
 dnl =========================================================================
 

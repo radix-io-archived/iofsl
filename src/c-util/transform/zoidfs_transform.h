@@ -7,6 +7,14 @@
 #include "zlib.h"
 #include "zoidfs_zlib.h"
 #endif
+#ifdef HAVE_BZLIB
+#include "bzlib.h"
+#include "zoidfs_bzip.h"
+#endif
+#ifdef HAVE_LZF
+#include "zoidfs_lzf.h"
+#endif
+
 #define SET_BINARY_MODE(file)
 #define ZOIDFS_TRANSFORM_ERROR  -9
 #define ZOIDFS_BUF_ERROR        -3
@@ -24,6 +32,7 @@ typedef struct
     void * type;
     void * intern_buf;
     size_t buf_position;
+    size_t total_in;
 } zoidfs_write_compress;
 
 int zoidfs_transform_init (char * type, zoidfs_write_compress * comp);
