@@ -68,12 +68,14 @@ void BMIMemoryAlloc::dealloc()
 {
     /* remove the BMI memory buffer */
     if(memory_)
+    {
         delete memory_;
+        memory_ = NULL;
 
-    /* reset the memory params */
-    allocated_ = false;
-    numTokens_ = 0;
-    memory_ = NULL;
+        /* reset the memory params */
+        allocated_ = false;
+        numTokens_ = 0;
+    }
 }
 
 /*
