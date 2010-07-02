@@ -24,7 +24,9 @@ namespace iofwd
         }
 
         if(rbuffer_)
+        {
             delete [] rbuffer_;
+        }
 
         /* delete the request last */
         delete &request_;
@@ -225,16 +227,16 @@ void WriteTaskSM::writeDoneCB(int UNUSED(status), int my_slot)
         // update the op count
         io_ops_done_++;
         count = io_ops_done_;
-    }
 
-    /* update the return code */
-    if(*(rbuffer_[my_slot]->ret) != zoidfs::ZFS_OK)
-    {
-        ret_ = *(rbuffer_[my_slot]->ret);
-    }
+        /* update the return code */
+        if(*(rbuffer_[my_slot]->ret) != zoidfs::ZFS_OK)
+        {
+            ret_ = *(rbuffer_[my_slot]->ret);
+        }
 
-    /* free the buffer */
-    request_.releaseBuffer(rbuffer_[my_slot]);
+        /* free the buffer */
+        request_.releaseBuffer(rbuffer_[my_slot]);
+    }
 
     if(count == total_pipeline_ops_)
     {
