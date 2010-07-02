@@ -1,5 +1,22 @@
+
+#define HAVE_LZF
 #include <stdio.h>
 #include <string.h>
+#ifdef HAVE_LZF
+#include "lzf/lzf.h"
+#include "lzf/lzfP.h"
+#include <rpc/xdr.h>
+#include "zoidfs_lzf.h"
+
+#define LZF_BUFF_SIZE 64000
+typedef struct
+{
+    void * buf;
+    int cur_position;
+    int buf_size;
+} lzf_state_var;
+
+#endif
 #include <stdlib.h>
 #include <assert.h>
 #include "iofwd_config.h"
@@ -11,10 +28,7 @@
 #include "bzlib.h"
 #include "zoidfs_bzip.h"
 #endif
-#ifdef HAVE_LZF
 #include "zoidfs_lzf.h"
-#endif
-
 #define SET_BINARY_MODE(file)
 #define ZOIDFS_TRANSFORM_ERROR  -9
 #define ZOIDFS_BUF_ERROR        -3
@@ -25,6 +39,7 @@
 #define ZOIDFS_STREAM_END       2
 #define ZOIDFS_FLUSH            3
 #define ZOIDFS_CLOSE            4
+
 typedef struct
 {
     int(*transform)(void *, void **, size_t *, void **, size_t *, int);
