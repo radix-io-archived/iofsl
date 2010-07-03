@@ -13,6 +13,7 @@ namespace iofwd
    namespace frontend
    {
 //===========================================================================
+#define NUM_OUTSTANDING_REQUESTS 16
 
 class IOFWDWriteRequest
    : public IOFWDRequest,
@@ -30,29 +31,17 @@ class IOFWDWriteRequest
      bool op_hint_compress_enabled;
      bool op_hint_headstuff_enabled;
 
-     // non pipelined state
-     size_t compressed_size;
-
      // pipelined state
-     volatile int user_callbacks;
      char **compressed_mem;
-     volatile int compressed_mem_count;
-     volatile int compressed_mem_consume;
-     volatile int num_input_bufs;
+     size_t compressed_size;
+     char **decompressed_mem;
+     size_t *decompressed_size;
+     char **callback_mem;
+     int next_slot;
 
-     typedef struct _buf
-     {
-	char *buf;
-	int byte_count;
-     }buf;
-     buf *transform_mem;
-     volatile int transform_mem_count;
-     volatile int transform_mem_consume;
+     int user_callbacks;
 
-     pthread_mutex_t imp;
-     pthread_cond_t icv;
-     pthread_mutex_t omp;
-     pthread_cond_t ocv;
+     boost::mutex mp_;
 
 public:
    IOFWDWriteRequest (int opid, const BMI_unexpected_info & info,
@@ -73,8 +62,7 @@ public:
 
    // for pipeline mode
    virtual void recvPipelineBufferCB(iofwdevent::CBType cb, RetrievedBuffer * rb, size_t size);
-   virtual void recvPipelineComplete(int recvStatus);
-   virtual void dummyPipelineComplete(int recvStatus);
+   virtual void recvPipelineComplete(int recvStatus, int my_slot);
 
    virtual void initRequestParams(ReqParam & p, void * bufferMem);
 
