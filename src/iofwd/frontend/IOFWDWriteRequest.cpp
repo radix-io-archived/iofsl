@@ -240,20 +240,14 @@ void IOFWDWriteRequest::initRequestParams(ReqParam & p, void * bufferMem)
 	    GenTransform = new iofwdutil::transform::ZLib ();
 
 	    compressed_mem = new char* [1];
-	    if(NULL == compressed_mem)
-	      throw "IOFWDWriteRequest::initRequestParams() new char* [] failed!";
 
 	    compressed_mem[0] = new char [compressed_size];
-	    if(NULL == compressed_mem[0])
-	      throw "IOFWDWriteRequest::initRequestParams() new char [] failed!";
 
 	    compressed_mem_count = 0;
 	    compressed_mem_consume = 0;
 	    num_input_bufs = 0;
 
 	    userCB_ = new CBType[1];
-	    if(NULL == userCB_)
-	      throw "IOFWDWriteRequest::initRequestParams() new CBType[] failed!";
 
 	    userCB_[0] = NULL;
 
@@ -270,27 +264,17 @@ void IOFWDWriteRequest::initRequestParams(ReqParam & p, void * bufferMem)
 	if(true == op_hint_compress_enabled)
 	{
 	    GenTransform = new iofwdutil::transform::ZLib ();
-	    if(NULL == GenTransform)
-	      throw "IOFWDWriteRequest::initRequestParams() failed (new iofwdutil::iofwdtransform::ZLib)!";
 
 	    compressed_mem = new char*[16];
-	    if(NULL == compressed_mem)
-	      throw "IOFWDWriteRequest::initRequestParams() failed (new char* [])!";
 
 	    for(int ii = 0; ii < 16; ii++)
-	    {
 	      compressed_mem[ii] = new char [param_.pipeline_size];
-	      if(NULL == compressed_mem[ii])
-		throw "IOFWDWriteRequest::initRequestParams() new char [] failed!";
-	    }
 
 	    compressed_mem_consume = 0;
 	    compressed_mem_count = 0;
 	    num_input_bufs = 0;
 
 	    transform_mem = new buf [16];
-	    if(NULL == transform_mem)
-	      throw "IOFWDWriteRequest::initRequestParams() failed (new buf [])!";
 
 	    for(int ii = 0; ii < 16; ii++)
 	    {
@@ -302,8 +286,6 @@ void IOFWDWriteRequest::initRequestParams(ReqParam & p, void * bufferMem)
 	    transform_mem_consume = 0;
 
 	    userCB_ = new CBType[16];
-	    if(NULL == userCB_)
-	      throw "IOFWDWriteRequest::initRequestParams() new CBType[] failed!";
 
 	    for(int ii = 0; ii < 16; ii++)
 	      userCB_[ii] = NULL;
