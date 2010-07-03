@@ -322,11 +322,9 @@ void IOFWDWriteRequest::recvComplete(int recvStatus)
    int outState = 0;
    size_t outBytes = 0;
 
-   if(false == op_hint_compress_enabled)
-   {
-      // You should never have called this call back at all
-      throw "IOFWDWriteRequest::recvComplete() failed (Wrong Callback)!";
-   }
+   ASSERT(true == op_hint_compress_enabled);
+   ASSERT(1 == user_callbacks);
+
    for(i = 0; i < param_.mem_count; i++)
    {
       GenTransform->transform(compressed_mem[0],
@@ -352,17 +350,9 @@ void IOFWDWriteRequest::recvComplete(int recvStatus)
 	  userCB_[0](recvStatus);
 	  break; // Control will never reach this place
       }
-      else if(iofwdutil::transform::SUPPLY_INBUF == outState)
-      {
-	  // In the non-pipelined case, we cannot have this return status
-	  throw "IOFWDWriteRequest::recvComplete() failed (SUPPLY_INBUF in Normal Mode)!";
-      }
-      else if (iofwdutil::transform::TRANSFORM_STREAM_ERROR == outState)
-      {
-	  throw "IOFWDWriteRequest::recvComplete() failed (TRANSFORM_STREAM_ERROR in Normal Mode)!";
-      }
+      ASSERT(iofwdutil::transform::SUPPLY_INBUF != outState);
+      ASSERT(iofwdutil::transform::TRANSFORM_STREAM_ERROR != outState);
    }
-
 }
 
 void IOFWDWriteRequest::recvBuffers(const CBType & cb, RetrievedBuffer * rb)
@@ -383,11 +373,9 @@ void IOFWDWriteRequest::recvBuffers(const CBType & cb, RetrievedBuffer * rb)
     {
       CBType transformCB = boost::bind(&IOFWDWriteRequest::recvComplete, boost::ref(*this), _1);
 
-      // There should never be more than one call backs in the non-pipelined case
       userCB_[user_callbacks++] = cb;
 
-      if(user_callbacks > 1)
-	throw "IOFWDWriteRequest::recvBuffers() Multiple user call backs in non pipelined case!";
+      ASSERT(1 == user_callbacks);
 
       STATIC_ASSERT(sizeof(bmi_size_t) == sizeof(size_t));
 
