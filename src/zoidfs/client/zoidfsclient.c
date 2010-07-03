@@ -3338,9 +3338,9 @@ int zoidfs_write(const zoidfs_handle_t *handle, size_t mem_count,
             sprintf(compress_len_string,"%d",total_len);
             zoidfs_hint_add( &op_hint , strdup(ZOIDFS_COMPRESSED_SIZE), strdup(compress_len_string),
                              strlen(compress_len_string), ZOIDFS_HINTS_ZC);
-            zoidfs_hint_add( &op_hint , strdup("ZOIDFS_TRANSFORM"), strdup(compression_type),
-                             strlen(compression_type), ZOIDFS_HINTS_ZC);
         }
+        zoidfs_hint_add( &op_hint , strdup("ZOIDFS_TRANSFORM"), strdup(compression_type),
+                         strlen(compression_type), ZOIDFS_HINTS_ZC);
     }
     /* init the transfer array wrappers */ 
     mem_sizes_transfer.data = (void *)mem_sizes;
