@@ -318,7 +318,7 @@ void IOFWDWriteRequest::releaseBuffer(RetrievedBuffer * rb)
 
 void IOFWDWriteRequest::recvComplete(int recvStatus)
 {
-   int i = 0;
+   unsigned int i = 0;
    int outState = 0;
    size_t outBytes = 0;
 
@@ -345,8 +345,6 @@ void IOFWDWriteRequest::recvComplete(int recvStatus)
 	  // at the end of the decompression
 	  // call the user callback stored previously
 	  // there should be only one callback
-	  if(user_callbacks > 1)
-	    throw "IOFWDWriteRequest::recvComplete() Multiple user call backs in non pipelined case!";
 	  userCB_[0](recvStatus);
 	  break; // Control will never reach this place
       }
