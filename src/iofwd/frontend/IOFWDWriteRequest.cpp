@@ -31,23 +31,40 @@ IOFWDWriteRequest::~IOFWDWriteRequest ()
       if(0 == param_.pipeline_size)
       {
 	  delete compressed_mem[0];
+	  compressed_mem[0] = NULL;
+
 	  delete []compressed_mem;
+	  compressed_mem = NULL;
+
 	  delete []userCB_;
+	  userCB_ = NULL;
+
 	  delete GenTransform;
       }
       else
       {
 	  for(int ii = 0; ii < NUM_OUTSTANDING_REQUESTS; ii++)
+	  {
 	      delete compressed_mem[ii];
+	      compressed_mem[ii] = NULL;
+	  }
 	  delete []compressed_mem;
+	  compressed_mem = NULL;
 
 	  for(int ii = 0; ii < NUM_OUTSTANDING_REQUESTS; ii++)
+	  {
 	      delete decompressed_mem[ii];
+	      decompressed_mem[ii] = NULL;
+	  }
 	  delete []decompressed_mem;
+	  decompressed_mem = NULL;
 
 	  delete []decompressed_size;
+	  decompressed_size = NULL;
 
 	  delete []userCB_;
+	  userCB_ = NULL;
+
 	  delete GenTransform;
       }
    }
