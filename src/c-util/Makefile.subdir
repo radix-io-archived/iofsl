@@ -70,5 +70,6 @@ src/c-util/hash/chash_crc32.h \
 src/c-util/hash/chash_crc32.c \
 src/c-util/hash/chash_adler32.h \
 src/c-util/hash/chash_adler32.c \
+src/c-util/transform/zoidfs_zlib.h \
 src/c-util/transform/zoidfs_zlib.c 
 endif
