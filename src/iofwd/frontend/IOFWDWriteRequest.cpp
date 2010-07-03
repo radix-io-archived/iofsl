@@ -13,7 +13,6 @@ namespace iofwd
 
 IOFWDWriteRequest::~IOFWDWriteRequest ()
 {
-   fprintf(stderr, "==> %s:(%s):%d\n", __FILE__, __func__, __LINE__);
 #ifndef USE_TASK_HA
    if (param_.mem_starts)
       delete [] param_.mem_starts;
@@ -51,7 +50,6 @@ IOFWDWriteRequest::~IOFWDWriteRequest ()
 #endif
    if(param_.op_hint)
       zoidfs::util::ZoidFSHintDestroy(&(param_.op_hint));
-   fprintf(stderr, "<== %s:(%s):%d\n", __FILE__, __func__, __LINE__);
 }
 
 IOFWDWriteRequest::ReqParam & IOFWDWriteRequest::decodeParam ()
@@ -344,7 +342,6 @@ void IOFWDWriteRequest::releaseBuffer(RetrievedBuffer * rb)
     /* delete the buffer */
     delete rb->buffer_;
     rb->buffer_ = NULL;
-    fprintf(stderr, "<== %s:(%s):%d\n", __FILE__, __func__, __LINE__);
 }
 
 void IOFWDWriteRequest::recvComplete(int recvStatus)
