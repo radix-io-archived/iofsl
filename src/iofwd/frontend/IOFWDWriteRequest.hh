@@ -13,7 +13,7 @@ namespace iofwd
    namespace frontend
    {
 //===========================================================================
-#define NUM_OUTSTANDING_REQUESTS 16
+#define NUM_OUTSTANDING_REQUESTS 8
 
 class IOFWDWriteRequest
    : public IOFWDRequest,
@@ -34,10 +34,9 @@ class IOFWDWriteRequest
      // pipelined state
      char **compressed_mem;
      size_t compressed_size;
-     char **decompressed_mem;
-     size_t *decompressed_size;
+     char *decompressed_mem;
+     size_t decompressed_size;
      char **callback_mem;
-     int next_slot;
 
      int user_callbacks;
 
