@@ -165,22 +165,26 @@ IOFWDWriteRequest::ReqParam & IOFWDWriteRequest::decodeParam ()
         op_hint_compress_enabled = false;
    }
 
-   char * enable_header_stuffing = zoidfs::util::ZoidFSHintGet(&(param_.op_hint), ZOIDFS_ENABLE_HEADER_STUFFING);
+   size_t uncompressed_bytes = 0;
+   char *enable_header_stuffing = zoidfs::util::ZoidFSHintGet(&(param_.op_hint), ZOIDFS_HEADER_STUFFING);
    if(enable_header_stuffing)
    {
-        if(strcmp(enable_pipeline, ZOIDFS_HINT_ENABLED) == 0)
-        {
-            op_hint_headstuff_enabled = true;
-        }
-        else
-        {
-            op_hint_headstuff_enabled = false;
-        }
+        char *token = NULL, *saveptr = NULL;
+
+	token = strtok_r(enable_header_stuffing, ":", &saveptr);
+
+	if(NULL != token)
+	    uncompressed_bytes = (size_t)atol(token);
+
+	if(0 == uncompressed_bytes)
+	  op_hint_headstuff_enabled = false;
+	else
+	  op_hint_headstuff_enabled = true;
    }
    /* keep pipelining enabled by default */
    else
    {
-        op_hint_headstuff_enabled = true;
+        op_hint_headstuff_enabled = false;
    }
 
    // init the rest of the write request params to 0
@@ -192,6 +196,21 @@ IOFWDWriteRequest::ReqParam & IOFWDWriteRequest::decodeParam ()
 
    // get the max buffer size from BMI
    r_.rbmi_.get_info(addr_, BMI_CHECK_MAXSIZE, static_cast<void *>(&param_.max_buffer_size));
+
+   compressed_mem = NULL;
+   compressed_size = 0;
+   decompressedBufSize = 0;
+   decompressed_mem = NULL;
+   decompressed_size = 0;
+   callback_mem = NULL;
+   userCB_ = NULL;
+   next_slot = 0;
+   user_callbacks = 0;
+   op_hint_compress_enabled = false;
+   op_hint_headstuff_enabled = false;
+   mem_slot = 0;
+   mem_slot_bytes = 0;
+   size_of_stuffed_data = 0;
 
    if(0 != param_.pipeline_size && true == op_hint_compress_enabled)
    {
@@ -303,16 +322,77 @@ void IOFWDWriteRequest::initRequestParams(ReqParam & p, void * bufferMem)
 
 	    userCB_ = new CBType[1];
 	    userCB_[0] = NULL;
-
-	    next_slot = 0;
-	    user_callbacks = 0;
-
-	    decompressed_mem = NULL;
-	    decompressedBufSize = 0;
-	    decompressed_size = 0;
-	    callback_mem = NULL;
 	}
 
+	if(true == op_hint_headstuff_enabled)
+	{
+	  int size_of_packet = raw_request_.size();
+	  void *ptr_to_header = raw_request_.get();
+	  int size_of_header = req_reader_.getPos();
+	  unsigned int ii = 0;
+	  size_t bytes = 0, total_bytes = 0;
+	  char *position = NULL;
+	  int outState = 0;
+	  size_t outBytes = 0;
+
+	  size_of_stuffed_data = size_of_packet - size_of_header;
+	  position = (char*)ptr_to_header + size_of_header;
+
+	  fprintf(stderr, "size_of_packet = %d\n", size_of_packet);
+	  fprintf(stderr, "ptr_to_header = %p\n", ptr_to_header);
+	  fprintf(stderr, "size_of_header = %d\n", size_of_header);
+	  fprintf(stderr, "size_of_stuffed_data = %u\n", (unsigned)size_of_stuffed_data);
+
+	  if(false == op_hint_compress_enabled)
+	  {
+	    for(ii = 0;
+		ii < param_.mem_count && total_bytes < size_of_stuffed_data;
+		ii++, position += bytes, total_bytes += bytes)
+	    {
+		bytes = std::min(param_.mem_sizes[ii], size_of_stuffed_data-total_bytes);
+		memcpy(param_.mem_starts[ii], position, bytes);
+	    }
+	    mem_slot = ii - 1;
+	    mem_slot_bytes = bytes;
+	  }
+	  else
+	  {
+	    for(ii = 0;
+		ii < param_.mem_count;
+		ii++)
+	    {
+		GenTransform->transform(position,
+		  size_of_stuffed_data,
+		  param_.mem_starts[ii],
+		  param_.mem_sizes[ii],
+		  &outBytes,
+		  &outState,
+		  true);
+
+		total_bytes += outBytes;
+		mem_slot_bytes = outBytes;
+
+		ASSERT(iofwdutil::transform::TRANSFORM_STREAM_ERROR != outState);
+
+		if(iofwdutil::transform::CONSUME_OUTBUF == outState)
+		{
+		    mem_slot = ii + 1;
+		    continue;
+		}
+		else if(iofwdutil::transform::SUPPLY_INBUF == outState)
+		{
+		    mem_slot = ii;
+		    break;
+		}
+		else if(iofwdutil::transform::TRANSFORM_STREAM_END == outState)
+		{
+		    mem_slot = ii;
+		    break;
+		}
+	    }
+	    size_of_stuffed_data = total_bytes;
+	  }
+	}
     }
 }
 
@@ -341,16 +421,30 @@ void IOFWDWriteRequest::recvComplete(int recvStatus)
 
    ASSERT(true == op_hint_compress_enabled);
    ASSERT(1 == user_callbacks);
+   ASSERT(size_of_stuffed_data < param_.mem_total_size);
 
-   for(i = 0; i < param_.mem_count; i++)
+   for(i = mem_slot; i < param_.mem_count; i++)
    {
-      GenTransform->transform(compressed_mem[0],
-	compressed_size,
-	param_.mem_starts[i],
-	param_.mem_sizes[i],
-	&outBytes,
-	&outState,
-	false);
+      if(i == mem_slot)
+      {
+	  GenTransform->transform(compressed_mem[0],
+	    compressed_size,
+	    param_.mem_starts[i]+mem_slot_bytes,
+	    param_.mem_sizes[i]-mem_slot_bytes,
+	    &outBytes,
+	    &outState,
+	    false);
+      }
+      else
+      {
+	  GenTransform->transform(compressed_mem[0],
+	    compressed_size,
+	    param_.mem_starts[i],
+	    param_.mem_sizes[i],
+	    &outBytes,
+	    &outState,
+	    false);
+      }
 
       if(iofwdutil::transform::CONSUME_OUTBUF == outState)
       {
@@ -363,7 +457,7 @@ void IOFWDWriteRequest::recvComplete(int recvStatus)
 	  // call the user callback stored previously
 	  // there should be only one callback
 	  userCB_[0](recvStatus);
-	  break; // Control will never reach this place
+	  break;
       }
       ASSERT(iofwdutil::transform::SUPPLY_INBUF != outState);
       ASSERT(iofwdutil::transform::TRANSFORM_STREAM_ERROR != outState);
@@ -372,9 +466,11 @@ void IOFWDWriteRequest::recvComplete(int recvStatus)
 
 void IOFWDWriteRequest::recvBuffers(const CBType & cb, RetrievedBuffer * rb)
 {
+    int recvStatus = 0;
+
     param_.mem_expected_size = 0;
 
-    if(false == op_hint_compress_enabled)
+    if(false == op_hint_compress_enabled && false == op_hint_headstuff_enabled)
     {
 #if SIZEOF_SIZE_T == SIZEOF_INT64_T
       r_.rbmi_.post_recv_list(cb, addr_, reinterpret_cast<void*const*>(param_.mem_starts), reinterpret_cast<const bmi_size_t *>(param_.mem_sizes),
@@ -395,14 +491,39 @@ void IOFWDWriteRequest::recvBuffers(const CBType & cb, RetrievedBuffer * rb)
       STATIC_ASSERT(sizeof(bmi_size_t) == sizeof(size_t));
 
 #if SIZEOF_SIZE_T == SIZEOF_INT64_T
-      r_.rbmi_.post_recv_list(transformCB, addr_,
-            reinterpret_cast<void*const*>(compressed_mem),
-            reinterpret_cast<const bmi_size_t*>(&compressed_size), 1,
-            param_.mem_total_size, &(param_.mem_expected_size),
-            dynamic_cast<iofwdutil::mm::BMIMemoryAlloc
-            *>(rb->buffer_)->bmiType(), tag_, 0);
+      if(size_of_stuffed_data < param_.mem_total_size)
+      {
+	  r_.rbmi_.post_recv_list(transformCB,
+	      addr_,
+	      reinterpret_cast<void*const*>(compressed_mem),
+	      reinterpret_cast<const bmi_size_t*>(&compressed_size),
+	      1,
+	      param_.mem_total_size,
+	      &(param_.mem_expected_size),
+	      dynamic_cast<iofwdutil::mm::BMIMemoryAlloc *>(rb->buffer_)->bmiType(),
+	      tag_, 0);
+      }
+      else
+      {
+	  userCB_[0](recvStatus);
+      }
 #else
-      r_.rbmi_.post_recv_list(transformCB, addr_, reinterpret_cast<void*const*>(compressed_mem), reinterpret_cast<const bmi_size_t*>(&compressed_size), 1, param_.mem_total_size, &(param_.mem_expected_size), dynamic_cast<iofwdutil::mm::BMIMemoryAlloc *>(rb->buffer_)->bmiType(), tag_, 0);
+      if(size_of_stuffed_data < param_.mem_total_size)
+      {
+	  r_.rbmi_.post_recv_list(transformCB,
+	      addr_,
+	      reinterpret_cast<void*const*>(compressed_mem),
+	      reinterpret_cast<const bmi_size_t*>(&compressed_size),
+	      1,
+	      param_.mem_total_size,
+	      &(param_.mem_expected_size),
+	      dynamic_cast<iofwdutil::mm::BMIMemoryAlloc *>(rb->buffer_)->bmiType(),
+	      tag_, 0);
+      }
+      else
+      {
+	  userCB_[0](recvStatus);
+      }
 #endif
     }
 }

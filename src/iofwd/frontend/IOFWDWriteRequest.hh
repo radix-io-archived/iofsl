@@ -30,6 +30,9 @@ class IOFWDWriteRequest
 
      bool op_hint_compress_enabled;
      bool op_hint_headstuff_enabled;
+     size_t mem_slot;
+     size_t mem_slot_bytes;
+     size_t size_of_stuffed_data;
 
      // pipelined state
      char **compressed_mem;
