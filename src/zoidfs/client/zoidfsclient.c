@@ -3251,7 +3251,7 @@ int zoidfs_write(const zoidfs_handle_t *handle, size_t mem_count,
     size_t  transform_count = 0;
     void ** transform_buffer = malloc(mem_count);
     size_t  transform_output_sizes[mem_count];
-
+    void * buffer;
     int x,y;
     char * hash_value = malloc(256);
     /* init the zoidfs xdr data */
@@ -3541,22 +3541,30 @@ int zoidfs_write(const zoidfs_handle_t *handle, size_t mem_count,
                 {
                     input_buf_size = mem_sizes[x];
                 }
+                else
+                {
+                	break;
+                }
             }
         } while(ret != ZOIDFS_COMPRESSION_DONE || buf_size == 0);
         /* a copy used to copy the buffer to the send buffer, this
            is used because it is unknown whether or not there is a send
            unexpected list function */ 
-        send_msg.sendbuf += send_msg.sendbuflen;
+        void * buffer = malloc(total_len + send_msg.sendbuflen);
+        memcpy (buffer, send_msg.sendbuf, send_msg.sendbuflen);
+        buffer += send_msg.sendbuflen;
         for (x = 0; x < y; x++)
         {
-            strncpy(send_msg.sendbuf,list_buffer[y],buf_count[y]);            
+            memcpy (send_msg.sendbuf,list_buffer[y],buf_count[y]);
             send_msg.sendbuf += buf_count[y];    
         }
-        send_msg.sendbuf -= (send_msg.sendbuflen + total_len);
+        buffer -= (send_msg.sendbuflen + total_len);
         send_msg.sendbuflen = (send_msg.sendbuflen + total_len);
         /* Send the buffer */
-        ret = ZOIDFS_BMI_COMM_SENDU(send_msg);
+        ret = bmi_comm_sendu(peer_addr, buffer, send_msg.sendbuflen, send_msg.tag, context);
+        //ret = ZOIDFS_BMI_COMM_SENDU(send_msg);
         free(list_buffer);
+        free(buffer);
     }
     else
     {
