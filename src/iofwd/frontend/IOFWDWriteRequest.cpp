@@ -111,6 +111,21 @@ IOFWDWriteRequest::ReqParam & IOFWDWriteRequest::decodeParam ()
    // get the hint
    decodeOpHint (&(param_.op_hint));
 
+   compressed_mem = NULL;
+   compressed_size = 0;
+   decompressedBufSize = 0;
+   decompressed_mem = NULL;
+   decompressed_size = 0;
+   callback_mem = NULL;
+   userCB_ = NULL;
+   next_slot = 0;
+   user_callbacks = 0;
+   op_hint_compress_enabled = false;
+   op_hint_headstuff_enabled = false;
+   mem_slot = 0;
+   mem_slot_bytes = 0;
+   size_of_stuffed_data = 0;
+
    // check for hints here
    char * enable_pipeline = zoidfs::util::ZoidFSHintGet(&(param_.op_hint), ZOIDFS_ENABLE_PIPELINE);
    if(enable_pipeline)
@@ -193,21 +208,6 @@ IOFWDWriteRequest::ReqParam & IOFWDWriteRequest::decodeParam ()
 
    // get the max buffer size from BMI
    r_.rbmi_.get_info(addr_, BMI_CHECK_MAXSIZE, static_cast<void *>(&param_.max_buffer_size));
-
-   compressed_mem = NULL;
-   compressed_size = 0;
-   decompressedBufSize = 0;
-   decompressed_mem = NULL;
-   decompressed_size = 0;
-   callback_mem = NULL;
-   userCB_ = NULL;
-   next_slot = 0;
-   user_callbacks = 0;
-   op_hint_compress_enabled = false;
-   op_hint_headstuff_enabled = false;
-   mem_slot = 0;
-   mem_slot_bytes = 0;
-   size_of_stuffed_data = 0;
 
    if(0 != param_.pipeline_size && true == op_hint_compress_enabled)
    {
