@@ -55,6 +55,11 @@ namespace iofwdutil
     };
 
      //======================================================================
+
+    typedef iofwdutil::Factory<std::string,GenericTransform>
+       GenericTransformFactory;
+
+     //======================================================================
   }
 
 }

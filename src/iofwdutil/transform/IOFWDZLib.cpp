@@ -1,9 +1,18 @@
 #include <boost/format.hpp>
 
+#include "iofwdutil/LinkHelper.hh"
 #include "iofwdutil/transform/IOFWDZLib.hh"
 #include "TransformException.hh"
 
 using boost::format;
+
+
+GENERIC_FACTORY_CLIENT(std::string,
+      iofwdutil::transform::GenericTransform,
+      iofwdutil::transform::ZLib,
+      "ZLIB",
+      zlib);
+
 
 namespace iofwdutil
 {
