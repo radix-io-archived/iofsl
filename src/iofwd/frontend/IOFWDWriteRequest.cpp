@@ -156,15 +156,12 @@ IOFWDWriteRequest::ReqParam & IOFWDWriteRequest::decodeParam ()
 
 	if(NULL != token)
 	{
-	    // The rest of the tokens do not matter --> once you get the compression type
-	    // check for the compressed size and that's it
-	    if(strcasecmp(token, ZOIDFS_TRANSFORM_ZLIB) == 0)
-	    {
-		op_hint_compress_enabled = true;
-		char *compressed_size_str =
+           transform_.reset
+              (iofwdutil::transform::GenericTransformFactory::construct(token)());
+           op_hint_compress_enabled = true;
+           char *compressed_size_str =
 		  zoidfs::util::ZoidFSHintGet(&(param_.op_hint), ZOIDFS_COMPRESSED_SIZE);
 		compressed_size = (size_t)atol(compressed_size_str);
-	    }
 	}
         else
         {
@@ -211,8 +208,6 @@ IOFWDWriteRequest::ReqParam & IOFWDWriteRequest::decodeParam ()
 
    if(0 != param_.pipeline_size && true == op_hint_compress_enabled)
    {
-	transform_.reset (new iofwdutil::transform::ZLib ());
-
 	compressed_mem = new char* [NUM_OUTSTANDING_REQUESTS];
 	for(int ii = 0; ii < NUM_OUTSTANDING_REQUESTS; ii++)
 	    compressed_mem[ii] = new char [param_.pipeline_size];
@@ -312,8 +307,6 @@ void IOFWDWriteRequest::initRequestParams(ReqParam & p, void * bufferMem)
 
 	if(true == op_hint_compress_enabled)
 	{
-	    transform_.reset(new iofwdutil::transform::ZLib ());
-
 	    compressed_mem = new char* [1];
 	    compressed_mem[0] = new char [compressed_size];
 
