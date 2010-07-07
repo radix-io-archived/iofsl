@@ -40,7 +40,6 @@ IOFWDWriteRequest::~IOFWDWriteRequest ()
 	  delete []userCB_;
 	  userCB_ = NULL;
 
-	  delete GenTransform;
       }
       else
       {
@@ -57,8 +56,6 @@ IOFWDWriteRequest::~IOFWDWriteRequest ()
 
 	  delete []userCB_;
 	  userCB_ = NULL;
-
-	  delete GenTransform;
 
 	  fprintf(stderr, "\n\n");
       }
@@ -214,7 +211,7 @@ IOFWDWriteRequest::ReqParam & IOFWDWriteRequest::decodeParam ()
 
    if(0 != param_.pipeline_size && true == op_hint_compress_enabled)
    {
-	GenTransform = new iofwdutil::transform::ZLib ();
+	transform_.reset (new iofwdutil::transform::ZLib ());
 
 	compressed_mem = new char* [NUM_OUTSTANDING_REQUESTS];
 	for(int ii = 0; ii < NUM_OUTSTANDING_REQUESTS; ii++)
@@ -315,7 +312,7 @@ void IOFWDWriteRequest::initRequestParams(ReqParam & p, void * bufferMem)
 
 	if(true == op_hint_compress_enabled)
 	{
-	    GenTransform = new iofwdutil::transform::ZLib ();
+	    transform_.reset(new iofwdutil::transform::ZLib ());
 
 	    compressed_mem = new char* [1];
 	    compressed_mem[0] = new char [compressed_size];
@@ -361,7 +358,7 @@ void IOFWDWriteRequest::initRequestParams(ReqParam & p, void * bufferMem)
 		ii < param_.mem_count;
 		ii++)
 	    {
-		GenTransform->transform(position,
+		transform_->transform(position,
 		  size_of_stuffed_data,
 		  param_.mem_starts[ii],
 		  param_.mem_sizes[ii],
@@ -427,7 +424,7 @@ void IOFWDWriteRequest::recvComplete(int recvStatus)
    {
       if(i == mem_slot)
       {
-	  GenTransform->transform(compressed_mem[0],
+	  transform_->transform(compressed_mem[0],
 	    compressed_size,
 	    param_.mem_starts[i]+mem_slot_bytes,
 	    param_.mem_sizes[i]-mem_slot_bytes,
@@ -437,7 +434,7 @@ void IOFWDWriteRequest::recvComplete(int recvStatus)
       }
       else
       {
-	  GenTransform->transform(compressed_mem[0],
+	  transform_->transform(compressed_mem[0],
 	    compressed_size,
 	    param_.mem_starts[i],
 	    param_.mem_sizes[i],
@@ -482,7 +479,8 @@ void IOFWDWriteRequest::recvBuffers(const CBType & cb, RetrievedBuffer * rb)
     }
     else
     {
-      CBType transformCB = boost::bind(&IOFWDWriteRequest::recvComplete, boost::ref(*this), _1);
+      CBType transformCB = boost::bind(&IOFWDWriteRequest::recvComplete,
+            boost::ref(*this), _1);
 
       userCB_[user_callbacks++] = cb;
 
@@ -538,9 +536,9 @@ void IOFWDWriteRequest::recvPipelineComplete(int recvStatus, int my_slot)
    int pipelines_ready_to_callback = 0;
    bool partial_slot = false;
 
-   if(iofwdutil::transform::SUPPLY_INBUF == GenTransform->getTransformState())
+   if(iofwdutil::transform::SUPPLY_INBUF == transform_->getTransformState())
    {
-      GenTransform->transform(compressed_mem[my_slot],
+      transform_->transform(compressed_mem[my_slot],
 	    param_.pipeline_size,
 	    decompressed_mem+decompressed_size,
 	    decompressedBufSize-decompressed_size,
@@ -650,7 +648,7 @@ void IOFWDWriteRequest::recvPipelineBufferCB(iofwdevent::CBType cb, RetrievedBuf
 	      remBytes = decompressed_size % param_.pipeline_size;
 	      if(remBytes > 0 &&
 		 remBytes < param_.pipeline_size &&
-		 iofwdutil::transform::TRANSFORM_STREAM_END == GenTransform->getTransformState())
+		 iofwdutil::transform::TRANSFORM_STREAM_END == transform_->getTransformState())
 	      {
 		total_slots++;
 		partial_slot = true;
@@ -674,7 +672,8 @@ void IOFWDWriteRequest::recvPipelineBufferCB(iofwdevent::CBType cb, RetrievedBuf
 
 void IOFWDWriteRequest::reply(const CBType & cb)
 {
-   simpleOptReply(cb, getReturnCode(), TSSTART << encoder::EncVarArray(param_.file_sizes, param_.file_count));
+   simpleOptReply(cb, getReturnCode(), TSSTART <<
+         encoder::EncVarArray(param_.file_sizes, param_.file_count));
 }
 
 //===========================================================================

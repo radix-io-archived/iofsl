@@ -1,6 +1,8 @@
 #ifndef IOFWD_FRONTEND_IOFWDWRITEREQUEST_HH
 #define IOFWD_FRONTEND_IOFWDWRITEREQUEST_HH
 
+#include <boost/scoped_ptr.hpp>
+
 #include "IOFWDRequest.hh"
 #include "iofwd/WriteRequest.hh"
 #include "iofwdutil/bmi/BMI.hh"
@@ -22,7 +24,7 @@ class IOFWDWriteRequest
 {
   protected:
      // shared state
-     iofwdutil::transform::GenericTransform * GenTransform;
+     boost::scoped_ptr<iofwdutil::transform::GenericTransform> transform_;
 
      // variables start with a lowercase letter; Instance variables end with
      // '_'
