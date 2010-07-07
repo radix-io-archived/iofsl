@@ -35,8 +35,10 @@ class IOFWDWriteRequest
      char **compressed_mem;
      size_t compressed_size;
      char *decompressed_mem;
+     size_t decompressedBufSize;
      size_t decompressed_size;
      char **callback_mem;
+     int next_slot;
 
      int user_callbacks;
 
