@@ -3508,7 +3508,7 @@ int zoidfs_write(const zoidfs_handle_t *handle, size_t mem_count,
         /* Sets up a buffer to hold pointers to the output data 
            (** used for passthrough so that no memory copys are needed) */
         void ** list_buffer;
-        list_buffer = malloc(mem_count * sizeof(char *));
+        list_buffer = malloc(20);
         /* list that contains the size of the buffers */
         size_t buf_count[mem_count];
         /* Stores total output length of all buffers */
@@ -3555,17 +3555,16 @@ int zoidfs_write(const zoidfs_handle_t *handle, size_t mem_count,
         /* a copy used to copy the buffer to the send buffer, this
            is used because it is unknown whether or not there is a send
            unexpected list function */ 
-        void * buffer = malloc(total_len + send_msg.sendbuflen);
+        void * buffer = malloc((total_len + send_msg.sendbuflen) * sizeof(char));
         memcpy (buffer, send_msg.sendbuf, send_msg.sendbuflen);
         buffer += send_msg.sendbuflen;
-        for (x = 0; x < y; x++)
+        for (x = 0; x <= y; x++)
         {
             memcpy (buffer,list_buffer[x],buf_count[x]);
             buffer += buf_count[x];
         }
         buffer -= (send_msg.sendbuflen + total_len);
         send_msg.sendbuflen = (send_msg.sendbuflen + total_len);
-
         /* Send the buffer */
         ret = bmi_comm_sendu(peer_addr, buffer, send_msg.sendbuflen, send_msg.tag, context);
         free(list_buffer);
