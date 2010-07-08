@@ -35,7 +35,10 @@ namespace iofwdutil
          registered_ = true;
 
          // List the av
-         HASHFUNC_REFERENCE(SHA1Simple);
+
+         // disabled until bug fixed
+         // HASHFUNC_REFERENCE(SHA1Simple);
+
          HASHFUNC_REFERENCE(NoneHash);
 #ifdef HAVE_OPENSSL
          OpenSSLHash::registerHash ();

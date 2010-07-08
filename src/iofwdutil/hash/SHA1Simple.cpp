@@ -12,7 +12,8 @@ namespace iofwdutil
    {
       //=====================================================================
 
-      HASHFUNC_AUTOREGISTER(SHA1Simple, "sha1", 0);
+      // disabled until bug is fixed. (Unit test fails)
+      //HASHFUNC_AUTOREGISTER(SHA1Simple, "sha1", 0);
 
       //=====================================================================
 
