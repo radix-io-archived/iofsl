@@ -3254,6 +3254,8 @@ int zoidfs_write(const zoidfs_handle_t *handle, size_t mem_count,
     size_t  transform_output_sizes[mem_count];
     void * buffer;
     int x,y;
+    /* list that contains the size of the buffers */
+    size_t buf_count[mem_count];
     char * hash_value = malloc(256);
     /* init the zoidfs xdr data */
     ZOIDFS_SEND_MSG_INIT(send_msg, ZOIDFS_PROTO_WRITE);
@@ -3491,6 +3493,7 @@ int zoidfs_write(const zoidfs_handle_t *handle, size_t mem_count,
     input_buf_size = 0;
     buf_size = 0;
     x = 0, y = 0;
+
     /*
      * Send the encoded function parameters to the ION daemon using an
      * unexpected BMI message.
@@ -3500,7 +3503,8 @@ int zoidfs_write(const zoidfs_handle_t *handle, size_t mem_count,
         /* Set the size of the first memory buffer */
         size = mem_sizes[0];
         /* set up the buffer size */
-        buf_size = BMI_GET_UNEXP_SIZE, max_buf = buf_size;
+        fprintf(stderr,"Unexpected Size: %i\n",BMI_GET_UNEXP_SIZE);
+        buf_size = BMI_GET_UNEXP_SIZE - send_msg.sendbuflen, max_buf = buf_size;
         /* sets up the compression (in this case passthrough is used */
         ret = zoidfs_transform_init ("passthrough", &zlib_struct);    
         if (ret == -1)
@@ -3509,9 +3513,8 @@ int zoidfs_write(const zoidfs_handle_t *handle, size_t mem_count,
            (** used for passthrough so that no memory copys are needed) */
         void ** list_buffer;
         list_buffer = malloc(20);
-        /* list that contains the size of the buffers */
-        size_t buf_count[mem_count];
         /* Stores total output length of all buffers */
+        size_t tmp_total_len = total_len;
         total_len = 0;  
         input_buf_size = mem_sizes[0];
         do 
@@ -3558,7 +3561,9 @@ int zoidfs_write(const zoidfs_handle_t *handle, size_t mem_count,
         void * buffer = malloc((total_len + send_msg.sendbuflen) * sizeof(char));
         memcpy (buffer, send_msg.sendbuf, send_msg.sendbuflen);
         buffer += send_msg.sendbuflen;
-        for (x = 0; x <= y; x++)
+        if (y == 0)
+        	y = 1;
+        for (x = 0; x < y; x++)
         {
             memcpy (buffer,list_buffer[x],buf_count[x]);
             buffer += buf_count[x];
@@ -3567,8 +3572,9 @@ int zoidfs_write(const zoidfs_handle_t *handle, size_t mem_count,
         send_msg.sendbuflen = (send_msg.sendbuflen + total_len);
         /* Send the buffer */
         ret = bmi_comm_sendu(peer_addr, buffer, send_msg.sendbuflen, send_msg.tag, context);
-        free(list_buffer);
-        free(buffer);
+        //free(list_buffer);
+        //free(buffer);
+        total_len = tmp_total_len;
     }
     else
     {
@@ -3595,24 +3601,46 @@ int zoidfs_write(const zoidfs_handle_t *handle, size_t mem_count,
             if (mem_count == 1) {
                 /* Contiguous write */
             #ifdef ZFS_USE_NB_BMI_COMM
-                send_msg_data.sendbuflen = mem_sizes[0];
-                ret = bmi_comm_isend(peer_addr, mem_starts[0], mem_sizes[0],
-                                    send_msg_data.tag, context, &send_msg_data.bmi_op_id);
+                if (header_stuffing != NULL)
+                {
+					send_msg_data.sendbuflen = mem_sizes[0] - buf_count[0];
+					ret = bmi_comm_isend(peer_addr, mem_starts[0], mem_sizes[0] - buf_count[0],
+										send_msg_data.tag, context, &send_msg_data.bmi_op_id);
+                }
+				else
+				{
+					send_msg_data.sendbuflen = mem_sizes[0] - buf_count[0];
+					ret = bmi_comm_isend(peer_addr, mem_starts[0], mem_sizes[0] - buf_count[0],
+										send_msg_data.tag, context, &send_msg_data.bmi_op_id);
+				}
                 send_msg_data.bmi_comp_id = ret;
             #else
-                ret = bmi_comm_send(peer_addr, mem_starts[0], mem_sizes[0],
-                                    send_msg_data.tag, context);
+                if (header_stuffing != NULL)
+                	ret = bmi_comm_send(peer_addr, mem_starts[0], mem_sizes[0] - buf_count[0],
+                                    	send_msg_data.tag, context);
+                else
+                	ret = bmi_comm_send(peer_addr, mem_starts[0], mem_sizes[0],
+                                    	send_msg_data.tag, context);
                 if (ret != ZFS_OK)
                    goto write_cleanup;
             #endif
             } else {
             #ifdef ZFS_USE_NB_BMI_COMM
                 /* Strided writes */
-                send_msg_data.sendbuflen = total_size;
-                ret = bmi_comm_isend_list(peer_addr,
-                                         mem_count, mem_starts, bmi_mem_sizes, send_msg.tag,
-                                         context, total_size, &send_msg_data.bmi_op_id);
-                send_msg_data.bmi_comp_id = ret;
+            	if (header_stuffing != NULL)
+            	{
+            		total_size = 0;
+            		for (x = 0, x < mem_count; x++)
+            		{
+            			bmi_mem_sizes -= buf_count[x];
+            			total_size += bmi_mem_sizes[x];
+            		}
+            	}
+				send_msg_data.sendbuflen = total_size;
+				ret = bmi_comm_isend_list(peer_addr,
+										  mem_count, mem_starts, bmi_mem_sizes, send_msg.tag,
+										  context, total_size, &send_msg_data.bmi_op_id);
+				send_msg_data.bmi_comp_id = ret;
             #else
                 ret = bmi_comm_send_list(peer_addr,
                                          mem_count, mem_starts, bmi_mem_sizes, send_msg.tag,
