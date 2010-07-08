@@ -3232,6 +3232,7 @@ int zoidfs_write(const zoidfs_handle_t *handle, size_t mem_count,
 
     size_t i;
     size_t total_len;
+
     size_t pipeline_size = 0;
     bmi_size_t total_size = 0;
     zoidfs_size_t_array_transfer_t mem_sizes_transfer;
@@ -3264,8 +3265,6 @@ int zoidfs_write(const zoidfs_handle_t *handle, size_t mem_count,
     {
         op_hint = zoidfs_hint_init(1);
     }
-    else
-        printf("Hello im here\n");
     /* else: check to see if the user has specified a compression/crc or not */
 
     /* Hint for compressed length (this must be added here because we must 
@@ -3281,6 +3280,11 @@ int zoidfs_write(const zoidfs_handle_t *handle, size_t mem_count,
         ret = chash_process (crc_hash, mem_starts[x], mem_sizes[x]);    
     }    
     ret = chash_get(crc_hash,hash_value, 256);
+    if (header_stuffing != NULL)
+    {
+        zoidfs_hint_add( &op_hint , strdup(ZOIDFS_HEADER_STUFFING), strdup("yes"),
+        		         strlen("yes"), ZOIDFS_HINTS_ZC);
+    }
     
     char * hash_string = malloc(ret + strlen(crc_type) + 1);
     snprintf(hash_string,ret + strlen(crc_type) + 1, "%s:%s", crc_type,hash_value);
@@ -3504,11 +3508,12 @@ int zoidfs_write(const zoidfs_handle_t *handle, size_t mem_count,
         /* Sets up a buffer to hold pointers to the output data 
            (** used for passthrough so that no memory copys are needed) */
         void ** list_buffer;
-        list_buffer = malloc(mem_count);
+        list_buffer = malloc(mem_count * sizeof(char *));
         /* list that contains the size of the buffers */
         size_t buf_count[mem_count];
         /* Stores total output length of all buffers */
         total_len = 0;  
+        input_buf_size = mem_sizes[0];
         do 
         {
            /* Transform the buffer */
@@ -3555,14 +3560,14 @@ int zoidfs_write(const zoidfs_handle_t *handle, size_t mem_count,
         buffer += send_msg.sendbuflen;
         for (x = 0; x < y; x++)
         {
-            memcpy (send_msg.sendbuf,list_buffer[y],buf_count[y]);
-            send_msg.sendbuf += buf_count[y];    
+            memcpy (buffer,list_buffer[x],buf_count[x]);
+            buffer += buf_count[x];
         }
         buffer -= (send_msg.sendbuflen + total_len);
         send_msg.sendbuflen = (send_msg.sendbuflen + total_len);
+
         /* Send the buffer */
         ret = bmi_comm_sendu(peer_addr, buffer, send_msg.sendbuflen, send_msg.tag, context);
-        //ret = ZOIDFS_BMI_COMM_SENDU(send_msg);
         free(list_buffer);
         free(buffer);
     }
