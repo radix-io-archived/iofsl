@@ -3574,8 +3574,8 @@ int zoidfs_write(const zoidfs_handle_t *handle, size_t mem_count,
         send_msg.sendbuflen = (send_msg.sendbuflen + total_len);
         /* Send the buffer */
         ret = bmi_comm_sendu(peer_addr, buffer, send_msg.sendbuflen, send_msg.tag, context);
-        //free(list_buffer);
-        //free(buffer);
+        free(list_buffer);
+        free(buffer);
         total_len = tmp_total_len;
     }
     else
@@ -3723,7 +3723,12 @@ write_cleanup:
 
     ZOIDFS_RECV_MSG_DESTROY(recv_msg);
     ZOIDFS_SEND_MSG_DESTROY(send_msg);
-
+    fprintf(stderr,"Im exiting\n");
+    if(header_stuffing != NULL)
+    {
+    	for(x = 0; x < y; x++)
+    		mem_starts[x] -= buf_count[x];
+    }
     return ret;
 }
 
