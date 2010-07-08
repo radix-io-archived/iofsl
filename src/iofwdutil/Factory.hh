@@ -51,6 +51,10 @@ namespace iofwdutil
  *    Factory<std::string,Geometric>::construct ("CIRCLE")(3);
  *
  *    See linker notes in FactoryAutoRegister.
+ *
+ *    @TODO: add tag as 3rd template parameter so it becomes possible to have
+ *    multiple factories with the same KEY and BASE. (For example, for
+ *    transform, one dealing with compression and one with decompression)
  */
 template <typename KEY, typename BASE>
 struct Factory : public Singleton<Factory<KEY,BASE> >
