@@ -3503,8 +3503,10 @@ int zoidfs_write(const zoidfs_handle_t *handle, size_t mem_count,
         /* Set the size of the first memory buffer */
         size = mem_sizes[0];
         /* set up the buffer size */
-        fprintf(stderr,"Unexpected Size: %i\n",BMI_GET_UNEXP_SIZE);
-        buf_size = BMI_GET_UNEXP_SIZE - send_msg.sendbuflen, max_buf = buf_size;
+        int psiz = 0;
+        ret = BMI_get_info(peer_addr, BMI_GET_UNEXP_SIZE, (void *)&psiz);
+        fprintf(stderr,"Unexpected Size: %i\n",psiz);
+        buf_size = psiz - send_msg.sendbuflen, max_buf = buf_size;
         /* sets up the compression (in this case passthrough is used */
         ret = zoidfs_transform_init ("passthrough", &zlib_struct);    
         if (ret == -1)
@@ -3512,7 +3514,7 @@ int zoidfs_write(const zoidfs_handle_t *handle, size_t mem_count,
         /* Sets up a buffer to hold pointers to the output data 
            (** used for passthrough so that no memory copys are needed) */
         void ** list_buffer;
-        list_buffer = malloc(20);
+        list_buffer = malloc(mem_count * sizeof(char*));
         /* Stores total output length of all buffers */
         size_t tmp_total_len = total_len;
         total_len = 0;  
