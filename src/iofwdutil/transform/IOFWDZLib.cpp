@@ -35,7 +35,6 @@ namespace iofwdutil
 
       ret = inflateInit(&stream);
       if(Z_OK != ret) {
-        // Need to throw exception
         throw TransformException (str(format("inflateInit() returned error"
                    " %d") % ret));
       }
@@ -62,7 +61,7 @@ namespace iofwdutil
                          bool flushFlag)
     {
       int flag = (flushFlag == true) ? Z_SYNC_FLUSH : Z_NO_FLUSH;
-      int have = 0;
+      size_t have = 0;
       int ret = 0;
 
       if(SUPPLY_INBUF == decompress_state)
@@ -82,15 +81,26 @@ namespace iofwdutil
 
       ret = inflate(&stream, flag);
 
+      const char * err;
       switch(ret)
       {
         case Z_STREAM_ERROR:
+           err = "stream error";
+           break;
         case Z_NEED_DICT:
+           err = "need dict"; break;
         case Z_DATA_ERROR:
+           err = "data error"; break;
         case Z_MEM_ERROR:
+           err = "mem error"; break;
+        default:
+           err = 0;
+      }
+
+      if (err)
+      {
           inflateEnd(&stream);
-          *outState = decompress_state = TRANSFORM_STREAM_ERROR;
-          return;
+          throw TransformException (err);
       }
 
       *outBytes = have = outSize - stream.avail_out;
