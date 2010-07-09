@@ -143,7 +143,7 @@ IOFWDWriteRequest::ReqParam & IOFWDWriteRequest::decodeParam ()
    /* keep pipelining enabled by default */
    else
    {
-        param_.op_hint_pipeline_enabled = true;
+        param_.op_hint_pipeline_enabled = false;
    }
 
    // Memory param_.op_hint is freed in the class destructor
@@ -161,7 +161,7 @@ IOFWDWriteRequest::ReqParam & IOFWDWriteRequest::decodeParam ()
            op_hint_compress_enabled = true;
            char *compressed_size_str =
                   zoidfs::util::ZoidFSHintGet(&(param_.op_hint), ZOIDFS_COMPRESSED_SIZE);
-                compressed_size = (size_t)atol(compressed_size_str);
+	   compressed_size = (size_t)atol(compressed_size_str);
         }
         else
         {
@@ -309,29 +309,34 @@ void IOFWDWriteRequest::initRequestParams(ReqParam & p, void * bufferMem)
         {
             compressed_mem = new char* [1];
             compressed_mem[0] = new char [compressed_size];
-
-            userCB_ = new CBType[1];
-            userCB_[0] = NULL;
         }
+
+	userCB_ = new CBType[1];
+	userCB_[0] = NULL;
 
         if(true == op_hint_headstuff_enabled)
         {
           int size_of_packet = raw_request_.size();
           void *ptr_to_header = raw_request_.get();
           int size_of_header = req_reader_.getPos();
+	  int SIZE_OF_HEADER = size_of_header + 4;
           unsigned int ii = 0;
           size_t bytes = 0, total_bytes = 0;
           char *position = NULL;
           int outState = 0;
           size_t outBytes = 0;
 
-          size_of_stuffed_data = size_of_packet - size_of_header;
-          position = (char*)ptr_to_header + size_of_header;
+          size_of_stuffed_data = size_of_packet - SIZE_OF_HEADER;
+          position = (char*)ptr_to_header + SIZE_OF_HEADER;
 
           fprintf(stderr, "size_of_packet = %d\n", size_of_packet);
           fprintf(stderr, "ptr_to_header = %p\n", ptr_to_header);
           fprintf(stderr, "size_of_header = %d\n", size_of_header);
           fprintf(stderr, "size_of_stuffed_data = %u\n", (unsigned)size_of_stuffed_data);
+
+	  compressed_mem = new char* [1];
+	  compressed_size = param_.mem_total_size - size_of_stuffed_data;
+	  compressed_mem[0] = new char [compressed_size];
 
           if(false == op_hint_compress_enabled)
           {
@@ -409,7 +414,6 @@ void IOFWDWriteRequest::recvComplete(int recvStatus)
    int outState = 0;
    size_t outBytes = 0;
 
-   ASSERT(true == op_hint_compress_enabled);
    ASSERT(1 == user_callbacks);
    ASSERT(size_of_stuffed_data < param_.mem_total_size);
 
@@ -489,9 +493,9 @@ void IOFWDWriteRequest::recvBuffers(const CBType & cb, RetrievedBuffer * rb)
               reinterpret_cast<void*const*>(compressed_mem),
               reinterpret_cast<const bmi_size_t*>(&compressed_size),
               1,
-              param_.mem_total_size,
+              param_.mem_total_size-size_of_stuffed_data,
               &(param_.mem_expected_size),
-              dynamic_cast<iofwdutil::mm::BMIMemoryAlloc *>(rb->buffer_)->bmiType(),
+              BMI_EXT_ALLOC,
               tag_, 0);
       }
       else
