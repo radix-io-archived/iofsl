@@ -3365,7 +3365,7 @@ int zoidfs_write(const zoidfs_handle_t *handle, size_t mem_count,
     if (header_stuffing != NULL)
     {
         zoidfs_hint_add( &op_hint, strdup(ZOIDFS_HEADER_STUFFING),
-                         strdup("yes"), strlen("yes"), ZOIDFS_HINTS_ZC);
+                         strdup("1"), strlen("1"), ZOIDFS_HINTS_ZC);
     }
 
     /* If pipeline size has been set to zero, set the non pipeline hint */
