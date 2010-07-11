@@ -3447,7 +3447,11 @@ int zoidfs_write(const zoidfs_handle_t *handle, size_t mem_count,
     send_msg.sendbuflen = zoidfs_xdr_size_processor(ZFS_OP_ID_T, &send_msg.zoidfs_op_id) +
                           zoidfs_xdr_size_processor(ZFS_HANDLE_T, (void *)handle) +
                           zoidfs_xdr_size_processor(ZFS_SIZE_T, &mem_count) +   // Memcount 
+#if 0
                           zoidfs_xdr_size_processor(ZFS_SIZE_T_ARRAY_T, &mem_count) +
+#else // Christina
+                          zoidfs_xdr_size_processor(ZFS_UINT64_ARRAY_T, &mem_count) +
+#endif
                           zoidfs_xdr_size_processor(ZFS_SIZE_T, &file_count) +
                           zoidfs_xdr_size_processor(ZFS_FILE_OFS_ARRAY_T, &file_count) +
                           zoidfs_xdr_size_processor(ZFS_FILE_OFS_ARRAY_T, &file_count) +
@@ -3539,7 +3543,11 @@ int zoidfs_write(const zoidfs_handle_t *handle, size_t mem_count,
         
         goto write_cleanup;
     }
+#if 0
     if((ret = zoidfs_xdr_processor(ZFS_SIZE_T_ARRAY_T, &mem_sizes_transfer, &send_msg.send_xdr)) != ZFS_OK)
+#else // Christina
+    if((ret = zoidfs_xdr_processor(ZFS_UINT64_ARRAY_T, &mem_sizes_transfer, &send_msg.send_xdr)) != ZFS_OK)
+#endif
     {
         
         goto write_cleanup;
