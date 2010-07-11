@@ -3283,7 +3283,7 @@ int zoidfs_write(const zoidfs_handle_t *handle, size_t mem_count,
     size_t  transform_count = 0;            /* Says how many output buffers
                                                have been written for transform
                                             */
-    void ** transform_buffer = malloc(mem_count); /* Stores the transformed
+    void ** transform_buffer = malloc(mem_count * sizeof(void*)); /* Stores the transformed
                                                      output which is sent
                                                      to the server 
                                                   */
@@ -3418,7 +3418,7 @@ int zoidfs_write(const zoidfs_handle_t *handle, size_t mem_count,
             } while (ret != ZOIDFS_COMPRESSION_DONE);        
             transform_count = x;
             char compress_len_string[100]; 
-            sprintf(compress_len_string,"%d",total_len);
+            sprintf(compress_len_string, "%d", (int)total_len);
             zoidfs_hint_add( &op_hint , strdup(ZOIDFS_COMPRESSED_SIZE), strdup(compress_len_string),
                              strlen(compress_len_string), ZOIDFS_HINTS_ZC);
         }
