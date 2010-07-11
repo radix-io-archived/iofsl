@@ -417,44 +417,58 @@ void IOFWDWriteRequest::recvComplete(int recvStatus)
    ASSERT(1 == user_callbacks);
    ASSERT(size_of_stuffed_data < param_.mem_total_size);
 
-   for(i = mem_slot; i < param_.mem_count; i++)
+   if(true == op_hint_compress_enabled)
    {
-      if(i == mem_slot)
+      for(i = mem_slot; i < param_.mem_count; i++)
       {
-          transform_->transform(compressed_mem[0],
-            compressed_size,
-            param_.mem_starts[i]+mem_slot_bytes,
-            param_.mem_sizes[i]-mem_slot_bytes,
-            &outBytes,
-            &outState,
-            false);
+	  if(i == mem_slot)
+	  {
+	      transform_->transform(compressed_mem[0],
+		compressed_size,
+		param_.mem_starts[i]+mem_slot_bytes,
+		param_.mem_sizes[i]-mem_slot_bytes,
+		&outBytes,
+		&outState,
+		false);
+	  }
+	  else
+	  {
+	      transform_->transform(compressed_mem[0],
+		compressed_size,
+		param_.mem_starts[i],
+		param_.mem_sizes[i],
+		&outBytes,
+		&outState,
+		false);
+	  }
+
+	  if(iofwdutil::transform::CONSUME_OUTBUF == outState)
+	  {
+	      continue;
+	  }
+	  else if(iofwdutil::transform::TRANSFORM_STREAM_END == outState)
+	  {
+	      userCB_[0](recvStatus);
+	      break;
+	  }
+	  ASSERT(iofwdutil::transform::SUPPLY_INBUF != outState);
       }
-      else
+   }
+   else
+   {
+      size_t position = mem_slot_bytes;
+
+      memcpy(param_.mem_starts[mem_slot]+position, compressed_mem[0],
+	  param_.mem_sizes[mem_slot]-mem_slot_bytes);
+      position += param_.mem_sizes[mem_slot] - mem_slot_bytes;
+
+      for(i = mem_slot+1; i < param_.mem_count; i++)
       {
-          transform_->transform(compressed_mem[0],
-            compressed_size,
-            param_.mem_starts[i],
-            param_.mem_sizes[i],
-            &outBytes,
-            &outState,
-            false);
+	  memcpy(param_.mem_starts[i], compressed_mem[0]+position, param_.mem_sizes[i]);
+	  position += param_.mem_sizes[i];
       }
 
-      if(iofwdutil::transform::CONSUME_OUTBUF == outState)
-      {
-          continue;
-      }
-      else if(iofwdutil::transform::TRANSFORM_STREAM_END == outState)
-      {
-          // This will normally occur only when i = parma_.mem_count
-          // at the end of the decompression
-          // call the user callback stored previously
-          // there should be only one callback
-          userCB_[0](recvStatus);
-          break;
-      }
-      ASSERT(iofwdutil::transform::SUPPLY_INBUF != outState);
-      //ASSERT(iofwdutil::transform::TRANSFORM_STREAM_ERROR != outState);
+      userCB_[0](recvStatus);
    }
 }
 
