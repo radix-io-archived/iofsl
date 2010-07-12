@@ -7,12 +7,16 @@
 #include <sys/types.h>
 #include <sys/time.h>
 
+#include "c-util/tools.h"
 #include "zoidfs/zoidfs.h"
 
 static double sfac = 0.0;
+static int mix_counter = 0;
+
+#define ZFS_MIX_RATIO 50
 
 /* the kernel to compute the data */
-double kernel(double x, double y)
+double cos_kernel(double x, double y)
 {
     /* kernel */
     double data = -1.0 * sfac * ( cos(x) + cos(y) );
@@ -22,6 +26,36 @@ double kernel(double x, double y)
     {
         data = 0.0;
     }
+
+    return data;
+}
+
+double random_kernel(double UNUSED(x), double UNUSED(y))
+{
+    double data = 0.0;
+    size_t sdata = 0;
+    FILE * f = fopen("/dev/urandom", "r");
+
+    if(f == NULL)
+    {
+        fprintf(stderr, "%s : could not open /dev/urandom\n", __func__);
+    }
+
+    if(mix_counter % 100 < ZFS_MIX_RATIO)
+    {
+        sdata = fread(&data, sizeof(double), 1, f);
+        if(sdata != 1)
+        {
+            fprintf(stderr, "%s : could not read from /dev/urandom, sdata = %i\n", __func__, sdata);
+        }
+    }
+    else
+    {
+        data = 0.0;
+    }
+    mix_counter++;
+
+    fclose(f);
 
     return data;
 }
@@ -132,10 +166,11 @@ int main(int argc, char * args[])
         for(y_cur = my_y_start ; y_cur < my_y_end ; y_cur += y_inc)
         {
             /* iterate over the x range */    
-            for(x_cur = x_start ; x_cur < x_end ; x_cur += x_inc)
+            for(x_cur = x_start ; x_cur < x_end ; x_cur += x_inc, j++)
             {
                 /* kernel */
-                data[j] = kernel(x_cur, y_cur);
+                //data[j] = cos_kernel(x_cur, y_cur);
+                data[j] = random_kernel(x_cur, y_cur);
                 cur_ops++;
             }
         }
@@ -177,7 +212,8 @@ int main(int argc, char * args[])
             for(x_cur = my_x_start ; x_cur < my_x_end ; x_cur += x_inc, j++)
             {
                 /* kernel */
-                data[j] = kernel(x_cur, y_cur);
+                //data[j] = cos_kernel(x_cur, y_cur);
+                data[j] = random_kernel(x_cur, y_cur);
             }
         }
 
@@ -225,7 +261,8 @@ int main(int argc, char * args[])
             for(x_cur = my_x_start ; x_cur < my_x_end ; x_cur += x_inc, j++)
             {
                 /* kernel */
-                data[j] = kernel(x_cur, y_cur);
+                //data[j] = cos_kernel(x_cur, y_cur);
+                data[j] = random_kernel(x_cur, y_cur);
             }
         }
     }
