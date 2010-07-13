@@ -3245,7 +3245,6 @@ int zoidfs_write(const zoidfs_handle_t *handle, size_t mem_count,
     size_t op_hint_pipeline_size_req = 0;
 
     /* Zoidfs data pointers/sizes */
-    zoidfs_size_t_array_transfer_t mem_sizes_transfer;
     zoidfs_file_ofs_array_transfer_t file_starts_transfer;
     zoidfs_file_ofs_array_transfer_t file_sizes_transfer;
 
@@ -3426,8 +3425,6 @@ int zoidfs_write(const zoidfs_handle_t *handle, size_t mem_count,
                          strlen(compression_type), ZOIDFS_HINTS_ZC);
     }
     /* init the transfer array wrappers */ 
-    mem_sizes_transfer.data = (void *)mem_sizes;
-    mem_sizes_transfer.len = mem_count;
     file_starts_transfer.data = (void *)file_starts;
     file_starts_transfer.len = file_count;
     file_sizes_transfer.data = (void *)file_sizes;
@@ -3446,12 +3443,6 @@ int zoidfs_write(const zoidfs_handle_t *handle, size_t mem_count,
 
     send_msg.sendbuflen = zoidfs_xdr_size_processor(ZFS_OP_ID_T, &send_msg.zoidfs_op_id) +
                           zoidfs_xdr_size_processor(ZFS_HANDLE_T, (void *)handle) +
-                          zoidfs_xdr_size_processor(ZFS_SIZE_T, &mem_count) +   // Memcount 
-#if 0
-                          zoidfs_xdr_size_processor(ZFS_SIZE_T_ARRAY_T, &mem_count) +
-#else // Christina
-                          zoidfs_xdr_size_processor(ZFS_UINT64_ARRAY_T, &mem_count) +
-#endif
                           zoidfs_xdr_size_processor(ZFS_SIZE_T, &file_count) +
                           zoidfs_xdr_size_processor(ZFS_FILE_OFS_ARRAY_T, &file_count) +
                           zoidfs_xdr_size_processor(ZFS_FILE_OFS_ARRAY_T, &file_count) +
@@ -3536,19 +3527,6 @@ int zoidfs_write(const zoidfs_handle_t *handle, size_t mem_count,
         goto write_cleanup;
     }
     if ((ret = zoidfs_xdr_processor(ZFS_HANDLE_T, (void *)handle, &send_msg.send_xdr)) != ZFS_OK) {
-        
-        goto write_cleanup;
-    }
-    if ((ret = zoidfs_xdr_processor(ZFS_SIZE_T, &mem_count, &send_msg.send_xdr)) != ZFS_OK) {
-        
-        goto write_cleanup;
-    }
-#if 0
-    if((ret = zoidfs_xdr_processor(ZFS_SIZE_T_ARRAY_T, &mem_sizes_transfer, &send_msg.send_xdr)) != ZFS_OK)
-#else // Christina
-    if((ret = zoidfs_xdr_processor(ZFS_UINT64_ARRAY_T, &mem_sizes_transfer, &send_msg.send_xdr)) != ZFS_OK)
-#endif
-    {
         
         goto write_cleanup;
     }

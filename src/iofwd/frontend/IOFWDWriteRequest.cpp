@@ -82,13 +82,7 @@ IOFWDWriteRequest::ReqParam & IOFWDWriteRequest::decodeParam ()
    process (req_reader_, handle_);
 
    // init the mem count and sizes
-   process (req_reader_, param_.mem_count);
-#ifndef USE_TASK_HA
-   param_.mem_sizes = new size_t[param_.mem_count];
-#else
-   param_.mem_sizes = (h.hamalloc<size_t>(param_.mem_count));
-#endif
-   process (req_reader_, encoder::EncVarArray(param_.mem_sizes, param_.mem_count));
+   param_.mem_count = 0;
 
    // init the file count, sizes, and starts
    process (req_reader_, param_.file_count);
@@ -245,9 +239,9 @@ void IOFWDWriteRequest::initRequestParams(ReqParam & p, void * bufferMem)
     if (param_.pipeline_size == 0)
     {
         char * mem = NULL;
-        for(size_t i = 0 ; i < param_.mem_count ; i++)
+        for(size_t i = 0 ; i < param_.file_count ; i++)
         {
-            param_.mem_total_size += p.mem_sizes[i];
+            param_.mem_total_size += param_.file_sizes[i];
         }
 
         // setup the BMI buffer to the user requested size
@@ -319,15 +313,14 @@ void IOFWDWriteRequest::initRequestParams(ReqParam & p, void * bufferMem)
           int size_of_packet = raw_request_.size();
           void *ptr_to_header = raw_request_.get();
           int size_of_header = req_reader_.getPos();
-	  int SIZE_OF_HEADER = size_of_header + 4;
           unsigned int ii = 0;
           size_t bytes = 0, total_bytes = 0;
           char *position = NULL;
           int outState = 0;
           size_t outBytes = 0;
 
-          size_of_stuffed_data = size_of_packet - SIZE_OF_HEADER;
-          position = (char*)ptr_to_header + SIZE_OF_HEADER;
+          size_of_stuffed_data = size_of_packet - size_of_header;
+          position = (char*)ptr_to_header + size_of_header;
 
           fprintf(stderr, "size_of_packet = %d\n", size_of_packet);
           fprintf(stderr, "ptr_to_header = %p\n", ptr_to_header);
