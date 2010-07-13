@@ -3560,10 +3560,16 @@ int zoidfs_write(const zoidfs_handle_t *handle, size_t mem_count,
     int psiz = 0;
     void ** memory_loc;
     size_t * memory_pos;
+    for(x = 0; x < mem_count; x++)
+    {
+    	buf_count[x] = 0;
+    }
+    x = 0;
     /*
      * Send the encoded function parameters to the ION daemon using an
      * unexpected BMI message.
      */
+    int header_data_len = 0;
     if (header_stuffing != NULL)
     {
         if (compression_type == NULL)
@@ -3654,6 +3660,7 @@ int zoidfs_write(const zoidfs_handle_t *handle, size_t mem_count,
                              send_msg.tag, context);
         free(list_buffer);
         free(buffer);
+        header_data_len = total_len;
         total_len = tmp_total_len;
     }
     else
@@ -3721,6 +3728,16 @@ int zoidfs_write(const zoidfs_handle_t *handle, size_t mem_count,
 										  context, total_size, &send_msg_data.bmi_op_id);
 				send_msg_data.bmi_comp_id = ret;
             #else
+                /* Strided writes */
+            	if (header_stuffing != NULL)
+            	{
+            		total_size = 0;
+            		for (x = 0; x < mem_count; x++)
+            		{
+            			bmi_mem_sizes[x] -= buf_count[x];
+            			total_size += bmi_mem_sizes[x];
+            		}
+            	}
                 ret = bmi_comm_send_list(peer_addr,
                                          mem_count, mem_starts, bmi_mem_sizes, send_msg.tag,
                                          context, total_size);
