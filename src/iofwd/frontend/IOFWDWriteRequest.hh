@@ -52,7 +52,12 @@ class IOFWDWriteRequest
 public:
    IOFWDWriteRequest (int opid, const BMI_unexpected_info & info,
          IOFWDResources & res)
-     : IOFWDRequest (info,res), WriteRequest (opid)
+     : IOFWDRequest (info,res), WriteRequest (opid),
+       op_hint_compress_enabled(false), op_hint_headstuff_enabled(false),
+       mem_slot(0), mem_slot_bytes(0), size_of_stuffed_data(0),
+       compressed_mem(NULL), compressed_size(NULL), decompressed_mem(NULL),
+       decompressedBufSize(0), decompressed_size(0), callback_mem(NULL),
+       next_slot(0), user_callbacks(0)
    {
    }
 

@@ -81,9 +81,6 @@ IOFWDWriteRequest::ReqParam & IOFWDWriteRequest::decodeParam ()
    // init the handle
    process (req_reader_, handle_);
 
-   // init the mem count and sizes
-   param_.mem_count = 0;
-
    // init the file count, sizes, and starts
    process (req_reader_, param_.file_count);
 #ifndef USE_TASK_HA
@@ -99,26 +96,24 @@ IOFWDWriteRequest::ReqParam & IOFWDWriteRequest::decodeParam ()
 #endif
    process (req_reader_, encoder::EncVarArray(param_.file_sizes, param_.file_count));
 
+   // init the mem count and sizes
+   param_.mem_count = param_.file_count;
+#ifndef USE_TASK_HA
+   param_.mem_sizes = new size_t[param_.file_count];
+#else
+   param_.mem_sizes = (h.hamalloc<size_t>(param_.file_count));
+#endif
+
+   for(size_t ii = 0; ii < param_.file_count ; ii++)
+   {
+      param_.mem_sizes[ii] = param_.file_sizes[ii];
+   }
+
    // get the pipeline size
    process (req_reader_, param_.pipeline_size);
 
    // get the hint
    decodeOpHint (&(param_.op_hint));
-
-   compressed_mem = NULL;
-   compressed_size = 0;
-   decompressedBufSize = 0;
-   decompressed_mem = NULL;
-   decompressed_size = 0;
-   callback_mem = NULL;
-   userCB_ = NULL;
-   next_slot = 0;
-   user_callbacks = 0;
-   op_hint_compress_enabled = false;
-   op_hint_headstuff_enabled = false;
-   mem_slot = 0;
-   mem_slot_bytes = 0;
-   size_of_stuffed_data = 0;
 
    // check for hints here
    char * enable_pipeline = zoidfs::util::ZoidFSHintGet(&(param_.op_hint), ZOIDFS_ENABLE_PIPELINE);
