@@ -3557,18 +3557,30 @@ int zoidfs_write(const zoidfs_handle_t *handle, size_t mem_count,
     input_buf_size = 0;
     buf_size = 0;
     x = 0, y = 0;
-
+    int psiz = 0;
+    void ** memory_loc;
+    size_t * memory_pos;
     /*
      * Send the encoded function parameters to the ION daemon using an
      * unexpected BMI message.
      */
     if (header_stuffing != NULL)
     {
+        if (compression_type == NULL)
+        {
+            memory_loc = (void **) mem_starts;
+            memory_pos = mem_sizes;    
+        }
+        else
+        {
+            memory_loc = transform_buffer;
+            memory_pos = transform_output_sizes; 
+        }
+        
         /* Set the size of the first memory buffer */
-        size = mem_sizes[0];
+        size = memory_pos[0];
         /* set up the buffer size */
-        int psiz = 0;
-        ret = BMI_get_info(peer_addr, BMI_GET_UNEXP_SIZE, (void *)&psiz);
+        BMI_get_info(peer_addr, BMI_GET_UNEXP_SIZE, (void *)&psiz);
         buf_size = psiz - send_msg.sendbuflen, max_buf = buf_size;
         /* sets up the compression (in this case passthrough is used */
         ret = zoidfs_transform_init ("passthrough", &zlib_struct);    
@@ -3581,24 +3593,25 @@ int zoidfs_write(const zoidfs_handle_t *handle, size_t mem_count,
         /* Stores total output length of all buffers */
         size_t tmp_total_len = total_len;
         total_len = 0;  
-        input_buf_size = mem_sizes[0];
+        input_buf_size = memory_pos[0];
         do 
         {
            /* Transform the buffer */
-           ret = zoidfs_transform (&zlib_struct, (void **)&mem_starts[x], &input_buf_size, 
-                                   &list_buffer[y], &buf_size, close);
-           /* if the mem_starts buffer is empty but the output buffer
+           ret = zoidfs_transform (&zlib_struct, (void **)&memory_loc[x], 
+                    &input_buf_size, &list_buffer[y], &buf_size, close);
+           memory_pos[x] = input_buf_size;
+           /* if the memory_loc buffer is empty but the output buffer
               has space left. Change buffers and rewind the output buffer */
            if (input_buf_size == 0 && buf_size != 0)
            {
-                buf_count[y] = mem_sizes[y];
-                list_buffer[y] -= mem_sizes[y];
-                total_len += mem_sizes[y];
+                buf_count[y] = memory_pos[y];
+                list_buffer[y] -= memory_pos[y];
+                total_len += memory_pos[y];
                 y++;
                 x++;     
            }   
-           /* if the output buffer is empty, rewind output buffer pointer location
-              and exit */
+           /* if the output buffer is empty, rewind output buffer pointer 
+              location and exit */
            if (buf_size == 0 || ret == ZOIDFS_COMPRESSION_DONE)
            {
                 buf_count[y] = max_buf - total_len;
@@ -3612,7 +3625,7 @@ int zoidfs_write(const zoidfs_handle_t *handle, size_t mem_count,
                 /* if there are additional buffers move on */
                 if ( x < mem_count - 1 )
                 {
-                    input_buf_size = mem_sizes[x];
+                    input_buf_size = memory_pos[x];
                 }
                 else
                 {
@@ -3635,8 +3648,10 @@ int zoidfs_write(const zoidfs_handle_t *handle, size_t mem_count,
         }
         buffer -= (send_msg.sendbuflen + total_len);
         send_msg.sendbuflen = (send_msg.sendbuflen + total_len);
+
         /* Send the buffer */
-        ret = bmi_comm_sendu(peer_addr, buffer, send_msg.sendbuflen, send_msg.tag, context);
+        ret = bmi_comm_sendu(peer_addr, buffer, send_msg.sendbuflen, 
+                             send_msg.tag, context);
         free(list_buffer);
         free(buffer);
         total_len = tmp_total_len;
