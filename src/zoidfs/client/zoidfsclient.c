@@ -3695,7 +3695,7 @@ int zoidfs_write(const zoidfs_handle_t *handle, size_t mem_count,
                 send_msg_data.bmi_comp_id = ret;
             #else
                 if (header_stuffing != NULL)
-                	ret = bmi_comm_send(peer_addr, mem_starts[0], mem_sizes[0] - buf_count[0],
+                	ret = bmi_comm_send(peer_addr, mem_starts[0], mem_sizes[0],
                                     	send_msg_data.tag, context);
                 else
                 	ret = bmi_comm_send(peer_addr, mem_starts[0], mem_sizes[0],
@@ -3800,7 +3800,6 @@ write_cleanup:
 
     ZOIDFS_RECV_MSG_DESTROY(recv_msg);
     ZOIDFS_SEND_MSG_DESTROY(send_msg);
-    fprintf(stderr,"Im exiting\n");
     if(header_stuffing != NULL)
     {
     	for(x = 0; x < y; x++)
