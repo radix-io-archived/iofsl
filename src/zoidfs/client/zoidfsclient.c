@@ -3323,6 +3323,14 @@ int zoidfs_write(const zoidfs_handle_t *handle, size_t mem_count,
                                                sizes of the input memory 
                                             */
 
+    size_t original_mem_sizes[mem_count];
+    void * original_mem_starts[mem_count];
+    for (x = 0; x < mem_count; x++)
+    {
+    	original_mem_sizes[x] = mem_sizes[x];
+    	original_mem_starts[x] = mem_starts[x];
+    }
+
     /* list that contains the size of the buffers */
     size_t buf_count[mem_count];
 
@@ -3559,7 +3567,9 @@ int zoidfs_write(const zoidfs_handle_t *handle, size_t mem_count,
     x = 0, y = 0;
     int psiz = 0;
     void ** memory_loc;
+
     size_t * memory_pos;
+
     for(x = 0; x < mem_count; x++)
     {
     	buf_count[x] = 0;
@@ -3821,6 +3831,10 @@ write_cleanup:
     {
     	for(x = 0; x < y; x++)
     		mem_starts[x] -= buf_count[x];
+    }
+    for (x = 0; x < mem_count; x++)
+    {
+    	((size_t *)mem_sizes)[x] = original_mem_sizes[x];
     }
     return ret;
 }
@@ -4124,12 +4138,12 @@ int zoidfs_read(const zoidfs_handle_t *handle, size_t mem_count,
     }
     if((ret = zoidfs_xdr_processor(ZFS_SIZE_T_ARRAY_T, &mem_sizes_transfer, &send_msg.send_xdr)) != ZFS_OK)
     {
-        
+
         goto read_cleanup;
     }
     if ((ret = zoidfs_xdr_processor(ZFS_SIZE_T, &file_count, &send_msg.send_xdr)) != ZFS_OK)
     {
-        
+
         goto read_cleanup;
     }
     if((ret = zoidfs_xdr_processor(ZFS_FILE_OFS_ARRAY_T, &file_starts_transfer, &send_msg.send_xdr)) != ZFS_OK)
