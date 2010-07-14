@@ -429,16 +429,15 @@ void IOFWDWriteRequest::recvComplete(int recvStatus)
    }
    else
    {
-      size_t position = mem_slot_bytes;
+      size_t bytes = param_.mem_sizes[mem_slot] - mem_slot_bytes;
 
-      memcpy(param_.mem_starts[mem_slot]+position, compressed_mem[0],
-	  param_.mem_sizes[mem_slot]-mem_slot_bytes);
-      position += param_.mem_sizes[mem_slot] - mem_slot_bytes;
+      memcpy(param_.mem_starts[mem_slot]+mem_slot_bytes, compressed_mem[0],
+	      bytes);
 
       for(i = mem_slot+1; i < param_.mem_count; i++)
       {
-	  memcpy(param_.mem_starts[i], compressed_mem[0]+position, param_.mem_sizes[i]);
-	  position += param_.mem_sizes[i];
+	  memcpy(param_.mem_starts[i], compressed_mem[0]+bytes, param_.mem_sizes[i]);
+	  bytes += param_.mem_sizes[i];
       }
 
       userCB_[0](recvStatus);
