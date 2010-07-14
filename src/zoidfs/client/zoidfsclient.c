@@ -3379,6 +3379,15 @@ int zoidfs_write(const zoidfs_handle_t *handle, size_t mem_count,
     if (PIPELINE_SIZE == 0)
        zoidfs_hint_add( &op_hint , strdup(ZOIDFS_ENABLE_PIPELINE), 
                         strdup("0"), 2, ZOIDFS_HINTS_ZC);
+    else
+    {
+        char pipeline_size_str[11];
+        assert(PIPELINE_SIZE < 2000000000);
+        sprintf(pipeline_size_str, "%i",PIPELINE_SIZE);
+        zoidfs_hint_add( &op_hint , strdup(ZOIDFS_ENABLE_PIPELINE), 
+                         strdup(pipeline_size_str), strlen(pipeline_size_str),
+                         ZOIDFS_HINTS_ZC);        
+    }
 
     /* If a compression has been selected */
     if (compression_type != NULL)
