@@ -3384,7 +3384,7 @@ int zoidfs_write(const zoidfs_handle_t *handle, size_t mem_count,
         char pipeline_size_str[11];
         assert(PIPELINE_SIZE < 2000000000);
         sprintf(pipeline_size_str, "%i",PIPELINE_SIZE);
-        zoidfs_hint_add( &op_hint , strdup(ZOIDFS_ENABLE_PIPELINE), 
+        zoidfs_hint_add( &op_hint , strdup(ZOIDFS_PIPELINE_SIZE),
                          strdup(pipeline_size_str), strlen(pipeline_size_str),
                          ZOIDFS_HINTS_ZC);        
     }
@@ -3735,7 +3735,7 @@ int zoidfs_write(const zoidfs_handle_t *handle, size_t mem_count,
             	if (header_stuffing != NULL)
             	{
             		total_size = 0;
-            		for (x = 0, x < mem_count; x++)
+            		for (x = 0; x < mem_count; x++)
             		{
             			bmi_mem_sizes -= buf_count[x];
             			total_size += bmi_mem_sizes[x];
@@ -3766,6 +3766,16 @@ int zoidfs_write(const zoidfs_handle_t *handle, size_t mem_count,
             }
         }
     } else {
+        /* Strided writes */
+    	if (header_stuffing != NULL)
+    	{
+    		total_size = 0;
+    		for (x = 0; x < mem_count; x++)
+    		{
+    			bmi_mem_sizes -= buf_count[x];
+    			total_size += bmi_mem_sizes[x];
+    		}
+    	}
         /* Pipelining */
         ret = zoidfs_write_pipeline(peer_addr, pipeline_size,
                                     mem_count, mem_starts, bmi_mem_sizes,
