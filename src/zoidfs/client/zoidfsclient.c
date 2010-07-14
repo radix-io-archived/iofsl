@@ -3737,7 +3737,7 @@ int zoidfs_write(const zoidfs_handle_t *handle, size_t mem_count,
             		total_size = 0;
             		for (x = 0; x < mem_count; x++)
             		{
-            			bmi_mem_sizes -= buf_count[x];
+            			bmi_mem_sizes[x] -= buf_count[x];
             			total_size += bmi_mem_sizes[x];
             		}
             	}
@@ -3772,7 +3772,7 @@ int zoidfs_write(const zoidfs_handle_t *handle, size_t mem_count,
     		total_size = 0;
     		for (x = 0; x < mem_count; x++)
     		{
-    			bmi_mem_sizes -= buf_count[x];
+    			bmi_mem_sizes[x] -= buf_count[x];
     			total_size += bmi_mem_sizes[x];
     		}
     	}
