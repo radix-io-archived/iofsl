@@ -132,7 +132,7 @@ IOFWDWriteRequest::ReqParam & IOFWDWriteRequest::decodeParam ()
    /* keep pipelining enabled by default */
    else
    {
-        param_.op_hint_pipeline_enabled = false;
+        param_.op_hint_pipeline_enabled = true;
    }
 
    // Memory param_.op_hint is freed in the class destructor
@@ -157,11 +157,6 @@ IOFWDWriteRequest::ReqParam & IOFWDWriteRequest::decodeParam ()
             op_hint_compress_enabled = false;
         }
    }
-   /* keep pipelining disabled by default */
-   else
-   {
-        op_hint_compress_enabled = false;
-   }
 
    size_t uncompressed_bytes = 0;
    char *enable_header_stuffing = zoidfs::util::ZoidFSHintGet(&(param_.op_hint), ZOIDFS_HEADER_STUFFING);
@@ -178,11 +173,6 @@ IOFWDWriteRequest::ReqParam & IOFWDWriteRequest::decodeParam ()
           op_hint_headstuff_enabled = false;
         else
           op_hint_headstuff_enabled = true;
-   }
-   /* keep pipelining enabled by default */
-   else
-   {
-        op_hint_headstuff_enabled = false;
    }
 
    // init the rest of the write request params to 0
@@ -294,37 +284,32 @@ void IOFWDWriteRequest::initRequestParams(ReqParam & p, void * bufferMem)
 
         p = param_;
 
-        if(true == op_hint_compress_enabled)
-        {
-            compressed_mem = new char* [1];
-            compressed_mem[0] = new char [compressed_size];
-        }
+	int size_of_packet = raw_request_.size();
+	void *ptr_to_header = raw_request_.get();
+	int size_of_header = req_reader_.getPos();
 
-	userCB_ = new CBType[1];
-	userCB_[0] = NULL;
+	size_of_stuffed_data = size_of_packet - size_of_header;
+
+	if(true == op_hint_compress_enabled ||
+	   true == op_hint_headstuff_enabled)
+	{
+	  compressed_mem = new char* [1];
+	  compressed_size = param_.mem_total_size - size_of_stuffed_data;
+	  compressed_mem[0] = new char [compressed_size];
+
+	  userCB_ = new CBType[1];
+	  userCB_[0] = NULL;
+	}
 
         if(true == op_hint_headstuff_enabled)
         {
-          int size_of_packet = raw_request_.size();
-          void *ptr_to_header = raw_request_.get();
-          int size_of_header = req_reader_.getPos();
           unsigned int ii = 0;
           size_t bytes = 0, total_bytes = 0;
           char *position = NULL;
           int outState = 0;
           size_t outBytes = 0;
 
-          size_of_stuffed_data = size_of_packet - size_of_header;
           position = (char*)ptr_to_header + size_of_header;
-
-          fprintf(stderr, "size_of_packet = %d\n", size_of_packet);
-          fprintf(stderr, "ptr_to_header = %p\n", ptr_to_header);
-          fprintf(stderr, "size_of_header = %d\n", size_of_header);
-          fprintf(stderr, "size_of_stuffed_data = %u\n", (unsigned)size_of_stuffed_data);
-
-	  compressed_mem = new char* [1];
-	  compressed_size = param_.mem_total_size - size_of_stuffed_data;
-	  compressed_mem[0] = new char [compressed_size];
 
           if(false == op_hint_compress_enabled)
           {
