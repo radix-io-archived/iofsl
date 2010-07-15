@@ -3686,6 +3686,7 @@ int zoidfs_write(const zoidfs_handle_t *handle, size_t mem_count,
     {
         ret = ZOIDFS_BMI_COMM_SENDU(send_msg);
     }
+
     if (ret != ZFS_OK)
        goto write_cleanup;
     /* Send the data using an expected BMI message */
@@ -3693,13 +3694,28 @@ int zoidfs_write(const zoidfs_handle_t *handle, size_t mem_count,
         /* No Pipelining */
         if (compression_type != NULL)
         {
-
-            ret = bmi_comm_send_list(peer_addr, transform_count,(const void **) transform_buffer, 
-                                     (const bmi_size_t *)transform_output_sizes,
-                                     send_msg_data.tag, context, total_len);
-            for(x = 0; x < transform_count; x++)
-                free(transform_buffer[x]);
-            free(transform_buffer);
+        	int skip_send = 0;
+        	for (x = 0; x < transform_count; x++)
+        	{
+        		if (transform_output_sizes[x] > 0)
+        			break;
+        		else if (x == (transform_count - 1))
+        			skip_send = 1;
+        	}
+        	/* fix mleak here*/
+        	if (skip_send == 0)
+        	{
+        		ret = bmi_comm_send_list(peer_addr, transform_count,(const void **) transform_buffer,
+        								 (const bmi_size_t *)transform_output_sizes,
+        								 send_msg_data.tag, context, total_len);
+                for(x = 0; x < transform_count; x++)
+                    free(transform_buffer[x]);
+        	}
+        	else
+        	{
+        		ret = ZFS_OK;
+        	}
+        	free(transform_buffer);
         }
         else
         {
