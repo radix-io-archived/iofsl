@@ -133,7 +133,6 @@ IOFWDWriteRequest::ReqParam & IOFWDWriteRequest::decodeParam ()
         param_.op_hint_pipeline_enabled = true;
    }
 
-   // Memory param_.op_hint is freed in the class destructor
    char *enable_transform = zoidfs::util::ZoidFSHintGet(&(param_.op_hint), ZOIDFS_TRANSFORM);
    if(NULL != enable_transform)
    {
@@ -156,10 +155,10 @@ IOFWDWriteRequest::ReqParam & IOFWDWriteRequest::decodeParam ()
         }
    }
 
-   size_t uncompressed_bytes = 0;
    char *enable_header_stuffing = zoidfs::util::ZoidFSHintGet(&(param_.op_hint), ZOIDFS_HEADER_STUFFING);
    if(enable_header_stuffing)
    {
+	size_t uncompressed_bytes = 0;
         char *token = NULL, *saveptr = NULL;
 
         token = strtok_r(enable_header_stuffing, ":", &saveptr);
@@ -169,6 +168,23 @@ IOFWDWriteRequest::ReqParam & IOFWDWriteRequest::decodeParam ()
 
         if(0 != uncompressed_bytes)
           op_hint_headstuff_enabled = true;
+   }
+
+   char *enable_crc = zoidfs::util::ZoidFSHintGet(&(param_.op_hint),
+       ZOIDFS_CRC);
+   if(NULL != enable_crc)
+   {
+        char *token = NULL, *saveptr = NULL;
+
+        token = strtok_r(enable_crc, ":", &saveptr);
+
+        if(NULL != token)
+        {
+	    hashFunc_.reset (HashFactory::instance().getHash(token));
+	    token = strtok_r(NULL, ":", &saveptr);
+	    hash_value = token;
+	    op_hint_crc_enabled = true;
+        }
    }
 
    // init the rest of the write request params to 0
@@ -360,6 +376,8 @@ void IOFWDWriteRequest::initRequestParams(ReqParam & p, void * bufferMem)
             {
                 bytes = std::min(param_.mem_sizes[ii], size_of_stuffed_data-total_bytes);
                 memcpy(param_.mem_starts[ii], position, bytes);
+		if(true == op_hint_crc_enabled)
+		  hashFunc_.get()->process (param_.mem_starts[ii], bytes);
             }
             mem_slot = ii - 1;
             mem_slot_bytes = bytes;
@@ -381,7 +399,8 @@ void IOFWDWriteRequest::initRequestParams(ReqParam & p, void * bufferMem)
                 total_bytes += outBytes;
                 mem_slot_bytes = outBytes;
 
-                //ASSERT(iofwdutil::transform::TRANSFORM_STREAM_ERROR != outState);
+		if(true == op_hint_crc_enabled)
+		  hashFunc_.get()->process (param_.mem_starts[ii], outBytes);
 
                 if(iofwdutil::transform::CONSUME_OUTBUF == outState)
                 {
@@ -394,7 +413,7 @@ void IOFWDWriteRequest::initRequestParams(ReqParam & p, void * bufferMem)
                     mem_slot = ii;
                     break;
                 }
-                else if(iofwdutil::transform::TRANSFORM_STREAM_END == outState)
+                if(total_bytes == param_.mem_total_size)
                 {
                     mem_slot = ii;
                     break;
@@ -402,6 +421,8 @@ void IOFWDWriteRequest::initRequestParams(ReqParam & p, void * bufferMem)
             }
             size_of_stuffed_data = total_bytes;
           }
+
+	  decompressed_size = size_of_stuffed_data;
         }
     }
 }
@@ -445,6 +466,11 @@ void IOFWDWriteRequest::recvComplete(int recvStatus)
 		&outBytes,
 		&outState,
 		false);
+
+	      decompressed_size += outBytes;
+
+	      if(true == op_hint_crc_enabled)
+		hashFunc_.get()->process (param_.mem_starts[i]+mem_slot_bytes, outBytes);
 	  }
 	  else
 	  {
@@ -455,14 +481,28 @@ void IOFWDWriteRequest::recvComplete(int recvStatus)
 		&outBytes,
 		&outState,
 		false);
+
+	      decompressed_size += outBytes;
+
+	      if(true == op_hint_crc_enabled)
+		hashFunc_.get()->process (param_.mem_starts[i], outBytes);
 	  }
 
 	  if(iofwdutil::transform::CONSUME_OUTBUF == outState)
 	  {
 	      continue;
 	  }
-	  else if(iofwdutil::transform::TRANSFORM_STREAM_END == outState)
+	  if(decompressed_size == param_.mem_total_size)
 	  {
+	      const size_t bufsize = hashFunc_->getHashSize();
+	      boost::scoped_array<char> result (new char[bufsize]);
+
+	      if (0 != strcasecmp (result.get(), hash_value))
+		fprintf(stderr, "Incompatible hash values\n"
+				"hash value received over wire = %s\n"
+				"hash value calculated = %s\n"
+				, hash_value, result.get());
+
 	      userCB_[0](recvStatus);
 	      break;
 	  }
@@ -476,9 +516,16 @@ void IOFWDWriteRequest::recvComplete(int recvStatus)
       memcpy(param_.mem_starts[mem_slot]+mem_slot_bytes, compressed_mem[0],
 	      bytes);
 
+      if(true == op_hint_crc_enabled)
+	hashFunc_.get()->process (param_.mem_starts[mem_slot]+mem_slot_bytes, bytes);
+
       for(i = mem_slot+1; i < param_.mem_count; i++)
       {
 	  memcpy(param_.mem_starts[i], compressed_mem[0]+bytes, param_.mem_sizes[i]);
+
+	  if(true == op_hint_crc_enabled)
+	    hashFunc_.get()->process (&param_.mem_starts[i], param_.mem_sizes[i]);
+
 	  bytes += param_.mem_sizes[i];
       }
 
@@ -495,11 +542,25 @@ void IOFWDWriteRequest::recvBuffers(const CBType & cb, RetrievedBuffer * rb)
     if(false == op_hint_compress_enabled && false == op_hint_headstuff_enabled)
     {
 #if SIZEOF_SIZE_T == SIZEOF_INT64_T
-      r_.rbmi_.post_recv_list(cb, addr_, reinterpret_cast<void*const*>(param_.mem_starts), reinterpret_cast<const bmi_size_t *>(param_.mem_sizes),
-                              param_.mem_count, param_.mem_total_size, &(param_.mem_expected_size), dynamic_cast<iofwdutil::mm::BMIMemoryAlloc *>(rb->buffer_)->bmiType(), tag_, 0);
+      r_.rbmi_.post_recv_list(cb,
+	  addr_,
+	  reinterpret_cast<void*const*>(param_.mem_starts),
+	  reinterpret_cast<const bmi_size_t *>(param_.mem_sizes),
+	  param_.mem_count,
+	  param_.mem_total_size,
+	  &(param_.mem_expected_size),
+	  dynamic_cast<iofwdutil::mm::BMIMemoryAlloc *>(rb->buffer_)->bmiType(),
+	  tag_, 0);
 #else
-      r_.rbmi_.post_recv_list(cb, addr_, reinterpret_cast<void*const*>(param_.mem_starts), reinterpret_cast<const bmi_size_t*>(param_.bmi_mem_sizes),
-                              param_.mem_count, param_.mem_total_size, &(param_.mem_expected_size), dynamic_cast<iofwdutil::mm::BMIMemoryAlloc *>(rb->buffer_)->bmiType(), tag_, 0);
+      r_.rbmi_.post_recv_list(cb,
+	  addr_,
+	  reinterpret_cast<void*const*>(param_.mem_starts),
+	  reinterpret_cast<const bmi_size_t*>(param_.bmi_mem_sizes),
+	  param_.mem_count,
+	  param_.mem_total_size,
+	  &(param_.mem_expected_size),
+	  dynamic_cast<iofwdutil::mm::BMIMemoryAlloc *>(rb->buffer_)->bmiType(),
+	  tag_, 0);
 #endif
     }
     else
@@ -576,6 +637,9 @@ void IOFWDWriteRequest::recvPipelineComplete(int recvStatus, int my_slot)
       ASSERT(iofwdutil::transform::CONSUME_OUTBUF != outState);
       ASSERT(outBytes <= (param_.mem_total_size - decompressed_size));
 
+      if(true == op_hint_crc_enabled)
+	hashFunc_.get()->process (decompressed_mem+decompressed_size, outBytes);
+
       decompressed_size += outBytes;
 
       pipelines_posted = decompressed_size / param_.pipeline_size;
@@ -617,12 +681,30 @@ void IOFWDWriteRequest::recvPipelineComplete(int recvStatus, int my_slot)
 	      &(param_.mem_expected_size), 
 	      BMI_EXT_ALLOC, tag_, 0);
       }
+
+      if(decompressed_size == param_.mem_total_size)
+      {
+	  const size_t bufsize = hashFunc_->getHashSize();
+	  boost::scoped_array<char> result (new char[bufsize]);
+
+	  if (0 != strcasecmp (result.get(), hash_value))
+	    fprintf(stderr, "Incompatible hash values\n"
+		            "hash value received over wire = %s\n"
+			    "hash value calculated = %s\n"
+			    , hash_value, result.get());
+
+      }
    }
    else
    {
      {
 	memcpy(decompressed_mem+decompressed_size, compressed_mem[my_slot],
 	    param_.mem_expected_size);
+
+	if(true == op_hint_crc_enabled)
+	  hashFunc_.get()->process (decompressed_mem+decompressed_size,
+	      param_.mem_expected_size);
+
 	decompressed_size += param_.mem_expected_size;
 
 	pipelines_posted = decompressed_size / param_.pipeline_size;
@@ -664,6 +746,18 @@ void IOFWDWriteRequest::recvPipelineComplete(int recvStatus, int my_slot)
 	    &(param_.mem_expected_size), 
 	    BMI_EXT_ALLOC, tag_, 0);
      }
+     else
+     {
+	const size_t bufsize = hashFunc_->getHashSize();
+	boost::scoped_array<char> result (new char[bufsize]);
+
+	if (0 != strcasecmp (result.get(), hash_value))
+	  fprintf(stderr, "Incompatible hash values\n"
+			  "hash value received over wire = %s\n"
+			  "hash value calculated = %s\n"
+			  , hash_value, result.get());
+
+     }
    }
 }
 
@@ -703,12 +797,44 @@ void IOFWDWriteRequest::recvPipelineBufferCB(iofwdevent::CBType cb, RetrievedBuf
 
       if(0 == callback)
       {
+	if(size_of_stuffed_data < param_.mem_total_size)
+	{
           r_.rbmi_.post_recv(transformCB,
               addr_,
               reinterpret_cast<iofwdutil::mm::BMIMemoryAlloc *>(compressed_mem[callback]),
               size,
               &(param_.mem_expected_size),
               BMI_EXT_ALLOC, tag_, 0);
+	}
+	else
+	{
+          {
+              boost::mutex::scoped_lock l (mp_);
+
+              total_slots = decompressed_size / param_.pipeline_size;
+              remBytes = decompressed_size % param_.pipeline_size;
+
+              if(remBytes > 0 &&
+                 decompressed_size == param_.mem_total_size)
+              {
+                total_slots++;
+                partial_slot = true;
+              }
+
+	      offset = next_slot * param_.pipeline_size;
+
+              while(next_slot < std::min(user_callbacks, total_slots))
+              {
+                  bytes = param_.pipeline_size;
+                  if(true == partial_slot && next_slot == total_slots - 1)
+                    bytes = remBytes;
+                  memcpy(callback_mem[next_slot], decompressed_mem+offset, bytes);
+                  userCB_[next_slot](recvStatus);
+                  next_slot++;
+		  offset += bytes;
+              }
+          }
+	}
       }
       else
       {

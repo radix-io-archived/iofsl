@@ -19,7 +19,6 @@ namespace iofwdutil
     {
       CONSUME_OUTBUF = 100,
       SUPPLY_INBUF,
-      TRANSFORM_STREAM_END,
 
       GENERIC_TRANSFORM_LAST
     };
