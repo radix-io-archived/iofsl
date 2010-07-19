@@ -41,7 +41,7 @@ class ChildRange
         {
         }
 
-        ChildRange(uint64_t st, uint64_t en) : st_(st), en_(en), cb_(NULL)
+        ChildRange(zoidfs::zoidfs_file_ofs_t st, zoidfs::zoidfs_file_ofs_t en) : st_(st), en_(en), cb_(NULL)
         {
         }
 
@@ -57,8 +57,8 @@ class ChildRange
         RangeType type_;
         const zoidfs::zoidfs_handle_t * handle_;
         char * buf_;
-        uint64_t st_;
-        uint64_t en_;
+        zoidfs::zoidfs_file_ofs_t st_;
+        zoidfs::zoidfs_file_ofs_t en_;
         zoidfs::zoidfs_op_hint_t * op_hint_;
         iofwd::tasksm::IOCBWrapper * cb_;
 };
@@ -70,7 +70,7 @@ class ParentRange : public ChildRange
         {
         }
 
-        ParentRange(uint64_t st, uint64_t en) : ChildRange(st, en)
+        ParentRange(zoidfs::zoidfs_file_ofs_t st, zoidfs::zoidfs_file_ofs_t en) : ChildRange(st, en)
         {
         }
 

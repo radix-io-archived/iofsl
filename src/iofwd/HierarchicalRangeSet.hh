@@ -13,6 +13,8 @@
 #include "iofwdutil/LinkHelper.hh"
 #include "iofwdutil/Configurable.hh"
 
+#include "zoidfs/zoidfs.h"
+
 namespace iofwd
 {
 //===========================================================================
@@ -71,7 +73,7 @@ public:
     /* find buffer intersects... no dup ranges are returned */
     void intersect(const ChildRange * r, std::set<ChildRange *> & s)
     {
-        std::map<uint64_t, ChildRange *>::iterator it;
+        std::map<zoidfs::zoidfs_file_ofs_t, ChildRange *>::iterator it;
 
         /*
             The beginning part of rr overlaps the end of r
@@ -117,7 +119,7 @@ public:
     /* identify all of the buffers that are a subset of existing buffers */
     void included(const ChildRange * r, std::set<ChildRange *> & s)
     {
-        std::map<uint64_t, ChildRange *>::iterator it;
+        std::map<zoidfs::zoidfs_file_ofs_t, ChildRange *>::iterator it;
 
         /*
             Buffer rr overlaps all of r
@@ -140,7 +142,7 @@ public:
         }
     }
 
-  void merge(const ChildRange * r, std::set<ChildRange *> & s, uint64_t & st, uint64_t & en)
+  void merge(const ChildRange * r, std::set<ChildRange *> & s, zoidfs::zoidfs_file_ofs_t & st, zoidfs::zoidfs_file_ofs_t & en)
   {
     st = r->st_;
     en = r->en_;
@@ -160,10 +162,10 @@ public:
 
   void add(ChildRange * r)
   {
-    std::map<uint64_t, ChildRange *>::iterator it;
+    std::map<zoidfs::zoidfs_file_ofs_t, ChildRange *>::iterator it;
     std::set<ChildRange *> s;
-    uint64_t st = 0;
-    uint64_t en = 0;
+    zoidfs::zoidfs_file_ofs_t st = 0;
+    zoidfs::zoidfs_file_ofs_t en = 0;
     ChildRange * new_r = NULL;
     ParentRange * new_pr = NULL;
 
@@ -227,8 +229,8 @@ public:
 
 private:
     std::set<ChildRange *> ranges;
-    std::map<uint64_t, ChildRange *> st_map;
-    std::map<uint64_t, ChildRange *> en_map;
+    std::map<zoidfs::zoidfs_file_ofs_t, ChildRange *> st_map;
+    std::map<zoidfs::zoidfs_file_ofs_t, ChildRange *> en_map;
 };
 
 //===========================================================================
