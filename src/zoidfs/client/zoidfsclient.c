@@ -230,7 +230,6 @@ typedef struct
  * xdr size processing for zoidfs messages
  */
 
-#ifdef ZFS_USE_XDR_SIZE_CACHE
 static unsigned int zoidfs_xdr_size_cache[ZFS_MSG_DATA_MAX];
 
 static inline unsigned int zoidfs_xdr_size_processor_cache_init()
@@ -355,14 +354,12 @@ static inline unsigned int zoidfs_xdr_size_processor_cache_init()
 
     return 0;
 }
-#endif
 
 static inline unsigned int zoidfs_xdr_size_processor(zoidfs_msg_data_t data_t, const void * data)
 {
     unsigned int size = 0; 
     if(data)
     {
-#ifdef ZFS_USE_XDR_SIZE_CACHE
         switch(data_t)
         {
             case ZFS_UINT32_ARRAY_T:
@@ -399,107 +396,6 @@ static inline unsigned int zoidfs_xdr_size_processor(zoidfs_msg_data_t data_t, c
                 break;
             }
         };
-#else
-        switch(data_t)
-        {
-            case ZFS_OP_ID_T:
-            {
-                size = xdr_sizeof((xdrproc_t)xdr_zoidfs_op_id_t, (zoidfs_op_id_t *)data);
-                break;
-            }
-            case ZFS_OP_STATUS_T:
-            {
-                size = xdr_sizeof((xdrproc_t)xdr_zoidfs_op_status_t, (zoidfs_op_status_t *)data);
-                break;
-            }
-            case ZFS_HANDLE_T:
-            {
-                size = xdr_sizeof((xdrproc_t)xdr_zoidfs_handle_t, (zoidfs_handle_t *)data);
-                break;
-            }
-            case ZFS_ATTR_T:
-            {
-                size = xdr_sizeof((xdrproc_t)xdr_zoidfs_attr_t, (zoidfs_sattr_t *)data);
-                break;
-            }
-            case ZFS_SATTR_T:
-            {
-                size = xdr_sizeof((xdrproc_t)xdr_zoidfs_sattr_t, (zoidfs_sattr_t *)data);
-                break;
-            }
-            case ZFS_NULL_PARAM_T:
-            {
-                size = xdr_sizeof((xdrproc_t)xdr_zoidfs_null_param_t, (zoidfs_null_param_t *)data);
-                break;
-            }
-            case ZFS_CACHE_HINT_T:
-            {
-                size = xdr_sizeof((xdrproc_t)xdr_zoidfs_cache_hint_t, (zoidfs_cache_hint_t *)data);
-                break;
-            }
-            case ZFS_DIRENT_COOKIE_T:
-            {
-                size = xdr_sizeof((xdrproc_t)xdr_zoidfs_dirent_cookie_t, (zoidfs_dirent_cookie_t *)data);
-                break;
-            }
-            case ZFS_OP_HINT_T:
-            {
-                size = xdr_sizeof((xdrproc_t)xdr_zoidfs_op_hint_t, (zoidfs_op_hint_t **)data);
-                break;
-            }
-            case ZFS_UINT32_T:
-            {
-                size = xdr_sizeof((xdrproc_t)xdr_uint32_t, (uint32_t *)data);
-                break;
-            }
-            case ZFS_SIZE_T:
-            {
-                size = xdr_sizeof((xdrproc_t)xdr_size_t, (size_t *)data);
-                break;
-            }
-            case ZFS_UINT64_T:
-            {
-                size = xdr_sizeof((xdrproc_t)xdr_uint64_t, (uint64_t *)data);
-                break;
-            }
-            case ZFS_FILE_OFS_T:
-            {
-                size = xdr_sizeof((xdrproc_t)xdr_zoidfs_file_ofs_t, (zoidfs_file_ofs_t *)data);
-                break;
-            }
-            case ZFS_UINT32_ARRAY_T:
-            {
-                size = sizeof(uint32_t) + (*(size_t *)data * (xdr_sizeof((xdrproc_t)xdr_uint32_t, (uint32_t *)data)));
-                break;
-            }
-            case ZFS_SIZE_T_ARRAY_T:
-            {
-                size = sizeof(size_t) + (*(size_t *)data * (xdr_sizeof((xdrproc_t)xdr_size_t, (size_t *)data)));
-                break;
-            }
-            case ZFS_UINT64_ARRAY_T:
-            {
-                size = sizeof(uint32_t) + (*(size_t *)data * (xdr_sizeof((xdrproc_t)xdr_uint64_t, (uint64_t *)data)));
-                break;
-            }
-            case ZFS_FILE_OFS_ARRAY_T:
-            {
-                size = sizeof(uint32_t) + (*(size_t *)data * (xdr_sizeof((xdrproc_t)xdr_zoidfs_file_ofs_t, (zoidfs_file_ofs_t *)data)));
-                break;
-            }
-            case ZFS_INT_T:
-            {
-                size = xdr_sizeof((xdrproc_t)xdr_int, (int *)data);
-                break;
-            }
-            default:
-            {
-                fprintf(stderr, "%s(): processing error, unknown zoidfs data type, %s:%i.\n", __func__, __FILE__, __LINE__);
-                size = 0;
-                break;
-            }
-        }
-#endif
     }
     return size;
 }
@@ -4401,10 +4297,8 @@ int zoidfs_init(void) {
 
     header_stuffing =  getenv(ZOIDFS_HEADER_STUFFING);
 
-#ifdef ZFS_USE_XDR_SIZE_CACHE
     /* get the values for the size cache */
     zoidfs_xdr_size_processor_cache_init();
-#endif
 
     assert(sizeof(size_t) == sizeof(unsigned long));
 
