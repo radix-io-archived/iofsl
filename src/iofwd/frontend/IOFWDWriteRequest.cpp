@@ -376,8 +376,8 @@ void IOFWDWriteRequest::initRequestParams(ReqParam & p, void * bufferMem)
             {
                 bytes = std::min(param_.mem_sizes[ii], size_of_stuffed_data-total_bytes);
                 memcpy(param_.mem_starts[ii], position, bytes);
-		if(true == op_hint_crc_enabled)
-		  hashFunc_.get()->process (param_.mem_starts[ii], bytes);
+                if(true == op_hint_crc_enabled)
+                	hashFunc_.get()->process (param_.mem_starts[ii], bytes);
             }
             mem_slot = ii - 1;
             mem_slot_bytes = bytes;
@@ -494,15 +494,17 @@ void IOFWDWriteRequest::recvComplete(int recvStatus)
 	  }
 	  if(decompressed_size == param_.mem_total_size)
 	  {
-	      const size_t bufsize = hashFunc_->getHashSize();
-	      boost::scoped_array<char> result (new char[bufsize]);
+		  if(true == op_hint_crc_enabled)
+		  {
+			  const size_t bufsize = hashFunc_->getHashSize();
+			  boost::scoped_array<char> result (new char[bufsize]);
 
-	      if (0 != strcasecmp (result.get(), hash_value))
-		fprintf(stderr, "Incompatible hash values\n"
-				"hash value received over wire = %s\n"
-				"hash value calculated = %s\n"
-				, hash_value, result.get());
-
+			  if (0 != strcasecmp (result.get(), hash_value))
+			fprintf(stderr, "Incompatible hash values\n"
+					"hash value received over wire = %s\n"
+					"hash value calculated = %s\n"
+					, hash_value, result.get());
+		  }
 	      userCB_[0](recvStatus);
 	      break;
 	  }
@@ -638,7 +640,7 @@ void IOFWDWriteRequest::recvPipelineComplete(int recvStatus, int my_slot)
       ASSERT(outBytes <= (param_.mem_total_size - decompressed_size));
 
       if(true == op_hint_crc_enabled)
-	hashFunc_.get()->process (decompressed_mem+decompressed_size, outBytes);
+    	  hashFunc_.get()->process (decompressed_mem+decompressed_size, outBytes);
 
       decompressed_size += outBytes;
 
@@ -684,14 +686,17 @@ void IOFWDWriteRequest::recvPipelineComplete(int recvStatus, int my_slot)
 
       if(decompressed_size == param_.mem_total_size)
       {
-	  const size_t bufsize = hashFunc_->getHashSize();
-	  boost::scoped_array<char> result (new char[bufsize]);
+    	  if(true == op_hint_crc_enabled)
+    	  {
+			  const size_t bufsize = hashFunc_->getHashSize();
+			  boost::scoped_array<char> result (new char[bufsize]);
 
-	  if (0 != strcasecmp (result.get(), hash_value))
-	    fprintf(stderr, "Incompatible hash values\n"
-		            "hash value received over wire = %s\n"
-			    "hash value calculated = %s\n"
-			    , hash_value, result.get());
+			  if (0 != strcasecmp (result.get(), hash_value))
+				fprintf(stderr, "Incompatible hash values\n"
+							"hash value received over wire = %s\n"
+						"hash value calculated = %s\n"
+						, hash_value, result.get());
+    	  }
 
       }
    }
@@ -748,14 +753,17 @@ void IOFWDWriteRequest::recvPipelineComplete(int recvStatus, int my_slot)
      }
      else
      {
-	const size_t bufsize = hashFunc_->getHashSize();
-	boost::scoped_array<char> result (new char[bufsize]);
+   	  if(true == op_hint_crc_enabled)
+   	  {
+		const size_t bufsize = hashFunc_->getHashSize();
+		boost::scoped_array<char> result (new char[bufsize]);
 
-	if (0 != strcasecmp (result.get(), hash_value))
-	  fprintf(stderr, "Incompatible hash values\n"
-			  "hash value received over wire = %s\n"
-			  "hash value calculated = %s\n"
-			  , hash_value, result.get());
+		if (0 != strcasecmp (result.get(), hash_value))
+		  fprintf(stderr, "Incompatible hash values\n"
+				  "hash value received over wire = %s\n"
+				  "hash value calculated = %s\n"
+				  , hash_value, result.get());
+   	  }
 
      }
    }
