@@ -3247,22 +3247,18 @@ int zoidfs_write(const zoidfs_handle_t *handle, size_t mem_count,
     /* Calculate hash */
     for (x = 0; x < mem_count; x++)
     {
-        ret = chash_process (crc_hash, mem_starts[x], mem_sizes[x]);    
+        ret = chash_process (crc_hash, mem_starts[x], mem_sizes[x]);
     }
 
         /* Get the hash and create hint string (hash_string) */     
     ret = chash_get(crc_hash,hash_value, chash_getsize(crc_hash));
     char * hash_string = malloc(ret + strlen(crc_type) + 1);
-    snprintf(hash_string,ret + strlen(crc_type) + 1, "%s:%s", 
+    snprintf(hash_string,ret + strlen(crc_type) + 1, "%s:%s",
                 crc_type,hash_value);
 
         /* set the hint */
-    zoidfs_hint_add( &op_hint , strdup("ZOIDFS_CRC"), strdup(hash_string),
-                     strlen(crc_type) + ret +1, ZOIDFS_HINTS_ZC);
-
-        /* Cleanup */
-    free(hash_value);
-    free(hash_string);
+    //zoidfs_hint_add( &op_hint , strdup("ZOIDFS_CRC"), strdup(hash_string),
+    //                 strlen(crc_type) + ret +1, ZOIDFS_HINTS_ZC);
 
     /* If header stuffing is turned on set the hint */
     if (header_stuffing != NULL)
@@ -3513,6 +3509,7 @@ int zoidfs_write(const zoidfs_handle_t *handle, size_t mem_count,
         list_buffer = malloc(mem_count * sizeof(char*));
         /* Stores total output length of all buffers */
         size_t tmp_total_len = total_len;
+        size_t start_size = 0;
         total_len = 0;  
         input_buf_size = memory_pos[0];
         do 
@@ -3520,7 +3517,7 @@ int zoidfs_write(const zoidfs_handle_t *handle, size_t mem_count,
            /* Transform the buffer */
            ret = zoidfs_transform (&zlib_struct, (void **)&memory_loc[x], 
                     &input_buf_size, &list_buffer[y], &buf_size, close);
-           memory_pos[x] = input_buf_size;
+           //memory_pos[x] = input_buf_size;
            /* if the memory_loc buffer is empty but the output buffer
               has space left. Change buffers and rewind the output buffer */
            if (input_buf_size == 0 && buf_size != 0)
@@ -3528,6 +3525,7 @@ int zoidfs_write(const zoidfs_handle_t *handle, size_t mem_count,
                 buf_count[y] = memory_pos[y];
                 list_buffer[y] -= memory_pos[y];
                 total_len += memory_pos[y];
+                memory_pos[y] = input_buf_size;
                 y++;
                 x++;     
            }   
@@ -3538,6 +3536,7 @@ int zoidfs_write(const zoidfs_handle_t *handle, size_t mem_count,
                 buf_count[y] = max_buf - total_len;
                 list_buffer[y] -= buf_count[y];
                 total_len += buf_count[y];
+                memory_pos[y] = input_buf_size;
                 break;
            }
            /* if there is no more input in this buffer*/
@@ -3546,6 +3545,7 @@ int zoidfs_write(const zoidfs_handle_t *handle, size_t mem_count,
                 /* if there are additional buffers move on */
                 if ( x < mem_count - 1 )
                 {
+                    memory_pos[x] = input_buf_size;
                     input_buf_size = memory_pos[x];
                 }
                 else
@@ -3604,14 +3604,11 @@ int zoidfs_write(const zoidfs_handle_t *handle, size_t mem_count,
         		ret = bmi_comm_send_list(peer_addr, transform_count,(const void **) transform_buffer,
         								 (const bmi_size_t *)transform_output_sizes,
         								 send_msg_data.tag, context, total_len);
-                for(x = 0; x < transform_count; x++)
-                    free(transform_buffer[x]);
         	}
         	else
         	{
         		ret = ZFS_OK;
         	}
-        	free(transform_buffer);
         }
         else
         {
@@ -3763,10 +3760,23 @@ write_cleanup:
     	for(x = 0; x < y; x++)
     		mem_starts[x] -= buf_count[x];
     }
+	for (x = 0; x < mem_count; x++)
+	{
+		//if (transform_count > x)
+		//	free(transform_buffer[x]);
+		((size_t *)mem_sizes)[x] = original_mem_sizes[x];
+	}
+
+    free(buf_list_tmp);
+    free(transform_buffer);
+    /* Cleanup */
+    free(hash_value);
+    free(hash_string);
     for (x = 0; x < mem_count; x++)
     {
-    	((size_t *)mem_sizes)[x] = original_mem_sizes[x];
+    	mem_starts[x] = original_mem_starts[x];
     }
+    //chash_free (&crc_hash);
     return ret;
 }
 
