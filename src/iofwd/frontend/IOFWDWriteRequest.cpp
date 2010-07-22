@@ -647,10 +647,7 @@ void IOFWDWriteRequest::recvPipelineComplete(int recvStatus, int my_slot)
       if(true == op_hint_crc_enabled_)
           hashFunc_.get()->process (decompressed_mem_+decompressed_size_, outBytes);
 
-      {
-	boost::mutex::scoped_lock l (mp_);
-	decompressed_size_ += outBytes;
-      }
+      decompressed_size_ += outBytes;
 
       pipelines_posted = decompressed_size_ / param_.pipeline_size;
       remBytes = decompressed_size_ % param_.pipeline_size;
@@ -717,10 +714,7 @@ void IOFWDWriteRequest::recvPipelineComplete(int recvStatus, int my_slot)
 	  hashFunc_.get()->process (decompressed_mem_+decompressed_size_,
 	      mem_expected_size_[my_slot]);
 
-	{
-	  boost::mutex::scoped_lock l (mp_);
-	  decompressed_size_ += mem_expected_size_[my_slot];
-	}
+	decompressed_size_ += mem_expected_size_[my_slot];
 
 	pipelines_posted = decompressed_size_ / param_.pipeline_size;
 	remBytes = decompressed_size_ % param_.pipeline_size;
@@ -827,8 +821,6 @@ void IOFWDWriteRequest::recvPipelineBufferCB(iofwdevent::CBType cb, RetrievedBuf
 	else
 	{
           {
-              boost::mutex::scoped_lock l (mp_);
-
               total_slots = decompressed_size_ / param_.pipeline_size;
               remBytes = decompressed_size_ % param_.pipeline_size;
 
@@ -838,6 +830,8 @@ void IOFWDWriteRequest::recvPipelineBufferCB(iofwdevent::CBType cb, RetrievedBuf
                 total_slots++;
                 partial_slot = true;
               }
+
+              boost::mutex::scoped_lock l (mp_);
 
 	      offset = next_slot_ * param_.pipeline_size;
 
@@ -857,8 +851,6 @@ void IOFWDWriteRequest::recvPipelineBufferCB(iofwdevent::CBType cb, RetrievedBuf
       else
       {
           {
-              boost::mutex::scoped_lock l (mp_);
-
               total_slots = decompressed_size_ / param_.pipeline_size;
               remBytes = decompressed_size_ % param_.pipeline_size;
 
@@ -868,6 +860,8 @@ void IOFWDWriteRequest::recvPipelineBufferCB(iofwdevent::CBType cb, RetrievedBuf
                 total_slots++;
                 partial_slot = true;
               }
+
+              boost::mutex::scoped_lock l (mp_);
 
 	      offset = next_slot_ * param_.pipeline_size;
 
