@@ -13,7 +13,7 @@
 
 #include <stdint.h>
 #include <stddef.h>
-//#include <zoidfs/hints/zoidfs-hints.h>
+/* #include <zoidfs/hints/zoidfs-hints.h> */
 
 #ifdef __cplusplus
 /*

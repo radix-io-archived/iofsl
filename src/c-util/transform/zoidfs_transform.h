@@ -57,3 +57,13 @@ int zoidfs_transform_init (char * type, zoidfs_write_compress * comp);
 int zoidfs_transform (zoidfs_write_compress * compression, void ** input, 
                       size_t * input_length, void ** output, size_t * output_len,
                       int flush);
+
+int zoidfs_transform_write_request (zoidfs_write_compress * transform,
+				    zoidfs_write_vars * write_buffs,
+				    size_t max_buff_size,
+				    size_t num_of_buffs_to_fill,
+				    void *** buffer,
+				    size_t ** buffer_sizes,
+				    size_t * buf_count,
+				    size_t * total_len
+				    );
