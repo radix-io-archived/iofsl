@@ -33,26 +33,26 @@ class IOFWDWriteRequest
      // shared state
      boost::scoped_ptr<iofwdutil::transform::GenericTransform> transform_;
      boost::scoped_ptr<HashFunc> hashFunc_;
-     char *hash_value;
+     char *hash_value_;
      iofwdevent::CBType *  userCB_;
-     bool op_hint_crc_enabled;
-     bool op_hint_compress_enabled;
-     bool op_hint_headstuff_enabled;
+     bool op_hint_crc_enabled_;
+     bool op_hint_compress_enabled_;
+     bool op_hint_headstuff_enabled_;
 
      // non pipelined state
-     size_t mem_slot;
-     size_t mem_slot_bytes;
-     size_t size_of_stuffed_data;
+     size_t mem_slot_;
+     size_t mem_slot_bytes_;
+     size_t size_of_stuffed_data_;
 
      // pipelined state
-     char **compressed_mem;
-     size_t compressed_size;
-     char *decompressed_mem;
-     size_t decompressed_size;
-     char **callback_mem;
-     size_t next_slot;
-     size_t user_callbacks;
-     bmi_size_t *mem_expected_size;
+     char   **compressed_mem_;
+     size_t compressed_size_;
+     char   *decompressed_mem_;
+     size_t decompressed_size_;
+     char   **callback_mem_;
+     size_t next_slot_;
+     size_t user_callbacks_;
+     bmi_size_t *mem_expected_size_;
      size_t pipeline_ops_;
      boost::mutex mp_;
 
@@ -61,13 +61,13 @@ public:
          IOFWDResources & res)
      : IOFWDRequest (info,res), WriteRequest (opid),
        transform_(NULL), hashFunc_(NULL),
-       hash_value(NULL), userCB_(NULL),
-       op_hint_crc_enabled(false),
-       op_hint_compress_enabled(false), op_hint_headstuff_enabled(false),
-       mem_slot(0), mem_slot_bytes(0), size_of_stuffed_data(0),
-       compressed_mem(NULL), compressed_size(0), decompressed_mem(NULL),
-       decompressed_size(0), callback_mem(NULL),
-       next_slot(0), user_callbacks(0), mem_expected_size(NULL), pipeline_ops_(0)
+       hash_value_(NULL), userCB_(NULL),
+       op_hint_crc_enabled_(false),
+       op_hint_compress_enabled_(false), op_hint_headstuff_enabled_(false),
+       mem_slot_(0), mem_slot_bytes_(0), size_of_stuffed_data_(0),
+       compressed_mem_(NULL), compressed_size_(0), decompressed_mem_(NULL),
+       decompressed_size_(0), callback_mem_(NULL),
+       next_slot_(0), user_callbacks_(0), mem_expected_size_(NULL), pipeline_ops_(0)
    {
    }
 
