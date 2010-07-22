@@ -14,6 +14,9 @@
 #include "iofwdutil/hash/SHA1Simple.hh"
 #include "iofwdutil/hash/HashAutoRegister.hh"
 
+#include "iofwdutil/atomics.hh"
+
+using namespace iofwdutil;
 using namespace iofwdutil::hash;
 
 namespace iofwd
@@ -49,6 +52,7 @@ class IOFWDWriteRequest
      char **callback_mem;
      size_t next_slot;
      size_t user_callbacks;
+     bmi_size_t *mem_expected_size;
      size_t pipeline_ops_;
      boost::mutex mp_;
 
@@ -63,7 +67,7 @@ public:
        mem_slot(0), mem_slot_bytes(0), size_of_stuffed_data(0),
        compressed_mem(NULL), compressed_size(0), decompressed_mem(NULL),
        decompressed_size(0), callback_mem(NULL),
-       next_slot(0), user_callbacks(0), pipeline_ops_(0)
+       next_slot(0), user_callbacks(0), mem_expected_size(NULL), pipeline_ops_(0)
    {
    }
 
