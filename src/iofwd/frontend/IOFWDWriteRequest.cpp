@@ -718,7 +718,7 @@ void IOFWDWriteRequest::recvPipelineComplete(int recvStatus, int my_slot)
 
 	{
 	  boost::mutex::scoped_lock l (mp_);
-	  decompressed_size += param_.mem_expected_size;
+	  decompressed_size += mem_expected_size[my_slot];
 	}
 
 	pipelines_posted = decompressed_size / param_.pipeline_size;
