@@ -634,7 +634,7 @@ void IOFWDWriteRequest::recvPipelineComplete(int recvStatus, int my_slot)
    if(true == op_hint_compress_enabled_)
    {
       transform_->transform(compressed_mem_[my_slot],
-	    param_.mem_expected_size,
+	    mem_expected_size_[my_slot],
 	    decompressed_mem_+decompressed_size_,
 	    param_.mem_total_size-decompressed_size_,
 	    &outBytes,
@@ -780,8 +780,6 @@ void IOFWDWriteRequest::recvPipelineBufferCB(iofwdevent::CBType cb, RetrievedBuf
    size_t bytes = 0;
    size_t remBytes = 0;
    bool partial_slot = false;
-
-   param_.mem_expected_size = 0;
 
    if(false == op_hint_compress_enabled_ &&
       false == op_hint_headstuff_enabled_)
