@@ -809,7 +809,7 @@ void IOFWDWriteRequest::recvPipelineBufferCB(iofwdevent::CBType cb, RetrievedBuf
 
       if(0 == callback)
       {
-	if(size_of_stuffed_data_ < param_.mem_total_size)
+	if(decompressed_size_ < param_.mem_total_size)
 	{
           r_.rbmi_.post_recv(transformCB,
               addr_,
