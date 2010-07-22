@@ -27,6 +27,7 @@ int zoidfs_transform_init (char * type, zoidfs_write_compress * comp)
     (*comp).intern_buf = NULL;
     (*comp).buf_position = 0;
     (*comp).type = type;
+
     if (strcmp("ZLIB:",type) == 0)
     { 
         #ifdef HAVE_ZLIB
@@ -72,6 +73,12 @@ void zoidfs_transform_destroy (zoidfs_write_compress * comp)
     }
 } 
 
+void zoidfs_transform_change_transform (char * type, zoidfs_write_compress * comp)
+{
+  zoidfs_transform_destroy (comp);
+  zoidfs_transform_init (type,comp);
+}
+
 int zoidfs_transform (zoidfs_write_compress * compression, void ** input, 
                       size_t * input_length, void ** output, size_t * output_len,
                       int flush)
@@ -95,4 +102,83 @@ int zoidfs_transform (zoidfs_write_compress * compression, void ** input,
     else if (*output_len > 0)
         return ZOIDFS_CONT;
     return ZOIDFS_CONT;
+}
+
+int zoidfs_transform_write_request (zoidfs_write_compress * transform,
+				    zoidfs_write_vars * write_buffs,
+				    size_t max_buff_size,
+				    size_t num_of_buffs_to_fill,
+				    void *** buffer,
+				    size_t ** buffer_sizes,
+				    size_t * buf_count,
+				    size_t * total_len
+				    )
+
+{
+  int x = 0,y = 0, rem_output_bufs, ret, close = ZOIDFS_CONT;
+  rem_output_bufs = num_of_buffs_to_fill;
+
+  /* Stores the length of the remaining input buffer (pre-transformed) */
+  size_t input_buf_left = write_buffs->mem_sizes[0];
+
+  /* Stores the length of the remaining output buffer */
+  size_t output_buf_left = max_buff_size;
+
+  /* Malloc's memory for the first buffer */
+  (*buffer)[0] = malloc(max_buff_size * sizeof(char));
+  
+  /* Loop until transform compleated or out of buffer */
+  do
+    {
+      /* Does the transform */
+      ret = zoidfs_transform( transform, &(write_buffs->mem_starts)[x],  
+			      &input_buf_left, &(*buffer)[y], &output_buf_left,
+			      close);
+
+      /* If the output buffer is full OR compression is compleated */
+
+      if (output_buf_left == 0 || ret == ZOIDFS_COMPRESSION_DONE)
+	{
+	  (*buffer)[y] -= max_buff_size - output_buf_left;
+	  write_buffs->mem_sizes[x] = input_buf_left;
+	  (*buffer_sizes)[y] = max_buff_size - output_buf_left;
+	  (*total_len) += (*buffer_sizes)[y];
+	  if (rem_output_bufs > 0 && ret != ZOIDFS_COMPRESSION_DONE)
+	    {
+	      y++;
+	      (*buffer)[y] = malloc(max_buff_size * sizeof(char));
+	      output_buf_left = max_buff_size;
+	      rem_output_bufs -= 1;
+	      (*buf_count) += 1;
+	    }
+	  else
+	    {
+	      return ret;
+	    }
+	}
+
+      /* if there was an error in the transform that is not related to the 
+	 buffer return to caller with the error code */
+
+      if (ret == ZOIDFS_TRANSFORM_ERROR)
+	return ret;
+
+      /* if there is no input buffer left ether grab the next buffer or close 
+	 the stream */
+      if (input_buf_left == 0)
+	{
+	  if ( x < (write_buffs->mem_count) - 1)
+	    {
+	      write_buffs->mem_sizes[x] = 0;
+	      x++;
+	      input_buf_left = write_buffs->mem_sizes[x];
+	    }
+	  else
+	    {
+	      close = ZOIDFS_CLOSE;
+	    }
+	}
+    } while (ret != ZOIDFS_COMPRESSION_DONE);
+
+  return ret;  
 }

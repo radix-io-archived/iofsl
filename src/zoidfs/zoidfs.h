@@ -210,6 +210,7 @@ enum {
     ZFSERR_OTHER=99999
 };
 
+
 /*
  * zoidfs file offset and size types
  * Always 64bits for portability
@@ -217,6 +218,22 @@ enum {
  */
 typedef uint64_t zoidfs_file_size_t;
 typedef uint64_t zoidfs_file_ofs_t;
+
+typedef struct
+{
+  /* zoidfs_write varibles */
+  size_t mem_count;
+  void ** mem_starts;
+  size_t * mem_sizes;
+  size_t file_count;
+  zoidfs_file_ofs_t * file_starts;
+  zoidfs_file_ofs_t * file_sizes;
+  zoidfs_op_hint_t * op_hint;
+
+} zoidfs_write_vars;
+
+
+
 
 /**
  * OPTIONAL

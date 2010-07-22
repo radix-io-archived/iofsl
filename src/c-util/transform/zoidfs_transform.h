@@ -7,7 +7,7 @@
 #include "lzf/lzfP.h"
 #include <rpc/xdr.h>
 #include "zoidfs_lzf.h"
-
+#include "zoidfs.h"
 #define LZF_BUFF_SIZE 64000
 typedef struct
 {
@@ -42,12 +42,15 @@ typedef struct
 
 typedef struct
 {
-    int(*transform)(void *, void **, size_t *, void **, size_t *, int);
-    void * compression_struct;
-    void * type;
-    void * intern_buf;
-    size_t buf_position;
-    size_t total_in;
+  /* transform varibles */
+  int(*transform)(void *, void **, size_t *, void **, size_t *, int);
+  void * compression_struct;
+  void * type;
+  void * intern_buf;
+  size_t buf_position;
+  size_t total_in;
+
+
 } zoidfs_write_compress;
 
 int zoidfs_transform_init (char * type, zoidfs_write_compress * comp);
