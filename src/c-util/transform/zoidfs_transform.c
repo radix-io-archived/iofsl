@@ -115,8 +115,20 @@ int zoidfs_transform_write_request (zoidfs_write_compress * transform,
 				    )
 
 {
+  int exit_when_size_reached;
   int x = 0,y = 0, rem_output_bufs, ret, close = ZOIDFS_CONT;
-  rem_output_bufs = num_of_buffs_to_fill;
+
+  if (num_of_buffs_to_fill == 0)
+    {
+      rem_output_bufs = write_buffs->mem_count;
+      exit_when_size_reached = 1;
+    }
+  else
+    {
+      rem_output_bufs = num_of_buffs_to_fill;
+      exit_when_size_reached = 0;
+
+    }
 
   /* Stores the length of the remaining input buffer (pre-transformed) */
   size_t input_buf_left = write_buffs->mem_sizes[0];
@@ -125,7 +137,8 @@ int zoidfs_transform_write_request (zoidfs_write_compress * transform,
   size_t output_buf_left = max_buff_size;
 
   /* Malloc's memory for the first buffer */
-  (*buffer)[0] = malloc(max_buff_size * sizeof(char));
+  if (transform->type != "passthrough")
+    (*buffer)[0] = malloc(max_buff_size * sizeof(char));
   
   /* Loop until transform compleated or out of buffer */
   do
@@ -143,10 +156,14 @@ int zoidfs_transform_write_request (zoidfs_write_compress * transform,
 	  write_buffs->mem_sizes[x] = input_buf_left;
 	  (*buffer_sizes)[y] = max_buff_size - output_buf_left;
 	  (*total_len) += (*buffer_sizes)[y];
+
+	  if ((*total_len) == max_buff_size && exit_when_size_reached == 1)
+	    return ret;
 	  if (rem_output_bufs > 0 && ret != ZOIDFS_COMPRESSION_DONE)
 	    {
 	      y++;
-	      (*buffer)[y] = malloc(max_buff_size * sizeof(char));
+	      if (transform->type != "passthrough")
+		(*buffer)[y] = malloc(max_buff_size * sizeof(char));
 	      output_buf_left = max_buff_size;
 	      rem_output_bufs -= 1;
 	      (*buf_count) += 1;
