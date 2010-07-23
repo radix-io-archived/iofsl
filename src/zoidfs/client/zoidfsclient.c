@@ -3133,9 +3133,9 @@ void zoidfs_write_generate_hints (zoidfs_write_vars * write_buffs)
 	}
     ret = chash_get(crc_hash,hash_value,chash_getsize(crc_hash));
     hash_string = malloc(ret + strlen(crc_type) + 1);
-    zoidfs_hint_add ( &(write_buffs->op_hint),strdup("ZOIDFS_CRC"),
-		      strdup(hash_string), strlen(crc_type) + ret + 1,
-		      ZOIDFS_HINTS_ZC);
+    //zoidfs_hint_add ( &(write_buffs->op_hint),strdup("ZOIDFS_CRC"),
+    //		      strdup(hash_string), strlen(crc_type) + ret + 1,
+    //	      ZOIDFS_HINTS_ZC);
 
     /* Add header stuffing hint */
     
@@ -3369,15 +3369,15 @@ int zoidfs_write(const zoidfs_handle_t *handle, size_t mem_count,
     /* compute the size of the messages */
 
     recv_msg.recvbuflen = zoidfs_xdr_size_processor(ZFS_OP_STATUS_T, &recv_msg.op_status) +
-                          zoidfs_xdr_size_processor(ZFS_UINT64_ARRAY_T, &file_count);
+	zoidfs_xdr_size_processor(ZFS_UINT64_ARRAY_T, &file_count);
 
     send_msg.sendbuflen = zoidfs_xdr_size_processor(ZFS_OP_ID_T, &send_msg.zoidfs_op_id) +
-                          zoidfs_xdr_size_processor(ZFS_HANDLE_T, (void *)handle) +
-                          zoidfs_xdr_size_processor(ZFS_SIZE_T, &file_count) +
-                          zoidfs_xdr_size_processor(ZFS_FILE_OFS_ARRAY_T, &file_count) +
-                          zoidfs_xdr_size_processor(ZFS_FILE_OFS_ARRAY_T, &file_count) +
-                          zoidfs_xdr_size_processor(ZFS_SIZE_T, &pipeline_size) +
-                          zoidfs_xdr_hint_size(op_hint);
+	zoidfs_xdr_size_processor(ZFS_HANDLE_T, (void *)handle) +
+	zoidfs_xdr_size_processor(ZFS_SIZE_T, &file_count) +
+	zoidfs_xdr_size_processor(ZFS_FILE_OFS_ARRAY_T, &file_count) +
+	zoidfs_xdr_size_processor(ZFS_FILE_OFS_ARRAY_T, &file_count) +
+	zoidfs_xdr_size_processor(ZFS_SIZE_T, &pipeline_size) +
+	zoidfs_xdr_hint_size((write_buffs.op_hint));
 
     /* Wait for the response from the ION */
 
@@ -3399,7 +3399,7 @@ int zoidfs_write(const zoidfs_handle_t *handle, size_t mem_count,
         goto write_cleanup;
     }
 
-    if((op_hint_pipeline_size = zoidfs_hint_get(&op_hint, ZOIDFS_PIPELINE_SIZE)) != NULL)
+    if((op_hint_pipeline_size = zoidfs_hint_get(&(write_buffs.op_hint), ZOIDFS_PIPELINE_SIZE)) != NULL)
     {
         op_hint_pipeline_size_req = atoi(op_hint_pipeline_size);
     }
@@ -3422,11 +3422,14 @@ int zoidfs_write(const zoidfs_handle_t *handle, size_t mem_count,
     /* Write the encoded header */ 
 
     ret = zoidfs_write_xdr_encode (&send_msg, handle, file_starts_transfer,
-				   file_sizes_transfer, file_count, pipeline_size,
+				   file_sizes_transfer, &file_count, pipeline_size,
 				   write_buffs.op_hint);
 
     if (ret == -1)
-	goto write_cleanup;
+	{
+	    fprintf(stderr, "Error encoding XDR\n");
+	    goto write_cleanup;
+	}
 
 
     /* If header stuffing is in use. */
@@ -3445,6 +3448,11 @@ int zoidfs_write(const zoidfs_handle_t *handle, size_t mem_count,
     
     ret = bmi_comm_sendu(peer_addr, header_buffer, header_len, 
 			 send_msg.tag, context);
+    if (ret == -1)
+	{
+	    fprintf(stderr, "Error sending header packet \n");
+	    goto write_cleanup;
+	}
 
     /* Calculate the remaining size of the data to be sent */
 
@@ -3458,6 +3466,7 @@ int zoidfs_write(const zoidfs_handle_t *handle, size_t mem_count,
 	{
 	    if (write_buffs.mem_count > 1)
 		{
+		    fprintf(stderr,"Sending this list\n");
 		    ret = bmi_comm_send_list (peer_addr, write_buffs.mem_count,
 					      write_buffs.mem_starts, write_buffs.mem_sizes,
 					      send_msg_data.tag, context, total_size);
@@ -3467,9 +3476,15 @@ int zoidfs_write(const zoidfs_handle_t *handle, size_t mem_count,
 		    ret = bmi_comm_send (peer_addr, write_buffs.mem_starts[0], write_buffs.mem_sizes[0],
 					 send_msg_data.tag, context);
 		}
+	    if (ret == -1)
+		{
+		    fprintf(stderr, "Error with non-pipeline send");
+		    goto write_cleanup;
+		}
 
 	}
-
+    
+    
     /* Pipeline case */
 
     else if (send_complete != 1)
@@ -3478,8 +3493,11 @@ int zoidfs_write(const zoidfs_handle_t *handle, size_t mem_count,
 	}
 
     if (ret != ZFS_OK)
-	goto write_cleanup;
-
+	{
+	    printf(stderr,"Error writing pipeline\n");
+	    goto write_cleanup;
+	}
+	    
     /* Receive the servers response */
 
     ret = ZOIDFS_BMI_COMM_RECV (recv_msg);
@@ -3487,7 +3505,7 @@ int zoidfs_write(const zoidfs_handle_t *handle, size_t mem_count,
     /* Decode the ION response */
     ZOIDFS_RECV_XDR_MEMCREATE(recv_msg);
     if ((ret = zoidfs_xdr_processor(ZFS_OP_STATUS_T, &recv_msg.op_status, &recv_msg.recv_xdr)) != ZFS_OK) {
-        
+        fprintf(stderr,"SEVER RESPONSE BAD\n");
         goto write_cleanup;
     }
     if(recv_msg.op_status == ZFS_OK)
@@ -3510,15 +3528,17 @@ int zoidfs_write(const zoidfs_handle_t *handle, size_t mem_count,
 	{
 	    for(x = 0; x < mem_count; x++)
 		free(compressed_send_starts[x]);
-	   
+
+	    free(compressed_send_sizes);
+	    free(compressed_send_starts);
 	}
 
     if (header_stuffing != NULL)
 	{
 	    free(header_buffer);
 	}
-    free(compressed_send_starts);
-    free(compressed_send_sizes);
+
+
     
     return ret;
 }
@@ -3531,10 +3551,10 @@ int zoidfs_write_pipeline_transform (zoidfs_write_vars * write_buffs,
 */
 
 int zoidfs_write_pipeline_list (zoidfs_write_vars * write_buffs,
-			   size_t pipeline_size,
-			   bmi_msg_tag_t tag,
-			   bmi_context_id context, 
-			   bmi_size_t total_size)
+				size_t pipeline_size,
+				bmi_msg_tag_t tag,
+				bmi_context_id context, 
+				bmi_size_t total_size)
 {
     zoidfs_write_compress * transform;
     size_t total_len = 0;
@@ -3725,7 +3745,7 @@ int zoidfs_write_xdr_encode (zoidfs_send_msg_t * send_msg,
 			     const zoidfs_handle_t * handle,
 			     zoidfs_file_ofs_array_transfer_t file_starts_transfer,
 			     zoidfs_file_ofs_array_transfer_t file_sizes_transfer,
-			     size_t file_count,
+			     size_t * file_count,
 			     size_t pipeline_size,
 			     zoidfs_op_hint_t * op_hint)
 {
@@ -3737,35 +3757,42 @@ int zoidfs_write_xdr_encode (zoidfs_send_msg_t * send_msg,
 
     /* encode the parameters */
     
-    if ((ret = zoidfs_xdr_processor(ZFS_OP_ID_T, &send_msg->zoidfs_op_id, &send_msg->send_xdr)) != ZFS_OK) 
+    if ((ret = zoidfs_xdr_processor(ZFS_OP_ID_T, &(send_msg->zoidfs_op_id), &send_msg->send_xdr)) != ZFS_OK) 
     {
 	return -1;
     }
+
     if ((ret = zoidfs_xdr_processor(ZFS_HANDLE_T, (void *)handle, &send_msg->send_xdr)) != ZFS_OK) 
     {
 	return -1;
     }
-    if ((ret = zoidfs_xdr_processor(ZFS_SIZE_T, &file_count, &send_msg->send_xdr)) != ZFS_OK)
+
+    if ((ret = zoidfs_xdr_processor(ZFS_SIZE_T, file_count, &send_msg->send_xdr)) != ZFS_OK)
     {
 	return -1;
     }
+
     if((ret = zoidfs_xdr_processor(ZFS_FILE_OFS_ARRAY_T, &file_starts_transfer, &send_msg->send_xdr)) != ZFS_OK)
     {  
 	return -1;
     }
+
+
     if((ret = zoidfs_xdr_processor(ZFS_FILE_OFS_ARRAY_T, &file_sizes_transfer, &send_msg->send_xdr)) != ZFS_OK)
     {
         
         return -1;
     }
+
     if ((ret = zoidfs_xdr_processor(ZFS_SIZE_T, &pipeline_size, &send_msg->send_xdr)) != ZFS_OK) {
         
         return -1;
     }
+
     if((ret = zoidfs_xdr_encode_hint(send_msg, op_hint)) != ZFS_OK) {
         return -1;
     } 
-    
+    fprintf(stderr,"im here");    
 }
 
 /*
