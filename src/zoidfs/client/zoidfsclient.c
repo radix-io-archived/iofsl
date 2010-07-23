@@ -142,10 +142,6 @@ static int gen_tag(void)
     return pthread_self();
 }
 
-static int zoidfs_write_pipeline(BMI_addr_t peer_addr, size_t pipeline_size,
-                                 size_t list_count, const void ** buf_list,
-                                 const bmi_size_t size_list[], bmi_msg_tag_t tag,
-                                 bmi_context_id context, bmi_size_t total_size);
 static int zoidfs_read_pipeline(BMI_addr_t peer_addr, size_t pipeline_size,
                                 size_t list_count, void ** buf_list,
                                 const bmi_size_t size_list[], bmi_msg_tag_t tag,
@@ -3133,9 +3129,9 @@ void zoidfs_write_generate_hints (zoidfs_write_vars * write_buffs)
 	}
     ret = chash_get(crc_hash,hash_value,chash_getsize(crc_hash));
     hash_string = malloc(ret + strlen(crc_type) + 1);
-    //zoidfs_hint_add ( &(write_buffs->op_hint),strdup("ZOIDFS_CRC"),
-    //		      strdup(hash_string), strlen(crc_type) + ret + 1,
-    //	      ZOIDFS_HINTS_ZC);
+    /*zoidfs_hint_add ( &(write_buffs->op_hint),strdup("ZOIDFS_CRC"),
+    		      strdup(hash_string), strlen(crc_type) + ret + 1,
+		      ZOIDFS_HINTS_ZC); */
 
     /* Add header stuffing hint */
     
@@ -3320,7 +3316,6 @@ int zoidfs_write_pipeline_list (zoidfs_write_vars * write_buffs,
     size_t * buffer_lengths = malloc (sizeof(size_t) * write_buffs->mem_count);
     bmi_size_t * bmi_mem_sizes = (bmi_size_t *) malloc(sizeof(bmi_size_t) * write_buffs->mem_count);
     size_t buffer_full = write_buffs->mem_count;   
-    size_t size_of_send = 0;
     bmi_size_t bmi_total_len = 0;
     size_t write_size = 0;
     if (compression_type == NULL)
@@ -3610,7 +3605,7 @@ int zoidfs_write(const zoidfs_handle_t *handle, size_t mem_count,
 
     if (ret != ZFS_OK)
 	{
-	    printf(stderr,"Error writing pipeline\n");
+	    fprintf(stderr,"Error writing pipeline\n");
 	    goto write_cleanup;
 	}
 	    
@@ -3656,167 +3651,6 @@ int zoidfs_write(const zoidfs_handle_t *handle, size_t mem_count,
 
 
     
-    return ret;
-}
-
-
-
-static int zoidfs_write_pipeline(BMI_addr_t peer_addr, size_t pipeline_size,
-                                 size_t list_count, const void ** buf_list,
-                                 const bmi_size_t bmi_size_list[], bmi_msg_tag_t tag,
-                                 bmi_context_id context, bmi_size_t total_size) {
-    int ret = ZFS_OK;
-    if (compression_type != NULL)
-    {
-        /* Create temporary non-const varibles for transform */
-        int x;
-        size_t  bmi_sizes[list_count];
-        void ** buf_list_tmp = malloc(list_count);
-        for (x = 0; x < list_count; x++)
-        {
-            bmi_sizes[x] = bmi_size_list[x];
-            buf_list_tmp[x] = (void *)buf_list[x];
-        }
-
-        /* Hold the close flag for transform */
-        int close = ZOIDFS_CONT;
-        /* stores the compression struct */
-        zoidfs_write_compress zlib_struct;
-        /* size of the desired compressed output */
-        size_t pipe_size = pipeline_size;
-        /* buffer to put the compressed output into */
-        void * buffer = malloc(pipeline_size);
-        /* return value for bmi_comm_send */   
-        int bmi_comm_ret;
-        /* initialize the transform */
-        zoidfs_transform_init (compression_type, &zlib_struct);    
-
-        do 
-        {
-            /* Preform the transform (strange bug here) 
-            ret = zoidfs_write_transform  (&zlib_struct, &pipe_size, 
-                                           list_count, buf_list_tmp,
-                                           bmi_sizes, &buffer, &close); 
-            /* if there is an issue return */
-            if (ret == ZOIDFS_TRANSFORM_ERROR)
-                break;
-
-            /* send the data */
-            bmi_comm_ret = bmi_comm_send(peer_addr, buffer, pipe_size, tag, context);  
-
-        /* run until all data has been sent */
-        } while (ret != ZOIDFS_COMPRESSION_DONE);        
-        if (ret == ZOIDFS_COMPRESSION_DONE)
-            return ZFS_OK;
-        else
-            return -1;
-
-    } else {
-
-    int np = 0;
-    bmi_size_t i;
-    bmi_size_t bmi_pipeline_size = (bmi_size_t)pipeline_size;
-    bmi_size_t start = 0;
-    bmi_size_t start_mem = 0;
-    bmi_size_t start_mem_ofs = 0;
-    bmi_size_t bmi_list_count = (bmi_size_t)list_count;
-
-    while (start < total_size) 
-    {
-        bmi_size_t end = 0;
-        bmi_size_t end_mem = 0;
-        bmi_size_t end_mem_ofs = 0;
-        bmi_size_t p_list_count = 0;
-        const char ** p_buf_list = NULL;
-        bmi_size_t * p_size_list = NULL;
-
-        /* compute the contents of the next request */
-        for (i = 0; i < bmi_list_count; i++)
-        {
-            /* if the element will exceed the pipeline size 
-                ... exit the loop */
-            if (start + bmi_pipeline_size <= end + bmi_size_list[i])
-            {
-                end_mem = i;
-                end_mem_ofs = start + bmi_pipeline_size - end;
-                end += end_mem_ofs;
-                break;
-            }
-
-            /* include this element on the buffer */
-            end += bmi_size_list[i];
-
-            /* if this is the last element in the list */
-            if (i == bmi_list_count -1)
-            {
-                end_mem = i;
-                end_mem_ofs = bmi_size_list[i];
-            }
-        }
-
-        /* create next request */
-        p_list_count = end_mem + 1 - start_mem;
-        p_buf_list = (const char**)malloc(sizeof(char*) * p_list_count);
-        p_size_list = (bmi_size_t*)malloc(sizeof(bmi_size_t) * p_list_count);
-        bmi_size_t p_total_size = 0;
-
-        /* if only one buffer to send, treat as a partial*/
-        if (start_mem == end_mem) 
-        {
-            p_buf_list[0] = ((const char*)buf_list[start_mem]) + start_mem_ofs;
-            assert(end_mem_ofs > start_mem_ofs);
-            p_size_list[0] = end_mem_ofs - start_mem_ofs;
-            p_total_size += p_size_list[0];
-        } 
-        else 
-        {
-            /* if there are multiple buffers, for each buffer */
-            bmi_size_t j = 0;
-            for (i = start_mem, j = 0; i <= end_mem; i++, j++)
-            {
-                /* if this is the first buffer, account for a partial buffer */
-                if (i == start_mem)
-                {
-                    p_buf_list[j] = ((const char*)buf_list[i]) + start_mem_ofs;
-                    p_size_list[j] = bmi_size_list[i] - start_mem_ofs;
-                }
-                /* if this is the last buffer, account for a partial */
-                else if (i == end_mem)
-                {
-                    p_buf_list[j] = (const char*)buf_list[i];
-                    p_size_list[j] = end_mem_ofs;
-                }
-                /* treat all other buffers as complete and seperate */
-                else
-                {
-                    p_buf_list[j] = (const char*)buf_list[i];
-                    p_size_list[j] = bmi_size_list[i];
-                }
-                assert(p_size_list[j] > 0);
-                p_total_size += p_size_list[j];
-            }
-        }
- 
-        /* send the data */
-        ret = bmi_comm_send_list(peer_addr, p_list_count, (const void**)p_buf_list,
-                                     p_size_list, tag, context, p_total_size);
-        free(p_buf_list);
-        free(p_size_list);
-
-        if (ret != ZFS_OK)
-           break;
-
-        /* next */
-        start = end;
-        start_mem = end_mem;
-        start_mem_ofs = end_mem_ofs;
-        if (start_mem < bmi_list_count && bmi_size_list[start_mem] == start_mem_ofs) {
-            start_mem++;
-            start_mem_ofs = 0;
-        }
-        np++;
-    }
-    }
     return ret;
 }
 
