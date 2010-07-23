@@ -3248,7 +3248,7 @@ void zoidfs_write_create_header ( zoidfs_write_vars * write_buffs,
 
     free(list_buffer);
     free(buffer_sizes);
-    zoidfs_transform_destroy(transform);
+    zoidfs_transform_destroy(&transform);
 }
 
 /*
@@ -3381,7 +3381,7 @@ int zoidfs_write(const zoidfs_handle_t *handle, size_t mem_count,
 	zoidfs_xdr_size_processor(ZFS_SIZE_T, &pipeline_size) +
 	zoidfs_xdr_hint_size((write_buffs.op_hint));
 
-    fprintf(stderr, "Send Buffer length: %i\n",send_msg.sendbuflen);
+
     /* Wait for the response from the ION */
 
     ZOIDFS_RECV_ALLOC_BUFFER(recv_msg);
@@ -3473,7 +3473,7 @@ int zoidfs_write(const zoidfs_handle_t *handle, size_t mem_count,
 
 		    for (x = 0; x < write_buffs.mem_count; x++)
 			bmi_mem_sizes[x] = write_buffs.mem_sizes[x]; 
-		    fprintf(stderr,"Sending this list\n");
+
 		    ret = bmi_comm_send_list (peer_addr, write_buffs.mem_count,
 					      (const void * const *)write_buffs.mem_starts, bmi_mem_sizes,
 					      send_msg_data.tag, context, total_size);
@@ -3596,6 +3596,10 @@ int zoidfs_write_pipeline_list (zoidfs_write_vars * write_buffs,
 	    bmi_total_len = (bmi_size_t)total_len;
 	    ret = bmi_comm_send_list (peer_addr, buffer_full, (const void **)buffer,
 				      bmi_mem_sizes, tag, context, bmi_total_len);
+	    if (compression_type != NULL &&
+		strcmp(compression_type,"passthrough") != 0)
+		for ( x = 0; x < buffer_full; x++)
+		    free(buffer[x]);
 	    buffer_full = write_buffs->mem_count;
 	    
 	} while (total_len == pipeline_size);
@@ -3814,7 +3818,7 @@ int zoidfs_write_xdr_encode (zoidfs_send_msg_t * send_msg,
     if((ret = zoidfs_xdr_encode_hint(send_msg, op_hint)) != ZFS_OK) {
         return -1;
     } 
-    fprintf(stderr,"im here");    
+    return 0;
 }
 
 /*

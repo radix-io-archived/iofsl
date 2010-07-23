@@ -501,6 +501,7 @@ int Pzoidfs_resize(const zoidfs_handle_t * handle /* in:ptr */,
                   zoidfs_op_hint_t * op_hint /* inout:ptr:nullok */);
 
 
+
 #ifdef __cplusplus
         } /* extern C */
 } /* namespace */

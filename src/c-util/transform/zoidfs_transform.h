@@ -68,3 +68,5 @@ int zoidfs_transform_write_request (zoidfs_write_compress * transform,
 				    size_t * total_len,
 				    int * close
 				    );
+void zoidfs_transform_destroy (zoidfs_write_compress * comp);
+void zoidfs_transform_change_transform (char * type, zoidfs_write_compress * comp);
