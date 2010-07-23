@@ -25,39 +25,25 @@ IOFWDWriteRequest::~IOFWDWriteRequest ()
       delete[] param_.file_sizes;
    if (param_.bmi_mem_sizes)
       delete[] param_.bmi_mem_sizes;
-   // NULL check not really required since freeing a NULL
-   // ptr is just doing a return from the function
-   if(true == op_hint_compress_enabled_)
-   {
-      if(0 == param_.pipeline_size)
-      {
-          delete []compressed_mem_[0];
-          compressed_mem_[0] = NULL;
 
-          delete []compressed_mem_;
-          compressed_mem_ = NULL;
+   delete []compressed_mem_[0];
+   compressed_mem_[0] = NULL;
 
-          delete []userCB_;
-          userCB_ = NULL;
+   delete []compressed_mem_;
+   compressed_mem_ = NULL;
 
-      }
-      else
-      {
-	  delete []compressed_mem_[0];
+   delete []decompressed_mem_;
+   decompressed_mem_ = NULL;
 
-          for(size_t ii = 0; ii < pipeline_ops_; ii++)
-              compressed_mem_[ii] = NULL;
+   delete []callback_mem_;
+   callback_mem_ = NULL;
 
-          delete []compressed_mem_;
-          compressed_mem_ = NULL;
+   delete []userCB_;
+   userCB_ = NULL;
 
-          delete []decompressed_mem_;
-          decompressed_mem_ = NULL;
+   delete []mem_expected_size_;
+   mem_expected_size_ = NULL;
 
-          delete []userCB_;
-          userCB_ = NULL;
-      }
-   }
 #else
    if (param_.mem_starts)
       h.hafree(param_.mem_starts);
@@ -381,7 +367,7 @@ void IOFWDWriteRequest::initRequestParams(ReqParam & p, void * bufferMem)
                 bytes = std::min(param_.mem_sizes[ii], size_of_stuffed_data_-total_bytes);
                 memcpy(param_.mem_starts[ii], position, bytes);
                 if(true == op_hint_crc_enabled_)
-		    hashFunc_.get()->process (param_.mem_starts[ii], bytes);
+		    hashFunc_->process (param_.mem_starts[ii], bytes);
             }
             mem_slot_ = ii - 1;
             mem_slot_bytes_ = bytes;
@@ -404,7 +390,7 @@ void IOFWDWriteRequest::initRequestParams(ReqParam & p, void * bufferMem)
                 mem_slot_bytes_ = outBytes;
 
 		if(true == op_hint_crc_enabled_)
-		  hashFunc_.get()->process (param_.mem_starts[ii], outBytes);
+		  hashFunc_->process (param_.mem_starts[ii], outBytes);
 
                 if(iofwdutil::transform::CONSUME_OUTBUF == outState)
                 {
@@ -474,7 +460,7 @@ void IOFWDWriteRequest::recvComplete(int recvStatus)
 	      decompressed_size_ += outBytes;
 
 	      if(true == op_hint_crc_enabled_)
-		hashFunc_.get()->process (param_.mem_starts[i]+mem_slot_bytes_, outBytes);
+		hashFunc_->process (param_.mem_starts[i]+mem_slot_bytes_, outBytes);
 	  }
 	  else
 	  {
@@ -489,7 +475,7 @@ void IOFWDWriteRequest::recvComplete(int recvStatus)
 	      decompressed_size_ += outBytes;
 
 	      if(true == op_hint_crc_enabled_)
-		hashFunc_.get()->process (param_.mem_starts[i], outBytes);
+		hashFunc_->process (param_.mem_starts[i], outBytes);
 	  }
 
 	  if(iofwdutil::transform::CONSUME_OUTBUF == outState)
@@ -523,14 +509,14 @@ void IOFWDWriteRequest::recvComplete(int recvStatus)
 	      bytes);
 
       if(true == op_hint_crc_enabled_)
-	hashFunc_.get()->process (param_.mem_starts[mem_slot_]+mem_slot_bytes_, bytes);
+	hashFunc_->process (param_.mem_starts[mem_slot_]+mem_slot_bytes_, bytes);
 
       for(i = mem_slot_+1; i < param_.mem_count; i++)
       {
 	  memcpy(param_.mem_starts[i], compressed_mem_[0]+bytes, param_.mem_sizes[i]);
 
 	  if(true == op_hint_crc_enabled_)
-	    hashFunc_.get()->process (&param_.mem_starts[i], param_.mem_sizes[i]);
+	    hashFunc_->process (&param_.mem_starts[i], param_.mem_sizes[i]);
 
 	  bytes += param_.mem_sizes[i];
       }
@@ -645,7 +631,7 @@ void IOFWDWriteRequest::recvPipelineComplete(int recvStatus, int my_slot)
       ASSERT(outBytes <= (param_.mem_total_size - decompressed_size_));
 
       if(true == op_hint_crc_enabled_)
-          hashFunc_.get()->process (decompressed_mem_+decompressed_size_, outBytes);
+          hashFunc_->process (decompressed_mem_+decompressed_size_, outBytes);
 
       decompressed_size_ += outBytes;
 
@@ -711,7 +697,7 @@ void IOFWDWriteRequest::recvPipelineComplete(int recvStatus, int my_slot)
 	    mem_expected_size_[my_slot]);
 
 	if(true == op_hint_crc_enabled_)
-	  hashFunc_.get()->process (decompressed_mem_+decompressed_size_,
+	  hashFunc_->process (decompressed_mem_+decompressed_size_,
 	      mem_expected_size_[my_slot]);
 
 	decompressed_size_ += mem_expected_size_[my_slot];
