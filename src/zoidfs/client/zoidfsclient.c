@@ -3153,6 +3153,9 @@ void zoidfs_write_generate_hints (zoidfs_write_vars * write_buffs)
 	    /* This is here to alert if there will be an overflow of 
 	       pipeline_size_str with the given pipeline size. There must be
 	       a better way of doing this! */
+	    zoidfs_hint_add ( &(write_buffs->op_hint),
+			      strdup(ZOIDFS_ENABLE_PIPELINE), strdup("1"),
+			      2, ZOIDFS_HINTS_ZC);
 	    assert(PIPELINE_SIZE < 100000000);
 	    sprintf(pipeline_size_str, "%i", (int)PIPELINE_SIZE);
 	    zoidfs_hint_add ( &(write_buffs->op_hint), 
@@ -3170,7 +3173,8 @@ int zoidfs_write_transform_non_pipeline ( zoidfs_write_vars * write_buffs,
 					  void *** buffer,
 					  size_t ** buffer_sizes,
 					  size_t * buf_count,
-					  size_t * len)
+					  size_t * len,
+					  size_t pipeline_size)
 {
     int ret = ZFS_OK;
     int close = 0;
@@ -3184,14 +3188,15 @@ int zoidfs_write_transform_non_pipeline ( zoidfs_write_vars * write_buffs,
     /* If this is the non-pipeline case. Compress the entire buffer then
        continue */
 
-    if (PIPELINE_SIZE == 0)
+    if (pipeline_size == 0)
 	{
 	    zoidfs_transform_change_transform (compression_type, transform);
 	    ret = zoidfs_transform_write_request (transform, write_buffs, 16000000, 
 						  0, buffer, buffer_sizes,
 						  buf_count, len, &close);	 
 
-	    sprintf(compressed_len_string, "%i",(int)len);
+	    sprintf(compressed_len_string, "%u",*len);
+	    printf("Compressed String: %s",compressed_len_string);
 	    zoidfs_hint_add ( &(write_buffs->op_hint), 
 			      strdup(ZOIDFS_COMPRESSED_SIZE),
 			      strdup(compressed_len_string),
@@ -3439,6 +3444,7 @@ int zoidfs_write(const zoidfs_handle_t *handle, size_t mem_count,
 
     zoidfs_transform_init ("passthrough", &transform);
 
+
     ZOIDFS_SEND_MSG_INIT (send_msg, ZOIDFS_PROTO_WRITE);
     ZOIDFS_SEND_MSG_DATA_INIT (send_msg_data);
     ZOIDFS_RECV_MSG_INIT (recv_msg);
@@ -3449,6 +3455,24 @@ int zoidfs_write(const zoidfs_handle_t *handle, size_t mem_count,
 
     zoidfs_write_generate_hints (&write_buffs);
     
+    if((op_hint_pipeline_size = zoidfs_hint_get(&(write_buffs.op_hint), ZOIDFS_PIPELINE_SIZE)) != NULL)
+    {
+        op_hint_pipeline_size_req = atoi(op_hint_pipeline_size);
+    }
+    else
+    {
+        op_hint_pipeline_size_req = (size_t)-1;
+    }
+
+    total_size = 0;
+    for ( x = 0; x < mem_count; x++)
+    	total_size += mem_sizes[x];
+
+    /* Set the pipeline size */
+
+    if (total_size >= (bmi_size_t) zfsmin((size_t)PIPELINE_SIZE, op_hint_pipeline_size_req))
+    	pipeline_size = (size_t) zfsmin ((size_t)PIPELINE_SIZE, op_hint_pipeline_size_req);
+
     /* If compression is used, set the hint in zoidfs_write_transform_non_pipeline
        if non-pipelining is in use also compressed the data */
 
@@ -3457,12 +3481,12 @@ int zoidfs_write(const zoidfs_handle_t *handle, size_t mem_count,
 	    compressed_send_starts = malloc (mem_count * sizeof(mem_count));
 	    ret = zoidfs_write_transform_non_pipeline (&write_buffs, &transform,
 						       &compressed_send_starts, &compressed_send_sizes,
-						       &compressed_send_count, &compressed_len);   
+						       &compressed_send_count, &compressed_len, pipeline_size);
 
 	    /* If pipelining is disabled, copy the pointers into write_buff's and make them the 
 	       main buffers to send */
 
-	    if (PIPELINE_SIZE == 0)
+	    if (pipeline_size == 0)
 		{
 		    write_buffs.mem_starts = compressed_send_starts;
 		    write_buffs.mem_count = compressed_send_count;
@@ -3506,26 +3530,6 @@ int zoidfs_write(const zoidfs_handle_t *handle, size_t mem_count,
         goto write_cleanup;
     }
 
-    if((op_hint_pipeline_size = zoidfs_hint_get(&(write_buffs.op_hint), ZOIDFS_PIPELINE_SIZE)) != NULL)
-    {
-        op_hint_pipeline_size_req = atoi(op_hint_pipeline_size);
-    }
-    else
-    {
-        op_hint_pipeline_size_req = (size_t)-1;
-    }
-
-    /* calculate the total length of the send */
-
-    total_size = 0;
-    for ( x = 0; x < mem_count; x++)
-	total_size += mem_sizes[x];
-
-    /* Set the pipeline size */
-    
-    if (total_size >= (bmi_size_t) zfsmin((size_t)PIPELINE_SIZE, op_hint_pipeline_size_req))
-	pipeline_size = (size_t) zfsmin ((size_t)PIPELINE_SIZE, op_hint_pipeline_size_req);
-
     /* Write the encoded header */ 
 
     ret = zoidfs_write_xdr_encode (&send_msg, handle, file_starts_transfer,
@@ -3566,7 +3570,7 @@ int zoidfs_write(const zoidfs_handle_t *handle, size_t mem_count,
 
     total_size = 0;
     for (x = 0; x < write_buffs.mem_count; x++)
-	total_size += write_buffs.mem_sizes[x];
+    	total_size += write_buffs.mem_sizes[x];
 
     /* Send the data */
 
@@ -3637,11 +3641,12 @@ int zoidfs_write(const zoidfs_handle_t *handle, size_t mem_count,
     zoidfs_write_vars_destroy (&write_buffs);
     if (compression_type != NULL)
 	{
-	    for(x = 0; x < mem_count; x++)
-		free(compressed_send_starts[x]);
+    	/*if (pipeline_size == 0)
+    		for(x = 0; x < compressed_send_count; x++)
+    			free(compressed_send_starts[x]);
 
 	    free(compressed_send_sizes);
-	    free(compressed_send_starts);
+	    free(compressed_send_starts);*/
 	}
 
     if (header_stuffing != NULL)
