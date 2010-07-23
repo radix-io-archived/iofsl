@@ -739,32 +739,36 @@ if test "x${use_zlib}" == "x1" ; then
       LIBS="$LIBS $ZLib_LIBS"
 fi
 
-
 dnl =========================================================================
-dnl ========= Check for BZLIB support (for compression)      ================
+dnl ====== BZip2 Support ====================================================
 dnl =========================================================================
 
+AC_ARG_WITH(bzip2,[  --with-bzip2=<location of bzip2 installation>
+                      ],BZIP2_DIR="$withval",BZIP2_DIR="")
+if test -n "$BZIP2_DIR" ;
+then
+   CPPFLAGS="$CPPFLAGS -I${BZIP2_DIR}/include"
+   LDFLAGS="$LDFLAGS -L${BZIP2_DIR}/lib"
+fi
 
-BZLIB_LDFLAGS=
-BZLIB_CFLAGS=
-BZLIB_CPPFLAGS=
-BZLIB_LIBS=
-PKG_CHECK_MODULES([BZLIB],[BZLIB],[use_bzlib=1],[use_bzlib=0])
-BZLIB_LDFLAGS="$BZLIB_LDFLAGS"
-BZLIB_CFLAGS="$BZLIB_CFLAGS"
-BZLIB_CPPFLAGS="$BZLIB_CPPFLAGS"
-BZLIB_LIBS="$BZLIB_LIBS"
-AC_SUBST([BZLIB_LDFLAGS])
-AC_SUBST([BZLIB_CFLAGS])
-AC_SUBST([BZLIB_CPPFLAGS])
-AC_SUBST([BZLIB_LIBS])
+use_bzlib=1
+
+AC_CHECK_HEADERS([bzlib.h],[],
+                 [use_bzlib=])
+
+if test -n $use_bzlib; then
+AC_SEARCH_LIBS([BZ2_bzCompress],[bz2],[],
+               [use_bzlib=])
+fi
+
 AM_CONDITIONAL([HAVE_BZLIB],[test "x${use_bzlib}" == "x1"])
+
+AC_MSG_CHECKING([if BZip2 support can be enabled])
 if test "x${use_bzlib}" == "x1" ; then
       AC_DEFINE([HAVE_BZLIB], [1], [If bzlib is available])
-      CPPFLAGS="$CPPFLAGS $BZLIB_CPPFLAGS"
-      LDFLAGS="$LDFLAGS $BZLIB_LDFLAGS"
-      CFLAGS="$CFLAGS $BZLIB_CFLAGS"
-      LIBS="$LIBS $BZLIB_LIBS"
+      AC_MSG_RESULT([yes])
+else
+      AC_MSG_RESULT([no])
 fi
 
 dnl =========================================================================
