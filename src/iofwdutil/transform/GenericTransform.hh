@@ -19,17 +19,27 @@ namespace iofwdutil
     {
       CONSUME_OUTBUF = 100,
       SUPPLY_INBUF,
+      TRANSFORM_DONE,           // returned when flush is set and all data has
+                                // been processed (both input and output). 
+                                // TRANSFORM_DONE implies CONSUME_OUTBUF
 
-      GENERIC_TRANSFORM_LAST
+      GENERIC_TRANSFORM_LAST    // This is not a state, it is used to
+                                // the first free state code.
     };
 
     /**
      * Interface for generic transformations. Example, encryption,
      * compression, decompression, ...
+     *
+     * @TODO Add setHint (std::string) method to allow for transform specific
+     * options (such as compression level)
+     * @TODO Get rid of getTransformState function
      */
     class GenericTransform
     {
       public:
+         // @TODO: add getName () function
+         
         typedef boost::mpl::list<> FACTORY_SIGNATURE;
 
         /**

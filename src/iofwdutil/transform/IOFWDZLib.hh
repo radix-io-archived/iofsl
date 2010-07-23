@@ -1,5 +1,5 @@
-#ifndef IOFWDUTIL_ZLIB_HH
-#define IOFWDUTIL_ZLIB_HH
+#ifndef IOFWDUTIL_IOFWDZLIB_HH
+#define IOFWDUTIL_IOFWDZLIB_HH
 
 
 extern "C"

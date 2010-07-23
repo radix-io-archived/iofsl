@@ -123,7 +123,7 @@ namespace iofwdutil
 
       if(Z_STREAM_END == ret)
       {
-        decompress_state = GENERIC_TRANSFORM_LAST;
+        decompress_state = TRANSFORM_DONE;
       }
 
       *outState = decompress_state;

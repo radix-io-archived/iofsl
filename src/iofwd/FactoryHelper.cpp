@@ -15,6 +15,8 @@ GENERIC_FACTORY_CLIENT_REGISTER(intervaltree);
 #ifdef HAVE_ZLIB
 GENERIC_FACTORY_CLIENT_REGISTER(zlib);
 #endif
+GENERIC_FACTORY_CLIENT_REGISTER(lzfdecomp);
+GENERIC_FACTORY_CLIENT_REGISTER(copytransform);
 
 namespace iofwd
 {
@@ -33,6 +35,8 @@ namespace iofwd
 #ifdef HAVE_ZLIB
       GENERIC_FACTORY_CLIENT_CALL(zlib);
 #endif
+      GENERIC_FACTORY_CLIENT_CALL(lzfdecomp);
+      GENERIC_FACTORY_CLIENT_CALL(copytransform);
    }
 }
 

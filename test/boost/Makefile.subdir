@@ -91,7 +91,14 @@ test_boost_iofwdutil_SOURCES = test/boost/iofwdutil.cpp \
 			test/boost/linkhelper-base.hh \
 			test/boost/linkhelper-derived.cpp \
 			test/boost/linkhelper-derived.hh \
-			test/boost/hashfunc.cpp
+			test/boost/hashfunc.cpp \
+			test/boost/iostate.cpp \
+			test/boost/test_common.cpp \
+			test/boost/test_common.hh \
+			test/boost/transform.cpp \
+			test/boost/MultiAlloc.hh \
+			test/boost/TestData.hh
+
 test_boost_iofwdutil_LDFLAGS = $(shared_ldflags)
 test_boost_iofwdutil_LDADD = $(shared_ldadd)
 

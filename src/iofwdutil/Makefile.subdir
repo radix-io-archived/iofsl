@@ -166,7 +166,18 @@ src/iofwdutil/mm/HeapMemoryManager.cpp \
 src/iofwdutil/transform/GenericTransform.hh \
 src/iofwdutil/transform/GenericTransform.cpp \
 src/iofwdutil/transform/TransformException.cpp \
-src/iofwdutil/transform/TransformException.hh
+src/iofwdutil/transform/TransformException.hh \
+src/iofwdutil/transform/LZF.cpp \
+src/iofwdutil/transform/LZF.hh \
+src/iofwdutil/transform/LZFCommon.hh \
+src/iofwdutil/transform/LZFCompress.hh \
+src/iofwdutil/transform/LZFCompress.cpp \
+src/iofwdutil/transform/CopyTransform.cpp \
+src/iofwdutil/transform/CopyTransform.hh \
+src/iofwdutil/transform/IOReadBuffer.cpp \
+src/iofwdutil/transform/IOReadBuffer.hh \
+src/iofwdutil/transform/IOWriteBuffer.cpp \
+src/iofwdutil/transform/IOWriteBuffer.hh
 
 if HAVE_ZLIB
 src_iofwdutil_libiofwdutil_a_SOURCES += \
@@ -175,7 +186,13 @@ src/iofwdutil/hash/Adler32.cpp \
 src/iofwdutil/hash/CRC32.hh \
 src/iofwdutil/hash/CRC32.cpp \
 src/iofwdutil/transform/IOFWDZLib.hh \
-src/iofwdutil/transform/IOFWDZLib.cpp
+src/iofwdutil/transform/IOFWDZLib.cpp \
+src/iofwdutil/transform/ZLibBase.hh \
+src/iofwdutil/transform/ZLibBase.cpp \
+src/iofwdutil/transform/ZLibCompress.hh \
+src/iofwdutil/transform/ZLibCompress.cpp \
+src/iofwdutil/transform/ZLibDecompress.hh \
+src/iofwdutil/transform/ZLibDecompress.cpp
 endif
 
 if HAVE_OPENSSL
