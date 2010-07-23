@@ -156,7 +156,7 @@ void test_zoidfs_transform_write_request (void)
   test_transform_write("ZLIB:", 15000000, 1, 1);
   test_transform_write("ZLIB:", 150000, 1, 1);
   test_transform_write("ZLIB:", 15000, 1, 1);
-  test_transform_write("ZLIB:", 15000000, 5, 5);
+  test_transform_write("ZLIB:", 15000000, 5, 0);
   test_transform_write("ZLIB:", 1500, 5, 5);
  
   test_transform_write("passthrough", 1500, 5 , 5);

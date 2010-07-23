@@ -3110,6 +3110,7 @@ void zoidfs_write_vars_init (zoidfs_write_vars * z,
     (*z).file_sizes  = (zoidfs_file_ofs_t *)file_sizes;
     (*z).file_starts = (zoidfs_file_ofs_t *)file_starts;
     (*z).op_hint     = op_hint;
+    
 }
 
 
@@ -3296,6 +3297,7 @@ int zoidfs_write(const zoidfs_handle_t *handle, size_t mem_count,
     /* stores the total size of the data to send */
 
     bmi_size_t total_size = 0;
+    bmi_size_t * bmi_mem_sizes = (bmi_size_t *)malloc(sizeof(bmi_size_t) * mem_count);
 
     /* file_starts and sizes varibles that hold the file_starts/file_sizes
        transfered to the server */
@@ -3379,6 +3381,7 @@ int zoidfs_write(const zoidfs_handle_t *handle, size_t mem_count,
 	zoidfs_xdr_size_processor(ZFS_SIZE_T, &pipeline_size) +
 	zoidfs_xdr_hint_size((write_buffs.op_hint));
 
+    fprintf(stderr, "Send Buffer length: %i\n",send_msg.sendbuflen);
     /* Wait for the response from the ION */
 
     ZOIDFS_RECV_ALLOC_BUFFER(recv_msg);
@@ -3425,6 +3428,7 @@ int zoidfs_write(const zoidfs_handle_t *handle, size_t mem_count,
 				   file_sizes_transfer, &file_count, pipeline_size,
 				   write_buffs.op_hint);
 
+
     if (ret == -1)
 	{
 	    fprintf(stderr, "Error encoding XDR\n");
@@ -3466,9 +3470,12 @@ int zoidfs_write(const zoidfs_handle_t *handle, size_t mem_count,
 	{
 	    if (write_buffs.mem_count > 1)
 		{
+
+		    for (x = 0; x < write_buffs.mem_count; x++)
+			bmi_mem_sizes[x] = write_buffs.mem_sizes[x]; 
 		    fprintf(stderr,"Sending this list\n");
 		    ret = bmi_comm_send_list (peer_addr, write_buffs.mem_count,
-					      write_buffs.mem_starts, write_buffs.mem_sizes,
+					      (const void * const *)write_buffs.mem_starts, bmi_mem_sizes,
 					      send_msg_data.tag, context, total_size);
 		}
 	    else
@@ -3556,28 +3563,161 @@ int zoidfs_write_pipeline_list (zoidfs_write_vars * write_buffs,
 				bmi_context_id context, 
 				bmi_size_t total_size)
 {
-    zoidfs_write_compress * transform;
+    zoidfs_write_compress transform;
     size_t total_len = 0;
-    int ret;
+    int ret, x;
     int close = 0;
     void ** buffer = malloc (sizeof(char *) * write_buffs->mem_count);
-    bmi_size_t * buffer_lengths = malloc (sizeof(bmi_size_t) * write_buffs->mem_count);
-    size_t buffer_full = 0;
-    size_t total_length = 0;
-    if (compression_type == NULL)
-	zoidfs_transform_init ("passthrough", &transform);
-    else
-	zoidfs_transform_init (compression_type, &transform);
-    
-    do 
+    size_t * buffer_lengths = malloc (sizeof(size_t) * write_buffs->mem_count);
+    bmi_size_t * bmi_mem_sizes = (bmi_size_t *) malloc(sizeof(bmi_size_t) * write_buffs->mem_count);
+    size_t buffer_full = write_buffs->mem_count;   
+    size_t size_of_send = 0;
+    bmi_size_t bmi_total_len = 0;
+    size_t write_size = 0;
+    if (compression_type != NULL || compression_type == NULL)
 	{
-	    total_len = 0;
-	    zoidfs_transform_write_request ( &transform, write_buffs, pipeline_size,
-					     0, &buffer, &buffer_lengths, &buffer_full,
-					     &total_len, &close);
-	    ret = bmi_comm_send_list (peer_addr, buffer_full, (const void **)buffer,
-				      buffer_lengths, tag, context, total_len);
-	} while (total_len == pipeline_size);
+	    if (compression_type == NULL)
+		zoidfs_transform_init ("passthrough", &transform);
+	    else
+		zoidfs_transform_init (compression_type, &transform);
+	    
+	    do 
+		{
+		    total_len = 0;
+		    
+		    zoidfs_transform_write_request ( &transform, write_buffs, pipeline_size,
+						     0, &buffer, &buffer_lengths, &buffer_full,
+						     &total_len, &close);
+		    printf("Buffer full: %i\n",buffer_full);
+		    for (x = 0; x < buffer_full; x++)
+			{
+			    write_size += buffer_lengths[x];
+		    
+			    bmi_mem_sizes[x] = (bmi_size_t)buffer_lengths[x]; 
+			}
+		    bmi_total_len = (bmi_size_t)total_len;
+		    fprintf(stderr,"pipeline size: %i, Total: %i buffer size: %i buffer_full: %i\n",pipeline_size,
+			    total_len, bmi_total_len, buffer_full);
+	    
+		    ret = bmi_comm_send_list (peer_addr, buffer_full, (const void **)buffer,
+					      bmi_mem_sizes, tag, context, bmi_total_len);
+		    
+		    buffer_full = write_buffs->mem_count;
+	   
+		} while (total_len == pipeline_size);
+	}
+    if (pipeline_size == 0)
+	{
+	    size_t list_count = write_buffs->mem_count;
+	    const void ** buf_list = (const void **) write_buffs->mem_starts;
+	    for( x = 0; x < write_buffs->mem_count; x++)
+		bmi_mem_sizes[x] = write_buffs->mem_sizes[x];
+	    const bmi_size_t * bmi_size_list = (const bmi_size_t *) bmi_mem_sizes ;
+	    int np = 0;
+	    bmi_size_t i;
+	    bmi_size_t bmi_pipeline_size = (bmi_size_t)pipeline_size;
+	    bmi_size_t start = 0;
+	    bmi_size_t start_mem = 0;
+	    bmi_size_t start_mem_ofs = 0;
+	    bmi_size_t bmi_list_count = (bmi_size_t)list_count;
+	    
+	    while (start < total_size) 
+		{
+		    bmi_size_t end = 0;
+		    bmi_size_t end_mem = 0;
+		    bmi_size_t end_mem_ofs = 0;
+		    bmi_size_t p_list_count = 0;
+		    const char ** p_buf_list = NULL;
+		    bmi_size_t * p_size_list = NULL;
+	
+		    /* compute the contents of the next request */
+		    for (i = 0; i < bmi_list_count; i++)
+			{
+			    /* if the element will exceed the pipeline size 
+			       ... exit the loop */
+			    if (start + bmi_pipeline_size <= end + bmi_size_list[i])
+				{
+				    end_mem = i;
+				    end_mem_ofs = start + bmi_pipeline_size - end;
+				    end += end_mem_ofs;
+				    break;
+				}
+
+			    /* include this element on the buffer */
+			    end += bmi_size_list[i];
+			    
+			    /* if this is the last element in the list */
+			    if (i == bmi_list_count -1)
+				{
+				    end_mem = i;
+				    end_mem_ofs = bmi_size_list[i];
+				}
+			}
+
+		    /* create next request */
+		    p_list_count = end_mem + 1 - start_mem;
+		    p_buf_list = (const char**)malloc(sizeof(char*) * p_list_count);
+		    p_size_list = (bmi_size_t*)malloc(sizeof(bmi_size_t) * p_list_count);
+		    bmi_size_t p_total_size = 0;
+
+		    /* if only one buffer to send, treat as a partial*/
+		    if (start_mem == end_mem) 
+			{
+			    p_buf_list[0] = ((const char*)buf_list[start_mem]) + start_mem_ofs;
+			    assert(end_mem_ofs > start_mem_ofs);
+			    p_size_list[0] = end_mem_ofs - start_mem_ofs;
+			    p_total_size += p_size_list[0];
+			} 
+		    else 
+			{
+			    /* if there are multiple buffers, for each buffer */
+			    bmi_size_t j = 0;
+			    for (i = start_mem, j = 0; i <= end_mem; i++, j++)
+				{
+				    /* if this is the first buffer, account for a partial buffer */
+				    if (i == start_mem)
+					{
+					    p_buf_list[j] = ((const char*)buf_list[i]) + start_mem_ofs;
+					    p_size_list[j] = bmi_size_list[i] - start_mem_ofs;
+					}
+				    /* if this is the last buffer, account for a partial */
+				    else if (i == end_mem)
+					{
+					    p_buf_list[j] = (const char*)buf_list[i];
+					    p_size_list[j] = end_mem_ofs;
+					}
+				    /* treat all other buffers as complete and seperate */
+				    else
+					{
+					    p_buf_list[j] = (const char*)buf_list[i];
+					    p_size_list[j] = bmi_size_list[i];
+					}
+				    assert(p_size_list[j] > 0);
+				    p_total_size += p_size_list[j];
+				}
+			}
+		    
+		    /* send the data */
+		    ret = bmi_comm_send_list(peer_addr, p_list_count, (const void**)p_buf_list,
+					     p_size_list, tag, context, p_total_size);
+		    free(p_buf_list);
+		    free(p_size_list);
+	
+		    if (ret != ZFS_OK)
+			break;
+		    
+		    /* next */
+		    start = end;
+		    start_mem = end_mem;
+		    start_mem_ofs = end_mem_ofs;
+		    if (start_mem < bmi_list_count && bmi_size_list[start_mem] == start_mem_ofs) {
+			start_mem++;
+			start_mem_ofs = 0;
+		    }
+		    np++;
+		}
+	}
+
     return ret;
 
 } 

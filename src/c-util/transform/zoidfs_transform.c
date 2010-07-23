@@ -173,7 +173,9 @@ int zoidfs_transform_write_request (zoidfs_write_compress * transform,
 	  (*total_len) += (*buffer_sizes)[y];
 
 	  if ((*total_len) == max_buff_size && exit_when_size_reached == 1)
-	    return ret;
+	    {
+	       return ret;
+	    }
 	  if (rem_output_bufs > 0 && ret != ZOIDFS_COMPRESSION_DONE)
 	    {
 	      y++;
