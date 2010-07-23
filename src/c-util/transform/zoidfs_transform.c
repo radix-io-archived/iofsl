@@ -10,6 +10,10 @@ int passthrough (void * stream, void ** source, size_t * length, void ** dest,
         *output_length =  *output_length - *length;
         (*dest) += *length;
         *length = 0;
+	if (close != 0)
+	{
+	  return ZOIDFS_STREAM_END;
+	}
     }
     else
     {
@@ -111,21 +115,28 @@ int zoidfs_transform_write_request (zoidfs_write_compress * transform,
 				    void *** buffer,
 				    size_t ** buffer_sizes,
 				    size_t * buf_count,
-				    size_t * total_len
+				    size_t * total_len,
+				    int * close
 				    )
 
 {
-  int exit_when_size_reached;
-  int x = 0,y = 0, rem_output_bufs, ret, close = ZOIDFS_CONT;
+  /* flag to say to exit when a certain size is reached */
 
+  int exit_when_size_reached;
+  
+  int x = 0,y = 0, rem_output_bufs, ret;
+  (*buf_count) = 1;
+  
+  /* if the num of buffers to fill is not set, fill them all */
+  
   if (num_of_buffs_to_fill == 0)
     {
-      rem_output_bufs = write_buffs->mem_count;
+      rem_output_bufs = write_buffs->mem_count - 1;
       exit_when_size_reached = 1;
     }
   else
     {
-      rem_output_bufs = num_of_buffs_to_fill;
+      rem_output_bufs = num_of_buffs_to_fill - 1;
       exit_when_size_reached = 0;
 
     }
@@ -136,6 +147,9 @@ int zoidfs_transform_write_request (zoidfs_write_compress * transform,
   /* Stores the length of the remaining output buffer */
   size_t output_buf_left = max_buff_size;
 
+  void * input_buffer;
+  void * output_buffer;
+
   /* Malloc's memory for the first buffer */
   if (transform->type != "passthrough")
     (*buffer)[0] = malloc(max_buff_size * sizeof(char));
@@ -144,9 +158,10 @@ int zoidfs_transform_write_request (zoidfs_write_compress * transform,
   do
     {
       /* Does the transform */
-      ret = zoidfs_transform( transform, &(write_buffs->mem_starts)[x],  
+
+      ret = zoidfs_transform( transform, &(*write_buffs).mem_starts[x],  
 			      &input_buf_left, &(*buffer)[y], &output_buf_left,
-			      close);
+			      *close);
 
       /* If the output buffer is full OR compression is compleated */
 
@@ -170,7 +185,7 @@ int zoidfs_transform_write_request (zoidfs_write_compress * transform,
 	    }
 	  else
 	    {
-	      return ret;
+      	      return ret;
 	    }
 	}
 
@@ -192,7 +207,7 @@ int zoidfs_transform_write_request (zoidfs_write_compress * transform,
 	    }
 	  else
 	    {
-	      close = ZOIDFS_CLOSE;
+	      (*close) = ZOIDFS_CLOSE;
 	    }
 	}
     } while (ret != ZOIDFS_COMPRESSION_DONE);

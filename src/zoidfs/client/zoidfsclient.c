@@ -1,3 +1,4 @@
+
 /*
  * zoidfs.c
  * Client-side implementation of the ZOIDFS API. The CNs communicate with
@@ -3176,6 +3177,7 @@ int zoidfs_write_transform_non_pipeline ( zoidfs_write_vars * write_buffs,
 					  size_t * len)
 {
     int ret = ZFS_OK;
+    int close = 0;
     char compressed_len_string[100];
     /* Add the hint for the transform */
 
@@ -3191,7 +3193,7 @@ int zoidfs_write_transform_non_pipeline ( zoidfs_write_vars * write_buffs,
 	    zoidfs_transform_change_transform (compression_type, transform);
 	    ret = zoidfs_transform_write_request (transform, write_buffs, 16000000, 
 						  0, buffer, buffer_sizes,
-						  buf_count, len);	 
+						  buf_count, len, &close);	 
 
 	    sprintf(compressed_len_string, "%i",(int)len);
 	    zoidfs_hint_add ( &(write_buffs->op_hint), 
@@ -3211,6 +3213,7 @@ void zoidfs_write_create_header ( zoidfs_write_vars * write_buffs,
     int psize;
     int x;
     int ret;
+    int close = 0;
     size_t input_buffer_size;
     size_t output_length = 0;
     size_t buf_count = write_buffs->mem_count;
@@ -3226,7 +3229,7 @@ void zoidfs_write_create_header ( zoidfs_write_vars * write_buffs,
         
     ret = zoidfs_transform_write_request (&transform, write_buffs, input_buffer_size, 
 					  0, &list_buffer, &buffer_sizes,
-					  &buf_count, &output_length);	 
+					  &buf_count, &output_length ,&close);	 
 
     
     memcpy((*buffer), send_msg->sendbuf, send_msg->sendbuflen);
@@ -3536,6 +3539,7 @@ int zoidfs_write_pipeline_list (zoidfs_write_vars * write_buffs,
     zoidfs_write_compress * transform;
     size_t total_len = 0;
     int ret;
+    int close = 0;
     void ** buffer = malloc (sizeof(char *) * write_buffs->mem_count);
     bmi_size_t * buffer_lengths = malloc (sizeof(bmi_size_t) * write_buffs->mem_count);
     size_t buffer_full = 0;
@@ -3550,7 +3554,7 @@ int zoidfs_write_pipeline_list (zoidfs_write_vars * write_buffs,
 	    total_len = 0;
 	    zoidfs_transform_write_request ( &transform, write_buffs, pipeline_size,
 					     0, &buffer, &buffer_lengths, &buffer_full,
-					     &total_len);
+					     &total_len, &close);
 	    ret = bmi_comm_send_list (peer_addr, buffer_full, (const void **)buffer,
 				      buffer_lengths, tag, context, total_len);
 	} while (total_len == pipeline_size);

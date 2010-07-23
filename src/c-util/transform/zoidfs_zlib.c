@@ -108,13 +108,14 @@ int zlib_compress (z_stream * stream, void ** source, size_t * length, void ** d
     }
     /* Figure out how much of the output buffer has been used */
     finished += (*output_length - (*strm).avail_out);
-    //input += (*length - (*strm).avail_in); 
+    input += (*length - (*strm).avail_in); 
     *output_length = (*strm).avail_out;
     *length = (*strm).avail_in;
 
     /* set the ourput buffer */
     (*dest) = finished;
     (*source) = input;
+
     if (ret == Z_BUF_ERROR)
         return ZOIDFS_BUF_ERROR;
     else if (ret != Z_OK && ret != ZOIDFS_STREAM_END)

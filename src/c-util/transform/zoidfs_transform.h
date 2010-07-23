@@ -65,5 +65,6 @@ int zoidfs_transform_write_request (zoidfs_write_compress * transform,
 				    void *** buffer,
 				    size_t ** buffer_sizes,
 				    size_t * buf_count,
-				    size_t * total_len
+				    size_t * total_len,
+				    int * close
 				    );
