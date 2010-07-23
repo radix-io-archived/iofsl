@@ -55,6 +55,25 @@ IOFWDWriteRequest::~IOFWDWriteRequest ()
       h.hafree(param_.file_sizes);
    if (param_.bmi_mem_sizes)
       h.hafree(param_.bmi_mem_sizes);
+
+   h.hafree(compressed_mem_[0]);
+   compressed_mem_[0] = NULL;
+
+   h.hafree(compressed_mem_);
+   compressed_mem_ = NULL;
+
+   h.hafree(decompressed_mem_);
+   decompressed_mem_ = NULL;
+
+   h.hafree(callback_mem_);
+   callback_mem_ = NULL;
+
+   h.hafree(userCB_);
+   userCB_ = NULL;
+
+   h.hafree(mem_expected_size_);
+   mem_expected_size_ = NULL;
+
 #endif
    if(param_.op_hint)
       zoidfs::util::ZoidFSHintDestroy(&(param_.op_hint));
@@ -195,9 +214,18 @@ IOFWDWriteRequest::ReqParam & IOFWDWriteRequest::decodeParam ()
      if(0 != param_.mem_total_size % param_.pipeline_size)
        pipeline_ops_++;
 
+#ifndef USE_TASK_HA
      compressed_mem_ = new char* [pipeline_ops_];
+#else
+     compressed_mem_ = (h.hamalloc<char*>(pipeline_ops_));
+#endif
 
+#ifndef USE_TASK_HA
      char *compmem = new char [param_.mem_total_size];
+#else
+     char *compmem = (h.hamalloc<char> (param_.mem_total_size));
+#endif
+
      size_t offset = 0;
 
      for(size_t ii = 0; ii < pipeline_ops_; ii++)
@@ -208,21 +236,41 @@ IOFWDWriteRequest::ReqParam & IOFWDWriteRequest::decodeParam ()
 
      compressed_size_ = 0;
 
+#ifndef USE_TASK_HA
      decompressed_mem_ = new char [param_.mem_total_size];
+#else
+     decompressed_mem_ = (h.hamalloc<char> (param_.mem_total_size));
+#endif
+
      decompressed_size_ = 0;
 
+#ifndef USE_TASK_HA
      callback_mem_ = new char* [pipeline_ops_];
+#else
+     callback_mem_ = (h.hamalloc<char*> (pipeline_ops_));
+#endif
+
      for(size_t ii = 0; ii < pipeline_ops_; ii++)
 	callback_mem_[ii] = NULL;
 
+#ifndef USE_TASK_HA
      userCB_ = new CBType [pipeline_ops_];
+#else
+     userCB_ = (h.hamalloc<CBType> (pipeline_ops_));
+#endif
+
      for(size_t ii = 0; ii < pipeline_ops_; ii++)
           userCB_[ii] = NULL;
 
      next_slot_ = 0;
      user_callbacks_ = 0;
 
+#ifndef USE_TASK_HA
      mem_expected_size_ = new bmi_size_t [pipeline_ops_];
+#else
+     mem_expected_size_ = (h.hamalloc<bmi_size_t> (pipeline_ops_));
+#endif
+
      for(size_t ii = 0; ii < pipeline_ops_; ii++)
 	mem_expected_size_[ii] = 0;
 
@@ -340,11 +388,24 @@ void IOFWDWriteRequest::initRequestParams(ReqParam & p, void * bufferMem)
 	if(true == op_hint_compress_enabled_ ||
 	   true == op_hint_headstuff_enabled_)
 	{
+#ifndef USE_TASK_HA
 	  compressed_mem_ = new char* [1];
-	  compressed_size_ = param_.mem_total_size - size_of_stuffed_data_;
-	  compressed_mem_[0] = new char [compressed_size_];
+#else
+	  compressed_mem_ = (h.hamalloc<char*> (1));
+#endif
 
+	  compressed_size_ = param_.mem_total_size - size_of_stuffed_data_;
+#ifndef USE_TASK_HA
+	  compressed_mem_[0] = new char [compressed_size_];
+#else
+	  compressed_mem_[0] = (h.hamalloc<char> (compressed_size_));
+#endif
+
+#ifndef USE_TASK_HA
 	  userCB_ = new CBType[1];
+#else
+	  userCB_ = (h.hamalloc<CBType> (1));
+#endif
 	  userCB_[0] = NULL;
 	}
 
