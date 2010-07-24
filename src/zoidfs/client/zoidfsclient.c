@@ -3067,11 +3067,16 @@ resize_cleanup:
 }
 
 
-void zoidfs_write_vars_destroy (zoidfs_write_vars * z)
+void zoidfs_write_vars_destroy (zoidfs_write_vars * z, int comp_enabled)
 {
-    /* Destroy the local mem_starts/mem_sizes */
-
-    free((*z).mem_starts);
+    int x;
+    /* Destroy the local mem_starts/mem_sizes 
+    if (comp_enabled > 0)
+	{
+	    for (x = 0; x < comp_enabled; x++)
+		free((*z).mem_starts[x]);
+		}*/
+    free((*z).mem_starts);	    
     free((*z).mem_sizes);    
 }
 
@@ -3323,10 +3328,17 @@ int zoidfs_write_pipeline_list (zoidfs_write_vars * write_buffs,
     size_t buffer_full = write_buffs->mem_count;   
     bmi_size_t bmi_total_len = 0;
     size_t write_size = 0;
-    if (compression_type == NULL)
-	zoidfs_transform_init ("passthrough", &transform);
+
+    /* If compression is disabled or the pipeline was set to zero but
+       message too large for a single send */
+    if (compression_type == NULL || PIPELINE_SIZE == 0)
+	{
+	    zoidfs_transform_init ("passthrough", &transform);
+	}
     else
-	zoidfs_transform_init (compression_type, &transform);
+	{	
+	    zoidfs_transform_init (compression_type, &transform);
+	}
     for (x = 0; x < write_buffs->mem_count; x++)
 	buffer_lengths[x] = pipeline_size;
     do 
@@ -3343,6 +3355,7 @@ int zoidfs_write_pipeline_list (zoidfs_write_vars * write_buffs,
 		    bmi_mem_sizes[x] = (bmi_size_t)buffer_lengths[x]; 
 		}
 	    bmi_total_len = (bmi_size_t)total_len;
+
 	    ret = bmi_comm_send_list (peer_addr, buffer_full, (const void **)buffer,
 				      bmi_mem_sizes, tag, context, bmi_total_len);
 	    if (compression_type != NULL &&
@@ -3418,7 +3431,8 @@ int zoidfs_write(const zoidfs_handle_t *handle, size_t mem_count,
     void * header_buffer;
     size_t header_len = 0;
     int send_complete = 0;
-
+    bmi_size_t bmi_pipeline_size = 0;
+    char pipeline_size_str[100];
     /* if file or mem counts are zero, return */
 
     if (file_count == 0 || mem_count == 0)
@@ -3480,8 +3494,11 @@ int zoidfs_write(const zoidfs_handle_t *handle, size_t mem_count,
 	{
 	    compressed_send_starts = malloc (mem_count * sizeof(mem_count));
 	    ret = zoidfs_write_transform_non_pipeline (&write_buffs, &transform,
-						       &compressed_send_starts, &compressed_send_sizes,
-						       &compressed_send_count, &compressed_len, pipeline_size);
+						       &compressed_send_starts, 
+						       &compressed_send_sizes,
+						       &compressed_send_count, 
+						       &compressed_len, 
+						       pipeline_size);
 
 	    /* If pipelining is disabled, copy the pointers into write_buff's and make them the 
 	       main buffers to send */
@@ -3491,10 +3508,37 @@ int zoidfs_write(const zoidfs_handle_t *handle, size_t mem_count,
 		    write_buffs.mem_starts = compressed_send_starts;
 		    write_buffs.mem_count = compressed_send_count;
 		    write_buffs.mem_sizes = compressed_send_sizes;
-		}
 
-	    
+		}
 	}
+
+    /* Check to see if pipelining must be enabled due to message
+       send size being greater then BMI_CHECK_MAXSIZE */
+    if (pipeline_size == 0)
+	{
+	    total_size = 0;
+	    for (x = 0; x < write_buffs.mem_count; x++)
+		total_size +=  write_buffs.mem_sizes[x];
+	    BMI_get_info(peer_addr,BMI_CHECK_MAXSIZE,(void *)&bmi_pipeline_size);
+
+	    if (total_size > bmi_pipeline_size)
+		{
+		    fprintf (stderr, "zoidfs_write: Pipelining Enabled due "
+			     "to message length > max pipeline size\n");
+		    pipeline_size = bmi_pipeline_size;
+		    zoidfs_hint_add ( &(write_buffs.op_hint),
+				      strdup(ZOIDFS_ENABLE_PIPELINE), strdup("1"),
+				      2, ZOIDFS_HINTS_ZC);
+		    assert(pipeline_size < 100000000);
+		    sprintf(pipeline_size_str, "%u", (size_t)pipeline_size);
+		    zoidfs_hint_add ( &(write_buffs.op_hint), 
+				      strdup(ZOIDFS_PIPELINE_SIZE),
+				      strdup(pipeline_size_str), 
+				      strlen(pipeline_size_str),
+				      ZOIDFS_HINTS_ZC);
+		}
+	}
+
 
     /* compute the size of the messages */
 
@@ -3571,16 +3615,12 @@ int zoidfs_write(const zoidfs_handle_t *handle, size_t mem_count,
     total_size = 0;
     for (x = 0; x < write_buffs.mem_count; x++)
     	total_size += write_buffs.mem_sizes[x];
-    fprintf(stderr,"Total Size: %i\n",total_size);
     /* Send the data */
 
     if (pipeline_size == 0 && total_size != 0)
 	{
 	    if (write_buffs.mem_count > 1)
 		{
-
-		    fprintf(stderr,"Sending List\n");
-
 		    for (x = 0; x < write_buffs.mem_count; x++)
 			bmi_mem_sizes[x] = write_buffs.mem_sizes[x]; 
      
@@ -3591,7 +3631,6 @@ int zoidfs_write(const zoidfs_handle_t *handle, size_t mem_count,
 		}
 	    else
 		{
-		    fprintf(stderr,"Send Size: %i\n",write_buffs.mem_sizes[0]);
 		    /* If the total size of the send is greater then
 		       the maximum send allowed by bmi. Send in increments */
 		    
@@ -3613,7 +3652,6 @@ int zoidfs_write(const zoidfs_handle_t *handle, size_t mem_count,
 
     else if (total_size != 0)
 	{   
-	    fprintf(stderr,"Running pipeline\n");
 	    ret = zoidfs_write_pipeline_list (&write_buffs, pipeline_size, send_msg.tag, context, total_size);
 	}
 
@@ -3648,22 +3686,21 @@ int zoidfs_write(const zoidfs_handle_t *handle, size_t mem_count,
     ZOIDFS_RECV_MSG_DESTROY (recv_msg);
     ZOIDFS_SEND_MSG_DESTROY (send_msg);
 
-    zoidfs_write_vars_destroy (&write_buffs);
-    if (compression_type != NULL)
-	{
-    	/*if (pipeline_size == 0)
-    		for(x = 0; x < compressed_send_count; x++)
-    			free(compressed_send_starts[x]);
 
-	    free(compressed_send_sizes);
-	    free(compressed_send_starts);*/
-	}
+    zoidfs_write_vars_destroy (&write_buffs, compressed_send_count);
+    free(bmi_mem_sizes);
+
 
     if (header_stuffing != NULL)
 	{
-	    free(header_buffer);
-	}
+	    //free(header_buffer);
 
+	    //zoidfs_write_vars_destroy (&write_buffs, 0);
+	}
+    else
+	{
+	    //zoidfs_write_vars_destroy (&write_buffs, compressed_send_count);
+	}
 
     
     return ret;
@@ -3686,8 +3723,10 @@ int zoidfs_read(const zoidfs_handle_t *handle, size_t mem_count,
     zoidfs_file_ofs_array_transfer_t file_starts_transfer;
     zoidfs_file_ofs_array_transfer_t file_sizes_transfer;
     int ret = ZFS_OK;
+    size_t bmi_pipeline_size;
     zoidfs_send_msg_t send_msg;
     zoidfs_recv_msg_t recv_msg;
+    size_t total_recv_size = 0;
     bmi_size_t * bmi_mem_sizes = NULL;
     char * op_hint_pipeline_size = NULL;
     size_t op_hint_pipeline_size_req = 0;
@@ -3758,7 +3797,14 @@ int zoidfs_read(const zoidfs_handle_t *handle, size_t mem_count,
             }
         }
     }
-
+    /* Checks the maximum size of the recv, if this happens to be greater
+     * then one maximum bmi_recv force pipelining on
+     */
+    BMI_get_info(peer_addr,BMI_CHECK_MAXSIZE,(void *)&bmi_pipeline_size);
+    for (i = 0; i < mem_count; i++)
+    	total_recv_size += mem_sizes[i];
+    if (total_recv_size > bmi_pipeline_size)
+    	pipeline_size = bmi_pipeline_size;
     recv_msg.recvbuflen = zoidfs_xdr_size_processor(ZFS_OP_STATUS_T, &recv_msg.op_status) +
                           zoidfs_xdr_size_processor(ZFS_UINT64_ARRAY_T, &file_count);
     send_msg.sendbuflen = zoidfs_xdr_size_processor(ZFS_OP_ID_T, &send_msg.zoidfs_op_id) +
