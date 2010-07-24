@@ -3201,7 +3201,7 @@ int zoidfs_write_transform_non_pipeline ( zoidfs_write_vars * write_buffs,
 						  buf_count, len, &close);	 
 
 	    sprintf(compressed_len_string, "%u",*len);
-	    printf("Compressed String: %s",compressed_len_string);
+
 	    zoidfs_hint_add ( &(write_buffs->op_hint), 
 			      strdup(ZOIDFS_COMPRESSED_SIZE),
 			      strdup(compressed_len_string),
