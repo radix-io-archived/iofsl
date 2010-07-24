@@ -149,10 +149,13 @@ IOFWDWriteRequest::ReqParam & IOFWDWriteRequest::decodeParam ()
         {
            transform_.reset
               (iofwdutil::transform::GenericTransformFactory::construct(token)());
-           op_hint_compress_enabled_ = true;
-           char *compressed_size_str =
-                  zoidfs::util::ZoidFSHintGet(&(param_.op_hint), ZOIDFS_COMPRESSED_SIZE);
-	   compressed_size_ = (size_t)atol(compressed_size_str);
+	   op_hint_compress_enabled_ = true;
+	   if (!enable_pipeline)
+	     {
+	       char *compressed_size_str =
+		 zoidfs::util::ZoidFSHintGet(&(param_.op_hint), ZOIDFS_COMPRESSED_SIZE);
+	       compressed_size_ = (size_t)atol(compressed_size_str);
+	     }
         }
         else
         {
@@ -287,7 +290,7 @@ IOFWDWriteRequest::ReqParam & IOFWDWriteRequest::decodeParam ()
 
      if(true == op_hint_headstuff_enabled_)
      {
-       if(false == op_hint_compress_enabled_)
+       if(false == op_hint_compress_enabled_ || enable_pipeline)
        {
 	 memcpy(dst, src, size_of_stuffed_data_);
 	 decompressed_size_ += size_of_stuffed_data_;
@@ -626,7 +629,7 @@ void IOFWDWriteRequest::recvBuffers(const CBType & cb, RetrievedBuffer * rb)
 
       ASSERT(1 == user_callbacks_);
 
-      STATIC_ASSERT(sizeof(bmi_size_t) == sizeof(size_t));
+      //STATIC_ASSERT(sizeof(bmi_size_t) == sizeof(size_t));
 
 #if SIZEOF_SIZE_T == SIZEOF_INT64_T
       if(size_of_stuffed_data_ < param_.mem_total_size)

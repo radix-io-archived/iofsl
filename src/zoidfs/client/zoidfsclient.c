@@ -3557,7 +3557,7 @@ int zoidfs_write(const zoidfs_handle_t *handle, size_t mem_count,
 	}
 
     /* Send the header */
-    
+
     ret = bmi_comm_sendu(peer_addr, header_buffer, header_len, 
 			 send_msg.tag, context);
     if (ret == -1)
@@ -3571,7 +3571,7 @@ int zoidfs_write(const zoidfs_handle_t *handle, size_t mem_count,
     total_size = 0;
     for (x = 0; x < write_buffs.mem_count; x++)
     	total_size += write_buffs.mem_sizes[x];
-
+    fprintf(stderr,"Total Size: %i\n",total_size);
     /* Send the data */
 
     if (pipeline_size == 0 && total_size != 0)
@@ -3579,17 +3579,26 @@ int zoidfs_write(const zoidfs_handle_t *handle, size_t mem_count,
 	    if (write_buffs.mem_count > 1)
 		{
 
+		    fprintf(stderr,"Sending List\n");
+
 		    for (x = 0; x < write_buffs.mem_count; x++)
 			bmi_mem_sizes[x] = write_buffs.mem_sizes[x]; 
-
+     
 		    ret = bmi_comm_send_list (peer_addr, write_buffs.mem_count,
-					      (const void * const *)write_buffs.mem_starts, bmi_mem_sizes,
+					      (const void * const *)write_buffs.mem_starts, 
+					      bmi_mem_sizes,
 					      send_msg_data.tag, context, total_size);
 		}
 	    else
 		{
-		    ret = bmi_comm_send (peer_addr, write_buffs.mem_starts[0], write_buffs.mem_sizes[0],
+		    fprintf(stderr,"Send Size: %i\n",write_buffs.mem_sizes[0]);
+		    /* If the total size of the send is greater then
+		       the maximum send allowed by bmi. Send in increments */
+		    
+		    ret = bmi_comm_send (peer_addr, write_buffs.mem_starts[0], 
+					 write_buffs.mem_sizes[0],
 					 send_msg_data.tag, context);
+
 		}
 	    if (ret == -1)
 		{
@@ -3602,8 +3611,9 @@ int zoidfs_write(const zoidfs_handle_t *handle, size_t mem_count,
     
     /* Pipeline case */
 
-    else if (send_complete != 1)
+    else if (total_size != 0)
 	{   
+	    fprintf(stderr,"Running pipeline\n");
 	    ret = zoidfs_write_pipeline_list (&write_buffs, pipeline_size, send_msg.tag, context, total_size);
 	}
 
