@@ -3,11 +3,11 @@ if BUILD_IOFWD_SERVER
 bin_PROGRAMS += src/iofwd/iofwd
 
 src_iofwd_iofwd_LDADD = \
+	src/iofwdutil/libiofwdutil.a \
 	src/zoidfs/libzoidfs-util.a \
 	src/zoidfs/libzoidfsprofile.a \
 	src/zoidfs/libzoidfs.a \
 	src/sm/libsm.a \
-	src/iofwdutil/libiofwdutil.a \
 	src/c-util/libc-util.a \
 	src/zoidfs/libzoidfshints.a \
 	src/iofwdevent/libiofwdevent.a \
@@ -24,8 +24,8 @@ src_iofwd_iofwd_LDFLAGS = \
     @BMI_LDFLAGS@
 
 src_iofwd_iofwd_SOURCES = \
-src/iofwd/FactoryHelper.hh \
-src/iofwd/FactoryHelper.cpp \
+src/iofwd/RegisterHelper.hh \
+src/iofwd/RegisterHelper.cpp \
 src/iofwd/DefRequestHandler.cpp \
 src/iofwd/IOFWDMain.cpp \
 src/iofwd/Range.cpp \

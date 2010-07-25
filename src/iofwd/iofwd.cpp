@@ -9,7 +9,9 @@
 #include "iofwdutil/ZException.hh"
 #include "iofwdutil/ConfigFile.hh"
 #include "c-util/txt_configfile.h"
-#include "FactoryHelper.hh"
+#include "iofwdutil/RegisterHelper.hh"
+#include "iofwd/RegisterHelper.hh"
+#include "zoidfs/util/RegisterHelper.hh"
 
 namespace po = boost::program_options;
 
@@ -129,7 +131,9 @@ int main (int argc, char ** args)
       }
 
       ZLOG_INFO(mainlog, "Registering factory clients...");
-      iofwd::registerFactoryClients ();
+      iofwdutil::registerIofwdutilFactoryClients ();
+      iofwd::registerIofwdFactoryClients ();
+      zoidfs::util::registerZoidfsUtilFactoryClients ();
 
       iofwd::IOFWDMain main (opt_notrap, config_); 
 

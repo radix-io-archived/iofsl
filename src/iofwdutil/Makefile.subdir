@@ -151,6 +151,8 @@ src/iofwdutil/FactoryAutoRegister.hh \
 src/iofwdutil/CreateMethod.hh \
 src/iofwdutil/FactoryException.hh \
 src/iofwdutil/FactoryHelper.hh \
+src/iofwdutil/RegisterHelper.hh \
+src/iofwdutil/RegisterHelper.cpp \
 \
 src/iofwdutil/atomics.hh \
 \
