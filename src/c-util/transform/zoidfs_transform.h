@@ -1,7 +1,10 @@
+#ifndef C_UTIL_TRANSFORM_ZOIDFS_TRANSFORM_H
+#define C_UTIL_TRANSFORM_ZOIDFS_TRANSFORM_H
 
 #define HAVE_LZF
 #include <stdio.h>
 #include <string.h>
+
 #ifdef HAVE_LZF
 #include "lzf/lzf.h"
 #include "lzf/lzfP.h"
@@ -78,3 +81,6 @@ int zoidfs_transform_write_request (zoidfs_write_compress * transform,
 				    );
 void zoidfs_transform_destroy (zoidfs_write_compress * comp);
 void zoidfs_transform_change_transform (char * type, zoidfs_write_compress * comp);
+
+#endif
+
