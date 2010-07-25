@@ -61,8 +61,6 @@ class WriteTaskSM : public sm::SimpleSM< WriteTaskSM >, public iofwdutil::Inject
                 total_pipeline_ops_ = (int)ceil(1.0 * total_bytes_ / pipeline_size_);
                 total_buffers_ = total_pipeline_ops_;
 
-		fprintf(stderr, "............ [T%x] %s:%d(%s) total_pipeline_ops_ = %d\n", (unsigned int)pthread_self(), __FILE__, __LINE__, __func__, total_pipeline_ops_);
-
                 computePipelineFileSegments();
 
                 /* setup the rbuffer variable */

@@ -26,8 +26,11 @@ IOFWDWriteRequest::~IOFWDWriteRequest ()
    if (param_.bmi_mem_sizes)
       delete[] param_.bmi_mem_sizes;
 
-   delete []compressed_mem_[0];
-   compressed_mem_[0] = NULL;
+   if(NULL != compressed_mem_)
+   {
+      delete []compressed_mem_[0];
+      compressed_mem_[0] = NULL;
+   }
 
    delete []compressed_mem_;
    compressed_mem_ = NULL;
@@ -150,12 +153,14 @@ IOFWDWriteRequest::ReqParam & IOFWDWriteRequest::decodeParam ()
            transform_.reset
               (iofwdutil::transform::GenericTransformFactory::construct(token)());
 	   op_hint_compress_enabled_ = true;
-	   if (!enable_pipeline)
-	     {
-	       char *compressed_size_str =
-		 zoidfs::util::ZoidFSHintGet(&(param_.op_hint), ZOIDFS_COMPRESSED_SIZE);
-	       compressed_size_ = (size_t)atol(compressed_size_str);
-	     }
+	   if (0 == param_.pipeline_size)
+	   {
+	      char *compressed_size_str =
+		zoidfs::util::ZoidFSHintGet(&(param_.op_hint), ZOIDFS_COMPRESSED_SIZE);
+	      ASSERT(compressed_size_str != NULL);
+	      compressed_size_ = (size_t)atol(compressed_size_str);
+	      ASSERT(compressed_size_ > 0);
+	   }
         }
         else
         {
@@ -397,7 +402,8 @@ void IOFWDWriteRequest::initRequestParams(ReqParam & p, void * bufferMem)
 	  compressed_mem_ = (h.hamalloc<char*> (1));
 #endif
 
-	  compressed_size_ = param_.mem_total_size - size_of_stuffed_data_;
+	  if(true == op_hint_headstuff_enabled_)
+	    compressed_size_ = param_.mem_total_size - size_of_stuffed_data_;
 #ifndef USE_TASK_HA
 	  compressed_mem_[0] = new char [compressed_size_];
 #else
@@ -514,7 +520,7 @@ void IOFWDWriteRequest::recvComplete(int recvStatus)
 	  if(i == mem_slot_)
 	  {
 	      transform_->transform(compressed_mem_[0],
-		compressed_size_,
+		param_.mem_expected_size,
 		param_.mem_starts[i]+mem_slot_bytes_,
 		param_.mem_sizes[i]-mem_slot_bytes_,
 		&outBytes,
@@ -529,7 +535,7 @@ void IOFWDWriteRequest::recvComplete(int recvStatus)
 	  else
 	  {
 	      transform_->transform(compressed_mem_[0],
-		compressed_size_,
+		param_.mem_expected_size,
 		param_.mem_starts[i],
 		param_.mem_sizes[i],
 		&outBytes,
