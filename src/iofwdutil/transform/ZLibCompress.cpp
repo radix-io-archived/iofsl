@@ -1,4 +1,13 @@
 #include "ZLibCompress.hh"
+#include "iofwdutil/LinkHelper.hh"
+
+GENERIC_FACTORY_CLIENT_TAG(std::string,
+      iofwdutil::transform::GenericTransform,
+      iofwdutil::transform::GTEncode,
+      iofwdutil::transform::ZLibCompress,
+      "ZLIB",
+      zlibencode);
+
 
 namespace iofwdutil
 {

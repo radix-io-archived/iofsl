@@ -7,13 +7,12 @@ extern "C" {
 #include "src/c-util/transform/lzf/lzf.h"
 }
 
-// @TODO: add tags to factory so that the GenericTransform library can be
-// split in a 'encode' and 'decode' factory.
-GENERIC_FACTORY_CLIENT(std::string,
+GENERIC_FACTORY_CLIENT_TAG(std::string,
       iofwdutil::transform::GenericTransform,
+      iofwdutil::transform::GTEncode,
       iofwdutil::transform::LZFCompress,
-      "LZFCompress",
-      lzfcomp);
+      "LZF",
+      lzfencode);
 
 namespace iofwdutil
 {

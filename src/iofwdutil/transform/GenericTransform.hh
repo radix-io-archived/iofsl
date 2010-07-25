@@ -66,8 +66,15 @@ namespace iofwdutil
 
      //======================================================================
 
-    typedef iofwdutil::Factory<std::string,GenericTransform>
-       GenericTransformFactory;
+    // Tags for factory
+    struct GTEncode {};
+    struct GTDecode {};
+
+    typedef iofwdutil::Factory<std::string,GenericTransform,GTEncode>
+       GenericTransformEncodeFactory;
+    
+    typedef iofwdutil::Factory<std::string,GenericTransform,GTDecode>
+       GenericTransformDecodeFactory;
 
      //======================================================================
   }

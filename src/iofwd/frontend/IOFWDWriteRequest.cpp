@@ -141,7 +141,8 @@ IOFWDWriteRequest::ReqParam & IOFWDWriteRequest::decodeParam ()
         param_.op_hint_pipeline_enabled = true;
    }
 
-   char *enable_transform = zoidfs::util::ZoidFSHintGet(&(param_.op_hint), ZOIDFS_TRANSFORM);
+   char *enable_transform = zoidfs::util::ZoidFSHintGet(&(param_.op_hint),
+         ZOIDFS_TRANSFORM);
    if(NULL != enable_transform)
    {
         char *token = NULL, *saveptr = NULL;
@@ -151,12 +152,14 @@ IOFWDWriteRequest::ReqParam & IOFWDWriteRequest::decodeParam ()
         if(NULL != token)
         {
            transform_.reset
-              (iofwdutil::transform::GenericTransformFactory::construct(token)());
+              (iofwdutil::transform::GenericTransformDecodeFactory::construct 
+                 (token)());
 	   op_hint_compress_enabled_ = true;
 	   if (0 == param_.pipeline_size)
 	   {
 	      char *compressed_size_str =
-		zoidfs::util::ZoidFSHintGet(&(param_.op_hint), ZOIDFS_COMPRESSED_SIZE);
+                zoidfs::util::ZoidFSHintGet(&(param_.op_hint),
+                      ZOIDFS_COMPRESSED_SIZE);
 	      ASSERT(compressed_size_str != NULL);
 	      compressed_size_ = (size_t)atol(compressed_size_str);
 	      ASSERT(compressed_size_ > 0);

@@ -3,13 +3,23 @@
 #include "iofwdutil/tools.hh"
 #include "TransformException.hh"
 
-// @TODO: add tags to factory so that the GenericTransform library can be
-// split in a 'encode' and 'decode' factory.
-GENERIC_FACTORY_CLIENT(std::string,
+// CopyTransform encode/decode is the same, so we register it twice; one as
+// encode, one as decode
+
+GENERIC_FACTORY_CLIENT_TAG(std::string,
       iofwdutil::transform::GenericTransform,
+      iofwdutil::transform::GTEncode,
       iofwdutil::transform::CopyTransform,
       "copy",
-      copytransform);
+      copytransformencode);
+
+GENERIC_FACTORY_CLIENT_TAG(std::string,
+      iofwdutil::transform::GenericTransform,
+      iofwdutil::transform::GTDecode,
+      iofwdutil::transform::CopyTransform,
+      "copy",
+      copytransformdecode);
+
 
 namespace iofwdutil
 {

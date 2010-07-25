@@ -3,13 +3,16 @@
 #include <boost/test/unit_test.hpp>
 #include <boost/tuple/tuple.hpp>
 #include <boost/function.hpp>
-#include <boost/ptr_container/ptr_vector.hpp>
+#include <iterator>
+#include <set>
+#include <algorithm>
 
 #include "iofwd_config.h"
 
 #include "iofwdutil/assert.hh"
 #include "iofwdutil/transform/LZF.hh"
 #include "iofwdutil/transform/LZFCompress.hh"
+#include "iofwdutil/RegisterHelper.hh"
 #include "iofwdutil/transform/CopyTransform.hh"
 
 // @TODO: use factory so this can go
@@ -200,61 +203,71 @@ static void testTransform (GenericTransform & encode, GenericTransform &
 }
 
 
-struct TestEntry
-{
-   TestEntry (const char * n, GenericTransform * e, GenericTransform * d)
-      : name(n), encode(e), decode(d) {}
-
-   virtual ~TestEntry ()
-   {}
-
-   const char * name;
-   std::auto_ptr<GenericTransform> encode;
-   std::auto_ptr<GenericTransform> decode;
-};
-
 // @TODO: once tag support is added to factory, find pairs of encode/decode
 // transforms automatically and test them.
 BOOST_FIXTURE_TEST_CASE ( transform_encode_decode, Dummy )
 {
+   BOOST_TEST_MESSAGE("Registering Transforms...");
+   iofwdutil::registerIofwdutilFactoryClients ();
+
+   BOOST_TEST_MESSAGE("Registered transforms:");
+
+   std::set<std::string> encode;
+   std::set<std::string> decode;
+   std::set<std::string> cantest;
+   std::set<std::string> notest;
+
+   GenericTransformEncodeFactory::instance().keys 
+      (std::inserter(encode, encode.begin()));
+   
+   GenericTransformDecodeFactory::instance().keys 
+      (std::inserter(decode, decode.begin()));
+
+   std::set_intersection (encode.begin(), encode.end(),
+         decode.begin(), decode.end(), std::inserter(cantest, cantest.begin()));
+   std::set_symmetric_difference (encode.begin(), encode.end(),
+         decode.begin(), decode.end(), std::inserter(notest, notest.begin()));
+
+   BOOST_FOREACH (const std::string & s, encode)
+   {
+      BOOST_TEST_MESSAGE(format("Encode: %s") % s);
+   }
+
+
+   BOOST_FOREACH (const std::string & s, decode)
+   {
+      BOOST_TEST_MESSAGE(format("Decode: %s") % s);
+   }
+   
+   BOOST_FOREACH (const std::string & s, cantest)
+   {
+      BOOST_TEST_MESSAGE(format("Will test: %s (have encode and decode)") % s);
+   }
+
+
+   BOOST_FOREACH (const std::string & s, notest)
+   {
+      BOOST_TEST_MESSAGE(format("Cannot test: %s (encode or decode missing)")
+            % s);
+   }
+
    BOOST_TEST_MESSAGE("Testing encoding and decoding");
 
    size_t loops = LOOPS * (isLongTestEnabled() ? 30 : 1);
 
-   boost::ptr_vector<TestEntry>  tests;
-
-
-   tests.push_back (new TestEntry("Copy",
-       new iofwdutil::transform::CopyTransform(),
-       new iofwdutil::transform::CopyTransform()));
-   
-    tests.push_back (new TestEntry("LZF",
-         new iofwdutil::transform::LZFCompress (),
-         new iofwdutil::transform::LZF ()));
-
-#ifdef HAVE_ZLIB
-   tests.push_back (new TestEntry("zlib-1",
-         new iofwdutil::transform::ZLibCompress (),
-         new iofwdutil::transform::ZLibDecompress ()));
-   // disabled since reset is not supported
-/*   tests.push_back (new TestEntry("zlib-2",
-         new iofwdutil::transform::ZLibCompress (),
-         new iofwdutil::transform::ZLib ()));
-         */
-#endif
-
-#ifdef HAVE_BZLIB
-   tests.push_back (new TestEntry("bzlib",
-         new iofwdutil::transform::BZCompress (),
-         new iofwdutil::transform::BZDecompress ()));
-#endif
 
    for (size_t i=0; i<loops; ++i)
    {
-      BOOST_FOREACH (const TestEntry & e, tests)
+      BOOST_FOREACH (const std::string & s, cantest)
       {
-      BOOST_TEST_MESSAGE(format("Testing %s") % e.name);
-      testTransform (*e.encode, *e.decode);
+         BOOST_TEST_MESSAGE(format("Testing %s") % s);
+
+         boost::scoped_ptr<GenericTransform> encodetr (
+            GenericTransformEncodeFactory::instance().construct(s)());
+         boost::scoped_ptr<GenericTransform> decodetr (
+            GenericTransformDecodeFactory::instance().construct(s)());
+
+         testTransform (*encodetr, *decodetr);
       }
    }
 }

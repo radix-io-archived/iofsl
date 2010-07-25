@@ -1,5 +1,13 @@
-
 #include "ZLibDecompress.hh"
+#include "iofwdutil/LinkHelper.hh"
+
+GENERIC_FACTORY_CLIENT_TAG(std::string,
+      iofwdutil::transform::GenericTransform,
+      iofwdutil::transform::GTDecode,
+      iofwdutil::transform::ZLibDecompress,
+      "ZLIB-2",
+      zlibdecode);
+
 
 namespace iofwdutil
 {

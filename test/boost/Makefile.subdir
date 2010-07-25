@@ -1,13 +1,21 @@
 
-shared_ldadd = src/iofwdevent/libiofwdevent.a \
+shared_ldadd = \
 	       src/sm/libsm.a \
+	       src/iofwdevent/libiofwdevent.a \
 	       src/iofwdutil/libiofwdutil.a \
 	       src/c-util/libc-util.a \
-	       $(BOOST_UNIT_TEST_FRAMEWORK_LIB) \
-	       $(BOOST_DATE_TIME_LIB) \
-	       $(BOOST_THREAD_LIB) \
-	       $(BOOST_REGEX_LIB) $(AM_LIBS)
-shared_ldflags =  $(BOOST_LDFLAGS)
+	         $(BOOST_UNIT_TEST_FRAMEWORK_LIB) \
+	       @BOOST_PROGRAM_OPTIONS_LIB@ \
+	       @BOOST_DATE_TIME_LIB@ \
+	       @BOOST_THREAD_LIB@ \
+	       @BOOST_REGEX_LIB@ \
+	       @ZFS_DISPATCHER_LIBS@ \
+	       @BMI_LIBS@
+
+shared_ldflags = \
+    @BOOST_LDFLAGS@ \
+    @ZFS_DISPATCHER_LDFLAGS@ \
+    @BMI_LDFLAGS@
 
 #############################################################################
 #  Dummy test case (for debugging)

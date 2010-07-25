@@ -7,8 +7,9 @@
 using boost::format;
 
 
-GENERIC_FACTORY_CLIENT(std::string,
+GENERIC_FACTORY_CLIENT_TAG(std::string,
       iofwdutil::transform::GenericTransform,
+      iofwdutil::transform::GTDecode,
       iofwdutil::transform::ZLib,
       "ZLIB",
       zlib);
