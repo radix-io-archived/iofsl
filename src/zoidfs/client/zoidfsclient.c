@@ -3067,17 +3067,11 @@ resize_cleanup:
 }
 
 
-void zoidfs_write_vars_destroy (zoidfs_write_vars * z, int comp_enabled)
+void zoidfs_write_vars_destroy (zoidfs_write_vars * z)
 {
-    int x;
-    /* Destroy the local mem_starts/mem_sizes 
-    if (comp_enabled > 0)
-	{
-	    for (x = 0; x < comp_enabled; x++)
-		free((*z).mem_starts[x]);
-		}*/
+    /* Destroy the local mem_starts/mem_sizes */
     free((*z).mem_starts);	    
-    free((*z).mem_sizes);    
+    free((*z).mem_sizes);
 }
 
 void zoidfs_write_vars_init (zoidfs_write_vars * z,
@@ -3469,7 +3463,8 @@ int zoidfs_write(const zoidfs_handle_t *handle, size_t mem_count,
 
     zoidfs_write_generate_hints (&write_buffs);
     
-    if((op_hint_pipeline_size = zoidfs_hint_get(&(write_buffs.op_hint), ZOIDFS_PIPELINE_SIZE)) != NULL)
+    if((op_hint_pipeline_size = zoidfs_hint_get(&(write_buffs.op_hint), 
+						ZOIDFS_PIPELINE_SIZE)) != NULL)
     {
         op_hint_pipeline_size_req = atoi(op_hint_pipeline_size);
     }
@@ -3505,10 +3500,12 @@ int zoidfs_write(const zoidfs_handle_t *handle, size_t mem_count,
 
 	    if (pipeline_size == 0)
 		{
-		    write_buffs.mem_starts = compressed_send_starts;
+		    for (x = 0; x < compressed_send_count; x++)
+			{
+			    write_buffs.mem_starts[x] = compressed_send_starts[x];
+			    write_buffs.mem_sizes[x] = compressed_send_sizes[x];
+			}
 		    write_buffs.mem_count = compressed_send_count;
-		    write_buffs.mem_sizes = compressed_send_sizes;
-
 		}
 	}
 
@@ -3615,6 +3612,7 @@ int zoidfs_write(const zoidfs_handle_t *handle, size_t mem_count,
     total_size = 0;
     for (x = 0; x < write_buffs.mem_count; x++)
     	total_size += write_buffs.mem_sizes[x];
+
     /* Send the data */
 
     if (pipeline_size == 0 && total_size != 0)
@@ -3631,9 +3629,7 @@ int zoidfs_write(const zoidfs_handle_t *handle, size_t mem_count,
 		}
 	    else
 		{
-		    /* If the total size of the send is greater then
-		       the maximum send allowed by bmi. Send in increments */
-		    
+		   		    
 		    ret = bmi_comm_send (peer_addr, write_buffs.mem_starts[0], 
 					 write_buffs.mem_sizes[0],
 					 send_msg_data.tag, context);
@@ -3652,7 +3648,11 @@ int zoidfs_write(const zoidfs_handle_t *handle, size_t mem_count,
 
     else if (total_size != 0)
 	{   
-	    ret = zoidfs_write_pipeline_list (&write_buffs, pipeline_size, send_msg.tag, context, total_size);
+	    ret = zoidfs_write_pipeline_list (&write_buffs, 
+					      pipeline_size, 
+					      send_msg.tag, 
+					      context, 
+					      total_size);
 	}
 
     if (ret != ZFS_OK)
@@ -3667,41 +3667,46 @@ int zoidfs_write(const zoidfs_handle_t *handle, size_t mem_count,
   
     /* Decode the ION response */
     ZOIDFS_RECV_XDR_MEMCREATE(recv_msg);
-    if ((ret = zoidfs_xdr_processor(ZFS_OP_STATUS_T, &recv_msg.op_status, &recv_msg.recv_xdr)) != ZFS_OK) {
-        fprintf(stderr,"SEVER RESPONSE BAD\n");
-        goto write_cleanup;
-    }
+    if ((ret = zoidfs_xdr_processor(ZFS_OP_STATUS_T, 
+				    &recv_msg.op_status, 
+				    &recv_msg.recv_xdr)) != ZFS_OK) 
+	{
+	    fprintf(stderr,"SEVER RESPONSE BAD\n");
+	    goto write_cleanup;
+	}
     if(recv_msg.op_status == ZFS_OK)
-    {
-        file_sizes_transfer.data = (void *)file_sizes;
-        file_sizes_transfer.len = file_count;
-        if((ret = zoidfs_xdr_processor(ZFS_FILE_OFS_ARRAY_T, &file_sizes_transfer, &recv_msg.recv_xdr)) != ZFS_OK)
-        {
-            goto write_cleanup;
-        }
-    }
+	{
+	    file_sizes_transfer.data = (void *)file_sizes;
+	    file_sizes_transfer.len = file_count;
+	    if((ret = zoidfs_xdr_processor(ZFS_FILE_OFS_ARRAY_T, 
+					   &file_sizes_transfer, 
+					   &recv_msg.recv_xdr)) != ZFS_OK)
+		{
+		    goto write_cleanup;
+		}
+	}
 	   
  write_cleanup:
     /* Destroy the messages */
     ZOIDFS_RECV_MSG_DESTROY (recv_msg);
     ZOIDFS_SEND_MSG_DESTROY (send_msg);
-
-
-    zoidfs_write_vars_destroy (&write_buffs, compressed_send_count);
     free(bmi_mem_sizes);
-
-
+    zoidfs_transform_destroy(&transform);
+    zoidfs_write_vars_destroy(&write_buffs);
     if (header_stuffing != NULL)
 	{
-	    //free(header_buffer);
-
-	    //zoidfs_write_vars_destroy (&write_buffs, 0);
+	    free(header_buffer);	    
 	}
-    else
+
+    if (compression_type != NULL)
 	{
-	    //zoidfs_write_vars_destroy (&write_buffs, compressed_send_count);
+	    for (x = 0; x < compressed_send_count; x++)
+		{
+		    free(compressed_send_starts[x]);
+		}
+	    free(compressed_send_starts);
+	    free(compressed_send_sizes);
 	}
-
     
     return ret;
 }
