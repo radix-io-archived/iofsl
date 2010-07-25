@@ -93,6 +93,23 @@ struct Factory : public Singleton<Factory<KEY,BASE,TAG> >
       size_t size() const
       { return map_.size(); }
 
+
+      /**
+       * Output all the registered keys to the output iterator specified
+       */
+      template <typename OUT>
+      void keys (OUT out) const
+      {
+         typename ContainerType::const_iterator i1 (map_.begin());
+         typename ContainerType::const_iterator i2 (map_.end());
+         while (i1 != i2)
+         {
+            *out = i1->first;
+            ++out;
+            ++i1;
+         }
+      }
+
       Factory ()
       {
       }
