@@ -44,13 +44,13 @@ int zoidfs_transform_init (char * type, zoidfs_write_compress * comp)
     }
     else if (strcmp("BZIP:",type) == 0)
     {
-        #ifdef HAVE_BZLIB
+        /*#ifdef HAVE_BZLIB 
             bzip_compress_init (&(*comp).compression_struct,(*comp).total_in);
             (*comp).transform = &bzip_compress_hook;
-        #else
+        #else */
             fprintf(stderr,"ERROR! bzip library is not availible!\n");
             return -1;
-        #endif   
+        /* #endif   */
     }
     else if (strcmp("LZF:",type) == 0)
     {

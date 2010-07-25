@@ -73,3 +73,12 @@ src/c-util/hash/chash_adler32.c \
 src/c-util/transform/zoidfs_zlib.h \
 src/c-util/transform/zoidfs_zlib.c 
 endif
+
+# Disabled BZLIB build; is broken
+#if HAVE_BZLIB
+#src_c_util_libc_util_a_SOURCES += \
+#src/c-util/transform/zoidfs_bzip.c \
+#src/c-util/transform/zoidfs_bzip.h
+#endif
+
+

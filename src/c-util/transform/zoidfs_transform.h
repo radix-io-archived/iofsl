@@ -17,18 +17,26 @@ typedef struct
 } lzf_state_var;
 
 #endif
+
 #include <stdlib.h>
 #include <assert.h>
 #include "iofwd_config.h"
+
 #ifdef HAVE_ZLIB
 #include "zlib.h"
 #include "zoidfs_zlib.h"
 #endif
-#ifdef HAVE_BZLIB
-#include "bzlib.h"
+
+/* Disabled BZLIB build; Broken */
+/*
+#ifdef HAVE_BZLIB_DISABLED
+#include <bzlib.h>
 #include "zoidfs_bzip.h"
 #endif
+*/
+
 #include "zoidfs_lzf.h"
+
 #define SET_BINARY_MODE(file)
 #define ZOIDFS_TRANSFORM_ERROR  -9
 #define ZOIDFS_BUF_ERROR        -3

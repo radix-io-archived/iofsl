@@ -1,4 +1,4 @@
-#include "bzlib.h"
+#include <bzlib.h>
 
 int bzip_compress (z_stream * stream, void ** source, size_t * length, void ** dest,
                    size_t * output_length, int close);
