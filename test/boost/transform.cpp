@@ -1,15 +1,29 @@
+#include <memory>
 #include <boost/format.hpp>
 #include <boost/test/unit_test.hpp>
 #include <boost/tuple/tuple.hpp>
 #include <boost/function.hpp>
+#include <boost/ptr_container/ptr_vector.hpp>
+
+#include "iofwd_config.h"
 
 #include "iofwdutil/assert.hh"
 #include "iofwdutil/transform/LZF.hh"
 #include "iofwdutil/transform/LZFCompress.hh"
 #include "iofwdutil/transform/CopyTransform.hh"
-#include "iofwdutil/transform/IOFWDZLib.hh"
-#include "iofwdutil/transform/ZLibCompress.hh"
-#include "iofwdutil/transform/ZLibDecompress.hh"
+
+// @TODO: use factory so this can go
+#ifdef HAVE_ZLIB
+#  include "iofwdutil/transform/ZLibCompress.hh"
+#  include "iofwdutil/transform/ZLibDecompress.hh"
+#  include "iofwdutil/transform/IOFWDZLib.hh"
+#endif
+
+#ifdef HAVE_BZLIB
+#  include "iofwdutil/transform/BZCompress.hh"
+#  include "iofwdutil/transform/BZDecompress.hh"
+#endif
+
 #include "iofwdutil/Timer.hh"
 #include "test_common.hh"
 #include "MultiAlloc.hh"
@@ -186,34 +200,62 @@ static void testTransform (GenericTransform & encode, GenericTransform &
 }
 
 
+struct TestEntry
+{
+   TestEntry (const char * n, GenericTransform * e, GenericTransform * d)
+      : name(n), encode(e), decode(d) {}
+
+   virtual ~TestEntry ()
+   {}
+
+   const char * name;
+   std::auto_ptr<GenericTransform> encode;
+   std::auto_ptr<GenericTransform> decode;
+};
+
 // @TODO: once tag support is added to factory, find pairs of encode/decode
 // transforms automatically and test them.
 BOOST_FIXTURE_TEST_CASE ( transform_encode_decode, Dummy )
 {
    BOOST_TEST_MESSAGE("Testing encoding and decoding");
 
-   boost::scoped_ptr<GenericTransform> decode (
-         new iofwdutil::transform::LZF ());
-   boost::scoped_ptr<GenericTransform> encode (
-         new iofwdutil::transform::LZFCompress ());
-   boost::scoped_ptr<GenericTransform> copy (
-         new iofwdutil::transform::CopyTransform ());
-   boost::scoped_ptr<GenericTransform> zlibencode (
-         new iofwdutil::transform::ZLibCompress ());
-   boost::scoped_ptr<GenericTransform> zlibdecode (
-         new iofwdutil::transform::ZLibDecompress ());
-
    size_t loops = LOOPS * (isLongTestEnabled() ? 30 : 1);
+
+   boost::ptr_vector<TestEntry>  tests;
+
+
+   tests.push_back (new TestEntry("Copy",
+       new iofwdutil::transform::CopyTransform(),
+       new iofwdutil::transform::CopyTransform()));
+   
+    tests.push_back (new TestEntry("LZF",
+         new iofwdutil::transform::LZFCompress (),
+         new iofwdutil::transform::LZF ()));
+
+#ifdef HAVE_ZLIB
+   tests.push_back (new TestEntry("zlib-1",
+         new iofwdutil::transform::ZLibCompress (),
+         new iofwdutil::transform::ZLibDecompress ()));
+   // disabled since reset is not supported
+/*   tests.push_back (new TestEntry("zlib-2",
+         new iofwdutil::transform::ZLibCompress (),
+         new iofwdutil::transform::ZLib ()));
+         */
+#endif
+
+#ifdef HAVE_BZLIB
+   tests.push_back (new TestEntry("bzlib",
+         new iofwdutil::transform::BZCompress (),
+         new iofwdutil::transform::BZDecompress ()));
+#endif
 
    for (size_t i=0; i<loops; ++i)
    {
-      /*BOOST_TEST_MESSAGE("Testing copy transform");
-      testTransform (*copy, *copy);
-      BOOST_TEST_MESSAGE("Testing LZF transform");
-      testTransform (*encode, *decode);
-      */
-      BOOST_TEST_MESSAGE("Testing ZLIb transform");
-      testTransform (*zlibencode, *zlibdecode);
+      BOOST_FOREACH (const TestEntry & e, tests)
+      {
+      BOOST_TEST_MESSAGE(format("Testing %s") % e.name);
+      testTransform (*e.encode, *e.decode);
+      }
    }
 }
 
