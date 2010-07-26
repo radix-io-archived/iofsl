@@ -59,8 +59,11 @@ IOFWDWriteRequest::~IOFWDWriteRequest ()
    if (param_.bmi_mem_sizes)
       h.hafree(param_.bmi_mem_sizes);
 
-   h.hafree(compressed_mem_[0]);
-   compressed_mem_[0] = NULL;
+   if(NULL != compressed_mem_)
+   {
+      h.hafree(compressed_mem_[0]);
+      compressed_mem_[0] = NULL;
+   }
 
    h.hafree(compressed_mem_);
    compressed_mem_ = NULL;
