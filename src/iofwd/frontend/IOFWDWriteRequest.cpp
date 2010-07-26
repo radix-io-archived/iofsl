@@ -3,7 +3,6 @@
 #include "zoidfs/zoidfs-proto.h"
 #include "iofwd_config.h"
 #include "zoidfs/util/ZoidFSHints.hh"
-#include "src/iofwdutil/transform/IOFWDZLib.hh"
 
 
 namespace iofwd

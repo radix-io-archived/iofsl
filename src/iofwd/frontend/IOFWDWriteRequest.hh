@@ -13,6 +13,7 @@
 #include "iofwdutil/hash/HashFactory.hh"
 #include "iofwdutil/hash/SHA1Simple.hh"
 #include "iofwdutil/hash/HashAutoRegister.hh"
+#include "src/iofwdutil/transform/IOFWDZLib.hh"
 
 #include "iofwdutil/atomics.hh"
 
