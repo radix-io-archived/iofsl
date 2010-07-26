@@ -25,48 +25,79 @@ int passthrough (void * stream, void ** source, size_t * length, void ** dest,
     return ZOIDFS_BUF_ERROR;
 }
 
+int zoidfs_transform_memcpy (void * stream, void ** source, size_t * length, void ** dest,
+			     size_t * output_length, int close)
+{
+  /* Memory copy transform. Copy's input memory into output memory */
+  if (*output_length > *length)
+    {
+      memcpy ((*dest), (*source), (*length));
+      (*source) += *length;
+      *output_length =  *output_length - *length;
+      (*dest) += *length;
+      *length = 0;
+      if (close != 0)
+	{
+	  return ZOIDFS_STREAM_END;
+	}
+    }
+  else
+    {
+      memcpy ((*dest), (*source), (*output_length));
+      (*source) += *output_length;
+      *length = *length - *output_length;        
+      (*dest) += *output_length;
+      *output_length = 0;           
+    } 
+  return ZOIDFS_BUF_ERROR;
+}
 int zoidfs_transform_init (char * type, zoidfs_write_compress * comp)
 {
-    int level = -1;
-    (*comp).intern_buf = NULL;
-    (*comp).buf_position = 0;
-    (*comp).type = type;
-
-    if (strcmp("ZLIB:",type) == 0)
+  int level = -1;
+  (*comp).intern_buf = NULL;
+  (*comp).buf_position = 0;
+  (*comp).type = type;
+  
+  if (strcmp("ZLIB:",type) == 0)
     { 
-        #ifdef HAVE_ZLIB
-            compress_init ("zlib",level,&(*comp).compression_struct);
-            (*comp).transform = &zlib_compress_hook;
-        #else
-            fprintf(stderr,"Error! Zlib library is not availible!\n");
-            return -1;
-        #endif
+#ifdef HAVE_ZLIB
+      compress_init ("zlib",level,&(*comp).compression_struct);
+      (*comp).transform = &zlib_compress_hook;
+#else
+      fprintf(stderr,"Error! Zlib library is not availible!\n");
+      return -1;
+#endif
     }
-    else if (strcmp("BZIP:",type) == 0)
+  else if (strcmp("BZIP:",type) == 0)
     {
-        /*#ifdef HAVE_BZLIB 
-            bzip_compress_init (&(*comp).compression_struct,(*comp).total_in);
+      /*#ifdef HAVE_BZLIB 
+	bzip_compress_init (&(*comp).compression_struct,(*comp).total_in);
             (*comp).transform = &bzip_compress_hook;
-        #else */
-            fprintf(stderr,"ERROR! bzip library is not availible!\n");
-            return -1;
-        /* #endif   */
+	    #else */
+      fprintf(stderr,"ERROR! bzip library is not availible!\n");
+      return -1;
+	/* #endif  */
     }
-    else if (strcmp("LZF:",type) == 0)
+  else if (strcmp("LZF:",type) == 0)
     {
-        #ifdef HAVE_LZF
-            lzf_compress_init (&(*comp).compression_struct,(*comp).total_in);
-            (*comp).transform = &lzf_compress_hook;
-        #else
-            fprintf(stderr,"ERROR! LZF library is not availible!\n");
-            return -1;
-        #endif
+#ifdef HAVE_LZF
+      lzf_compress_init (&(*comp).compression_struct,(*comp).total_in);
+      (*comp).transform = &lzf_compress_hook;
+#else
+      fprintf(stderr,"ERROR! LZF library is not availible!\n");
+      return -1;
+#endif
     }
-    else if (strcmp("passthrough",type) == 0)
+  else if (strcmp("passthrough",type) == 0)
     {
-        (*comp).transform = &passthrough;                    
+      (*comp).transform = &passthrough;                    
     }
-    return 0;
+  else if (strcmp("memcpy:", type) == 0)
+    {
+      (*comp).transform = &zoidfs_transform_memcpy;
+    }
+  
+  return 0;
 }
 
 void zoidfs_transform_destroy (zoidfs_write_compress * comp)
