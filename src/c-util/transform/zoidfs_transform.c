@@ -94,19 +94,19 @@ int zoidfs_transform_init (char * type_str, zoidfs_write_compress * comp)
     }
   else if (strcmp("bzip",type) == 0)
     {
-      /*#ifdef HAVE_BZLIB */
-      /* Get the level from the options 
+#ifdef HAVE_BZLIB 
+      /* Get the level from the options */
       option = strtok(NULL,":");
       if (option != NULL)
 	level = atoi(option);
       
-      /* set up the compression struct 
-      bzip_compress_init (&(*comp).compression_struct,(*comp).total_in);
-      (*comp).transform = &bzip_compress_hook; */
-      /*#else */
+      /* set up the compression struct */
+      bzip_compress_init ("bzip", 9, 0, 30, &(*comp).compression_struct);
+      (*comp).transform = &bzip_compress_hook; 
+#else 
       fprintf(stderr,"ERROR! bzip library is not availible!\n");
       return -1;
-      /*#endif  */
+#endif 
     }
   else if (strcmp("lzf",type) == 0)
     {

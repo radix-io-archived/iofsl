@@ -3221,7 +3221,7 @@ void zoidfs_write_create_header ( zoidfs_write_vars * write_buffs,
     size_t * buffer_sizes = malloc(write_buffs->mem_count * sizeof(size_t));
     zoidfs_write_compress transform;
 
-    zoidfs_transform_init ("passthrough", &transform);
+    zoidfs_transform_init ("passthrough:", &transform);
 
     BMI_get_info(peer_addr,BMI_GET_UNEXP_SIZE,(void *)&psize);
     (*buffer) = malloc(psize * sizeof(char));
@@ -3353,7 +3353,7 @@ int zoidfs_write_pipeline_list (zoidfs_write_vars * write_buffs,
 	    ret = bmi_comm_send_list (peer_addr, buffer_full, (const void **)buffer,
 				      bmi_mem_sizes, tag, context, bmi_total_len);
 	    if (compression_type != NULL &&
-		strcmp(compression_type,"passthrough") != 0)
+		strcmp(compression_type,"passthrough:") != 0)
 		for ( x = 0; x < buffer_full; x++)
 		    free(buffer[x]);
 	    buffer_full = write_buffs->mem_count;
@@ -3450,7 +3450,7 @@ int zoidfs_write(const zoidfs_handle_t *handle, size_t mem_count,
 
     /* Initialize the transform to passthrough */
 
-    zoidfs_transform_init ("passthrough", &transform);
+    zoidfs_transform_init ("passthrough:", &transform);
 
 
     ZOIDFS_SEND_MSG_INIT (send_msg, ZOIDFS_PROTO_WRITE);

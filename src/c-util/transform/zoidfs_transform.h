@@ -30,13 +30,11 @@ typedef struct
 #include "zoidfs_zlib.h"
 #endif
 
-/* Disabled BZLIB build; Broken */
-/*
-#ifdef HAVE_BZLIB_DISABLED
-#include <bzlib.h>
+#ifdef HAVE_BZLIB
+//#include <bzlib.h>
 #include "zoidfs_bzip.h"
 #endif
-*/
+
 
 #include "zoidfs_lzf.h"
 
