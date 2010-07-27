@@ -283,3 +283,66 @@ int zoidfs_transform_write_request (zoidfs_write_compress * transform,
 
   return ret;  
 }
+typedef struct
+{
+  void * stream;
+  char * type;
+} zoidfs_decompress;
+
+typedef struct
+{
+  void ** read_buf;
+  size_t * read_buf_size;
+  size_t read_mem_count;
+  void ** output_buf;
+  size_t * output_sizes;
+  size_t output_mem_count;
+} zoidfs_read_vars;
+ 
+int zoidfs_transform_decompress ( zoidfs_decompress * transform, 
+				  void ** in_buf, size_t * in_size,
+				  void *** out_buf, size_t ** out_size,
+				  size_t * outputs_filled, size_t mem_count)
+{
+  int x = 0;
+  int ret = 0;
+  (*outputs_filled) = 0;
+  do
+    {
+      //ret = transform->decompress(in_buf, in_size, &(*out_buf)[x], &(*out_size)[x]);
+      if (ret == ZOIDFS_TRANSFORM_ERROR)
+	return ret;
+      if (in_size == 0)
+	return ZOIDFS_BUF_ERROR;
+      if ((*out_size)[x] == 0)
+	{
+	  x++;
+	  (*outputs_filled) ++;
+	}
+    } while (x != mem_count);
+  return ZOIDFS_OUTPUT_FULL;
+}
+int zoidfs_transform_read_request (zoidfs_decompress * transform,
+				   zoidfs_read_vars * read_buffs,
+				   size_t * total_len
+				   )
+{
+  int x, ret;
+  size_t * outputs_filled = 0;
+  for (x = 0; x < read_buffs->read_mem_count; x++)
+    {
+      if (read_buffs->read_buf_size[x] > 0)
+	{
+	  ret = zoidfs_transform_decompress (transform,
+					     &read_buffs->read_buf[x],
+					     &read_buffs->read_buf_size[x],
+					     &read_buffs->output_buf,
+					     &read_buffs->output_sizes,
+					     &outputs_filled,
+					     read_buffs->output_mem_count);
+	}
+      
+      if (ret == ZOIDFS_OUTPUT_FULL || ret == ZOIDFS_COMPRESSION_DONE)
+	return ret;
+    }
+}
