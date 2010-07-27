@@ -1,5 +1,5 @@
 #include "zoidfs_transform.h"
-
+#include <string.h>
 int passthrough (void * stream, void ** source, size_t * length, void ** dest,
                  size_t * output_length, int close)
 {
@@ -51,16 +51,40 @@ int zoidfs_transform_memcpy (void * stream, void ** source, size_t * length, voi
     } 
   return ZOIDFS_BUF_ERROR;
 }
-int zoidfs_transform_init (char * type, zoidfs_write_compress * comp)
+int zoidfs_transform_init (char * type_str, zoidfs_write_compress * comp)
 {
+  char * tmp_type = malloc(sizeof(char) * strlen(type_str) + 1);
+  char * main_type;
+  int x;
   int level = -1;
-  (*comp).intern_buf = NULL;
-  (*comp).buf_position = 0;
+  char * option;
+  char * type;
+
+  /* Get token for the name of the transform type */
+  strcpy (tmp_type, type_str);
+  main_type = strtok(tmp_type," :");
+  type = malloc((strlen(main_type) + 1) * sizeof(char));
+
+  /* Make the type lower case (for strcmp reasons) */
+  for (x = 0; x < strlen(main_type); x++)
+    type[x] = tolower(main_type[x]);
+  type[strlen(main_type)] = '\000';
+
+  /* Setup the transform struct */
   (*comp).type = type;
-  
-  if (strcmp("ZLIB:",type) == 0)
+  (*comp).buf_position = 0;
+  (*comp).intern_buf = NULL;
+
+  if (strcmp("zlib",type) == 0)
     { 
 #ifdef HAVE_ZLIB
+      /* Grab the level from the input string */
+      option = strtok(NULL," :");
+      if (option != NULL)
+	level = atoi(option);
+
+      /* set up the compression struct and function pointer for 
+	 transform */
       compress_init ("zlib",level,&(*comp).compression_struct);
       (*comp).transform = &zlib_compress_hook;
 #else
@@ -68,17 +92,23 @@ int zoidfs_transform_init (char * type, zoidfs_write_compress * comp)
       return -1;
 #endif
     }
-  else if (strcmp("BZIP:",type) == 0)
+  else if (strcmp("bzip",type) == 0)
     {
-      /*#ifdef HAVE_BZLIB 
-	bzip_compress_init (&(*comp).compression_struct,(*comp).total_in);
-            (*comp).transform = &bzip_compress_hook;
-	    #else */
+      /*#ifdef HAVE_BZLIB */
+      /* Get the level from the options 
+      option = strtok(NULL,":");
+      if (option != NULL)
+	level = atoi(option);
+      
+      /* set up the compression struct 
+      bzip_compress_init (&(*comp).compression_struct,(*comp).total_in);
+      (*comp).transform = &bzip_compress_hook; */
+      /*#else */
       fprintf(stderr,"ERROR! bzip library is not availible!\n");
       return -1;
-	/* #endif  */
+      /*#endif  */
     }
-  else if (strcmp("LZF:",type) == 0)
+  else if (strcmp("lzf",type) == 0)
     {
 #ifdef HAVE_LZF
       lzf_compress_init (&(*comp).compression_struct,(*comp).total_in);
@@ -92,11 +122,17 @@ int zoidfs_transform_init (char * type, zoidfs_write_compress * comp)
     {
       (*comp).transform = &passthrough;                    
     }
-  else if (strcmp("memcpy:", type) == 0)
+  else if (strcmp("memcpy", type) == 0)
     {
       (*comp).transform = &zoidfs_transform_memcpy;
     }
-  
+  else
+    {
+      free(type);
+      assert("Transform not recognized" == NULL);
+    }
+
+  free(tmp_type);
   return 0;
 }
 
