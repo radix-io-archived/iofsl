@@ -19,11 +19,169 @@
 int lzf_compress_init (void ** library, size_t buffer_size)
 {
     lzf_state_var * tmp = malloc(sizeof(lzf_state_var));
-    (*tmp).buf = malloc(LZF_BUFF_SIZE);
-    (*tmp).cur_position = 0;
-
+    int xdr_header_size;
+    xdr_header_size = xdr_sizeof((xdrproc_t)xdr_int, &xdr_header_size);  
+    (*tmp).out_buf = malloc(LZF_BUFF_SIZE + xdr_header_size);
+    (*tmp).out_buf_size = LZF_BUFF_SIZE;
+    (*tmp).out_buf_len = 0;
+    (*tmp).out_buf_pos = 0;
+    (*tmp).in_buf = malloc(LZF_BUFF_SIZE + xdr_header_size);
+    (*tmp).in_buf_size = LZF_BUFF_SIZE;
+    (*tmp).in_buf_len = 0;
+    (*tmp).in_buf_pos = 0;
+    (*tmp).out_buf_type = 'U';
     (*library) = tmp;     
     return 0;
+}
+
+ inline int lzf_compress_block (lzf_state_var * state, void ** input, size_t * in_length, int close)
+{
+  int ret = 0;
+  state->out_buf_type = 'C';
+  /* if there is some uncompressed input buffer remaining */
+  if (state->in_buf_len > 0)
+    {
+      /* if there is enough data to create a block */
+      if ((*in_length) + state->in_buf_len >= LZF_BUFF_SIZE)
+	{
+	  memcpy(state->in_buf, (*input), LZF_BUFF_SIZE - state->in_buf_len);
+	  (*in_length) -= LZF_BUFF_SIZE - state->in_buf_len;
+	  (*input) += LZF_BUFF_SIZE - state->in_buf_len;
+
+	  state->in_buf -= state->in_buf_pos;
+	  ret = lzf_compress (state->in_buf, LZF_BUFF_SIZE, state->out_buf, LZF_BUFF_SIZE);	
+	  if (ret == 0)
+	    {
+	      memcpy(state->out_buf, state->in_buf, LZF_BUFF_SIZE);
+	      ret = LZF_BUFF_SIZE;
+	      state->out_buf_type = 'U';
+	    }
+	  state->out_buf_len = ret;
+	  state->in_buf_len = 0;
+	  state->in_buf_pos = 0;
+	  return ret;
+	}
+      /* If the close flag is on, compress final block and write out */
+      else if (close == ZOIDFS_CLOSE)
+	{
+	  memcpy(state->in_buf, (*input), (*in_length));
+	  (*input) += (*in_length);
+
+	  state->in_buf -= state->in_buf_pos;
+	  ret = lzf_compress (state->in_buf, state->in_buf_pos + (*in_length),
+			      state->out_buf, LZF_BUFF_SIZE);
+	  if (ret == 0)
+	    {
+	      memcpy(state->out_buf, state->in_buf, state->in_buf_pos + (*in_length));
+	      ret = state->in_buf_pos + (*in_length);
+	      state->out_buf_type = 'U';
+	    }
+	  state->out_buf_len = ret;
+	  state->in_buf_len = 0;
+	  state->in_buf_pos = 0;
+	  (*in_length) = 0;
+
+	  return ZOIDFS_COMPRESSION_DONE;	  
+	}
+      else
+	{
+	  memcpy(state->in_buf, (*input), (*in_length));
+	  state->in_buf_len += (*in_length);
+	  state->in_buf += (*in_length);
+	  state->in_buf_pos += (*in_length);
+	  (*input) += (*in_length);
+	  (*in_length) = 0;
+	  return ZOIDFS_BUF_ERROR;
+	}
+    }
+  else
+    {
+      /* If there is enough input to consume one full block */
+      if ((*in_length) > LZF_BUFF_SIZE)
+	{
+	  ret = lzf_compress((*input), LZF_BUFF_SIZE, state->out_buf, LZF_BUFF_SIZE);
+	  if (ret == 0)
+	    {
+	      memcpy(state->out_buf, state->in_buf, LZF_BUFF_SIZE);
+	      ret = LZF_BUFF_SIZE;
+	      state->out_buf_type = 'U';
+	    }
+	  (*input) += LZF_BUFF_SIZE;
+	  (*in_length) -= LZF_BUFF_SIZE;
+	  state->out_buf_len = ret;
+	  state->out_buf_pos = 0;
+	  return ret;
+	}
+      /* else copy it to a buffer for a another trial */
+      else
+	{
+	  memcpy(state->in_buf, (*input), (*in_length));
+	  state->in_buf_len += (*in_length);
+	  state->in_buf += (*in_length);
+	  state->in_buf_pos += (*in_length);
+	  (*input) += (*in_length);
+	  (*in_length) = 0;
+	  return ZOIDFS_BUF_ERROR;
+	}
+    }
+  return ZOIDFS_TRANSFORM_ERROR;
+}
+ inline int lzf_dump_comp_buffer(lzf_state_var * state, void ** output, size_t * output_left)
+{
+  size_t pos_adj;
+  int out_buf_rem = state->out_buf_len - state->out_buf_pos;
+  /* Writes out any output buffer (compressed buffer) that could not be 
+     placed into output last time due to output buffer being full */
+
+  if (state->out_buf_len > 0)
+    {
+      /* If there is enough output to write the full stored buffer */
+      if (  (int)((*output_left) - out_buf_rem)  > 0)
+      {
+	  /* Make the copy */
+	  memcpy((*output), state->out_buf, out_buf_rem);
+	  (*output_left) -= out_buf_rem;
+	  (*output) += out_buf_rem;
+	  
+	  /* Reset the output buffer state */
+	  state->out_buf_len = 0;
+	  state->out_buf -= state->out_buf_pos;
+	  state->out_buf_pos = 0;
+	  return 0;
+	}
+      /* else: write out what you can */
+      else
+	{
+	  /* how much data to write out to the output buffer */
+	  pos_adj = (*output_left);
+
+	  /* copy what we can to the output buffer */
+	  memcpy((*output),state->out_buf, pos_adj);
+	  (*output) += pos_adj;
+	  (*output_left) = 0;
+
+	  /* Adjust the state values to reflect how much data is remaining */
+	  state->out_buf += pos_adj;
+	  state->out_buf_pos += pos_adj;
+	  return ZOIDFS_OUTPUT_FULL;
+	}
+    }
+  return 0;
+}
+
+inline void lzf_compress_gen_header (lzf_state_var * state, int len)
+{
+  XDR    xdr_header_data;
+  int    xdr_header_size = len;    
+  char * xdr_buffer = malloc(len * sizeof(char)); 
+  xdrmem_create(&xdr_header_data,xdr_buffer,xdr_header_size,XDR_ENCODE); 
+  xdr_int(&xdr_header_data,&state->out_buf_len);
+  ((char *)state->out_buf)[0] = state->out_buf_type;
+  state->out_buf += 1;
+  memcpy(state->out_buf, xdr_buffer, xdr_header_size);
+  state->out_buf -= 1;
+  state->out_buf_len += 5;
+
 }
 
 int lzf_compress_hook (void * stream, void ** source, size_t * length, void ** dest,
@@ -34,137 +192,56 @@ int lzf_compress_hook (void * stream, void ** source, size_t * length, void ** d
 int lzf_compress_data (lzf_state_var * stream, void ** source, size_t * length, void ** dest,
                        size_t * output_length, int close)
 {
-    int count = 0;
-    /* Sets up the xdr encoding */   
-    XDR  header_data;
-    int header_size = 0;    
-    header_size = xdr_sizeof((xdrproc_t)xdr_int, &header_size);
-    char xdr_buffer[header_size]; 
-    
-    /* Stores the input data */
-    void * data = (*source);
-    int data_pos = 0;
+  size_t lzf_block_size = LZF_BUFF_SIZE;
+  
+  int count = 0;
+  int comp_ret = 0;
+  int ret = 0;
+  /* Sets up the xdr encoding */
+   
+  XDR    xdr_header_data;
+  int    xdr_header_size = 0;    
+  char * xdr_buffer; 
 
-    /* Compressed buffer that will be passed into lzf_compress_data
-       to store precompressed data +  headers */
-    void * compressed = (*dest);
-    int comp_pos = 0;
-    int comp_buf_size = *output_length;
+  /* Set up the header size and internal buffer size */
+  if (*length == 0 && close != ZOIDFS_CLOSE)
+	 return ZOIDFS_BUF_ERROR;
 
-    /* internal state buffer to store possible overflows */   
-    void * buffer = malloc(LZF_BUFF_SIZE + header_size + 1);
-    int buf_pos = 0;
-    int buf_left = (*stream).cur_position;
-    int x;
-    int ret = 0;
+  xdr_header_size = xdr_sizeof((xdrproc_t)xdr_int, &xdr_header_size);
 
-    /* Write whats left hanging around in the buffers */
-    if (buf_left > 0 && (comp_buf_size - comp_pos) > buf_left)
+  /* Dump any remaining output buffer */
+
+  ret = lzf_dump_comp_buffer (stream, dest, output_length);
+
+  if (ret == ZOIDFS_OUTPUT_FULL)
+    return ret;
+ 
+  do 
     {
-        memcpy (compressed, buffer, buf_left);
-        compressed += buf_left;
-        comp_pos += buf_left;
-        buffer -= buf_pos;
-        buf_pos = 0;
-        buf_left = 0;
+      /* make some room for the header */
+      stream->out_buf += xdr_header_size + 1;
+      
+      comp_ret = lzf_compress_block (stream, source, length, close);
+      stream->out_buf -= xdr_header_size + 1;
+      if (comp_ret == ZOIDFS_BUF_ERROR)
+    	  break;
+      lzf_compress_gen_header (stream, xdr_header_size);
+
+      ret = lzf_dump_comp_buffer (stream, dest, output_length);
+      if (ret == ZOIDFS_OUTPUT_FULL)
+	break;
     }
-    /* if for some reason we cant write this data out return */
-    else if (buf_left > 0)
-    {
-        return ZOIDFS_BUF_ERROR;
-    }
-    /* if there is no input, check to see if the EOS flag was set
-        if so exit. (No buffer left at this point) */
-    if ((*length) == 0)
-        if ((close) == ZOIDFS_CLOSE)
-            return ZOIDFS_STREAM_END;
-        else
-            return ZOIDFS_BUF_ERROR;
+  while (comp_ret != ZOIDFS_COMPRESSION_DONE);
+  /* Create header for packet */
 
-    /* Compress the data until the buffer is full */
-    while (comp_pos < comp_buf_size)
-    {
-       /* Mark the buffer as compressed */
-       ((char *)buffer)[0] = 'C';
-
-       /* move the buffer forward to make room for xdr_int */
-       buffer += header_size + 1;  
-       
-       /* Compressed the data */
-       ret = lzf_compress (data, LZF_BUFF_SIZE, buffer, LZF_BUFF_SIZE);
-
-       /* If the compression fails, just put raw data there */
-       if (ret == 0)
-       {
-            /* Moveing the buffer back to set uncompressed flag */
-            buffer -= header_size + 1;  
-            ((char *)buffer)[0] = 'U';
-            
-            /* Advancing the buffer back */
-            buffer += header_size + 1;                  
-            memcpy(buffer, data, LZF_BUFF_SIZE);
-            ret = LZF_BUFF_SIZE;                
-       }
-       buffer -= header_size + 1;   
-       data_pos += LZF_BUFF_SIZE;
-
-       /* If at end of data reset pointer */
-       if (data_pos > (*length))
-           data -= data_pos - LZF_BUFF_SIZE;
-       else
-           data += LZF_BUFF_SIZE;
-
-       /*Generate header */
-       xdrmem_create(&header_data,xdr_buffer,header_size,XDR_ENCODE); 
-       xdr_int(&header_data,&ret);
-       
-       /* Copy the header data */
-       for (x = 0; x < header_size; x++)
-       {
-            ((char *)buffer)[x + 1] = xdr_buffer[x];
-       }
-
-       xdr_destroy(&header_data);
-       buf_left = ret + header_size + 1;
-       /* If there is enough buffer to write out the compressed 
-            data fully */
-       if (buf_left < (comp_buf_size - comp_pos))
-       {
-            memcpy (compressed,buffer,buf_left);
-            compressed += buf_left;
-            comp_pos += buf_left;
-            buf_left = 0;
-            buf_pos = 0;
-       }
-       /* else: write out what you can and signal to caller that you
-            need more room */
-       else 
-       {
-            buf_pos = (comp_buf_size - comp_pos);
-            memcpy(compressed,buffer,buf_pos);
-            compressed += buf_pos;
-            buf_left = buf_left - buf_pos;
-            buffer += buf_pos;
-            comp_pos += buf_pos;
-            break;
-        }
-        /* if the data_position is greater then or equal to the length
-            of the output string exit the compression loop */
-        if (data_pos >= (*length))
-            break;
-    }
-    buf_left = (*stream).cur_position;
-
-    (*output_length) = (*output_length) - comp_pos;
-    if (data_pos > (*length))
-        (*length) = 0;
-    else
-        (*length) = (*length) - data_pos;
-    (*dest) = compressed;
-    (*source) = data;
-    if ((*length) == 0  || (*output_length) == 0)
-        return ZOIDFS_BUF_ERROR;
+  if (comp_ret == ZOIDFS_COMPRESSION_DONE)
+	 return ZOIDFS_STREAM_END;
+  if ((*length) == 0  || (*output_length) == 0)
+    return ZOIDFS_BUF_ERROR;
 }
+
+
+ 
 /***********************
  Decompression Function
 

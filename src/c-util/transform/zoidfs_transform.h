@@ -14,8 +14,16 @@
 #define LZF_BUFF_SIZE 64000
 typedef struct
 {
-    void * buf;
-    int cur_position;
+  void * out_buf;     /* Compressed output buffer yet to be written */
+  size_t out_buf_pos; /* Output buffer position */
+  size_t out_buf_size;/* Maximum size of the output buffer */
+  size_t out_buf_len; /* Current length of written output buffer */
+  char out_buf_type;
+  void * in_buf;
+  size_t in_buf_pos;
+  size_t in_buf_size;
+  size_t in_buf_len;
+  
     int buf_size;
 } lzf_state_var;
 
