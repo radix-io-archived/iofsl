@@ -173,7 +173,6 @@ IOFWDReadRequest::ReqParam & IOFWDReadRequest::decodeParam ()
 	if(rem_bytes_ > 0)
 	{
 	  pipeline_ops_++;
-	  partial_slot_ = true;
 	}
 
 #ifndef USE_TASK_HA

@@ -34,7 +34,6 @@ class  IOFWDReadRequest
      char   **compressed_mem_;
      size_t compressed_size_;
      size_t rem_bytes_;
-     bool   partial_slot_;
      size_t next_slot_;
      size_t user_callbacks_;
      size_t pipeline_ops_;
@@ -49,7 +48,6 @@ public:
 	compressed_mem_(NULL),
 	compressed_size_(0),
 	rem_bytes_(0),
-	partial_slot_(false),
         next_slot_(0),
 	user_callbacks_(0),
 	pipeline_ops_(0)
