@@ -283,37 +283,96 @@ int zoidfs_transform_write_request (zoidfs_write_compress * transform,
 
   return ret;  
 }
-typedef struct
-{
-  void * stream;
-  char * type;
-} zoidfs_decompress;
 
-typedef struct
+int zoidfs_transform_decompress_init (char * type_str, zoidfs_decompress * comp)
 {
-  void ** read_buf;
-  size_t * read_buf_size;
-  size_t read_mem_count;
-  void ** output_buf;
-  size_t * output_sizes;
-  size_t output_mem_count;
-} zoidfs_read_vars;
- 
+  char * tmp_type = malloc(sizeof(char) * strlen(type_str) + 1);
+  char * main_type;
+  char * type;
+  int x;
+
+  /* Get token for the name of the transform type */
+  strcpy (tmp_type, type_str);
+  main_type = strtok(tmp_type," :");
+  type = malloc((strlen(main_type) + 1) * sizeof(char));
+
+  /* Make the type lower case (for strcmp reasons) */
+  for (x = 0; x < strlen(main_type); x++)
+    type[x] = tolower(main_type[x]);
+  type[strlen(main_type)] = '\000';
+
+  /* Setup the transform struct */
+  comp->type = type; 
+
+  if (strcmp("zlib",type) == 0)
+    { 
+#ifdef HAVE_ZLIB
+      zlib_decompress_init (&(comp->transform));
+      comp->decompress = &zlib_decompress;
+#else
+      fprintf(stderr,"Error! Zlib library is not availible!\n");
+      return -1;
+#endif
+    }
+  /*
+  else if (strcmp("bzip",type) == 0)
+    {
+#ifdef HAVE_BZLIB 
+      bzip_decompress_init (&(comp->compression_struct));
+      (*comp).transform = &bzip_compress_hook; 
+#else 
+      fprintf(stderr,"ERROR! bzip library is not availible!\n");
+      return -1;
+#endif 
+    }
+  else if (strcmp("lzf",type) == 0)
+    {
+#ifdef HAVE_LZF
+      lzf_decompress_init (&(comp->compression_struct));
+      (*comp).transform = &lzf_compress_hook;
+#else
+      fprintf(stderr,"ERROR! LZF library is not availible!\n");
+      return -1;
+#endif
+    }
+  else if (strcmp("passthrough",type) == 0)
+    {
+      (*comp).transform = &passthrough;                    
+    }
+  else if (strcmp("memcpy", type) == 0)
+    {
+      (*comp).transform = &zoidfs_transform_memcpy;
+    }
+  else
+    {
+      free(type);
+      assert("Transform not recognized" == NULL);
+      }*/
+
+  free(tmp_type);
+  return 0;
+
+
+}
+
+
 int zoidfs_transform_decompress ( zoidfs_decompress * transform, 
 				  void ** in_buf, size_t * in_size,
 				  void *** out_buf, size_t ** out_size,
-				  size_t * outputs_filled, size_t mem_count)
+				  size_t * outputs_filled, size_t mem_count, int close)
 {
   int x = 0;
   int ret = 0;
   (*outputs_filled) = 0;
   do
     {
-      //ret = transform->decompress(in_buf, in_size, &(*out_buf)[x], &(*out_size)[x]);
+      ret = transform->decompress(transform->transform, in_buf, in_size, &(*out_buf)[x], &(*out_size)[x], 0);
       if (ret == ZOIDFS_TRANSFORM_ERROR)
-	return ret;
-      if (in_size == 0)
-	return ZOIDFS_BUF_ERROR;
+    	  return ret;
+      if (in_size == 0 && close != ZOIDFS_CLOSE)
+    	  return ZOIDFS_BUF_ERROR;
+      if (ret == ZOIDFS_STREAM_END)
+    	  return ret;
       if ((*out_size)[x] == 0)
 	{
 	  x++;
@@ -324,13 +383,14 @@ int zoidfs_transform_decompress ( zoidfs_decompress * transform,
 }
 int zoidfs_transform_read_request (zoidfs_decompress * transform,
 				   zoidfs_read_vars * read_buffs,
-				   size_t * total_len
+				   size_t * outputs_filled
 				   )
 {
-  int x, ret;
-  size_t * outputs_filled = 0;
+  int x, ret = 0;
+  (*outputs_filled) = 0;
   for (x = 0; x < read_buffs->read_mem_count; x++)
     {
+
       if (read_buffs->read_buf_size[x] > 0)
 	{
 	  ret = zoidfs_transform_decompress (transform,
@@ -339,10 +399,11 @@ int zoidfs_transform_read_request (zoidfs_decompress * transform,
 					     &read_buffs->output_buf,
 					     &read_buffs->output_sizes,
 					     &outputs_filled,
-					     read_buffs->output_mem_count);
+					     read_buffs->output_mem_count, 0);
+
 	}
-      
-      if (ret == ZOIDFS_OUTPUT_FULL || ret == ZOIDFS_COMPRESSION_DONE)
-	return ret;
+      if (ret == ZOIDFS_OUTPUT_FULL || ret == ZOIDFS_STREAM_END ||
+	  ret == ZOIDFS_TRANSFORM_ERROR)
+    	  return ret;
     }
 }

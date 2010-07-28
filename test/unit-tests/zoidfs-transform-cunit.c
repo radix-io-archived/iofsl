@@ -74,6 +74,27 @@ test_transform_data build_test_data (void)
     x.write_buffs = z;
     return x;
 }
+
+zoidfs_read_vars build_decompression (char ** data, size_t * len, size_t count)
+{
+  int y;
+  zoidfs_read_vars x;
+  x.read_buf = (void **) data;
+  x.read_buf_size = len;
+  x.read_mem_count = count;
+  char ** out_data = malloc(sizeof(char *) * num_test_data);
+  size_t * out_data_len = malloc(sizeof(size_t) * num_test_data);
+  for (y = 0; y < num_test_data; y++)
+    {
+      out_data[y] = malloc(sizeof(char) * test_data_len[y]);
+      out_data_len[y] = test_data_len[y];
+    }
+  x.output_buf = (void **)out_data;
+  x.output_sizes = out_data_len;
+  x.output_mem_count = num_test_data;
+  return x;
+}
+
 void test_transform_write (char * transfer_type, int out_buf_size, 
 			   int num_buffs, int num_buffs_to_fill)
 {
@@ -87,9 +108,13 @@ void test_transform_write (char * transfer_type, int out_buf_size,
   size_t buf_count = num_buffs;
   size_t total_len = 0;
   int close = 0;
+  size_t total_compressed_len = 0;
   size_t * local_mem_sizes = malloc(num_test_data * sizeof(size_t));
   void ** local_mem_starts = malloc(num_test_data * sizeof(void *));
-  FILE * test_file = fopen("/tmp/test.txt","w");
+
+  char ** compressed_mem_buffers = malloc(num_test_data * num_buffs * sizeof(char *));
+  size_t * compressed_mem_sizes = malloc(num_test_data * num_buffs * sizeof(size_t));
+  size_t compressed_num_buffs = 0;
   char ** buffer = malloc(sizeof(char *) * num_test_data);
   size_t * buffer_sizes = malloc(sizeof(size_t) * num_test_data);
   /* Set up the local varibles for transform */
@@ -123,9 +148,14 @@ void test_transform_write (char * transfer_type, int out_buf_size,
 					    &buffer, &buffer_sizes, &buf_count,
 					    &total_len, &close);
 
+      
+      /* Copy compressed buffer pointers for decompression test later */
       for ( x = 0; x < buf_count; x++)
 	{
-	  fwrite(buffer[x],1,buffer_sizes[x],test_file);
+	  compressed_mem_buffers[compressed_num_buffs] = buffer[x];
+	  compressed_mem_sizes[compressed_num_buffs] = buffer_sizes[x];
+	  total_compressed_len += buffer_sizes[x];
+	  compressed_num_buffs++;
 	  buffer_sizes[x] = out_buf_size;
 	}
       total_len = 0;
@@ -133,41 +163,92 @@ void test_transform_write (char * transfer_type, int out_buf_size,
 
     } while (ret != ZOIDFS_COMPRESSION_DONE);
 
+  /* Assert that the input data pointers have been advanced */
   for (x = 0; x < num_test_data; x++)
     {
       CU_ASSERT_EQUAL (var.mem_starts[x] - test_data_len[x], 
 		       test_data[x]);  
     }
 
-  fclose(test_file);
+  /* Verify that the size of the compression is equal to what it originally was */
+  size_t comp_size_test = 0;
+  size_t * tmp_compressed_sizes = malloc(sizeof(size_t) * compressed_num_buffs);
+  FILE * testme = fopen("/tmp/decomtests.txt","w");
+  for (x = 0; x < compressed_num_buffs; x++)
+  {
+    comp_size_test += compressed_mem_sizes[x];
+    tmp_compressed_sizes[x] = compressed_mem_sizes[x];
+    fwrite(compressed_mem_buffers[x],1,compressed_mem_sizes[x],testme);
+  }
+  fclose(testme);
+  assert(comp_size_test == total_compressed_len);
+
   if (transfer_type != "passthrough:")
     {
-      for(x = 0; x < num_test_data; x++)
+      zoidfs_decompress decomp;
+      zoidfs_transform_decompress_init (transfer_type, &decomp);
+      zoidfs_read_vars read_buffs = build_decompression (compressed_mem_buffers
+							 , compressed_mem_sizes, 
+							 compressed_num_buffs);
+
+      ret = zoidfs_transform_read_request (&decomp, &read_buffs, &total_len);
+      assert(ret != ZOIDFS_TRANSFORM_ERROR);
+      for(x = 0; x <  compressed_num_buffs; x++)
+      {
+    	  compressed_mem_buffers[x] -= tmp_compressed_sizes[x];
+      }
+      int y;
+      for(x = 0; x < read_buffs.output_mem_count; x++)
+      {
+    	  read_buffs.output_buf[x] -= read_buffs.output_sizes[x];
+    	  for(y = 0; y < test_data_len[x]; y++)
+    	  {
+    		  if(((char **)read_buffs.output_buf)[x][y] != ((char **) local_mem_starts)[x][y])
+    		  {
+    			  fprintf(stderr,"Error, Bytes do not match %i,%i",x,y);
+    			  assert(1 == 0);
+    			  	  /*fprintf(stderr,"Error, Bytes do not match %i,%i",x,y);
+    			  	  assert( ((char **)read_buffs.output_buf)[x][y] == ((char **) local_mem_starts)[x][y]]);*/
+    		  }
+    	  }
+      }
+
+      fprintf(stderr,"My return value = %i\n",ret);
+      
+    }
+  
+
+  if (transfer_type != "passthrough:")
+    {
+      for(x = 0; x < compressed_num_buffs; x++)
 	{
-	  free(buffer[x]);
-	  //free(var.mem_starts[x]);
+	  free(compressed_mem_buffers[x]);
 	}    
     }
+  //free(compressed_num_buffs);
+  free(compressed_mem_sizes);
+  free(buffer);
 }
 
 void test_zoidfs_transform_write_request (void)
 {
-  /* test compression
+  /* test compression */
   test_transform_write("ZLIB:", 15000000, 1, 1);
   test_transform_write("ZLIB:", 150000, 1, 1);
   test_transform_write("ZLIB:", 15000, 1, 1);
   test_transform_write("ZLIB:", 15000000, 5, 0);
   test_transform_write("ZLIB:", 1500, 5, 5);
- 
+  /*
   test_transform_write("passthrough:", 1500, 5 , 5);
   test_transform_write("passthrough:", 1500000, 1, 1);
   test_transform_write("passthrough:", 150000000, 1, 1);
 
   test_transform_write("bzip:", 1500, 1, 1);
   test_transform_write("bzip:", 15000, 1, 1);
-  test_transform_write("bzip:", 1500000, 1, 1);*/
+  test_transform_write("bzip:", 1500000, 1, 1);
   
   test_transform_write("lzf:", 150000, 1, 1);
+  */
 }
 
 int main()

@@ -70,6 +70,15 @@ typedef struct
 
 } zoidfs_write_compress;
 
+typedef struct
+{
+  void * transform;
+  char * type;
+  int(*decompress)(void *, void **, size_t *, void **, size_t *, int);
+} zoidfs_decompress;
+
+
+
 int zoidfs_transform_init (char * type, zoidfs_write_compress * comp);
 int zoidfs_transform (zoidfs_write_compress * compression, void ** input, 
                       size_t * input_length, void ** output, size_t * output_len,
