@@ -34,7 +34,10 @@ int lzf_compress_init (void ** library, size_t buffer_size)
     return 0;
 }
 
- inline int lzf_compress_block (lzf_state_var * state, void ** input, size_t * in_length, int close)
+
+
+inline int lzf_compress_block (lzf_state_var * state, void ** input, 
+			       size_t * in_length, int close)
 {
   int ret = 0;
   state->out_buf_type = 'C';
@@ -239,8 +242,68 @@ int lzf_compress_data (lzf_state_var * stream, void ** source, size_t * length, 
   if ((*length) == 0  || (*output_length) == 0)
     return ZOIDFS_BUF_ERROR;
 }
+#define LZF_UNCOMPRESSED 5
+#define LZF_COMPRESSED 6
+
+int lzf_decompress_get_dataset (void ** source, size_t * source_len,
+				void ** packet, size_t * packet_len)
+{
+  XDR xdr;
+  char * xdr_buffer;
+  size_t xdr_header_size;
+  int ret = 0;
+  char * source_char = (char *) (*source);
+
+  /* Parse the header charactor */
+  if (source_char[0] == 'U')
+    ret = LZF_UNCOMPRESSED;
+  else if (source_char[0] == 'C')
+    ret = LZF_COMPRESSED;
+  else
+    return -1;
+  source_char++;
+  
+  /* Parse the xdr_header_string */
+  
+  xdr_header_size = xdr_sizeof((xdrproc_t)xdr_int, &xdr_header_size);
+  xdr_buffer = source_char;
+  xdrmem_create(&xdr,xdr_buffer,xdr_header_size,XDR_DECODE);   
+  if (xdr_int (&xdr, packet_len) != 0)
+    return -1;
+
+  source_char += xdr_header_size;
+
+  (*source) = (void *) source_char;
+
+  return ret;
+}
+
+int lzf_decompress_block (lzf_state_var * state, void * block,
+			  size_t block_len, int type)
+{
+  int ret = 0;
+  if (LZF_COMPRESSED == type)
+    ret = lzf_decompress(block, block_len, state->out_buf, state->out_buf_len);
+  else
+    memcpy(state->out_buf, block, block_len);
+  return ret;
+}
+
+int lzf_decompress_hook (lzf_state_var * state, void ** source,
+			 size_t * source_len, void ** dest,
+			 size_t * dest_len, int close)
+{
+  int ret;
+  do 
+    {
+      lzf_dump_comp_buffer(state, dest, dest_len);
+      ret = lzf_decompress_get_dataset (source,dest, state->in_buf, state->in_buf_len);
+      lzf_decompress_block (state, state->in_buf, state->in_buf_len, ret);
+    } while ( ret != 0);
 
 
+
+}
  
 /***********************
  Decompression Function
@@ -260,7 +323,6 @@ void * lzf_decompress_data (void * compressed_data, int len)
     int x,ret;
     for(;;)
     {
-        
         if (LZF_DEBUG)
         {
             fprintf(stderr,"Decompressed run : %i\n\tReturn: %i\n",count,ret);
