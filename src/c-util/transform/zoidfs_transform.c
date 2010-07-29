@@ -314,17 +314,17 @@ int zoidfs_transform_decompress_init (char * type_str, zoidfs_decompress * comp)
       return -1;
 #endif
     }
-  /*
+  
   else if (strcmp("bzip",type) == 0)
     {
 #ifdef HAVE_BZLIB 
-      bzip_decompress_init (&(comp->compression_struct));
-      (*comp).transform = &bzip_compress_hook; 
+      bzip_decompress_init (&(comp->transform));
+      comp->decompress = &bzip_decompress; 
 #else 
       fprintf(stderr,"ERROR! bzip library is not availible!\n");
       return -1;
 #endif 
-    }
+    }/*
   else if (strcmp("lzf",type) == 0)
     {
 #ifdef HAVE_LZF
@@ -387,7 +387,7 @@ int zoidfs_transform_decompress ( zoidfs_decompress * transform,
 	      mem_count, close);*/
       if (ret == ZOIDFS_TRANSFORM_ERROR)
     	  return ret;
-      if (in_size == 0 && close != ZOIDFS_CLOSE)
+      if (*in_size == 0 && close != ZOIDFS_CLOSE)
     	  return ZOIDFS_BUF_ERROR;
       if (ret == ZOIDFS_STREAM_END)
     	  return ret;
@@ -401,7 +401,8 @@ int zoidfs_transform_decompress ( zoidfs_decompress * transform,
 }
 int zoidfs_transform_read_request (zoidfs_decompress * transform,
 				   zoidfs_read_vars * read_buffs,
-				   size_t * outputs_filled
+				   size_t * outputs_filled,
+				   int close
 				   )
 {
   int x, ret = 0;
@@ -420,6 +421,15 @@ int zoidfs_transform_read_request (zoidfs_decompress * transform,
 					     read_buffs->output_mem_count, 0);
 
 	}
+      if (x + 1 == read_buffs->read_mem_count &&
+	  ret != ZOIDFS_STREAM_END && close != ZOIDFS_CLOSE)
+	ret = zoidfs_transform_decompress (transform,
+					   &read_buffs->read_buf[x],
+					   &read_buffs->read_buf_size[x],
+					   &read_buffs->output_buf,
+					   &read_buffs->output_sizes,
+					   &outputs_filled,
+					   read_buffs->output_mem_count, close);
       if (ret == ZOIDFS_OUTPUT_FULL || ret == ZOIDFS_STREAM_END ||
 	  ret == ZOIDFS_TRANSFORM_ERROR)
     	  return ret;

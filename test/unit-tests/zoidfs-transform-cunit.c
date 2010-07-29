@@ -112,8 +112,8 @@ void test_transform_write (char * transfer_type, int out_buf_size,
   size_t * local_mem_sizes = malloc(num_test_data * sizeof(size_t));
   void ** local_mem_starts = malloc(num_test_data * sizeof(void *));
 
-  char ** compressed_mem_buffers = malloc(num_test_data * num_buffs * sizeof(char *));
-  size_t * compressed_mem_sizes = malloc(num_test_data * num_buffs * sizeof(size_t));
+  char ** compressed_mem_buffers = malloc(num_test_data * num_buffs * 20 *  sizeof(char *));
+  size_t * compressed_mem_sizes = malloc(num_test_data * num_buffs * 20 * sizeof(size_t));
   size_t compressed_num_buffs = 0;
   char ** buffer = malloc(sizeof(char *) * num_test_data);
   size_t * buffer_sizes = malloc(sizeof(size_t) * num_test_data);
@@ -147,7 +147,6 @@ void test_transform_write (char * transfer_type, int out_buf_size,
 					    max_buf_size, num_of_buffs_to_fill,
 					    &buffer, &buffer_sizes, &buf_count,
 					    &total_len, &close);
-
       
       /* Copy compressed buffer pointers for decompression test later */
       for ( x = 0; x < buf_count; x++)
@@ -178,7 +177,6 @@ void test_transform_write (char * transfer_type, int out_buf_size,
   {
     comp_size_test += compressed_mem_sizes[x];
     tmp_compressed_sizes[x] = compressed_mem_sizes[x];
-
   }
 
   assert(comp_size_test == total_compressed_len);
@@ -191,7 +189,7 @@ void test_transform_write (char * transfer_type, int out_buf_size,
 							 ,compressed_mem_sizes, 
 							 compressed_num_buffs);
 
-      ret = zoidfs_transform_read_request (&decomp, &read_buffs, &total_len);
+      ret = zoidfs_transform_read_request (&decomp, &read_buffs, &total_len, ZOIDFS_CLOSE);
       assert(ret != ZOIDFS_TRANSFORM_ERROR);
       for(x = 0; x <  compressed_num_buffs; x++)
       {
@@ -202,7 +200,6 @@ void test_transform_write (char * transfer_type, int out_buf_size,
       for(x = 0; x < read_buffs.output_mem_count; x++)
 	{
 	  read_buffs.output_buf[x] -= test_data_len[x];
-
 
 	  for(y = 0; y < test_data_len[x]; y++)
 	    {
@@ -235,22 +232,23 @@ void test_transform_write (char * transfer_type, int out_buf_size,
 void test_zoidfs_transform_write_request (void)
 {
   /* test compression */
+  fprintf(stderr, "ZLIB TESTS\n");
   test_transform_write("ZLIB:", 15000000, 1, 1);
-  /*test_transform_write("ZLIB:", 150000, 1, 1);
+  test_transform_write("ZLIB:", 150000, 1, 1);
   test_transform_write("ZLIB:", 15000, 1, 1);
   test_transform_write("ZLIB:", 15000000, 5, 0);
   test_transform_write("ZLIB:", 1500, 5, 5);
- 
+  /*fprintf(stderr,"PASSTHROUGH TESTS\n");
   test_transform_write("passthrough:", 1500, 5 , 5);
   test_transform_write("passthrough:", 1500000, 1, 1);
-  test_transform_write("passthrough:", 150000000, 1, 1);
-
+  test_transform_write("passthrough:", 150000000, 1, 1); */
+  fprintf(stderr,"BZIP TESTS\n");
   test_transform_write("bzip:", 1500, 1, 1);
   test_transform_write("bzip:", 15000, 1, 1);
   test_transform_write("bzip:", 1500000, 1, 1);
   
-  test_transform_write("lzf:", 150000, 1, 1);
-  */
+  //test_transform_write("lzf:", 150000, 1, 1);
+
 }
 
 int main()

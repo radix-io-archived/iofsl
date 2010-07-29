@@ -1,4 +1,17 @@
 #include "zoidfs_transform.h"
+int bzip_decompress_init (void ** transform)
+{
+  int ret;
+  bz_stream * tmp = malloc(sizeof(bz_stream));
+  (*tmp).bzalloc = Z_NULL;
+  (*tmp).bzfree = Z_NULL;
+  (*tmp).opaque = Z_NULL;
+  ret = BZ2_bzDecompressInit(tmp, 0, 0);
+  if (ret != BZ_OK)
+    return -1;
+  (*transform) = (void *) tmp;
+  return 0;
+}
 
 int bzip_compress_init (char * type, int block_size, int verbosity, 
                         int work_factor,  void ** library)
@@ -29,36 +42,6 @@ int bzip_compress_init (char * type, int block_size, int verbosity,
     /* Set the library pointer to point to the struct */
     (*library) = ret_value;     
     return 0;
-}
-
-int bzip_decompress_init (char * type, int verbosity, int small, void ** library)
-{
-    int ret; 
-    void ** ret_value;
-    
-    if (strcmp(type,"bzip") == 0)
-    {
-        /* Create the required zlib structure */
-        bz_stream * tmp = malloc(sizeof(bz_stream));
-
-        ret = BZ2_bzDecompressInit(tmp, verbosity, small);
-
-        /* check if everything is ok */
-        if (ret != BZ_OK)
-        {
-            printf("ERROR");
-            return ret;
-        }
-
-        ret_value = (void *)tmp;
-    }
-    else
-    {
-        return -1;
-    }
-    /* Set the library pointer to point to the struct */
-    (*library) = ret_value;     
-    return 0;    
 }
 
 int bzip_compress_hook (void * stream, void ** source, size_t * length, 
@@ -113,7 +96,7 @@ int bzip_compress (bz_stream * stream, void ** source, size_t * length,
     /* set the ourput buffer */
     (*dest) = finished;
     (*source) = input;
-    fprintf(stderr,"return: %i\n",ret);
+
     if (ret == BZ_RUN_OK)
         return ZOIDFS_BUF_ERROR;
     else if (ret != BZ_RUN && ret != ZOIDFS_STREAM_END)
@@ -125,24 +108,26 @@ int bzip_compress (bz_stream * stream, void ** source, size_t * length,
     return ret;
 }
 
-int bzip_decompress (void * source, size_t * length, void ** dest,
-                     size_t * output_length, z_stream * stream, int close)
+int bzip_decompress (bz_stream * stream, void ** source,
+		     size_t * length, void ** dest,
+                     size_t * output_length, int close)
 {
     int ret;
-    size_t have;
-    /* Malloc the buffer that will recieve the compress data */
-    void * finished = (*dest); 
-    bz_stream * strm = (bz_stream *) stream;
+    void * input = (*source);
+    void * finished = (*dest);
+    bz_stream * strm = stream;
     /* Setup the zlib buffers */
+    if ((*output_length) == 0 )
+    	return ZOIDFS_BUF_ERROR;
     (*strm).avail_in = *length;
-    (*strm).next_in = source;
+    (*strm).next_in =  input;
     (*strm).avail_out = *output_length;
     (*strm).next_out = finished;
     /* Compress the data */
     if (close)
     { 
         ret = BZ2_bzDecompress(strm);
-        if (ret == BZ_STREAM_END)
+        if (ret == Z_STREAM_END)
         {
             (void)BZ2_bzDecompressEnd(strm); 
         }
@@ -153,11 +138,19 @@ int bzip_decompress (void * source, size_t * length, void ** dest,
     }
 
     /* Figure out how much of the output buffer has been used */
-    have =  *output_length - (*strm).avail_out;
-    *output_length = have;
+    finished += (*output_length - (*strm).avail_out);
+    input += (*length - (*strm).avail_in);
+    *output_length = (*strm).avail_out;
     *length = (*strm).avail_in;
 
     /* set the ourput buffer */
     (*dest) = finished;
+    (*source) = input;
+
+    if (ret == BZ_STREAM_END)
+    	return ZOIDFS_STREAM_END;
+    else if (ret != BZ_OK && ret != ZOIDFS_STREAM_END)
+        return ZOIDFS_TRANSFORM_ERROR;
     return ret;
 }
+
