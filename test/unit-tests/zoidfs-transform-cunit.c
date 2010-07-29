@@ -231,7 +231,7 @@ void test_transform_write (char * transfer_type, int out_buf_size,
 
 void test_zoidfs_transform_write_request (void)
 {
-  /* test compression */
+  /* test compression 
   fprintf(stderr, "ZLIB TESTS\n");
   test_transform_write("ZLIB:", 15000000, 1, 1);
   test_transform_write("ZLIB:", 150000, 1, 1);
@@ -241,13 +241,13 @@ void test_zoidfs_transform_write_request (void)
   /*fprintf(stderr,"PASSTHROUGH TESTS\n"); 
   test_transform_write("passthrough:", 1500, 5 , 5);
   test_transform_write("passthrough:", 1500000, 1, 1);
-  test_transform_write("passthrough:", 150000000, 1, 1); */
+  test_transform_write("passthrough:", 150000000, 1, 1); 
   fprintf(stderr,"BZIP TESTS\n");
   test_transform_write("bzip:", 1500, 1, 1);
   test_transform_write("bzip:", 15000, 1, 1);
-  test_transform_write("bzip:", 1500000, 1, 1);
+  test_transform_write("bzip:", 1500000, 1, 1);*/
   
-  //test_transform_write("lzf:", 150000, 1, 1);
+  test_transform_write("lzf:", 150000, 1, 1);
 
 }
 

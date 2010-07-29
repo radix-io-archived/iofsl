@@ -1,5 +1,5 @@
 #include "zoidfs_transform.h"
-
+#define ZOIDFS_DECOMPRESSION_DONE 11
 /* NOTE: Due to the way this compression works. The data stream
    produced by lzf_compress will contain multiple independant
    compressed blocks of size LZF_BUFF_SIZE. These blocks are
@@ -17,6 +17,24 @@
 */
 
 int lzf_compress_init (void ** library, size_t buffer_size)
+{
+    lzf_state_var * tmp = malloc(sizeof(lzf_state_var));
+    int xdr_header_size;
+    xdr_header_size = xdr_sizeof((xdrproc_t)xdr_int, &xdr_header_size);  
+    (*tmp).out_buf = malloc(LZF_BUFF_SIZE + xdr_header_size);
+    (*tmp).out_buf_size = LZF_BUFF_SIZE;
+    (*tmp).out_buf_len = 0;
+    (*tmp).out_buf_pos = 0;
+    (*tmp).in_buf = malloc(LZF_BUFF_SIZE + xdr_header_size);
+    (*tmp).in_buf_size = LZF_BUFF_SIZE;
+    (*tmp).in_buf_len = 0;
+    (*tmp).in_buf_pos = 0;
+    (*tmp).out_buf_type = 'U';
+    (*library) = tmp;     
+    return 0;
+}
+
+int lzf_decompress_init (void ** library)
 {
     lzf_state_var * tmp = malloc(sizeof(lzf_state_var));
     int xdr_header_size;
@@ -244,38 +262,174 @@ int lzf_compress_data (lzf_state_var * stream, void ** source, size_t * length, 
 }
 #define LZF_UNCOMPRESSED 5
 #define LZF_COMPRESSED 6
-
-int lzf_decompress_get_dataset (void ** source, size_t * source_len,
-				void ** packet, size_t * packet_len)
+int lzf_decompress_get_dataset_rem (lzf_state_var * state, void ** source,
+				    size_t * source_len, void ** packet,
+				    size_t * packet_len)
 {
   XDR xdr;
+  int ret;
+  int header_rem = 0;
   char * xdr_buffer;
-  size_t xdr_header_size;
-  int ret = 0;
-  char * source_char = (char *) (*source);
-
-  /* Parse the header charactor */
-  if (source_char[0] == 'U')
-    ret = LZF_UNCOMPRESSED;
-  else if (source_char[0] == 'C')
-    ret = LZF_COMPRESSED;
-  else
-    return -1;
-  source_char++;
-  
-  /* Parse the xdr_header_string */
-  
+  size_t xdr_header_size;  
   xdr_header_size = xdr_sizeof((xdrproc_t)xdr_int, &xdr_header_size);
-  xdr_buffer = source_char;
+  
+  /* if the header is not known yet, find it and make a copy */
+  if (state->in_buf_len < (1 + xdr_header_size))
+    {
+      header_rem = (1 + xdr_header_size) + state->in_buf_len;
+      memcpy (state->in_buf, (*source), header_rem);
+      
+      (*source_len) -= header_rem;
+      state->in_buf_len += header_rem;
+      (*source) += header_rem;
+      state->in_buf +=  header_rem;
+    }
+  
+  state->in_buf -= state->in_buf_len - 1;
+  xdr_buffer = state->in_buf;
   xdrmem_create(&xdr,xdr_buffer,xdr_header_size,XDR_DECODE);   
   if (xdr_int (&xdr, packet_len) != 0)
     return -1;
 
-  source_char += xdr_header_size;
+  if (*source_len >= *packet_len - 
+      (state->in_buf_len - xdr_header_size - 1))
+    {
+      state->in_buf += state->in_buf_len - 1;
+      memcpy(state->in_buf, (*source), *packet_len - 
+	     (state->in_buf_len - xdr_header_size - 1));
+      state->in_buf -= state->in_buf_len;
+      state->in_buf_len +=  *packet_len - 
+	                    (state->in_buf_len - xdr_header_size - 1); 
+    }
+  else
+    {
+      state->in_buf += state->in_buf_len - 1;
+      memcpy(state->in_buf, (*source), *source_len);
+      state->in_buf_len += *source_len;
+      state->in_buf += *source_len;
+      return ZOIDFS_BUF_ERROR;
+    }
 
-  (*source) = (void *) source_char;
+  if  (((char*)state->in_buf)[0] == 'C')
+    ret = LZF_COMPRESSED;
+  else if (((char*)state->in_buf)[0] == 'U')
+    ret = LZF_UNCOMPRESSED;
+  else 
+    return -1;
 
+  state->in_buf += 1 + xdr_header_size;
+  (*packet) = state->in_buf;
+  
   return ret;
+}
+
+int lzf_decompress_get_dataset_full (lzf_state_var * state,
+				     void ** source, size_t * source_len,
+				     void ** packet, size_t * packet_len)
+{
+  XDR xdr;
+  char * xdr_buffer;
+  int ret = 0;
+  char * source_char = (char *) (*source);
+  size_t xdr_header_size;  
+
+  if (*source_len < (1 + xdr_header_size))
+    {
+      memcpy(state->in_buf,source_char, (*source_len));
+      state->in_buf_len = (*source_len);
+      state->in_buf_pos = 0;
+      source_char += (*source_len);
+      (*source) = (void *) source_char;
+      return ZOIDFS_BUF_ERROR;
+    }
+
+  if (state->in_buf_len == 0)
+    {
+      /* Parse the header charactor */
+      if (source_char[0] == 'U')
+	ret = LZF_UNCOMPRESSED;
+      else if (source_char[0] == 'C')
+	ret = LZF_COMPRESSED;
+      else
+	return -1;
+      source_char++;
+  
+      /* Parse the xdr_header_string */
+
+      xdr_buffer = source_char;
+      xdrmem_create(&xdr,xdr_buffer,xdr_header_size,XDR_DECODE);   
+      if (xdr_int (&xdr, packet_len) != 0)
+	return -1;
+
+      if (*source_len < *packet_len)
+	{
+	  source_char--;
+	  memcpy(state->in_buf, source_char, *source_len);
+	  state->in_buf += *source_len;
+	  state->in_buf_len = *source_len;
+	  state->in_buf_pos = *source_len;
+	  source_char += (*source_len);
+	  *source_len = 0;
+	  return ZOIDFS_BUF_ERROR;
+	}
+      else
+	{
+	  source_char += xdr_header_size;
+	  (*packet) = (void *) source_char;
+	  source_char += *packet_len;
+	}
+    }
+  return ret;
+}
+
+int lzf_decompress_get_dataset (lzf_state_var * state,
+				void ** source, size_t * source_len,
+				void ** packet, size_t * packet_len)
+{
+  int ret;
+  if ((*source_len) == 0)
+    return ZOIDFS_BUF_ERROR;
+  if (state->in_buf_len > 0)
+    ret = lzf_decompress_get_dataset_rem (state, source, source_len,
+					  packet, packet_len);
+  else
+    ret = lzf_decompress_get_dataset_full (state, source, source_len,
+					   packet, packet_len);
+  return ret;
+}
+inline void lzf_decompress_reset_state (lzf_state_var * state)
+{
+  state->out_buf -= state->out_buf_pos;
+  state->out_buf_pos = 0;
+  state->out_buf_len = 0;
+}
+
+int lzf_decompress_write_block (lzf_state_var * state, void ** dest,
+				size_t * dest_len)
+{
+  size_t rem_out = 0;
+  if (state->out_buf_len > 0)
+    {
+      rem_out = (state->out_buf_len - state->out_buf_pos);
+      if ((*dest_len) >= rem_out)
+	{
+	  memcpy((*dest),state->out_buf,rem_out);
+	  (*dest) += rem_out;
+	  (*dest_len) -= rem_out;
+	  lzf_decompress_reset_state (state);
+	  return ZOIDFS_CONT;
+	}
+      else 
+	{
+	  memcpy((*dest), state->out_buf, (*dest_len));
+	  state->out_buf += (*dest_len);
+	  state->out_buf_pos += (*dest_len);
+	  state->out_buf_len -= (*dest_len);
+	  (*dest_len) = 0;
+	  return ZOIDFS_BUF_FULL;
+	}
+    }
+  return ZOIDFS_CONT;
 }
 
 int lzf_decompress_block (lzf_state_var * state, void * block,
@@ -283,26 +437,44 @@ int lzf_decompress_block (lzf_state_var * state, void * block,
 {
   int ret = 0;
   if (LZF_COMPRESSED == type)
-    ret = lzf_decompress(block, block_len, state->out_buf, state->out_buf_len);
+    {
+      ret = lzf_decompress(block, block_len, state->out_buf, state->out_buf_size);
+      state->out_buf_len = ret;
+    }
   else
-    memcpy(state->out_buf, block, block_len);
+    {
+      memcpy(state->out_buf, block, block_len);
+      state->out_buf_len = block_len;
+    }
   return ret;
 }
 
-int lzf_decompress_hook (lzf_state_var * state, void ** source,
+
+int lzf_decompress_hook (void * state_var, void ** source,
 			 size_t * source_len, void ** dest,
 			 size_t * dest_len, int close)
 {
-  int ret;
+  char * decomp_block;
+  size_t * decomp_size = 0;
+  int ret, end;
+  lzf_state_var * state = (lzf_state_var *)state_var;
+  lzf_dump_comp_buffer (state, dest, dest_len);
   do 
     {
-      lzf_dump_comp_buffer(state, dest, dest_len);
-      ret = lzf_decompress_get_dataset (source,dest, state->in_buf, state->in_buf_len);
-      lzf_decompress_block (state, state->in_buf, state->in_buf_len, ret);
-    } while ( ret != 0);
+      ret = lzf_decompress_get_dataset (state, source, source_len, decomp_block, decomp_size);
+      if (ret == ZOIDFS_BUF_ERROR)
+	break;
+      lzf_decompress_block (state, decomp_block, decomp_size, ret);
+      if (state->out_buf_len < LZF_BUFF_SIZE)
+	end = ZOIDFS_DECOMPRESSION_DONE;
+      ret = lzf_dump_comp_buffer (state, dest, dest_len);
+      state->in_buf -= state->in_buf_len;
+      state->in_buf_len = 0;
+      if (ret == ZOIDFS_OUTPUT_FULL)
+	break;
 
-
-
+    } while (end != ZOIDFS_DECOMPRESSION_DONE);
+  return end;
 }
  
 /***********************

@@ -324,17 +324,17 @@ int zoidfs_transform_decompress_init (char * type_str, zoidfs_decompress * comp)
       fprintf(stderr,"ERROR! bzip library is not availible!\n");
       return -1;
 #endif 
-    }/*
+    }
   else if (strcmp("lzf",type) == 0)
     {
 #ifdef HAVE_LZF
-      lzf_decompress_init (&(comp->compression_struct));
-      (*comp).transform = &lzf_compress_hook;
+      lzf_decompress_init (&(comp->transform));
+      (*comp).decompress = &lzf_decompress_hook;
 #else
       fprintf(stderr,"ERROR! LZF library is not availible!\n");
       return -1;
 #endif
-    }
+    }/*
   else if (strcmp("passthrough",type) == 0)
     {
       (*comp).transform = &passthrough;                    
