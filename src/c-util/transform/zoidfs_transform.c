@@ -364,9 +364,27 @@ int zoidfs_transform_decompress ( zoidfs_decompress * transform,
   int x = 0;
   int ret = 0;
   (*outputs_filled) = 0;
+
   do
     {
-      ret = transform->decompress(transform->transform, in_buf, in_size, &(*out_buf)[x], &(*out_size)[x], 0);
+      size_t tmp_store = (*out_size)[x];
+      /*fprintf(stderr, "\nZoidfs_transform_decompress:\n\t"
+	      "transform: %p\n\tin_buf: %p\n\tin_size: %i\n\t"
+	      "out_buf: %p\n\tout_size: %i\r\noutputs_filled: %i\n\t"
+	      "mem_count: %i\n\tclose: %i\n", transform->transform,
+	      *in_buf,*in_size,(*out_buf)[x],(*out_size)[x],*outputs_filled,
+	      mem_count, close);*/
+      ret = transform->decompress(transform->transform, 
+				  in_buf, in_size, 
+				  &(*out_buf)[x], 
+				  &(*out_size)[x], 0);
+
+      /*fprintf(stderr, "\nZoidfs_transform_decompress:\n\t"
+	      "transform: %p\n\tin_buf: %p\n\tin_size: %i\n\t"
+	      "out_buf: %p\n\tout_size: %i\r\noutputs_filled: %i\n\t"
+	      "mem_count: %i\n\tclose: %i\n", transform->transform,
+	      *in_buf,*in_size,(*out_buf)[x],(*out_size)[x],*outputs_filled,
+	      mem_count, close);*/
       if (ret == ZOIDFS_TRANSFORM_ERROR)
     	  return ret;
       if (in_size == 0 && close != ZOIDFS_CLOSE)

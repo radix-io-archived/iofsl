@@ -165,7 +165,7 @@ int zlib_decompress (z_stream * stream, void ** source,
     }
     else
     {
-        ret = inflate(strm, Z_NO_FLUSH);
+        ret = inflate(strm, Z_FULL_FLUSH);
     }
 
     /* Figure out how much of the output buffer has been used */
