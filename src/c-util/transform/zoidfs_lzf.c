@@ -330,9 +330,10 @@ int lzf_decompress_get_dataset_full (lzf_state_var * state,
   XDR xdr;
   char * xdr_buffer;
   int ret = 0;
+  int xdr_len = 0;
   char * source_char = (char *) (*source);
   size_t xdr_header_size;  
-
+  xdr_header_size = xdr_sizeof((xdrproc_t)xdr_int, &xdr_header_size);
   if (*source_len < (1 + xdr_header_size))
     {
       memcpy(state->in_buf,source_char, (*source_len));
@@ -358,9 +359,10 @@ int lzf_decompress_get_dataset_full (lzf_state_var * state,
 
       xdr_buffer = source_char;
       xdrmem_create(&xdr,xdr_buffer,xdr_header_size,XDR_DECODE);   
-      if (xdr_int (&xdr, packet_len) != 0)
+      if (xdr_int (&xdr, &xdr_len) == 0)
 	return -1;
 
+      (*packet_len) = xdr_len;
       if (*source_len < *packet_len)
 	{
 	  source_char--;
@@ -439,6 +441,8 @@ int lzf_decompress_block (lzf_state_var * state, void * block,
   if (LZF_COMPRESSED == type)
     {
       ret = lzf_decompress(block, block_len, state->out_buf, state->out_buf_size);
+      if (ret == 0)
+	ret = state->out_buf_size;
       state->out_buf_len = ret;
     }
   else
@@ -455,13 +459,13 @@ int lzf_decompress_hook (void * state_var, void ** source,
 			 size_t * dest_len, int close)
 {
   char * decomp_block;
-  size_t * decomp_size = 0;
+  size_t decomp_size = 0;
   int ret, end;
   lzf_state_var * state = (lzf_state_var *)state_var;
   lzf_dump_comp_buffer (state, dest, dest_len);
   do 
     {
-      ret = lzf_decompress_get_dataset (state, source, source_len, decomp_block, decomp_size);
+      ret = lzf_decompress_get_dataset (state, source, source_len, &decomp_block, &decomp_size);
       if (ret == ZOIDFS_BUF_ERROR)
 	break;
       lzf_decompress_block (state, decomp_block, decomp_size, ret);
@@ -471,7 +475,7 @@ int lzf_decompress_hook (void * state_var, void ** source,
       state->in_buf -= state->in_buf_len;
       state->in_buf_len = 0;
       if (ret == ZOIDFS_OUTPUT_FULL)
-	break;
+	return ret;
 
     } while (end != ZOIDFS_DECOMPRESSION_DONE);
   return end;

@@ -140,7 +140,6 @@ void test_transform_write (char * transfer_type, int out_buf_size,
       buffer_sizes[x] = out_buf_size;
     }
 
-
   do 
     {
       ret = zoidfs_transform_write_request (&transform, &var,
@@ -153,6 +152,7 @@ void test_transform_write (char * transfer_type, int out_buf_size,
 	{
 	  compressed_mem_buffers[compressed_num_buffs] = buffer[x];
 	  compressed_mem_sizes[compressed_num_buffs] = buffer_sizes[x];
+
 	  total_compressed_len += buffer_sizes[x];
 	  compressed_num_buffs++;
 	  buffer_sizes[x] = out_buf_size;
@@ -189,8 +189,11 @@ void test_transform_write (char * transfer_type, int out_buf_size,
 							 ,compressed_mem_sizes, 
 							 compressed_num_buffs);
 
+
       ret = zoidfs_transform_read_request (&decomp, &read_buffs, &total_len, ZOIDFS_CLOSE);
+
       assert(ret != ZOIDFS_TRANSFORM_ERROR);
+
       for(x = 0; x <  compressed_num_buffs; x++)
       {
     	  compressed_mem_buffers[x] -= tmp_compressed_sizes[x];
@@ -205,9 +208,9 @@ void test_transform_write (char * transfer_type, int out_buf_size,
 	    {
 	      if(((char **)read_buffs.output_buf)[x][y] != ((char **) test_data)[x][y])
 		{
-		  fprintf(stderr,"Error, Bytes do not match %i,%i, %c, %c",x,y,
-			  ((char**)read_buffs.output_buf)[x][y],
-			  ((char **) local_mem_starts)[x][y]);
+		  fprintf(stderr,"Error, Bytes do not match %i,%i, %u, %u",x,y,
+			  ((unsigned char**)read_buffs.output_buf)[x][y],
+			  ((unsigned char **) local_mem_starts)[x][y]);
 		  assert(1 == 0);  
 		}
 	    }
@@ -245,9 +248,9 @@ void test_zoidfs_transform_write_request (void)
   fprintf(stderr,"BZIP TESTS\n");
   test_transform_write("bzip:", 1500, 1, 1);
   test_transform_write("bzip:", 15000, 1, 1);
-  test_transform_write("bzip:", 1500000, 1, 1);*/
+  test_transform_write("bzip:", 1500000, 1, 1);
   
-  test_transform_write("lzf:", 150000, 1, 1);
+  test_transform_write("lzf:", 150000, 1, 1);*/
 
 }
 
