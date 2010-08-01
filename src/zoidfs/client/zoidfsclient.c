@@ -3204,6 +3204,100 @@ int zoidfs_write_transform_non_pipeline ( zoidfs_write_vars * write_buffs,
     return ret;
 }
 
+zoidfs_read_vars * zoidfs_read_init (const zoidfs_handle_t *handle,
+				     size_t mem_count, void * mem_starts[],
+				     const size_t mem_sizes[], size_t file_count,
+				     const zoidfs_file_ofs_t file_starts, 
+				     const zoidfs_file_size_t file_sizes[],
+				     zoidfs_op_hint_t * op_hint)
+{
+    int x;
+    zoidfs_read_vars * read_buffs = malloc(sizeof(zoidfs_read_vars));
+    read_buffs->handle = handle;
+    read_buffs->output_mem_count = mem_count;
+    read_buffs->output_buf = malloc(sizeof(size_t) * mem_count);
+    read_buffs->output_sizes = malloc(sizeof(size_t) * mem_count);
+    for (x = 0; x < mem_count; x++)
+	{
+	    read_buffs->output_buf[x] = mem_starts[x];
+	    read_buffs->output_sizes[x] = mem_sizes[x];
+	}
+    read_buffs->op_hint = op_hint;
+    return read_buffs;
+}
+void zoidfs_read_generate_hints (zoidfs_read_vars * read_buffs)
+{
+    if (zoidfs_hint_num_elements(&(read_buffs->op_hint)) == 0)
+	read_buffs->op_hint = zoidfs_hint_init(1);
+
+    if (compression_type != NULL)
+	zoidfs_hint_add ( &(read_buffs->op_hint), strdup("ZOIDFS_TRANSFORM"),
+			  strdup(compression_type), strlen(compression_type), 
+			  ZOIDFS_HINTS_ZC);
+}
+    
+
+void zoidfs_read_transform_recv (zoidfs_read_vars * recv_buffs,
+				 zoidfs_recv_msg_t * recv_msg,
+				 size_t pipeline_size,
+				 size_t * data_recv_size)
+{
+    int x, ret;
+    zoidfs_decompress decomp;
+    size_t size_recv = 0;
+    size_t total_len = 0;
+    void ** recv_data = malloc(sizeof(char*) * recv_buffs->output_mem_count);
+    bmi_size_t * recv_data_len = malloc(sizeof(size_t) * recv_buffs->output_mem_count);
+
+    for ( x = 0; x < recv_buffs->output_mem_count; x++)
+	{
+	    total_len += recv_buffs->output_sizes[x];
+	}
+    if (total_len < pipeline_size)
+	{
+	    recv_data[0] = malloc(sizeof(char) * total_len);
+	    recv_data_len[0] = total_len;
+	}
+    else
+	{	
+	    recv_data[0] = malloc(sizeof(char) * pipeline_size);
+	    recv_data_len[0] = pipeline_size;
+	}
+
+    x = 0;
+    do 
+	{
+	    recv_data[x] = malloc(sizeof(char) * pipeline_size);
+	    ret = bmi_comm_recv (peer_addr, recv_data[x], pipeline_size,
+			 recv_msg->tag, context, &size_recv);
+	    recv_data_len[x] = size_recv;
+	    x++;
+	} while (size_recv == PIPELINE_SIZE);
+
+    recv_buffs->read_buf = malloc(sizeof(char *) * x);
+    recv_buffs->output_sizes = malloc(sizeof(size_t) * x);
+    recv_buffs->read_mem_count = x;
+    for (x = 0; x < recv_buffs->read_mem_count; x++)
+	{
+	    recv_buffs->read_buf[x] = recv_data[x];
+	    recv_buffs->read_buf_size[x] = recv_data_len[x];
+	}
+    zoidfs_transform_decompress_init (compression_type, &decomp);
+    ret = zoidfs_transform_read_request (&decomp, &recv_buffs, &total_len, ZOIDFS_CLOSE);
+    if (ret == ZOIDFS_TRANSFORM_ERROR)
+	{
+	    ret = -1;
+	    goto zoidfs_read_cleanup;
+	}
+
+ zoidfs_read_cleanup:
+    for(x = 0; recv_buffs->read_mem_count; x++)
+	free(recv_data[x]);
+    free(recv_data);
+    free(recv_data_len);
+}
+				 
+
 void zoidfs_write_create_header ( zoidfs_write_vars * write_buffs,
 				  zoidfs_send_msg_t * send_msg,
 				  void ** buffer,

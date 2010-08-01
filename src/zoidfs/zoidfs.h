@@ -234,12 +234,17 @@ typedef struct
 
 typedef struct
 {
-  void ** read_buf;
-  size_t * read_buf_size;
-  size_t read_mem_count;
-  void ** output_buf;
-  size_t * output_sizes;
-  size_t output_mem_count;
+    zoidfs_handle_t * handle;
+    size_t file_count;
+    zoidfs_file_size_t * file_sizes;
+    zoidfs_op_hint_t * op_hint;
+
+    void ** read_buf;
+    size_t * read_buf_size;
+    size_t read_mem_count;
+    void ** output_buf;
+    size_t * output_sizes;
+    size_t output_mem_count;
 } zoidfs_read_vars;
 
 
