@@ -3291,6 +3291,7 @@ void zoidfs_read_transform_recv (zoidfs_read_vars * recv_buffs,
 	{
 	    recv_buffs->read_buf[x] = recv_data[x];
 	    recv_buffs->read_buf_size[x] = recv_data_len[x];
+	    fprintf(stderr,"Recv buffs len: %i %i\n",x, recv_data_len[x]);
 	}
     zoidfs_transform_decompress_init (compression_type, &decomp);
     ret = zoidfs_transform_read_request (&decomp, &recv_buffs, &total_len, ZOIDFS_CLOSE);
@@ -3998,7 +3999,7 @@ int zoidfs_read(const zoidfs_handle_t *handle, size_t mem_count,
         
         goto read_cleanup;
     }
-    if((ret = zoidfs_xdr_encode_hint(&send_msg, op_hint)) != ZFS_OK) {
+    if((ret = zoidfs_xdr_encode_hint(&send_msg, read_buffs->op_hint)) != ZFS_OK) {
         goto read_cleanup;
     }
     /*
@@ -4008,7 +4009,8 @@ int zoidfs_read(const zoidfs_handle_t *handle, size_t mem_count,
     ret = ZOIDFS_BMI_COMM_SENDU(send_msg);
     if (ret != ZFS_OK)
        goto read_cleanup;
-    if (strcmp(compression_type,"DISABLED UNTIL SERVER FIX") == 0)
+    /* if (compression_type != NULL) */
+    if (strcmp(compression_type, "DISABLED") == 0)
 	zoidfs_read_transform_recv ( read_buffs, &recv_msg,
 				     pipeline_size, &data_recv_size);
     else
