@@ -308,6 +308,49 @@ struct iofwd_inode {
     zoidfs_handle_t handle;                     /* zoidfs handle */
 };
 
+void zoidfs_print_handle(struct iofwd_inode *iino)
+{
+    uint8_t v[32];
+    unsigned char hbuffer[65];
+    int i = 0;
+    unsigned char * buffer = NULL;
+    unsigned char * vptr = NULL;
+    zoidfs_handle_t * h = NULL;
+
+    if(!iino)
+        return;
+
+    h = &(iino->handle);
+    memset(hbuffer, 0, 65);
+    memset(v, 0, 32);
+
+    memcpy(&v[0], &(h->data[0]), 32);
+    buffer = (unsigned char *)v;
+    vptr = hbuffer;
+
+    while(i < sizeof(zoidfs_handle_t))
+    {
+        int j = 0;
+        unsigned char cb = buffer[i];
+        while(j < 2)
+        {
+            unsigned int val = (cb >> 4) & 0xf;
+            if(val < 10)
+            {
+                *vptr++ = (unsigned char)('0' + val);
+            }
+            else
+            {
+                *vptr++ = (unsigned char)('a' + (val - 10));
+            }
+            cb = (cb << 4);
+            j += 1;
+        }
+        i += 1;
+    }
+    fprintf(stderr, "%s : handle = %s\n", __func__, hbuffer);
+}
+
 #define SYSIO_COPY_STAT(src, dest) *(dest) = *(src) 
 
 #define SYSIO_PRINT_STAT(src) \
@@ -462,7 +505,10 @@ static inline int iofwd_attrs_valid(struct iofwd_inode * iino, time_t t)
 static inline int iofwd_handle_valid(struct iofwd_inode * iino, time_t t)
 {
     if(iino)
-        return (iino->ii_handlevalid && iino->ii_handletim && (t < iino->ii_handletim));
+    {
+        //return (iino->ii_handlevalid && iino->ii_handletim && (t < iino->ii_handletim));
+        return (iino->ii_handletim && (t < iino->ii_handletim));
+    }
     return 0;
 }
 
@@ -479,12 +525,13 @@ static int iofwd_stat(const char *path, struct inode *ino, time_t t, struct intn
     unsigned fhandle_set = 0;
     zoidfs_attr_t attr;
 
+
     iino = ino ? I2II(ino) : NULL;
 
     /* if the inode is valid, don't lookup */
     if(iino && iofwd_handle_valid(iino, t))
     {
-        attr.mask = ZOIDFS_ATTR_ALL;
+        attr.mask = ZOIDFS_ATTR_ALL | (ZOIDFS_ATTR_FILEID|ZOIDFS_ATTR_FSID|ZOIDFS_ATTR_BSIZE);
         err = zoidfs_getattr(&iino->handle, &attr, ZOIDFS_NO_OP_HINT);
         if(err == ZFS_OK)
         {
@@ -500,7 +547,7 @@ static int iofwd_stat(const char *path, struct inode *ino, time_t t, struct intn
             fhandle_set = 1;
 
             /* get the attrs for the file handle */
-            attr.mask = ZOIDFS_ATTR_ALL;
+            attr.mask = ZOIDFS_ATTR_ALL | (ZOIDFS_ATTR_FILEID|ZOIDFS_ATTR_FSID|ZOIDFS_ATTR_BSIZE);
             err = zoidfs_getattr(&fhandle, &attr, ZOIDFS_NO_OP_HINT);
             if(err == ZFS_OK)
             {
@@ -526,17 +573,20 @@ static int iofwd_stat(const char *path, struct inode *ino, time_t t, struct intn
     }
 
     if (iino) {
-        iino->ii_attrtim = t;
-        iino->ii_handletim = t;
+        iino->ii_attrtim = t + 30;
+        iino->ii_handletim = t + 30;
         SYSIO_COPY_STAT(&stbuf, &ino->i_stbuf);
 
         /* valid file handle? copy it into the inode */
         if(fhandle_set)
         {
-            memcpy(&iino->handle, &fhandle, sizeof(zoidfs_handle_t));
+            iino->ii_handlevalid = 1;
+            memcpy(&(iino->handle.data[0]), &(fhandle.data[0]), sizeof(zoidfs_handle_t));
         }
         if (buf)
+        {
             *buf = ino->i_stbuf;
+        }
         SYSIO_IOFWD_FEXIT();
         return 0;
     }
@@ -568,6 +618,7 @@ static struct inode * iofwd_i_new(struct filesys *fs, time_t expiration, struct 
     }
     memset(&iino->ii_ident, 0, sizeof(iino->ii_ident));
     iino->ii_seekok = 0;
+    iino->ii_handlevalid = 0;
     iino->ii_attrvalid = 0;
     iino->ii_resetfpos = 0;
     iino->ii_ident.dev = buf->st_dev;
@@ -675,11 +726,17 @@ static int iofwd_fsswop_mount(const char *source,
     err = iofwd_stat("/", NULL, 0, &stbuf);
     if (err)
         goto error;
+
     rootino = iofwd_i_new(fs, t + FS2IOFWDFS(fs)->iofwdfs_atimo, &stbuf);
     if (!rootino) {
         err = -ENOMEM;
         goto error;
     }
+
+    /* init the root handle */
+    I2II(rootino)->ii_handlevalid = 0;
+    I2II(rootino)->ii_attrtim = t;
+    I2II(rootino)->ii_handletim = t;
 
     /*
      * Have path-node specified by the given source argument. Let the
@@ -1139,6 +1196,7 @@ static int iofwd_inop_lookup(struct pnode *pno, struct inode **inop, struct inte
 
     *inop = pno->p_base->pb_ino;
 
+    full_path = _sysio_pb_path(pno->p_base, '/');
     /* use cached values */
     if(*inop && (path || !intnt || (intnt->int_opmask & INT_GETATTR) == 0) && iofwd_attrs_valid(I2II(*inop), t) && iofwd_handle_valid(I2II(*inop), t))
     {
