@@ -18,20 +18,20 @@ cd ./libbuild
 # parse the BMI library
 mkdir ./libbmi
 cd ./libbmi
-ar -x /home/copej/mac-copej/work/anl/mcs/iofwd-64bit/bmi-2.8.1/lib/libbmi.a
+ar -x ./bmi-2.8.1/lib/libbmi.a
 cd ..
 
 # parse the zoidfsclient lib
 mkdir ./libzoidfsclient
 cd ./libzoidfsclient
-ar -x /home/copej/mac-copej/work/anl/mcs/iofwd-64bit/tmp/iofwd/src/zoidfs/libzoidfsclient.a
-ar -x /home/copej/mac-copej/work/anl/mcs/iofwd-64bit/tmp/iofwd/src/zoidfs/libzoidfshints.a
+ar -x ./iofwd/src/zoidfs/libzoidfsclient.a
+ar -x ./iofwd/src/zoidfs/libzoidfshints.a
 cd ..
 
 # parse the libsysio
 mkdir ./libsysio
 cd ./libsysio
-ar -x /home/copej/mac-copej/work/anl/mcs/iofwd-64bit/libsysio-iofwd-update/lib/libsysio.a
+ar -x ./libsysio-iofwd-update/lib/libsysio.a
 cd ..
 
 # parse libc
@@ -99,11 +99,5 @@ mv ./libiofwdsysio.a ./staticlibs
 #
 
 gcc -g -c posix-cunit.c -o posix-cunit.o
-gcc posix-cunit.o -g -o posix-cunit-static -L/home/copej/mac-copej/work/anl/mcs/iofwd-64bit/tmp/iofwd/src/zoidfs -lzoidfsclient ./staticlibs/libiofwdsysio.a -lpthread -lrt -L/home/copej/mac-copej/work/anl/mcs/iofwd-64bit/tmp/iofwd/src/zoidfs -lzoidfsclient -L/home/copej/mac-copej/work/anl/mcs/iofwd-64bit/tmp/iofwd/src/zoidfs -lzoidfshints
+gcc posix-cunit.o -g -o posix-cunit-static -L./iofwd/src/zoidfs -lzoidfsclient ./staticlibs/libiofwdsysio.a -lpthread -lrt -L./iofwd/src/zoidfs -lzoidfsclient -L./iofwd/src/zoidfs -lzoidfshints
 #gcc posix-cunit.o -g -o posix-cunit-shared -L./sharedlibs -liofwdsysio -lpthread
-
-#
-# make the test client app (alternate symbols)
-#
-#gcc -g -DIOFSL_ALT_SYMBOL=_zfs_sysio -c posix-cunit.c -o posix-cunit-native.o
-#gcc -o posix-cunit-native posix-cunit-native.o ~/mac-copej/work/anl/mcs/iofwd-64bit/libsysio/lib/libsysio.a -lpthread
