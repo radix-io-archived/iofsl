@@ -313,13 +313,14 @@ void IOFWDReadRequest::sendBuffers(const iofwdevent::CBType & cb, RetrievedBuffe
 	    param_.bmi_mem_sizes[ii],
 #endif
 	    compressed_mem_[0]+compressed_size_,
-	    param_.mem_total_size,
+	    param_.mem_total_size-compressed_size_,
 	    &outBytes,
 	    &outState,
 	    flushFlag);
 
 	  compressed_size_ += outBytes;
 
+	  ASSERT(outBytes <= param_.mem_total_size-compressed_size_);
 	  ASSERT(iofwdutil::transform::CONSUME_OUTBUF != outState);
       }
 
