@@ -300,9 +300,12 @@ void IOFWDReadRequest::sendBuffers(const iofwdevent::CBType & cb, RetrievedBuffe
    {
       int    outState = 0;
       size_t outBytes = 0;
+      bool   flushFlag = false;
 
       for(size_t ii = 0; ii < param_.mem_count; ii++)
       {
+	  flushFlag = (ii == param_.mem_count - 1) ? true : false;
+
 	  transform_->transform(param_.mem_starts[ii],
 #if SIZEOF_SIZE_T == SIZEOF_INT64_T
 	    param_.mem_sizes[ii],
@@ -313,7 +316,7 @@ void IOFWDReadRequest::sendBuffers(const iofwdevent::CBType & cb, RetrievedBuffe
 	    param_.mem_total_size,
 	    &outBytes,
 	    &outState,
-	    false);
+	    flushFlag);
 
 	  compressed_size_ += outBytes;
 
