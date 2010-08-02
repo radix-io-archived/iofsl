@@ -351,6 +351,7 @@ void IOFWDReadRequest::sendPipelineBufferCB(const iofwdevent::CBType cb, Retriev
    else
    {
       int    outState = 0;
+      int    recvStatus = 0;
       size_t outBytes = 0;
       size_t bytes = 0;
       size_t pipelines_posted = 0;
@@ -402,6 +403,10 @@ void IOFWDReadRequest::sendPipelineBufferCB(const iofwdevent::CBType cb, Retriev
 
 	      next_slot_++;
 	  }
+      }
+      else
+      {
+	  cb(recvStatus);
       }
    }
 }
