@@ -1,0 +1,77 @@
+syscalls := fcntl chdir chmod fchmod chown fchown close dup dup2 fstat fstat64 lstat64 fsync getcwd lseek lseek64 lstat getdirentries getdirentries64 mkdir creat creat64 stat stat64 read pread readv write pwrite writev statvfs statvfs64 fstatvfs fstatvfs64 truncate ftruncate truncate64 ftruncate64 rmdir symlink readlink link unlink rename fdatasync umask mknod utime mount umount opendir closedir readdir scandir
+syscall_prefix = __iofwdlibsysio_wrap
+
+#
+# update these paths!
+#
+bmi_path = ..//bmi-2.8.1
+iofsl_path = ../iofsl 
+sysio_path = ../libsysio 
+
+#
+# redefine symbols
+#
+define SYSCALL_redefine_expand_template
+--redefine-sym $(1)=$(syscall_prefix)_$(1)
+endef
+
+define SYSCALL_redefine_expand_setup_template
+objcopy $(foreach syscall,$(syscalls), $(call SYSCALL_redefine_expand_template,$(syscall))) $(1) $(1).tmp ;
+cp $(1).tmp $(1) ;
+rm $(1).tmp ;
+endef
+
+#.PHONY: all setup clean install uninstall libextract libbuildprep staticlibbuild dynlibbuild test
+.PHONY: all setup clean install uninstall libextract libbuildprep staticlibbuild test
+
+#all: staticlibbuild dynlibbuild install test
+all: staticlibbuild install test
+
+iofsl_syscall_wrapper.o: iofsl_syscall_wrapper.c
+	gcc -g -fPIC -c iofsl_syscall_wrapper.c -o iofsl_syscall_wrapper.o
+
+libbuildprep: libextract iofsl_syscall_wrapper.o
+	$(foreach libobj, $(wildcard libbuild/libbmi/*), $(call SYSCALL_redefine_expand_setup_template, $(libobj)))
+
+staticlibbuild: libbuildprep
+	cd ./libbuild ; ar -cru ./libiofwdsysio.a ../iofsl_syscall_wrapper.o ./libbmi/*.o ./libzoidfsclient/*.o ./libsysio/*.o ; mv ./libiofwdsysio.a ../ ; cd ../
+
+dynlibbuild: libbuildprep
+	cd ./libbuild ; gcc -g -shared -Wl,-soname,libiofwdsysio.so.1 -o libiofwdsysio.so.1.0.1 ../iofsl_syscall_wrapper.o ./libbmi/*.o ./libzoidfsclient/*.o ./libsysio/*.o ; mv ./libiofwdsysio.so.1.0.1 ../ ; cd ../
+
+libextract: setup
+	cd ./libbuild/libbmi ; ar -x $(bmi_path)/lib/libbmi.a ; cd ../../
+	cd ./libbuild/libzoidfsclient ; ar -x $(iofsl_path)/src/zoidfs/libzoidfsclient.a ; cd ../../
+	cd ./libbuild/libzoidfsclient ; ar -x $(iofsl_path)/src/zoidfs/libzoidfshints.a ; cd ../../
+	cd ./libbuild/libsysio ; ar -x $(sysio_path)/lib/libsysio.a ; cd ../../
+
+test: posix-sysio-iofsl-unit-static posix-sysio-iofsl-unit-shared
+
+posix-sysio-iofsl-unit-static: posix-sysio-iofsl-unit.o
+	gcc posix-sysio-iofsl-unit.o -g -o posix-sysio-iofsl-unit-static ./lib/libiofwdsysio.a -lpthread -lrt
+
+posix-sysio-iofsl-unit-shared: posix-sysio-iofsl-unit.o
+	gcc posix-sysio-iofsl-unit.o -g -o posix-sysio-iofsl-unit-shared -L./lib -liofwdsysio -lpthread -lrt
+
+posix-sysio-iofsl-unit.o: posix-sysio-iofsl-unit.c
+	gcc -g -c posix-sysio-iofsl-unit.c -o posix-sysio-iofsl-unit.o
+
+setup:
+	mkdir ./libbuild
+	mkdir ./libbuild/libzoidfsclient
+	mkdir ./libbuild/libbmi
+	mkdir ./libbuild/libsysio
+
+clean:
+	rm -rf ./libbuild
+	rm ./posix-sysio-iofsl-unit.o ./posix-sysio-iofsl-unit-static ./posix-sysio-iofsl-unit-shared 
+
+install: uninstall
+	mkdir -p ./lib
+	#mv libiofwdsysio.so.1.0.1 ./lib
+	#cd ./lib ; ln -s libiofwdsysio.so.1.0.1 libiofwdsysio.so.1 ; cd ../
+	#cd ./lib ; ln -s libiofwdsysio.so.1 libiofwdsysio.so ; cd ../
+	mv ./libiofwdsysio.a ./lib
+
+uninstall:
+	rm -rf ./lib
