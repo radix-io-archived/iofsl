@@ -3594,7 +3594,7 @@ int zoidfs_write(const zoidfs_handle_t *handle, size_t mem_count,
 
     if (compression_type != NULL)
 	{
-	    compressed_send_starts = malloc (mem_count * sizeof(mem_count));
+	    compressed_send_starts = malloc (mem_count * sizeof(void*));
 	    ret = zoidfs_write_transform_non_pipeline (&write_buffs, &transform,
 						       &compressed_send_starts, 
 						       &compressed_send_sizes,
