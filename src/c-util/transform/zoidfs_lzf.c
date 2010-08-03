@@ -213,16 +213,11 @@ int lzf_compress_hook (void * stream, void ** source, size_t * length, void ** d
 int lzf_compress_data (lzf_state_var * stream, void ** source, size_t * length, void ** dest,
                        size_t * output_length, int close)
 {
-  size_t lzf_block_size = LZF_BUFF_SIZE;
-  
-  int count = 0;
   int comp_ret = 0;
   int ret = 0;
   /* Sets up the xdr encoding */
    
-  XDR    xdr_header_data;
   int    xdr_header_size = 0;    
-  char * xdr_buffer; 
 
   /* Set up the header size and internal buffer size */
   if (*length == 0 && close != ZOIDFS_CLOSE)
@@ -508,7 +503,7 @@ void * lzf_decompress_data (void * compressed_data, int len)
                             compressed_data,((char *)compressed_data)[0]);
         }
         count++;
-        /* if the data is uncompressed *
+        // if the data is uncompressed *
         if (data_pos == 1280000)
             break;
         if(((char *)compressed_data)[0] == 'U')
@@ -530,7 +525,7 @@ void * lzf_decompress_data (void * compressed_data, int len)
             compressed_data += header_size + 1;
             xdrmem_create(&header_data,xdr_buffer,header_size, XDR_DECODE); 
             xdr_int(&header_data,&chunk_size);     
-            /* Compressed the data *
+            // Compressed the data *
             ret = lzf_decompress (compressed_data, chunk_size, data, 1280000 - data_pos);
             compressed_data += chunk_size;
             data += ret;

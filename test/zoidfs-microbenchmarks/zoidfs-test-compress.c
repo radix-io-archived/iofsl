@@ -46,7 +46,7 @@ double random_kernel(double UNUSED(x), double UNUSED(y))
         sdata = fread(&data, sizeof(double), 1, f);
         if(sdata != 1)
         {
-            fprintf(stderr, "%s : could not read from /dev/urandom, sdata = %i\n", __func__, sdata);
+            fprintf(stderr, "%s : could not read from /dev/urandom, sdata = %i\n", __func__, (int) sdata);
         }
     }
     else

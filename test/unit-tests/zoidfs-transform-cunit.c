@@ -2,6 +2,7 @@
 #include "CUnit/Basic.h"
 #include <stdio.h>
 #include <stdlib.h>
+#include <time.h>
 #include "zoidfs/zoidfs.h"
 #include "zoidfs/zoidfs-proto.h"
 #include "iofwd_config.h"
@@ -241,7 +242,7 @@ void test_zoidfs_transform_write_request (void)
   test_transform_write("ZLIB:", 15000, 1, 1);
   test_transform_write("ZLIB:", 15000000, 5, 0);
   test_transform_write("ZLIB:", 1500, 5, 5);
-  /*fprintf(stderr,"PASSTHROUGH TESTS\n"); 
+  //fprintf(stderr,"PASSTHROUGH TESTS\n"); 
   test_transform_write("passthrough:", 1500, 5 , 5);
   test_transform_write("passthrough:", 1500000, 1, 1);
   test_transform_write("passthrough:", 150000000, 1, 1); 

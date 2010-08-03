@@ -19,9 +19,6 @@ int MPI_Init(int * args, char *** argv)
 {
     int rank = 0;
     int size = 0;
-    int i = 0;
-    int shared_hosts = 0;
-    char * hostname;
     int num_ioservers = atoi(getenv("ZOIDFS_NUM_IOSERVERS"));
     int io_server_rank = 0;
     char * client_config_fn = (char *)malloc(sizeof(char) * 1024);

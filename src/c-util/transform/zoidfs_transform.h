@@ -94,6 +94,8 @@ int zoidfs_transform_write_request (zoidfs_write_compress * transform,
 				    size_t * total_len,
 				    int * close
 				    );
+int zoidfs_transform_decompress_init (char * type_str, zoidfs_decompress * comp);
+int zoidfs_transform_read_request (zoidfs_decompress * transform, zoidfs_read_vars * read_buffs, size_t * outputs_filled, int close);
 void zoidfs_transform_destroy (zoidfs_write_compress * comp);
 void zoidfs_transform_change_transform (char * type, zoidfs_write_compress * comp);
 

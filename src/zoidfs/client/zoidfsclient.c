@@ -3194,7 +3194,7 @@ int zoidfs_write_transform_non_pipeline ( zoidfs_write_vars * write_buffs,
 						  0, buffer, buffer_sizes,
 						  buf_count, len, &close);	 
 
-	    sprintf(compressed_len_string, "%u",*len);
+	    sprintf(compressed_len_string, "%u", (unsigned) *len);
 
 	    zoidfs_hint_add ( &(write_buffs->op_hint), 
 			      strdup(ZOIDFS_COMPRESSED_SIZE),
@@ -3291,11 +3291,11 @@ void zoidfs_read_transform_recv (zoidfs_read_vars * recv_buffs,
 	{
 	    recv_buffs->read_buf[x] = recv_data[x];
 	    recv_buffs->read_buf_size[x] = recv_data_len[x];
-	    fprintf(stderr,"Recv buffs len: %i %i\n",x, recv_data_len[x]);
+	    fprintf(stderr, "Recv buffs len: %i %i\n", x, (int) recv_data_len[x]);
 	}
     zoidfs_transform_decompress_init (compression_type, &decomp);
     ret = zoidfs_transform_read_request (&decomp, recv_buffs, &total_len, ZOIDFS_CLOSE);
-    fprintf(stderr, "Ret: %i, Total_len: %i\n",ret,total_len);
+    fprintf(stderr, "Ret: %i, Total_len: %i\n", ret, (int) total_len);
     if (ret == ZOIDFS_TRANSFORM_ERROR)
 	{
 	    ret = -1;
@@ -3532,7 +3532,6 @@ int zoidfs_write(const zoidfs_handle_t *handle, size_t mem_count,
     /* Stores the header stuffing information */ 
     void * header_buffer;
     size_t header_len = 0;
-    int send_complete = 0;
     bmi_size_t bmi_pipeline_size = 0;
     char pipeline_size_str[100];
     /* if file or mem counts are zero, return */
@@ -3635,7 +3634,7 @@ int zoidfs_write(const zoidfs_handle_t *handle, size_t mem_count,
 				      strdup(ZOIDFS_ENABLE_PIPELINE), strdup("1"),
 				      2, ZOIDFS_HINTS_ZC);
 		    assert(pipeline_size < 100000000);
-		    sprintf(pipeline_size_str, "%u", (size_t)pipeline_size);
+		    sprintf(pipeline_size_str, "%u", (unsigned) pipeline_size);
 		    zoidfs_hint_add ( &(write_buffs.op_hint), 
 				      strdup(ZOIDFS_PIPELINE_SIZE),
 				      strdup(pipeline_size_str), 

@@ -1,5 +1,7 @@
 #include "zoidfs_transform.h"
 #include <string.h>
+#include <ctype.h>
+
 int passthrough (void * stream, void ** source, size_t * length, void ** dest,
                  size_t * output_length, int close)
 {
@@ -214,9 +216,6 @@ int zoidfs_transform_write_request (zoidfs_write_compress * transform,
   /* Stores the length of the remaining output buffer */
   size_t output_buf_left = max_buff_size;
 
-  void * input_buffer;
-  void * output_buffer;
-
   /* Malloc's memory for the first buffer */
   if (transform->type != "passthrough")
     (*buffer)[0] = malloc(max_buff_size * sizeof(char));
@@ -367,7 +366,6 @@ int zoidfs_transform_decompress ( zoidfs_decompress * transform,
 
   do
     {
-      size_t tmp_store = (*out_size)[x];
       /*fprintf(stderr, "\nZoidfs_transform_decompress:\n\t"
 	      "transform: %p\n\tin_buf: %p\n\tin_size: %i\n\t"
 	      "out_buf: %p\n\tout_size: %i\r\noutputs_filled: %i\n\t"
@@ -397,7 +395,8 @@ int zoidfs_transform_decompress ( zoidfs_decompress * transform,
 	  (*outputs_filled) ++;
 	}
     } while (x != mem_count);
-  return ZOIDFS_OUTPUT_FULL;
+
+    return ZOIDFS_OUTPUT_FULL;
 }
 int zoidfs_transform_read_request (zoidfs_decompress * transform,
 				   zoidfs_read_vars * read_buffs,
