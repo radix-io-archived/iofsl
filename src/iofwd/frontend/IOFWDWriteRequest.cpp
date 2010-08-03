@@ -562,7 +562,7 @@ void IOFWDWriteRequest::recvComplete(int recvStatus)
 	      if(true == op_hint_crc_enabled_)
 	      {
 		  const size_t bufsize = hashFunc_->getHashSize();
-		  boost::scoped_array<char> result (new char[bufsize]);
+		  boost::scoped_array<char> result (new char[bufsize + 1]);
 
 		  if (0 != strcasecmp (result.get(), hash_value_))
 		    throw HashException (str(format("Incompatible hash values\nhash received = %s\nhash calculated = %s") % hash_value_ % result.get()));

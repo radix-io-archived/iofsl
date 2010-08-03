@@ -134,6 +134,21 @@ IOFWDReadRequest::ReqParam & IOFWDReadRequest::decodeParam ()
         }
    }
 
+   char *enable_crc = zoidfs::util::ZoidFSHintGet(&(param_.op_hint),
+       ZOIDFS_CRC);
+   if(NULL != enable_crc)
+   {
+        char *token = NULL, *saveptr = NULL;
+
+        token = strtok_r(enable_crc, ":", &saveptr);
+
+        if(NULL != token)
+        {
+	    hashFunc_.reset (HashFactory::instance().getHash(token));
+	    op_hint_crc_enabled_ = true;
+        }
+   }
+
    // init other param vars
    param_.mem_total_size = 0;
 
@@ -274,6 +289,18 @@ void IOFWDReadRequest::sendBuffers(const iofwdevent::CBType & cb, RetrievedBuffe
 
    if(false == op_hint_compress_enabled_)
    {
+      if(true == op_hint_crc_enabled_)
+      {
+	for(size_t ii = 0; ii < param_.mem_count; ii++)
+	{
+#if SIZEOF_SIZE_T == SIZEOF_INT64_T
+	  hashFunc_->process (param_.mem_starts[ii], param_.mem_sizes[ii]);
+#else
+	  hashFunc_->process (param_.mem_starts[ii], param_.bmi_mem_sizes[ii]);
+#endif
+	}
+      }
+
 #if SIZEOF_SIZE_T == SIZEOF_INT64_T
       /* Send the mem_sizes_ array */
       r_.rbmi_.post_send_list(cb,
@@ -324,6 +351,9 @@ void IOFWDReadRequest::sendBuffers(const iofwdevent::CBType & cb, RetrievedBuffe
 	  ASSERT(iofwdutil::transform::CONSUME_OUTBUF != outState);
       }
 
+      if(true == op_hint_crc_enabled_)
+	hashFunc_->process (compressed_mem_[0], compressed_size_);
+
       r_.rbmi_.post_send_list(cb,
 	  addr_,
 	  reinterpret_cast<const void*const*>(compressed_mem_),
@@ -341,6 +371,9 @@ void IOFWDReadRequest::sendPipelineBufferCB(const iofwdevent::CBType cb, Retriev
 
    if(false == op_hint_compress_enabled_)
    {
+      if(true == op_hint_crc_enabled_)
+	hashFunc_->process (rb->buffer_, size);
+
       r_.rbmi_.post_send(cb,
 	  addr_,
 	  (const void *)dynamic_cast<iofwdutil::mm::BMIMemoryAlloc *>(rb->buffer_)->getMemory(),
@@ -372,6 +405,9 @@ void IOFWDReadRequest::sendPipelineBufferCB(const iofwdevent::CBType cb, Retriev
 	flush_flag);
 
       ASSERT(outBytes <= param_.mem_total_size-compressed_size_);
+
+      if(true == op_hint_crc_enabled_ && 0 != outBytes)
+	  hashFunc_->process (compressed_mem_[0]+compressed_size_, outBytes);
 
       compressed_size_ += outBytes;
 
@@ -415,7 +451,22 @@ void IOFWDReadRequest::reply(const CBType & cb)
 {
    ZLOG_AUTOTRACE_DEFAULT;
 
+   int  key_len = strlen(ZOIDFS_CRC);
+   char *key = new char[key_len + 1];
+   int  value_len = hashFunc_->getHashSize();
+   char *value (new char[value_len + 1]);
+   zoidfs::zoidfs_op_hint_t *op_hint = zoidfs::util::ZoidFSHintInit(1);
+
+   strcpy(key, ZOIDFS_CRC);
+   zoidfs::util::ZoidFSHintAdd(&op_hint, key, value, value_len, ZOIDFS_HINTS_ZC);
+
    simpleOptReply(cb, getReturnCode(), TSSTART << encoder::EncVarArray(param_.file_sizes, param_.file_count));
+
+   delete []key;
+   key = NULL;
+
+   delete []value;
+   value = NULL;
 }
 
 void IOFWDReadRequest::allocateBuffer(iofwdevent::CBType cb, RetrievedBuffer * rb)

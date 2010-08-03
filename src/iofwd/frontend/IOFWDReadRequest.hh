@@ -9,10 +9,14 @@
 #include "iofwdutil/HybridAllocator.hh"
 
 #include <boost/scoped_ptr.hpp>
+#include "iofwdutil/hash/HashFactory.hh"
+#include "iofwdutil/hash/SHA1Simple.hh"
+#include "iofwdutil/hash/HashAutoRegister.hh"
 #include "src/iofwdutil/transform/IOFWDZLib.hh"
 
 
 using namespace iofwdutil;
+using namespace iofwdutil::hash;
 
 namespace iofwd
 {
@@ -26,11 +30,12 @@ class  IOFWDReadRequest
      public iofwdutil::InjectPool<IOFWDReadRequest>
 {
   protected:
-     // shared state
-     boost::scoped_ptr<iofwdutil::transform::GenericTransform> transform_;
+     bool op_hint_crc_enabled_;
      bool op_hint_compress_enabled_;
 
-     // pipelined state
+     boost::scoped_ptr<iofwdutil::transform::GenericTransform> transform_;
+     boost::scoped_ptr<HashFunc> hashFunc_;
+
      char   **compressed_mem_;
      size_t compressed_size_;
      size_t rem_bytes_;
@@ -43,8 +48,10 @@ public:
    IOFWDReadRequest (int opid, const BMI_unexpected_info & info,
          IOFWDResources & res)
       : IOFWDRequest (info,res), ReadRequest (opid),
-        transform_(NULL),
+        op_hint_crc_enabled_(false),
         op_hint_compress_enabled_(false),
+        transform_(NULL),
+        hashFunc_(NULL),
 	compressed_mem_(NULL),
 	compressed_size_(0),
 	rem_bytes_(0),
