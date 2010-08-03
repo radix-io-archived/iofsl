@@ -3294,7 +3294,7 @@ void zoidfs_read_transform_recv (zoidfs_read_vars * recv_buffs,
 	    fprintf(stderr,"Recv buffs len: %i %i\n",x, recv_data_len[x]);
 	}
     zoidfs_transform_decompress_init (compression_type, &decomp);
-    ret = zoidfs_transform_read_request (&decomp, &recv_buffs, &total_len, ZOIDFS_CLOSE);
+    ret = zoidfs_transform_read_request (&decomp, recv_buffs, &total_len, ZOIDFS_CLOSE);
     fprintf(stderr, "Ret: %i, Total_len: %i\n",ret,total_len);
     if (ret == ZOIDFS_TRANSFORM_ERROR)
 	{
@@ -4009,8 +4009,8 @@ int zoidfs_read(const zoidfs_handle_t *handle, size_t mem_count,
     ret = ZOIDFS_BMI_COMM_SENDU(send_msg);
     if (ret != ZFS_OK)
        goto read_cleanup;
-    /* if (compression_type != NULL) */
-    if (strcmp(compression_type, "DISABLED") == 0)
+    if (compression_type != NULL)
+	/*if (strcmp(compression_type, "DISABLED") == 0)*/
 	zoidfs_read_transform_recv ( read_buffs, &recv_msg,
 				     pipeline_size, &data_recv_size);
     else

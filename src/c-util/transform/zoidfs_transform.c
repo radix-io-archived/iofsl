@@ -385,12 +385,12 @@ int zoidfs_transform_decompress ( zoidfs_decompress * transform,
 	      "mem_count: %i\n\tclose: %i\n", transform->transform,
 	      *in_buf,*in_size,(*out_buf)[x],(*out_size)[x],*outputs_filled,
 	      mem_count, close);*/
+      if (ret == ZOIDFS_STREAM_END)
+    	  return ret;
       if (ret == ZOIDFS_TRANSFORM_ERROR)
     	  return ret;
       if (*in_size == 0 && close != ZOIDFS_CLOSE)
     	  return ZOIDFS_BUF_ERROR;
-      if (ret == ZOIDFS_STREAM_END)
-    	  return ret;
       if ((*out_size)[x] == 0)
 	{
 	  x++;
