@@ -119,6 +119,8 @@ src/iofwd/tasksm/IOCBWrapper.cpp \
 src/iofwd/tasksm/TaskSMFactory.hh \
 src/iofwd/tasksm/TaskSMFactory.cpp \
 \
+src/iofwd/frontend/HashException.hh \
+src/iofwd/frontend/HashException.cpp \
 src/iofwd/frontend/IOFWDResources.hh \
 src/iofwd/frontend/Frontend.cpp \
 src/iofwd/frontend/IOFWDCommitRequest.cpp \

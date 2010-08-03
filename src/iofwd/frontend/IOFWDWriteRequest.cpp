@@ -565,10 +565,7 @@ void IOFWDWriteRequest::recvComplete(int recvStatus)
 		  boost::scoped_array<char> result (new char[bufsize]);
 
 		  if (0 != strcasecmp (result.get(), hash_value_))
-		  fprintf(stderr, "Incompatible hash values\n"
-				  "hash value received over wire = %s\n"
-				  "hash value calculated = %s\n"
-				  , hash_value_, result.get());
+		    throw HashException (str(format("Incompatible hash values\nhash received = %s\nhash calculated = %s") % hash_value_ % result.get()));
 	      }
 	      userCB_[0](recvStatus);
 	      break;
@@ -758,10 +755,7 @@ void IOFWDWriteRequest::recvPipelineComplete(int recvStatus, int my_slot)
 	      boost::scoped_array<char> result (new char[bufsize]);
 
 	      if (0 != strcasecmp (result.get(), hash_value_))
-		fprintf(stderr, "Incompatible hash values\n"
-		"hash value received over wire = %s\n"
-		"hash value calculated = %s\n"
-		, hash_value_, result.get());
+		throw HashException (str(format("Incompatible hash values\nhash received = %s\nhash calculated = %s") % hash_value_ % result.get()));
 	  }
       }
    }
@@ -824,10 +818,7 @@ void IOFWDWriteRequest::recvPipelineComplete(int recvStatus, int my_slot)
 	      boost::scoped_array<char> result (new char[bufsize]);
 
 	      if (0 != strcasecmp (result.get(), hash_value_))
-		fprintf(stderr, "Incompatible hash values\n"
-				"hash value received over wire = %s\n"
-				"hash value calculated = %s\n"
-				, hash_value_, result.get());
+		throw HashException (str(format("Incompatible hash values\nhash received = %s\nhash calculated = %s") % hash_value_ % result.get()));
    	  }
      }
    }

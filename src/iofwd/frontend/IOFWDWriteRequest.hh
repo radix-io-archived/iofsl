@@ -10,6 +10,7 @@
 #include "iofwdutil/HybridAllocator.hh"
 #include "iofwdutil/InjectPool.hh"
 
+#include "iofwd/frontend/HashException.hh"
 #include "iofwdutil/hash/HashFactory.hh"
 #include "iofwdutil/hash/SHA1Simple.hh"
 #include "iofwdutil/hash/HashAutoRegister.hh"
