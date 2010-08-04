@@ -1,6 +1,9 @@
 #ifndef IOFWDEVENT_NOPCOMPLETION_HH
 #define IOFWDEVENT_NOPCOMPLETION_HH
 
+#include "iofwdevent/CBException.hh"
+
+
 namespace iofwdevent
 {
    //========================================================================
@@ -11,8 +14,9 @@ namespace iofwdevent
     */
    struct NOPCompletion
    {
-      void  operator  () (int) const
+      void  operator  () (const CBException & e) const
       {
+         e.check ();
       }
    };
 

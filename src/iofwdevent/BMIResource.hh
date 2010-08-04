@@ -178,7 +178,9 @@ namespace iofwdevent
          Handle post_testunexpected (const CBType &  u,
                int incount,
                int * outcount,
-               BMI_unexpected_info * info);
+               BMI_unexpected_info * info,
+               boost::optional<bmi_msg_tag_t> matchtag 
+                   = boost::optional<bmi_msg_tag_t>());
 
 
          Handle lookup (const CBType & u, const std::string & s,
@@ -207,14 +209,15 @@ namespace iofwdevent
             int * outcount;
             BMI_unexpected_info * info;
             size_t sequence;
+            boost::optional<bmi_msg_tag_t> matchtag;
 
             UnexpectedClient  () {}
 
             UnexpectedClient (const CBType &  o,
                   int in, int * out, BMI_unexpected_info *i,
-                  size_t seq)
+                  size_t seq, boost::optional<bmi_msg_tag_t> tag)
                : op (o), incount(in), outcount(out), info(i),
-               sequence(seq)
+               sequence(seq),matchtag(tag)
             {
             }
          };
@@ -236,6 +239,9 @@ namespace iofwdevent
          // Lock for the unexpected structures
          boost::mutex ue_lock_;
 
+         // Lock to pretect dequeueing from UE
+         boost::mutex ue_dequeue_lock_;
+
          // Intrusive single linked list with support for push_back
          // (cache_last -> true)
          typedef boost::intrusive::slist<UnexpectedClient,
@@ -247,9 +253,11 @@ namespace iofwdevent
          // slist for storing messages until somebody asks for them.
          // We want to take them from BMI, since as long as unexpected
          // messages are present BMI_testcontext returns early.
-         boost::intrusive::slist<UnexpectedMessage,
+         typedef boost::intrusive::slist<UnexpectedMessage,
             boost::intrusive::cache_last<true>,
-            boost::intrusive::constant_time_size<true> > ue_ready_;
+            boost::intrusive::constant_time_size<true> > UEReadyType;
+         
+         UEReadyType ue_ready_;
 
          size_t ue_sequence_;
 
