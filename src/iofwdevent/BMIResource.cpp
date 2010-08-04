@@ -51,7 +51,8 @@ namespace iofwdevent
     * messages ready.
     */
    BMIResource::Handle BMIResource::post_testunexpected (const CBType &  u,
-         int incount, int * outcount, BMI_unexpected_info * info)
+         int incount, int * outcount, BMI_unexpected_info * info,
+         boost::optional<bmi_msg_tag_t> tag)
    {
       mutex::scoped_lock l (ue_lock_);
 
@@ -61,7 +62,7 @@ namespace iofwdevent
       // might want to switch to pool allocated if it has performance benefits
       UnexpectedClient * nc = new (ue_client_pool_.malloc())
                                UnexpectedClient (u, incount, outcount, info,
-                                     ue_sequence_++);
+                                     ue_sequence_++, tag);
       ue_clientlist_.push_back (*nc);
 
       ZLOG_DEBUG_MORE(log_, format("testunexpected posted: incount=%i new"
@@ -270,6 +271,12 @@ namespace iofwdevent
     */
    void BMIResource::checkUnexpected ()
    {
+      // If somebody is already in this function, just exit. No point in
+      // racing against eachother to call the callbacks.
+      boost::mutex::scoped_try_lock ul (ue_dequeue_lock_);
+      if (!ul.owns_lock ())
+         return;
+
       // To simplify things, we always queued the unexpected messages first.
       // This way, we don't have to block other calls to BMI_testunexpected
       // (to prevent writing to ue_info_) while we drop the lock and notify
@@ -278,52 +285,86 @@ namespace iofwdevent
 
       // Now, for as long as we have messages to hand out
       // (either new ones, or queued in ue_ready_) _and_ we have clients
-      // (!ue_clientlist_.empty()) give them to the client to process them.
-      while (!ue_clientlist_.empty () &&
-              !ue_ready_.empty ())
+      // we didn't check give them to the client to process them.
+      UEClientListType::iterator I = ue_clientlist_.begin();
+
+      
+      // Note: ue_dequeue_lock_ prevents two threads from being in this
+      // method but does not prevent another thread from appending messages to
+      // the ue queue or add another client to the ue_clientlist while we drop
+      // the ue_lock during the callback. This is OK since for slist since
+      // adding does not invalidate iterators.
+      // (see http://www.boost.org/doc/libs/1_35_0/doc/html/
+      //  boost/intrusive/slist.html#id847393-bb)
+      while (I != ue_clientlist_.end () &&
+              !ue_ready_.empty())
       {
-         UnexpectedClient & c = ue_clientlist_.front ();
-         ue_clientlist_.pop_front ();
+         UnexpectedClient & c = *I;
 
          ASSERT(c.incount);
 
-         const size_t thisclient = std::min (static_cast<size_t>(c.incount),
-               static_cast<size_t>(ue_ready_.size()));
+         size_t delivered = 0;
 
-         ASSERT(thisclient);
+         // Try to deliver messages
 
-         *c.outcount = thisclient;
+         UEReadyType::iterator M = ue_ready_.begin();
 
-         for (size_t i=0; i<thisclient; ++i)
+         while (M != ue_ready_.end() &&
+               delivered < static_cast<size_t>(c.incount))
          {
-            UnexpectedMessage & msg = ue_ready_.front ();
-            c.info[i] = msg.info_;
-            ue_ready_.pop_front ();
+            UEReadyType::iterator CUR = M;
+            ++M;
+            UnexpectedMessage & msg = *CUR;
+
+            // Check for specific tag requests
+            if (c.matchtag && msg.info_.tag != *c.matchtag)
+               continue;
+
+            c.info[delivered] = msg.info_;
+            ue_ready_.erase (CUR);
+            ++delivered;
 
             // call destructor; Boost pool
             msg.~UnexpectedMessage ();
 
             ue_message_pool_.free (&msg);
          }
-
-         // We have to release the lock before calling the callback of the
-         // client because most likely it will repost a new testunexpected
-         // request.
-         //
-         // This means that:
-         //    1) Somebody could come along and put more unexpected
-         //       requests in our ue_ready_ queue
-         //    2) ue_client_list iterators can be invalidated
-         //       if the client reregisters.
-         ue_lock_.unlock ();
+         
+         // If we have messages for this client,
+         // deliver them
+         if (delivered)
          {
-            // Note: cannot/should not throw!
-            completeUnexpectedClient (c);
-            c.~UnexpectedClient ();
+            UEClientListType::iterator removeclient = I;
+            ue_clientlist_.erase (removeclient);
+            *c.outcount = delivered;
+
+            // We have to release the lock before calling the callback of the
+            // client because most likely it will repost a new testunexpected
+            // request.
+            //
+            // This means that:
+            //    1) Somebody could come along and put more unexpected
+            //       requests in our ue_ready_ queue
+            //    2) ue_client_list iterators can be invalidated
+            //       if the client reregisters.
+            ue_lock_.unlock ();
+            try
+            {
+               // Note: cannot/should not throw!
+               completeUnexpectedClient (c);
+               c.~UnexpectedClient ();
+            }
+            catch (...)
+            {
+               ALWAYS_ASSERT(false && "callback should not throw!");
+            }
+            ue_lock_.lock ();
+            // We need the lock to protect access to the mem pool
+            ue_client_pool_.free (&c);
          }
-         ue_lock_.lock ();
-         // We need the lock to protect access to the mem pool
-         ue_client_pool_.free (&c);
+
+         // Try next client
+         ++I;
       }
    }
 
@@ -376,20 +417,24 @@ namespace iofwdevent
       int outcount;
 
       // Try to deal with unexpected messages; If we cannot get the lock,
-      // somebody is currently calling testunexpected and that thread is
-      // going to poll testunexpected any moment now.
+      // somebody is currently calling post_testunexpected and that thread
+      // is going to poll testunexpected any moment now.
       {
-         mutex::scoped_try_lock ul (ue_lock_);
-         // For now, don't try to queue unexpected messages. Only try to
-         // retrieve them if we know we have a client.
-         // This is TEMPORARY and only here so that we don't steal unexpected
-         // messages from other components in the system.
-         if (!ue_clientlist_.empty ())
+         boost::mutex::scoped_try_lock ul (ue_lock_);
+         if (ul.owns_lock ())
          {
-            if (ul.owns_lock ())
+            // For now, don't try to dequeue unexpected messages if we
+            // don't have any clients. Only try to retrieve them if we know
+            // we have a client.  This is TEMPORARY and only here so that
+            // we don't steal unexpected messages from other components in
+            // the system.
+            if (!ue_clientlist_.empty ())
+            {
                checkUnexpected ();
+            }
          }
       }
+
       checkBMI (BMI_testcontext (opids_.size(), &opids_[0],
                &outcount, &errors_[0], &sizes_[0],
                reinterpret_cast<void**>(&users_[0]), maxwait, context_));
