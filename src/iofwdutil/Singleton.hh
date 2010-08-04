@@ -26,6 +26,9 @@ namespace iofwdutil
  *   Note: Singleton is threadsafe.
  *
  *   @TODO Add valgrind ignore macro for memory allocated here.
+ *
+ *   @TODO Singleton cleanup possible if, when creating the singleton, we add
+ *   register a delete method that we manually call when shutting down.
  */
 template<class T>
 class Singleton : private boost::noncopyable
