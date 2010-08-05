@@ -3111,8 +3111,8 @@ void zoidfs_write_vars_init (zoidfs_write_vars * z,
 void zoidfs_write_generate_hints (zoidfs_write_vars * write_buffs)
 {
     int x, ret;
-    HashHandle crc_hash =  chash_lookup(crc_type);
-    char * hash_value =  malloc(chash_getsize(crc_hash));
+    HashHandle crc_hash;
+    char * hash_value;
     char * hash_string;
     char pipeline_size_str[11];
 
@@ -3120,17 +3120,23 @@ void zoidfs_write_generate_hints (zoidfs_write_vars * write_buffs)
 	write_buffs->op_hint = zoidfs_hint_init(1);
 
     /* Calculate and add hashing hint */
-
-    for (x = 0; x < write_buffs->mem_count; x++)
+    if (crc_type != NULL)
 	{
-	    ret = chash_process (crc_hash, write_buffs-> mem_starts[x], 
-				 write_buffs->mem_sizes[x]);
+	    crc_hash =  chash_lookup(crc_type);
+	    hash_value =  malloc(chash_getsize(crc_hash));
+	    for (x = 0; x < write_buffs->mem_count; x++)
+		{
+		    ret = chash_process (crc_hash, write_buffs-> mem_starts[x], 
+					 write_buffs->mem_sizes[x]);
+		}
+	    ret = chash_get(crc_hash,hash_value,chash_getsize(crc_hash));
+	    hash_string = malloc(ret + strlen(crc_type) + 1);
+	    zoidfs_hint_add ( &(write_buffs->op_hint),strdup("ZOIDFS_CRC"),
+			      strdup(hash_string), strlen(crc_type) + ret + 1,
+			      ZOIDFS_HINTS_ZC);
+	    free(hash_value);
+	    free(hash_string);
 	}
-    ret = chash_get(crc_hash,hash_value,chash_getsize(crc_hash));
-    hash_string = malloc(ret + strlen(crc_type) + 1);
-    /*zoidfs_hint_add ( &(write_buffs->op_hint),strdup("ZOIDFS_CRC"),
-    		      strdup(hash_string), strlen(crc_type) + ret + 1,
-		      ZOIDFS_HINTS_ZC); */
 
     /* Add header stuffing hint */
     
@@ -3138,7 +3144,7 @@ void zoidfs_write_generate_hints (zoidfs_write_vars * write_buffs)
 	zoidfs_hint_add ( &(write_buffs->op_hint), 
 			  strdup(ZOIDFS_HEADER_STUFFING), strdup("1"), 
 			  strlen("1"), ZOIDFS_HINTS_ZC);
-
+ 
     /* Add pipeline hint */
 
     if (PIPELINE_SIZE == 0)
@@ -4204,8 +4210,6 @@ int zoidfs_init(void) {
     int psiz = 0;
 
     crc_type = getenv(ZOIDFS_CRC);
-    if (!crc_type)
-        crc_type = strdup("sha1");
 
     compression_type = getenv(ZOIDFS_TRANSFORM);
 
