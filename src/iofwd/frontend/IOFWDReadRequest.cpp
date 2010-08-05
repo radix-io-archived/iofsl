@@ -13,8 +13,6 @@ namespace iofwd
 
 IOFWDReadRequest::~IOFWDReadRequest ()
 {
-   ZLOG_AUTOTRACE_DEFAULT;
-
 #ifndef USE_TASK_HA
    if (param_.mem_starts)
       delete[] param_.mem_starts;
@@ -68,8 +66,6 @@ IOFWDReadRequest::~IOFWDReadRequest ()
 //
 IOFWDReadRequest::ReqParam & IOFWDReadRequest::decodeParam ()
 {
-   ZLOG_AUTOTRACE_DEFAULT;
-
    // get the handle
    process (req_reader_, handle_);
 
@@ -215,8 +211,6 @@ IOFWDReadRequest::ReqParam & IOFWDReadRequest::decodeParam ()
 
 void IOFWDReadRequest::initRequestParams(ReqParam & p, void * bufferMem)
 {
-    ZLOG_AUTOTRACE_DEFAULT;
-
     // allocate buffer for normal mode
     if (param_.pipeline_size == 0)
     {
@@ -285,8 +279,6 @@ void IOFWDReadRequest::initRequestParams(ReqParam & p, void * bufferMem)
 
 void IOFWDReadRequest::sendBuffers(const iofwdevent::CBType & cb, RetrievedBuffer * rb)
 {
-   ZLOG_AUTOTRACE_DEFAULT;
-
    if(false == op_hint_compress_enabled_)
    {
       if(true == op_hint_crc_enabled_)
@@ -367,8 +359,6 @@ void IOFWDReadRequest::sendBuffers(const iofwdevent::CBType & cb, RetrievedBuffe
 
 void IOFWDReadRequest::sendPipelineBufferCB(const iofwdevent::CBType cb, RetrievedBuffer * rb, size_t size)
 {
-   ZLOG_AUTOTRACE_DEFAULT;
-
    if(false == op_hint_compress_enabled_)
    {
       if(true == op_hint_crc_enabled_)
@@ -449,30 +439,35 @@ void IOFWDReadRequest::sendPipelineBufferCB(const iofwdevent::CBType cb, Retriev
 
 void IOFWDReadRequest::reply(const CBType & cb)
 {
-   ZLOG_AUTOTRACE_DEFAULT;
+   if(true == op_hint_crc_enabled_)
+   {
+      int  key_len = strlen(ZOIDFS_CRC);
+      char *key = new char[key_len + 1];
+      int  value_len = hashFunc_->getHashSize();
+      char *value (new char[value_len + 1]);
+      zoidfs::zoidfs_op_hint_t *op_hint = zoidfs::util::ZoidFSHintInit(1);
 
-   int  key_len = strlen(ZOIDFS_CRC);
-   char *key = new char[key_len + 1];
-   int  value_len = hashFunc_->getHashSize();
-   char *value (new char[value_len + 1]);
-   zoidfs::zoidfs_op_hint_t *op_hint = zoidfs::util::ZoidFSHintInit(1);
+      strcpy(key, ZOIDFS_CRC);
+      zoidfs::util::ZoidFSHintAdd(&op_hint, key, value, value_len, ZOIDFS_HINTS_ZC);
 
-   strcpy(key, ZOIDFS_CRC);
-   zoidfs::util::ZoidFSHintAdd(&op_hint, key, value, value_len, ZOIDFS_HINTS_ZC);
+      // Encode the hash value in the reply message
+      // currently hash is not encoded
+      simpleOptReply(cb, getReturnCode(), TSSTART << encoder::EncVarArray(param_.file_sizes, param_.file_count));
 
-   simpleOptReply(cb, getReturnCode(), TSSTART << encoder::EncVarArray(param_.file_sizes, param_.file_count));
+      delete []key;
+      key = NULL;
 
-   delete []key;
-   key = NULL;
-
-   delete []value;
-   value = NULL;
+      delete []value;
+      value = NULL;
+   }
+   else
+   {
+      simpleOptReply(cb, getReturnCode(), TSSTART << encoder::EncVarArray(param_.file_sizes, param_.file_count));
+   }
 }
 
 void IOFWDReadRequest::allocateBuffer(iofwdevent::CBType cb, RetrievedBuffer * rb)
 {
-    ZLOG_AUTOTRACE_DEFAULT;
-
     /* allocate the buffer wrapper */
     rb->buffer_ = new iofwdutil::mm::BMIMemoryAlloc(addr_, iofwdutil::bmi::BMI::ALLOC_SEND, rb->getsize());
 
@@ -481,8 +476,6 @@ void IOFWDReadRequest::allocateBuffer(iofwdevent::CBType cb, RetrievedBuffer * r
 
 void IOFWDReadRequest::releaseBuffer(RetrievedBuffer * rb)
 {
-    ZLOG_AUTOTRACE_DEFAULT;
-
     iofwdutil::mm::BMIMemoryManager::instance().dealloc(rb->buffer_);
 
     delete rb->buffer_;
