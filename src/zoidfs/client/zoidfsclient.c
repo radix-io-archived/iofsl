@@ -3260,16 +3260,6 @@ void zoidfs_read_transform_recv (zoidfs_read_vars * recv_buffs,
 	{
 	    total_len += recv_buffs->output_sizes[x];
 	}
-    /*if (total_len < pipeline_size)
-	{
-	    recv_data[0] = malloc(sizeof(char) * total_len);
-	    recv_data_len[0] = total_len;
-	}
-    else
-	{	
-	    recv_data[0] = malloc(sizeof(char) * pipeline_size);
-	    recv_data_len[0] = pipeline_size;
-	    } */
 
     x = 0;
     do 

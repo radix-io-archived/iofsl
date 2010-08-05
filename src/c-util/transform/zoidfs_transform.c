@@ -94,7 +94,7 @@ int zoidfs_transform_init (char * type_str, zoidfs_write_compress * comp)
       return -1;
 #endif
     }
-  else if (strcmp("bzip",type) == 0)
+  else if (strcmp("bzlib",type) == 0)
     {
 #ifdef HAVE_BZLIB 
       /* Get the level from the options */
@@ -103,7 +103,7 @@ int zoidfs_transform_init (char * type_str, zoidfs_write_compress * comp)
 	level = atoi(option);
       
       /* set up the compression struct */
-      bzip_compress_init ("bzip", 9, 0, 30, &(*comp).compression_struct);
+      bzip_compress_init ("bzlib", 9, 0, 30, &(*comp).compression_struct);
       (*comp).transform = &bzip_compress_hook; 
 #else 
       fprintf(stderr,"ERROR! bzip library is not availible!\n");

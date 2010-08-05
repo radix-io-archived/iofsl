@@ -18,7 +18,7 @@ int bzip_compress_init (char * type, int block_size, int verbosity,
 {
     int ret; 
     void ** ret_value;
-    if (strcmp(type,"bzip") == 0)
+    if (strcmp(type,"bzlib") == 0)
     {
         /* Create the required zlib structure */
         bz_stream * tmp = malloc(sizeof(bz_stream));
