@@ -49,7 +49,7 @@ namespace iofwdevent
     */
    BMIResource::Handle BMIResource::post_testunexpected (const CBType &  u,
          int incount, int * outcount, BMI_unexpected_info * info,
-         boost::optional<bmi_msg_tag_t> tag)
+         boost::optional<TagRange> tag)
    {
       boost::mutex::scoped_lock l (ue_lock_);
 
@@ -233,6 +233,11 @@ namespace iofwdevent
       }
    }
 
+   bool BMIResource::checkTagRange (bmi_msg_tag_t tag, const TagRange & range)
+      const
+   {
+      return (tag >= range.first && tag <= range.second);
+   }
 
    /**
     * Check for unexpected messages, and hand them to the listeners or store
@@ -291,7 +296,7 @@ namespace iofwdevent
             UnexpectedMessage & msg = *CUR;
 
             // Check for specific tag requests
-            if (c.matchtag && msg.info_.tag != *c.matchtag)
+            if (c.matchtag && !checkTagRange (msg.info_.tag, *c.matchtag))
                continue;
 
             c.info[delivered] = msg.info_;

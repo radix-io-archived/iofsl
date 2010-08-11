@@ -155,15 +155,18 @@ namespace iofwdevent
                             bmi_msg_tag_t tag,
                             bmi_hint hints);
 
+         typedef std::pair<bmi_msg_tag_t, bmi_msg_tag_t> TagRange;
+
          /**
           * Post testunexpected call.
+          * Tag range is inclusive (i.e. [start, stop])
           */
          Handle post_testunexpected (const CBType &  u,
                int incount,
                int * outcount,
                BMI_unexpected_info * info,
-               boost::optional<bmi_msg_tag_t> matchtag 
-                   = boost::optional<bmi_msg_tag_t>());
+               boost::optional<TagRange> matchtag 
+                   = boost::optional<TagRange>());
 
 
          Handle lookup (const CBType & u, const std::string & s,
@@ -192,13 +195,13 @@ namespace iofwdevent
             int * outcount;
             BMI_unexpected_info * info;
             size_t sequence;
-            boost::optional<bmi_msg_tag_t> matchtag;
+            boost::optional<TagRange> matchtag;
 
             UnexpectedClient  () {}
 
             UnexpectedClient (const CBType &  o,
                   int in, int * out, BMI_unexpected_info *i,
-                  size_t seq, boost::optional<bmi_msg_tag_t> tag)
+                  size_t seq, boost::optional<TagRange> tag)
                : op (o), incount(in), outcount(out), info(i),
                sequence(seq),matchtag(tag)
             {
@@ -265,6 +268,9 @@ namespace iofwdevent
 
          /// Throw a BMI exception
          void throwBMIError (int ret);
+         
+         /// Check unexpected message filter
+         bool checkTagRange (bmi_msg_tag_t tag, const TagRange & range) const;
    };
 
    //===========================================================================
