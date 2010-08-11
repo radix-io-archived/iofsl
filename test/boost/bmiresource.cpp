@@ -128,7 +128,8 @@ BOOST_FIXTURE_TEST_CASE( unexpected, BMIFixture )
    waitreceive.reset ();
 
    /* wait for receive with specific tag */
-   bmi_.post_testunexpected (waitreceive, 1, &completed, &info, 3);
+   bmi_.post_testunexpected (waitreceive, 1, &completed, &info,
+         std::make_pair(3,3));
    bmi_.post_sendunexpected (NOPCompletion (), init_.unexpected_self(),
          &completed, sizeof(completed), BMI_EXT_ALLOC, 3, 0);
    waitreceive.wait ();
@@ -146,8 +147,10 @@ BOOST_FIXTURE_TEST_CASE( unexpected, BMIFixture )
    completed = 0;
    waitreceive.reset();
 
-   bmi_.post_testunexpected (waitreceive, 1, &completed, &info, 3);
-   bmi_.post_testunexpected (waitreceive2, 1, &completed2, &info2, 2);
+   bmi_.post_testunexpected (waitreceive, 1, &completed, &info,
+         std::make_pair(3,3));
+   bmi_.post_testunexpected (waitreceive2, 1, &completed2, &info2,
+         std::make_pair(2,2));
    bmi_.post_sendunexpected (NOPCompletion(), init_.unexpected_self(),
          &completed, sizeof(completed), BMI_EXT_ALLOC, 2, 0);
    waitreceive2.wait();
@@ -211,7 +214,7 @@ struct UECallback
       com_(c)
    {
          handle_ = bmi_.post_testunexpected (*this, info_.size(), 
-            &completed_, &info_[0], tag_);
+            &completed_, &info_[0], std::make_pair(tag_,tag_));
    }
 
    operator iofwdevent::CBType ()
@@ -250,7 +253,7 @@ struct UECallback
       if (!stop)
       {
          handle_ = bmi_.post_testunexpected (*this, info_.size(), 
-            &completed_, &info_[0], tag_);
+            &completed_, &info_[0], std::make_pair(tag_,tag_));
       }
       else
       {
