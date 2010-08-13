@@ -3923,15 +3923,26 @@ int zoidfs_read(const zoidfs_handle_t *handle, size_t mem_count,
     	pipeline_size = bmi_pipeline_size;
     recv_msg.recvbuflen = zoidfs_xdr_size_processor(ZFS_OP_STATUS_T, &recv_msg.op_status) +
                           zoidfs_xdr_size_processor(ZFS_UINT64_ARRAY_T, &file_count);
-    send_msg.sendbuflen = zoidfs_xdr_size_processor(ZFS_OP_ID_T, &send_msg.zoidfs_op_id) +
-                          zoidfs_xdr_size_processor(ZFS_HANDLE_T, (void *)handle) +
-                          zoidfs_xdr_size_processor(ZFS_SIZE_T, &mem_count) +
-                          zoidfs_xdr_size_processor(ZFS_SIZE_T_ARRAY_T, &mem_count) +
-                          zoidfs_xdr_size_processor(ZFS_SIZE_T, &file_count) +
-                          zoidfs_xdr_size_processor(ZFS_FILE_OFS_ARRAY_T, &file_count) +
-                          zoidfs_xdr_size_processor(ZFS_FILE_OFS_ARRAY_T, &file_count) +
-                          zoidfs_xdr_size_processor(ZFS_SIZE_T, &pipeline_size) +
-                          zoidfs_xdr_hint_size(read_buffs->op_hint);
+    if (NULL != compression_type)
+      send_msg.sendbuflen = zoidfs_xdr_size_processor(ZFS_OP_ID_T, &send_msg.zoidfs_op_id) +
+			    zoidfs_xdr_size_processor(ZFS_HANDLE_T, (void *)handle) +
+			    zoidfs_xdr_size_processor(ZFS_SIZE_T, &mem_count) +
+			    zoidfs_xdr_size_processor(ZFS_SIZE_T_ARRAY_T, &mem_count) +
+			    zoidfs_xdr_size_processor(ZFS_SIZE_T, &file_count) +
+			    zoidfs_xdr_size_processor(ZFS_FILE_OFS_ARRAY_T, &file_count) +
+			    zoidfs_xdr_size_processor(ZFS_FILE_OFS_ARRAY_T, &file_count) +
+			    zoidfs_xdr_size_processor(ZFS_SIZE_T, &pipeline_size) +
+			    zoidfs_xdr_hint_size(read_buffs->op_hint);
+    else
+      send_msg.sendbuflen = zoidfs_xdr_size_processor(ZFS_OP_ID_T, &send_msg.zoidfs_op_id) +
+			    zoidfs_xdr_size_processor(ZFS_HANDLE_T, (void *)handle) +
+			    zoidfs_xdr_size_processor(ZFS_SIZE_T, &mem_count) +
+			    zoidfs_xdr_size_processor(ZFS_SIZE_T_ARRAY_T, &mem_count) +
+			    zoidfs_xdr_size_processor(ZFS_SIZE_T, &file_count) +
+			    zoidfs_xdr_size_processor(ZFS_FILE_OFS_ARRAY_T, &file_count) +
+			    zoidfs_xdr_size_processor(ZFS_FILE_OFS_ARRAY_T, &file_count) +
+			    zoidfs_xdr_size_processor(ZFS_SIZE_T, &pipeline_size) +
+			    zoidfs_xdr_hint_size(op_hint);
 
     /* Wait for the response from the ION */
     ZOIDFS_RECV_ALLOC_BUFFER(recv_msg);
@@ -3994,8 +4005,17 @@ int zoidfs_read(const zoidfs_handle_t *handle, size_t mem_count,
         
         goto read_cleanup;
     }
-    if((ret = zoidfs_xdr_encode_hint(&send_msg, read_buffs->op_hint)) != ZFS_OK) {
-        goto read_cleanup;
+    if (NULL != compression_type)
+    {
+      if((ret = zoidfs_xdr_encode_hint(&send_msg, read_buffs->op_hint)) != ZFS_OK) {
+	  goto read_cleanup;
+      }
+    }
+    else
+    {
+      if((ret = zoidfs_xdr_encode_hint(&send_msg, op_hint)) != ZFS_OK) {
+	  goto read_cleanup;
+      }
     }
     /*
      * Send the encoded function parameters to the ION daemon using an
