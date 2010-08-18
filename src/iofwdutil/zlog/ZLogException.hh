@@ -9,19 +9,14 @@ namespace iofwdutil
    {
 //===========================================================================
 
-class ZLogException : public ZException
+class ZLogException : public virtual ZException
 {
 public:
    ZLogException (const std::string & s)
    {
-      pushMsg (s); 
+      pushMsg (s);
    }
-
-   virtual ~ZLogException ()
-   {
-   }
-
-}; 
+};
 
 //===========================================================================
    }

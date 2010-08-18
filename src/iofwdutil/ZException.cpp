@@ -1,29 +1,18 @@
-#include <iterator>
-#include <sstream>
-#include <algorithm>
 #include <boost/foreach.hpp>
+#include <boost/exception/all.hpp>
+#include <boost/format.hpp>
+
 #include "ZException.hh"
 #include "backtrace.hh"
 
-using namespace std; 
+using namespace boost;
 
 namespace iofwdutil
 {
    //========================================================================
 
-   namespace {
-      struct addendl
-      {
-         std::string operator () (const std::string & in)
-         {
-            return in + "\n";
-         }
-      };
-   }
-
    ZException::ZException ()
    {
-
    }
 
    ZException::ZException (const std::string & s)
@@ -31,22 +20,28 @@ namespace iofwdutil
       pushMsg (s);
    }
 
-   ZException::~ZException ()
-   {
-   }
-
    std::string ZException::toString () const
    {
-      ostringstream o; 
-      std::ostream_iterator<std::string> out(o);
-      std::transform (msg_.begin(), msg_.end(), out, addendl());
-
-      return o.str(); 
+      return diagnostic_information (*this);
    }
 
    void ZException::pushMsg (const std::string & msg)
    {
-      msg_.push_back (msg); 
+      std::string * str =
+        boost::get_error_info<zexception_msg> (*this);
+      if (str)
+      {
+         *str += msg;
+      }
+      else
+      {
+         *this << zexception_msg (msg);
+      }
+   }
+
+   std::string to_string (const zexception_msg & n)
+   {
+      return str(format("Exception message: %s") % n.value ());
    }
 
    //========================================================================

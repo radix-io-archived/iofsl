@@ -14,7 +14,6 @@ namespace encoder
     */
    class EncoderException : public iofwdutil::ZException
    {
-      virtual ~EncoderException ();
    };
 
 

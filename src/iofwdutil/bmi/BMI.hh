@@ -84,11 +84,7 @@ namespace iofwdutil
       // Shut down BMI
       void finalize ();
 
-   protected:
-      friend class BMIContext;
-      friend class BMIAddr;
-      friend class BMIOp;
-
+      // Throw exception if a BMI error occurs
       inline
       static int check (int retcode)
       {
@@ -97,6 +93,12 @@ namespace iofwdutil
 
          return handleBMIError (retcode);
       }
+
+
+   protected:
+      friend class BMIContext;
+      friend class BMIAddr;
+      friend class BMIOp;
 
       static int handleBMIError (int retcode);
 

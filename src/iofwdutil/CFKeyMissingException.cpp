@@ -9,8 +9,4 @@ CFKeyMissingException::CFKeyMissingException (const std::string & n)
 {
 }
 
-CFKeyMissingException::~CFKeyMissingException ()
-{
-}
-
 }

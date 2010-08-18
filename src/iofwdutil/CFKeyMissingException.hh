@@ -3,16 +3,15 @@
 namespace iofwdutil
 {
 
-   class CFKeyMissingException : public ZException 
+   class CFKeyMissingException : virtual public ZException
    {
       public:
          CFKeyMissingException (const std::string & keyname);
 
-
-         virtual ~CFKeyMissingException ();
-
          const std::string & getKeyName () const
          { return keyname_; }
+
+         virtual ~CFKeyMissingException () throw () {}
 
       protected:
          const std::string keyname_;
