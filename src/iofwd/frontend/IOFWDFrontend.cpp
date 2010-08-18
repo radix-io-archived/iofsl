@@ -22,7 +22,7 @@
 #include "iofwd/Config.hh"
 #include "iofwd/BMI.hh"
 #include "iofwd/ConfigException.hh"
-
+#include "zoidfs/zoidfs-comm.h"
 #include "IOFWDNotImplementedRequest.hh"
 #include "IOFWDNullRequest.hh"
 #include "IOFWDGetAttrRequest.hh"
@@ -223,7 +223,8 @@ void IOFWDFrontend::post_testunexpected ()
 
    unexpected_handle_ = rbmi_.post_testunexpected
       (boost::bind (&IOFWDFrontend::newUnexpected,
-            boost::ref(*this), _1), info_.size(), &ue_count_, &info_[0]);
+            boost::ref(*this), _1), info_.size(), &ue_count_, &info_[0],
+       std::make_pair(ZOIDFS_BMI_MINTAG, ZOIDFS_BMI_MAXTAG));
 }
 
 /**
