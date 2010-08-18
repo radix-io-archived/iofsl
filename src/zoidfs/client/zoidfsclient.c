@@ -3426,6 +3426,7 @@ int zoidfs_write_pipeline_list (zoidfs_write_vars * write_buffs,
     size_t buffer_full = write_buffs->mem_count;   
     bmi_size_t bmi_total_len = 0;
     size_t write_size = 0;
+    size_t xfer_size = 0;
 
     /* If compression is disabled or the pipeline was set to zero but
        message too large for a single send */
@@ -3437,6 +3438,10 @@ int zoidfs_write_pipeline_list (zoidfs_write_vars * write_buffs,
 	{	
 	    zoidfs_transform_init (compression_type, &transform);
 	}
+
+    for(x = 0, xfer_size = 0; x < write_buffs->mem_count; x++)
+      xfer_size += write_buffs->mem_sizes[x];
+
     for (x = 0; x < write_buffs->mem_count; x++)
 	buffer_lengths[x] = pipeline_size;
     do 
@@ -3462,7 +3467,7 @@ int zoidfs_write_pipeline_list (zoidfs_write_vars * write_buffs,
 		    free(buffer[x]);
 	    buffer_full = write_buffs->mem_count;
 	    
-	} while (total_len == pipeline_size);
+	} while (total_len == pipeline_size && total_len < xfer_size);
 	
     free(buffer);
     free(buffer_lengths);
