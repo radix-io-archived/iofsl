@@ -7,6 +7,7 @@
 /* #define ZOIDFS_REQUEST_TAG 0
 #define ZOIDFS_REPLY_TAG   1 */
 
+#define ZOIDFS_BMI_MINTAG 0
 #define ZOIDFS_BMI_MAXTAG 65536
 
 #endif
