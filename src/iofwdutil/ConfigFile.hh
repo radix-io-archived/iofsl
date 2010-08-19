@@ -11,7 +11,7 @@
 
 #include "c-util/configfile.h"
 #include "ConfigContainer.hh"
-#include "CFKeyMissingException.hh"
+#include "ConfigException.hh"
 
 namespace iofwdutil
 {

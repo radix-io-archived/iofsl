@@ -98,7 +98,8 @@ src/iofwdutil/workqueue/WorkItem.hh \
 src/iofwdutil/workqueue/WorkQueue.hh \
 src/iofwdutil/workqueue/WorkQueueBase.hh \
  \
-src/iofwdutil/CFKeyMissingException.hh \
+src/iofwdutil/ConfigException.hh \
+src/iofwdutil/ConfigException.cpp \
 src/iofwdutil/ConfigContainer.hh \
 src/iofwdutil/ConfigFile.hh \
 src/iofwdutil/HybridAllocator.hh \

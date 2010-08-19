@@ -30,16 +30,25 @@ static bool             opt_help                = false;
 static ConfigFile getConfig (const std::string & name)
 {
    char * err = 0;
-   ConfigHandle h = txtfile_openConfig (name.c_str(), &err); 
-   if (!h || err)
+   try
    {
-      const std::string s = 
-         str(boost::format("Error opening config file '%s': %s") % name % err);
-      free (err);
-      ZTHROW (ZException () << zexception_msg (s));
-   }
+      ConfigHandle h = txtfile_openConfig (name.c_str(), &err); 
+      if (!h || err)
+      {
+         const std::string s = 
+            str(boost::format("Error opening config file '%s': %s") % name % err);
+         free (err);
+         ZTHROW (ConfigIOException () <<  zexception_msg (s));
+      }
 
-   return ConfigFile  (h);
+      return ConfigFile  (h);
+   }
+   catch (ConfigException & e)
+   {
+      // Add filename to exception
+      e << cfexception_file_name (name);
+      throw;
+   }
 }
 
 
