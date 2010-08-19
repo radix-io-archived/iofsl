@@ -3,7 +3,7 @@
  * zoidfs.c
  * Client-side implementation of the ZOIDFS API. The CNs communicate with
  * the IONs over BMI.
- *
+ *z
  * Nawab Ali <alin@cse.ohio-state.edu>
  * Jason Cope <copej@mcs.anl.gov>
  *    
@@ -3072,6 +3072,7 @@ void zoidfs_write_vars_destroy (zoidfs_write_vars * z)
     /* Destroy the local mem_starts/mem_sizes */
     free((*z).mem_starts);	    
     free((*z).mem_sizes);
+    zoidfs_hint_destroy(&z->op_hint);
 }
 
 void zoidfs_write_vars_init (zoidfs_write_vars * z,
@@ -3231,6 +3232,15 @@ zoidfs_read_vars * zoidfs_read_init (const zoidfs_handle_t *handle,
     read_buffs->op_hint = op_hint;
     return read_buffs;
 }
+void zoidfs_read_destroy (zoidfs_read_vars * read_buffs)
+{
+    free(read_buffs->output_buf);
+    free(read_buffs->output_sizes);
+    free(read_buffs->read_buf);
+    free(read_buffs->read_buf_size);
+    zoidfs_hint_destroy(&read_buffs->op_hint);
+    free(read_buffs);
+}
 void zoidfs_read_generate_hints (zoidfs_read_vars * read_buffs)
 {
     if (zoidfs_hint_num_elements(&(read_buffs->op_hint)) == 0)
@@ -3248,13 +3258,13 @@ void zoidfs_read_transform_recv (zoidfs_read_vars * recv_buffs,
 				 size_t pipeline_size,
 				 size_t * data_recv_size)
 {
-    int x, ret;
+    int x, ret, num_read;
     size_t recv_size_expected = 0;
     zoidfs_decompress decomp;
     bmi_size_t size_recv = 0;
     size_t total_len = 0;
     void ** recv_data = malloc(sizeof(char*) * recv_buffs->output_mem_count);
-    bmi_size_t * recv_data_len = malloc(sizeof(size_t) * recv_buffs->output_mem_count);
+    bmi_size_t * recv_data_len = malloc(sizeof(bmi_size_t) * recv_buffs->output_mem_count);
 
     for ( x = 0; x < recv_buffs->output_mem_count; x++)
 	{
@@ -3283,15 +3293,16 @@ void zoidfs_read_transform_recv (zoidfs_read_vars * recv_buffs,
     recv_buffs->read_buf = malloc(sizeof(char *) * x); 
     recv_buffs->read_buf_size = malloc(sizeof(size_t) * x);
     recv_buffs->read_mem_count = x;
+    num_read = x;
     for (x = 0; x < recv_buffs->read_mem_count; x++)
 	{
 	    recv_buffs->read_buf[x] = recv_data[x];
 	    recv_buffs->read_buf_size[x] = recv_data_len[x];
-	    fprintf(stderr, "Recv buffs len: %i %i\n", x, (int) recv_data_len[x]);
+	    
 	}
     zoidfs_transform_decompress_init (compression_type, &decomp);
     ret = zoidfs_transform_read_request (&decomp, recv_buffs, &total_len, ZOIDFS_CLOSE);
-    fprintf(stderr, "Ret: %i, Total_len: %i\n", ret, (int) total_len);
+  
     if (ret == ZOIDFS_TRANSFORM_ERROR)
 	{
 	    ret = -1;
@@ -3300,11 +3311,14 @@ void zoidfs_read_transform_recv (zoidfs_read_vars * recv_buffs,
     
  zoidfs_read_cleanup:
     ret =0;
-    /*
-    for(x = 0; recv_buffs->read_mem_count; x++)
+    for(x = 0; x < num_read; x++)
+	{
 	    free(recv_data[x]);
+	}
     free(recv_data);
-    free(recv_data_len);*/
+    free(recv_data_len);
+   
+    zoidfs_transform_decompress_destory(&decomp);
 }
 				 
 
@@ -3339,11 +3353,11 @@ void zoidfs_write_create_header ( zoidfs_write_vars * write_buffs,
     memcpy((*buffer), send_msg->sendbuf, send_msg->sendbuflen);
 
     (*((char **)buffer)) += send_msg->sendbuflen;
-    
     for (x = 0; x < buf_count; x++)
 	{
 	    memcpy((*buffer), list_buffer[x], buffer_sizes[x]);
 	    (*((char **)buffer)) += buffer_sizes[x];
+	    free(list_buffer[x]);
 	}
 
     (*header_len) = output_length + send_msg->sendbuflen;    
@@ -3357,8 +3371,8 @@ void zoidfs_write_create_header ( zoidfs_write_vars * write_buffs,
 
 int zoidfs_write_xdr_encode (zoidfs_send_msg_t * send_msg,
 			     const zoidfs_handle_t * handle,
-			     zoidfs_file_ofs_array_transfer_t file_starts_transfer,
-			     zoidfs_file_ofs_array_transfer_t file_sizes_transfer,
+			     zoidfs_file_ofs_array_transfer_t * file_starts_transfer,
+			     zoidfs_file_ofs_array_transfer_t * file_sizes_transfer,
 			     size_t * file_count,
 			     size_t pipeline_size,
 			     zoidfs_op_hint_t * op_hint)
@@ -3386,15 +3400,15 @@ int zoidfs_write_xdr_encode (zoidfs_send_msg_t * send_msg,
 	return -1;
     }
 
-    if((ret = zoidfs_xdr_processor(ZFS_FILE_OFS_ARRAY_T, &file_starts_transfer, &send_msg->send_xdr)) != ZFS_OK)
+    if((ret = zoidfs_xdr_processor(ZFS_FILE_OFS_ARRAY_T, file_starts_transfer, &send_msg->send_xdr)) != ZFS_OK)
     {  
+	fprintf(stderr,"Faild to encode file_starts\n");
 	return -1;
     }
 
-
-    if((ret = zoidfs_xdr_processor(ZFS_FILE_OFS_ARRAY_T, &file_sizes_transfer, &send_msg->send_xdr)) != ZFS_OK)
+    if((ret = zoidfs_xdr_processor(ZFS_FILE_OFS_ARRAY_T, file_sizes_transfer, &send_msg->send_xdr)) != ZFS_OK)
     {
-        
+        fprintf(stderr,"Failed to encode file_sizes\n");
         return -1;
     }
 
@@ -3472,6 +3486,7 @@ int zoidfs_write_pipeline_list (zoidfs_write_vars * write_buffs,
     free(buffer);
     free(buffer_lengths);
     free(bmi_mem_sizes);
+    zoidfs_transform_destroy(&transform);
     return ret;
 } 
 
@@ -3681,8 +3696,8 @@ int zoidfs_write(const zoidfs_handle_t *handle, size_t mem_count,
 
     /* Write the encoded header */ 
 
-    ret = zoidfs_write_xdr_encode (&send_msg, handle, file_starts_transfer,
-				   file_sizes_transfer, &file_count, pipeline_size,
+    ret = zoidfs_write_xdr_encode (&send_msg, handle, &file_starts_transfer,
+				   &file_sizes_transfer, &file_count, pipeline_size,
 				   write_buffs.op_hint);
 
 
@@ -3808,10 +3823,11 @@ int zoidfs_write(const zoidfs_handle_t *handle, size_t mem_count,
 
     if (compression_type != NULL)
 	{
-	    for (x = 0; x < compressed_send_count; x++)
+	    /*for (x = 0; x < compressed_send_count; x++)
 		{
-		    free(compressed_send_starts[x]);
-		}
+		    if (compressed_send_starts[x])
+			free(compressed_send_starts[x]);
+			}*/
 	    free(compressed_send_starts);
 	    free(compressed_send_sizes);
 	}
@@ -4096,6 +4112,8 @@ read_cleanup:
         ret = recv_msg.op_status;
     }
 
+    if (compression_type != NULL)
+	zoidfs_read_destroy(read_buffs);
     ZOIDFS_RECV_MSG_DESTROY(recv_msg);
     ZOIDFS_SEND_MSG_DESTROY(send_msg);
 

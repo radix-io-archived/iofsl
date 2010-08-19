@@ -140,10 +140,11 @@ int zoidfs_transform_init (char * type_str, zoidfs_write_compress * comp)
 
 void zoidfs_transform_destroy (zoidfs_write_compress * comp)
 {
-    if (strcmp((*comp).type,"ZLIB:") == 0 || strcmp((*comp).type,"BZIP:") == 0)
+    if (strcmp((*comp).type,"zlib") == 0 || strcmp((*comp).type,"bzip") == 0)
     {
         free((*comp).compression_struct);        
     }
+    free((*comp).type);
 } 
 
 void zoidfs_transform_change_transform (char * type, zoidfs_write_compress * comp)
@@ -219,7 +220,7 @@ int zoidfs_transform_write_request (zoidfs_write_compress * transform,
   /* Malloc's memory for the first buffer */
   if (transform->type != "passthrough")
     (*buffer)[0] = malloc(max_buff_size * sizeof(char));
-  
+
   /* Loop until transform compleated or out of buffer */
   do
     {
@@ -282,7 +283,15 @@ int zoidfs_transform_write_request (zoidfs_write_compress * transform,
 
   return ret;  
 }
-
+void zoidfs_transform_decompress_destory (zoidfs_decompress * comp)
+{
+#ifdef HAVE_ZLIB
+  if (strcmp(comp->type,"zlib") == 0)
+    (void)inflateEnd(comp->transform);
+#endif
+  free(comp->transform);
+  free(comp->type);
+}
 int zoidfs_transform_decompress_init (char * type_str, zoidfs_decompress * comp)
 {
   char * tmp_type = malloc(sizeof(char) * strlen(type_str) + 1);
@@ -350,8 +359,6 @@ int zoidfs_transform_decompress_init (char * type_str, zoidfs_decompress * comp)
 
   free(tmp_type);
   return 0;
-
-
 }
 
 
