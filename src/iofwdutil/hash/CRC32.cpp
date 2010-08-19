@@ -6,6 +6,11 @@ extern "C" {
 #include <zlib.h>
 }
 
+//
+// @TODO: Rename this into adler32 and add some wrappers around boost/crc.hpp
+// that really implement crc32
+//
+
 namespace iofwdutil
 {
    namespace hash
