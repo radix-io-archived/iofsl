@@ -20,10 +20,11 @@ namespace iofwdevent
     * Cannot be copied for two reasons:
     *    1) When using as functor, the user really doesn't want to copy the
     *       functor (and complete the copy) -> force failure is boost::ref
-    *       isn't use
+    *       isn't used
     *    2) boost::mutex cannot be copied anyway.
     *
     * @TODO: exception transport
+    * @TODO: This class really has a wrong name
     */
    class SingleCompletion : public boost::noncopyable
    {
