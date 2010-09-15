@@ -20,50 +20,64 @@ AC_CONFIG_HEADERS([iofwd_config.h])
 AC_PROG_CC
 AM_PROG_CC_C_O
 AC_PROG_CXX
-AC_PROG_CXXCPP
 AC_PROG_RANLIB
 
-AC_REQUIRE_CPP
+
+AC_ARG_WITH([mpi],[AS_HELP_STRING([--with-mpi@<:@=DIR@:>@],
+                        [location of MPI library])],
+                   [],
+                   [with_mpi=check])
 
 ENABLE_MPI=
 ORIG_CC=
 ORIG_CPP=
 ORIG_CXX=
-AC_ARG_WITH([mpi],[AS_HELP_STRING([--with-mpi@<:@=DIR@:>@],
-                        [location of MPI library])],
-                   [mpidir=$withval])
+AS_IF([test "x$with_mpi" != "xno"],
+[
+ if test "x$with_mpi" != "xcheck" -a "x$with_mpi" != "xyes"; then
+    checkpath="${with_mpi}/bin"
+ else
+    checkpath="$PATH"
+ fi
+ AC_CHECK_PROGS(MPICC, [mpicc], [], [$checkpath])
+ AC_CHECK_PROGS(MPICXX, [mpiCC mpic++], [], [$checkpath])
+ if test "x$with_mpi" != "xcheck"; then
+    if test -z "${MPICXX}" ; then
+    AC_MSG_ERROR("--with-mpi given but could not find mpic++!")
+    fi
+    if test -z "${MPICC}" ; then
+    AC_MSG_ERROR("--with-mpi given but could not find mpicc!")
+    fi
+ fi
+ ])
 
-# search for mpi compilers and overide the normal compilers
-# if mpi compilers are found
-#
-# if the mpi flag is specifed but the mpi compilers are not found
-# ... abort
-if test "x${mpidir}" != "x" ; then
-    AC_CHECK_PROG([MPICC],[mpicc],[${mpidir}/bin/mpicc],[0], [${mpidir}/bin])
-    if test "x$MPICC" != "x0" ; then
-        ORIG_CC="${CC}"
-        CC="${mpidir}/bin/mpicc"
-    else
-        AC_MSG_ERROR([Could not locate mpicc!])
-    fi
-    AC_CHECK_PROG([MPICPP],[mpic++],[${mpidir}/bin/mpic++],[0], [${mpidir}/bin])
-    if test "x$MPICPP" != "x0" ; then
-        ORIG_CPP="${CPP}"
-        CPP="${mpidir}/bin/mpicpp"
-    else
-        AC_MSG_ERROR([Could not locate mpic++!])
-    fi
-    AC_CHECK_PROG([MPICXX],[mpicxx],[${mpidir}/bin/mpicxx],[0], [${mpidir}/bin])
-    if test "x$MPICXX" != "x0" ; then
-        ORIG_CXX="${CXX}"
-        CXX="${mpidir}/bin/mpicxx"
-    else
-        AC_MSG_ERROR([Could not locate mpicxx!])
-    fi
-    ENABLE_MPI=1
+if test "${MPICXX}x" != "x" ; then
+   if test "${MPICC}x" == "x"; then
+      AC_MSG_ERROR("Found MPI C++ compiler but not MPI C compiler??")
+   fi
+
+   ORIG_CXX="${CXX}"
+   CXX="${MPICXX}"
+   ORIG_CC="${CC}"
+   CC="${MPICC}"
+   ENABLE_MPI=1
+
 fi
+
+AC_MSG_CHECKING([if MPI support will be enabled])
+if test "x$ENABLE_MPI" == "x1"; then
+AC_MSG_RESULT([yes])
+else
+AC_MSG_RESULT([no])
+fi
+
 AM_CONDITIONAL([HAVE_MPI],[test "x${ENABLE_MPI}" == "x1"])
 
+dnl ========================================================
+dnl Now that we have a compiler, try to use preprocessor
+dnl ========================================================
+AC_REQUIRE_CPP
+AC_PROG_CXXCPP
 
 dnl =========================================================================
 dnl ===== pkg-config support ================================================
