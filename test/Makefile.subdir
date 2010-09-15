@@ -172,3 +172,14 @@ test_bmi_sm_pingpong_LDFLAGS = @BMI_LDFLAGS@ @BOOST_LDFLAGS@
 noinst_PROGRAMS += test/configfile
 test_configfile_SOURCES = test/configfile.c
 test_configfile_LDADD = ${top_builddir}/src/c-util/libc-util.a 
+
+
+if HAVE_MPI
+
+noinst_PROGRAMS += test/throughput
+test_throughput_SOURCES = test/throughput.cpp
+test_throughput_LDFLAGS = @BMI_LDFLAGS@ @BOOST_LDFLAGS@
+test_throughput_LDADD = $(BOOST_PROGRAM_OPTIONS_LIB) $(BOOST_DATETIME_LIB) \
+			$(BMI_LIBS)
+
+endif
