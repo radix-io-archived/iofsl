@@ -119,6 +119,65 @@ class ThreadPool : public Singleton< ThreadPool >
             }
         }
 
+        void submitWorkUnit(boost::function<void (void)> func, TPPrio prio)
+        {
+            boost::mutex::scoped_lock lock(queue_mutex_);
+            if(prio == HIGH)
+            {
+                if(active_threads_ >= 12)
+                {
+                    prio_queue_.push(func);
+                }
+                else
+                {
+                    active_threads_++;
+                    lock.unlock();
+                    boost::thread t (func);
+                }
+            }
+            else
+            {
+                if(active_threads_ >= 12)
+                {
+                    norm_queue_.push(func);
+                }
+                else
+                {
+                    active_threads_++;
+                    lock.unlock();
+                    boost::thread t (func);
+                }
+            }
+        }
+
+        void workUnitDone()
+        {
+            boost::mutex::scoped_lock lock(queue_mutex_);
+            active_threads_--;
+        }
+
+        void startWorkUnit()
+        {
+            boost::mutex::scoped_lock lock(queue_mutex_);
+
+            if(prio_queue_.size() > 0)
+            {
+                boost::function<void ()> func = prio_queue_.front();
+                prio_queue_.pop(); 
+                active_threads_++;
+                lock.unlock();
+                boost::thread t (func);
+            }
+            else if(norm_queue_.size() > 0)
+            {
+                boost::function<void ()> func = norm_queue_.front();
+                norm_queue_.pop(); 
+                active_threads_++;
+                lock.unlock();
+                boost::thread t (func);
+            }
+        }
+
         /* add work to the thread pool from a free function */
         /* only accepts work that takes no args and has a void return type */
         void addWorkUnit(void (*workFunc)(void), TPPrio prio);
@@ -146,6 +205,10 @@ class ThreadPool : public Singleton< ThreadPool >
         /* work queues */
         /* for now, we use predefined priroities seperated by queue... */
         /* DO NOT EXECUTE WORK WITHIN THESE DATA STRUCTURES... ONLY ADD AND RM WORK UNITS TO MINIMIZE LOCK HOLD TIMES */
+        int active_threads_;
+        std::queue< boost::function< void() > > prio_queue_;
+        std::queue< boost::function< void() > > norm_queue_;
+        boost::mutex queue_mutex_;
         std::queue< boost::function< void() > > high_prio_queue_queue_;
         boost::mutex high_prio_queue_mutex_;
         std::queue< boost::function< void() > > mid_prio_queue_queue_;
@@ -177,6 +240,24 @@ class ThreadPool : public Singleton< ThreadPool >
         boost::mutex tp_start_mutex_;
         bool started_;
         int tp_start_ref_count_;
+};
+
+class ThreadPoolKick
+{
+    public:
+        ThreadPoolKick(iofwdutil::ThreadPool & tp) : tp_(tp)
+        {
+        }
+
+        void operator()() const
+        {
+           tp_.workUnitDone();
+           tp_.startWorkUnit(); 
+        }
+
+
+    protected:
+        iofwdutil::ThreadPool & tp_;
 };
 
 } /* namespace iofwdutil */

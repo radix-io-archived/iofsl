@@ -78,7 +78,7 @@ namespace iofwdutil
             thread_vec_.clear();
         }
 
-        ThreadPool::ThreadPool() : thread_count_(0), shutdown_threads_(false), started_(false), tp_start_ref_count_(0)
+        ThreadPool::ThreadPool() : active_threads_(0), thread_count_(0), shutdown_threads_(false), started_(false), tp_start_ref_count_(0)
         {
         }
 
