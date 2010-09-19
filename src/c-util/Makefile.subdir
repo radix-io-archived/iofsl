@@ -46,6 +46,7 @@ src/c-util/lookup3.h \
 src/c-util/lookup3.c \
 src/c-util/lookup8.h \
 src/c-util/lookup8.c \
+src/c-util/quicklist.h \
 src/c-util/sha1.c \
 src/c-util/sha1.h \
 \
