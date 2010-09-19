@@ -21,9 +21,35 @@
 #include <assert.h>
 #include <pthread.h>
 
+#include "zoidfs/client/zoidfsclient.h"
+#include "zoidfs/client/zoidfsrouter.h"
+
 static char *ion_name;
-static BMI_addr_t peer_addr;
+static BMI_addr_t * peer_addr = NULL;
+static BMI_addr_t * def_peer_addr = NULL;
 static bmi_context_id context;
+
+/* addr manipulation funcs */
+
+void zoidfs_client_swap_addr(BMI_addr_t * naddr)
+{
+    peer_addr = naddr;
+}
+
+void zoidfs_client_def_addr()
+{
+    peer_addr = def_peer_addr;
+}
+
+void zoidfs_client_set_def_addr(BMI_addr_t * addr)
+{
+    peer_addr = addr;
+}
+
+bmi_context_id * zoidfs_client_get_context()
+{
+    return &context;
+}
 
 /* conditional compilation flags */
 /*#define ZFS_USE_XDR_SIZE_CACHE
@@ -903,6 +929,11 @@ int zoidfs_xdr_hint_size(zoidfs_op_hint_t * op_hint)
 /* pipline config */
 static bmi_size_t PIPELINE_SIZE = 8388608;
 
+void zoidfs_client_set_pipeline_size(size_t psize)
+{
+    PIPELINE_SIZE = psize;
+}
+
 /* reuse a static buffer */
 #ifdef ZFS_BMI_FASTMEMALLOC
 static void * zfs_bmi_client_sendbuf = NULL;
@@ -917,22 +948,22 @@ static void * zfs_bmi_client_recvbuf = NULL;
 #else
 #define ZOIDFS_SEND_MSG_SET_BUFLEN(_msg, _val) (_msg).send_msg.sendbuflen = (_val)
 #define ZOIDFS_RECV_MSG_SET_BUFLEN(_msg, _val) (_msg).recv_msg.recvbuflen = (_val)
-#define ZOIDFS_SEND_ALLOC_BUFFER(_msg) (_msg).sendbuf = BMI_memalloc(peer_addr, (_msg).sendbuflen, BMI_SEND)
-#define ZOIDFS_RECV_ALLOC_BUFFER(_msg) (_msg).recvbuf = BMI_memalloc(peer_addr, (_msg).recvbuflen, BMI_RECV)
+#define ZOIDFS_SEND_ALLOC_BUFFER(_msg) (_msg).sendbuf = BMI_memalloc(*(peer_addr), (_msg).sendbuflen, BMI_SEND)
+#define ZOIDFS_RECV_ALLOC_BUFFER(_msg) (_msg).recvbuf = BMI_memalloc(*(peer_addr), (_msg).recvbuflen, BMI_RECV)
 #endif
 
 #define ZOIDFS_SEND_XDR_MEMCREATE(_msg) ZFS_XDRMEM_CREATE((_msg).send_xdr, (_msg).sendbuf, (_msg).sendbuflen, XDR_ENCODE)
 #define ZOIDFS_RECV_XDR_MEMCREATE(_msg) ZFS_XDRMEM_CREATE((_msg).recv_xdr, (_msg).recvbuf, (_msg).actual_size, XDR_DECODE)
 
 
-#define ZOIDFS_BMI_COMM_SEND(_msg) bmi_comm_send(peer_addr, (_msg).sendbuf, (_msg).sendbuflen, (_msg).tag, context)
-#define ZOIDFS_BMI_COMM_ISEND(_msg) bmi_comm_isend(peer_addr, (_msg).sendbuf, (_msg).sendbuflen, (_msg).tag, context, &((_msg).bmi_op_id))
+#define ZOIDFS_BMI_COMM_SEND(_msg) bmi_comm_send(*(peer_addr), (_msg).sendbuf, (_msg).sendbuflen, (_msg).tag, context)
+#define ZOIDFS_BMI_COMM_ISEND(_msg) bmi_comm_isend(*(peer_addr), (_msg).sendbuf, (_msg).sendbuflen, (_msg).tag, context, &((_msg).bmi_op_id))
 #define ZOIDFS_BMI_COMM_ISEND_WAIT(_msg) bmi_comm_isend_wait((_msg).bmi_op_id, (_msg).sendbuflen, context)
-#define ZOIDFS_BMI_COMM_SENDU(_msg) bmi_comm_sendu(peer_addr, (_msg).sendbuf, (_msg).sendbuflen, (_msg).tag, context)
-#define ZOIDFS_BMI_COMM_ISENDU(_msg) bmi_comm_isendu(peer_addr, (_msg).sendbuf, (_msg).sendbuflen, (_msg).tag, context, &((_msg).bmi_op_id))
+#define ZOIDFS_BMI_COMM_SENDU(_msg) bmi_comm_sendu(*(peer_addr), (_msg).sendbuf, (_msg).sendbuflen, (_msg).tag, context)
+#define ZOIDFS_BMI_COMM_ISENDU(_msg) bmi_comm_isendu(*(peer_addr), (_msg).sendbuf, (_msg).sendbuflen, (_msg).tag, context, &((_msg).bmi_op_id))
 #define ZOIDFS_BMI_COMM_ISENDU_WAIT(_msg) bmi_comm_isendu_wait((_msg).sendbuflen, context, (_msg).bmi_op_id)
-#define ZOIDFS_BMI_COMM_RECV(_msg) bmi_comm_recv(peer_addr, (_msg).recvbuf, (_msg).recvbuflen, (_msg).tag, context, &(_msg).actual_size)
-#define ZOIDFS_BMI_COMM_IRECV(_msg) bmi_comm_irecv(peer_addr, (_msg).recvbuf, (_msg).recvbuflen, (_msg).tag, context, &(_msg).actual_size, &((_msg).bmi_op_id))
+#define ZOIDFS_BMI_COMM_RECV(_msg) bmi_comm_recv(*(peer_addr), (_msg).recvbuf, (_msg).recvbuflen, (_msg).tag, context, &(_msg).actual_size)
+#define ZOIDFS_BMI_COMM_IRECV(_msg) bmi_comm_irecv(*(peer_addr), (_msg).recvbuf, (_msg).recvbuflen, (_msg).tag, context, &(_msg).actual_size, &((_msg).bmi_op_id))
 #define ZOIDFS_BMI_COMM_IRECV_WAIT(_msg) bmi_comm_irecv_wait((_msg).bmi_op_id, &(_msg).actual_size, context)
 
 
@@ -3356,11 +3387,11 @@ int zoidfs_write(const zoidfs_handle_t *handle, size_t mem_count,
             /* Contiguous write */
 #ifdef ZFS_USE_NB_BMI_COMM
             send_msg_data.sendbuflen = mem_sizes[0];
-            ret = bmi_comm_isend(peer_addr, mem_starts[0], mem_sizes[0],
+            ret = bmi_comm_isend(*(peer_addr), mem_starts[0], mem_sizes[0],
                                 send_msg_data.tag, context, &send_msg_data.bmi_op_id);
             send_msg_data.bmi_comp_id = ret;
 #else
-            ret = bmi_comm_send(peer_addr, mem_starts[0], mem_sizes[0],
+            ret = bmi_comm_send(*(peer_addr), mem_starts[0], mem_sizes[0],
                                 send_msg_data.tag, context);
             if (ret != ZFS_OK)
                goto write_cleanup;
@@ -3369,12 +3400,12 @@ int zoidfs_write(const zoidfs_handle_t *handle, size_t mem_count,
 #ifdef ZFS_USE_NB_BMI_COMM
             /* Strided writes */
             send_msg_data.sendbuflen = total_size;
-            ret = bmi_comm_isend_list(peer_addr,
+            ret = bmi_comm_isend_list(*(peer_addr),
                                      mem_count, mem_starts, bmi_mem_sizes, send_msg.tag,
                                      context, total_size, &send_msg_data.bmi_op_id);
             send_msg_data.bmi_comp_id = ret;
 #else
-            ret = bmi_comm_send_list(peer_addr,
+            ret = bmi_comm_send_list(*(peer_addr),
                                      mem_count, mem_starts, bmi_mem_sizes, send_msg.tag,
                                      context, total_size);
             if (ret != ZFS_OK)
@@ -3383,7 +3414,7 @@ int zoidfs_write(const zoidfs_handle_t *handle, size_t mem_count,
         }
     } else {
         /* Pipelining */
-        ret = zoidfs_write_pipeline(peer_addr, pipeline_size,
+        ret = zoidfs_write_pipeline(*(peer_addr), pipeline_size,
                                     mem_count, mem_starts, bmi_mem_sizes,
                                     send_msg.tag, context, total_size);
         if (ret != ZFS_OK)
@@ -3456,7 +3487,7 @@ write_cleanup:
     return ret;
 }
 
-static int zoidfs_write_pipeline(BMI_addr_t peer_addr, size_t pipeline_size,
+static int zoidfs_write_pipeline(BMI_addr_t l_peer_addr, size_t pipeline_size,
                                  size_t list_count, const void ** buf_list,
                                  const bmi_size_t bmi_size_list[], bmi_msg_tag_t tag,
                                  bmi_context_id context, bmi_size_t total_size) {
@@ -3546,7 +3577,7 @@ static int zoidfs_write_pipeline(BMI_addr_t peer_addr, size_t pipeline_size,
         }
  
         /* send the data */
-        ret = bmi_comm_send_list(peer_addr, p_list_count, (const void**)p_buf_list,
+        ret = bmi_comm_send_list(l_peer_addr, p_list_count, (const void**)p_buf_list,
                                      p_size_list, tag, context, p_total_size);
         free(p_buf_list);
         free(p_size_list);
@@ -3747,13 +3778,13 @@ int zoidfs_read(const zoidfs_handle_t *handle, size_t mem_count,
         /* No Pipelining */
         if (mem_count == 1) {
             /* Contiguous read */
-            ret = bmi_comm_recv(peer_addr, mem_starts[0], total_size, recv_msg.tag,
+            ret = bmi_comm_recv(*(peer_addr), mem_starts[0], total_size, recv_msg.tag,
                                 context, &recv_msg.actual_size);
             if (ret != ZFS_OK)
                goto read_cleanup;
         } else {
             /* Strided reads */
-            ret = bmi_comm_recv_list(peer_addr, mem_count,
+            ret = bmi_comm_recv_list(*(peer_addr), mem_count,
                                      mem_starts, bmi_mem_sizes,
                                      recv_msg.tag, context, total_size);
             if (ret != ZFS_OK)
@@ -3761,7 +3792,7 @@ int zoidfs_read(const zoidfs_handle_t *handle, size_t mem_count,
         }
     } else {
         /* Pipelining */
-        ret = zoidfs_read_pipeline(peer_addr, pipeline_size,
+        ret = zoidfs_read_pipeline(*(peer_addr), pipeline_size,
                                    mem_count, mem_starts, bmi_mem_sizes,
                                    recv_msg.tag, context, total_size);
         if (ret != ZFS_OK)
@@ -3809,7 +3840,7 @@ read_cleanup:
     return ret;
 }
 
-static int zoidfs_read_pipeline(BMI_addr_t peer_addr, size_t pipeline_size,
+static int zoidfs_read_pipeline(BMI_addr_t l_peer_addr, size_t pipeline_size,
                                 size_t list_count, void ** buf_list,
                                 const bmi_size_t bmi_size_list[], bmi_msg_tag_t tag,
                                 bmi_context_id context, bmi_size_t total_size) {
@@ -3899,7 +3930,7 @@ static int zoidfs_read_pipeline(BMI_addr_t peer_addr, size_t pipeline_size,
         }
 
         /* recv the data */
-        ret = bmi_comm_recv_list(peer_addr, p_list_count, (void**)p_buf_list,
+        ret = bmi_comm_recv_list(l_peer_addr, p_list_count, (void**)p_buf_list,
                                      p_size_list, tag, context, p_total_size);
         free(p_buf_list);
         free(p_size_list);
@@ -3949,27 +3980,31 @@ int zoidfs_init(void) {
         return ZFSERR_OTHER;
     }
 
-    /*
-     * Pick up the ION hostname from an environment variable (ZOIDFS_ION_NAME).
-     */
+   /*
+    * Pick up the ION hostname from an environment variable (ZOIDFS_ION_NAME).
+    */
     ion_name = getenv(ION_ENV);
-    if (!ion_name) {
+    if (!ion_name)
+    {
         fprintf(stderr, "zoidfs_init: getenv(\"%s\") failed.\n", ION_ENV);
         return ZFSERR_OTHER;
     }
-
+    
     /* Perform an address lookup on the ION */
-    ret = BMI_addr_lookup(&peer_addr, ion_name);
-    if (ret < 0) {
+    peer_addr = (BMI_addr_t *)malloc(sizeof(BMI_addr_t));
+    ret = BMI_addr_lookup(peer_addr, ion_name);
+    if (ret < 0) 
+    {
         fprintf(stderr, "zoidfs_init: BMI_addr_lookup() failed, ion_name = %s.\n", ion_name);
         return ZFSERR_OTHER;
     }
+    def_peer_addr = peer_addr;
 
     /* setup the pipeline size */
 
     /* ask BMI for the max buffer size it can handle... */
     int psiz = 0;
-    ret = BMI_get_info(peer_addr, BMI_CHECK_MAXSIZE, (void *)&psiz);
+    ret = BMI_get_info(*(peer_addr), BMI_CHECK_MAXSIZE, (void *)&psiz);
     if(ret)
     {
        fprintf(stderr, "zoidfs_init: BMI_get_info(BMI_CHECK_MAXSIZE) failed.\n");
@@ -3996,20 +4031,20 @@ int zoidfs_init(void) {
 #ifdef HAVE_BMI_ZOID_TIMEOUT
     {
 	int timeout = 3600 * 1000;
-	BMI_set_info(peer_addr, BMI_ZOID_POST_TIMEOUT, &timeout);
+	BMI_set_info(*(peer_addr), BMI_ZOID_POST_TIMEOUT, &timeout);
     }
 #endif
 
     /* preallocate buffers */
 #ifdef ZFS_BMI_FASTMEMALLOC
-    zfs_bmi_client_sendbuf = BMI_memalloc(peer_addr, ZFS_BMI_CLIENT_SENDBUF_LEN, BMI_SEND);
+    zfs_bmi_client_sendbuf = BMI_memalloc(*(peer_addr), ZFS_BMI_CLIENT_SENDBUF_LEN, BMI_SEND);
     if(!zfs_bmi_client_sendbuf)
     {
         fprintf(stderr, "zoidfs_init: could not allocate send buffer for fast mem alloc.\n");
         return ZFSERR_OTHER;
     }
 
-    zfs_bmi_client_recvbuf = BMI_memalloc(peer_addr, ZFS_BMI_CLIENT_RECVBUF_LEN, BMI_RECV);
+    zfs_bmi_client_recvbuf = BMI_memalloc(*(peer_addr), ZFS_BMI_CLIENT_RECVBUF_LEN, BMI_RECV);
     if(!zfs_bmi_client_recvbuf)
     {
         fprintf(stderr, "zoidfs_init: could not allocate recv buffer for fast mem alloc.\n");
@@ -4034,18 +4069,26 @@ int zoidfs_finalize(void) {
 #ifdef ZFS_BMI_FASTMEMALLOC
     if(zfs_bmi_client_sendbuf)
     {
-        BMI_memfree (peer_addr, zfs_bmi_client_sendbuf,
+        BMI_memfree (*(peer_addr), zfs_bmi_client_sendbuf,
               ZFS_BMI_CLIENT_SENDBUF_LEN, BMI_SEND);
         zfs_bmi_client_sendbuf = NULL;
     }
 
     if(zfs_bmi_client_recvbuf)
     {
-        BMI_memfree (peer_addr, zfs_bmi_client_recvbuf,
+        BMI_memfree (*(peer_addr), zfs_bmi_client_recvbuf,
               ZFS_BMI_CLIENT_RECVBUF_LEN, BMI_RECV);
         zfs_bmi_client_recvbuf = NULL;
     }
 #endif
+    
+    /* cleanup peer_addr */
+    if(peer_addr)
+    {
+        free(peer_addr);
+        peer_addr = NULL;
+    }
+
     BMI_close_context(context);
 
     /* Finalize BMI */
