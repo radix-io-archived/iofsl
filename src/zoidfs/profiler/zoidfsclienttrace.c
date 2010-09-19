@@ -4,7 +4,6 @@
  *
  * Jason Cope <copej@mcs.anl.gov>
  *
- * @TODO: fix explicit uint64_t -> zoidfs_file_ofs/size_t
  */
 
 #include "zoidfs/zoidfs.h"
@@ -19,8 +18,13 @@
  */
 #define ZOIDFS_PRINT_COUNTER(__counter)    fprintf(stderr, "\t%s = %u\n", #__counter, __counter##_call_count)
 #define ZOIDFS_PRINT_TIME(__timer)    fprintf(stderr, "\t%s = %f\n", #__timer, __timer##_time)
-/*#define ZOIDFS_TRACE() fprintf(stderr, "ZOIDFS API TRACE: %s()\n", __func__) */
+
+/* is tracing enabled */
+#if ZOIDFS_TRACING_ENABLED
+#define ZOIDFS_TRACE() fprintf(stderr, "ZOIDFS API TRACE: %s()\n", __func__)
+#else
 #define ZOIDFS_TRACE() /* no tracing */
+#endif
 
 /*
  * call counts
@@ -94,6 +98,7 @@ double zoidfs_prof_elapsed_time(struct timespec * t1, struct timespec * t2)
         1.0e-9 * (double) (t2->tv_nsec - t1->tv_nsec) );
 }
 
+#ifndef ZOIDFS_DISPATCHER_PROF
 #define ZOIDFS_PROF_TIME(__func, __tval, __mutex)   \
 do{                                                 \
     struct timespec t1, t2;                         \
@@ -111,7 +116,16 @@ do{                                                 \
     __counter++;                                    \
     pthread_mutex_unlock(&__mutex);                 \
 }while(0)
+#else
+#define ZOIDFS_PROF_TIME(__func, __tval, __mutex)   \
+do{                                                 \
+    __func;                                         \
+}while(0)
 
+#define ZOIDFS_PROF_INC_COUNTER(__counter, __mutex) \
+do{                                                 \
+}while(0)
+#endif
 /*
  * zoidfs_null
  * This function implements a noop operation. The IOD returns a 1-byte message
