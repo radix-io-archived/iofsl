@@ -1,6 +1,7 @@
 #include <assert.h>
 #include <string.h>
 #include <ctype.h>
+#include <stdio.h>
 
 /* get access to HAVE_DISP... defines */
 #include "iofwd_config.h"
@@ -100,6 +101,7 @@ int zint_setup_handlers(int n, const char * user_handlers[])
                  zint_server_handlers_keys[ZINT_SERVER_HANDLERS_LOCAL_INDEX])
               != 0)
         {
+           fprintf(stderr, "user_handler[%i] = %s\n", i, user_handlers[i]);
            ++hsize;
         }
     }
@@ -297,6 +299,15 @@ int zint_initialize_handlers()
     int ret;
     unsigned int i = 0;
 
+    /* code to load the POSIX handler for local operations */
+#ifdef ZINT_HANDLER_LOCAL
+    char ** user_handlers = NULL;
+    user_handlers = (char **)malloc(sizeof(char *) * 1);
+    user_handlers[0] = strdup("POSIX");
+
+    zint_setup_handlers(1, user_handlers);
+    fprintf(stderr, "%s %i\n", __func__, ZINT_HANDLERS_COUNT);
+#endif
     for(; i < ZINT_HANDLERS_COUNT; ++i)
     {
         ret = zint_handlers[i]->init();
@@ -305,5 +316,12 @@ int zint_initialize_handlers()
             return ret;
         }
     }
+
+    /* cleanup the local handler setup */
+#if ZINT_HANDLER_LOCAL 
+    free(user_handlers[0]);
+    free(user_handlers);
+#endif
+
     return ZFS_OK;
 }
