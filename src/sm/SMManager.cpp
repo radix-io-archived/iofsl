@@ -27,7 +27,13 @@ void SMManager::schedule (SMClient * client)
 {
    ZLOG_DEBUG_MORE(log_,format("Scheduling client %p") % (void*) client);
 
-   iofwdutil::ThreadPool::instance().addWorkUnit(new SMHelper(client), &SMHelper::run, iofwdutil::ThreadPool::HIGH, true);
+   /* use submitWorkUnit method to avoid the tp queues */
+   SMWrapper * w = new SMWrapper(client, tp_);
+
+   /* TODO: we shouldn't need to manually manage the ref count */
+   client->addref();
+
+   tp_.submitWorkUnit(boost::bind(&SMManager::submitWorkUnit, w), iofwdutil::ThreadPool::LOW);
 }
 
 void SMManager::startThreads()
@@ -102,7 +108,8 @@ SMManager::~SMManager ()
 SMManager::SMManager (size_t count) 
    : threads_(count),
    finish_(false),
-   log_(iofwdutil::IOFWDLog::getSource ("smmanager"))
+   log_(iofwdutil::IOFWDLog::getSource ("smmanager")),
+   tp_(iofwdutil::ThreadPool::instance())
 {
 }
 

@@ -58,7 +58,7 @@ static void check_ranges(const vector<ChildRange *>& rs)
 
 RequestScheduler::RequestScheduler ()
     : log_(IOFWDLog::getSource("requestscheduler")), exiting_(false),
-       schedActive_(false), batch_size_(0)
+       schedActive_(false), batch_size_(0), tp_(iofwdutil::ThreadPool::instance())
 {
 }
 
@@ -107,6 +107,12 @@ RequestScheduler::~RequestScheduler()
   }
 }
 
+void RequestScheduler::submitWorkUnit(ReqSchedHelper * w)
+{
+    w->run();
+    delete w;
+}
+
 void RequestScheduler::write (const iofwdevent::CBType & cb, int * ret, const
       zoidfs::zoidfs_handle_t * handle, size_t count, const void *
       mem_starts[], const size_t * mem_sizes, size_t file_count, const
@@ -141,7 +147,8 @@ void RequestScheduler::write (const iofwdevent::CBType & cb, int * ret, const
     /* if the scheduler is not active, add the scheduler work to the ThreadPool */
     if(!schedActive_)
     {
-        iofwdutil::ThreadPool::instance().addWorkUnit(new ReqSchedHelper(this), &ReqSchedHelper::run, iofwdutil::ThreadPool::HIGH, true);
+        tp_.submitWorkUnit(boost::bind(&RequestScheduler::submitWorkUnit, new ReqSchedHelper(this)), iofwdutil::ThreadPool::HIGH);
+        //tp_.addWorkUnit(new ReqSchedHelper(this), &ReqSchedHelper::run, iofwdutil::ThreadPool::HIGH, true);
         schedActive_ = true;
     }
   }
@@ -179,7 +186,8 @@ void RequestScheduler::read (const iofwdevent::CBType & cb, int * ret, const
     /* if the scheduler is not active, add the scheduler work to the ThreadPool */
     if(!schedActive_)
     {
-        iofwdutil::ThreadPool::instance().addWorkUnit(new ReqSchedHelper(this), &ReqSchedHelper::run, iofwdutil::ThreadPool::HIGH, true);
+        tp_.submitWorkUnit(boost::bind(&RequestScheduler::submitWorkUnit, new ReqSchedHelper(this)), iofwdutil::ThreadPool::HIGH);
+        //tp_.addWorkUnit(new ReqSchedHelper(this), &ReqSchedHelper::run, iofwdutil::ThreadPool::HIGH, true);
         schedActive_ = true;
     }
   }

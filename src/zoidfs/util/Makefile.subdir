@@ -24,6 +24,7 @@ src/zoidfs/util/NullAPI.cpp \
 src/zoidfs/util/ZoidFSAPI.cpp \
 src/zoidfs/util/ZoidFSAsync.cpp \
 src/zoidfs/util/ZoidFSDefAsync.cpp \
+src/zoidfs/util/ZoidFSAsyncWorkUnit.hh \
 src/zoidfs/util/ZoidFSSync.cpp \
 src/zoidfs/util/zoidfs-util.cpp \
 src/zoidfs/util/FileSpecHelper.hh \

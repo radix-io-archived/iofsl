@@ -51,6 +51,7 @@ public:
 
 protected:
 
+
     /* ThreadPool helper for the RequestScheduler */
     class ReqSchedHelper
     {
@@ -72,6 +73,8 @@ protected:
             RequestScheduler * rs_;
     };
 
+    static void submitWorkUnit(ReqSchedHelper * w);
+
   void run(bool waitForWork);
   void issue(std::vector<ChildRange *>& rs);
   void issueWait(int status);
@@ -87,6 +90,8 @@ private:
   bool schedActive_;
 
   int batch_size_;
+
+  iofwdutil::ThreadPool & tp_;
 };
 
 }

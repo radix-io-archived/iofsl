@@ -10,6 +10,9 @@
 #include "iofwdutil/Configurable.hh"
 #include "iofwdutil/IOFWDLog.hh"
 
+#include "zoidfs/zoidfs-proto.h"
+#include "src/zoidfs/util/ZoidFSAsyncWorkUnit.hh"
+
 namespace zoidfs
 {
 
@@ -26,7 +29,7 @@ namespace zoidfs
    {
    public:
 
-      ZoidFSDefAsync () : log_ (iofwdutil::IOFWDLog::getSource("defasync"))
+      ZoidFSDefAsync () : log_ (iofwdutil::IOFWDLog::getSource("defasync")), tp_(iofwdutil::ThreadPool::instance())
       {
       }
 
@@ -147,91 +150,7 @@ namespace zoidfs
 
    protected:
 
-      /* bundles for API calls w/ long param lists  */
-      struct param_helper_bundle1
-      {
-            param_helper_bundle1(
-                const zoidfs_handle_t * from_parent_handle,
-                const char * from_component_name,
-                const char * from_full_path,
-                const zoidfs_handle_t * to_parent_handle,
-                const char * to_component_name,
-                const char * to_full_path,
-                zoidfs_cache_hint_t * from_parent_hint,
-                zoidfs_cache_hint_t * to_parent_hint,
-                zoidfs_op_hint_t * hint)
-                :
-                from_parent_handle_(from_parent_handle),
-                from_component_name_(from_component_name),
-                from_full_path_(from_full_path),
-                to_parent_handle_(to_parent_handle),
-                to_component_name_(to_component_name),
-                to_full_path_(to_full_path),
-                from_parent_hint_(from_parent_hint),
-                to_parent_hint_(to_parent_hint),
-                hint_(hint)
-            {
-            }
-
-            const zoidfs_handle_t * from_parent_handle_;
-            const char * from_component_name_;
-            const char * from_full_path_;
-            const zoidfs_handle_t * to_parent_handle_;
-            const char * to_component_name_;
-            const char * to_full_path_;
-            zoidfs_cache_hint_t * from_parent_hint_;
-            zoidfs_cache_hint_t * to_parent_hint_;
-            zoidfs_op_hint_t * hint_;
-      };
-
-      struct param_helper_bundle2
-      {
-            param_helper_bundle2(
-                const zoidfs_handle_t * from_parent_handle,
-                const char * from_component_name,
-                const char * from_full_path,
-                const zoidfs_handle_t * to_parent_handle,
-                const char * to_component_name,
-                const char * to_full_path,
-                const zoidfs_sattr_t * attr,
-                zoidfs_cache_hint_t * from_parent_hint,
-                zoidfs_cache_hint_t * to_parent_hint,
-                zoidfs_op_hint_t * hint)
-                :
-                from_parent_handle_(from_parent_handle),
-                from_component_name_(from_component_name),
-                from_full_path_(from_full_path),
-                to_parent_handle_(to_parent_handle),
-                to_component_name_(to_component_name),
-                to_full_path_(to_full_path),
-                attr_(attr),
-                from_parent_hint_(from_parent_hint),
-                to_parent_hint_(to_parent_hint),
-                hint_(hint)
-            {
-            }
-
-            const zoidfs_handle_t * from_parent_handle_;
-            const char * from_component_name_;
-            const char * from_full_path_;
-            const zoidfs_handle_t * to_parent_handle_;
-            const char * to_component_name_;
-            const char * to_full_path_;
-            const zoidfs_sattr_t * attr_;
-            zoidfs_cache_hint_t * from_parent_hint_;
-            zoidfs_cache_hint_t * to_parent_hint_;
-            zoidfs_op_hint_t * hint_;
-      };
-
-      /* typedef common bundles */
-      typedef struct param_helper_bundle1 rename_helper_bundle_t;
-      typedef struct param_helper_bundle1 link_helper_bundle_t;
-      typedef struct param_helper_bundle2 symlink_helper_bundle_t;
-
-      /* callback helpers for API calls w/ long param lists */
-      int rename_helper(rename_helper_bundle_t * b);
-      int link_helper(link_helper_bundle_t * b);
-      int symlink_helper(symlink_helper_bundle_t * b);
+      static void runWorkUnit(ZoidFSDefAsyncWorkUnit * wu);
 
       struct OpHelper
       {
@@ -273,11 +192,17 @@ namespace zoidfs
          }
       }
 
+    void submitWorkUnit(const boost::function<void (void)> & wu_, iofwdutil::ThreadPool::TPPrio prio)
+    {
+        tp_.submitWorkUnit(wu_, prio);
+    }
+
    protected:
       boost::scoped_ptr<ZoidFSAPI> api_;
       bool wait_for_threads_;
 
       iofwdutil::zlog::ZLogSource & log_;
+      iofwdutil::ThreadPool & tp_;
    };
 
 //==========================================================================

@@ -67,6 +67,8 @@ protected:
 
    enum{EVMODE_TASK = 0, EVMODE_SM};
    int event_mode_;
+
+   iofwdutil::ThreadPool & tp_;
 };
 
 }

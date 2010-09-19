@@ -22,8 +22,6 @@ namespace sm
  * it can no longer be rescheduled.
  *
  * @TODO: remove old code from when SMManager still had a thread of its own.
- * @TODO: schedule could use boost::bind with an intrusive_ptr to avoid
- *        new SMHelper()
  */
 class SMManager
 {
@@ -73,29 +71,43 @@ protected:
 
    iofwdutil::zlog::ZLogSource & log_;
 
-   /* wrapper for the SM ops sent to the ThreadPool */
-   struct SMHelper
+   iofwdutil::ThreadPool & tp_;
+
+   class SMWrapper
    {
-      SMHelper(SMClient * client) : client_(client)
-      {
-      }
+        public:
+            SMWrapper(SMClient * client, iofwdutil::ThreadPool & tp)
+                : client_(client), tp_(tp)
+            {
+            }
 
-      /* after running the SM, force the SM client to deallocate */ 
-      void run()
-      {
-         client_->execute();
-         client_.reset(0);
-      }
-
-      protected:
-         SMClientSharedPtr client_;
+            SMClient * client_;
+            iofwdutil::ThreadPool & tp_;
+            
    };
 
+   static void submitWorkUnit(SMWrapper * w)
+   {
+        /* execute the client work and drop the ref */
+        w->client_->execute();
+    
+        /* TODO: we shouldn't need to manually manage the ref count */
+        w->client_->removeref();
 
+        if(!w->client_->alive())
+        {
+            delete w->client_;
+        }
+
+        /* reschedule the thread with more work from the tp */
+        boost::this_thread::at_thread_exit(iofwdutil::ThreadPoolKick(w->tp_));
+
+        /* cleanup the wrapper alloc */
+        delete w;
+   }
 };
 
 //===========================================================================
 }
-
-
 #endif
+

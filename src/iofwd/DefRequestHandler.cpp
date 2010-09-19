@@ -21,7 +21,7 @@ namespace iofwd
 //===========================================================================
 
 DefRequestHandler::DefRequestHandler (const iofwdutil::ConfigFile & cf)
-   : log_ (IOFWDLog::getSource ("defreqhandler")), config_(cf), event_mode_(EVMODE_SM)
+   : log_ (IOFWDLog::getSource ("defreqhandler")), config_(cf), event_mode_(EVMODE_SM), tp_(iofwdutil::ThreadPool::instance())
 {
    //
    // Get async API
@@ -54,9 +54,9 @@ DefRequestHandler::DefRequestHandler (const iofwdutil::ConfigFile & cf)
 
    /* start thread pool */
    iofwdutil::ConfigFile lc = config_.openSectionDefault ("threadpool");
-   iofwdutil::ThreadPool::instance().setMinThreadCount(lc.getKeyAsDefault("minnumthreads", 0));
-   iofwdutil::ThreadPool::instance().setMaxThreadCount(lc.getKeyAsDefault("maxnumthreads", 0));
-   iofwdutil::ThreadPool::instance().start();
+   tp_.setMinThreadCount(lc.getKeyAsDefault("minnumthreads", 0));
+   tp_.setMaxThreadCount(lc.getKeyAsDefault("maxnumthreads", 0));
+   tp_.start();
 
    /* get the event mode */
    lc = config_.openSectionDefault ("events");
