@@ -63,9 +63,18 @@ if test "${MPICXX}x" != "x" ; then
    # make sure mpi compiler path is a full path
    #
    ORIG_CXX="${CXX}"
-   CXX="${checkpath}/${MPICXX}"
+   if test "x$with_mpi" != "xcheck" -a "x$with_mpi" != "xyes"; then
+        CXX="${checkpath}/${MPICXX}"
+   else
+        CXX="${MPICXX}"
+   fi
+
    ORIG_CC="${CC}"
-   CC="${checkpath}/${MPICC}"
+   if test "x$with_mpi" != "xcheck" -a "x$with_mpi" != "xyes"; then
+        CC="${checkpath}/${MPICC}"
+   else
+        CC="${MPICC}"
+   fi
    ENABLE_MPI=1
 
 fi
