@@ -40,7 +40,10 @@ AS_IF([test "x$with_mpi" != "xno"],
     checkpath="$PATH"
  fi
  AC_CHECK_PROGS(MPICC, [mpicc], [], [$checkpath])
- AC_CHECK_PROGS(MPICXX, [mpiCC mpic++], [], [$checkpath])
+ #
+ # with mpich2-1.3, mpiCC invokes gcc... not g++
+ #
+ AC_CHECK_PROGS(MPICXX, [mpic++ mpicxx mpiCC], [], [$checkpath])
  if test "x$with_mpi" != "xcheck"; then
     if test -z "${MPICXX}" ; then
     AC_MSG_ERROR("--with-mpi given but could not find mpic++!")
@@ -56,10 +59,13 @@ if test "${MPICXX}x" != "x" ; then
       AC_MSG_ERROR("Found MPI C++ compiler but not MPI C compiler??")
    fi
 
+   #
+   # make sure mpi compiler path is a full path
+   #
    ORIG_CXX="${CXX}"
-   CXX="${MPICXX}"
+   CXX="${checkpath}/${MPICXX}"
    ORIG_CC="${CC}"
-   CC="${MPICC}"
+   CC="${checkpath}/${MPICC}"
    ENABLE_MPI=1
 
 fi
