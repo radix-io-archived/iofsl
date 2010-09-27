@@ -106,6 +106,16 @@ namespace iofwdevent
        */
       inline size_t completed () const;
 
+      /**
+       * Return number of a free slot, or -1 if no slots are free.
+       */
+      inline int nextFree () const;
+
+      /**
+       * Returns true if the specified slot is free.
+       */
+      inline bool isFree (size_t slot) const;
+
    protected:
 
       /// Returns callback for completing the specified slot.
@@ -161,7 +171,7 @@ namespace iofwdevent
    {
       boost::mutex::scoped_lock l(lock_);
 
-      ALWAYS_ASSERT(pos >= 0 && pos < C);
+      ALWAYS_ASSERT(pos < C);
       ALWAYS_ASSERT(slots_[pos].status_ == FREE);
       
       Slot & s = slots_[pos];
@@ -170,7 +180,7 @@ namespace iofwdevent
       // Forward direction
       if (-1 != s.prev_)
       {
-         ASSERT(first_free_ != pos);
+         ASSERT(first_free_ != static_cast<int>(pos));
          slots_[s.prev_].next_ = s.next_;
       }
       else
@@ -500,6 +510,21 @@ namespace iofwdevent
       return slots_completed_;
    }
 
+
+   template <size_t S>
+   int MultiCompletion<S>::nextFree () const
+   {
+      boost::mutex::scoped_lock l (lock_);
+      return first_free_;
+   }
+
+
+   template <size_t S>
+   bool MultiCompletion<S>::isFree (size_t pos) const
+   {
+      boost::mutex::scoped_lock l (lock_);
+      return slots_[pos].status_ == FREE;
+   }
 
    template <size_t S>
    size_t MultiCompletion<S>::size() const

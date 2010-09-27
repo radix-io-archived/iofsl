@@ -2,7 +2,12 @@
 #include <boost/thread.hpp>
 #include <boost/thread/condition.hpp>
 #include <boost/random/mersenne_twister.hpp>
+#include <boost/random/variate_generator.hpp>
+#include <boost/random/lognormal_distribution.hpp>
 #include <boost/format.hpp>
+#include <boost/functional/hash.hpp>
+#include <boost/lexical_cast.hpp>
+#include <boost/date_time/posix_time/posix_time_duration.hpp>
 
 #include "ThreadSafety.hh"
 
@@ -16,6 +21,7 @@ using namespace boost;
 using namespace boost::random;
 using namespace iofwdevent;
 using namespace std;
+using namespace boost::posix_time;
 
 const size_t THREADCOUNT = 32;
    
@@ -115,6 +121,15 @@ struct mt_context
 
 static void mt_main (mt_context & ctx)
 {
+   std::string seed =
+      boost::lexical_cast<std::string>(boost::this_thread::get_id());
+
+   mt11213b rand (hash_range (seed.begin(), seed.end()));
+   lognormal_distribution<> distrib (10.0, 100.0);
+
+   variate_generator<boost::mt11213b&, boost::lognormal_distribution<> >
+      random (rand, distrib);
+
    while (!ctx.isDone())
    {
       CBType cb;
@@ -123,12 +138,11 @@ static void mt_main (mt_context & ctx)
       if (!ctx.getCB(cb))
          return;
 
+      const double delay = abs(random());
+      this_thread::sleep (microseconds(delay));
+
       ALWAYS_ASSERT(cb);
       cb (COMPLETED);
-
-      // Sometimes yield
-      if (randgen_() % 66 == 0)
-         this_thread::yield ();
    }
 }
 
@@ -138,7 +152,7 @@ void mt_do_test ()
    SingleCompletion block;
    MultiCompletion<C> slots;
 
-   const size_t WORKITEMS = 1024;
+   const size_t WORKITEMS = 2048;
 
 
    mt_context ctx (C);
@@ -219,9 +233,9 @@ void mt_do_test ()
 
    BOOST_TEST_MESSAGE("MultiCompletion, multithreaded test pattern 2");
 
-   const size_t MAXRET =6;
-   boost::array<size_t, MAXRET> slotnums;
-   boost::array<int, MAXRET> statuses;
+   size_t MAXRET = randgen_ () % 1024;
+   boost::scoped_array<size_t> slotnums (new size_t[MAXRET]);
+   boost::scoped_array<int> statuses (new int[MAXRET]);
 
    while (todo)
    {
@@ -250,10 +264,10 @@ void mt_do_test ()
       do
       {
          const size_t count = slots.testSome (&slotnums[0], &statuses[0],
-               slotnums.size());
+               MAXRET);
          
          // The first time, we expect at least waitcount slots to be done
-         BOOST_CHECK (!first || (count >= std::min(slotnums.size(), waitcount)));
+         BOOST_CHECK (!first || (count >= std::min(MAXRET, waitcount)));
          first = false;
 
          if (count <= 0)
@@ -283,6 +297,8 @@ BOOST_FIXTURE_TEST_CASE (multithreaded, F)
    mt_do_test<6> ();
    mt_do_test<12> ();
    mt_do_test<100> ();
+   mt_do_test<1024> ();
+   mt_do_test<2048> ();
 }
 
 BOOST_AUTO_TEST_SUITE_END()
