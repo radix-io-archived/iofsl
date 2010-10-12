@@ -1,0 +1,6 @@
+#!/bin/bash
+#edit "yourMachineName" to represent your host machine
+
+export ZOIDFS_ION_NAME="tcp://yourMachineName:12345"
+
+./iofsl-install/bin/iofwd --config iofsl/defaultconfig.cf

@@ -1,0 +1,35 @@
+#!/bin/bash
+
+#Here is where we construct the local
+#repo for cloning the git repo.
+
+#Edit the "target machine" and 
+#username@targetMachine to represent
+#your required names.
+
+#LANL requires a proxy declaration.
+#The following is for LANL only.  If a 
+#proxy is required on your network: edit
+#this proxy declaration as you require:
+#==========================================
+
+export http_proxy=proxyout.lanl.gov:8080
+ 
+#Next we clone the repository at Argonne
+#Uncomment the git clone that works for you.
+#Private repo: Must have key.
+#==========================================
+
+#git clone git@git.mcs.anl.gov:~/iofsl.git
+ 
+#Public repo: No key needed.
+#==========================================
+
+cd ~/
+git clone http://git.mcs.anl.gov/iofsl.git
+
+cd iofsl
+git remote add "target machine"  ssh://username@targetMachine/~/iofsl.git
+
+git push --all "target machine"
+

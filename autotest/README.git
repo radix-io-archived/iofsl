@@ -1,0 +1,39 @@
+
+
+1. On Target Machine:
+==================
+
+In order to use git we have to set up an 
+iofsl.git directory on the target machine.  We will
+then initialize it.  Execute the "targeGitSetup"
+script in your home directory on the target machine
+to do this.  
+
+2. On Local Machine:
+==================
+
+On our local desktop we set up the local git 
+repo for our clone.  Execute the "localGitSetup"
+script on your local machine to do this.
+
+
+To Update From ANL:
+==================
+
+git pull origin master
+git push --all "target machine name here"
+
+Using On Target Machine:
+========================
+
+Create a script or use command line to access
+the local IOFSL repository at your local 
+desktop.  Use either a file-based URI (i.e. file://) 
+or use SSH within the target machine where you 
+probably have password-less login.
+
+Example:
+=======================
+
+targetMachine:~>git clone ssh://username@yourlocalmachine/~/iofsl
+	or something to this effect.

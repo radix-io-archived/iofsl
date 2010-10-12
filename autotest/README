@@ -1,0 +1,27 @@
+
+This auto-build sub-package is intended to automate the 
+build process for the IOFSL software.  Follow the 
+README.git file to set up the proper method for using git 
+on semi-secure hpc machines.  If your hpc machine allows
+you git access you can choose to clone from there instead.
+Please review each script (including build_iofsl).  Edits which
+indicate where you have installed dependencies and which dependencies you 
+are requiring, may be needed.  
+=======================================================================
+
+The "localGitSetup" script should be moved to your home directory
+on your local machine, and executed there.
+=======================================================================
+
+The "targetGitSetup" script should be moved to your home directory
+on your target machine and executed there.
+=======================================================================
+
+Following the succesful setup of the git directories execute the 
+"build_iofsl" script from your home directory on your target machine.  
+=======================================================================
+
+Included with the package is a "runIofslServer" script which can be used 
+to launch the server on a host machine after a proper build.  This should
+be edited to represent the machine and allocation you are using to submit 
+jobs on your hpc machine.  
