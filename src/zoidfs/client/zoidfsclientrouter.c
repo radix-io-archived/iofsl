@@ -179,7 +179,7 @@ typedef struct zoidfs_client_router_block_id
 /* 
  * create a block id
  */
-static zoidfs_client_router_block_id_t * zoidfs_client_router_block_id_create(int sid, zoidfs_handle_t * handle, int handle_server_id, zoidfs_op_hint_t * op_hint)
+static zoidfs_client_router_block_id_t * zoidfs_client_router_block_id_create(int sid, const zoidfs_handle_t * handle, int handle_server_id, zoidfs_op_hint_t * op_hint)
 {
     zoidfs_client_router_block_id_t * r = (zoidfs_client_router_block_id_t *)malloc(sizeof(zoidfs_client_router_block_id_t));
 
@@ -188,7 +188,7 @@ static zoidfs_client_router_block_id_t * zoidfs_client_router_block_id_create(in
     r->block_offsets_tree = NULL;
     r->ofs_range_list = NULL;
     r->cur_index = 0;
-    r->handle = handle;
+    r->handle = (zoidfs_handle_t *)handle;
     r->handle_server_id = handle_server_id;
     r->op_hint = op_hint;
 
@@ -312,7 +312,7 @@ static zoidfs_client_router_block_id_t * zoidfs_client_router_block_id_find(void
  */
 static int zoidfs_client_router_file_domain_add(void ** tree, int sid, int so,
     size_t mc, void * mstart, size_t msize, size_t fc, zoidfs_file_ofs_t fstart, zoidfs_file_size_t fsize,
-    zoidfs_handle_t * handle, int handle_server_id, zoidfs_op_hint_t * op_hint)
+    const zoidfs_handle_t * handle, int handle_server_id, zoidfs_op_hint_t * op_hint)
 {
     zoidfs_client_router_block_id_t * sid_node = NULL;
     zoidfs_client_router_block_offset_t * so_node = NULL;
