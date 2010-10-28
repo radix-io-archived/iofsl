@@ -1115,9 +1115,14 @@ zoid_server_free_client_addr(bmi_method_addr_p addr)
 {
     gen_mutex_lock(&clients_mutex);
 
-    assert(((struct zoid_addr*)addr->method_data)->pid < clients_len &&
-	   clients_addr[((struct zoid_addr*)addr->method_data)->pid] == addr);
-    clients_addr[((struct zoid_addr*)addr->method_data)->pid] = NULL;
+    if (((struct zoid_addr*)addr->method_data)->pid != ZOID_ADDR_SERVER_PID)
+    {
+	assert(((struct zoid_addr*)addr->method_data)->pid >= 0 &&
+	       ((struct zoid_addr*)addr->method_data)->pid < clients_len &&
+	       clients_addr[((struct zoid_addr*)addr->method_data)->pid] ==
+	       addr);
+	clients_addr[((struct zoid_addr*)addr->method_data)->pid] = NULL;
+    }
 
     gen_mutex_unlock(&clients_mutex);
 }
