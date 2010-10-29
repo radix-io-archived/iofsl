@@ -681,6 +681,10 @@ static void get_method(struct options *opts)
 		   && check_uri(&id[4])) {
                 opts->method = strdup("bmi_zoid");
         }
+        } else if (strncmp(id, "portals", 7) == 0 && check_uri(&id[7]))
+        {
+                opts->method = strdup("bmi_portals");
+        }
         return;
 }
 
