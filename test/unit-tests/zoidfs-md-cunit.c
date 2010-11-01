@@ -82,7 +82,7 @@ int init_basedir_handle(char * mpt)
 
 int testNULL(void)
 {
-    CU_ASSERT(ZFS_OK == zoidfs_null());
+    //CU_ASSERT(ZFS_OK == zoidfs_null());
     return 0;
 }
 

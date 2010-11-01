@@ -46,44 +46,9 @@ requesthandler {
   //
   zoidfsapi {
 
-    name = "requestscheduler";
-    //name = "defasync";
+    //name = "requestscheduler";
+    name = "defasync";
 
-    requestscheduler {
-        //
-        // request scheduler modes
-        //  fifo - schedule requests as they arrive
-        //  merge - attempt to merge requests
-        //
-        schedalgo = "merge";
-
-        //
-        // list io batch size
-        //  upper limit on the number of non contig ops
-        //  the scheduler will issue in a single zoidfs read or write
-        //
-        batchsize = "16";
-
-        api = "defasync";
-
-        rangesched {
-            //
-            // request mereger type
-            //  hierarchical: list of ranges merged 
-            //  intervaltree: red-black interval tree
-            //  default: hierarchical
-            //
-            merger = "hierarchical";
-
-            hierarchical {
-                // no special config options
-            }
-            
-            //
-            // hbrr quantum 
-            //
-            defquantum = "8";
-        }
 
     defasync {
       //blocking_api = "zoidfs";
@@ -143,7 +108,7 @@ requesthandler {
     local {
     }
 
-      }
+  //    }
     }
     }
     }

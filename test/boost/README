@@ -22,3 +22,13 @@ cpp_exception 	- report uncaught c++ exception
 system_error 	- report system originated non-fatal errors (for example, timeout or floating point exception)
 fatal_error 	- report only user or system originated fatal errors (for example, memory access violation)
 nothing 	- does not report any information
+
+
+
+=========================================================
+== Controlling test duration ============================
+=========================================================
+
+if the environment variable IOFSL_TEST is set to 'long' the unit tests
+that support it will switch to longer tests (usually more loops).
+

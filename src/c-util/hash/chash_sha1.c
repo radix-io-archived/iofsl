@@ -2,8 +2,8 @@
 #include <string.h>
 
 #include "c-util/tools.h"
-#include "chash_sha1.h"
 #include "c-util/sha1.h"
+#include "chash_sha1.h"
 
 static int chash_sha1_reset (HashHandle h)
 {
@@ -42,10 +42,10 @@ static int chash_sha1_get (HashHandle h, void * dest,
 {
    ALWAYS_ASSERT(destsize >= 20);
    memcpy (dest, &((SHA1Context*) h->data)->Message_Digest[0], 20);
-   return 0;
+   return 20;
 }
 
-struct HashFunctionImpl chash_none = {
+struct HashFunctionImpl chash_sha1 = {
    .reset = &chash_sha1_reset,
    .getsize= &chash_sha1_getsize,
    .init = &chash_sha1_init,

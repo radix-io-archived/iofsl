@@ -29,7 +29,15 @@ namespace iofwdutil
  */
 #define GENERIC_FACTORY_CLIENT(key,base,derived,mykey,linkkey) \
    namespace iofwdutil { namespace linkhelper { void register_key_##linkkey () { \
-      iofwdutil::FactoryAutoRegister<key,base,derived> (mykey); } } }
+      iofwdutil::FactoryAutoRegister<key,base,void,derived> (mykey); } } }
+
+/**
+ * This macro needs to be mentioned in the cpp file of the derived class.
+ * Outside of any namespace. Don't forget to use FQN for base/derived.
+ */
+#define GENERIC_FACTORY_CLIENT_TAG(key,base,tag,derived,mykey,linkkey) \
+   namespace iofwdutil { namespace linkhelper { void register_key_##linkkey () { \
+      iofwdutil::FactoryAutoRegister<key,base,tag,derived> (mykey); } } }
 
 /**
  * This macro will ensure the derived class is registered.

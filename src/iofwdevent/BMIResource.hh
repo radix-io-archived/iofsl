@@ -8,10 +8,12 @@ extern "C"
 
 #include <boost/intrusive/slist.hpp>
 #include <boost/pool/pool_alloc.hpp>
+#include <boost/format.hpp>
 #include "iofwdutil/tools.hh"
 #include "ThreadedResource.hh"
 #include "iofwdutil/assert.hh"
 #include "iofwdutil/IOFWDLog.hh"
+#include "iofwdevent/BMIError.hh"
 
 namespace iofwdevent
 {
@@ -89,7 +91,7 @@ namespace iofwdevent
          /**
           * Check for normal BMI errors not associated with requests
           */
-         inline void checkBMI (int ret) { ALWAYS_ASSERT(ret >= 0); };
+         inline void checkBMI (int ret);
 
       public:
 
@@ -248,6 +250,17 @@ namespace iofwdevent
    };
 
    //===========================================================================
+
+   void BMIResource::checkBMI (int ret)
+   {
+      if(ret < 0)
+      {
+         char err_msg[512] = {'\0'};
+         bmi_strerror_r (ret, err_msg, sizeof(err_msg));
+         ZLOG_ERROR(log_, boost::format("BMI Layer returned error (%s)") % err_msg);
+      }
+      ALWAYS_ASSERT(ret >= 0);
+   }
 
    BMIResource::BMIEntry * BMIResource::newEntry (const CBType &  u,
          bmi_size_t * actual)

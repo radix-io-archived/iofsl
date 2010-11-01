@@ -488,10 +488,12 @@ static int zfuse_write (const char * UNUSED(path), const char * buf, size_t size
    uint64_t ofs = offset; 
    uint64_t fsize = size; 
    const void * memstart = buf; 
+   // write returns number of bytes written in fsize array
    int ret = zoidfs_write (handle, 1, &memstart, &size, 1, &ofs, &fsize, ZOIDFS_NO_OP_HINT);
    if (ret != ZFS_OK)
       return zoidfserr_to_posix (ret); 
-   return size;
+   assert (fsize <= size);
+   return fsize;
 }
 
 static int zfuse_read(const char * UNUSED(path), char *buf, size_t size, off_t offset,
@@ -509,7 +511,8 @@ static int zfuse_read(const char * UNUSED(path), char *buf, size_t size, off_t o
    int ret = zoidfs_read (handle, 1, &memstart, &size, 1, &ofs, &fsize, ZOIDFS_NO_OP_HINT);
    if (ret != ZFS_OK)
       return zoidfserr_to_posix (ret); 
-   return size;
+   assert (fsize <= size);
+   return fsize;
 }
 
 static void * zfuse_init (struct fuse_conn_info * UNUSED(conn))

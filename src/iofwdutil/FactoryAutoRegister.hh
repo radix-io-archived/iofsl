@@ -11,12 +11,12 @@ namespace iofwdutil
  * Automatic registration for factory.
  *
  */
-template <typename KEY, typename BASE, typename DERIVED>
+template <typename KEY, typename BASE, typename TAG, typename DERIVED>
 struct FactoryAutoRegister
 {
    FactoryAutoRegister (const KEY & key)
    {
-      Factory<KEY,BASE>::instance ().add (key,
+      Factory<KEY,BASE,TAG>::instance ().add (key,
             &CreateMethod<BASE,DERIVED>::create);
    }
 };
@@ -28,7 +28,13 @@ struct FactoryAutoRegister
 
 #define FACTORYAUTOREGISTER(key,base,derived,name) \
    namespace { \
-      static iofwdutil::FactoryAutoRegister<key,base,derived> \
+      static iofwdutil::FactoryAutoRegister<key,base,void,derived> \
+      F_UNIQUE(autoreg_) (name); \
+   }
+
+#define FACTORYAUTOREGISTER_TAG(key,base,tag,derived,name) \
+   namespace { \
+      static iofwdutil::FactoryAutoRegister<key,base,tag,derived> \
       F_UNIQUE(autoreg_) (name); \
    }
 

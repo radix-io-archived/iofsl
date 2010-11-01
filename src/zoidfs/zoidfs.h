@@ -13,7 +13,7 @@
 
 #include <stdint.h>
 #include <stddef.h>
-//#include <zoidfs/hints/zoidfs-hints.h>
+/* #include <zoidfs/hints/zoidfs-hints.h> */
 
 #ifdef __cplusplus
 /*
@@ -210,6 +210,7 @@ enum {
     ZFSERR_OTHER=99999
 };
 
+
 /*
  * zoidfs file offset and size types
  * Always 64bits for portability
@@ -217,6 +218,7 @@ enum {
  */
 typedef uint64_t zoidfs_file_size_t;
 typedef uint64_t zoidfs_file_ofs_t;
+
 
 /**
  * OPTIONAL
@@ -482,6 +484,7 @@ int Pzoidfs_readdir(const zoidfs_handle_t * parent_handle /* in:ptr */,
 int Pzoidfs_resize(const zoidfs_handle_t * handle /* in:ptr */,
                   uint64_t size /* in:obj */,
                   zoidfs_op_hint_t * op_hint /* inout:ptr:nullok */);
+
 
 
 #ifdef __cplusplus

@@ -768,6 +768,37 @@ if test "x${use_zlib}" == "x1" ; then
       LIBS="$LIBS $ZLib_LIBS"
 fi
 
+dnl =========================================================================
+dnl ====== BZip2 Support ====================================================
+dnl =========================================================================
+
+AC_ARG_WITH(bzip2,[  --with-bzip2=<location of bzip2 installation>
+                      ],BZIP2_DIR="$withval",BZIP2_DIR="")
+if test -n "$BZIP2_DIR" ;
+then
+   CPPFLAGS="$CPPFLAGS -I${BZIP2_DIR}/include"
+   LDFLAGS="$LDFLAGS -L${BZIP2_DIR}/lib"
+fi
+
+use_bzlib=1
+
+AC_CHECK_HEADERS([bzlib.h],[],
+                 [use_bzlib=])
+
+if test -n $use_bzlib; then
+AC_SEARCH_LIBS([BZ2_bzCompress],[bz2],[],
+               [use_bzlib=])
+fi
+
+AM_CONDITIONAL([HAVE_BZLIB],[test "x${use_bzlib}" == "x1"])
+
+AC_MSG_CHECKING([if BZip2 support can be enabled])
+if test "x${use_bzlib}" == "x1" ; then
+      AC_DEFINE([HAVE_BZLIB], [1], [If bzlib is available])
+      AC_MSG_RESULT([yes])
+else
+      AC_MSG_RESULT([no])
+fi
 
 dnl =========================================================================
 dnl ========= Check for OpenSSL support (for hash functions) ================

@@ -1,5 +1,6 @@
-#ifndef IOFWD_FACTORYHELPER_HH
-#define IOFWD_FACTORYHELPER_HH
+
+#ifndef IOFWD_REGISTERHELPER_HH
+#define IOFWD_REGISTERHELPER_HH
 
 namespace iofwd
 {
@@ -7,7 +8,7 @@ namespace iofwd
    /**
     * This function makes sure all objects register to the factory.
     */
-   void registerFactoryClients ();
+   void registerIofwdFactoryClients ();
 
 }
 

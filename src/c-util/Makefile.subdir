@@ -55,12 +55,31 @@ src/c-util/hash/chash.c \
 src/c-util/hash/chash_none.c \
 src/c-util/hash/chash_none.h \
 src/c-util/hash/chash_sha1.h \
-src/c-util/hash/chash_sha1.c
+src/c-util/hash/chash_sha1.c \
+src/c-util/transform/lzf/lzf.h \
+src/c-util/transform/lzf/lzfP.h \
+src/c-util/transform/lzf/lzf_c.c \
+src/c-util/transform/lzf/lzf_d.c \
+src/c-util/transform/zoidfs_transform.h \
+src/c-util/transform/zoidfs_transform.c \
+src/c-util/transform/zoidfs_lzf.c \
+src/c-util/transform/zoidfs_lzf.h 
 
 if HAVE_ZLIB
 src_c_util_libc_util_a_SOURCES += \
 src/c-util/hash/chash_crc32.h \
 src/c-util/hash/chash_crc32.c \
 src/c-util/hash/chash_adler32.h \
-src/c-util/hash/chash_adler32.c
+src/c-util/hash/chash_adler32.c \
+src/c-util/transform/zoidfs_zlib.h \
+src/c-util/transform/zoidfs_zlib.c 
 endif
+
+# Disabled BZLIB build; is broken
+if HAVE_BZLIB
+    src_c_util_libc_util_a_SOURCES += \
+    src/c-util/transform/zoidfs_bzip.c \
+    src/c-util/transform/zoidfs_bzip.h
+endif
+
+

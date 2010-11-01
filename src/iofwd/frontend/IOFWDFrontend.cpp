@@ -33,6 +33,7 @@
 #include "IOFWDLinkRequest.hh"
 
 #include "iofwdutil/mm/BMIMemoryManager.hh"
+#include "iofwdutil/mm/HeapMemoryManager.hh"
 
 using namespace iofwdutil::bmi;
 using namespace iofwdutil;
@@ -102,6 +103,10 @@ IOFWDFrontend::IOFWDFrontend (Resources & r)
 
 IOFWDFrontend::~IOFWDFrontend ()
 {
+   ZLOG_INFO (log_, "Stopping heap memory manager...");
+   iofwdutil::mm::HeapMemoryManager::instance().reset();
+   delete &iofwdutil::mm::HeapMemoryManager::instance();
+
    ZLOG_INFO (log_, "Stopping BMI memory manager...");
    iofwdutil::mm::BMIMemoryManager::instance().reset();
    delete &iofwdutil::mm::BMIMemoryManager::instance();
@@ -143,6 +148,12 @@ void IOFWDFrontend::init ()
    iofwdutil::ConfigFile lc = config_.openSectionDefault("bmimemorymanager");
    iofwdutil::mm::BMIMemoryManager::instance().setMaxNumBuffers(lc.getKeyAsDefault("maxnumbuffers", 0));
    iofwdutil::mm::BMIMemoryManager::instance().start();
+
+   /* start the heap memory manager */
+   ZLOG_INFO (log_, "Starting heap memory manager...");
+   lc = config_.openSectionDefault("heapmemorymanager");
+   iofwdutil::mm::HeapMemoryManager::instance().setMaxNumBuffers(lc.getKeyAsDefault("maxnumbuffers", 0));
+   iofwdutil::mm::HeapMemoryManager::instance().start();
 }
 
 void IOFWDFrontend::run()

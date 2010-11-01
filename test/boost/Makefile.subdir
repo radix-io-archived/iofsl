@@ -1,12 +1,21 @@
 
-shared_ldadd = src/iofwdevent/libiofwdevent.a \
+shared_ldadd = \
 	       src/sm/libsm.a \
+	       src/iofwdevent/libiofwdevent.a \
 	       src/iofwdutil/libiofwdutil.a \
-	       $(BOOST_UNIT_TEST_FRAMEWORK_LIB) \
-	       $(BOOST_DATE_TIME_LIB) \
-	       $(BOOST_THREAD_LIB) \
-	       $(BOOST_REGEX_LIB) $(AM_LIBS)
-shared_ldflags =  $(BOOST_LDFLAGS)
+	       src/c-util/libc-util.a \
+	         $(BOOST_UNIT_TEST_FRAMEWORK_LIB) \
+	       @BOOST_PROGRAM_OPTIONS_LIB@ \
+	       @BOOST_DATE_TIME_LIB@ \
+	       @BOOST_THREAD_LIB@ \
+	       @BOOST_REGEX_LIB@ \
+	       @ZFS_DISPATCHER_LIBS@ \
+	       @BMI_LIBS@
+
+shared_ldflags = \
+    @BOOST_LDFLAGS@ \
+    @ZFS_DISPATCHER_LDFLAGS@ \
+    @BMI_LDFLAGS@
 
 #############################################################################
 #  Dummy test case (for debugging)
@@ -89,7 +98,15 @@ test_boost_iofwdutil_SOURCES = test/boost/iofwdutil.cpp \
 			test/boost/linkhelper.cpp \
 			test/boost/linkhelper-base.hh \
 			test/boost/linkhelper-derived.cpp \
-			test/boost/linkhelper-derived.hh
+			test/boost/linkhelper-derived.hh \
+			test/boost/hashfunc.cpp \
+			test/boost/iostate.cpp \
+			test/boost/test_common.cpp \
+			test/boost/test_common.hh \
+			test/boost/transform.cpp \
+			test/boost/MultiAlloc.hh \
+			test/boost/TestData.hh
+
 test_boost_iofwdutil_LDFLAGS = $(shared_ldflags)
 test_boost_iofwdutil_LDADD = $(shared_ldadd)
 

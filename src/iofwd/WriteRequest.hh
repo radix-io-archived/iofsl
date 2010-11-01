@@ -7,6 +7,7 @@
 #include "iofwdutil/bmi/BMIAddr.hh"
 #include "iofwdutil/bmi/BMIBuffer.hh"
 #include "iofwd/RetrievedBuffer.hh"
+#include "iofwdutil/transform/IOFWDZLib.hh"
 
 namespace iofwd
 {
@@ -51,9 +52,11 @@ public:
 
   // for normal mode
   virtual void recvBuffers(const CBType & cb, RetrievedBuffer * rb) = 0;
+  virtual void recvComplete(int recvStatus) = 0;
 
   // for pipeline mode
   virtual void recvPipelineBufferCB(iofwdevent::CBType cb, RetrievedBuffer * rb, size_t size) = 0;
+  virtual void recvPipelineComplete(int recvStatus, int my_slot) = 0;
 
   //virtual iofwdutil::bmi::BMIAddr getRequestAddr() = 0;
 

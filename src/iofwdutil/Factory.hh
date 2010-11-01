@@ -30,6 +30,9 @@ namespace iofwdutil
  *
  *    FACTORYAUTOREGISTER(KEYTYPE,BASETYPE,YOURTYPE,YOURKEYVAL);
  *
+ *    (FACTORYAUTOREGISTER_TAG(KEYTYPE,BASETYPE,TAG,YOURTYPE,YOURKEYVAL) for
+ *    non-default tags.
+ *
  *    For example:
  *
  *    struct Geometric
@@ -51,15 +54,20 @@ namespace iofwdutil
  *    Factory<std::string,Geometric>::construct ("CIRCLE")(3);
  *
  *    See linker notes in FactoryAutoRegister.
+ *
+ *
+ *    The TAG argument can be used to create multiple factories serving the
+ *    same interface. For example, for GenericTransform this enables us to
+ *    have an 'encode' and 'decode' factory.
  */
-template <typename KEY, typename BASE>
-struct Factory : public Singleton<Factory<KEY,BASE> >
+template <typename KEY, typename BASE, typename TAG = void>
+struct Factory : public Singleton<Factory<KEY,BASE,TAG> >
 {
    typedef typename FactoryHelper<BASE>::CONSTFUNC CONSTFUNC;
    public:
 
       static CONSTFUNC construct (const KEY & key)
-      { return Factory<KEY,BASE>::instance().constructHelper (key); }
+      { return Factory<KEY,BASE,TAG>::instance().constructHelper (key); }
 
       CONSTFUNC constructHelper(const KEY & key) const
       {
@@ -84,6 +92,23 @@ struct Factory : public Singleton<Factory<KEY,BASE> >
 
       size_t size() const
       { return map_.size(); }
+
+
+      /**
+       * Output all the registered keys to the output iterator specified
+       */
+      template <typename OUT>
+      void keys (OUT out) const
+      {
+         typename ContainerType::const_iterator i1 (map_.begin());
+         typename ContainerType::const_iterator i2 (map_.end());
+         while (i1 != i2)
+         {
+            *out = i1->first;
+            ++out;
+            ++i1;
+         }
+      }
 
       Factory ()
       {
