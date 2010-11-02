@@ -664,7 +664,7 @@ int testREADLINK(void)
 {
     zoidfs_handle_t fhandle;
     char buffer[4096];
-    char path[PATHSIZE];
+    /* char path[PATHSIZE]; */
     char short_buffer[24];
     size_t buffer_length = 4096;
     size_t short_buffer_length = 24;
