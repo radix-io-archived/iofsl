@@ -14,7 +14,7 @@ static size_t data_size = 400000;
 
 int init_transform_test(void)
 {
-    int x, y;
+    size_t x, y;
     srand((unsigned)time(NULL));
     test_data = malloc(num_test_data * sizeof(char *));
     test_data_len = malloc ( sizeof(size_t) * num_test_data);
@@ -31,7 +31,7 @@ int init_transform_test(void)
 }
 int clean_transform_test(void)
 {
-    int x;
+    size_t x;
     for (x = 0; x < num_test_data; x++)
         free(test_data[x]);
     return 0;
@@ -51,7 +51,7 @@ typedef struct
 
 test_transform_data build_test_data (void)
 {
-  int y;
+  size_t y;
   test_transform_data x;
   zoidfs_write_vars * z = malloc(sizeof(zoidfs_write_vars));
   zoidfs_write_compress * comp = malloc(sizeof(zoidfs_write_compress));
@@ -78,7 +78,7 @@ test_transform_data build_test_data (void)
 
 zoidfs_read_vars build_decompression (char ** data, size_t * len, size_t count)
 {
-  int y;
+  size_t y;
   zoidfs_read_vars x;
   x.read_buf = (void **) data;
   x.read_buf_size = len;
@@ -99,7 +99,8 @@ zoidfs_read_vars build_decompression (char ** data, size_t * len, size_t count)
 void test_transform_write (char * transfer_type, int out_buf_size, 
 			   int num_buffs, int num_buffs_to_fill)
 {
-  int ret, x, y;
+  int ret;
+  size_t x, y;
   size_t total_size = 0;
   zoidfs_write_vars var;
 
@@ -136,7 +137,7 @@ void test_transform_write (char * transfer_type, int out_buf_size,
 
   for (x = 0; x < num_test_data; x++)
     {
-      if (transfer_type != "passthrough:")
+      if (strcmp (transfer_type, "passthrough:"))
 	buffer[x] = malloc(sizeof(char) * out_buf_size);
       buffer_sizes[x] = out_buf_size;
     }
@@ -182,7 +183,7 @@ void test_transform_write (char * transfer_type, int out_buf_size,
 
   assert(comp_size_test == total_compressed_len);
 
-  if (transfer_type != "passthrough:")
+  if (strcmp (transfer_type, "passthrough:"))
     {
       zoidfs_decompress decomp;
       zoidfs_transform_decompress_init (transfer_type, &decomp);
@@ -199,7 +200,7 @@ void test_transform_write (char * transfer_type, int out_buf_size,
       {
     	  compressed_mem_buffers[x] -= tmp_compressed_sizes[x];
       }
-      int y;
+      size_t y;
 
       for(x = 0; x < read_buffs.output_mem_count; x++)
 	{
@@ -209,9 +210,10 @@ void test_transform_write (char * transfer_type, int out_buf_size,
 	    {
 	      if(((char **)read_buffs.output_buf)[x][y] != ((char **) test_data)[x][y])
 		{
-		  fprintf(stderr,"Error, Bytes do not match %i,%i, %u, %u",x,y,
-			  ((unsigned char**)read_buffs.output_buf)[x][y],
-			  ((unsigned char **) local_mem_starts)[x][y]);
+		  fprintf(stderr,"Error, Bytes do not match %lu,%lu, %lu, %lu",
+                        (unsigned long) x, (unsigned long) y,
+			  (unsigned long) ((unsigned char**)read_buffs.output_buf)[x][y],
+			  (unsigned long) ((unsigned char **) local_mem_starts)[x][y]);
 		  assert(1 == 0);  
 		}
 	    }
@@ -221,7 +223,7 @@ void test_transform_write (char * transfer_type, int out_buf_size,
     }
 
 
-  if (transfer_type != "passthrough:")
+  if (strcmp (transfer_type, "passthrough:"))
     {
       for(x = 0; x < compressed_num_buffs; x++)
 	{
