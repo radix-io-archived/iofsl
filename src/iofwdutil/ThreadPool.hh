@@ -124,7 +124,7 @@ class ThreadPool : public Singleton< ThreadPool >
             boost::mutex::scoped_lock lock(queue_mutex_);
             if(prio == HIGH)
             {
-                if(active_threads_ >= 12)
+                if(active_threads_ >= max_high_thread_count_)
                 {
                     prio_queue_.push(func);
                 }
@@ -137,7 +137,7 @@ class ThreadPool : public Singleton< ThreadPool >
             }
             else
             {
-                if(active_threads_ >= 12)
+                if(active_threads_ >= max_norm_thread_count_)
                 {
                     norm_queue_.push(func);
                 }
@@ -182,10 +182,14 @@ class ThreadPool : public Singleton< ThreadPool >
         /* only accepts work that takes no args and has a void return type */
         void addWorkUnit(void (*workFunc)(void), TPPrio prio);
 
-        static void setMinThreadCount(int c);
-        static int getMinThreadCount();
-        static void setMaxThreadCount(int c);
-        static int getMaxThreadCount();
+        static void setMinHighThreadCount(int c);
+        static int getMinHighThreadCount();
+        static void setMaxHighThreadCount(int c);
+        static int getMaxHighThreadCount();
+        static void setMinNormThreadCount(int c);
+        static int getMinNormThreadCount();
+        static void setMaxNormThreadCount(int c);
+        static int getMaxNormThreadCount();
 
         void reset();
     protected:
@@ -224,8 +228,10 @@ class ThreadPool : public Singleton< ThreadPool >
         int thread_count_;
         boost::mutex shutdown_lock_;
         static boost::mutex tp_setup_mutex_;
-        static int max_thread_count_;
-        static int min_thread_count_;
+        static int max_high_thread_count_;
+        static int min_high_thread_count_;
+        static int max_norm_thread_count_;
+        static int min_norm_thread_count_;
         bool shutdown_threads_;
         bool thread_pool_running_;
         boost::condition threadcond_;

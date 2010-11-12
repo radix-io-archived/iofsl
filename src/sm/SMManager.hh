@@ -50,6 +50,7 @@ public:
    void startThreads();
    void stopThreads();
 
+   void useHighPrioTP(bool mode);
 protected:
 
 
@@ -58,6 +59,7 @@ protected:
 
 protected:
    size_t threads_;
+   bool high_prio_tp_;
 
    // Lock protects the work queu
    std::queue<SMClientSharedPtr> worklist_;

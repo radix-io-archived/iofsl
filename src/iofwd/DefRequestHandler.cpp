@@ -54,8 +54,10 @@ DefRequestHandler::DefRequestHandler (const iofwdutil::ConfigFile & cf)
 
    /* start thread pool */
    iofwdutil::ConfigFile lc = config_.openSectionDefault ("threadpool");
-   tp_.setMinThreadCount(lc.getKeyAsDefault("minnumthreads", 0));
-   tp_.setMaxThreadCount(lc.getKeyAsDefault("maxnumthreads", 0));
+   tp_.setMinHighThreadCount(lc.getKeyAsDefault("minnumhighthreads", 0));
+   tp_.setMaxNormThreadCount(lc.getKeyAsDefault("maxnumhighthreads", 0));
+   tp_.setMinHighThreadCount(lc.getKeyAsDefault("minnumnormthreads", 0));
+   tp_.setMaxNormThreadCount(lc.getKeyAsDefault("maxnumnormthreads", 0));
    tp_.start();
 
    /* get the event mode */
@@ -63,8 +65,13 @@ DefRequestHandler::DefRequestHandler (const iofwdutil::ConfigFile & cf)
    const std::string mode = lc.getKeyDefault("mode", "SM");
    if(mode == "SM")
    {
+      bool smhighprio = true;
       ZLOG_INFO(log_, "Using SM mode");
       event_mode_ = EVMODE_SM;
+      lc = config_.openSectionDefault ("sm");
+      smhighprio = config_.getKeyAsDefault<bool>("highprio", true);
+      smm_.useHighPrioTP(smhighprio);
+    
    }
    else if (mode == "TASK")
    {
