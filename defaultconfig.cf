@@ -88,7 +88,12 @@ requesthandler {
     defasync {
       //blocking_api = "zoidfs";
       blocking_api = "log";
+
+      // should we use the threadpool for the zoidfs driver 
       use_thread_pool = "TrUe";
+
+      // which zoidfs op are high prio... READ,WRITE,LOOKUP,CREATE,REMOVE,SET_ATTR,GET_ATTR,SYMLINK,READLINK,READDIR,LINK,NULL
+      highprioops = "READ,WRITE,LOOKUP,CREATE,REMOVE";
 
     log {
       blocking_api = "zoidfs";
@@ -155,8 +160,12 @@ requesthandler {
   // threadpool config
   //
   threadpool {
-      minnumthreads = "4";
-      maxnumthreads = "16";
+      // what are the limits on the number of active threads (high and normal prio)
+      maxnumnormthreads = "16";
+      maxnumhighthreads = "16";
+
+      minnumnormthreads = "4";
+      minnumhighthreads = "4";
   }
 
   //
@@ -166,11 +175,18 @@ requesthandler {
   //
   events {
       mode = "SM";
+
+      // SM specific options
+      sm
+      {
+        // should the SMManager schedule code on the high prio TP ?
+        highprio = "TRUE";
+      }
   }
 
-  workqueue {
-    minthreadnum = "0";
-    maxthreadnum = "100";
-  }
+  //workqueue {
+  //  minthreadnum = "0";
+  //  maxthreadnum = "100";
+  //}
 
 }

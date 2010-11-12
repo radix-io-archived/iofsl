@@ -1,7 +1,10 @@
 #include <memory>
+#include <vector>
+#include <string>
 #include <boost/bind.hpp>
 #include <boost/scoped_ptr.hpp>
 #include <boost/format.hpp>
+#include <boost/algorithm/string.hpp>
 
 #include "iofwdutil/LinkHelper.hh"
 #include "iofwdutil/tools.hh"
@@ -280,6 +283,7 @@ namespace zoidfs
          throw;
       }
 
+      /* check for wait for threads param */
       try
       {
          wait_for_threads_ = config.getKeyAsDefault<bool>("use_thread_pool", false);
@@ -298,6 +302,65 @@ namespace zoidfs
                " '1'");
          throw;
       }
+
+      /* check for high prio operations... defaults to READ and WRITE */
+      try
+      {
+         std::vector<std::string> op_strs;
+         std::string highprioops_ = config.getKeyAsDefault<std::string>("highprioops", "READ,WRITE");
+         boost::split(op_strs, highprioops_, boost::is_any_of(","));
+
+         for(int i = 0 ; i < zoidfs::ZOIDFS_PROTO_MAX ; i++)
+         {
+             highpriooplist_[i] = false;
+         }
+
+         for(unsigned int i = 0 ; i < op_strs.size() ; i++)
+         {
+            ZLOG_INFO(log_, format("'%s' is a high priority operation") %
+               op_strs[i]);
+
+             if(op_strs[i].compare("READ") == 0)
+                highpriooplist_[zoidfs::ZOIDFS_PROTO_READ] = true;
+             else if(op_strs[i].compare("WRITE") == 0)
+                highpriooplist_[zoidfs::ZOIDFS_PROTO_WRITE] = true;
+             else if(op_strs[i].compare("GET_ATTR") == 0)
+                highpriooplist_[zoidfs::ZOIDFS_PROTO_GET_ATTR] = true;
+             else if(op_strs[i].compare("SET_ATTR") == 0)
+                highpriooplist_[zoidfs::ZOIDFS_PROTO_SET_ATTR] = true;
+             else if(op_strs[i].compare("REMOVE") == 0)
+                highpriooplist_[zoidfs::ZOIDFS_PROTO_REMOVE] = true;
+             else if(op_strs[i].compare("CREATE") == 0)
+                highpriooplist_[zoidfs::ZOIDFS_PROTO_CREATE] = true;
+             else if(op_strs[i].compare("MKDIR") == 0)
+                highpriooplist_[zoidfs::ZOIDFS_PROTO_MKDIR] = true;
+             else if(op_strs[i].compare("LOOKUP") == 0)
+                highpriooplist_[zoidfs::ZOIDFS_PROTO_LOOKUP] = true;
+             else if(op_strs[i].compare("READLINK") == 0)
+                highpriooplist_[zoidfs::ZOIDFS_PROTO_READLINK] = true;
+             else if(op_strs[i].compare("COMMIT") == 0)
+                highpriooplist_[zoidfs::ZOIDFS_PROTO_COMMIT] = true;
+             else if(op_strs[i].compare("RENAME") == 0)
+                highpriooplist_[zoidfs::ZOIDFS_PROTO_RENAME] = true;
+             else if(op_strs[i].compare("SYMLINK") == 0)
+                highpriooplist_[zoidfs::ZOIDFS_PROTO_SYMLINK] = true;
+             else if(op_strs[i].compare("READDIR") == 0)
+                highpriooplist_[zoidfs::ZOIDFS_PROTO_READDIR] = true;
+             else if(op_strs[i].compare("RESIZE") == 0)
+                highpriooplist_[zoidfs::ZOIDFS_PROTO_RESIZE] = true;
+             else if(op_strs[i].compare("LINK") == 0)
+                highpriooplist_[zoidfs::ZOIDFS_PROTO_LINK] = true;
+             else if(op_strs[i].compare("NULL") == 0)
+                highpriooplist_[zoidfs::ZOIDFS_PROTO_NULL] = true;
+         }
+      }
+      catch (const boost::bad_lexical_cast &)
+      {
+         ZLOG_ERROR(log_, "Invalid value for use_thread_pool: use '0' or"
+               " '1'");
+         throw;
+      }
+
    }
 
 
@@ -305,7 +368,10 @@ namespace zoidfs
    {
       ZoidFSDefAsyncNullWorkUnit * wu = new ZoidFSDefAsyncNullWorkUnit(cb, ret, api_.get(), tp_);
 
-      submitWorkUnit(boost::bind(&ZoidFSDefAsync::runWorkUnit, wu), iofwdutil::ThreadPool::LOW);
+      if(highpriooplist_[zoidfs::ZOIDFS_PROTO_NULL])
+        submitWorkUnit(boost::bind(&ZoidFSDefAsync::runWorkUnit, wu), iofwdutil::ThreadPool::HIGH);
+      else
+        submitWorkUnit(boost::bind(&ZoidFSDefAsync::runWorkUnit, wu), iofwdutil::ThreadPool::LOW);
    }
 
 
@@ -315,7 +381,10 @@ namespace zoidfs
    {
       ZoidFSDefAsyncGetattrWorkUnit * wu = new ZoidFSDefAsyncGetattrWorkUnit(cb, ret, api_.get(), tp_, handle, attr, op_hint);
 
-      submitWorkUnit(boost::bind(&ZoidFSDefAsync::runWorkUnit, wu), iofwdutil::ThreadPool::LOW);
+      if(highpriooplist_[zoidfs::ZOIDFS_PROTO_GET_ATTR])
+        submitWorkUnit(boost::bind(&ZoidFSDefAsync::runWorkUnit, wu), iofwdutil::ThreadPool::HIGH);
+      else
+        submitWorkUnit(boost::bind(&ZoidFSDefAsync::runWorkUnit, wu), iofwdutil::ThreadPool::LOW);
    }
 
 
@@ -326,7 +395,10 @@ namespace zoidfs
    {
       ZoidFSDefAsyncSetattrWorkUnit * wu = new ZoidFSDefAsyncSetattrWorkUnit(cb, ret, api_.get(), tp_, handle, sattr, attr, hint);
 
-      submitWorkUnit(boost::bind(&ZoidFSDefAsync::runWorkUnit, wu), iofwdutil::ThreadPool::LOW);
+      if(highpriooplist_[zoidfs::ZOIDFS_PROTO_SET_ATTR])
+        submitWorkUnit(boost::bind(&ZoidFSDefAsync::runWorkUnit, wu), iofwdutil::ThreadPool::HIGH);
+      else
+        submitWorkUnit(boost::bind(&ZoidFSDefAsync::runWorkUnit, wu), iofwdutil::ThreadPool::LOW);
    }
 
 
@@ -339,7 +411,10 @@ namespace zoidfs
    {
       ZoidFSDefAsyncLookupWorkUnit * wu = new ZoidFSDefAsyncLookupWorkUnit(cb, ret, api_.get(), tp_, parent_handle, component_name, full_path, handle, hint);
 
-      submitWorkUnit(boost::bind(&ZoidFSDefAsync::runWorkUnit, wu), iofwdutil::ThreadPool::LOW);
+      if(highpriooplist_[zoidfs::ZOIDFS_PROTO_LOOKUP])
+        submitWorkUnit(boost::bind(&ZoidFSDefAsync::runWorkUnit, wu), iofwdutil::ThreadPool::HIGH);
+      else
+        submitWorkUnit(boost::bind(&ZoidFSDefAsync::runWorkUnit, wu), iofwdutil::ThreadPool::LOW);
    }
 
 
@@ -350,7 +425,10 @@ namespace zoidfs
    {
       ZoidFSDefAsyncReadlinkWorkUnit * wu = new ZoidFSDefAsyncReadlinkWorkUnit(cb, ret, api_.get(), tp_, handle, buffer, buffer_length, hint);
 
-      submitWorkUnit(boost::bind(&ZoidFSDefAsync::runWorkUnit, wu), iofwdutil::ThreadPool::LOW);
+      if(highpriooplist_[zoidfs::ZOIDFS_PROTO_READLINK])
+        submitWorkUnit(boost::bind(&ZoidFSDefAsync::runWorkUnit, wu), iofwdutil::ThreadPool::HIGH);
+      else
+        submitWorkUnit(boost::bind(&ZoidFSDefAsync::runWorkUnit, wu), iofwdutil::ThreadPool::LOW);
    }
 
 
@@ -365,7 +443,10 @@ namespace zoidfs
    {
       ZoidFSDefAsyncReadWorkUnit * wu = new ZoidFSDefAsyncReadWorkUnit(cb, ret, api_.get(), tp_, handle, mem_count, mem_starts, mem_sizes, file_count, file_starts, file_sizes, hint);
 
-      submitWorkUnit(boost::bind(&ZoidFSDefAsync::runWorkUnit, wu), iofwdutil::ThreadPool::LOW);
+      if(highpriooplist_[zoidfs::ZOIDFS_PROTO_READ])
+        submitWorkUnit(boost::bind(&ZoidFSDefAsync::runWorkUnit, wu), iofwdutil::ThreadPool::HIGH);
+      else
+        submitWorkUnit(boost::bind(&ZoidFSDefAsync::runWorkUnit, wu), iofwdutil::ThreadPool::LOW);
    }
 
 
@@ -380,7 +461,10 @@ namespace zoidfs
    {
       ZoidFSDefAsyncWriteWorkUnit * wu = new ZoidFSDefAsyncWriteWorkUnit(cb, ret, api_.get(), tp_, handle, mem_count, mem_starts, mem_sizes, file_count, file_starts, file_sizes, hint);
 
-      submitWorkUnit(boost::bind(&ZoidFSDefAsync::runWorkUnit, wu), iofwdutil::ThreadPool::HIGH);
+      if(highpriooplist_[zoidfs::ZOIDFS_PROTO_WRITE])
+        submitWorkUnit(boost::bind(&ZoidFSDefAsync::runWorkUnit, wu), iofwdutil::ThreadPool::HIGH);
+      else
+        submitWorkUnit(boost::bind(&ZoidFSDefAsync::runWorkUnit, wu), iofwdutil::ThreadPool::LOW);
    }
 
 
@@ -389,7 +473,10 @@ namespace zoidfs
    {
       ZoidFSDefAsyncCommitWorkUnit * wu = new ZoidFSDefAsyncCommitWorkUnit(cb, ret, api_.get(), tp_, handle, hint);
 
-      submitWorkUnit(boost::bind(&ZoidFSDefAsync::runWorkUnit, wu), iofwdutil::ThreadPool::LOW);
+      if(highpriooplist_[zoidfs::ZOIDFS_PROTO_COMMIT])
+        submitWorkUnit(boost::bind(&ZoidFSDefAsync::runWorkUnit, wu), iofwdutil::ThreadPool::HIGH);
+      else
+        submitWorkUnit(boost::bind(&ZoidFSDefAsync::runWorkUnit, wu), iofwdutil::ThreadPool::LOW);
    }
 
 
@@ -403,7 +490,10 @@ namespace zoidfs
    {
       ZoidFSDefAsyncCreateWorkUnit * wu = new ZoidFSDefAsyncCreateWorkUnit(cb, ret, api_.get(), tp_, parent_handle, component_name, full_path, attr, handle, created, hint);
 
-      submitWorkUnit(boost::bind(&ZoidFSDefAsync::runWorkUnit, wu), iofwdutil::ThreadPool::LOW);
+      if(highpriooplist_[zoidfs::ZOIDFS_PROTO_CREATE])
+        submitWorkUnit(boost::bind(&ZoidFSDefAsync::runWorkUnit, wu), iofwdutil::ThreadPool::HIGH);
+      else
+        submitWorkUnit(boost::bind(&ZoidFSDefAsync::runWorkUnit, wu), iofwdutil::ThreadPool::LOW);
    }
 
 
@@ -415,7 +505,10 @@ namespace zoidfs
    {
       ZoidFSDefAsyncRemoveWorkUnit * wu = new ZoidFSDefAsyncRemoveWorkUnit(cb, ret, api_.get(), tp_, parent_handle, component_name, full_path, parent_hint, hint);
 
-      submitWorkUnit(boost::bind(&ZoidFSDefAsync::runWorkUnit, wu), iofwdutil::ThreadPool::LOW);
+      if(highpriooplist_[zoidfs::ZOIDFS_PROTO_REMOVE])
+        submitWorkUnit(boost::bind(&ZoidFSDefAsync::runWorkUnit, wu), iofwdutil::ThreadPool::HIGH);
+      else
+        submitWorkUnit(boost::bind(&ZoidFSDefAsync::runWorkUnit, wu), iofwdutil::ThreadPool::LOW);
    }
 
    void ZoidFSDefAsync::rename(const iofwdevent::CBType & cb, int * ret, const zoidfs_handle_t * from_parent_handle,
@@ -431,7 +524,10 @@ namespace zoidfs
       ZoidFSDefAsyncRenameWorkUnit * wu = new ZoidFSDefAsyncRenameWorkUnit(cb, ret, api_.get(), tp_, from_parent_handle, from_component_name, 
             from_full_path, to_parent_handle, to_component_name, to_full_path, from_parent_hint, to_parent_hint, hint);
 
-      submitWorkUnit(boost::bind(&ZoidFSDefAsync::runWorkUnit, wu), iofwdutil::ThreadPool::LOW);
+      if(highpriooplist_[zoidfs::ZOIDFS_PROTO_RENAME])
+        submitWorkUnit(boost::bind(&ZoidFSDefAsync::runWorkUnit, wu), iofwdutil::ThreadPool::HIGH);
+      else
+        submitWorkUnit(boost::bind(&ZoidFSDefAsync::runWorkUnit, wu), iofwdutil::ThreadPool::LOW);
    }
 
    void ZoidFSDefAsync::link(const iofwdevent::CBType & cb, int * ret, const zoidfs_handle_t * from_parent_handle,
@@ -447,7 +543,10 @@ namespace zoidfs
       ZoidFSDefAsyncLinkWorkUnit * wu = new ZoidFSDefAsyncLinkWorkUnit(cb, ret, api_.get(), tp_, from_parent_handle, from_component_name, 
             from_full_path, to_parent_handle, to_component_name, to_full_path, from_parent_hint, to_parent_hint, hint);
 
-      submitWorkUnit(boost::bind(&ZoidFSDefAsync::runWorkUnit, wu), iofwdutil::ThreadPool::LOW);
+      if(highpriooplist_[zoidfs::ZOIDFS_PROTO_LINK])
+        submitWorkUnit(boost::bind(&ZoidFSDefAsync::runWorkUnit, wu), iofwdutil::ThreadPool::HIGH);
+      else
+        submitWorkUnit(boost::bind(&ZoidFSDefAsync::runWorkUnit, wu), iofwdutil::ThreadPool::LOW);
    }
 
    void ZoidFSDefAsync::symlink(const iofwdevent::CBType & cb, int * ret, const zoidfs_handle_t * from_parent_handle,
@@ -464,7 +563,10 @@ namespace zoidfs
       ZoidFSDefAsyncSymlinkWorkUnit * wu = new ZoidFSDefAsyncSymlinkWorkUnit(cb, ret, api_.get(), tp_, from_parent_handle, from_component_name, 
             from_full_path, to_parent_handle, to_component_name, to_full_path, attr, from_parent_hint, to_parent_hint, hint);
 
-      submitWorkUnit(boost::bind(&ZoidFSDefAsync::runWorkUnit, wu), iofwdutil::ThreadPool::LOW);
+      if(highpriooplist_[zoidfs::ZOIDFS_PROTO_SYMLINK])
+        submitWorkUnit(boost::bind(&ZoidFSDefAsync::runWorkUnit, wu), iofwdutil::ThreadPool::HIGH);
+      else
+        submitWorkUnit(boost::bind(&ZoidFSDefAsync::runWorkUnit, wu), iofwdutil::ThreadPool::LOW);
    }
 
 
@@ -477,7 +579,10 @@ namespace zoidfs
    {
       ZoidFSDefAsyncMkdirWorkUnit * wu = new ZoidFSDefAsyncMkdirWorkUnit(cb, ret, api_.get(), tp_, parent_handle, component_name, full_path, attr, parent_hint, hint);
 
-      submitWorkUnit(boost::bind(&ZoidFSDefAsync::runWorkUnit, wu), iofwdutil::ThreadPool::LOW);
+      if(highpriooplist_[zoidfs::ZOIDFS_PROTO_MKDIR])
+        submitWorkUnit(boost::bind(&ZoidFSDefAsync::runWorkUnit, wu), iofwdutil::ThreadPool::HIGH);
+      else
+        submitWorkUnit(boost::bind(&ZoidFSDefAsync::runWorkUnit, wu), iofwdutil::ThreadPool::LOW);
    }
 
 
@@ -491,7 +596,10 @@ namespace zoidfs
    {
       ZoidFSDefAsyncReaddirWorkUnit * wu = new ZoidFSDefAsyncReaddirWorkUnit(cb, ret, api_.get(), tp_, parent_handle, cookie, entry_count, entries, flags, parent_hint, hint);
 
-      submitWorkUnit(boost::bind(&ZoidFSDefAsync::runWorkUnit, wu), iofwdutil::ThreadPool::LOW);
+      if(highpriooplist_[zoidfs::ZOIDFS_PROTO_READDIR])
+        submitWorkUnit(boost::bind(&ZoidFSDefAsync::runWorkUnit, wu), iofwdutil::ThreadPool::HIGH);
+      else
+        submitWorkUnit(boost::bind(&ZoidFSDefAsync::runWorkUnit, wu), iofwdutil::ThreadPool::LOW);
    }
 
 
@@ -501,7 +609,10 @@ namespace zoidfs
    {
       ZoidFSDefAsyncResizeWorkUnit * wu = new ZoidFSDefAsyncResizeWorkUnit(cb, ret, api_.get(), tp_, handle, size, hint);
 
-      submitWorkUnit(boost::bind(&ZoidFSDefAsync::runWorkUnit, wu), iofwdutil::ThreadPool::LOW);
+      if(highpriooplist_[zoidfs::ZOIDFS_PROTO_RESIZE])
+        submitWorkUnit(boost::bind(&ZoidFSDefAsync::runWorkUnit, wu), iofwdutil::ThreadPool::HIGH);
+      else
+        submitWorkUnit(boost::bind(&ZoidFSDefAsync::runWorkUnit, wu), iofwdutil::ThreadPool::LOW);
    }
 
     } /* namespace util */

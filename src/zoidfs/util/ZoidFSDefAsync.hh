@@ -194,7 +194,14 @@ namespace zoidfs
 
     void submitWorkUnit(const boost::function<void (void)> & wu_, iofwdutil::ThreadPool::TPPrio prio)
     {
-        tp_.submitWorkUnit(wu_, prio);
+        if(wait_for_threads_)
+        {
+            tp_.submitWorkUnit(wu_, prio);
+        }
+        else
+        {
+            boost::thread t (wu_);
+        }
     }
 
    protected:
@@ -203,6 +210,7 @@ namespace zoidfs
 
       iofwdutil::zlog::ZLogSource & log_;
       iofwdutil::ThreadPool & tp_;
+      bool highpriooplist_[zoidfs::ZOIDFS_PROTO_MAX];
    };
 
 //==========================================================================

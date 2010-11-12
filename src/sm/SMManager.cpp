@@ -33,7 +33,10 @@ void SMManager::schedule (SMClient * client)
    /* TODO: we shouldn't need to manually manage the ref count */
    client->addref();
 
-   tp_.submitWorkUnit(boost::bind(&SMManager::submitWorkUnit, w), iofwdutil::ThreadPool::LOW);
+   if(high_prio_tp_)
+    tp_.submitWorkUnit(boost::bind(&SMManager::submitWorkUnit, w), iofwdutil::ThreadPool::HIGH);
+   else
+    tp_.submitWorkUnit(boost::bind(&SMManager::submitWorkUnit, w), iofwdutil::ThreadPool::LOW);
 }
 
 void SMManager::startThreads()
@@ -106,11 +109,16 @@ SMManager::~SMManager ()
 
 
 SMManager::SMManager (size_t count) 
-   : threads_(count),
+   : threads_(count), high_prio_tp_(true),
    finish_(false),
    log_(iofwdutil::IOFWDLog::getSource ("smmanager")),
    tp_(iofwdutil::ThreadPool::instance())
 {
+}
+
+void SMManager::useHighPrioTP(bool mode)
+{
+    high_prio_tp_ = mode;
 }
 
 //===========================================================================

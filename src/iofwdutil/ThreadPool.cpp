@@ -2,32 +2,59 @@
 
 namespace iofwdutil
 {
-        int iofwdutil::ThreadPool::min_thread_count_ = 1;
-        int iofwdutil::ThreadPool::max_thread_count_ = 1;
+        int iofwdutil::ThreadPool::min_high_thread_count_ = 1;
+        int iofwdutil::ThreadPool::max_high_thread_count_ = 1;
+        int iofwdutil::ThreadPool::min_norm_thread_count_ = 1;
+        int iofwdutil::ThreadPool::max_norm_thread_count_ = 1;
+
         boost::mutex iofwdutil::ThreadPool::tp_setup_mutex_;
 
-        void ThreadPool::setMinThreadCount(int c)
+        void ThreadPool::setMaxHighThreadCount(int c)
         {
             boost::mutex::scoped_lock lock(tp_setup_mutex_);
-            min_thread_count_ = c;
+            max_high_thread_count_ = c;
         }
 
-        void ThreadPool::setMaxThreadCount(int c)
+        void ThreadPool::setMaxNormThreadCount(int c)
         {
             boost::mutex::scoped_lock lock(tp_setup_mutex_);
-            max_thread_count_ = c;
+            max_norm_thread_count_ = c;
         }
 
-        int ThreadPool::getMinThreadCount()
+        void ThreadPool::setMinHighThreadCount(int c)
         {
             boost::mutex::scoped_lock lock(tp_setup_mutex_);
-            return min_thread_count_;
+            min_high_thread_count_ = c;
         }
 
-        int ThreadPool::getMaxThreadCount()
+        void ThreadPool::setMinNormThreadCount(int c)
         {
             boost::mutex::scoped_lock lock(tp_setup_mutex_);
-            return max_thread_count_;
+            min_norm_thread_count_ = c;
+        }
+
+        int ThreadPool::getMinNormThreadCount()
+        {
+            boost::mutex::scoped_lock lock(tp_setup_mutex_);
+            return min_norm_thread_count_;
+        }
+
+        int ThreadPool::getMinHighThreadCount()
+        {
+            boost::mutex::scoped_lock lock(tp_setup_mutex_);
+            return min_high_thread_count_;
+        }
+
+        int ThreadPool::getMaxNormThreadCount()
+        {
+            boost::mutex::scoped_lock lock(tp_setup_mutex_);
+            return max_norm_thread_count_;
+        }
+
+        int ThreadPool::getMaxHighThreadCount()
+        {
+            boost::mutex::scoped_lock lock(tp_setup_mutex_);
+            return max_high_thread_count_;
         }
 
         void ThreadPool::reset()
@@ -98,10 +125,10 @@ namespace iofwdutil
             thread_count_ = 0;
 
             /* setup the storage queue for thread work */
-            thread_work_items_.resize(max_thread_count_);
+            thread_work_items_.resize(max_norm_thread_count_);
 
             /* create the max number of threads */
-            for(thread_count_ = 0 ; thread_count_ < max_thread_count_ ; thread_count_++)
+            for(thread_count_ = 0 ; thread_count_ < max_norm_thread_count_ ; thread_count_++)
             {
                 createThread(thread_count_);
             }
