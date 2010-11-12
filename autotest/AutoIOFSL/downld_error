@@ -1,0 +1,3 @@
+#!/bin/bash
+
+mail -s "git status result" rjdamore@gmail.com < downld_error_1.log
