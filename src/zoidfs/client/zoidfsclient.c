@@ -167,7 +167,7 @@ do{                                 \
  * for communication to identify the threads. This enables that bmi_post_recv()
  * receives the proper message which is heading to the caller's thread.
  *
- * Tags above 65536 are reserved for other uses.
+ * Tags above  ZOIDFS_BMI_MAXTAG are reserved for other uses.
  *
  * NOTE: Uses thread local storage now, but if we add full async support we
  * might want to use OpenPA and use an atomic increment. This will break
