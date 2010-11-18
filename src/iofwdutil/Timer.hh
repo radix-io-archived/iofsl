@@ -16,41 +16,41 @@ namespace iofwdutil
 class Timer
 {
 public:
-   typedef iofwdutil::TimeVal TimeVal; 
+   typedef iofwdutil::TimeVal TimeVal;
 
-   enum { NS_PER_SECOND = TimeVal::NS_PER_SECOND };  
+   enum { NS_PER_SECOND = TimeVal::NS_PER_SECOND };
 public:
-   Timer (); 
+   Timer ();
 
    /// Stop clock and reset internal values
    void reset ()
    {
-      start_.clear(); 
-      stop_.clear(); 
-   } 
+      start_.clear();
+      stop_.clear();
+   }
 
    /// Return elapsed time since start but do not stop clock
    TimeVal current () const
    {
-      return getCurrent () - start_; 
+      return getCurrent () - start_;
    }
 
    /// Return time between start and stop call
    TimeVal elapsed () const
    {
-      return stop_ - start_; 
+      return stop_ - start_;
    }
 
    /// Start clock
    void start ()
    {
-      start_ = getCurrent(); 
+      start_ = getCurrent();
    }
 
    /// Stop clock
    void stop ()
    {
-      stop_ = getCurrent(); 
+      stop_ = getCurrent();
    }
 
    /// Write clock information to ostream
@@ -60,19 +60,19 @@ protected:
    TimeVal getCurrent () const
    {
       struct timespec tp;
-      int ret = clock_gettime (clockid_, &tp); 
-      BOOST_ASSERT(ret == 0); 
-      return TimeVal (tp.tv_sec, tp.tv_nsec); 
+      int ret = clock_gettime (clockid_, &tp);
+      BOOST_ASSERT(ret == 0);
+      return TimeVal (tp.tv_sec, tp.tv_nsec);
    }
 
 
 protected:
-   TimeVal start_; 
-   TimeVal stop_; 
-   clockid_t clockid_; 
+   TimeVal start_;
+   TimeVal stop_;
+   clockid_t clockid_;
 
-}; 
-   
+};
+
 
 //===========================================================================
 }
