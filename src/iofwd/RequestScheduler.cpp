@@ -110,6 +110,7 @@ RequestScheduler::~RequestScheduler()
 void RequestScheduler::submitWorkUnit(ReqSchedHelper * w)
 {
     w->run();
+    boost::this_thread::at_thread_exit(iofwdutil::ThreadPoolKick(w->rs_->tp_));
     delete w;
 }
 
