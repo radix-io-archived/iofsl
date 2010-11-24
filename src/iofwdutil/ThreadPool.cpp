@@ -126,12 +126,6 @@ namespace iofwdutil
 
             /* setup the storage queue for thread work */
             thread_work_items_.resize(max_norm_thread_count_);
-
-            /* create the max number of threads */
-            for(thread_count_ = 0 ; thread_count_ < max_norm_thread_count_ ; thread_count_++)
-            {
-                createThread(thread_count_);
-            }
         }
 
         ThreadPool::~ThreadPool()
