@@ -69,7 +69,6 @@ protected:
                 rs_->run(false);
             }
 
-        protected:
             RequestScheduler * rs_;
     };
 
