@@ -604,7 +604,7 @@ int MPI_File_open(MPI_Comm comm, char * filename, int amode, MPI_Info info, MPI_
         zoidfs_handle_t * local_handle = (zoidfs_handle_t *)malloc(sizeof(zoidfs_handle_t));
 
         /* split the comm into leaders and others */
-        MPI_Comm_split(MPI_COMM_WORLD, 1, rank / group_size, &leader_comm);
+        PMPI_Comm_split(MPI_COMM_WORLD, 1, rank / group_size, &leader_comm);
 
         /* perform the lookup */
         zoidfs_client_swap_addr(zoidfs_router_get_addr(zoidfs_router_get_leader_rank()));
@@ -623,7 +623,7 @@ int MPI_File_open(MPI_Comm comm, char * filename, int amode, MPI_Info info, MPI_
         int ofs = (rank / group_size) + 1;
 
         /* split the comm into leaders and others */
-        MPI_Comm_split(MPI_COMM_WORLD, 0, rank - ofs,  &leader_comm);
+        PMPI_Comm_split(MPI_COMM_WORLD, 0, rank - ofs,  &leader_comm);
         PMPI_Comm_free(&leader_comm);
     }
 
@@ -631,7 +631,7 @@ int MPI_File_open(MPI_Comm comm, char * filename, int amode, MPI_Info info, MPI_
     if(group_size > 1)
     {
         /* split into sub groups based on the default server */
-        MPI_Comm_split(MPI_COMM_WORLD, rank % n, rank / n, &dist_comm);
+        PMPI_Comm_split(MPI_COMM_WORLD, rank % n, rank / n, &dist_comm);
 
         /* distribute the handles to the group */
         PMPI_Bcast(all_handles, sizeof(zoidfs_handle_t) * n, MPI_BYTE, 0, dist_comm);
