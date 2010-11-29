@@ -7,10 +7,7 @@ Created on Nov 8, 2010
 import os,sys
 from send_mail import Mail
 import subprocess
-from configobj import ConfigObj
 
-
-config = ConfigObj('git_repo.cfg')
 
 def diff_repo(): # check the repository, if difference exists, download new version.
    

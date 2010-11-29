@@ -1,15 +1,19 @@
+#!/usr/bin/env python
 '''
 Created on Nov 2, 2010
 
-@author: Rico
+@author: Rico D'Amore
 '''
 from configobj import ConfigObj
 import os
 
 config = ConfigObj('iofsl_config.cfg')
 repoCount = 0
+
+
 class Repo1:
         repoCount = 0
+
         try:  #retrieve our repo data from git_repo.cfg
             vc_command    = config['section1']['git_repo']
             git_command   = config['section2']['git_command1']
@@ -24,12 +28,8 @@ class Repo1:
             
         def dwnldRepo1(self):
             os.system("".join(Repo1.repo1))
-        #    print "".join(Repo1.repo1)
-        #    print "The Repo Count is" + " " + (Repo1.repoCount).__str__()
             
-            
-           
-        
+
 class Repo2:
         repoCount = Repo1.repoCount  # get our repo count from class Repo1:
         try:
@@ -46,8 +46,7 @@ class Repo2:
         
         def dwnldRepo2(self):
             os.system("".join(Repo2.repo2))
-         #   print "".join(Repo2.repo2)
-         #  print "The Repo Count is" + " " + (Repo2.repoCount).__str__()
+        
             
         
         

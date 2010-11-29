@@ -5,8 +5,9 @@ Created on Nov 2, 2010
 @author: Rico D'Amore
 '''
 import os,sys,re,datetime,math,random
-from Repo_Objects import Repo1,Repo2
+from repo_objects import Repo1,Repo2
 from optparse import OptionParser
+
 
 def options_parse():
     parser = OptionParser()

@@ -31,6 +31,7 @@ config['section3'] ['git_address2']   = 'git://git.kernel.org/pub/scm/git'
 config['section3'] ['git_address3']   = 'git://git.mcs.anl.gov/'
 config['section3'] ['git_address4']   = ''
 config['section3'] ['git_address5']   = ''
+
 #Section4
 config['section4'] = {}
 config['section4'] ['git_directory1'] = '/iofsl.git'
@@ -38,6 +39,28 @@ config['section4'] ['git_directory2'] = '/git.git'
 config['section4'] ['git_directory3'] = ':'
 config['section4'] ['git_directory4'] = ':'
 config['section4'] ['git_directory5'] = ':'
+
+#Section5 build commands
+config['section5'] = {}
+config['section5'] ['iofsl_prepare']       = '/Users/Rico/Documents/workspace/python/AutoIOFSL/prepare'
+config['section5'] ['iofsl_configure']     = '/Users/Rico/Documents/workspace/python/AutoIOFSL/configure '
+config['section5'] ['iofsl_prefix']        = '--prefix=$HOME/iofsl-install '
+config['section5'] ['iofsl_make']          = '/Users/Rico/Documents/workspace/python/AutoIOFSL/make '
+config['section5'] ['iofsl_make_install']  = '/Users/Rico/Documents/workspace/python/AutoIOFSL/make_install '
+config['section5'] ['iofsl_wcunit']        = '--with-cunit=$HOME/opt/cunit-2.1 '
+config['section5'] ['iofsl_wbmi']          = '--with-bmi=$HOME/opt/bmi-2.8.2 '
+config['section5'] ['iofsl_wboost']        = '--with-boost=$HOME/opt/boost-1.44 '
+config['section5'] ['iofsl_wmpi']          = '--with-mpi=$HOME/opt/mpich2-1.3 '
+
+#Section 6. Alternate build scripts
+config['section6'] = {}
+config['section6'] ['iofsl-construct']     = '/Users/Rico/Documents/workspace/python/AutoIOFSL/iofsl/construct'
+
+
+
+
+
+
 #Section5 ENV
 #config['section5'] = {}
 #config['section5'] ['CFLAGS']         = '-I$HOME/iofsl/src/zoidfs'
