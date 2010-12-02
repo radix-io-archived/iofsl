@@ -380,7 +380,6 @@ class IOFWDThread
 
         void noop()
         {
-            fprintf(stderr, "%s:%i, this = %p\n", __func__, __LINE__, this);
         }
 
         boost::thread t_;
