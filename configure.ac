@@ -87,6 +87,7 @@ AC_MSG_RESULT([no])
 fi
 
 AM_CONDITIONAL([HAVE_MPI],[test "x${ENABLE_MPI}" == "x1"])
+AC_DEFINE([HAVE_MPI],[test "x${ENABLE_MPI}" == "x1"],[Build with MPI support])
 
 dnl ========================================================
 dnl Now that we have a compiler, try to use preprocessor

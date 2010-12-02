@@ -22,7 +22,7 @@
 #include <pthread.h>
 
 #include "zoidfs/client/zoidfsclient.h"
-#include "zoidfs/client/zoidfsrouter.h"
+#include "zoidfs/client/router/zoidfsrouter.h"
 
 static char *ion_name;
 static BMI_addr_t * peer_addr = NULL;
@@ -43,7 +43,7 @@ void zoidfs_client_def_addr()
 
 void zoidfs_client_set_def_addr(BMI_addr_t * addr)
 {
-    peer_addr = addr;
+    def_peer_addr = addr;
 }
 
 bmi_context_id * zoidfs_client_get_context()

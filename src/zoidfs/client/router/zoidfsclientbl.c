@@ -1,11 +1,7 @@
 /*
- * zoidfsclientrouter.c
- * ZoidFS client router lib. This code routes I/O data segments to
- *  IOFSL servers that may own a specific FS block region. The goal
- *  with this code is to reduce lock contention within the FS file servers
- *  by minimizing the block / file region lock revocation be ensuring that
- *  as few IOFSL servers are writing to a specific block as possible. Ideally,
- *  there should be one server that writes to a specific block.
+ * zoidfsclientbl.c
+ * ZoidFS client block layout lib. This code routes I/O data segments to
+ *  IOFSL servers that may own a specific FS block region.
  *
  * Jason Cope <copej@mcs.anl.gov>
  *
@@ -17,143 +13,296 @@
 #include "zoidfs/zoidfs.h"
 #include "zoidfs/zoidfs-proto.h"
 #include "c-util/tools.h"
-#include "zoidfs/client/zoidfsrouter.h"
+#include "zoidfs/client/router/zoidfsrouter.h"
 #include "zoidfs/client/zoidfsclient.h"
+#include "zoidfs/client/bmi_comm.h"
 
 #include <stdio.h>
 #include <time.h>
 #include <pthread.h>
 #include <stdlib.h>
 #include <string.h>
-
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <unistd.h>
 #include <mpi.h>
 
 #include "c-util/lookup8.h"
 #include "c-util/lookup3.h"
 #include "c-util/quicklist.h"
 
+#include "zoidfs/client/router/zoidfsclienthcache.h"
+
+int zoidfs_router_bmi_addr_setup_block_layout()
+{
+    int i = 0;
+    for(i = 0 ; i < zoidfs_router_get_num_servers() ; i++)
+    {
+        //fprintf(stderr, "%s sid = %i, def = %i, addr = %s\n", __func__, i, defid, zoidfs_router_region_list[i].iofsl_addr);
+        int bret = BMI_addr_lookup(&(zoidfs_router_get_region_list()[i].bmi_addr), zoidfs_router_get_region_list()[i].iofsl_addr);
+        if(bret < 0)
+        {
+            fprintf(stderr, "zoidfs_init: BMI_addr_lookup() failed, ion_name = %s.\n", zoidfs_router_get_region_list()[i].iofsl_addr);
+            return -1;
+        }
+    }
+    return 0;
+}
+
+static void zoidfs_router_simple_block_layout_setup(int num_servers, size_t block_size)
+{
+    int i = 0;
+    size_t curofs = 0;
+    zoidfs_router_server_region_t * l = NULL;
+
+    /* setup static dim variables */
+    zoidfs_router_set_block_size(block_size);
+    zoidfs_router_set_num_servers(num_servers);
+
+    l = (zoidfs_router_server_region_t *)malloc(sizeof(zoidfs_router_server_region_t) * num_servers);
+
+    for(i = 0 ; i < num_servers ; i++)
+    {
+        l[i].id = i;
+        l[i].start = curofs;
+        l[i].end = curofs + block_size - 1;
+        curofs += block_size;
+    }
+    zoidfs_router_set_region_list(l);
+}
+
+static void zoidfs_router_simple_block_layout_cleanup()
+{
+    int i = 0;
+
+    /* cleanup each server entry */
+    for(i = 0 ; i < zoidfs_router_get_num_servers() ; i++)
+    {
+        free(zoidfs_router_get_region_list()[i].iofsl_addr);
+        zoidfs_router_get_region_list()[i].iofsl_addr = NULL;
+    }
+
+    /* reset all of the region variables */
+    zoidfs_router_set_block_size(0);
+    zoidfs_router_set_num_servers(0);
+
+    free(zoidfs_router_get_region_list());
+    zoidfs_router_set_region_list(NULL);
+}
+
 /*
- * filename and handle caches
+ * Simple block layout overloads
  */
-
-static MPI_File * cur_mpi_fh = NULL;
-static char * cur_mpi_fh_fn = NULL;
-
-static QLIST_HEAD(zoidfs_client_handle_list);
-
-typedef struct zoidfs_client_handle_cache
+int MPI_Init_simple_block_layout_server(int * args, char *** argv)
 {
-    struct qlist_head list;
-    MPI_File * mpi_fh;
-    zoidfs_handle_t * zoidfs_fh;
-    char * filename;
-    int server_id;
-    uint64_t sidfn_key; 
-    uint64_t fh_key; 
-    
-} zoidfs_client_handle_cache_t;
+    int rank = 0;
+    int size = 0;
+    int i = 0;
+    int ccfd = 0;
+    int num_ioservers = atoi(getenv("ZOIDFS_NUM_IOSERVERS"));
+    size_t block_size = atoi(getenv("ZOIDFS_BLOCK_SIZE"));
 
-zoidfs_client_handle_cache_t * zoidfs_client_handle_cache_create(MPI_File * mpi_fh, zoidfs_handle_t * zoidfs_fh, char * filename, int server_id)
-{
-    zoidfs_client_handle_cache_t * r = (zoidfs_client_handle_cache_t *)malloc(sizeof(zoidfs_client_handle_cache_t));
+    /* init MPI */
+    int ret = PMPI_Init(args, argv);
 
-    r->mpi_fh = mpi_fh;
-    r->zoidfs_fh = zoidfs_fh;
-    r->filename = filename;
-    r->server_id = server_id;
+    /* get the proc rank and size */
+    PMPI_Comm_size(MPI_COMM_WORLD, &size);
+    PMPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
-    //fprintf(stderr, "%s zoidfs handle = %p, mpi fh = %p, filename = %s, sid = %i\n", __func__, r->zoidfs_fh, r->mpi_fh, r->filename, r->server_id);
+    /* compute the layout */
+    zoidfs_router_simple_block_layout_setup(num_ioservers, block_size);
 
-    return r;
-}
-
-void zoidfs_client_handle_cache_destroy(void * r)
-{
-    if(((zoidfs_client_handle_cache_t *)r)->filename)
+    /* rank 0 will get the server addresses and distribute them to the other clients */
+    if(rank == 0)
     {
-        free(((zoidfs_client_handle_cache_t *)r)->filename);
-    }
-    if(((zoidfs_client_handle_cache_t *)r)->server_id == 0)
-    {
-        free(((zoidfs_client_handle_cache_t *)r)->zoidfs_fh);
-    }
-    free(r);
-}
+        /* create a string to hold the config file path */
+        char * client_config_fn = (char *)malloc(sizeof(char) * 1024);
 
-void zoidfs_client_handle_cache_add(MPI_File * mpi_fh, zoidfs_handle_t * zoidfs_fh, char * fn, int sid)
-{
-    zoidfs_client_handle_cache_t * e = zoidfs_client_handle_cache_create(mpi_fh, zoidfs_fh, fn, sid);
-
-    qlist_add_tail(&(e->list), &zoidfs_client_handle_list);
-}
-
-void zoidfs_client_handle_cache_find_fn(MPI_File * mpi_fh)
-{
-    zoidfs_client_handle_cache_t * item = NULL;
-    zoidfs_client_handle_cache_t * witem = NULL;
-
-    /* find the mpi file handle in the list */
-    qlist_for_each_entry_safe(item, witem, &zoidfs_client_handle_list, list)
-    {
-        /* if this is the fh, save it and break */
-        if(memcmp(item->mpi_fh, mpi_fh, sizeof(MPI_File)) == 0)
+        /* for each iofsl server */
+        for(i = 0 ; i < num_ioservers ; i++)
         {
-            cur_mpi_fh_fn = item->filename;
-            //qlist_del(&(item->list));
-            break;
+            /* setup the io server addr to use */
+            sprintf(&client_config_fn[0], "./defaultclientconfig.cf.%i.%i.%i", size, num_ioservers, i);
+            /* setup the file name for the server / region */
+            zoidfs_router_get_region_list()[i].iofsl_addr = (char *)malloc(sizeof(char) * 128);
+
+            /* get the address from the config file */
+            ccfd = open(client_config_fn, O_RDONLY);
+            if(ccfd < 0)
+            {
+                fprintf(stderr, "%s: failed to open client config, file = %s\n", __func__, client_config_fn);
+            }
+
+            /* store the address... will lookup it up later */
+            if(read(ccfd, zoidfs_router_get_region_list()[i].iofsl_addr, 128) <= 0)
+            {
+                fprintf(stderr, "%s: could not read the address\n", __func__);
+            }
+
+            /* remove the newline */
+            zoidfs_router_get_region_list()[i].iofsl_addr[strlen(zoidfs_router_get_region_list()[i].iofsl_addr) - 1] = '\0';
+
+            /* close the fd */
+            close(ccfd);
+
+            /* send this addr out to all of the other clients */
+            PMPI_Bcast(zoidfs_router_get_region_list()[i].iofsl_addr, 128, MPI_CHAR, 0, MPI_COMM_WORLD);
         }
+
+        /* cleanup */
+        free(client_config_fn);
     }
-}
-
-zoidfs_client_handle_cache_t * zoidfs_client_handle_cache_find_by_fn_sid(char * filename, int server_id)
-{
-    zoidfs_client_handle_cache_t * item = NULL;
-    zoidfs_client_handle_cache_t * fitem = NULL;
-    zoidfs_client_handle_cache_t * witem = NULL;
-
-    /* find the mpi file handle in the list */
-    qlist_for_each_entry_safe(item, witem, &zoidfs_client_handle_list, list)
+    /* all other ranks wait for the server addrs */
+    else
     {
-        /* if this is the fh, save it and break */
-        if(strcmp(item->filename, filename) == 0 && item->server_id == server_id)
+        zoidfs_router_set_defid(rank % num_ioservers);
+        for(i = 0 ; i < num_ioservers ; i++)
         {
-            fitem = item;
-            break;
+            /* setup the address path */
+            zoidfs_router_get_region_list()[i].iofsl_addr = (char *)malloc(sizeof(char) * 128);
+
+            /* get the address */
+            PMPI_Bcast(zoidfs_router_get_region_list()[i].iofsl_addr, 128, MPI_CHAR, 0, MPI_COMM_WORLD);
         }
     }
 
-    return fitem;
+    /* assign the leaders */
+    zoidfs_router_set_leader_rank(rank % num_ioservers);
+
+    return ret;
 }
 
-void zoidfs_client_handle_list_cleanup(MPI_File * mpi_fh)
+int MPI_Finalize_simple_block_layout_server()
 {
-    zoidfs_client_handle_cache_t * item = NULL;
-    zoidfs_client_handle_cache_t * witem = NULL;
-    zoidfs_client_handle_cache_t * oitem = NULL;
+    int ret = PMPI_Finalize();
 
-    /* find the mpi file handle in the list */
-    qlist_for_each_entry_safe(item, witem, &zoidfs_client_handle_list, list)
+    zoidfs_router_simple_block_layout_cleanup();
+
+    return ret;
+}
+
+/* overload of zoidfs_init */
+int zoidfs_init_simple_block_layout_server(void)
+{
+    int ret = ZFS_OK;
+    char * pipeline_size = NULL;
+
+#ifdef ZFS_USE_XDR_SIZE_CACHE
+    /* get the values for the size cache */
+    zoidfs_xdr_size_processor_cache_init();
+#endif
+
+    assert(sizeof(size_t) == sizeof(unsigned long));
+
+    /* Initialize BMI */
+    ret = BMI_initialize(NULL, NULL, 0);
+    if (ret < 0) {
+        fprintf(stderr, "zoidfs_init: BMI_initialize() failed.\n");
+        return ZFSERR_OTHER;
+    }
+
+    /* Create a new BMI context */
+    ret = BMI_open_context(zoidfs_client_get_context());
+    if (ret < 0) {
+        fprintf(stderr, "zoidfs_init: BMI_open_context() failed.\n");
+        return ZFSERR_OTHER;
+    }
+
+    /* setup the zoidfs router interface */
+    zoidfs_router_bmi_addr_setup_block_layout();
+
+    /* set default peer addr */
+    zoidfs_client_swap_addr(zoidfs_router_get_default_addr());
+    zoidfs_client_set_def_addr(zoidfs_router_get_default_addr());
+
+    /* setup the pipeline size */
+
+    /* ask BMI for the max buffer size it can handle... */
+    int psiz = 0;
+    ret = BMI_get_info(*(zoidfs_router_get_default_addr()), BMI_CHECK_MAXSIZE, (void *)&psiz);
+    if(ret)
     {
-        /* if this is the fh, save it and break */
-        if(memcmp(item->mpi_fh, mpi_fh, sizeof(MPI_File)) == 0)
+       fprintf(stderr, "zoidfs_init: BMI_get_info(BMI_CHECK_MAXSIZE) failed.\n");
+       return ZFSERR_OTHER;
+    }
+    zoidfs_client_set_pipeline_size((size_t)psiz);
+
+    /* check the for the PIPELINE_SIZE env variable */
+    pipeline_size = getenv(PIPELINE_SIZE_ENV);
+    if(pipeline_size)
+    {
+        int requested = atoi (pipeline_size);
+        if (requested > psiz)
         {
-            oitem = item;
-            qlist_del(&(item->list));
-            break;
+           fprintf (stderr, "zoidfs_init: reducing pipelinesize to BMI max"
+                 " (%i bytes)\n", psiz);
+        }
+        else
+        {
+            zoidfs_client_set_pipeline_size((size_t)requested);
         }
     }
 
-    /* find all of the matches in the list and delete them */
-    qlist_for_each_entry_safe(item, witem, &zoidfs_client_handle_list, list)
+#ifdef HAVE_BMI_ZOID_TIMEOUT
     {
-        /* if the node is for the same file, delete it */
-        if(strcmp(oitem->filename, item->filename) == 0)
-        {
-            qlist_del(&(item->list));
-
-            zoidfs_client_handle_cache_destroy(item);
-        }
+        int timeout = 3600 * 1000;
+        BMI_set_info(*(zoidfs_router_get_default_addr()), BMI_ZOID_POST_TIMEOUT, &timeout);
     }
+#endif
+
+    /* preallocate buffers */
+#ifdef ZFS_BMI_FASTMEMALLOC
+    zfs_bmi_client_sendbuf = BMI_memalloc(*(zoidfs_router_get_default_addr()), ZFS_BMI_CLIENT_SENDBUF_LEN, BMI_SEND);
+    if(!zfs_bmi_client_sendbuf)
+    {
+        fprintf(stderr, "zoidfs_init: could not allocate send buffer for fast mem alloc.\n");
+        return ZFSERR_OTHER;
+    }
+
+    zfs_bmi_client_recvbuf = BMI_memalloc(*(zoidfs_router_get_default_addr()), ZFS_BMI_CLIENT_RECVBUF_LEN, BMI_RECV);
+    if(!zfs_bmi_client_recvbuf)
+    {
+        fprintf(stderr, "zoidfs_init: could not allocate recv buffer for fast mem alloc.\n");
+        /* cleanup buffer */
+        BMI_memfree (peer_addr, zfs_bmi_client_sendbuf,
+              ZFS_BMI_CLIENT_SENDBUF_LEN, BMI_SEND);
+        peer_addr = NULL;
+        return ZFSERR_OTHER;
+    }
+#endif
+
+    return ZFS_OK;
+}
+
+int zoidfs_finalize_simple_block_layout_server(void) {
+    int ret = ZFS_OK;
+
+    /* cleanup buffers */
+#ifdef ZFS_BMI_FASTMEMALLOC
+    if(zfs_bmi_client_sendbuf)
+    {
+        BMI_memfree (*(peer_addr), zfs_bmi_client_sendbuf,
+              ZFS_BMI_CLIENT_SENDBUF_LEN, BMI_SEND);
+        zfs_bmi_client_sendbuf = NULL;
+    }
+
+    if(zfs_bmi_client_recvbuf)
+    {
+        BMI_memfree (*(peer_addr), zfs_bmi_client_recvbuf,
+              ZFS_BMI_CLIENT_RECVBUF_LEN, BMI_RECV);
+        zfs_bmi_client_recvbuf = NULL;
+    }
+#endif
+
+    //BMI_close_context(zoidfs_client_get_context());
+
+    /* Finalize BMI */
+    ret = BMI_finalize();
+    if (ret < 0) {
+        fprintf(stderr, "zoidfs_finalize: BMI_finalize() failed.\n");
+        exit(1);
+    }
+    return 0;
 }
 
 /*
@@ -405,7 +554,7 @@ static void zoidfs_client_router_file_domain_write(const void * nodep, const VIS
 
             /* invoke the write operation for this sub range of the client write op */
             int ret = 0;
-            zoidfs_client_handle_cache_t * hret = zoidfs_client_handle_cache_find_by_fn_sid(cur_mpi_fh_fn, cur_sid);
+            zoidfs_client_handle_cache_t * hret = zoidfs_client_handle_cache_find_by_fn_sid(zoidfs_client_handle_cache_get_mpifhfn(), cur_sid);
 
             zoidfs_client_swap_addr(zoidfs_router_get_addr(cur_sid));
 
@@ -443,7 +592,7 @@ static void zoidfs_client_router_file_domain_write(const void * nodep, const VIS
  * TODO: big assumption here... the mem and file data is equivalent (same
  *  number of segments, segments are of similar size). This needs to be generalized.
  */
-int zoidfs_write(const zoidfs_handle_t *handle, size_t mem_count_,
+int zoidfs_write_simple_block_layout(const zoidfs_handle_t *handle, size_t mem_count_,
                  const void *mem_starts[], const size_t mem_sizes_[],
                  size_t file_count_, const zoidfs_file_ofs_t file_starts[],
                  const zoidfs_file_size_t file_sizes[], zoidfs_op_hint_t * op_hint) {
@@ -578,8 +727,10 @@ int zoidfs_read(const zoidfs_handle_t *handle, size_t mem_count_,
     return ret;
 }
 
-int MPI_File_open(MPI_Comm comm, char * filename, int amode, MPI_Info info, MPI_File * fh)
+int MPI_File_open_simple_block_layout_server(MPI_Comm comm, char * filename, int amode, MPI_Info info, MPI_File * fh)
 {
+    fprintf(stderr, "%s:%i enter\n", __func__, __LINE__);
+    PMPI_Barrier(MPI_COMM_WORLD);
     int ret = 0;
     int i = 0;
     MPI_Comm leader_comm, dist_comm;
@@ -647,13 +798,15 @@ int MPI_File_open(MPI_Comm comm, char * filename, int amode, MPI_Info info, MPI_
     }
 
     /* wait for all of the processes to complete the open */
+    fprintf(stderr, "%s:%i exit, fh = %p\n", __func__, __LINE__, fh);
     PMPI_Barrier(MPI_COMM_WORLD);
 
     return ret;
 }
 
-int MPI_File_close(MPI_File * fh)
+int MPI_File_close_simple_block_layout_server(MPI_File * fh)
 {
+    fprintf(stderr, "%s:%i enter\n", __func__, __LINE__);
     int ret = 0;
 
     /* remove the file name from the cache if success */
@@ -662,26 +815,41 @@ int MPI_File_close(MPI_File * fh)
     /* invoke the close */
     ret = PMPI_File_close(fh);
 
+    fprintf(stderr, "%s:%i exit\n", __func__, __LINE__);
     return ret;
 }
 
-int MPI_File_write_at(MPI_File fh, MPI_Offset offset, void * buf,
+int MPI_File_write_at_simple_block_layout_server(MPI_File fh, MPI_Offset offset, void * buf,
     int count, MPI_Datatype datatype, MPI_Status * status)
 {
+    fprintf(stderr, "%s:%i enter\n", __func__, __LINE__);
     int ret = 0;
 
     /* set the cur file handle */
-    cur_mpi_fh = &fh;
+    zoidfs_client_handle_cache_set_mpifh(&fh);
 
     /* get the file name */
-    zoidfs_client_handle_cache_find_fn(cur_mpi_fh);
+    zoidfs_client_handle_cache_find_fn(zoidfs_client_handle_cache_get_mpifh());
 
     /* invoke the write op */
     ret = PMPI_File_write_at(fh, offset, buf, count, datatype, status);
 
     /* set the cur file handle to NULL */
-    cur_mpi_fh = NULL;
-    cur_mpi_fh_fn = NULL;
+    zoidfs_client_handle_cache_set_mpifhfn(NULL);
+    zoidfs_client_handle_cache_set_mpifh(NULL);
 
+    fprintf(stderr, "%s:%i exit\n", __func__, __LINE__);
     return ret;
 }
+
+zoidfs_router_t zoidfs_router_simple_block_layout_server = {
+    .name = "ZOIDFS_SIMPLE_BLOCK_LAYOUT_SERVER",
+    .mpi_init = MPI_Init_simple_block_layout_server,
+    .mpi_finalize = MPI_Finalize_simple_block_layout_server,
+    .mpi_file_open = MPI_File_open_simple_block_layout_server,
+    .mpi_file_close = MPI_File_close_simple_block_layout_server,
+    .mpi_file_write_at = MPI_File_write_at_simple_block_layout_server,
+    .zoidfs_write = zoidfs_write_simple_block_layout,
+    .zoidfs_init = zoidfs_init_simple_block_layout_server,
+    .zoidfs_finalize = zoidfs_finalize_simple_block_layout_server,
+};
