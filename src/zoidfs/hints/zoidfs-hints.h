@@ -26,15 +26,15 @@ namespace zoidfs
 
 /* TODO these are currently just stubs */
 
-int zoidfs_hint_create(zoidfs_op_hint_t * hint);
-int zoidfs_hint_set(zoidfs_op_hint_t hint, char * key, char * value);
-int zoidfs_hint_delete(zoidfs_op_hint_t hint, char * key);
-int zoidfs_hint_get(zoidfs_op_hint_t hint, char * key, int valuelen, char * value, int * flag);
-int zoidfs_hint_get_valuelen(zoidfs_op_hint_t hint, char * key, int * valuelen, int * flag);
-int zoidfs_hint_get_nkeys(zoidfs_op_hint_t hint, int * nkeys);
-int zoidfs_hint_get_nthkey(zoidfs_op_hint_t hint, int n, char * key);
-int zoidfs_hint_dup(zoidfs_op_hint_t oldhint, zoidfs_op_hint_t * newhint);
-int zoidfs_hint_free(zoidfs_op_hint_t * hint);
+int zoidfs_op_hint_create(zoidfs_op_hint_t * hint);
+int zoidfs_op_hint_set(zoidfs_op_hint_t hint, char * key, char * value);
+int zoidfs_op_hint_delete(zoidfs_op_hint_t hint, char * key);
+int zoidfs_op_hint_get(zoidfs_op_hint_t hint, char * key, int valuelen, char * value, int * flag);
+int zoidfs_op_hint_get_valuelen(zoidfs_op_hint_t hint, char * key, int * valuelen, int * flag);
+int zoidfs_op_hint_get_nkeys(zoidfs_op_hint_t hint, int * nkeys);
+int zoidfs_op_hint_get_nthkey(zoidfs_op_hint_t hint, int n, char * key);
+int zoidfs_op_hint_dup(zoidfs_op_hint_t oldhint, zoidfs_op_hint_t * newhint);
+int zoidfs_op_hint_free(zoidfs_op_hint_t * hint);
 
 /* old hint API */
 

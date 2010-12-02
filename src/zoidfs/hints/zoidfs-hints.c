@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include "c-util/tools.h"
 
 /*
  * zoidfs_hint_init() - initialize the hint list to 'size' elements
@@ -556,47 +557,47 @@ void decode_double(char ** pptr, void * value)
 }
 
 /* new hint functions... at the moment, they do nothing */
-int zoidfs_hint_create(zoidfs_op_hint_t * UNUSED(hint))
+int zoidfs_op_hint_create(zoidfs_op_hint_t * UNUSED(hint))
 {
-    return 0
+    return 0;
 }
 
-int zoidfs_hint_set(zoidfs_op_hint_t UNUSED(hint), char * UNUSED(key), char * UNUSED(value))
+int zoidfs_op_hint_set(zoidfs_op_hint_t UNUSED(hint), char * UNUSED(key), char * UNUSED(value))
 {
-    return 0
+    return 0;
 }
 
-int zoidfs_hint_delete(zoidfs_op_hint_t UNUSED(hint), char * UNUSED(key))
+int zoidfs_op_hint_delete(zoidfs_op_hint_t UNUSED(hint), char * UNUSED(key))
 {
-    return 0
+    return 0;
 }
 
-int zoidfs_hint_get(zoidfs_op_hint_t UNUSED(hint), char * UNUSED(key), int UNUSED(valuelen), char * UNUSED(value), int * UNUSED(flag))
+int zoidfs_op_hint_get(zoidfs_op_hint_t UNUSED(hint), char * UNUSED(key), int UNUSED(valuelen), char * UNUSED(value), int * UNUSED(flag))
 {
-    return 0
+    return 0;
 }
 
-int zoidfs_hint_get_valuelen(zoidfs_op_hint_t UNUSED(hint), char * UNUSED(key), int * UNUSED(valuelen), int * UNUSED(flag))
+int zoidfs_op_hint_get_valuelen(zoidfs_op_hint_t UNUSED(hint), char * UNUSED(key), int * UNUSED(valuelen), int * UNUSED(flag))
 {
-    return 0
+    return 0;
 }
 
-int zoidfs_hint_get_nkeys(zoidfs_op_hint_t UNUSED(hint), int * UNUSED(nkeys))
+int zoidfs_op_hint_get_nkeys(zoidfs_op_hint_t UNUSED(hint), int * UNUSED(nkeys))
 {
-    return 0
+    return 0;
 }
 
-int zoidfs_hint_get_nthkey(zoidfs_op_hint_t UNUSED(hint), int UNUSED(n), char * UNUSED(key))
+int zoidfs_op_hint_get_nthkey(zoidfs_op_hint_t UNUSED(hint), int UNUSED(n), char * UNUSED(key))
 {
-    return 0
+    return 0;
 }
 
-int zoidfs_hint_dup(zoidfs_op_hint_t oldhint, zoidfs_op_hint_t * newhint)
+int zoidfs_op_hint_dup(zoidfs_op_hint_t UNUSED(oldhint), zoidfs_op_hint_t * UNUSED(newhint))
 {
-    return 0
+    return 0;
 }
 
-int zoidfs_hint_free(zoidfs_op_hint_t * hint)
+int zoidfs_op_hint_free(zoidfs_op_hint_t * UNUSED(hint))
 {
-    return 0
+    return 0;
 }
