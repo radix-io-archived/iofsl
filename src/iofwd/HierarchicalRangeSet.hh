@@ -2,7 +2,6 @@
 #define IOFWD_RANGESET_HH
 
 #include <cstdio>
-#include <iostream>
 #include <cassert>
 #include <set>
 #include <map>

@@ -1,7 +1,8 @@
 #ifndef IOFWDUTIL_TIMER_HH
 #define IOFWDUTIL_TIMER_HH
 
-#include <iostream>
+
+#include <iosfwd>
 #include <time.h>
 #include <boost/assert.hpp>
 #include "TimeVal.hh"

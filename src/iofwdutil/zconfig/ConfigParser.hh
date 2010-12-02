@@ -1,7 +1,7 @@
 #ifndef IOFWDUTIL_ZCONFIG_CONFIGPARSER_HH
 #define IOFWDUTIL_ZCONFIG_CONFIGPARSER_HH
 
-#include <iostream>
+#include <iosfwd>
 #include <string>
 
 namespace iofwdutil

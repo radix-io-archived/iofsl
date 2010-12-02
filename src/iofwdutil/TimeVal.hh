@@ -2,7 +2,7 @@
 #define IOFWDUTIL_TIMEVAL_HH
 
 #include <cmath>
-#include <iostream>
+#include <iosfwd>
 #include <boost/assert.hpp>
 #include <stdint.h>
 
