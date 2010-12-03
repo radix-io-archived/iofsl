@@ -110,9 +110,6 @@ test/zoidfsapi-rename-test
 test/zoidfsapi-symlink-test
 test/boost/atomics
 test/boost/bmi-pingpong
-
-
-
 test/boost/iofwdevent-resource
 test/boost/encoder
 test/boost/dummy
@@ -123,3 +120,7 @@ test/unit-tests/configfile-cunit
 buildlogs
 iofsl.pc
 iofslrouter.pc
+test/throughput
+test/zoidfs-gridftp-test
+compile
+stamp-h1
