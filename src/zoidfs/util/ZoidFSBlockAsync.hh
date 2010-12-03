@@ -4,6 +4,8 @@
 #include "ZoidFSAPI.hh"
 #include "ZoidFSAsync.hh"
 
+#include <boost/noncopyable.hpp>
+
 namespace zoidfs
 {
    namespace util
@@ -12,7 +14,7 @@ namespace zoidfs
        * Async implementation that calls the blocking zoidfs functions in the
        * context of the caller. As such, it is not async at all.
        */
-      class ZoidFSBlockAsync  : public ZoidFSAsync
+      class ZoidFSBlockAsync  : public ZoidFSAsync, private boost::noncopyable
       {
          ZoidFSBlockAsync (ZoidFSAPI * delegate);
 
