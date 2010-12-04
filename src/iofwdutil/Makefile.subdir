@@ -139,6 +139,8 @@ src/iofwdutil/hash/HashFunc.hh\
 src/iofwdutil/hash/HashException.hh\
 src/iofwdutil/hash/SHA1Simple.cpp\
 src/iofwdutil/hash/SHA1Simple.hh\
+src/iofwdutil/hash/CRC64.hh \
+src/iofwdutil/hash/CRC64.cpp \
 src/iofwdutil/hash/NoneHash.hh \
 src/iofwdutil/hash/NoneHash.cpp \
 src/iofwdutil/hash/HashAutoRegister.hh\
