@@ -47,6 +47,7 @@ private:
 
    iofwdutil::HybridAllocator<4096> h;
    zoidfs::zoidfs_handle_t handle_;
+   zoidfs::zoidfs_op_hint_t op_hint_;
 };
 
 //===========================================================================

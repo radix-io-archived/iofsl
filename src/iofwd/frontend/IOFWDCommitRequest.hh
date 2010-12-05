@@ -20,7 +20,7 @@ class IOFWDCommitRequest
 public:
    IOFWDCommitRequest (int opid, const BMI_unexpected_info & info,
          IOFWDResources & res)
-      : CommitRequest(opid), IOFWDRequest (info, res), op_hint_(NULL)
+      : CommitRequest(opid), IOFWDRequest (info, res)
    {
    }
 
@@ -33,7 +33,7 @@ public:
 protected:
    ReqParam param_;
    zoidfs::zoidfs_handle_t handle_;
-   zoidfs::zoidfs_op_hint_t * op_hint_;
+   zoidfs::zoidfs_op_hint_t op_hint_;
 };
 
 

@@ -20,7 +20,7 @@ class IOFWDReadLinkRequest
 public:
    IOFWDReadLinkRequest (int opid, const BMI_unexpected_info & info,
          IOFWDResources & res)
-      : IOFWDRequest (info,res), ReadLinkRequest (opid), op_hint_(NULL)
+      : IOFWDRequest (info,res), ReadLinkRequest (opid)
    {
    }
 
@@ -37,7 +37,7 @@ protected:
 
    zoidfs::zoidfs_handle_t handle_;
    uint64_t buffer_length_;
-   zoidfs::zoidfs_op_hint_t * op_hint_;
+   zoidfs::zoidfs_op_hint_t op_hint_;
 };
 
 //===========================================================================

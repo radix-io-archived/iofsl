@@ -11,17 +11,11 @@ const IOFWDGetAttrRequest::ReqParam & IOFWDGetAttrRequest::decodeParam ()
 {
    process (req_reader_, handle_);
    process (req_reader_, attr_);
+   zoidfs::hints::zoidfs_hint_create(&op_hint_);
    decodeOpHint (&op_hint_);
    param_.handle = &handle_;
    param_.attr = &attr_;
-   if(op_hint_)
-   {
-      param_.op_hint = op_hint_;
-   }
-   else
-   {
-      param_.op_hint = NULL;
-   }
+   param_.op_hint = &op_hint_;
    return param_;
 }
 
@@ -35,10 +29,7 @@ void IOFWDGetAttrRequest::reply (const CBType & cb, const zoidfs::zoidfs_attr_t 
 
 IOFWDGetAttrRequest::~IOFWDGetAttrRequest ()
 {
-    if(op_hint_)
-    {
-        zoidfs::util::ZoidFSHintDestroy(&op_hint_);
-    }
+   zoidfs::hints::zoidfs_hint_free(&op_hint_);
 }
 
 //===========================================================================

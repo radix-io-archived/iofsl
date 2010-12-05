@@ -35,8 +35,7 @@ IOFWDReadRequest::~IOFWDReadRequest ()
    if (param_.bmi_mem_sizes)
       h.hafree(param_.bmi_mem_sizes);
 #endif
-   if(param_.op_hint)
-      zoidfs::util::ZoidFSHintDestroy(&(param_.op_hint));
+   zoidfs::hints::zoidfs_hint_free(param_.op_hint);
 }
 
 //
@@ -75,11 +74,15 @@ IOFWDReadRequest::ReqParam & IOFWDReadRequest::decodeParam ()
 
    // get the pipeline size
    process (req_reader_, param_.pipeline_size);
-   decodeOpHint (&param_.op_hint);
+   zoidfs::hints::zoidfs_hint_create(&op_hint_);
+   param_.op_hint = &op_hint_;
+   decodeOpHint(param_.op_hint);
 
    // check for hints here
-   char * enable_pipeline = zoidfs::util::ZoidFSHintGet(&(param_.op_hint), ZOIDFS_ENABLE_PIPELINE);
-   if(enable_pipeline)
+   int hint_found = 0; 
+   char enable_pipeline[32];
+   zoidfs::hints::zoidfs_hint_get(*(param_.op_hint), ZOIDFS_ENABLE_PIPELINE, 32, enable_pipeline, &hint_found);
+   if(hint_found)
    {
         if(strcmp(enable_pipeline, ZOIDFS_HINT_ENABLED) == 0)
         {

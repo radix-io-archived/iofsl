@@ -68,7 +68,7 @@ protected:
               info.component_name, info.full_path));
    }
 
-   void decodeOpHint (zoidfs::zoidfs_op_hint_t ** op_hint)
+   void decodeOpHint (zoidfs::zoidfs_op_hint_t * op_hint)
    {
      process(req_reader_, encoder::OpHintHelper (op_hint));
    }

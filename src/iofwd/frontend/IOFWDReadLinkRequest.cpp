@@ -11,6 +11,7 @@ const IOFWDReadLinkRequest::ReqParam & IOFWDReadLinkRequest::decodeParam ()
 {
    process (req_reader_, handle_);
    process (req_reader_, buffer_length_);
+   zoidfs::hints::zoidfs_hint_create(&op_hint_);
    decodeOpHint (&op_hint_);
 
    /*
@@ -18,15 +19,7 @@ const IOFWDReadLinkRequest::ReqParam & IOFWDReadLinkRequest::decodeParam ()
     */
    param_.buffer_length = buffer_length_;
    param_.handle = &handle_;
-   if(op_hint_)
-   {
-      param_.op_hint = op_hint_;
-   }
-   else
-   {
-      param_.op_hint = NULL;
-   }
-
+   param_.op_hint = &op_hint_;
    return param_;
 }
 
@@ -42,10 +35,7 @@ void IOFWDReadLinkRequest::reply (const CBType & cb, const char * buffer, size_t
 
 IOFWDReadLinkRequest::~IOFWDReadLinkRequest ()
 {
-    if(op_hint_)
-    {
-        zoidfs::util::ZoidFSHintDestroy(&op_hint_);
-    }
+   zoidfs::hints::zoidfs_hint_free(&op_hint_);
 }
 
 

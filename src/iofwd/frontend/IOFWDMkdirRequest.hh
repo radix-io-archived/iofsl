@@ -20,7 +20,7 @@ class IOFWDMkdirRequest
 public:
    IOFWDMkdirRequest (int opid, const BMI_unexpected_info & info,
          IOFWDResources & res)
-      : IOFWDRequest (info,res), MkdirRequest (opid), op_hint_(NULL)
+      : IOFWDRequest (info,res), MkdirRequest (opid)
    {
    }
 
@@ -35,7 +35,7 @@ protected:
    ReqParam param_;
    FileInfo info_;
    zoidfs::zoidfs_sattr_t sattr_;
-   zoidfs::zoidfs_op_hint_t * op_hint_;
+   zoidfs::zoidfs_op_hint_t op_hint_;
 };
 
 //===========================================================================

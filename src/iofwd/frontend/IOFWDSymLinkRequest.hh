@@ -20,7 +20,7 @@ class IOFWDSymLinkRequest
 public:
    IOFWDSymLinkRequest (int opid, const BMI_unexpected_info & info,
          IOFWDResources & res)
-      : IOFWDRequest (info,res), SymLinkRequest (opid), op_hint_(NULL)
+      : IOFWDRequest (info,res), SymLinkRequest (opid)
    {
    }
 
@@ -37,7 +37,7 @@ protected:
    FileInfo from_info_;
    FileInfo to_info_;
    zoidfs::zoidfs_sattr_t sattr_;
-   zoidfs::zoidfs_op_hint_t * op_hint_;
+   zoidfs::zoidfs_op_hint_t op_hint_;
 };
 
 //===========================================================================

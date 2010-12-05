@@ -40,15 +40,7 @@ const IOFWDRenameRequest::ReqParam & IOFWDRenameRequest::decodeParam ()
       param_.to_parent_handle = &to_info_.parent_handle ;
       param_.to_component_name = to_info_.component_name;
    }
-   if(op_hint_)
-   {
-      param_.op_hint = op_hint_;
-   }
-   else
-   {
-      param_.op_hint = NULL;
-   }
-
+   param_.op_hint = &op_hint_;
    return param_;
 }
 
@@ -65,10 +57,7 @@ void IOFWDRenameRequest::reply (const CBType & cb,
 
 IOFWDRenameRequest::~IOFWDRenameRequest ()
 {
-    if(op_hint_)
-    {
-        zoidfs::util::ZoidFSHintDestroy(&op_hint_);
-    }
+   zoidfs::hints::zoidfs_hint_free(&op_hint_);
 }
 
 

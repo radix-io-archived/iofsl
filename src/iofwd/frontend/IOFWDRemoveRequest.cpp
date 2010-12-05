@@ -10,6 +10,7 @@ namespace iofwd
 const IOFWDRemoveRequest::ReqParam & IOFWDRemoveRequest::decodeParam ()
 {
    decodeFileSpec (info_);
+   zoidfs::hints::zoidfs_hint_create(&op_hint_);
    decodeOpHint (&op_hint_);
    if (info_.full_path[0])
    {
@@ -23,14 +24,7 @@ const IOFWDRemoveRequest::ReqParam & IOFWDRemoveRequest::decodeParam ()
       param_.parent_handle = &info_.parent_handle ;
       param_.component_name = info_.component_name;
    }
-   if(op_hint_)
-   {
-      param_.op_hint = op_hint_;
-   }
-   else
-   {
-      param_.op_hint = NULL;
-   }
+   param_.op_hint = &op_hint_;
    return param_;
 }
 
@@ -44,10 +38,7 @@ void IOFWDRemoveRequest::reply (const CBType & cb, const zoidfs::zoidfs_cache_hi
 
 IOFWDRemoveRequest::~IOFWDRemoveRequest ()
 {
-    if(op_hint_)
-    {
-        zoidfs::util::ZoidFSHintDestroy(&op_hint_);
-    }
+   zoidfs::hints::zoidfs_hint_free(&op_hint_);
 }
 
 

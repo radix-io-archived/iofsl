@@ -20,7 +20,7 @@ class IOFWDSetAttrRequest
 public:
    IOFWDSetAttrRequest (int opid, const BMI_unexpected_info & info,
          IOFWDResources & res)
-      : IOFWDRequest (info, res), SetAttrRequest (opid), op_hint_(NULL)
+      : IOFWDRequest (info, res), SetAttrRequest (opid)
    {
    }
    virtual ~IOFWDSetAttrRequest ();
@@ -34,7 +34,7 @@ protected:
    zoidfs::zoidfs_handle_t handle_;
    zoidfs::zoidfs_attr_t attr_;
    zoidfs::zoidfs_sattr_t sattr_;
-   zoidfs::zoidfs_op_hint_t * op_hint_;
+   zoidfs::zoidfs_op_hint_t op_hint_;
 };
 
 //===========================================================================

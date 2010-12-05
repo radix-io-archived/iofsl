@@ -12,10 +12,7 @@ IOFWDReadDirRequest::~IOFWDReadDirRequest()
   if (entries_)
     delete[] entries_;
 
-  if(op_hint_)
-  {
-    zoidfs::util::ZoidFSHintDestroy(&op_hint_);
-  }
+  zoidfs::hints::zoidfs_hint_free(&op_hint_);
 }
    
 
@@ -25,6 +22,7 @@ const IOFWDReadDirRequest::ReqParam & IOFWDReadDirRequest::decodeParam ()
    process (req_reader_, cookie_);
    process (req_reader_, entry_count_);
    process (req_reader_, flags_);
+   zoidfs::hints::zoidfs_hint_create(&op_hint_);
    decodeOpHint (&op_hint_);
 
    entries_ = new zoidfs::zoidfs_dirent_t[entry_count_];
@@ -37,15 +35,8 @@ const IOFWDReadDirRequest::ReqParam & IOFWDReadDirRequest::decodeParam ()
    param_.entry_count = entry_count_;
    param_.entries = entries_;
    param_.flags = flags_;
-   if(op_hint_)
-   {
-      param_.op_hint = op_hint_;
-   }
-   else
-   {
-      param_.op_hint = NULL;
-   }
-   
+   param_.op_hint = &op_hint_;
+ 
    return param_;
 }
 

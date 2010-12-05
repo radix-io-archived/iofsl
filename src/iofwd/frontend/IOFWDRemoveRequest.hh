@@ -20,7 +20,7 @@ class IOFWDRemoveRequest
 public:
    IOFWDRemoveRequest (int opid, const BMI_unexpected_info & info,
          IOFWDResources & res)
-      : IOFWDRequest (info,res), RemoveRequest (opid), op_hint_(NULL)
+      : IOFWDRequest (info,res), RemoveRequest (opid)
    {
    }
 
@@ -34,7 +34,7 @@ public:
 protected:
    ReqParam param_;
    FileInfo info_;
-   zoidfs::zoidfs_op_hint_t * op_hint_;
+   zoidfs::zoidfs_op_hint_t op_hint_;
 };
 
 //===========================================================================

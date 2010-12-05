@@ -12,6 +12,7 @@ const IOFWDSymLinkRequest::ReqParam & IOFWDSymLinkRequest::decodeParam ()
    decodeFileSpec (from_info_);
    decodeFileSpec (to_info_);
    process (req_reader_, sattr_);
+   zoidfs::hints::zoidfs_hint_create(&op_hint_);
    decodeOpHint (&op_hint_);
 
    // from
@@ -43,15 +44,7 @@ const IOFWDSymLinkRequest::ReqParam & IOFWDSymLinkRequest::decodeParam ()
    }
 
    param_.sattr = &sattr_;
-   if(op_hint_)
-   {
-      param_.op_hint = op_hint_;
-   }
-   else
-   {
-      param_.op_hint = NULL;
-   }
-
+   param_.op_hint = &op_hint_;
    return param_;
 }
 
@@ -68,10 +61,7 @@ void IOFWDSymLinkRequest::reply (const CBType & cb,
 
 IOFWDSymLinkRequest::~IOFWDSymLinkRequest ()
 {
-    if(op_hint_)
-    {
-        zoidfs::util::ZoidFSHintDestroy(&op_hint_);
-    }
+   zoidfs::hints::zoidfs_hint_free(&op_hint_);
 }
 
 //===========================================================================
