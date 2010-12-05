@@ -331,7 +331,7 @@ void ReadTask::postRead(const ReadRequest::ReqParam & p, int index)
     api_->read (
         bmmCB, ret, p.handle, p_file_count,
         reinterpret_cast<void**>(mem_starts), mem_sizes, p_file_count, file_starts,
-        file_sizes, p.op_hint);
+        file_sizes, const_cast<zoidfs::zoidfs_op_hint_t *>(p.op_hint));
 }
 
 void ReadTask::runPipelineMode(const ReadRequest::ReqParam & p)

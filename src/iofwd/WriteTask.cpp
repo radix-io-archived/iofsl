@@ -285,7 +285,7 @@ void WriteTask::postWrite(const WriteRequest::ReqParam & p, int index)
     /* enqueue the write */
     api_->write (
         bmmCB, ret, p.handle, p_file_count, (const void**)mem_starts, mem_sizes,
-        p_file_count, file_starts, file_sizes, p.op_hint);
+        p_file_count, file_starts, file_sizes, const_cast<zoidfs::zoidfs_op_hint_t *>(p.op_hint));
 }
 
 void WriteTask::runPipelineMode(const WriteRequest::ReqParam & p)

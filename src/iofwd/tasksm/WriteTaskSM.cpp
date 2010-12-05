@@ -53,7 +53,7 @@ namespace iofwd
 #if SIZEOF_SIZE_T == SIZEOF_INT64_T
         api_->write(slots_[WRITE_SLOT], &ret_, p.handle, p.mem_count,
               (const void**)p.mem_starts, p.mem_sizes, p.file_count, p.file_starts,
-              p.file_sizes, p.op_hint);
+              p.file_sizes, const_cast<zoidfs::zoidfs_op_hint_t *>(p.op_hint));
 #else
         api_->write(slots_[WRITE_SLOT], &ret_, p.handle, p.mem_count, (const
                  void**)p.mem_starts, p.mem_sizes, p.file_count, p.file_starts,
@@ -181,7 +181,7 @@ namespace iofwd
             /* enqueue the write */
             api_->write (
                 slots_[WRITE_SLOT], ret, p.handle, p_file_count, (const void**)mem_starts, mem_sizes,
-                p_file_count, file_starts, file_sizes, p.op_hint);
+                p_file_count, file_starts, file_sizes, const_cast<zoidfs::zoidfs_op_hint_t *>(p.op_hint));
 
             /* issue the serial wait */
             slots_.wait(WRITE_SLOT, &WriteTaskSM::waitPipelineEnqueueWrite);
@@ -203,7 +203,7 @@ namespace iofwd
                 boost::function<void(int)> barrierCB = boost::bind(&iofwd::tasksm::WriteTaskSM::writeDoneCB, this, 0, my_slot);
                 api_->write (
                     barrierCB, ret, p.handle, p_file_count, (const void**)mem_starts, mem_sizes,
-                    p_file_count, file_starts, file_sizes, p.op_hint);
+                    p_file_count, file_starts, file_sizes, const_cast<zoidfs::zoidfs_op_hint_t *>(p.op_hint));
 
                 if(cur_recv_bytes_ == total_bytes_)
                 {

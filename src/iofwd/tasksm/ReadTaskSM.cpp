@@ -49,7 +49,7 @@ namespace iofwd
 #if SIZEOF_SIZE_T == SIZEOF_INT64_T
         api_->read (slots_[READ_SLOT], &ret_, p.handle, p.mem_count,
               (void**)p.mem_starts, p.mem_sizes, p.file_count, p.file_starts, p.file_sizes,
-              p.op_hint);
+              const_cast<zoidfs::zoidfs_op_hint_t *>(p.op_hint));
 #else
         api_->read(slots_[READ_SLOT], &ret_, p.handle, p.mem_count, (void**)p.mem_starts, p.mem_sizes,
               p.file_count, p.file_starts, p.file_sizes, p.op_hint);
@@ -176,7 +176,7 @@ namespace iofwd
         /* enqueue the write */
         api_->read (
             slots_[READ_SLOT], ret, p.handle, p_file_count, (void**)mem_starts, mem_sizes,
-            p_file_count, file_starts, file_sizes, p.op_hint);
+            p_file_count, file_starts, file_sizes, const_cast<zoidfs::zoidfs_op_hint_t *>(p.op_hint));
 
         /* issue the serial wait */
         slots_.wait(READ_SLOT, &ReadTaskSM::waitPipelineEnqueueRead);
@@ -201,7 +201,7 @@ namespace iofwd
         /* enqueue the write */
         api_->read (
             slots_[my_slot], ret, p.handle, p_file_count, (void**)mem_starts, mem_sizes,
-            p_file_count, file_starts, file_sizes, p.op_hint);
+            p_file_count, file_starts, file_sizes, const_cast<zoidfs::zoidfs_op_hint_t *>(p.op_hint));
 
 
         /* go to the next state depending on the current pipeline stage */
