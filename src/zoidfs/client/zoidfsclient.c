@@ -903,7 +903,8 @@ int zoidfs_xdr_encode_hint(zoidfs_send_msg_t * send_msg, zoidfs_op_hint_t * op_h
     int ret = ZFS_OK;
     if(op_hint)
     {
-        int size = zoidfs_hint_num_elements(&op_hint);
+        int size = 0;
+        zoidfs_hint_get_nkeys(*op_hint, &size);
         valid_hint = 1;
         if((ret = zoidfs_xdr_processor(ZFS_NULL_PARAM_T, &valid_hint, &send_msg->send_xdr)) != ZFS_OK)
         {
@@ -3246,7 +3247,6 @@ int zoidfs_write(const zoidfs_handle_t *handle, size_t mem_count,
     zoidfs_send_msg_data_t send_msg_data;
     zoidfs_recv_msg_t recv_msg;
     bmi_size_t * bmi_mem_sizes = NULL;
-    char * op_hint_pipeline_size = NULL;
     size_t op_hint_pipeline_size_req = 0;
 
     /* init the zoidfs xdr data */
@@ -3302,9 +3302,22 @@ int zoidfs_write(const zoidfs_handle_t *handle, size_t mem_count,
     }
 
     /* check if a pipeline size was set in the hint */
-    if((op_hint_pipeline_size = zoidfs_hint_get(&op_hint, ZOIDFS_PIPELINE_SIZE)) != NULL)
+    int hintlength = 0;
+    int hintfound = 0;
+    char * hintstr = NULL;
+
+    if(op_hint)
     {
-        op_hint_pipeline_size_req = atoi(op_hint_pipeline_size);
+        zoidfs_hint_get_valuelen(*op_hint, ZOIDFS_PIPELINE_SIZE, &hintlength, &hintfound);
+    }
+
+    if(hintlength > 0)
+        hintstr = malloc(hintlength);
+
+    if(hintfound && hintlength > 0 && zoidfs_hint_get(*op_hint, ZOIDFS_PIPELINE_SIZE, hintlength, hintstr, &hintfound) != 0)
+    {
+        op_hint_pipeline_size_req = atoi(hintstr);
+        free(hintstr);
     }
     else
     {
@@ -3641,7 +3654,6 @@ int zoidfs_read(const zoidfs_handle_t *handle, size_t mem_count,
     zoidfs_send_msg_t send_msg;
     zoidfs_recv_msg_t recv_msg;
     bmi_size_t * bmi_mem_sizes = NULL;
-    char * op_hint_pipeline_size = NULL;
     size_t op_hint_pipeline_size_req = 0;
 
     /* init the zoidfs xdr data */
@@ -3663,10 +3675,22 @@ int zoidfs_read(const zoidfs_handle_t *handle, size_t mem_count,
         goto read_cleanup;
     }
 
-    /* check if a pipeline size was set in the hint */
-    if((op_hint_pipeline_size = zoidfs_hint_get(&op_hint, ZOIDFS_PIPELINE_SIZE)) != NULL)
+    int hintlength = 0;
+    int hintfound = 0;
+    char * hintstr = NULL;
+
+    if(op_hint)
     {
-        op_hint_pipeline_size_req = atoi(op_hint_pipeline_size);
+        zoidfs_hint_get_valuelen(*op_hint, ZOIDFS_PIPELINE_SIZE, &hintlength, &hintfound);
+    }
+
+    if(hintlength > 0)
+        hintstr = malloc(hintlength);
+
+    if(hintfound && hintlength > 0 && zoidfs_hint_get(*op_hint, ZOIDFS_PIPELINE_SIZE, hintlength, hintstr, &hintfound) != 0)
+    {
+        op_hint_pipeline_size_req = atoi(hintstr);
+        free(hintstr);
     }
     else
     {
