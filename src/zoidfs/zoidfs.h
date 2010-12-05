@@ -13,7 +13,7 @@
 
 #include <stdint.h>
 #include <stddef.h>
-//#include <zoidfs/hints/zoidfs-hints.h>
+#include "c-util/quicklist.h"
 
 #ifdef __cplusplus
 /*
@@ -162,15 +162,18 @@ typedef enum
 } zoidfs_op_hint_type_t;
 
 /* node in the hint linked list */
-typedef struct zoidfs_op_hint_s
+typedef struct zoidfs_op_hint_item
 {
+    struct qlist_head list;
     char * key;
     char * value;
-    int value_len;
-    struct zoidfs_op_hint_s * next;
-    zoidfs_op_hint_type_t type;
-    void (*encode)(char **pptr, void *value);
-    void (*decode)(char **pptr, void *value);
+    int valuelen;
+} zoidfs_op_hint_item_t;
+
+typedef struct zoidfs_op_hint
+{
+    struct qlist_head * list;
+    int copy;
 } zoidfs_op_hint_t;
 
 /* flag for no hints */
