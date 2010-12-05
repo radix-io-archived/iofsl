@@ -40,14 +40,14 @@ struct qlist_head {
  * This is only for internal qlist manipulation where we know
  * the prev/next entries already!
  */
-static __inline__ void __qlist_add(struct qlist_head * new,
+static __inline__ void __qlist_add(struct qlist_head * newi,
                                    struct qlist_head * prev,
                                    struct qlist_head * next)
 {
-    next->prev = new;
-    new->next = next;
-    new->prev = prev;
-    prev->next = new;
+    next->prev = newi;
+    newi->next = next;
+    newi->prev = prev;
+    prev->next = newi;
 }
 
 /**
@@ -58,9 +58,9 @@ static __inline__ void __qlist_add(struct qlist_head * new,
  * Insert a new entry after the specified head.
  * This is good for implementing stacks.
  */
-static __inline__ void qlist_add(struct qlist_head *new, struct qlist_head *head)
+static __inline__ void qlist_add(struct qlist_head *newi, struct qlist_head *head)
 {
-    __qlist_add(new, head, head->next);
+    __qlist_add(newi, head, head->next);
 }
 
 /**
@@ -71,9 +71,9 @@ static __inline__ void qlist_add(struct qlist_head *new, struct qlist_head *head
  * Insert a new entry before the specified head.
  * This is useful for implementing queues.
  */
-static __inline__ void qlist_add_tail(struct qlist_head *new, struct qlist_head *head)
+static __inline__ void qlist_add_tail(struct qlist_head *newi, struct qlist_head *head)
 {
-    __qlist_add(new, head->prev, head);
+    __qlist_add(newi, head->prev, head);
 }
 
 /*
