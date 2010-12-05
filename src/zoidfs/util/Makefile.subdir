@@ -38,8 +38,6 @@ src/zoidfs/util/ZoidFSDefAsync.hh \
 src/zoidfs/util/ZoidFSSync.hh \
 src/zoidfs/util/zoidfs-util.hh \
 src/zoidfs/util/zoidfs-wrapped.hh \
-src/zoidfs/util/ZoidFSHints.hh \
-src/zoidfs/util/ZoidFSHints.cpp \
 src/zoidfs/util/zoidfs-xdr.hh \
 src/zoidfs/util/zoidfs-ops.hh \
 src/zoidfs/util/zoidfs-ops.cpp \

@@ -198,32 +198,49 @@ bool_t xdr_zoidfs_cache_hint_t(XDR *xdrs, zoidfs_cache_hint_t *hint) {
  * zdr_zoidfs_op_hint_t
  * Encode / decode zoidfs_op_hint_t using XDR
  */
-bool_t xdr_zoidfs_op_hint_element_t(XDR *xdrs, zoidfs_op_hint_t *hint) {
+bool_t xdr_zoidfs_op_hint_element_t(XDR * xdrs, char * key, char * value, int valuelen) {
     bool_t ret;
-    char * key = &hint->key[0]; 
-    char * value = &hint->value[0]; 
-    int value_len = hint->value_len;
     int key_len = strlen(key) + 1;
     
     ret = xdr_int(xdrs, &key_len); 
     ret = ret && xdr_string(xdrs, &key, key_len);
-    ret = ret && xdr_int(xdrs, &value_len); 
-    ret = ret && xdr_string(xdrs, &value, value_len);
+    ret = ret && xdr_int(xdrs, &valuelen); 
+    ret = ret && xdr_string(xdrs, &value, valuelen);
 
     return(ret);
 }
 
-bool_t xdr_zoidfs_op_hint_t(XDR *xdrs, zoidfs_op_hint_t ** hint) {
+bool_t xdr_zoidfs_op_hint_t(XDR *xdrs, zoidfs_op_hint_t * hint) {
     bool_t ret = 1;
-    int hint_size = zoidfs_hint_num_elements(hint);
+    int hint_size = 0;
     int i = 0;
+
+    zoidfs_hint_get_nkeys(*hint, &hint_size);
     for(i = 0 ; i < hint_size ; i++)
     {
-        zoidfs_op_hint_t * cur_hint = zoidfs_hint_index(hint, i);
-        if(cur_hint->key != NULL && cur_hint->value != NULL && cur_hint->value_len != 0)
+        int flag = 0;
+        int keylength = 0;
+        int valuelength = 0;
+        char * key = NULL;
+        char * value = NULL;
+
+        /* get the next key */
+        zoidfs_hint_get_nthkeylen(*hint, i, &keylength);
+        key = malloc(keylength);
+        zoidfs_hint_get_nthkey(*hint, i, key); 
+
+        /* get the next value */
+        zoidfs_hint_get_valuelen(*hint, key, &valuelength, &flag);
+        value = malloc(valuelength);
+        zoidfs_hint_get_nthkey(*hint, i, key);
+ 
+        if(key != NULL && value != NULL && valuelength != 0)
         {
-            ret = ret && xdr_zoidfs_op_hint_element_t(xdrs, cur_hint);
+            ret = ret && xdr_zoidfs_op_hint_element_t(xdrs, key, value, valuelength);
         }
+
+        free(key);
+        free(value);
     }
     return ret;
 }
