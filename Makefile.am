@@ -46,7 +46,6 @@ include $(top_srcdir)/src/taskmon/Makefile.subdir
 include $(top_srcdir)/src/encoder/Makefile.subdir
 include $(top_srcdir)/src/zoidfs/Makefile.subdir
 include $(top_srcdir)/src/fuse/Makefile.subdir
-include $(top_srcdir)/src/client/Makefile.subdir
 include $(top_srcdir)/src/c-util/Makefile.subdir
 include $(top_srcdir)/test/Makefile.subdir
 include $(top_srcdir)/sandbox/Makefile.subdir
