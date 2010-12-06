@@ -98,14 +98,10 @@ protected:
                 w->client_->execute();
     
                 /* TODO: we shouldn't need to manually manage the ref count */
-                w->client_->removeref();
-
-#if 0
-                if(!w->client_->alive())
+                if (!w->client_->removeref())
                 {
                     delete w->client_;
                 }
-#endif
 
                 /* reschedule the thread with more work from the tp */
 #ifndef USE_CRAY_TP
