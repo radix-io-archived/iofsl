@@ -101,13 +101,20 @@ void doTest ()
 
 BOOST_FIXTURE_TEST_CASE (threaded, F)
 {
+   BOOST_TEST_MESSAGE("Testing atomic<int>");
    if (atomic<int>::USING_LOCKS)
-      BOOST_ERROR("atomic<int> is using locks!!");
-
+      BOOST_TEST_MESSAGE("Warning: atomic<int> is using locks!!");
    doTest<atomic<int> > ();
-#ifdef HAVE_ATOMICS
-   doTest<fast_atomic<int> > (); 
-#endif
+
+   BOOST_TEST_MESSAGE("Testing atomic<unsigned int>");
+   if (atomic<unsigned int>::USING_LOCKS)
+      BOOST_TEST_MESSAGE("Warning: atomic<unsigned int> is using locks!!");
+   doTest<atomic<unsigned int> > ();
+
+   BOOST_TEST_MESSAGE("Testing atomic<size_t>");
+   if (atomic<size_t>::USING_LOCKS)
+      BOOST_TEST_MESSAGE("Warning: atomic<size_t> is using locks!!");
+   doTest<atomic<size_t> > ();
 }
 
 BOOST_AUTO_TEST_SUITE_END()
