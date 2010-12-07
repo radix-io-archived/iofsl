@@ -134,6 +134,18 @@ src/iofwdutil/ThreadPool.hh \
 src/iofwdutil/ThreadPool.cpp \
 src/iofwdutil/InjectPool.hh \
 \
+src/iofwdutil/hash/HashFactory.cpp\
+src/iofwdutil/hash/HashFactory.hh\
+src/iofwdutil/hash/HashFunc.cpp\
+src/iofwdutil/hash/HashFunc.hh\
+src/iofwdutil/hash/NoSuchHashException.cpp\
+src/iofwdutil/hash/NoSuchHashException.hh\
+src/iofwdutil/hash/SHA1Simple.cpp\
+src/iofwdutil/hash/SHA1Simple.hh\
+src/iofwdutil/hash/NoneHash.hh \
+src/iofwdutil/hash/NoneHash.cpp \
+src/iofwdutil/hash/HashAutoRegister.hh\
+\
 src/iofwdutil/Factory.hh \
 src/iofwdutil/FactoryAutoRegister.hh \
 src/iofwdutil/CreateMethod.hh \
@@ -148,3 +160,20 @@ src/iofwdutil/rm/IntervalMergeTree.cpp \
 src/iofwdutil/mm/IOFWDMemoryManager.hh \
 src/iofwdutil/mm/BMIMemoryManager.hh \
 src/iofwdutil/mm/BMIMemoryManager.cpp
+
+if HAVE_ZLIB
+src_iofwdutil_libiofwdutil_a_SOURCES += \
+src/iofwdutil/hash/Adler32.hh \
+src/iofwdutil/hash/Adler32.cpp \
+src/iofwdutil/hash/CRC32.hh \
+src/iofwdutil/hash/CRC32.cpp
+endif
+
+if HAVE_OPENSSL
+src_iofwdutil_libiofwdutil_a_SOURCES += \
+	src/iofwdutil/hash/OpenSSLHash.hh \
+	src/iofwdutil/hash/OpenSSLHash.cpp \
+	src/iofwdutil/hash/OpenSSLInit.hh \
+	src/iofwdutil/hash/OpenSSLInit.cpp
+endif
+
