@@ -11,11 +11,11 @@
 #include <bmi.h>
 #include "zoidfs/zoidfs.h"
 #include "bmi_comm.h"
-/*#include "mpi_comm.h"*/
 #include "zoidfs_xdr.h"
 #include "zoidfs/zoidfs-proto.h"
 #include "zoidfs/hints/zoidfs-hints.h"
 #include "iofwd_config.h"
+#include "zoidfs-comm.h"
 
 #include "c-util/tools.h"
 #include <assert.h>
@@ -50,6 +50,11 @@ bmi_context_id * zoidfs_client_get_context()
 {
     return &context;
 }
+
+/* TLS key for tag */
+static pthread_key_t ptk_tag;
+static unsigned int next_tag = 0;
+static pthread_mutex_t tag_lock = PTHREAD_MUTEX_INITIALIZER;
 
 /* conditional compilation flags */
 /*#define ZFS_USE_XDR_SIZE_CACHE
@@ -156,13 +161,31 @@ do{                                 \
 #define ZFS_XDRSTREAM(_xdr) &(_xdr)->xdr
 #define ZFS_XDRSTREAM_REF(_xdr) &(_xdr).xdr
 /*
- * In cosidering the multi-threaded client (e.g. FUSE), we use different tag
+ * In considering the multi-threaded client (e.g. FUSE), we use different tag
  * for communication to identify the threads. This enables that bmi_post_recv()
  * receives the proper message which is heading to the caller's thread.
+ *
+ * Tags above 65536 are reserved for other uses.
+ *
+ * NOTE: Uses thread local storage now, but if we add full async support we
+ * might want to use OpenPA and use an atomic increment. This will break
+ * other things, as the code now seems to assume that gen_tag always returns
+ * the same value for the same thread.
  */
-static int gen_tag(void)
+static bmi_msg_tag_t gen_tag(void)
 {
-    return pthread_self();
+   intptr_t tag;
+   
+   tag = (intptr_t) pthread_getspecific (ptk_tag);
+   if (!tag)
+   {
+      pthread_mutex_lock (&tag_lock);
+      tag = ++next_tag;
+      pthread_mutex_unlock (&tag_lock);
+      pthread_setspecific (ptk_tag, (void*) tag);
+   }
+   assert (tag < ZOIDFS_BMI_MAXTAG);
+   return tag;
 }
 
 static int zoidfs_write_pipeline(BMI_addr_t peer_addr, size_t pipeline_size,
@@ -4055,6 +4078,10 @@ int zoidfs_init(void) {
     }
 #endif
 
+    /* Initialize TLS tags */
+    pthread_key_create (&ptk_tag, 0);
+    next_tag = 1;
+
     return ZFS_OK;
 }
 
@@ -4097,6 +4124,11 @@ int zoidfs_finalize(void) {
         fprintf(stderr, "zoidfs_finalize: BMI_finalize() failed.\n");
         exit(1);
     }
+
+
+    /* Free TLS key */
+    pthread_key_delete (ptk_tag);
+
     return 0;
 }
 
