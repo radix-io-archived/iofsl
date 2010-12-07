@@ -43,7 +43,8 @@ zlog::ZLogSource * IOFWDLog::createSource (const char * name)
 
 IOFWDLog::IOFWDLog ()
    : configurator_ (new ZLogConfigurator ()),
-     default_loglevel_(INFO)
+     default_loglevel_(INFO),
+     default_(0)
 {
    createDefaultSinks (); 
    createDefaultFilters (); 
@@ -51,6 +52,9 @@ IOFWDLog::IOFWDLog ()
    // Set log levels from env
    if (getenv ("IOFWD_LOGLEVEL"))
       setLogLevelOverride (getenv("IOFWD_LOGLEVEL")); 
+
+   // We don't need to free source, we don't own it.
+   default_ = &getSourceInt ("default");
 }
 
 void IOFWDLog::createDefaultFilters ()
@@ -159,7 +163,14 @@ void IOFWDLog::setLogLevelOverride (const std::string & source)
    if (loglevel_override_.empty())
       return; 
 
-   /* remove global entries from list */
+   /*
+    * remove global entries from list
+    * (Global entries are 'debug' (and not 'localcache:debug')
+    *
+    * Walk backwards over the vector so we can remove while going through the
+    * array. The first global entry in the loglevel string will set the
+    * default loglevel
+    * */
    for (int i=static_cast<int>(loglevel_override_.size())-1; i>=0; --i)
    {
       if (loglevel_override_[i].first.size()== 0)

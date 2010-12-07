@@ -87,6 +87,7 @@ AC_MSG_RESULT([no])
 fi
 
 AM_CONDITIONAL([HAVE_MPI],[test "x${ENABLE_MPI}" == "x1"])
+AC_DEFINE([HAVE_MPI],[test "x${ENABLE_MPI}" == "x1"],[Build with MPI support])
 
 dnl ========================================================
 dnl Now that we have a compiler, try to use preprocessor
@@ -185,6 +186,34 @@ AC_CHECK_FUNCS([memset])
 AC_CHECK_LIB([rt],[clock_getres],,[AC_MSG_ERROR([Could not find clock_getres!])])
 AC_CHECK_LIB([pthread],[pthread_create],,[AC_MSG_ERROR([Could not find pthread_create!])])
 
+dnl =========================================================================
+dnl = Check if sig_atomic_t is working for C++                              =
+dnl =========================================================================
+AC_LANG_PUSH([C++])
+AC_MSG_CHECKING(for sig_atomic_t in csignal)
+AC_EGREP_HEADER(sig_atomic_t,csignal,
+   [
+     ac_cv_type_sig_atomic_t=yes;
+     AC_EGREP_HEADER(volatile.*sig_atomic_t,
+                     signal.h,
+                     [
+                         is_sig_atomic_t_volatile=yes;
+                         AC_MSG_RESULT([yes, volatile])
+                     ],
+                     [
+                         is_sig_atomic_t_volatile=no;
+                         AC_MSG_RESULT([yes, non volatile])
+                     ])
+   ],
+   [
+     AC_MSG_RESULT(no)
+     AC_CHECK_TYPES(sig_atomic_t,
+                    [],
+                    [AC_MSG_ERROR([No sig_atomic_t in csignal??])],
+                    [csignal])
+     is_sig_atomic_t_volatile=no
+   ])
+AC_LANG_POP
 
 # Check for CUNIT
 cunitdir=

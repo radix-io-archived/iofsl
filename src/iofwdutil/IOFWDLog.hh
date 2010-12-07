@@ -10,6 +10,7 @@
 #include "iofwdutil/zlog/ZLogSource.hh"
 #include "iofwdutil/zlog/ZLog.hh"
 #include "Singleton.hh"
+#include "iofwdutil/zlog/ZLogTracer.hh"
 
 namespace iofwdutil
 {
@@ -38,8 +39,11 @@ class IOFWDLog : public Singleton<IOFWDLog>
 
 public:
 
-    static zlog::ZLogSource & getSource (const char * sourcename = "default")
+    static zlog::ZLogSource & getSource (const char * sourcename = 0)
     {
+       if (!sourcename)
+          return IOFWDLog::instance().getDefaultSource ();
+
        return IOFWDLog::instance().getSourceInt (sourcename);
     }
 
@@ -51,6 +55,10 @@ private:
 
     IOFWDLog ();
 
+    zlog::ZLogSource & getDefaultSource ()
+    {
+       return *default_;
+    }
 
     zlog::ZLogSource & getSourceInt (const char * name)
     {
@@ -87,8 +95,21 @@ private:
 
     std::vector<std::pair<std::string, unsigned int> > loglevel_override_;
 
+    zlog::ZLogSource * default_;
+
     boost::mutex lock_;
 };
+
+
+/**
+ * Helper for easy tracing
+ */
+
+/// Default log name
+#define ZLOG_DEFAULT iofwdutil::IOFWDLog::getSource()
+
+/// Autotrace to default log
+#define ZLOG_AUTOTRACE_DEFAULT ZLOG_AUTOTRACE(ZLOG_DEFAULT)
 
 //===========================================================================
 }

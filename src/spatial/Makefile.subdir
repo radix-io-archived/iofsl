@@ -1,5 +1,0 @@
-noinst_LIBRARIES += src/spatial/libspatial.a
-
-src_spatial_libspatial_a_SOURCES = \
-	src/spatial/Point.cpp \
-	src/spatial/Point.hh 

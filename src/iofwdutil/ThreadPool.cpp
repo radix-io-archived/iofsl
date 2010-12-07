@@ -105,7 +105,7 @@ namespace iofwdutil
             thread_vec_.clear();
         }
 
-        ThreadPool::ThreadPool() : active_threads_(0), thread_count_(0), shutdown_threads_(false), started_(false), tp_start_ref_count_(0)
+        ThreadPool::ThreadPool() : active_threads_(0), high_active_threads_(0), norm_active_threads_(0), thread_count_(0), shutdown_threads_(false), started_(false), tp_start_ref_count_(0)
         {
         }
 
@@ -124,14 +124,13 @@ namespace iofwdutil
 
             thread_count_ = 0;
 
+            for(int i = 0 ; i < max_high_thread_count_ + max_norm_thread_count_ ; i++)
+            {
+                tpgroup_.push(new IOFWDThread(this));
+            }
+
             /* setup the storage queue for thread work */
             thread_work_items_.resize(max_norm_thread_count_);
-
-            /* create the max number of threads */
-            for(thread_count_ = 0 ; thread_count_ < max_norm_thread_count_ ; thread_count_++)
-            {
-                createThread(thread_count_);
-            }
         }
 
         ThreadPool::~ThreadPool()

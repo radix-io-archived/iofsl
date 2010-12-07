@@ -1,0 +1,6 @@
+#ifndef ZOIDFS_CLIENT_ROUTER_ZOIDFSCLIENTSS_H
+#define ZOIDFS_CLIENT_ROUTER_ZOIDFSCLIENTSS_H
+
+extern zoidfs_router_t zoidfs_router_static_server;
+
+#endif

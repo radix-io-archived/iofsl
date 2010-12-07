@@ -19,6 +19,25 @@ namespace zoidfs
 #define ZOIDFS_ENABLE_PIPELINE (char*)"ZOIDFS_ENABLE_PIPELINE"
 #define ZOIDFS_PIPELINE_SIZE (char*)"ZOIDFS_PIPELINE_SIZE"
 
+
+/* new hint API */
+
+/* zoidfs hints are modeled on the MPI info interface */
+
+/* TODO these are currently just stubs */
+
+int zoidfs_op_hint_create(zoidfs_op_hint_t * hint);
+int zoidfs_op_hint_set(zoidfs_op_hint_t hint, char * key, char * value);
+int zoidfs_op_hint_delete(zoidfs_op_hint_t hint, char * key);
+int zoidfs_op_hint_get(zoidfs_op_hint_t hint, char * key, int valuelen, char * value, int * flag);
+int zoidfs_op_hint_get_valuelen(zoidfs_op_hint_t hint, char * key, int * valuelen, int * flag);
+int zoidfs_op_hint_get_nkeys(zoidfs_op_hint_t hint, int * nkeys);
+int zoidfs_op_hint_get_nthkey(zoidfs_op_hint_t hint, int n, char * key);
+int zoidfs_op_hint_dup(zoidfs_op_hint_t oldhint, zoidfs_op_hint_t * newhint);
+int zoidfs_op_hint_free(zoidfs_op_hint_t * hint);
+
+/* old hint API */
+
 /* create and initialize the hint list */
 zoidfs_op_hint_t * zoidfs_hint_init(int size);
 

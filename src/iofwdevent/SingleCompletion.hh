@@ -1,13 +1,12 @@
 #ifndef IOFWDEVENT_SINGLECOMPLETION_HH
 #define IOFWDEVENT_SINGLECOMPLETION_HH
 
+#include "iofwdevent/Resource.hh"
+#include "iofwdutil/assert.hh"
+
 #include <boost/function.hpp>
 #include <boost/thread.hpp>
 #include <boost/utility.hpp>
-#include <csignal>
-
-#include "iofwdevent/Resource.hh"
-#include "iofwdutil/assert.hh"
 
 namespace iofwdevent
 {
@@ -105,7 +104,7 @@ namespace iofwdevent
    protected:
 
       enum { UNUSED = 0, SUCCESS, CANCEL, EXCEPTION, WAITING };
-      sig_atomic_t status_;
+      int status_;
 
       boost::mutex lock_;
       boost::condition_variable cond_;

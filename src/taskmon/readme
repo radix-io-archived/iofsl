@@ -1,4 +1,0 @@
-Component that keeps track of completion/error state of certain tasks.
-Used by the state machines to manage transitions on message/lock/... completion
-
-

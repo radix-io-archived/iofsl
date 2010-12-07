@@ -42,6 +42,8 @@ sandbox/hatest
 src/fuse/fuseclient
 src/fuse/fusedispatch
 src/iofwd/iofwd
+test/zoidfs-gridftp-test
+test/bmi-sm-pingpong
 test/bmitest
 test/completion
 test/configfile

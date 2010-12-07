@@ -90,22 +90,34 @@ protected:
 
    static void submitWorkUnit(SMWrapper * w)
    {
-        /* execute the client work and drop the ref */
-        w->client_->execute();
-    
-        /* TODO: we shouldn't need to manually manage the ref count */
-        w->client_->removeref();
-
-        if(!w->client_->alive())
+        if(w)
         {
-            delete w->client_;
+            if(w->client_)
+            {
+                /* execute the client work and drop the ref */
+                w->client_->execute();
+    
+                /* TODO: we shouldn't need to manually manage the ref count */
+                w->client_->removeref();
+
+#if 0
+                if(!w->client_->alive())
+                {
+                    delete w->client_;
+                }
+#endif
+
+                /* reschedule the thread with more work from the tp */
+#ifndef USE_CRAY_TP
+                boost::this_thread::at_thread_exit(iofwdutil::ThreadPoolKick(w->tp_));
+#endif
+
+                /* cleanup the wrapper alloc */
+                delete w;
+
+                return;
+            }
         }
-
-        /* reschedule the thread with more work from the tp */
-        boost::this_thread::at_thread_exit(iofwdutil::ThreadPoolKick(w->tp_));
-
-        /* cleanup the wrapper alloc */
-        delete w;
    }
 };
 

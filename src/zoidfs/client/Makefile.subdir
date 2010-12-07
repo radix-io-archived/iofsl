@@ -21,9 +21,14 @@ src/zoidfs/client/zoidfsclient.c
 if HAVE_MPI
 lib_LIBRARIES += src/zoidfs/libzoidfsrouter.a
 src_zoidfs_libzoidfsrouter_a_SOURCES = \
-src/zoidfs/client/zoidfsclientrouter.c \
-src/zoidfs/client/zoidfsrouter.h \
-src/zoidfs/client/zoidfsrouter.c
+src/zoidfs/client/router/zoidfsclientbl.h \
+src/zoidfs/client/router/zoidfsclientbl.c \
+src/zoidfs/client/router/zoidfsclientss.h \
+src/zoidfs/client/router/zoidfsclientss.c \
+src/zoidfs/client/router/zoidfsclienthcache.h \
+src/zoidfs/client/router/zoidfsclienthcache.c \
+src/zoidfs/client/router/zoidfsrouter.h \
+src/zoidfs/client/router/zoidfsrouter.c
 endif
 
 endif

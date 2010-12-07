@@ -243,9 +243,9 @@ namespace zoidfs
        };
 
        /* reschedule the thread with more work from the tp */
+#ifndef USE_CRAY_TP
        boost::this_thread::at_thread_exit(iofwdutil::ThreadPoolKick(bwu->tp_));
-       //iofwdutil::ThreadPoolKick(bwu->tp_);
-
+#endif
        delete bwu;
    }
 
