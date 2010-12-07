@@ -1,12 +1,12 @@
 #ifndef IOFWDEVENT_SINGLECOMPLETION_HH
 #define IOFWDEVENT_SINGLECOMPLETION_HH
 
+#include "iofwdevent/Resource.hh"
+#include "iofwdutil/assert.hh"
+
 #include <boost/function.hpp>
 #include <boost/thread.hpp>
 #include <boost/utility.hpp>
-
-#include "iofwdevent/Resource.hh"
-#include "iofwdutil/assert.hh"
 
 namespace iofwdevent
 {
