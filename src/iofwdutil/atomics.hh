@@ -152,10 +152,17 @@ private:
    mutable boost::mutex  lock_;
 };
 
+//====================================================================
+}
 
 #ifdef HAVE_OPENPA
 
 #include <opa_primitives.h>
+
+namespace iofwdutil
+{
+//====================================================================
+
 /**
  * OPA specialization for integers
  * Prefer OpenPA
@@ -233,9 +240,15 @@ class atomic_base<int>
    private:
       OPA_int_t value_;
 };
+
+}
+
 #elif HAVE_GLIB
 
 #include <glib.h>
+
+namespace iofwdutil
+{
 
 /**
  * Glib specialization for integers
@@ -316,7 +329,12 @@ class atomic_base<int>
       gint value_;
 };
 
+}
+
 #endif
+
+namespace iofwdutil
+{
 
 /**
  * Adds shared functionality to the atomic_base class.
