@@ -46,7 +46,6 @@ int MPI_Init_static_server(int * args, char *** argv)
     int num_ioservers = atoi(getenv("ZOIDFS_NUM_IOSERVERS"));
     int io_server_rank = 0;
     char * client_config_fn = (char *)malloc(sizeof(char) * 1024);
-    int ccfd = 0;
 
     /* init MPI */
     int ret = PMPI_Init(args, argv);
@@ -243,7 +242,7 @@ int zoidfs_finalize_static_server(void) {
     }
 #endif
 
-    BMI_close_context(zoidfs_client_get_context());
+    BMI_close_context(*(zoidfs_client_get_context()));
 
     /* Finalize BMI */
     ret = BMI_finalize();

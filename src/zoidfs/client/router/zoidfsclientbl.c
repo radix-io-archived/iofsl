@@ -294,7 +294,7 @@ int zoidfs_finalize_simple_block_layout_server(void) {
     }
 #endif
 
-    //BMI_close_context(zoidfs_client_get_context());
+    BMI_close_context(*(zoidfs_client_get_context()));
 
     /* Finalize BMI */
     ret = BMI_finalize();
