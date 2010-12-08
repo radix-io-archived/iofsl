@@ -40,6 +40,7 @@ int zoidfs_router_bmi_addr_setup_static_server()
  */
 int MPI_Init_static_server(int * args, char *** argv)
 {
+    fprintf(stderr, "%s:%i enter\n", __func__, __LINE__);
     int rank = 0;
     int size = 0;
     int num_ioservers = atoi(getenv("ZOIDFS_NUM_IOSERVERS"));
@@ -65,33 +66,59 @@ int MPI_Init_static_server(int * args, char *** argv)
     zoidfs_router_server_region_t * l = (zoidfs_router_server_region_t *)malloc(sizeof(zoidfs_router_server_region_t));
     l[0].iofsl_addr = (char *)malloc(sizeof(char) * 1024);
 
-    /* setup the io server addr to use */
-    sprintf(client_config_fn, "./defaultclientconfig.cf.%i.%i.%i", size, num_ioservers, io_server_rank);
+    char * addrList = (char *)malloc(sizeof(char *) * num_ioservers * 64);
+    memset(addrList, 0, sizeof(char *) * num_ioservers * 64);
 
-    /* get the address from the config file */
-    ccfd = open(client_config_fn, O_RDONLY);
-    if(ccfd < 0)
+    /* only rank 0 will read the config file for all of the clients */
+    if(rank == 0)
     {
-        fprintf(stderr, "failed to open client config, file = %s\n", client_config_fn);
+        FILE * ccfd = fopen("./defaultclientconfig.cf", "r");
+        if(!ccfd)
+        {
+                fprintf(stderr, "failed to open client config, file = %s\n", client_config_fn);
+        }
+        else
+        {
+                int i = 0;
+                /* we should have an address for each file */
+                for(i = 0 ; i < num_ioservers ; i++)
+                {
+                        int br = 0;
+                        int fret = 0;
+
+                        /* scan the file for the next address */
+                        fret = fscanf(ccfd, "%s\n", &addrList[i * 64]);
+                        if(fret != EOF)
+                        {
+                                fprintf(stderr, "%s:%i read bytes = %i, addr = %s\n", __func__, __LINE__, br, &addrList[i * 64]);
+                        }
+                        else
+                        {
+                                fprintf(stderr, "could not read the address\n");
+                                break;
+                        }
+                }
+        }
+
+        /* close the fd */
+        fclose(ccfd);
     }
 
-    if(read(ccfd, l[0].iofsl_addr, 1024) > 0)
-    {
-        l[0].iofsl_addr[strlen(l[0].iofsl_addr) - 1] = '\0';
-    }
-    else
-    {
-        fprintf(stderr, "could not read the address\n");
-    }
+    /* distribute the addrs to all clients */
+    PMPI_Bcast(addrList, sizeof(char *) * num_ioservers * 64, MPI_CHAR, 0, MPI_COMM_WORLD);
 
-    /* close the fd */
-    close(ccfd);
+    /* let each client pick the address to use */
+    strcpy(l[0].iofsl_addr, &addrList[io_server_rank * 64]);
+
+    /* free the addr space */
+    free(addrList);
 
     /* cleanup */
     free(client_config_fn);
 
     zoidfs_router_set_region_list(l);
 
+    fprintf(stderr, "%s:%i exit\n", __func__, __LINE__);
     return ret;
 }
 
@@ -104,6 +131,7 @@ int MPI_Finalize_static_server()
 /* overload of zoidfs_init */
 int zoidfs_init_static_server(void)
 {
+    fprintf(stderr, "%s:%i enter\n", __func__, __LINE__);
     int ret = ZFS_OK;
     char * pipeline_size = NULL;
 
@@ -191,6 +219,7 @@ int zoidfs_init_static_server(void)
     }
 #endif
 
+    fprintf(stderr, "%s:%i exit\n", __func__, __LINE__);
     return ZFS_OK;
 }
 
