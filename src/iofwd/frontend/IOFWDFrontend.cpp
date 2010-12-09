@@ -142,6 +142,8 @@ void IOFWDFrontend::init ()
    ZLOG_INFO (log_, "Starting BMI memory manager...");
    iofwdutil::ConfigFile lc = config_.openSectionDefault("bmimemorymanager");
    iofwdutil::mm::BMIMemoryManager::instance().setMaxNumBuffers(lc.getKeyAsDefault("maxnumbuffers", 0));
+   /* set the max amount of BMI memory allocs by total bytes (def is 256 MB) */
+   iofwdutil::mm::BMIMemoryManager::instance().setMaxMemAmount(lc.getKeyAsDefault("maxmem", 256UL * 1024UL * 1024UL));
    iofwdutil::mm::BMIMemoryManager::instance().start();
 }
 

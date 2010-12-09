@@ -79,6 +79,8 @@ class BMIMemoryAlloc : public IOFWDMemoryAlloc
         /* get the memory buffer start */
         virtual size_t getMemorySize() const;
 
+        size_t getReqMemorySize() const;
+
         /* get the number of tokens held by this alloc */
         virtual size_t getNumTokens() const;
 
@@ -89,6 +91,14 @@ class BMIMemoryAlloc : public IOFWDMemoryAlloc
         {
             return memory_->bmiType();
         }
+
+        int decgetCBCount()
+        {
+            boost::mutex::scoped_lock lock(cbcount_mutex_);
+            cb_count_--;
+            return cb_count_;
+        }
+
     protected:
         /* friends that can invoke the alloc and dealloc methods */
         friend class BMIMemoryManager;
@@ -106,6 +116,9 @@ class BMIMemoryAlloc : public IOFWDMemoryAlloc
         /* BMI params */
         iofwdutil::bmi::BMIAddr addr_;
         iofwdutil::bmi::BMI::AllocType allocType_;
+
+        boost::mutex cbcount_mutex_;
+        int cb_count_;
 };
 
 /* allocation manager for BMI buffers */
@@ -130,6 +143,7 @@ class BMIMemoryManager : public IOFWDMemoryManager, public iofwdutil::Singleton 
 
         /* memory manager setup */
         static void setMaxNumBuffers(int numBuffers);
+        static void setMaxMemAmount(size_t mem);
 
     protected:
         void runBufferAllocCB(int status, BMIMemoryAlloc * memAlloc, iofwdevent::CBType cb);        
@@ -141,8 +155,10 @@ class BMIMemoryManager : public IOFWDMemoryManager, public iofwdutil::Singleton 
          *  neeed pipelineSize_ sized buffers 
          */
         iofwdevent::TokenResource * tokens_;
+        iofwdevent::TokenResource * mem_;
 
         static int numTokens_;
+        static size_t memAmount_;
         static boost::mutex bmm_setup_mutex_;
 };
     }

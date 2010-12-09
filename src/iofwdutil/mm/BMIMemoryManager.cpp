@@ -10,7 +10,7 @@ namespace iofwdutil
     {
 
 BMIMemoryAlloc::BMIMemoryAlloc(iofwdutil::bmi::BMIAddr addr, iofwdutil::bmi::BMI::AllocType allocType, size_t bufferSize)
-    : IOFWDMemoryAlloc(), allocated_(false), numTokens_(0), bufferSize_(bufferSize), memory_(NULL), addr_(addr), allocType_(allocType)
+    : IOFWDMemoryAlloc(), allocated_(false), numTokens_(0), bufferSize_(bufferSize), memory_(NULL), addr_(addr), allocType_(allocType), cb_count_(2)
 {
 }
 
@@ -43,6 +43,11 @@ iofwdutil::bmi::BMIBuffer * BMIMemoryAlloc::getBMIBuffer() const
 size_t BMIMemoryAlloc::getMemorySize() const
 {
     return memory_->size();
+}
+
+size_t BMIMemoryAlloc::getReqMemorySize() const
+{
+    return bufferSize_;
 }
 
 /* get the number of tokens held by this alloc */
@@ -90,8 +95,7 @@ void BMIMemoryManager::runBufferAllocCB(int status, BMIMemoryAlloc * memAlloc, i
     /* have the buffer wrapper allocate the buffer and consume one token */
     memAlloc->alloc(1);
 
-    /* invoke the callback */
-    cb(status);
+    mem_->request(cb, memAlloc->getReqMemorySize());
 }
 
 /*
@@ -106,6 +110,7 @@ BMIMemoryManager::BMIMemoryManager()
 
 /* static variables for the mem manager */
 int iofwdutil::mm::BMIMemoryManager::numTokens_ = 0;
+size_t iofwdutil::mm::BMIMemoryManager::memAmount_ = 0;
 boost::mutex iofwdutil::mm::BMIMemoryManager::bmm_setup_mutex_;
 
 void BMIMemoryManager::setMaxNumBuffers(int numTokens)
@@ -114,13 +119,21 @@ void BMIMemoryManager::setMaxNumBuffers(int numTokens)
     numTokens_ = numTokens;
 }
 
+void BMIMemoryManager::setMaxMemAmount(size_t mem)
+{
+    boost::mutex::scoped_lock lock(bmm_setup_mutex_);
+    memAmount_ = mem;
+}
+
 void BMIMemoryManager::start()
 {
     /* create the token resource */
     tokens_ = new iofwdevent::TokenResource(numTokens_); 
+    mem_ = new iofwdevent::TokenResource(memAmount_); 
 
     /* start the token resource */
     tokens_->start();
+    mem_->start();
 }
 
 void BMIMemoryManager::reset()
@@ -129,10 +142,14 @@ void BMIMemoryManager::reset()
     {
         /* stop the token resource */
         tokens_->stop();
+        mem_->stop();
 
         /* delete the token object */
         delete tokens_;
         tokens_ = NULL;
+
+        delete mem_;
+        mem_ = NULL;
     }
 }
 
@@ -151,10 +168,12 @@ BMIMemoryManager::~BMIMemoryManager()
 void BMIMemoryManager::alloc(iofwdevent::CBType cb, IOFWDMemoryAlloc * memAlloc)
 {
     /* construct the mem manager callback */
-    boost::function<void(int)> bmmCB = boost::bind(&iofwdutil::mm::BMIMemoryManager::runBufferAllocCB, this, _1, dynamic_cast<BMIMemoryAlloc *>(memAlloc), cb);
+    boost::function<void(int)>bmmCB_token = boost::bind(&iofwdutil::mm::BMIMemoryManager::runBufferAllocCB, this, _1, dynamic_cast<BMIMemoryAlloc *>(memAlloc), cb);
+    //boost::function<void(int)> bmmCB_mem = boost::bind(&iofwdutil::mm::BMIMemoryManager::runBufferAllocCB, this, _1, dynamic_cast<BMIMemoryAlloc *>(memAlloc), cb);
 
     /* get the tokens */
-    tokens_->request(boost::bind(bmmCB, 0), 1);
+    tokens_->request(boost::bind(bmmCB_token, 0), 1);
+    //mem_->request(boost::bind(bmmCB_mem, 0), dynamic_cast<BMIMemoryAlloc *>(memAlloc)->getReqMemorySize());
 }
 
 /*
@@ -163,10 +182,12 @@ void BMIMemoryManager::alloc(iofwdevent::CBType cb, IOFWDMemoryAlloc * memAlloc)
 void BMIMemoryManager::dealloc(IOFWDMemoryAlloc * memAlloc)
 {
     /* free the BMI memory */
+    size_t mr = dynamic_cast<BMIMemoryAlloc *>(memAlloc)->getReqMemorySize();
     memAlloc->dealloc();
 
     /* return the tokens */
     tokens_->release(1);
+    mem_->release(mr);
 }
     }
 }
