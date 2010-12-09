@@ -26,64 +26,39 @@ int main()
     sattr.mtime.seconds = now.tv_sec;
     sattr.mtime.nseconds = now.tv_usec;
 
-    zoidfs_op_hint_t * hint  = zoidfs_hint_init(3);
+    zoidfs_op_hint_t hint;
 
-    zoidfs_hint_add(&hint, strdup("key"), strdup("data"), 5, ZOIDFS_HINTS_ZC);
-    zoidfs_hint_add(&hint, strdup("key1"), strdup("data1"), 6, ZOIDFS_HINTS_ZC);
-    zoidfs_hint_add(&hint, strdup("key2"), strdup("data2"), 6, ZOIDFS_HINTS_ZC);
-    zoidfs_hint_print(&hint);
-    zoidfs_hint_add(&hint, strdup("key3"), strdup("data3"), 6, ZOIDFS_HINTS_ZC);
-    zoidfs_hint_add(&hint, strdup("key4"), strdup("data4"), 6, ZOIDFS_HINTS_ZC);
-    zoidfs_hint_add(&hint, strdup("key5"), strdup("data5"), 6, ZOIDFS_HINTS_ZC);
-    zoidfs_hint_add(&hint, strdup("key5"), strdup("data5"), 6, ZOIDFS_HINTS_ZC);
-    zoidfs_hint_add(&hint, strdup("key6"), strdup("data6"), 6, ZOIDFS_HINTS_ZC);
-    zoidfs_hint_add(&hint, strdup("key7"), strdup("data7"), 6, ZOIDFS_HINTS_ZC);
+    /* create the hint */
+    zoidfs_hint_create(&hint);
 
-    zoidfs_hint_print(&hint);
-    
-    zoidfs_hint_remove(&hint, "key4", ZOIDFS_HINTS_REUSE_HINTS);
-    zoidfs_hint_print(&hint);
-
-    zoidfs_hint_remove(&hint, "key4", ZOIDFS_HINTS_REUSE_HINTS);
-    zoidfs_hint_print(&hint);
-
-    zoidfs_hint_remove(&hint, "key7", ZOIDFS_HINTS_REUSE_HINTS);
-    zoidfs_hint_print(&hint);
-
-    zoidfs_hint_remove(&hint, "key", ZOIDFS_HINTS_REUSE_HINTS);
-    zoidfs_hint_print(&hint);
-
-    zoidfs_hint_remove(&hint, "key3", ZOIDFS_HINTS_REUSE_HINTS);
-    zoidfs_hint_print(&hint);
-
-    zoidfs_hint_add(&hint, strdup("key"), strdup("data"), 5, ZOIDFS_HINTS_ZC);
-    zoidfs_hint_print(&hint);
-
-    zoidfs_hint_add(&hint, strdup("key"), strdup("data4"), 6, ZOIDFS_HINTS_ZC);
-    zoidfs_hint_print(&hint);
-
-    zoidfs_op_hint_t * _hint = zoidfs_hint_pop(&hint);
-    fprintf(stderr, "hint pop: key = %s, value = %s\n", _hint->key, _hint->value);
-    zoidfs_hint_print(&hint);
-    zoidfs_hint_destroy(&_hint);
-
-    fprintf(stderr, "hint list size: size = %i\n", zoidfs_hint_num_elements(&hint));
+    /* set some hint data */
+    zoidfs_hint_set(hint, strdup("key"), strdup("data"), 5);
+    zoidfs_hint_set(hint, strdup("key1"), strdup("data1"), 6);
+    zoidfs_hint_set(hint, strdup("key2"), strdup("data2"), 6);
+    zoidfs_hint_set(hint, strdup("key3"), strdup("data3"), 6);
+    zoidfs_hint_set(hint, strdup("key4"), strdup("data4"), 6);
+    zoidfs_hint_set(hint, strdup("key5"), strdup("data5"), 6);
+    zoidfs_hint_set(hint, strdup("key5"), strdup("data5"), 6);
+    zoidfs_hint_set(hint, strdup("key6"), strdup("data6"), 6);
+    zoidfs_hint_set(hint, strdup("key7"), strdup("data7"), 6);
 
     zoidfs_init();
     
     zoidfs_mkdir(NULL, NULL, "/test-dir", &sattr, &parent_hint, ZOIDFS_NO_OP_HINT);
-    zoidfs_mkdir(NULL, NULL, "/test-dir-hints", &sattr, &parent_hint, hint);
+    zoidfs_mkdir(NULL, NULL, "/test-dir-hints", &sattr, &parent_hint, &hint);
     zoidfs_mkdir(NULL, NULL, "/test-dir2", &sattr, &parent_hint, ZOIDFS_NO_OP_HINT);
-    zoidfs_mkdir(NULL, NULL, "/test-dir-hints2", &sattr, &parent_hint, hint);
+    zoidfs_mkdir(NULL, NULL, "/test-dir-hints2", &sattr, &parent_hint, &hint);
    
-    zoidfs_remove(NULL, NULL, "/test-dir", NULL, hint); 
-    zoidfs_remove(NULL, NULL, "/test-dir-hints", NULL, hint); 
-    zoidfs_remove(NULL, NULL, "/test-dir2", NULL, hint); 
-    zoidfs_remove(NULL, NULL, "/test-dir-hints2", NULL, hint);
+    zoidfs_remove(NULL, NULL, "/test-dir", NULL, &hint); 
+    zoidfs_remove(NULL, NULL, "/test-dir-hints", NULL, &hint); 
+    zoidfs_remove(NULL, NULL, "/test-dir2", NULL, &hint); 
+    zoidfs_remove(NULL, NULL, "/test-dir-hints2", NULL, &hint);
+
+    zoidfs_hint_free(&hint);
 
     zoidfs_finalize();
 
-    zoidfs_hint_destroy(&hint);
+    zoidfs_hint_free(&hint);
 
     return 0;
 }
