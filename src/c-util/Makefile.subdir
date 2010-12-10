@@ -55,7 +55,11 @@ src/c-util/hash/chash.c \
 src/c-util/hash/chash_none.c \
 src/c-util/hash/chash_none.h \
 src/c-util/hash/chash_sha1.h \
-src/c-util/hash/chash_sha1.c
+src/c-util/hash/chash_sha1.c \
+src/c-util/transform/lzf/lzf.h \
+src/c-util/transform/lzf/lzfP.h \
+src/c-util/transform/lzf/lzf_c.c \
+src/c-util/transform/lzf/lzf_d.c
 
 if HAVE_ZLIB
 src_c_util_libc_util_a_SOURCES += \
