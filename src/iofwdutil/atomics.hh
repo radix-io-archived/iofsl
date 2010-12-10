@@ -58,7 +58,7 @@ public:
    }
 
    /**
-    * Compare and swap. 
+    * Compare and swap.
     * If current value equal to compare, swap with newvalue.
     * Returns true if values were equal and swap occured.
     */
@@ -179,7 +179,7 @@ class atomic_base<int>
    typedef int BASE;
 
    public:
-   
+
       enum { USING_LOCKS = 0 };
 
    void store (BASE newv)
@@ -373,11 +373,11 @@ public:
 
 public:
    /**
-    * General C++ functions, defined in terms of the atomic_base 
+    * General C++ functions, defined in terms of the atomic_base
     * object.
     */
 
-     /** 
+     /**
     * Assignment operator
     */
    atomic_base<BASE> & operator = (const BASE & val)
@@ -387,15 +387,15 @@ public:
    }
 
    /**
-    * Increment; postincrement operator 
+    * Increment; postincrement operator
     * NOTE: return BASE type, not atomic<BASE>
     */
-   BASE operator ++ (int /* dummy */)
+   BASE operator ++ (int )
    {
       return this->fetch_and_incr ();
    }
 
-   /** 
+   /**
     * Increment; preincrement
     * NOTE: return BASE type, not atomic<BASE>
     */
@@ -406,15 +406,15 @@ public:
    }
 
    /**
-    * Decrement; postdecrement operator 
+    * Decrement; postdecrement operator
     * NOTE: return BASE type, not atomic<BASE>
     */
-   BASE operator -- (int /* dummy */)
+   BASE operator -- (int)
    {
       return this->fetch_and_decr ();
    }
 
-   /** 
+   /**
     * Decrement; predecrement
     * NOTE: return BASE type, not atomic<BASE>
     */
@@ -430,7 +430,7 @@ public:
     * a = b + c
     * which cannot be atomic.
     */
-   /*void operator + (BASE val)
+   void operator + (BASE val)
    {
       this->add (val);
    }
@@ -438,7 +438,7 @@ public:
    void operator - (BASE val)
    {
       this->add (-val);
-   }*/
+   }
 
    void operator += (BASE val)
    {
@@ -466,7 +466,7 @@ public:
  * Doesn't support ++, --, +, -
  */
 template <>
-class atomic<bool> : public atomic_base<int> 
+class atomic<bool> : public atomic_base<int>
 {
 protected:
    typedef bool BASE;
@@ -488,11 +488,11 @@ public:
 
 public:
    /**
-    * General C++ functions, defined in terms of the atomic_base 
+    * General C++ functions, defined in terms of the atomic_base
     * object.
     */
 
-     /** 
+     /**
     * Assignment operator
     */
    atomic<bool> & operator = (const bool & val)
