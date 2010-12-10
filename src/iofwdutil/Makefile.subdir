@@ -159,14 +159,53 @@ src/iofwdutil/rm/IntervalMergeTree.cpp \
 \
 src/iofwdutil/mm/IOFWDMemoryManager.hh \
 src/iofwdutil/mm/BMIMemoryManager.hh \
-src/iofwdutil/mm/BMIMemoryManager.cpp
+src/iofwdutil/mm/BMIMemoryManager.cpp \
+\
+src/iofwdutil/transform/GenericTransform.hh \
+src/iofwdutil/transform/GenericTransform.cpp \
+src/iofwdutil/transform/IOFWDZLib.hh \
+src/iofwdutil/transform/IOFWDZLib.cpp \
+src/iofwdutil/transform/TransformException.cpp \
+src/iofwdutil/transform/TransformException.hh \
+src/iofwdutil/transform/LZF.cpp \
+src/iofwdutil/transform/LZF.hh \
+src/iofwdutil/transform/LZFCommon.hh \
+src/iofwdutil/transform/LZFCompress.hh \
+src/iofwdutil/transform/LZFCompress.cpp \
+src/iofwdutil/transform/CopyTransform.cpp \
+src/iofwdutil/transform/CopyTransform.hh \
+src/iofwdutil/transform/IOReadBuffer.cpp \
+src/iofwdutil/transform/IOReadBuffer.hh \
+src/iofwdutil/transform/IOWriteBuffer.cpp \
+src/iofwdutil/transform/IOWriteBuffer.hh \
+\
+src/iofwdutil/FactoryLinkHelper.hh \
+src/iofwdutil/FactoryLinkHelper.cpp
 
 if HAVE_ZLIB
 src_iofwdutil_libiofwdutil_a_SOURCES += \
 src/iofwdutil/hash/Adler32.hh \
 src/iofwdutil/hash/Adler32.cpp \
 src/iofwdutil/hash/CRC32.hh \
-src/iofwdutil/hash/CRC32.cpp
+src/iofwdutil/hash/CRC32.cpp \
+src/iofwdutil/transform/IOFWDZLib.hh \
+src/iofwdutil/transform/IOFWDZLib.cpp \
+src/iofwdutil/transform/ZLibBase.hh \
+src/iofwdutil/transform/ZLibBase.cpp \
+src/iofwdutil/transform/ZLibCompress.hh \
+src/iofwdutil/transform/ZLibCompress.cpp \
+src/iofwdutil/transform/ZLibDecompress.hh \
+src/iofwdutil/transform/ZLibDecompress.cpp
+endif
+
+if HAVE_BZLIB
+src_iofwdutil_libiofwdutil_a_SOURCES += \
+src/iofwdutil/transform/BZLib.hh \
+src/iofwdutil/transform/BZLib.cpp \
+src/iofwdutil/transform/BZCompress.hh \
+src/iofwdutil/transform/BZCompress.cpp \
+src/iofwdutil/transform/BZDecompress.hh \
+src/iofwdutil/transform/BZDecompress.cpp
 endif
 
 if HAVE_OPENSSL
