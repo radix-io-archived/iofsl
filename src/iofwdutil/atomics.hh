@@ -58,15 +58,21 @@ public:
    }
 
    /**
-    * Compare and swap. Returns old value.
+    * Compare and swap. 
+    * If current value equal to compare, swap with newvalue.
+    * Returns true if values were equal and swap occured.
     */
    BASE cas (BASE compare, BASE newv)
    {
       boost::mutex::scoped_lock l(lock_);
       BASE old = value_;
       if (value_ == compare)
+      {
          value_ = newv;
-      return old;
+         return true;
+      }
+      else
+         return false;
    }
 
    /**
@@ -194,7 +200,7 @@ class atomic_base<int>
 
    BASE cas (BASE compare, BASE newv)
    {
-      return OPA_cas_int (&value_, compare, newv);
+      return (OPA_cas_int (&value_, compare, newv) == compare);
    }
 
    bool decr_and_test ()
@@ -277,12 +283,9 @@ class atomic_base<int>
       value_ = newv;
    }
 
-   BASE cas (BASE compare, BASE newv)
+   bool cas (BASE compare, BASE newval)
    {
-      ALWAYS_ASSERT(false && "Not implemented!");
-      /*return (g_atomic_int_compare_and_exchange (&value_, compare, newv)
-            ? compare : */
-      return 0;
+      return g_atomic_int_compare_and_exchange (&value_, compare, newval);
    }
 
    bool decr_and_test ()
@@ -307,7 +310,14 @@ class atomic_base<int>
 
    BASE swap (BASE other)
    {
-      return g_atomic_int_exchange_and_add (&value_, 0);
+      // Emulate swap using load + CAS
+      int oldval;
+      do
+      {
+         oldval = load ();
+      }
+      while (!g_atomic_int_compare_and_exchange (&value_, oldval, other));
+      return oldval;
    }
 
    void incr ()
