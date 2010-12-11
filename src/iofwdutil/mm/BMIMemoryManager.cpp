@@ -1,4 +1,5 @@
 #include "iofwdutil/mm/BMIMemoryManager.hh"
+#include "iofwdutil/tools.hh"
 
 #include <cassert>
 
@@ -90,12 +91,17 @@ void BMIMemoryAlloc::dealloc()
  *  a wrapper around the callback with some additional memory manager
  *  ops. 
  */
-void BMIMemoryManager::runBufferAllocCB(int status, BMIMemoryAlloc * memAlloc, iofwdevent::CBType cb)
+void BMIMemoryManager::runBufferAllocCB1(int UNUSED(status), BMIMemoryAlloc * memAlloc, iofwdevent::CBType cb)
+{
+    boost::function<void(int)>bmmCB = boost::bind(&iofwdutil::mm::BMIMemoryManager::runBufferAllocCB2, this, _1, dynamic_cast<BMIMemoryAlloc *>(memAlloc), cb);
+    mem_->request(bmmCB, memAlloc->getReqMemorySize());
+}
+
+void BMIMemoryManager::runBufferAllocCB2(int status, BMIMemoryAlloc * memAlloc, iofwdevent::CBType cb)
 {
     /* have the buffer wrapper allocate the buffer and consume one token */
     memAlloc->alloc(1);
-
-    mem_->request(cb, memAlloc->getReqMemorySize());
+    cb(status);
 }
 
 /*
@@ -168,12 +174,10 @@ BMIMemoryManager::~BMIMemoryManager()
 void BMIMemoryManager::alloc(iofwdevent::CBType cb, IOFWDMemoryAlloc * memAlloc)
 {
     /* construct the mem manager callback */
-    boost::function<void(int)>bmmCB_token = boost::bind(&iofwdutil::mm::BMIMemoryManager::runBufferAllocCB, this, _1, dynamic_cast<BMIMemoryAlloc *>(memAlloc), cb);
-    //boost::function<void(int)> bmmCB_mem = boost::bind(&iofwdutil::mm::BMIMemoryManager::runBufferAllocCB, this, _1, dynamic_cast<BMIMemoryAlloc *>(memAlloc), cb);
+    boost::function<void(int)>bmmCB = boost::bind(&iofwdutil::mm::BMIMemoryManager::runBufferAllocCB1, this, _1, dynamic_cast<BMIMemoryAlloc *>(memAlloc), cb);
 
     /* get the tokens */
-    tokens_->request(boost::bind(bmmCB_token, 0), 1);
-    //mem_->request(boost::bind(bmmCB_mem, 0), dynamic_cast<BMIMemoryAlloc *>(memAlloc)->getReqMemorySize());
+    tokens_->request(boost::bind(bmmCB, 0), 1);
 }
 
 /*
@@ -188,6 +192,32 @@ void BMIMemoryManager::dealloc(IOFWDMemoryAlloc * memAlloc)
     /* return the tokens */
     tokens_->release(1);
     mem_->release(mr);
+}
+
+bool BMIMemoryManager::try_alloc(IOFWDMemoryAlloc * memAlloc)
+{
+    bool req = false;
+ 
+    req = tokens_->try_request(1);
+
+    /* if we got the buffer token, try to get the mem token*/
+    if(req)
+    {
+        req = mem_->try_request(dynamic_cast<BMIMemoryAlloc *>(memAlloc)->getReqMemorySize());
+        /* we got the buffer space, so return */
+        if(req)
+        {
+            dynamic_cast<BMIMemoryAlloc *>(memAlloc)->alloc(1);
+            return true;
+        }
+        /* we could not get the buffer, so release the buffer token */
+        else
+        {
+            tokens_->release(1);
+        }
+    }
+    
+    return false;
 }
     }
 }

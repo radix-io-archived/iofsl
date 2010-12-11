@@ -131,6 +131,7 @@ class BMIMemoryManager : public IOFWDMemoryManager, public iofwdutil::Singleton 
 
         /* submit a buffer request */
         void alloc(iofwdevent::CBType cb, IOFWDMemoryAlloc * memAlloc_);
+        bool try_alloc(IOFWDMemoryAlloc * memAlloc);
 
         /* return a buffer to the manager */
         void dealloc(IOFWDMemoryAlloc * memAlloc_);
@@ -146,7 +147,8 @@ class BMIMemoryManager : public IOFWDMemoryManager, public iofwdutil::Singleton 
         static void setMaxMemAmount(size_t mem);
 
     protected:
-        void runBufferAllocCB(int status, BMIMemoryAlloc * memAlloc, iofwdevent::CBType cb);        
+        void runBufferAllocCB1(int status, BMIMemoryAlloc * memAlloc, iofwdevent::CBType cb);        
+        void runBufferAllocCB2(int status, BMIMemoryAlloc * memAlloc, iofwdevent::CBType cb);        
 
         /*
          * We use a TokenResource to limit the number of buffers consumed by the server
