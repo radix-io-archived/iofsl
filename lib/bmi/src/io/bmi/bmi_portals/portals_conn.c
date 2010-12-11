@@ -20,11 +20,20 @@
 #include <unistd.h>
 #include <pthread.h>
 #include <fcntl.h>
+#include <assert.h>
+#include <sys/mman.h>
+
+#define _GNU_SOURCE
+#include <pthread.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <errno.h>
+#include <sched.h>
 
 #include "dlmalloc.h"
 
 /* consts and constraints */
-#define BMIP_EQ_SIZE (2<<16) 
+#define BMIP_EQ_SIZE (1<<16) 
 
 #define BMIP_MAX_TEST_COUNT 1000
 
@@ -48,31 +57,75 @@ static ptl_handle_md_t ex_md_handle;
 static ptl_handle_md_t ex_req_md_handle;
 static ptl_handle_md_t ex_rsp_md_handle;
 
+/* counters */
+static uint64_t ex_send_count = 0;
+static uint64_t ex_send_size = 0;
+static double ex_send_time = 0;
+static uint64_t ex_recv_count = 0;
+static uint64_t ex_recv_size = 0;
+static double ex_recv_time = 0;
+static uint64_t unex_send_count = 0;
+static uint64_t unex_send_size = 0;
+static double unex_send_time = 0;
+
 /* local unex msg space... 8KB */
-#define BMIP_UNEX_SPACE (8 * (2<<10))
-#define BMIP_UNEX_MSG_SIZE (8 * (2<<10))
-char bmip_unex_space[BMIP_UNEX_SPACE]; 
-const size_t bmip_unex_space_length = BMIP_UNEX_SPACE;
+#define BMIP_UNEX_SPACE (8 * (1<<10))
+#define BMIP_UNEX_MSG_SIZE (8 * (1<<10) + 1)
+static char bmip_unex_space[BMIP_UNEX_SPACE]; 
+static const size_t bmip_unex_space_length = BMIP_UNEX_SPACE;
 
 /* ex msg space */
-#define BMIP_EX_SPACE (128 * (2<<20))
-#define BMIP_EX_MSG_SIZE (8 * (2<<20))
-void * bmip_ex_space = NULL; 
-const size_t bmip_ex_space_length = BMIP_EX_SPACE;
+#if 0
+#ifdef BMIPSERVERMEM
+#warning server mem
+//static const size_t BMIP_SERVER_EX_SPACE = (1ul * 1024ul * 1024ul * 1024ul);
+static const size_t BMIP_SERVER_EX_SPACE = (2ul * 1024ul * 1024ul * 1024ul);
+//static const size_t BMIP_SERVER_EX_SPACE = (4ul * 1024ul * 1024ul * 1024ul);
+//static const size_t BMIP_SERVER_EX_SPACE = (8ul * 1024ul * 1024ul * 1024ul);
+#else
+#warning client mem
+static const size_t BMIP_SERVER_EX_SPACE = (16 * (1<<20));
+#endif
+#else
+#ifdef BMIPSERVERMEM
+#warning server mem
+//#define BMIP_SERVER_EX_SPACE (1ul * 1024ul * 1024ul * 1024ul)
+//#define BMIP_SERVER_EX_SPACE (2ul * 1024ul * 1024ul * 1024ul)
+#define BMIP_SERVER_EX_SPACE (4ul * 1024ul * 1024ul * 1024ul)
+//#define BMIP_SERVER_EX_SPACE (8ul * 1024ul * 1024ul * 1024ul)
+#else
+#warning client mem
+#define BMIP_SERVER_EX_SPACE (16 * (1<<20))
+#endif
+#endif
+#define BMIP_CLIENT_EX_SPACE (16 * (1<<20))
+#define BMIP_EX_MSG_SIZE (8 * (1<<20) + 1)
+#if 1
+static char bmip_ex_space_buffer[BMIP_SERVER_EX_SPACE];
+static void * bmip_ex_space = &bmip_ex_space_buffer[0];
+static void * bmip_ex_space_end = &bmip_ex_space_buffer[BMIP_SERVER_EX_SPACE - 1];
+#else
+static void * bmip_ex_space = NULL;
+static void * bmip_ex_space_end = NULL;
+#endif
+ 
+static size_t bmip_ex_space_length = 0;
 
 /* request space... */
-size_t bmip_ex_req_space[BMIP_MAX_LISTIO]; 
-const size_t bmip_ex_req_space_length = sizeof(bmip_ex_req_space);
+static size_t bmip_ex_req_space[BMIP_MAX_LISTIO]; 
+static const size_t bmip_ex_req_space_length = sizeof(bmip_ex_req_space);
 
 /* response space... */
-size_t bmip_ex_rsp_space[BMIP_MAX_LISTIO]; 
-const size_t bmip_ex_rsp_space_length = sizeof(bmip_ex_rsp_space);
+static size_t bmip_ex_rsp_space[BMIP_MAX_LISTIO]; 
+static const size_t bmip_ex_rsp_space_length = sizeof(bmip_ex_rsp_space);
 
 /* match bit flags for the various bmi operations */
 static const uint64_t unex_mb = (1ULL << 63);
 static const uint64_t ex_mb = (1ULL << 62);
 static const uint64_t ex_req_mb = (1ULL << 61);
 static const uint64_t ex_rsp_mb = (1ULL << 60);
+static const uint64_t ex_req_put_mb = (1ULL << 59);
+static const uint64_t ex_req_get_mb = (1ULL << 58);
 
 /* counters for the done ops */
 static int server_num_done = 0;
@@ -88,6 +141,7 @@ static QLIST_HEAD(bmip_server_pending_recv_ops);
 
 /* lock for list accesses */
 static gen_mutex_t list_mutex = GEN_MUTEX_INITIALIZER;
+static gen_mutex_t sig_mutex = GEN_MUTEX_INITIALIZER;
 
 /* attr when we use barrier sync */
 static pthread_barrierattr_t bmip_context_attr;
@@ -96,12 +150,10 @@ static pthread_barrierattr_t bmip_context_attr;
 static int bmip_shutdown = 0;
 
 /* self pipe data structures */
-static int workfds[2];
 static fd_set workfdset;
 static int workfdmax = -1;
+static int workfds[2];
 static int unexworkfds[2];
-static fd_set unexworkfdset;
-static int unexworkfdmax = -1;
 
 /* portals addr index... this never changes! */
 #define BMIP_PTL_INDEX 37
@@ -109,33 +161,35 @@ static int unexworkfdmax = -1;
 /* server data allocation space */
 static mspace portals_data_space = NULL;
 
-int bmip_get_max_ex_msg_size()
+int bmip_get_max_ex_msg_size(void)
 {
 	return BMIP_EX_MSG_SIZE;
 }
 
-int bmip_get_max_unex_msg_size()
+int bmip_get_max_unex_msg_size(void)
 {
 	return BMIP_UNEX_MSG_SIZE;
 }
 
-void bmip_monitor_shutdown()
+void bmip_monitor_shutdown(void)
 {
 	bmip_shutdown = 1;
 }
 
 void bmip_data_init(size_t len)
 {
-	bmip_ex_space = (void *)malloc(len);
+	bmip_ex_space_end = bmip_ex_space + len;
+	fprintf(stderr, "%s:%i space = %p, space end = %p, len = %lli\n", __func__, __LINE__, bmip_ex_space, bmip_ex_space_end, len);
+
         portals_data_space = create_mspace_with_base(bmip_ex_space, len, 1);
 }
 
 int bmip_data_destroy(void)
 {
         destroy_mspace(portals_data_space);
-        free(bmip_ex_space);
 
         bmip_ex_space = NULL;
+        bmip_ex_space_end = NULL;
         portals_data_space = NULL;
 
         return 0;
@@ -161,14 +215,14 @@ size_t bmip_data_get_offset(void * buffer)
         return (size_t) (buffer - bmip_ex_space);
 }
 
-bmip_portals_conn_op_t * bmip_op_in_progress(int64_t mb)
+bmip_portals_conn_op_t * bmip_op_in_progress(int64_t mb, ptl_process_id_t pid)
 {
 	bmip_portals_conn_op_t * n = NULL, * nsafe = NULL;
 	int found = 0;
 
 	qlist_for_each_entry_safe(n, nsafe, &bmip_cur_ops, list)
 	{
-		if(n->match_bits == mb)
+		if(n->match_bits == mb && ((pid.pid == n->target.pid && pid.nid == n->target.nid)))
 		{
 			found = 1;
 			break;
@@ -181,14 +235,14 @@ bmip_portals_conn_op_t * bmip_op_in_progress(int64_t mb)
 	return n;
 }
 
-bmip_portals_conn_op_t * bmip_unex_op_in_progress(int64_t mb)
+bmip_portals_conn_op_t * bmip_unex_op_in_progress(int64_t mb, ptl_process_id_t pid)
 {
 	bmip_portals_conn_op_t * n = NULL, * nsafe = NULL;
 	int found = 0;
 
 	qlist_for_each_entry_safe(n, nsafe, &bmip_unex_pending, list)
 	{
-		if(n->match_bits == mb)
+		if(n->match_bits == mb && ((pid.pid == n->target.pid && pid.nid == n->target.nid)))
 		{
 			found = 1;
 			break;
@@ -205,6 +259,10 @@ bmip_portals_conn_op_t * bmip_server_send_pending(ptl_process_id_t target, int64
 {
 	bmip_portals_conn_op_t * n = NULL, * nsafe = NULL;
 	int found = 0;
+
+	/* if the addr is the local server addr, return NULL since we ignore the event */
+	if(bmip_is_local_addr(target))
+		return NULL;
 
 	qlist_for_each_entry_safe(n, nsafe, &bmip_server_pending_send_ops, list)
 	{
@@ -225,6 +283,10 @@ bmip_portals_conn_op_t * bmip_server_recv_pending(ptl_process_id_t target, int64
 {
 	bmip_portals_conn_op_t * n = NULL, * nsafe = NULL;
 	int found = 0;
+
+	/* if the addr is the local server addr, return NULL since we ignore the event */
+	if(bmip_is_local_addr(target))
+		return NULL;
 
 	qlist_for_each_entry_safe(n, nsafe, &bmip_server_pending_recv_ops, list)
 	{
@@ -248,6 +310,13 @@ int bmip_is_local_addr(ptl_process_id_t pid)
 	return 0;
 }
 
+void bmip_reinit_sighandler(void)
+{
+        FD_ZERO(&workfdset);
+        FD_SET(workfds[0], &workfdset);
+        FD_SET(unexworkfds[0], &workfdset);
+}
+
 int bmip_init_comm(void)
 {
 	int ret = 0;
@@ -259,21 +328,14 @@ int bmip_init_comm(void)
 	pipe(workfds);
 	FD_ZERO(&workfdset);
 	FD_SET(workfds[0], &workfdset);
-	FD_SET(workfds[1], &workfdset);
-	if(workfds[0] > workfds[1])
+	if(workfds[0] > workfdmax)
 		workfdmax = workfds[0];
-	else if(workfds[0] < workfds[1])
-		workfdmax = workfds[1];
 
 	/* unex msg self pipe */
 	pipe(unexworkfds);
-	FD_ZERO(&unexworkfdset);
-	FD_SET(unexworkfds[0], &unexworkfdset);
-	FD_SET(unexworkfds[1], &unexworkfdset);
-	if(unexworkfds[0] > unexworkfds[1])
-		unexworkfdmax = unexworkfds[0];
-	else if(unexworkfds[0] < unexworkfds[1])
-		unexworkfdmax = unexworkfds[1];
+	FD_SET(unexworkfds[0], &workfdset);
+	if(unexworkfds[0] > workfdmax)
+		workfdmax = unexworkfds[0];
 
 	/* init portals */ 
 	ret = bmip_ptl_init(&num_interfaces);
@@ -326,6 +388,7 @@ int bmip_init_comm_ni(int pid)
 			goto out;
 		}
 	}
+	local_pid = bmip_get_ptl_id();
 
 out:
 	return ret;
@@ -402,13 +465,22 @@ out:
 	return ret;
 }
 
-int bmip_setup_ex_eq(void)
+int bmip_setup_ex_eq(int is_server)
 {
         int ret = 0;
         ptl_md_t md;
 
 	/* create the ex msg space */
-	bmip_data_init(bmip_ex_space_length);
+	if(is_server)
+	{
+		bmip_ex_space_length = BMIP_SERVER_EX_SPACE;
+		bmip_data_init(BMIP_SERVER_EX_SPACE);
+	}
+	else
+	{
+		bmip_ex_space_length = BMIP_CLIENT_EX_SPACE;
+		bmip_data_init(BMIP_CLIENT_EX_SPACE);
+	}
 
         /* setup the expected buffer space */
         md.start = bmip_ex_space;
@@ -514,7 +586,7 @@ out:
 	return ret;
 }
 
-int bmip_setup_eqs(void)
+int bmip_setup_eqs(int is_server)
 {
 	int ret = 0;
 
@@ -555,7 +627,7 @@ int bmip_setup_eqs(void)
 	}
 
 	/* setup the ex eq, me, and md */
-	ret = bmip_setup_ex_eq();
+	ret = bmip_setup_ex_eq(is_server);
 	if(ret != PTL_OK)
 	{
 		bmip_fprintf("could not setup ex eq", __FILE__, __func__, __LINE__);
@@ -689,21 +761,25 @@ int bmip_wait_local_get(void)
 {
 	int ecount = 0;
 	int etype = 0;
-	while(ecount < 4)
+	while(ecount < 2)
 	{
 		etype = bmip_wait_ex_event(NULL);
+#if 0
 		if(etype == PTL_EVENT_SEND_START)
 		{
 			ecount++;
 		}
-		else if(etype == PTL_EVENT_SEND_END)
+#endif
+		if(etype == PTL_EVENT_SEND_END)
 		{
 			ecount++;
 		}
+#if 0
 		else if(etype == PTL_EVENT_REPLY_START)
 		{
 			ecount++;
 		}
+#endif
 		else if(etype == PTL_EVENT_REPLY_END)
 		{
 			ecount++;
@@ -716,14 +792,16 @@ int bmip_wait_unex_remote_get(void)
 {
 	int ecount = 0;
 	int etype = 0;
-        while(ecount < 2)
+        while(ecount < 1)
         {
                 etype = bmip_wait_unex_event(NULL);
+#if 0
                 if(etype == PTL_EVENT_GET_START)
                 {
                         ecount++;
                 }
-                else if(etype == PTL_EVENT_GET_END)
+#endif
+                if(etype == PTL_EVENT_GET_END)
                 {
                         ecount++;
                 }
@@ -735,14 +813,16 @@ int bmip_wait_remote_get(void)
 {
 	int ecount = 0;
 	int etype = 0;
-        while(ecount < 2)
+        while(ecount < 1)
         {
                 etype = bmip_wait_ex_event(NULL);
+#if 0
                 if(etype == PTL_EVENT_GET_START)
                 {
                         ecount++;
                 }
-                else if(etype == PTL_EVENT_GET_END)
+#endif
+                if(etype == PTL_EVENT_GET_END)
                 {
                         ecount++;
                 }
@@ -754,14 +834,16 @@ int bmip_wait_local_put(void)
 {
         int ecount = 0;
 	int etype = 0;
-        while(ecount < 3)
+        while(ecount < 2)
         {
                 etype = bmip_wait_ex_event(NULL);
+#if 0
                 if(etype == PTL_EVENT_SEND_START)
                 {
                         ecount++;
                 }
-                else if(etype == PTL_EVENT_SEND_END)
+#endif
+                if(etype == PTL_EVENT_SEND_END)
                 {
                         ecount++;
                 }
@@ -778,14 +860,16 @@ int bmip_wait_remote_put(void)
 {
 	int ecount = 0;
 	int etype = 0;
-        while(ecount < 2)
+        while(ecount < 1)
         {
                 etype = bmip_wait_ex_event(NULL);
+#if 0
                 if(etype == PTL_EVENT_PUT_START)
                 {
                         ecount++;
                 }
-                else if(etype == PTL_EVENT_PUT_END)
+#endif
+                if(etype == PTL_EVENT_PUT_END)
                 {
                         ecount++;
                 }
@@ -893,7 +977,7 @@ int bmip_client_send(ptl_process_id_t target, int num, void ** buffers, size_t *
 	}
 
 	/* send put request */
-        ret = bmip_ptl_put(put_req_md, PTL_ACK_REQ, target, BMIP_PTL_INDEX, 0, mb | ex_req_mb, 0, 0);
+        ret = bmip_ptl_put(put_req_md, PTL_ACK_REQ, target, BMIP_PTL_INDEX, 0, mb | ex_req_mb | ex_req_put_mb, 0, num);
         if(ret != PTL_OK)
         {
                 bmip_fprintf("could not send req ex msg", __FILE__, __func__, __LINE__);
@@ -916,40 +1000,129 @@ int bmip_client_send(ptl_process_id_t target, int num, void ** buffers, size_t *
         }	
 	put_req_md = PTL_HANDLE_INVALID;
 	
-	/* set the remote offset */
-	for(i = 0 ; i < num ; i++)
+	int snum = bmip_ex_rsp_space[0];
+
+	if(num == snum)
 	{
-        	put_mdesc.start = buffers[i];
-        	put_mdesc.length = lengths[i];
-        
-		ret = bmip_ptl_md_bind(local_ni, put_mdesc, PTL_RETAIN, &put_md);
-        	if(ret != PTL_OK)
-        	{
-                	bmip_fprintf("could not bind md", __FILE__, __func__, __LINE__);
-                	goto out;
-        	}
+		/* set the remote offset */
+		for(i = 0 ; i < num ; i++)
+		{
+        		put_mdesc.start = buffers[i];
+        		put_mdesc.length = lengths[i];
+        	
+			ret = bmip_ptl_md_bind(local_ni, put_mdesc, PTL_RETAIN, &put_md);
+	        	if(ret != PTL_OK)
+        		{
+                		bmip_fprintf("could not bind md", __FILE__, __func__, __LINE__);
+                		goto out;
+	        	}
 
-		offset = bmip_ex_rsp_space[i + 1];
+			offset = bmip_ex_rsp_space[i + 1];
 
-		/* invoke the put */
-        	ret = bmip_ptl_put(put_md, PTL_ACK_REQ, target, BMIP_PTL_INDEX, 0, mb | ex_mb, offset, 0);
-        	if(ret != PTL_OK)
-        	{
-                	bmip_fprintf("could not send ex msg", __FILE__, __func__, __LINE__);
-                	goto out;
-        	}	
-	
-		/* wait for ack */
-		bmip_wait_local_put();
+			/* invoke the put */
+	        	ret = bmip_ptl_put(put_md, PTL_ACK_REQ, target, BMIP_PTL_INDEX, 0, mb | ex_mb, offset, 0);
+        		if(ret != PTL_OK)
+        		{
+                		bmip_fprintf("could not send ex msg", __FILE__, __func__, __LINE__);
+	                	goto out;
+        		}	
+		
+			/* wait for ack */
+			bmip_wait_local_put();
 
-		/* cleanup */
-		ret = bmip_ptl_md_unlink(put_md);
-        	if(ret != PTL_OK)
-        	{
-                	bmip_fprintf("could not send ex msg", __FILE__, __func__, __LINE__);
-                	goto out;
-        	}	
-		put_md = PTL_HANDLE_INVALID;
+			/* cleanup */
+			ret = bmip_ptl_md_unlink(put_md);
+	        	if(ret != PTL_OK)
+        		{
+                		bmip_fprintf("could not send ex msg", __FILE__, __func__, __LINE__);
+                		goto out;
+	        	}	
+			put_md = PTL_HANDLE_INVALID;
+		}
+	}
+	else if(snum > num)
+	{
+		void * cur_buffer = buffers[0];
+
+		/* set the remote offset */
+		for(i = 0 ; i < snum ; i++)
+		{
+			size_t rlength = bmip_ex_rsp_space[snum + i + 1];
+        		put_mdesc.start = cur_buffer;
+        		put_mdesc.length = rlength;
+        	
+			ret = bmip_ptl_md_bind(local_ni, put_mdesc, PTL_RETAIN, &put_md);
+	        	if(ret != PTL_OK)
+        		{
+                		bmip_fprintf("could not bind md", __FILE__, __func__, __LINE__);
+                		goto out;
+	        	}
+
+			offset = bmip_ex_rsp_space[i + 1];
+
+			/* invoke the put */
+	        	ret = bmip_ptl_put(put_md, PTL_ACK_REQ, target, BMIP_PTL_INDEX, 0, mb | ex_mb, offset, 0);
+        		if(ret != PTL_OK)
+        		{
+                		bmip_fprintf("could not send ex msg", __FILE__, __func__, __LINE__);
+	                	goto out;
+        		}	
+		
+			/* wait for ack */
+			bmip_wait_local_put();
+
+			/* cleanup */
+			ret = bmip_ptl_md_unlink(put_md);
+	        	if(ret != PTL_OK)
+        		{
+                		bmip_fprintf("could not send ex msg", __FILE__, __func__, __LINE__);
+                		goto out;
+	        	}	
+			put_md = PTL_HANDLE_INVALID;
+
+			cur_buffer += rlength;
+		}
+	}
+	else
+	{
+		offset = bmip_ex_rsp_space[1];
+
+		/* set the remote offset */
+		for(i = 0 ; i < num ; i++)
+		{
+        		put_mdesc.start = buffers[i];
+        		put_mdesc.length = lengths[i];
+        	
+			ret = bmip_ptl_md_bind(local_ni, put_mdesc, PTL_RETAIN, &put_md);
+	        	if(ret != PTL_OK)
+        		{
+                		bmip_fprintf("could not bind md", __FILE__, __func__, __LINE__);
+                		goto out;
+	        	}
+
+
+			/* invoke the put */
+	        	ret = bmip_ptl_put(put_md, PTL_ACK_REQ, target, BMIP_PTL_INDEX, 0, mb | ex_mb, offset, 0);
+        		if(ret != PTL_OK)
+        		{
+                		bmip_fprintf("could not send ex msg", __FILE__, __func__, __LINE__);
+	                	goto out;
+        		}	
+		
+			/* wait for ack */
+			bmip_wait_local_put();
+
+			/* cleanup */
+			ret = bmip_ptl_md_unlink(put_md);
+	        	if(ret != PTL_OK)
+        		{
+                		bmip_fprintf("could not send ex msg", __FILE__, __func__, __LINE__);
+                		goto out;
+	        	}	
+			put_md = PTL_HANDLE_INVALID;
+
+			offset += lengths[i];
+		}
 	}
 
 out:
@@ -977,7 +1150,7 @@ int bmip_client_recv(ptl_process_id_t target, int num, void ** buffers, size_t *
         put_req_mdesc.start = buffers[0];
         put_req_mdesc.length = 0;
         put_req_mdesc.threshold = 2; /* send, ack */
-        put_req_mdesc.options = PTL_MD_OP_GET | PTL_MD_MANAGE_REMOTE;
+        put_req_mdesc.options = PTL_MD_OP_PUT | PTL_MD_MANAGE_REMOTE;
 	put_req_mdesc.eq_handle = bmi_eq;
 
         ret = bmip_ptl_md_bind(local_ni, put_req_mdesc, PTL_RETAIN, &put_req_md);
@@ -1000,7 +1173,7 @@ int bmip_client_recv(ptl_process_id_t target, int num, void ** buffers, size_t *
 	}
 
 	/* send put request */
-        ret = bmip_ptl_get(put_req_md, target, BMIP_PTL_INDEX, 0, mb | ex_req_mb, 0);
+        ret = bmip_ptl_put(put_req_md, PTL_ACK_REQ, target, BMIP_PTL_INDEX, 0, mb | ex_req_mb | ex_req_get_mb, 0, num);
         if(ret != PTL_OK)
         {
                 bmip_fprintf("could not send req ex msg", __FILE__, __func__, __LINE__);
@@ -1008,7 +1181,7 @@ int bmip_client_recv(ptl_process_id_t target, int num, void ** buffers, size_t *
         }
 
 	/* wait for ack... 4 events */
-	bmip_wait_local_get();
+	bmip_wait_local_put();
 	
 	/* cleanup */
 	ret = bmip_ptl_md_unlink(put_req_md);
@@ -1021,41 +1194,171 @@ int bmip_client_recv(ptl_process_id_t target, int num, void ** buffers, size_t *
 
 	bmip_wait_remote_put();
 
-	/* set the remote offset */
-	for(i = 0 ; i < num ; i++)
+	int snum = bmip_ex_rsp_space[0];
+
+	if(snum == num)
 	{
-        	put_mdesc.start = buffers[i];
-        	put_mdesc.length = lengths[i];
+		/* set the remote offset */
+		for(i = 0 ; i < num ; i++)
+		{
+			int rlength = 0;
 
-        	ret = bmip_ptl_md_bind(local_ni, put_mdesc, PTL_RETAIN, &put_md);
-        	if(ret != PTL_OK)
-        	{
-                	bmip_fprintf("could not bind md", __FILE__, __func__, __LINE__);
-                	goto out;
-        	}
+			/* next offset and length */
+			offset = bmip_ex_rsp_space[i + 1];
+			rlength = bmip_ex_rsp_space[num + i + 1];
 
-		/* next offset */
-		offset = bmip_ex_rsp_space[i + 1];
+        		put_mdesc.start = buffers[i];
 
-		/* invoke the put */
-        	ret = bmip_ptl_get(put_md, target, BMIP_PTL_INDEX, 0, mb | ex_mb, offset);
-        	if(ret != PTL_OK)
-        	{
-                	bmip_fprintf("could not recv ex msg", __FILE__, __func__, __LINE__);
-                	goto out;
-        	}	
+			/* get the min amount of data */
+			if(rlength < lengths[i])
+			{
+        			put_mdesc.length = rlength;
+				lengths[i] = rlength;
+			}
+			else
+			{
+        			put_mdesc.length = lengths[i];
+			}
+
+        		ret = bmip_ptl_md_bind(local_ni, put_mdesc, PTL_RETAIN, &put_md);
+        		if(ret != PTL_OK)
+        		{
+                		bmip_fprintf("could not bind md", __FILE__, __func__, __LINE__);
+                		goto out;
+        		}
+
+			/* invoke the put */
+	        	ret = bmip_ptl_get(put_md, target, BMIP_PTL_INDEX, 0, mb | ex_mb, offset);
+        		if(ret != PTL_OK)
+        		{
+                		bmip_fprintf("could not recv ex msg", __FILE__, __func__, __LINE__);
+	                	goto out;
+        		}	
 	
-		/* wait for ack */
-		bmip_wait_local_get();
+			/* wait for ack */
+			bmip_wait_local_get();
+	
+			/* cleanup */
+			ret = bmip_ptl_md_unlink(put_md);
+	        	if(ret != PTL_OK)
+        		{
+                		bmip_fprintf("could not unlink recv msg md", __FILE__, __func__, __LINE__);
+                		goto out;
+	        	}	
+			put_md = PTL_HANDLE_INVALID;
+		}
+	}
+	else if(snum > num)
+	{
+		void * cur_buffer = buffers[0];
 
-		/* cleanup */
-		ret = bmip_ptl_md_unlink(put_md);
-        	if(ret != PTL_OK)
-        	{
-                	bmip_fprintf("could not unlink recv msg md", __FILE__, __func__, __LINE__);
-                	goto out;
-        	}	
-		put_md = PTL_HANDLE_INVALID;
+		/* set the remote offset */
+		for(i = 0 ; i < snum ; i++)
+		{
+			int rlength = 0;
+
+			/* next offset and length */
+			offset = bmip_ex_rsp_space[i + 1];
+			rlength = bmip_ex_rsp_space[snum + i + 1];
+
+        		put_mdesc.start = cur_buffer;
+
+			/* get the min amount of data */
+			if(rlength < lengths[0])
+			{
+				if(i == 0)
+					lengths[0] = rlength;
+				else
+					lengths[0] += rlength;
+			}
+			else
+			{
+				rlength = lengths[0];
+			}
+        		put_mdesc.length = rlength;
+
+        		ret = bmip_ptl_md_bind(local_ni, put_mdesc, PTL_RETAIN, &put_md);
+        		if(ret != PTL_OK)
+        		{
+                		bmip_fprintf("could not bind md", __FILE__, __func__, __LINE__);
+                		goto out;
+        		}
+
+			/* invoke the put */
+	        	ret = bmip_ptl_get(put_md, target, BMIP_PTL_INDEX, 0, mb | ex_mb, offset);
+        		if(ret != PTL_OK)
+        		{
+                		bmip_fprintf("could not recv ex msg", __FILE__, __func__, __LINE__);
+	                	goto out;
+        		}	
+	
+			/* wait for ack */
+			bmip_wait_local_get();
+	
+			/* cleanup */
+			ret = bmip_ptl_md_unlink(put_md);
+	        	if(ret != PTL_OK)
+        		{
+                		bmip_fprintf("could not unlink recv msg md", __FILE__, __func__, __LINE__);
+                		goto out;
+	        	}	
+			put_md = PTL_HANDLE_INVALID;
+
+			/* update the cur location into the local buffer */
+			cur_buffer += rlength;
+		}
+	}
+	else
+	{
+		offset = bmip_ex_rsp_space[1];
+		int rlength = bmip_ex_rsp_space[snum + 1];
+
+		/* set the remote offset */
+		for(i = 0 ; i < num ; i++)
+		{
+        		put_mdesc.start = buffers[i];
+
+			/* get the min amount of data */
+			if(rlength < lengths[i])
+			{
+        			put_mdesc.length = rlength;
+				lengths[i] = rlength;
+			}
+			else
+			{
+        			put_mdesc.length = lengths[i];
+			}
+
+        		ret = bmip_ptl_md_bind(local_ni, put_mdesc, PTL_RETAIN, &put_md);
+        		if(ret != PTL_OK)
+        		{
+                		bmip_fprintf("could not bind md", __FILE__, __func__, __LINE__);
+                		goto out;
+        		}
+
+			/* invoke the put */
+	        	ret = bmip_ptl_get(put_md, target, BMIP_PTL_INDEX, 0, mb | ex_mb, offset);
+        		if(ret != PTL_OK)
+        		{
+                		bmip_fprintf("could not recv ex msg", __FILE__, __func__, __LINE__);
+	                	goto out;
+        		}	
+	
+			/* wait for ack */
+			bmip_wait_local_get();
+	
+			/* cleanup */
+			ret = bmip_ptl_md_unlink(put_md);
+	        	if(ret != PTL_OK)
+        		{
+                		bmip_fprintf("could not unlink recv msg md", __FILE__, __func__, __LINE__);
+                		goto out;
+	        	}	
+			put_md = PTL_HANDLE_INVALID;
+
+			/* update the remote offset */
+			offset += lengths[i];
+		}
 	}
 
 out:
@@ -1067,7 +1370,11 @@ int bmip_server_put_local_get_req_info(void * op_, int etype)
 	bmip_portals_conn_op_t * op = (bmip_portals_conn_op_t *)op_;
 
 	/* setup the callback and params */
+#ifdef BMIP_COUNT_ALL_EVENTS 
 	op->put_fetch_req_wait_counter = 4;
+#else
+	op->put_fetch_req_wait_counter = 2;
+#endif
 	op->cur_function = bmip_server_put_local_get_req_wait;
 
 	return 0;
@@ -1076,6 +1383,7 @@ int bmip_server_put_local_get_req_info(void * op_, int etype)
 int bmip_server_put_local_get_req_wait(void * op_, int etype)
 {
 	bmip_portals_conn_op_t * op = (bmip_portals_conn_op_t *)op_;
+#ifdef BMIP_COUNT_ALL_EVENTS 
         if(etype == PTL_EVENT_SEND_START)
         {
 		op->put_fetch_req_wait_counter--;
@@ -1085,6 +1393,9 @@ int bmip_server_put_local_get_req_wait(void * op_, int etype)
 		op->put_fetch_req_wait_counter--;
         }
         else if(etype == PTL_EVENT_REPLY_START)
+#else
+        if(etype == PTL_EVENT_REPLY_START)
+#endif
         {
 		op->put_fetch_req_wait_counter--;
         }
@@ -1119,11 +1430,12 @@ int bmip_server_put_local_put_rsp_info(void * op_, int etype)
 	for(i = 1 ; i < op->num + 1 ; i++)
 	{
 		op->req_buffer[i] = op->offsets[i - 1];
+		op->req_buffer[i + op->num] = op->lengths[i - 1];
 	}
 
  	/* setup of the MDs */
 	op->mdesc.start = op->req_buffer;
-       	op->mdesc.length = sizeof(size_t) * (op->num + 1);
+       	op->mdesc.length = sizeof(size_t) * (2 * op->num + 1);
        	op->mdesc.threshold = 2; /* send, ack */
        	op->mdesc.options = PTL_MD_OP_PUT;
        	op->mdesc.eq_handle = bmi_eq;
@@ -1142,7 +1454,11 @@ int bmip_server_put_local_put_rsp_info(void * op_, int etype)
        	}
 
 	/* setup the callback and params */
+#ifdef BMIP_COUNT_ALL_EVENTS 
 	op->put_push_rsp_wait_counter = 3;
+#else
+	op->put_push_rsp_wait_counter = 1;
+#endif
 	op->cur_function = bmip_server_put_local_put_wait;
 
 	return 0;
@@ -1151,6 +1467,7 @@ int bmip_server_put_local_put_rsp_info(void * op_, int etype)
 int bmip_server_put_local_put_wait(void * op_, int etype)
 {
 	bmip_portals_conn_op_t * op = (bmip_portals_conn_op_t *)op_;
+#ifdef BMIP_COUNT_ALL_EVENTS 
         if(etype == PTL_EVENT_SEND_START)
         {
 		op->put_push_rsp_wait_counter--;
@@ -1160,6 +1477,9 @@ int bmip_server_put_local_put_wait(void * op_, int etype)
 		op->put_push_rsp_wait_counter--;
         }
         else if(etype == PTL_EVENT_ACK)
+#else
+        if(etype == PTL_EVENT_ACK)
+#endif
         {
 		op->put_push_rsp_wait_counter--;
         }
@@ -1186,7 +1506,14 @@ int bmip_server_put_remote_put(void * op_, int etype)
         }
 
 	/* setup the callback */
-	op->put_remote_put_wait_counter = 2 * (op->num);
+	if(op->num >= op->rnum)
+	{
+		op->put_remote_put_wait_counter = 2 * (op->num);
+	}
+	else
+	{
+		op->put_remote_put_wait_counter = 2 * (op->rnum);
+	}
 	op->cur_function = bmip_server_put_remote_put_wait;
 
 	return 0;
@@ -1237,7 +1564,8 @@ int bmip_server_put_cleanup(void * op_, int etype)
 	else
 	{
 		int i = 0;
-		char c = 'a';
+		char c = 'p';
+		int ret = 0;
 
 		for(i = 0 ; i < op->num ; i++)
 		{
@@ -1249,7 +1577,9 @@ int bmip_server_put_cleanup(void * op_, int etype)
 		free(op->user_buffers);
 
 		qlist_add_tail(&op->list, &bmip_done_ops);
-		write(workfds[1], &c, 1);
+		ret = write(workfds[1], &c, 1);
+		if(ret != 1)
+			fprintf(stderr, "%s:%i error... could not write to put ex pipe\n", __func__, __LINE__);
 		server_num_done++;
 	}
 
@@ -1259,6 +1589,7 @@ int bmip_server_put_cleanup(void * op_, int etype)
 int bmip_server_get_local_put_rsp_info(void * op_, int etype)
 {
 	bmip_portals_conn_op_t * op = (bmip_portals_conn_op_t *)op_;
+#ifdef BMIP_COUNT_ALL_EVENTS 
         if(etype == PTL_EVENT_SEND_START)
         {
 		op->get_local_rsp_wait_counter--;
@@ -1268,6 +1599,9 @@ int bmip_server_get_local_put_rsp_info(void * op_, int etype)
 		op->get_local_rsp_wait_counter--;
         }
         else if(etype == PTL_EVENT_ACK)
+#else
+        if(etype == PTL_EVENT_ACK)
+#endif
         {
 		op->get_local_rsp_wait_counter--;
         }
@@ -1294,7 +1628,14 @@ int bmip_server_get_remote_get(void * op_, int etype)
         }
 
 	/* setup the callback */
-	op->get_remote_get_wait_counter = 2 * op->num;
+	if(op->num >= op->rnum)
+	{
+		op->get_remote_get_wait_counter = 2 * op->num;
+	}
+	else
+	{
+		op->get_remote_get_wait_counter = 2 * op->rnum;
+	}
 	op->cur_function = bmip_server_get_remote_get_wait;
 
 	return 0;
@@ -1341,7 +1682,8 @@ int bmip_server_get_cleanup(void * op_, int etype)
 	{
 		/* copy the recv'd buffers to the user buffers */
 		int i = 0;
-		char c = 'a';
+		char c = 'g';
+		int ret = 0;
 
 		for(i = 0 ; i < op->num ; i++)
 		{
@@ -1354,7 +1696,9 @@ int bmip_server_get_cleanup(void * op_, int etype)
 		free(op->user_buffers);
 
 		qlist_add_tail(&op->list, &bmip_done_ops);
-		write(workfds[1], &c, 1);
+		ret = write(workfds[1], &c, 1);
+		if(ret != 1)
+			fprintf(stderr, "%s:%i error... could not write to get ex pipe\n", __func__, __LINE__);
 		server_num_done++;
 	}
 
@@ -1375,7 +1719,7 @@ int bmip_server_get_pending(void * op_, int etype)
 	return 0;
 }
 
-int bmip_server_put_init(void * op_, int etype)
+int bmip_server_put_init(void * op_, int etype, ptl_process_id_t pid)
 {
 	int ret = 0;
 	bmip_portals_conn_op_t * op = (bmip_portals_conn_op_t *)op_;
@@ -1386,6 +1730,7 @@ int bmip_server_put_init(void * op_, int etype)
         op->mdesc.threshold = 2; /* send, ack */
         op->mdesc.options = PTL_MD_OP_GET;
         op->mdesc.eq_handle = bmi_eq;
+	op->target = pid;
 
         ret = bmip_ptl_md_bind(local_ni, op->mdesc, PTL_RETAIN, &op->md);
         if(ret != PTL_OK)
@@ -1408,7 +1753,7 @@ int bmip_server_put_init(void * op_, int etype)
 	return 0;
 }
 
-int bmip_server_get_init(void * op_, int etype)
+int bmip_server_get_init(void * op_, int etype, ptl_process_id_t op_pid)
 {	
 	int ret = 0;
 	int i = 0;
@@ -1419,14 +1764,16 @@ int bmip_server_get_init(void * op_, int etype)
 	for(i = 1 ; i < op->num + 1 ; i++)
 	{
 		op->req_buffer[i] = op->offsets[i - 1];
+		op->req_buffer[i + op->num] = op->lengths[i - 1];
 	}
 
 	/* setup of the MDs */
 	op->mdesc.start = op->req_buffer;
-	op->mdesc.length = sizeof(size_t) * (op->num + 1);
+	op->mdesc.length = sizeof(size_t) * (2 * op->num + 1);
 	op->mdesc.threshold = 2; /* send, ack */
 	op->mdesc.options = PTL_MD_OP_PUT;
 	op->mdesc.eq_handle = bmi_eq;
+	op->target = op_pid;
 
 	ret = bmip_ptl_md_bind(local_ni, op->mdesc, PTL_RETAIN, &op->md);
 	if(ret != PTL_OK)
@@ -1442,7 +1789,11 @@ int bmip_server_get_init(void * op_, int etype)
 	}
 
 	op->cur_function = bmip_server_get_local_put_rsp_info;
+#ifdef BMIP_COUNT_ALL_EVENTS 
 	op->get_local_rsp_wait_counter = 3;
+#else
+	op->get_local_rsp_wait_counter = 1;
+#endif
 
         /* add the op the queue */
         qlist_add_tail(&op->list, &bmip_cur_ops);
@@ -1456,12 +1807,13 @@ bmip_context_t * bmip_server_post_recv(ptl_process_id_t target, int64_t match_bi
 	int i = 0;
 
 	gen_mutex_lock(&list_mutex);
-	if((cur_op = bmip_server_send_pending(target, match_bits)))
+	if((cur_op = bmip_server_send_pending(target, 0xffffffffULL & match_bits)))
 	{
 		cur_op->num = num;
 		cur_op->buffers = (void *)malloc(sizeof(void *) * num);
 		cur_op->user_buffers = (void *)malloc(sizeof(void *) * num);
 		cur_op->lengths = (size_t *)malloc(sizeof(size_t) * num);
+		cur_op->alengths = (size_t *)malloc(sizeof(size_t) * num);
 		cur_op->offsets = (size_t *)malloc(sizeof(size_t) * num);
 
 		cur_op->use_barrier = use_barrier;
@@ -1475,7 +1827,7 @@ bmip_context_t * bmip_server_post_recv(ptl_process_id_t target, int64_t match_bi
 			cur_op->lengths[i] = lengths[i];
 
 			/* this is driver allocated buffer */
-			if(cur_op->offsets[i] < BMIP_EX_SPACE)
+			if(cur_op->offsets[i] < bmip_ex_space_length)
 			{
 				cur_op->buffers[i] = buffers[i];
 				cur_op->user_buffers[i] = buffers[i]; 
@@ -1500,11 +1852,12 @@ bmip_context_t * bmip_server_post_recv(ptl_process_id_t target, int64_t match_bi
 		qlist_del(&cur_op->list);
 
 		/* init the put op */
-		bmip_server_put_init(cur_op, -1);
+		bmip_server_put_init(cur_op, -1, target);
 	}
 	else
 	{
 		cur_op = (bmip_portals_conn_op_t *)malloc(sizeof(bmip_portals_conn_op_t));
+		memset(cur_op, 0, sizeof(bmip_portals_conn_op_t));
 
 		/* setup op info */
 		cur_op->target = target;
@@ -1514,6 +1867,7 @@ bmip_context_t * bmip_server_post_recv(ptl_process_id_t target, int64_t match_bi
 		cur_op->buffers = (void *)malloc(sizeof(void *) * num);
 		cur_op->user_buffers = (void *)malloc(sizeof(void *) * num);
 		cur_op->lengths = (size_t *)malloc(sizeof(size_t) * num);
+		cur_op->alengths = (size_t *)malloc(sizeof(size_t) * num);
 		cur_op->offsets = (size_t *)malloc(sizeof(size_t) * num);
 
 		cur_op->use_barrier = use_barrier;
@@ -1527,7 +1881,7 @@ bmip_context_t * bmip_server_post_recv(ptl_process_id_t target, int64_t match_bi
                         cur_op->lengths[i] = lengths[i];
 
                         /* this is driver allocated buffer */
-                        if(cur_op->offsets[i] < BMIP_EX_SPACE)
+                        if(cur_op->offsets[i] < bmip_ex_space_length)
                         {
                                 cur_op->buffers[i] = buffers[i];
                                 cur_op->user_buffers[i] = buffers[i];
@@ -1565,10 +1919,11 @@ bmip_context_t * bmip_server_post_send(ptl_process_id_t target, int64_t match_bi
 	int i = 0;
 
 	gen_mutex_lock(&list_mutex);
-	if(!(cur_op = bmip_server_recv_pending(target, match_bits)))
+	if(!(cur_op = bmip_server_recv_pending(target, 0xffffffffULL & match_bits)))
 	{
 		cur_op = (bmip_portals_conn_op_t *)malloc(sizeof(bmip_portals_conn_op_t));
-
+		memset(cur_op, 0, sizeof(bmip_portals_conn_op_t));
+	
 		/* setup op info */
 		cur_op->target = target; 
 		cur_op->match_bits = 0xffffffffULL & match_bits;
@@ -1577,6 +1932,7 @@ bmip_context_t * bmip_server_post_send(ptl_process_id_t target, int64_t match_bi
 		cur_op->buffers = (const void *)malloc(sizeof(void *) * num);
 		cur_op->user_buffers = (const void *)malloc(sizeof(void *) * num);
 		cur_op->lengths = (size_t *)malloc(sizeof(size_t) * num);
+		cur_op->alengths = (size_t *)malloc(sizeof(size_t) * num);
 		cur_op->offsets = (size_t *)malloc(sizeof(size_t) * num);
 
 		cur_op->use_barrier = use_barrier;
@@ -1590,7 +1946,7 @@ bmip_context_t * bmip_server_post_send(ptl_process_id_t target, int64_t match_bi
                         cur_op->lengths[i] = lengths[i];
 
                         /* this is driver allocated buffer */
-                        if(cur_op->offsets[i] < BMIP_EX_SPACE)
+                        if(cur_op->offsets[i] < bmip_ex_space_length)
                         {
                                 cur_op->buffers[i] = buffers[i];
                                 cur_op->user_buffers[i] = buffers[i];
@@ -1626,6 +1982,7 @@ bmip_context_t * bmip_server_post_send(ptl_process_id_t target, int64_t match_bi
 		cur_op->buffers = (void *)malloc(sizeof(void *) * num);
 		cur_op->user_buffers = (void *)malloc(sizeof(void *) * num);
 		cur_op->lengths = (size_t *)malloc(sizeof(size_t) * num);
+		cur_op->alengths = (size_t *)malloc(sizeof(size_t) * num);
 		cur_op->offsets = (size_t *)malloc(sizeof(size_t) * num);
 
 		cur_op->num = num;
@@ -1640,7 +1997,7 @@ bmip_context_t * bmip_server_post_send(ptl_process_id_t target, int64_t match_bi
                         cur_op->lengths[i] = lengths[i];
 
                         /* this is driver allocated buffer */
-                        if(cur_op->offsets[i] < BMIP_EX_SPACE)
+                        if(cur_op->offsets[i] < bmip_ex_space_length)
                         {
                                 cur_op->buffers[i] = buffers[i];
                                 cur_op->user_buffers[i] = buffers[i];
@@ -1668,7 +2025,7 @@ bmip_context_t * bmip_server_post_send(ptl_process_id_t target, int64_t match_bi
 		qlist_del(&cur_op->list);
 
 		/* init the put op */
-		bmip_server_get_init(cur_op, -1);
+		bmip_server_get_init(cur_op, -1, target);
 	}
 	gen_mutex_unlock(&list_mutex);
 
@@ -1720,20 +2077,42 @@ int bmip_server_test_event_id(int ms_timeout, int nums, void ** user_ptrs, size_
 				scount++;
 #else
 			{
+				deadline.tv_sec = 1;
 				deadline.tv_nsec = 0;
-				deadline.tv_sec = 3600;
 				{
+					gen_mutex_lock(&sig_mutex);
+					bmip_reinit_sighandler();
 					ret = pselect(workfdmax + 1, &workfdset, NULL, NULL, &deadline, NULL);
 					if(ret > 0)
 					{
 						gen_mutex_lock(&list_mutex);
 						if(FD_ISSET(workfds[0], &workfdset))
 						{
-							char c;
-							read(workfds[0], &c, 1);
+							fprintf(stderr, "%s:%i ex event detected\n", __func__, __LINE__);
+						}
+						else if(FD_ISSET(unexworkfds[0], &workfdset))
+						{
+							fprintf(stderr, "%s:%i unex event detected\n", __func__, __LINE__);
+						}
+						else
+						{
+							fprintf(stderr, "%s:%i other event detected\n", __func__, __LINE__);
 						}
 						gen_mutex_unlock(&list_mutex);
 					}
+					else if(ret == 0)
+					{
+						fprintf(stderr, "%s:%i timeout\n", __func__, __LINE__);
+						deadline.tv_sec = 1;
+						deadline.tv_nsec = 0;
+						bmip_reinit_sighandler();
+					}
+					else
+					{
+						fprintf(stderr, "%s:%i error = %i\n", __func__, __LINE__, ret);
+						bmip_reinit_sighandler();
+					}
+					gen_mutex_unlock(&sig_mutex);
 				}
 #endif
 			}
@@ -1779,6 +2158,7 @@ int bmip_server_test_event_id(int ms_timeout, int nums, void ** user_ptrs, size_
 					/* cleanup op */
 					free(n->context);
 					free(n->lengths);
+					free(n->alengths);
 					free(n->offsets);
 					free(n->buffers);
 					free(n);
@@ -1812,11 +2192,33 @@ int bmip_server_test_events(int ms_timeout, int nums, void ** user_ptrs, size_t 
 	struct timespec deadline;
 	int l_server_num_done = 0;
 
+	/* update the counter if it is greater than zero */
+	gen_mutex_lock(&list_mutex);
+	if(server_num_done > 0)
+	{
+		int ret_ = 0;
+		char * b = NULL;
+		if(server_num_done <= nums)
+		{
+			l_server_num_done = server_num_done;
+			server_num_done = 0;
+		}
+		else
+		{
+			l_server_num_done = nums;
+			server_num_done -= nums;
+		}
+		b = malloc(l_server_num_done);
+		ret_ = read(workfds[0], b, l_server_num_done);
+		free(b);
+	}
+	gen_mutex_unlock(&list_mutex);
+
 	/* issue the timed wait */
 	while(firstpass >= 0)
 	{
 		/* if not the first pass, wait for timeout before scanning list */
-		if(firstpass == 0 && ms_timeout != 0)
+		if(firstpass == 0 && ms_timeout != 0 && l_server_num_done == 0)
 		{
 #ifdef BMIP_SPIN_WAIT
 			int scount = 0;
@@ -1838,40 +2240,53 @@ int bmip_server_test_events(int ms_timeout, int nums, void ** user_ptrs, size_t 
 				scount++;
 #else
 			{
+				deadline.tv_sec = 1;
 				deadline.tv_nsec = 0;
-				deadline.tv_sec = 3600;
 				{
+					gen_mutex_lock(&sig_mutex);
+					bmip_reinit_sighandler();
 					ret = pselect(workfdmax + 1, &workfdset, NULL, NULL, &deadline, NULL);
-					if(ret > 0)
+					if(ret == 0)
 					{
-						gen_mutex_lock(&list_mutex);
-						if(FD_ISSET(workfds[0], &workfdset))
-						{
-							char c;
-							read(workfds[0], &c, 1);
-						}
-						gen_mutex_unlock(&list_mutex);
+						deadline.tv_sec = 1;
+						deadline.tv_nsec = 0;
+						bmip_reinit_sighandler();
 					}
+					else if(ret < 0)
+					{
+						fprintf(stderr, "%s:%i test events pselect() error, ret = %i\n", __func__, __LINE__, ret);
+						bmip_reinit_sighandler();
+					}
+					gen_mutex_unlock(&sig_mutex);
 				}
 #endif
 			}
 		}
 		firstpass--;
 
-		/* check the counter one last time */
-		gen_mutex_lock(&list_mutex);
-
 		/* update the counter if it is greater than zero */
-		if(server_num_done > 0)
-			l_server_num_done = server_num_done;
-
-		gen_mutex_unlock(&list_mutex);
+		gen_mutex_lock(&list_mutex);
+		if(server_num_done > 0 && l_server_num_done == 0)
+		{
+                	char * b = NULL;
+			int ret_ = 0;
+			if(server_num_done <= nums)
+			{
+				l_server_num_done = server_num_done;
+				server_num_done = 0;
+			}
+			else
+			{
+				l_server_num_done = nums;
+				server_num_done -= nums;
+			}
+                	b = malloc(l_server_num_done);
+			ret_ = read(workfds[0], b, l_server_num_done);
+                	free(b);
+		}
 
 		if(l_server_num_done > 0)
 		{
-			/* protect the list */
-			gen_mutex_lock(&list_mutex);
-
 			/* check the done lists */
 			bmip_portals_conn_op_t * n = NULL, * nsafe = NULL;
 			qlist_for_each_entry_safe(n, nsafe, &bmip_done_ops, list)
@@ -1893,25 +2308,22 @@ int bmip_server_test_events(int ms_timeout, int nums, void ** user_ptrs, size_t 
 				/* cleanup op */
 				free(n->context);
 				free(n->lengths);
+				free(n->alengths);
 				free(n->offsets);
 				free(n->buffers);
 				free(n);
 
 				/* if we hit the list storage limit, break from the loop */
-				if(num == nums)
+				if(num == l_server_num_done)
 					break;
 			}
+		}
+		gen_mutex_unlock(&list_mutex);
 
-			/* reset the num done counter */	
-			server_num_done -= num; 
-
-			/* unlock the list lock */
-			gen_mutex_unlock(&list_mutex);
-
-			if(num > 0)
-			{
-				break;
-			}
+		/* break the loop if we found results */
+		if(num > 0)
+		{
+			break;
 		}
 	}
 
@@ -1927,29 +2339,33 @@ int bmip_server_test_unex_events(int ms_timeout, int nums, void ** umsgs, size_t
 	struct timespec deadline;
 	int l_server_num_done = 0;
 
-	if(ms_timeout > 0)
+	/* update the counter if it is greater than zero */
+	gen_mutex_lock(&list_mutex);
+	if(server_num_unex_done > 0)
 	{
-		/* get the current time */
-		clock_gettime(CLOCK_REALTIME, &deadline);
-	
-		/* update the deadline with the timeout */
-		deadline.tv_nsec += (ms_timeout * 1000000);
-
-		if(deadline.tv_nsec > 1000000000)
+        	char * b = NULL;
+		int ret_ = 0;
+		if(server_num_unex_done < nums)
 		{
-			time_t s = deadline.tv_nsec / 1000000000;
-			long sr = deadline.tv_nsec % 1000000000;
-
-			deadline.tv_sec += s;
-			deadline.tv_nsec = sr;
+        		l_server_num_done = server_num_unex_done;
+			server_num_unex_done = 0;
 		}
+		else
+		{
+        		l_server_num_done = nums;
+			server_num_unex_done -= nums;
+		}
+        	b = malloc(l_server_num_done);
+        	ret_ = read(unexworkfds[0], b, l_server_num_done);
+        	free(b);
 	}
+	gen_mutex_unlock(&list_mutex);
 
 	/* issue the timed wait */
 	while(firstpass >= 0)
 	{
 		/* if not the first pass, wait for timeout before scanning list */
-		if(firstpass == 0 && ms_timeout != 0)
+		if(firstpass == 0 && ms_timeout != 0 && l_server_num_done == 0)
 		{
 #ifdef BMIP_SPIN_WAIT
                         int scount = 0;
@@ -1972,38 +2388,45 @@ int bmip_server_test_unex_events(int ms_timeout, int nums, void ** umsgs, size_t
 #else
                         {
                                 deadline.tv_nsec = 0;
-                                deadline.tv_sec = 3600;
+                                deadline.tv_sec = 0;
                                 {
-                                        ret = pselect(unexworkfdmax + 1, &unexworkfdset, NULL, NULL, &deadline, NULL);
-                                        if(ret > 0)
-                                        {
-                                                gen_mutex_lock(&list_mutex);
-                                                if(FD_ISSET(unexworkfds[0], &unexworkfdset))
-                                                {
-                                                        char c;
-                                                        read(unexworkfds[0], &c, 1);
-                                                }
-                                                gen_mutex_unlock(&list_mutex);
-                                        }
+                                        gen_mutex_lock(&sig_mutex);
+					bmip_reinit_sighandler();
+                                        ret = pselect(workfdmax + 1, &workfdset, NULL, NULL, &deadline, NULL);
+					if(ret <= 0)	
+					{
+						bmip_reinit_sighandler();
+					}
+                                        gen_mutex_unlock(&sig_mutex);
                                 }
 #endif
 			}
 		}
 		firstpass--;
 
-		/* check the counter one last time */
-		gen_mutex_lock(&list_mutex);
-
 		/* update the counter if it is greater than zero */
-		if(server_num_unex_done > 0)
-			l_server_num_done = server_num_unex_done;
+		gen_mutex_lock(&list_mutex);
+		if(server_num_unex_done > 0 && l_server_num_done == 0)
+		{
+			int ret_ = 0;
+                	char * b = NULL;
+			if(server_num_unex_done <= nums)
+			{
+				l_server_num_done = server_num_unex_done;
+				server_num_unex_done = 0;
+			}
+			else
+			{
+				l_server_num_done = nums;
+				server_num_unex_done -= nums;
+			}
+                	b = malloc(l_server_num_done);
+                	ret_ = read(unexworkfds[0], b, l_server_num_done);
+                	free(b);
+		}
 
-		gen_mutex_unlock(&list_mutex);
 		if(l_server_num_done > 0)
 		{
-			/* protect the list */
-			gen_mutex_lock(&list_mutex);
-
 			/* check the done lists */
 			bmip_portals_conn_op_t * n = NULL, * nsafe = NULL;
 			qlist_for_each_entry_safe(n, nsafe, &bmip_unex_done, list)
@@ -2023,38 +2446,30 @@ int bmip_server_test_unex_events(int ms_timeout, int nums, void ** umsgs, size_t
 				num++;
 
 				/* if we hit the list storage limit, break from the loop */
-				if(num == nums)
+				if(num == l_server_num_done)
 					break;
 			}
+		}
 
-			/* reset the num done counter */	
-			server_num_unex_done -= num; 
+		gen_mutex_unlock(&list_mutex);
 
-			/* unlock the list lock */
-			gen_mutex_unlock(&list_mutex);
-
-			if(num > 0)
-			{
-				break;
-			}
+		if(num > 0)
+		{
+			break;
 		}
 	}
-
 	return num;
 }
 
 int bmip_server_unex_cleanup(void * op_, int etype)
 {
-	char c;
+	char c='u';
 	int ret = 0;
 	bmip_portals_conn_op_t * op = (bmip_portals_conn_op_t *)op_;
 
 	/* delete list from pending queue and it to the done queue */
 	qlist_del(&op->list);
 	qlist_add_tail(&op->list, &bmip_unex_done);
-
-	/* update the count */
-	server_num_unex_done++;
 
 	 /* unlink the request */
         ret = bmip_ptl_md_unlink(op->md);
@@ -2064,7 +2479,12 @@ int bmip_server_unex_cleanup(void * op_, int etype)
 	}
 
 	/* notify */
-	write(unexworkfds[1], &c, 1);
+	ret = write(unexworkfds[1], &c, 1);
+	if(ret != 1)
+		fprintf(stderr, "%s:%i error... could not write to unex pipe\n", __func__, __LINE__);
+
+	/* update the count */
+	server_num_unex_done++;
 
 	return 0;
 }
@@ -2073,6 +2493,7 @@ int bmip_server_unex_wait(void * op_, int etype)
 {
 	bmip_portals_conn_op_t * op = (bmip_portals_conn_op_t *)op_;
 
+#ifdef BMIP_COUNT_ALL_EVENTS 
         if(etype == PTL_EVENT_SEND_START)
         {
 		op->unex_wait_counter--;
@@ -2082,6 +2503,9 @@ int bmip_server_unex_wait(void * op_, int etype)
 		op->unex_wait_counter--;
         }
         else if(etype == PTL_EVENT_REPLY_START)
+#else
+        if(etype == PTL_EVENT_REPLY_START)
+#endif
         {
 		op->unex_wait_counter--;
         }
@@ -2123,7 +2547,11 @@ int bmip_server_unex_pending(void * op_, int etype)
         }
 
         /* set the callback */
+#ifdef BMIP_COUNT_ALL_EVENTS 
 	op->unex_wait_counter = 4;
+#else
+	op->unex_wait_counter = 2;
+#endif
 	op->cur_function = bmip_server_unex_wait;
 
 	return 0;
@@ -2134,7 +2562,23 @@ void * bmip_server_monitor(void * args)
 	int ret = PTL_OK;
 	int etype = 0;
 	int icount = 0;
+	cpu_set_t cpuset;
+	int s = 0;
+	pthread_t thisThread;
+      
+#if 0 
+	/* get the the thread ID */ 
+	thisThread = pthread_self();
 
+	/* set the thread affinity to core 0 */
+	CPU_ZERO(&cpuset);
+        CPU_SET(0, &cpuset);
+        s = pthread_setaffinity_np(thisThread, sizeof(cpu_set_t), &cpuset);
+        if (s != 0)
+		fprintf(stderr, "%s:%i could not set the thread affinity\n", __func__, __LINE__);
+#endif
+
+	/* run the monitor */
 	for(;;)
 	{
 		ptl_event_t ev;
@@ -2150,12 +2594,13 @@ void * bmip_server_monitor(void * args)
 		if(icount % 2 == 0)
 		{
 			etype = bmip_wait_ex_event(&ev);
+			icount = 1;
 		}
 		else
 		{
 			etype = bmip_wait_unex_event(&ev);
+			icount = 0;
 		}
-		icount++;
 
 		if(etype < 0)
 			continue;
@@ -2165,13 +2610,14 @@ void * bmip_server_monitor(void * args)
 		/* check if the message is an unexpected */
 		if(ev.match_bits & unex_mb)
 		{
-			if(!(op = bmip_unex_op_in_progress(0xffffffffULL & ev.match_bits)))
+			if(!(op = bmip_unex_op_in_progress(0xffffffffULL & ev.match_bits, ev.initiator)))
 			{
 				/* end of the unex msg */
 				if(etype == PTL_EVENT_PUT_END)
 				{
 					/* create a new operation */
 					bmip_portals_conn_op_t * cur_op = (bmip_portals_conn_op_t *)malloc(sizeof(bmip_portals_conn_op_t));
+					memset(cur_op, 0, sizeof(bmip_portals_conn_op_t));
 
 					/* create the unex msg space */
 					cur_op->unex_msg_len = (size_t)ev.hdr_data;
@@ -2196,10 +2642,10 @@ void * bmip_server_monitor(void * args)
 		else
 		{
 		/* if this event is not currently in progress, start to track it */
-		if(!(op = bmip_op_in_progress(0xffffffffULL & ev.match_bits)))
+		if(!(op = bmip_op_in_progress(0xffffffffULL & ev.match_bits, ev.initiator)))
 		{
 			/* this is a server recv */
-			if(etype == PTL_EVENT_PUT_END)
+			if(etype == PTL_EVENT_PUT_END && (ev.match_bits & ex_req_put_mb))
 			{
 				/* if request message */
 				if(ev.match_bits & ex_req_mb)
@@ -2212,17 +2658,21 @@ void * bmip_server_monitor(void * args)
 						/* remove the op from the pending send list */
 						qlist_del(&cur_op->list);
  
+						cur_op->rnum = (int)ev.hdr_data;
+
 						/* init the put op */
-						bmip_server_put_init(cur_op, etype);
+						bmip_server_put_init(cur_op, etype, ev.initiator);
 					}
 					/* op not request yet... queue the client response until the server requests */
 					else
 					{
 						cur_op = (bmip_portals_conn_op_t *)malloc(sizeof(bmip_portals_conn_op_t));
+						memset(cur_op, 0, sizeof(bmip_portals_conn_op_t));
 
 						/* setup op info */
 						cur_op->target = ev.initiator;
 						cur_op->match_bits = 0xffffffffULL & ev.match_bits;
+						cur_op->rnum = (int)ev.hdr_data;
 
 						/* set the callback */
 						bmip_server_put_pending(cur_op, etype);
@@ -2234,7 +2684,7 @@ void * bmip_server_monitor(void * args)
 			}
 
 			/* this is a server recv */
-			else if(etype == PTL_EVENT_GET_END)
+			else if(etype == PTL_EVENT_PUT_END && (ev.match_bits & ex_req_get_mb))
 			{
 				/* if request message */
                         	if(ev.match_bits & ex_req_mb)
@@ -2247,17 +2697,21 @@ void * bmip_server_monitor(void * args)
                                                 /* remove the op from the pending send list */
                                                 qlist_del(&cur_op->list);
 
+						cur_op->rnum = (int)ev.hdr_data;
+
                                                 /* init the put op */
-                                                bmip_server_get_init(cur_op, etype);
+                                                bmip_server_get_init(cur_op, etype, ev.initiator);
                                         }
                                         /* op not request yet... queue the client response until the server requests */
                                         else
                                         {
                                                 cur_op = (bmip_portals_conn_op_t *)malloc(sizeof(bmip_portals_conn_op_t));
+						memset(cur_op, 0, sizeof(bmip_portals_conn_op_t));
 
                                                 /* setup op info */
                                                 cur_op->target = ev.initiator;
                                                 cur_op->match_bits = 0xffffffffULL & ev.match_bits;
+						cur_op->rnum = (int)ev.hdr_data;
 
                                                 /* set the callback */
                                                 bmip_server_get_pending(cur_op, etype);
@@ -2285,10 +2739,20 @@ out:
 
 void * bmip_new_malloc(size_t length)
 {
-	return bmip_data_get(length);
+	void * mem = NULL;
+	mem = bmip_data_get(length);
+	if(mem >= bmip_ex_space && mem <= bmip_ex_space_end && (mem + length) <= bmip_ex_space_end)
+		return mem;
+	else
+		fprintf(stderr, "%s:%i invalid mem = %p length = %i\n", __func__, __LINE__, mem, length);
+	return mem;
 }
 
 void bmip_new_free(void * mem)
 {
-	bmip_data_release(mem);
+	if(mem >= bmip_ex_space && mem <= bmip_ex_space_end)
+		bmip_data_release(mem);
+	else
+		fprintf(stderr, "%s:%i invalid mem = %p\n", __func__, __LINE__, mem);
+	return;
 }

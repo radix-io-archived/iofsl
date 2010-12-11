@@ -12,19 +12,68 @@
 #include "src/io/bmi/bmi.h"
 #include "src/io/bmi/bmi-method-support.h"
 
+/* bmi mode */
 #define CLIENT 0
 #define SERVER 1
 
+#define BMIP_CLONE
+
+#ifdef BMIP_CLONE
+static int client_clone_mode = 1;
+#else
+static int client_clone_mode = 0;
+#endif
+
+/* thread info */
 static pthread_t bmip_monitor_thread;
 
+/* portals id info */
 static int portals_node_type;
 int portals_method_id;
+
+/* clone stack data */
+#define BMIP_CLONE_STACK_SIZE 262144 
+static char clone_stack[BMIP_CLONE_STACK_SIZE];
+static char * clone_stack_top = &clone_stack[BMIP_CLONE_STACK_SIZE - 1];
+static pid_t client_clone_pid = 0;
 
 /* list of portals addrs */
 static QLIST_HEAD(bmip_addr_list);
 
 /* lock for accessing the addr list */
-static gen_mutex_t bmip_addr_list_mutex = GEN_MUTEX_INITIALIZER;
+static gen_mutex_t addr_lock = GEN_MUTEX_INITIALIZER;
+static gen_mutex_t server_lock = GEN_MUTEX_INITIALIZER;
+
+/* delegate data */
+static ptl_process_id_t bmip_delegate_pid = {.pid = 0, .nid = 0};
+static void * bmip_delegate_buffer = NULL;
+static size_t bmip_delegate_size = 0;
+static int64_t bmip_delegate_tag = 0;
+static int bmip_delegate_ret = 0;
+static int bmip_delegate_list_count = 0;
+static void ** bmip_delegate_buffer_list = NULL;
+static size_t * bmip_delegate_size_list = NULL;
+static int bmip_client_shutdown = 0;
+
+typedef enum
+{
+	BMIP_UNKNOWN = 0,
+	BMIP_POSTSEND,
+	BMIP_POSTSENDLIST,
+	BMIP_POSTSENDUNEX,
+	BMIP_POSTRECV,
+	BMIP_POSTRECVLIST,
+	BMIP_FINALIZE,
+} bmip_client_op_t;
+
+bmip_client_op_t bmip_client_op_type = BMIP_UNKNOWN; 
+
+static void BMI_portals_client_post_send(void);
+static void BMI_portals_client_post_send_list(void);
+static void BMI_portals_client_post_sendunexpected(void);
+static void BMI_portals_client_post_recv(void);
+static void BMI_portals_client_post_recv_list(void);
+static void BMI_portals_client_finalize(void);
 
 /* container for portals specific addr info */
 typedef struct portals_addr
@@ -35,12 +84,43 @@ typedef struct portals_addr
 	bmi_method_addr_p p_addr;
 } portals_addr_t;
 
-static int
-BMI_portals_initialize(bmi_method_addr_p listen_addr, int method_id,
-			int init_flags)
+static int bmip_is_clone = 0;
+pthread_barrier_t bmip_comm_bar;
+pthread_barrierattr_t bmi_comm_bar_attr;
+
+int bmip_comm_barrier_init(void)
 {
-	portals_node_type = (init_flags & BMI_INIT_SERVER) ? SERVER : CLIENT;
-	portals_method_id = method_id;
+	int ret = 0;
+    	ret = pthread_barrierattr_setpshared(&bmi_comm_bar_attr, PTHREAD_PROCESS_SHARED);
+    	if(ret == -1)
+    	{
+        	perror("could not set barrier attr\n");
+    	}
+    	pthread_barrier_init(&bmip_comm_bar, &bmi_comm_bar_attr, 2);
+    	return 0;
+}
+
+int bmip_comm_barrier_destroy(void)
+{
+    return pthread_barrier_destroy(&bmip_comm_bar);
+}
+
+int bmip_comm_barrier(void)
+{
+	int ret = 0;
+	ret = pthread_barrier_wait(&bmip_comm_bar);
+
+	if(ret != PTHREAD_BARRIER_SERIAL_THREAD && ret != 0)
+	{
+        	perror("could not wait at barrier\n");
+	}
+    	return ret;
+}
+
+int bmip_client_clone_init(void * args)
+{
+	bmip_is_clone = 1;
+	bmi_method_addr_p listen_addr = (bmi_method_addr_p)args;
 
 	/* if we have the addr */
 	if(listen_addr)
@@ -53,19 +133,101 @@ BMI_portals_initialize(bmi_method_addr_p listen_addr, int method_id,
 	else
 	{
 		/* init the bmip layer */
-		bmip_init(312);
+		bmip_init(303);
 	}
 
+	/* setup the eq lists */
+	bmip_setup_eqs(0);
+
+	bmip_comm_barrier();
+
+	/* wait for work */
+	while(!bmip_client_shutdown)
+	{
+		/* wait for the bmi caller to signal */
+		bmip_comm_barrier();
+
+		/* delegate the bmi call */
+		switch(bmip_client_op_type)
+		{
+			case BMIP_POSTSEND:
+				BMI_portals_client_post_send();
+				break;
+			case BMIP_POSTSENDLIST:
+				BMI_portals_client_post_send_list();
+				break;
+			case BMIP_POSTSENDUNEX:
+				BMI_portals_client_post_sendunexpected();
+				break;
+			case BMIP_POSTRECV:
+				BMI_portals_client_post_recv();
+				break;
+			case BMIP_POSTRECVLIST:
+				BMI_portals_client_post_recv_list();
+				break;
+			case BMIP_FINALIZE:
+				BMI_portals_client_finalize();
+				bmip_client_shutdown = 1;
+				break;
+			default:
+				break;
+		};
+
+		/* signal the caller */
+		bmip_comm_barrier();
+	}
+
+	return 0;
+}
+
+static int
+BMI_portals_initialize(bmi_method_addr_p listen_addr, int method_id,
+			int init_flags)
+{
+	portals_node_type = (init_flags & BMI_INIT_SERVER) ? SERVER : CLIENT;
+	portals_method_id = method_id;
+
+	if(portals_node_type == SERVER || (!client_clone_mode && portals_node_type == CLIENT) )
+	{
+		/* if we have the addr */
+		if(listen_addr)
+		{
+			portals_addr_t * a = ((portals_addr_t *)listen_addr->method_data);
+	
+			/* init the bmip layer */
+			bmip_init(a->pid.pid);
+		}
+		else
+		{
+			/* init the bmip layer */
+			bmip_init(303);
+		}	
+	}
 
 	/* setup the eq lists */
-	bmip_setup_eqs();
+	if(portals_node_type == SERVER)
+		bmip_setup_eqs(1);
+	else
+		bmip_setup_eqs(0);
 
 	if(portals_node_type == SERVER)
 	{
 		pthread_create(&bmip_monitor_thread, NULL, bmip_server_monitor, NULL);
 	}
+	else if(portals_node_type == CLIENT)
+	{
+		bmip_comm_barrier_init();
+#ifdef BMIP_CLONE
+		//client_clone_pid = clone(bmip_client_clone_init, clone_stack_top, CLONE_THREAD|CLONE_FILES|CLONE_SIGHAND|CLONE_VM, listen_addr);
+		client_clone_pid = clone(bmip_client_clone_init, clone_stack_top, CLONE_THREAD|CLONE_SIGHAND|CLONE_VM, listen_addr);
+		bmip_comm_barrier();
+#endif
+	}
 
-	fprintf(stderr, "%s:%i nid = %i pid = %i\n", __func__, __LINE__, bmip_get_ptl_nid(), bmip_get_ptl_pid());
+	if(portals_node_type == SERVER || (!client_clone_mode && portals_node_type == CLIENT))
+	{
+		fprintf(stderr, "%s:%i nid = %i pid = %i\n", __func__, __LINE__, bmip_get_ptl_nid(), bmip_get_ptl_pid());
+	}
 
 	return 0;
 }
@@ -74,11 +236,33 @@ BMI_portals_initialize(bmi_method_addr_p listen_addr, int method_id,
 static int
 BMI_portals_finalize(void)
 {
-	bmip_dest_eqs();
-
-	bmip_finalize();
+	if(portals_node_type == SERVER)
+	{
+		bmip_dest_eqs();
+		bmip_finalize();
+		return 0;
+	}
+	else if(portals_node_type == CLIENT && !bmip_is_clone)
+	{
+		bmip_client_op_type = BMIP_FINALIZE;
+		bmip_delegate_ret = 0;
+		bmip_comm_barrier();
+		bmip_comm_barrier();
+		return bmip_delegate_ret;
+	}
 
 	return 0;
+}
+
+static void
+BMI_portals_client_finalize(void)
+{
+	if(bmip_is_clone && portals_node_type == CLIENT)
+	{
+		bmip_dest_eqs();
+		bmip_finalize();
+		bmip_delegate_ret = 0;
+	}
 }
 
 /* Invoked on BMI_set_info.  The only important case seems to be an internal
@@ -90,11 +274,15 @@ BMI_portals_set_info(int option, void* inout_parameter)
 	{
 		case BMI_DROP_ADDR:
 		{
+			gen_mutex_lock(&addr_lock);
 			bmi_method_addr_p addr = (bmi_method_addr_p)inout_parameter;
 			portals_addr_t * a = (portals_addr_t *)addr->method_data;
 
+			fprintf(stderr, "%s:%i drop portals addr = %s\n", __func__, __LINE__, a->hostname);
+
 			/* remove from the list */
 			qlist_del(&a->list);
+			gen_mutex_unlock(&addr_lock);
 
 			/* cleanup */
 			//free(a->hostname);
@@ -198,10 +386,27 @@ BMI_portals_post_send(bmi_op_id_t* id, bmi_method_addr_p dest,
 	}
 	else
 	{
-		bmip_client_send(((portals_addr_t *)dest->method_data)->pid, 1, &buffer, (size_t *)&size, (int64_t)tag);
-		return 1;
+		/* delegate data */
+		bmip_delegate_pid = ((portals_addr_t *)dest->method_data)->pid;
+		bmip_delegate_buffer = buffer;
+		bmip_delegate_size = size;
+		bmip_delegate_tag = tag;
+		bmip_delegate_ret = 0;
+		bmip_client_op_type = BMIP_POSTSEND;
+
+		bmip_comm_barrier();
+		bmip_comm_barrier();
+
+		return bmip_delegate_ret;
 	}
 	return -1;
+}
+
+static void 
+BMI_portals_client_post_send(void)
+{
+	bmip_client_send(bmip_delegate_pid, 1, &bmip_delegate_buffer, (size_t *)&bmip_delegate_size, (int64_t)bmip_delegate_tag);
+	bmip_delegate_ret = 1;
 }
 
 /* Invoked on BMI_post_sendunexpected.  We only support it on clients.  */
@@ -215,10 +420,26 @@ BMI_portals_post_sendunexpected(bmi_op_id_t* id, bmi_method_addr_p dest,
 	int ret = 0;
 	if(portals_node_type == CLIENT)
 	{
-		bmip_client_unex_send(((portals_addr_t *)dest->method_data)->pid, 1, (void *)buffer, (size_t)size, (int64_t)tag);
-		return 1;
+		bmip_delegate_pid = ((portals_addr_t *)dest->method_data)->pid;
+		bmip_delegate_buffer = buffer;
+		bmip_delegate_size = size;
+		bmip_delegate_tag = tag;
+		bmip_delegate_ret = 0;
+		bmip_client_op_type = BMIP_POSTSENDUNEX;
+
+		bmip_comm_barrier();
+		bmip_comm_barrier();
+
+		return bmip_delegate_ret;
 	}
 	return -1;
+}
+
+static void
+BMI_portals_client_post_sendunexpected(void)
+{
+	bmip_client_unex_send(bmip_delegate_pid, 1, bmip_delegate_buffer, bmip_delegate_size, bmip_delegate_tag);
+	bmip_delegate_ret = 1;
 }
 
 /* Invoked on BMI_post_recv.  */
@@ -244,10 +465,28 @@ BMI_portals_post_recv(bmi_op_id_t* id, bmi_method_addr_p src, void* buffer,
 	}
 	else
 	{
-		bmip_client_recv(((portals_addr_t *)src->method_data)->pid, 1, (void **)&buffer, (size_t *)&expected_size, (int64_t)tag);
-		return 1;
+		bmip_delegate_pid = ((portals_addr_t *)src->method_data)->pid;
+		bmip_delegate_buffer = buffer;
+		bmip_delegate_size = expected_size;
+		bmip_delegate_tag = tag;
+		bmip_delegate_ret = 0;
+		bmip_client_op_type = BMIP_POSTRECV;
+
+		bmip_comm_barrier();
+		bmip_comm_barrier();
+
+		*actual_size = bmip_delegate_size;
+
+		return bmip_delegate_ret;
 	}
 	return -1;
+}
+
+static void
+BMI_portals_client_post_recv(void)
+{
+	bmip_client_recv(bmip_delegate_pid, 1, (void **)&bmip_delegate_buffer, (size_t *)&bmip_delegate_size, (int64_t)bmip_delegate_tag);
+	bmip_delegate_ret = 1;
 }
 
 /* Invoked on BMI_post_test.  */
@@ -351,6 +590,7 @@ bmi_method_addr_p bmip_lookup_addr(ptl_process_id_t pid)
 	sprintf(&id[0], "portals://nid%05i:%03i\n", pid.nid, pid.pid);
 	
 	/* scan the list of known addrs for this addr */
+	gen_mutex_lock(&addr_lock);
 	qlist_for_each_entry_safe(a, n_a, &bmip_addr_list, list)
 	{
 			/* if we found a match */
@@ -366,6 +606,7 @@ bmi_method_addr_p bmip_lookup_addr(ptl_process_id_t pid)
 	{
 		if(!(addr = bmi_alloc_method_addr(portals_method_id, sizeof(portals_addr_t))))
 		{
+				gen_mutex_unlock(&addr_lock);
 				return NULL;
 		}
 
@@ -387,6 +628,7 @@ bmi_method_addr_p bmip_lookup_addr(ptl_process_id_t pid)
 		addr = a->p_addr;
 	}
 
+	gen_mutex_unlock(&addr_lock);
 	return addr;
 }
 
@@ -443,7 +685,7 @@ BMI_portals_method_addr_lookup(const char * id)
 	bmi_method_addr_p addr = NULL;
 	portals_addr_t * a = NULL, * n_a = NULL;
 
-	fprintf(stderr, "%s:%i id = %s\n", __func__, __LINE__, id);
+	//fprintf(stderr, "%s:%i id = %s\n", __func__, __LINE__, id);
 
 	/* portals://nid00000:000 */
 
@@ -452,6 +694,7 @@ BMI_portals_method_addr_lookup(const char * id)
 		return NULL;
 
 	/* scan the list of known addrs for this addr */
+	gen_mutex_lock(&addr_lock);
 	qlist_for_each_entry_safe(a, n_a, &bmip_addr_list, list)
 	{
 		/* if we found a match */
@@ -467,7 +710,10 @@ BMI_portals_method_addr_lookup(const char * id)
 	{
 		if(!(addr = bmi_alloc_method_addr(portals_method_id,
 						   sizeof(portals_addr_t))))
+		{
+			gen_mutex_unlock(&addr_lock);
 			return NULL;
+		}
 
 		char nid[6];
 		char pid[4];
@@ -495,6 +741,7 @@ BMI_portals_method_addr_lookup(const char * id)
 	{
 		fprintf(stderr, "%s:%i not found\n", __func__, __LINE__);
 	}
+	gen_mutex_unlock(&addr_lock);
 
 	return addr;
 }
@@ -518,10 +765,27 @@ BMI_portals_post_send_list(bmi_op_id_t* id, bmi_method_addr_p dest,
 	}
 	else
 	{
-		bmip_client_send(((portals_addr_t *)dest->method_data)->pid, list_count, (void **)buffer_list, (size_t *)size_list, (int64_t)tag);
-		return 1;
+		bmip_delegate_pid = ((portals_addr_t *)dest->method_data)->pid;
+		bmip_delegate_list_count = list_count;
+		bmip_delegate_buffer_list = buffer_list;
+		bmip_delegate_size_list = size_list;
+		bmip_delegate_tag = tag;
+		bmip_delegate_ret = 0;
+		bmip_client_op_type = BMIP_POSTSENDLIST;
+
+		bmip_comm_barrier();
+		bmip_comm_barrier();
+
+		return bmip_delegate_ret;
 	}
 	return -1;
+}
+
+static void
+BMI_portals_client_post_send_list(void)
+{
+	bmip_client_send(bmip_delegate_pid, bmip_delegate_list_count, (void **)bmip_delegate_buffer_list, (size_t *)bmip_delegate_size_list, (int64_t)bmip_delegate_tag);
+	bmip_delegate_ret = 1;
 }
 
 /* Invoked on BMI_post_recv_list.  */
@@ -545,11 +809,29 @@ BMI_portals_post_recv_list(bmi_op_id_t* id, bmi_method_addr_p src,
 	}
 	else
 	{
-		bmip_client_recv(((portals_addr_t *)src->method_data)->pid, list_count, (void **)buffer_list, (size_t *)size_list, (int64_t)tag);
+                bmip_delegate_pid = ((portals_addr_t *)src->method_data)->pid;
+                bmip_delegate_list_count = list_count;
+                bmip_delegate_buffer_list = buffer_list;
+                bmip_delegate_size_list = size_list;
+                bmip_delegate_tag = tag;
+                bmip_delegate_ret = 0;
+		bmip_client_op_type = BMIP_POSTRECVLIST;
+
+		bmip_comm_barrier();
+		bmip_comm_barrier();
+
 		*total_actual_size = total_expected_size;
-		return 1;
+
+		return bmip_delegate_ret;
 	}
 	return -1;
+}
+
+static void
+BMI_portals_client_post_recv_list(void)
+{
+        bmip_client_recv(bmip_delegate_pid, bmip_delegate_list_count, (void **)bmip_delegate_buffer_list, (size_t *)bmip_delegate_size_list, (int64_t)bmip_delegate_tag);
+        bmip_delegate_ret = 1;
 }
 
 static int
