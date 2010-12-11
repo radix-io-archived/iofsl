@@ -22,7 +22,6 @@
 #include <pthread.h>
 
 #include "zoidfs/client/zoidfsclient.h"
-#include "zoidfs/client/router/zoidfsrouter.h"
 
 static char *ion_name;
 static BMI_addr_t * peer_addr = NULL;
