@@ -1,7 +1,7 @@
 #ifndef SRC_ZOIDFS_HINTS_ZOIDFS_HINTS_C
 #define SRC_ZOIDFS_HINTS_ZOIDFS_HINTS_C
 
-#include "zoidfs/zoidfs.h"
+#include "zoidfs.h"
 
 #ifdef __cplusplus
 /*
