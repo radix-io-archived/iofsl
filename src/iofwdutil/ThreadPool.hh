@@ -3,6 +3,7 @@
 
 #include <queue>
 #include <vector>
+#include <stack>
 #include <boost/function.hpp>
 #include <boost/bind.hpp>
 #include <boost/thread/thread.hpp>
@@ -12,6 +13,8 @@
 #include <boost/thread/barrier.hpp>
 
 #include "iofwdutil/Singleton.hh"
+
+#define CRAY_TP_CORE_MAX 12
 
 /*
     generic thread pool for the entire app
@@ -144,7 +147,7 @@ class ThreadPool : public Singleton< ThreadPool >
                     boost::thread t (func);
 #else
                     high_active_threads_++;
-                    IOFWDThread * wt = tpgroup_.front();
+                    IOFWDThread * wt = tpgroup_.top();
                     tpgroup_.pop();
                     lock.unlock();
                     wt->setPrio(prio);
@@ -170,7 +173,7 @@ class ThreadPool : public Singleton< ThreadPool >
                     boost::thread t (func);
 #else
                     norm_active_threads_++;
-                    IOFWDThread * wt = tpgroup_.front();
+                    IOFWDThread * wt = tpgroup_.top();
                     tpgroup_.pop();
                     lock.unlock();
                     wt->setPrio(prio);
@@ -204,7 +207,7 @@ class ThreadPool : public Singleton< ThreadPool >
                 boost::thread t (func);
 #else
                 boost::function<void ()> func = prio_queue_.front();
-                IOFWDThread * wt = tpgroup_.front();
+                IOFWDThread * wt = tpgroup_.top();
                 tpgroup_.pop();
                 wt->setWork(func);
 #endif
@@ -219,7 +222,7 @@ class ThreadPool : public Singleton< ThreadPool >
                 boost::thread t (func);
 #else
                 boost::function<void ()> func = norm_queue_.front();
-                IOFWDThread * wt = tpgroup_.front();
+                IOFWDThread * wt = tpgroup_.top();
                 tpgroup_.pop();
                 wt->setWork(func);
 #endif
@@ -356,9 +359,30 @@ class IOFWDThread
         }
     
     protected:
+        /* the thread work function */
         void operator()()
         {
-            bool morework = false;
+           /* set the affinity of the thread */
+           int s, j;
+           cpu_set_t cpuset;
+           pthread_t thread;
+           bool morework = false;
+
+           /* get the thread id */
+           thread = pthread_self();
+
+           /* clear the cpu set */
+           CPU_ZERO(&cpuset);
+
+           /* set the number of cores to use to CRAY_TP_CORE_MAX */
+           for (j = 0; j < CRAY_TP_CORE_MAX ; j++)
+           {
+               CPU_SET(j, &cpuset);
+           }
+
+           /* update the affinity */
+           pthread_setaffinity_np(thread, sizeof(cpu_set_t), &cpuset);
+
             while(!shutdown_)
             {
                 /* wait for work */
@@ -420,7 +444,7 @@ class IOFWDThread
         std::queue< boost::function< void() > > low_prio_queue_queue_;
         boost::mutex low_prio_queue_mutex_;
 
-        std::queue< IOFWDThread * > tpgroup_;
+        std::stack< IOFWDThread * > tpgroup_;
 
         /* storage for the current thread work items */
         /* NO LOCKS FOR THESE DATA STRUCTURES */
