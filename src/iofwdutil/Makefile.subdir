@@ -163,8 +163,6 @@ src/iofwdutil/mm/BMIMemoryManager.cpp \
 \
 src/iofwdutil/transform/GenericTransform.hh \
 src/iofwdutil/transform/GenericTransform.cpp \
-src/iofwdutil/transform/IOFWDZLib.hh \
-src/iofwdutil/transform/IOFWDZLib.cpp \
 src/iofwdutil/transform/TransformException.cpp \
 src/iofwdutil/transform/TransformException.hh \
 src/iofwdutil/transform/LZF.cpp \
@@ -188,8 +186,6 @@ src/iofwdutil/hash/Adler32.hh \
 src/iofwdutil/hash/Adler32.cpp \
 src/iofwdutil/hash/CRC32.hh \
 src/iofwdutil/hash/CRC32.cpp \
-src/iofwdutil/transform/IOFWDZLib.hh \
-src/iofwdutil/transform/IOFWDZLib.cpp \
 src/iofwdutil/transform/ZLibBase.hh \
 src/iofwdutil/transform/ZLibBase.cpp \
 src/iofwdutil/transform/ZLibCompress.hh \
