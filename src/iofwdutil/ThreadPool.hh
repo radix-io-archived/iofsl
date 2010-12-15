@@ -362,11 +362,13 @@ class IOFWDThread
         /* the thread work function */
         void operator()()
         {
+           bool morework = false;
+
+#ifdef HAVE_LIBPTHREAD
            /* set the affinity of the thread */
-           int s, j;
+           int j;
            cpu_set_t cpuset;
            pthread_t thread;
-           bool morework = false;
 
            /* get the thread id */
            thread = pthread_self();
@@ -382,6 +384,7 @@ class IOFWDThread
 
            /* update the affinity */
            pthread_setaffinity_np(thread, sizeof(cpu_set_t), &cpuset);
+#endif
 
             while(!shutdown_)
             {
