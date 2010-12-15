@@ -82,10 +82,8 @@ int init_basedir_handle(char * mpt)
 
 int testNULL(void)
 {
-   fprintf (stderr, "test for zoidfs_null disabled");
-   /* DISABLED until problem zith zoidfs_null is fixed! */
-   /*  CU_ASSERT(ZFS_OK == zoidfs_null()); */
-    return 0;
+   CU_ASSERT(ZFS_OK == zoidfs_null());
+   return 0;
 }
 
 int testCREATE(void)
