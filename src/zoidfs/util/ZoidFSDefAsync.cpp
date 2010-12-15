@@ -32,6 +32,19 @@ namespace zoidfs
    {
        switch(bwu->type_)
        {
+           case zoidfs::ZOIDFS_PROTO_NULL:
+           {
+              /* convert to the write work unit */
+              ZoidFSDefAsyncNullWorkUnit * wu = static_cast<ZoidFSDefAsyncNullWorkUnit *>(bwu);
+
+              /* invoke the write API */
+              *(wu->ret_) = wu->api_->null();
+
+              /* invoke the callback */
+              wu->cb_(iofwdevent::COMPLETED);
+
+              break;
+           }
            case zoidfs::ZOIDFS_PROTO_GET_ATTR:
            {
               /* convert to the write work unit */
