@@ -2,7 +2,6 @@
 #include "iofwdutil/bmi/BMIOp.hh"
 #include "zoidfs/zoidfs-proto.h"
 #include "iofwd_config.h"
-#include "zoidfs/util/ZoidFSHints.hh"
 
 namespace iofwd
 {

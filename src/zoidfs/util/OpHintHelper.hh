@@ -1,9 +1,9 @@
 #ifndef IOFWDUTIL_OPHINTHELPER_HH
 #define IOFWDUTIL_OPHINTHELPER_HH
 
-#include "zoidfs/util/ZoidFSHints.hh"
 #include "zoidfs-xdr.hh"
 #include "zoidfs/zoidfs-proto.h"
+#include "zoidfs/hints/zoidfs-hints.h"
 #include "encoder/EncoderWrappers.hh"
 #include "encoder/Util.hh"
 #include "iofwdutil/assert.hh"
