@@ -14,6 +14,7 @@
 #include "iofwdutil/zlog/ZLogSource.hh"
 #include "iofwdutil/zlog/ZLogDefaultFilter.hh"
 #include "iofwdutil/zlog/LevelParser.hh"
+#include "iofwdutil/IOFWDLogException.hh"
 
 using namespace iofwdutil::zlog;
 using namespace ourspirit;
@@ -157,7 +158,9 @@ void IOFWDLog::setLogLevelOverride (const std::string & source)
 
    if (!parse (source.c_str(), parser, space_p).full)
    {
-      ALWAYS_ASSERT(false && "Invalid loglevel string"); 
+      ZTHROW (LogLevelException ()
+         << zexception_msg("Could not parse loglevel string")
+         << e_loglevel_name(source));
    }
 
    if (loglevel_override_.empty())

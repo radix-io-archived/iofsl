@@ -120,6 +120,7 @@ src/iofwdutil/CFKeyMissingException.cpp \
 src/iofwdutil/ConfigContainer.cpp \
 src/iofwdutil/ConfigFile.cpp \
 src/iofwdutil/IOFWDLog.cpp \
+src/iofwdutil/IOFWDLogException.hh \
 src/iofwdutil/TimeVal.cpp \
 src/iofwdutil/Timer.cpp \
 src/iofwdutil/ZException.cpp \
