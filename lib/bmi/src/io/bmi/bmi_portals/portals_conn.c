@@ -1403,6 +1403,11 @@ int bmip_server_put_local_get_req_wait(void * op_, int etype)
         {
 		op->put_fetch_req_wait_counter--;
         }
+	else
+	{
+		/* unknown event... store it for later */
+		op->ev_list[op->ev_list_counter++] = etype;
+	}
 
 	/* if counter done... invoke the next function */
 	if(op->put_fetch_req_wait_counter == 0)
@@ -1483,6 +1488,11 @@ int bmip_server_put_local_put_wait(void * op_, int etype)
         {
 		op->put_push_rsp_wait_counter--;
         }
+	else
+	{
+		/* unknown event... store it for later */
+		op->ev_list[op->ev_list_counter++] = etype;
+	}
 
 	/* if counter done... set next function */
 	if(op->put_push_rsp_wait_counter == 0)
@@ -1506,13 +1516,19 @@ int bmip_server_put_remote_put(void * op_, int etype)
         }
 
 	/* setup the callback */
+	int nm = 0;
+#if 0
+	nm = 2;
+#else
+	nm = 1;
+#endif
 	if(op->num >= op->rnum)
 	{
-		op->put_remote_put_wait_counter = 2 * (op->num);
+		op->put_remote_put_wait_counter = nm * (op->num);
 	}
 	else
 	{
-		op->put_remote_put_wait_counter = 2 * (op->rnum);
+		op->put_remote_put_wait_counter = nm * (op->rnum);
 	}
 	op->cur_function = bmip_server_put_remote_put_wait;
 
@@ -1522,14 +1538,23 @@ int bmip_server_put_remote_put(void * op_, int etype)
 int bmip_server_put_remote_put_wait(void * op_, int etype)
 {
 	bmip_portals_conn_op_t * op = (bmip_portals_conn_op_t *)op_;
+#if 0
         if(etype == PTL_EVENT_PUT_START)
         {
 		op->put_remote_put_wait_counter--;
         }
         else if(etype == PTL_EVENT_PUT_END)
+#else
+        if(etype == PTL_EVENT_PUT_END)
+#endif
         {
 		op->put_remote_put_wait_counter--;
         }
+	else
+	{
+		/* unknown event... store it for later */
+		op->ev_list[op->ev_list_counter++] = etype;
+	}
 
 	if(op->put_remote_put_wait_counter == 0)
 	{
@@ -1605,6 +1630,11 @@ int bmip_server_get_local_put_rsp_info(void * op_, int etype)
         {
 		op->get_local_rsp_wait_counter--;
         }
+	else
+	{
+		/* unknown event... store it for later */
+		op->ev_list[op->ev_list_counter++] = etype;
+	}
 
 	/* invoke */
 	if(op->get_local_rsp_wait_counter == 0)
@@ -1628,13 +1658,19 @@ int bmip_server_get_remote_get(void * op_, int etype)
         }
 
 	/* setup the callback */
+	int nm = 0;
+#if 0
+	nm = 2;
+#else
+	nm = 1;
+#endif
 	if(op->num >= op->rnum)
 	{
-		op->get_remote_get_wait_counter = 2 * op->num;
+		op->get_remote_get_wait_counter = nm * op->num;
 	}
 	else
 	{
-		op->get_remote_get_wait_counter = 2 * op->rnum;
+		op->get_remote_get_wait_counter = nm * op->rnum;
 	}
 	op->cur_function = bmip_server_get_remote_get_wait;
 
@@ -1644,14 +1680,23 @@ int bmip_server_get_remote_get(void * op_, int etype)
 int bmip_server_get_remote_get_wait(void * op_, int etype)
 {
 	bmip_portals_conn_op_t * op = (bmip_portals_conn_op_t *)op_;
+#if 0
         if(etype == PTL_EVENT_GET_START)
         {
                 op->get_remote_get_wait_counter--;
         }
         else if(etype == PTL_EVENT_GET_END)
+#else
+        if(etype == PTL_EVENT_GET_END)
+#endif
         {
                 op->get_remote_get_wait_counter--;
         }
+	else
+	{
+		/* unknown event... store it for later */
+		op->ev_list[op->ev_list_counter++] = etype;
+	}
 
 	if(op->get_remote_get_wait_counter == 0)
 	{
@@ -1807,7 +1852,7 @@ bmip_context_t * bmip_server_post_recv(ptl_process_id_t target, int64_t match_bi
 	int i = 0;
 
 	gen_mutex_lock(&list_mutex);
-	if((cur_op = bmip_server_send_pending(target, 0xffffffffULL & match_bits)))
+	if((cur_op = bmip_server_recv_pending(target, 0xffffffffULL & match_bits)))
 	{
 		cur_op->num = num;
 		cur_op->buffers = (void *)malloc(sizeof(void *) * num);
@@ -1906,7 +1951,7 @@ bmip_context_t * bmip_server_post_recv(ptl_process_id_t target, int64_t match_bi
 		bmip_server_put_pending(cur_op, -1);
 
 		/* add to the pending op list */
-		qlist_add_tail(&cur_op->list, &bmip_server_pending_send_ops);	
+		qlist_add_tail(&cur_op->list, &bmip_server_pending_recv_ops);	
 	}
 	gen_mutex_unlock(&list_mutex);
 
@@ -1919,7 +1964,7 @@ bmip_context_t * bmip_server_post_send(ptl_process_id_t target, int64_t match_bi
 	int i = 0;
 
 	gen_mutex_lock(&list_mutex);
-	if(!(cur_op = bmip_server_recv_pending(target, 0xffffffffULL & match_bits)))
+	if(!(cur_op = bmip_server_send_pending(target, 0xffffffffULL & match_bits)))
 	{
 		cur_op = (bmip_portals_conn_op_t *)malloc(sizeof(bmip_portals_conn_op_t));
 		memset(cur_op, 0, sizeof(bmip_portals_conn_op_t));
@@ -1973,7 +2018,7 @@ bmip_context_t * bmip_server_post_send(ptl_process_id_t target, int64_t match_bi
 		/* set the callback */
 		bmip_server_get_pending(cur_op, -1);
 
-		qlist_add_tail(&cur_op->list, &bmip_server_pending_recv_ops);
+		qlist_add_tail(&cur_op->list, &bmip_server_pending_send_ops);
 	}
 	else
 	{
@@ -2653,7 +2698,7 @@ void * bmip_server_monitor(void * args)
 					bmip_portals_conn_op_t * cur_op = NULL;
 
 					/* check if the server requested this operation */
-					if((cur_op = bmip_server_send_pending(ev.initiator, 0xffffffffULL & ev.match_bits)))
+					if((cur_op = bmip_server_recv_pending(ev.initiator, 0xffffffffULL & ev.match_bits)))
 					{
 						/* remove the op from the pending send list */
 						qlist_del(&cur_op->list);
@@ -2678,12 +2723,12 @@ void * bmip_server_monitor(void * args)
 						bmip_server_put_pending(cur_op, etype);
 
 						/* add to the pending op list */
-						qlist_add_tail(&cur_op->list, &bmip_server_pending_send_ops);	
+						qlist_add_tail(&cur_op->list, &bmip_server_pending_recv_ops);	
 					}
 				}
 			}
 
-			/* this is a server recv */
+			/* this is a server send */
 			else if(etype == PTL_EVENT_PUT_END && (ev.match_bits & ex_req_get_mb))
 			{
 				/* if request message */
@@ -2692,7 +2737,7 @@ void * bmip_server_monitor(void * args)
 					bmip_portals_conn_op_t * cur_op = NULL;
 
                                         /* check if the server requested this operation */
-                                        if((cur_op = bmip_server_recv_pending(ev.initiator, 0xffffffffULL & ev.match_bits)))
+                                        if((cur_op = bmip_server_send_pending(ev.initiator, 0xffffffffULL & ev.match_bits)))
                                         {
                                                 /* remove the op from the pending send list */
                                                 qlist_del(&cur_op->list);
@@ -2717,7 +2762,7 @@ void * bmip_server_monitor(void * args)
                                                 bmip_server_get_pending(cur_op, etype);
 
                                                 /* add to the pending op list */
-                                                qlist_add_tail(&cur_op->list, &bmip_server_pending_recv_ops);
+                                                qlist_add_tail(&cur_op->list, &bmip_server_pending_send_ops);
                                         }
 				}
 			}

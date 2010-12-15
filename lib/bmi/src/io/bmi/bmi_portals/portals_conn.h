@@ -15,6 +15,8 @@
 
 #define BMIP_MAX_LISTIO 1025
 
+#define BMIP_EV_LIMIT 128
+
 typedef struct bmip_context
 {
 	pthread_barrier_t b;
@@ -35,8 +37,10 @@ typedef struct bmip_portals_conn_op
 	const void ** buffers;
 	const void ** user_buffers;
 	size_t * lengths;
+	size_t * alengths;
 	size_t * offsets;
 	int num; 
+	int rnum; 
 	size_t req_buffer[BMIP_MAX_LISTIO];
 	int64_t match_bits;
 	bmip_context_t * context;
@@ -49,6 +53,10 @@ typedef struct bmip_portals_conn_op
 	ptl_process_id_t target;
 	ptl_md_t mdesc;
         ptl_handle_md_t md;
+
+	/* list of events */
+	int ev_list[BMIP_EV_LIMIT];
+	int ev_list_counter;
 
 	/* operation state machine data storage */
 	int (*cur_function)(void * op, int etype);
@@ -70,7 +78,7 @@ int bmip_get_ptl_pid(void);
 int bmip_get_ptl_nid(void);
 
 /* eq mgmt */
-int bmip_setup_eqs(void);
+int bmip_setup_eqs(int is_server);
 int bmip_dest_eqs(void);
 
 int bmip_wait_unex_event(ptl_event_t * ev);
@@ -86,7 +94,7 @@ int bmip_server_put_local_put_wait(void * op_, int etype);
 int bmip_server_put_remote_put_wait(void * op_, int etype);
 int bmip_server_put_cleanup(void * op_, int etype);
 int bmip_server_put_pending(void * op_, int etype);
-int bmip_server_put_init(void * op_, int etype);
+int bmip_server_put_init(void * op_, int etype, ptl_process_id_t pid);
 
 int bmip_server_get_local_put_rsp_info(void * op_, int etype);
 int bmip_server_get_local_put_wait(void * op_, int etype);
@@ -94,7 +102,7 @@ int bmip_server_get_remote_get(void * op_, int etype);
 int bmip_server_get_remote_get_wait(void * op_, int etype);
 int bmip_server_get_cleanup(void * op_, int etype);
 int bmip_server_get_pending(void * op_, int etype);
-int bmip_server_get_init(void * op_, int etype);
+int bmip_server_get_init(void * op_, int etype, ptl_process_id_t op_pid);
 
 void * bmip_server_monitor(void * args);
 bmip_context_t * bmip_server_post_recv(ptl_process_id_t target, int64_t match_bits, int num, void ** buffers, size_t * lengths, int use_barrier, void * user_ptr, int64_t comm_id);
@@ -125,4 +133,7 @@ int bmip_wait_remote_put(void);
 int bmip_wait_local_put(void);
 
 int bmip_server_test_event_id(int ms_timeout, int nums, void ** user_ptrs, size_t * sizes, int64_t comm_id);
+
+int bmip_is_local_addr(ptl_process_id_t pid);
+ptl_process_id_t bmip_get_ptl_id(void);
 #endif

@@ -87,7 +87,7 @@ int bmip_wait_event(int timeout, ptl_handle_eq_t * eq, ptl_event_t * ev)
 	}
 
 	/* wait for an unexpected message */
-#ifdef BMIP_USE_TIMEOUT
+#ifndef BMIP_USE_TIMEOUT
 	ret = bmip_ptl_eq_wait(*eq, lev);
 #else
 	ret = bmip_ptl_eq_poll(eq, numhandles, timeout, lev, &i);
