@@ -40,6 +40,7 @@ const IOFWDRenameRequest::ReqParam & IOFWDRenameRequest::decodeParam ()
       param_.to_parent_handle = &to_info_.parent_handle ;
       param_.to_component_name = to_info_.component_name;
    }
+   zoidfs::hints::zoidfs_hint_create(&op_hint_);
    param_.op_hint = &op_hint_;
    return param_;
 }
