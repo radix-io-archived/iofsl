@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <math.h>
 #include <pthread.h>
+#include <assert.h>
 
 /* rb tree sentinel */
 static size_t interval_merge_tree_sentinel_key_key = 0;
@@ -465,12 +466,15 @@ static inline int interval_merge_tree_rotate_left(interval_merge_tree_node_t ** 
     y->left = x;
     x->parent = y;
 
+    
     /* update the size based on the operation */
     if(op == RB_TREE_INSERT)
     {
         if(x != &interval_merge_tree_sentinel && y != &interval_merge_tree_sentinel)
         {
             y->size = x->size;
+            assert(x->right);
+            assert(x->left);
             x->size = x->left->size + x->right->size + 1;
         }
     }
@@ -479,6 +483,8 @@ static inline int interval_merge_tree_rotate_left(interval_merge_tree_node_t ** 
         if(x != &interval_merge_tree_sentinel && y != &interval_merge_tree_sentinel)
         {
             y->size = x->size;
+            assert(x->right);
+            assert(x->left);
             x->size = x->left->size - x->right->size - 1;
         }
     }
@@ -525,6 +531,8 @@ static inline int interval_merge_tree_rotate_right(interval_merge_tree_node_t **
         if(x != &interval_merge_tree_sentinel && y != &interval_merge_tree_sentinel)
         {
             x->size = y->size;
+            assert(y->left);
+            assert(y->right);
             y->size = y->left->size + y->right->size + 1;
         }
     }
@@ -533,6 +541,8 @@ static inline int interval_merge_tree_rotate_right(interval_merge_tree_node_t **
         if(x != &interval_merge_tree_sentinel && y != &interval_merge_tree_sentinel)
         {
             x->size = y->size;
+            assert(y->left);
+            assert(y->right);
             y->size = y->left->size - y->right->size - 1;
         }
     }
@@ -789,6 +799,9 @@ static int interval_merge_tree_delete_rules(interval_merge_tree_node_t ** root, 
 /* find the min value from a given node in the tree */
 static inline interval_merge_tree_node_t * interval_merge_tree_min(interval_merge_tree_node_t * node)
 {
+    if(!node)
+        return NULL;
+
     while(node->left != &interval_merge_tree_sentinel)
     {
         node = node->left;
@@ -800,6 +813,9 @@ static inline interval_merge_tree_node_t * interval_merge_tree_min(interval_merg
 static inline interval_merge_tree_node_t * interval_merge_tree_successor(interval_merge_tree_node_t * node)
 {
     interval_merge_tree_node_t * y = NULL;
+
+    if(!node)
+        return NULL;
 
     if(node->right != &interval_merge_tree_sentinel)
     {
@@ -819,7 +835,7 @@ static inline interval_merge_tree_node_t * interval_merge_tree_successor(interva
 
 static int interval_merge_tree_delete_update_rank(interval_merge_tree_node_t * node, size_t k)
 {
-    if(!node || node != &interval_merge_tree_sentinel)
+    if(node && node != &interval_merge_tree_sentinel)
     {
         node->size -= 1;
 
@@ -872,7 +888,9 @@ interval_merge_tree_node_t * interval_merge_tree_find_delete(interval_merge_tree
     {
         x = y->right;
     }
-
+    
+    assert(x);
+    assert(y);
     x->parent = y->parent;
 
     if(y->parent == &interval_merge_tree_sentinel)
@@ -940,6 +958,8 @@ interval_merge_tree_node_t * interval_merge_tree_delete(interval_merge_tree_node
         x = y->right;
     }
 
+    assert(x);
+    assert(y);
     x->parent = y->parent;
 
     if(y->parent == &interval_merge_tree_sentinel)
@@ -1009,8 +1029,12 @@ int interval_merge_tree_print_tree(interval_merge_tree_node_t * node)
 /* find the key in the tree */
 interval_merge_tree_key_t interval_merge_tree_key_find(interval_merge_tree_node_t * node, size_t k)
 {
-    if(!node || node != &interval_merge_tree_sentinel)
+    if(node && node != &interval_merge_tree_sentinel)
     {
+        /* check for valid key */
+        if(!node->key.key)
+            return interval_merge_tree_sentinel_key;
+
         if(*(size_t *)node->key.key == k)
         {
             return node->key;
@@ -1030,8 +1054,12 @@ interval_merge_tree_key_t interval_merge_tree_key_find(interval_merge_tree_node_
 /* find the node in the tree given a key */
 interval_merge_tree_node_t * interval_merge_tree_node_find(interval_merge_tree_node_t * node, size_t k)
 {
-    if(!node || node != &interval_merge_tree_sentinel)
+    if(node && node != &interval_merge_tree_sentinel)
     {
+        /* verify that pointer is valid */ 
+        if(node->key.key == NULL)
+            return NULL;
+
         if(*(size_t *)node->key.key == k)
         {
             return node;
@@ -1054,7 +1082,7 @@ interval_merge_tree_node_t * interval_merge_tree_node_find_rank(interval_merge_t
     interval_merge_tree_node_t * fn = NULL;
 
     /* recursively search for the node */
-    if(!node || node != &interval_merge_tree_sentinel)
+    if(node && node != &interval_merge_tree_sentinel)
     {
         if(*(size_t *)node->key.key == k)
         {
