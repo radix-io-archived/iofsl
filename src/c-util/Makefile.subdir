@@ -1,4 +1,4 @@
-noinst_LIBRARIES += src/c-util/libc-util.a
+lib_LIBRARIES += src/c-util/libiofsl-c-util.a
 
 .PHONY: maintainer-clean-local
 maintainer-clean-local::
@@ -15,7 +15,7 @@ maintainer-clean-local::
 src/c-util/configlex.c: src/c-util/configparser.h
 # src/c-util/configlex.h: src/c-util/configlex.c
 
-src_c_util_libc_util_a_SOURCES = \
+src_c_util_libiofsl_c_util_a_SOURCES = \
 src/c-util/configfile.c \
 src/c-util/configfile.h \
 src/c-util/configglue.c \
@@ -62,7 +62,7 @@ src/c-util/transform/lzf/lzf_c.c \
 src/c-util/transform/lzf/lzf_d.c
 
 if HAVE_ZLIB
-src_c_util_libc_util_a_SOURCES += \
+src_c_util_libiofsl_c_util_a_SOURCES += \
 src/c-util/hash/chash_crc32.h \
 src/c-util/hash/chash_crc32.c \
 src/c-util/hash/chash_adler32.h \

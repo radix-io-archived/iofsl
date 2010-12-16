@@ -9,7 +9,7 @@ if HAVE_CUNIT
 test_unit_tests_ldadd =          \
 	${top_builddir}/src/zoidfs/libzoidfs-util.a  \
 	${top_builddir}/src/iofwdutil/libiofwdutil.a \
-	${top_builddir}/src/c-util/libc-util.a       \
+	${top_builddir}/src/c-util/libiofsl-c-util.a       \
     ${top_builddir}/src/zoidfs/libzoidfshints.a \
     @CUNIT_LIBS@                 \
     @ZFS_DISPATCHER_LIBS@ \
@@ -53,7 +53,7 @@ noinst_PROGRAMS += test/unit-tests/configfile-cunit
 test_unit_tests_configfile_cunit_SOURCES = test/unit-tests/configfile-cunit.c
 test_unit_tests_configfile_cunit_LDFLAGS = ${test_unit_tests_ldflags}
 test_unit_tests_configfile_cunit_LDADD = \
-			    ${top_builddir}/src/c-util/libc-util.a \
+			    ${top_builddir}/src/c-util/libiofsl-c-util.a \
 			    ${test_unit_tests_ldadd}
 
 endif
@@ -68,7 +68,7 @@ test_microbenchmarks_ldadd =     \
     ${top_builddir}/src/zoidfs/libzoidfs-util.a  \
     ${top_builddir}/src/iofwdutil/libiofwdutil.a \
     ${top_builddir}/src/zoidfs/libzoidfshints.a \
-    ${top_builddir}/src/c-util/libc-util.a       \
+    ${top_builddir}/src/c-util/libiofsl-c-util.a       \
     @ZFS_DISPATCHER_LIBS@ @BMI_LIBS@
 
 test_microbenchmarks_ldflags =   \
@@ -153,7 +153,7 @@ endif
 noinst_PROGRAMS += test/hashfunc
 test_hashfunc_SOURCES = test/hashfunc.cpp
 test_hashfunc_LDADD = ${top_builddir}/src/iofwdutil/libiofwdutil.a \
-		      ${top_builddir}/src/c-util/libc-util.a \
+		      ${top_builddir}/src/c-util/libiofsl-c-util.a \
 		      @BOOST_PROGRAM_OPTIONS_LIB@ \
 		      @BOOST_THREAD_LIB@
 test_hashfunc_LDFLAGS = @BMI_LDFLAGS@ @BOOST_LDFLAGS@
@@ -178,7 +178,7 @@ test_bmi_sm_pingpong_LDFLAGS = @BMI_LDFLAGS@ @BOOST_LDFLAGS@
 
 noinst_PROGRAMS += test/configfile
 test_configfile_SOURCES = test/configfile.c
-test_configfile_LDADD = ${top_builddir}/src/c-util/libc-util.a 
+test_configfile_LDADD = ${top_builddir}/src/c-util/libiofsl-c-util.a 
 
 
 if HAVE_MPI

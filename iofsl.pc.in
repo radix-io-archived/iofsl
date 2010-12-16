@@ -7,6 +7,6 @@ Name: IOFSL
 Description: I/O Forwarding Scalability Layer 
 URL: http://www.mcs.anl.gov/research/projects/iofsl/
 Version: @VERSION@
-Libs: -L${libdir} -lzoidfsclient -lc-util -lzoidfshints 
+Libs: -L${libdir} -lzoidfsclient -liofsl-c-util -lzoidfshints 
 Libs.private: @IOFSL_CLIENT_LIBS_PKG@
 Cflags: -I${includedir} 

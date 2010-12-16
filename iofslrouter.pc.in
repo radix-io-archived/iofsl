@@ -3,10 +3,10 @@ exec_prefix=@exec_prefix@
 libdir=@libdir@
 includedir=@includedir@
 
-Name: IOFSL
+Name: IOFSL Router
 Description: I/O Forwarding Scalability Layer 
 URL: http://www.mcs.anl.gov/research/projects/iofsl/
 Version: @VERSION@
-Libs: -L${libdir} -lzoidfsrouter -lzoidfsclient -lc-util -lzoidfshints 
+Libs: -L${libdir} -lzoidfsrouter -lzoidfsclient -liofsl-c-util -lzoidfshints 
 Libs.private: @IOFSL_CLIENT_LIBS_PKG@
 Cflags: -I${includedir} 

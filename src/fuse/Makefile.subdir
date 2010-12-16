@@ -7,6 +7,6 @@ src_fuse_fuseclient_LDADD = \
 		src/zoidfs/libzoidfs-util.a \
 		src/zoidfs/libzoidfsclient.a \
         src/zoidfs/libzoidfshints.a \
-		src/c-util/libc-util.a @FUSE_LIBS@ @BMI_LIBS@
+		src/c-util/libiofsl-c-util.a @FUSE_LIBS@ @BMI_LIBS@
 
 endif

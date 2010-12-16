@@ -11,7 +11,7 @@ sandbox_ldflags = $(AM_LDFLAGS) \
 
 sandbox_ldadd =          \
     $(top_builddir)/src/zoidfs/libzoidfs-util.a  \
-    $(top_builddir)/src/c-util/libc-util.a       \
+    $(top_builddir)/src/c-util/libiofsl-c-util.a       \
     $(top_builddir)/src/iofwdutil/libiofwdutil.a \
     $(top_builddir)/src/zoidfs/libzoidfshints.a \
     @CUNIT_LIBS@                 \

@@ -8,7 +8,7 @@ src_iofwd_iofwd_LDADD = \
 	src/zoidfs/libzoidfs.a \
 	src/sm/libsm.a \
 	src/iofwdutil/libiofwdutil.a \
-	src/c-util/libc-util.a \
+	src/c-util/libiofsl-c-util.a \
 	src/zoidfs/libzoidfshints.a \
 	src/iofwdevent/libiofwdevent.a \
 	@BOOST_PROGRAM_OPTIONS_LIB@ \
