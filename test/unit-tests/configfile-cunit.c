@@ -86,13 +86,12 @@ static void testconfig ()
 int main (int argc, char ** args)
 {
 
-   int flags, opt;
+   int opt;
    int nsecs, tfnd;
    CU_pSuite pSuite = NULL;
 
    nsecs = 0;
    tfnd = 0;
-   flags = 0;
    while ((opt = getopt(argc, args, "v")) != -1) {
       switch (opt) {
          case 'v':
