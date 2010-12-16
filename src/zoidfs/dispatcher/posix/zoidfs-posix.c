@@ -1137,7 +1137,7 @@ static inline int zoidfs_generic_access (const zoidfs_handle_t *handle, int mem_
          ret = saferead (file, mempos, thistransfer, filepos);
 
       /* detect and set errors from IO calls */
-      if(ret < 0 || ret != thistransfer)
+      if(ret < 0 || (size_t)ret != thistransfer)
       {
         zfs_ret = ZFSERR_IO; 
       }
