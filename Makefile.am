@@ -29,7 +29,7 @@ AM_CXXFLAGS = $(AM_CFLAGS)
 # pkgconfig files
 #
 pkgconfigdir = $(libdir)/pkgconfig
-pkgconfig_DATA = zoidfs.pc zoidfs-local.pc
+pkgconfig_DATA = iofsl.pc iofslrouter.pc
 $(pkgconfig_DATA): config.status
 
 #

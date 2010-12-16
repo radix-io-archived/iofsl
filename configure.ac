@@ -118,6 +118,12 @@ ZOIDFS_STATIC_LIBS_PKG=
 ZOIDFS_LOCAL_LIBS_PKG=
 ZOIDFS_LOCAL_STATIC_LIBS_PKG=
 
+#
+# IOFSL Client flags for pkg-config
+#
+IOFSL_CLIENT_CFLAGS_PKG=
+IOFSL_CLIENT_LIBS_PKG=
+IOFSL_CLIENT_STATIC_LIBS_PKG=
 
 dnl
 dnl Conditional client / server build args
@@ -185,6 +191,7 @@ AC_TYPE_SSIZE_T
 AC_CHECK_FUNCS([memset])
 AC_CHECK_LIB([rt],[clock_getres],,[AC_MSG_ERROR([Could not find clock_getres!])])
 AC_CHECK_LIB([pthread],[pthread_create],,[AC_MSG_ERROR([Could not find pthread_create!])])
+IOFSL_CLIENT_LIBS_PKG="${IOFSL_CLIENT_LIBS_PKG} -lrt -lpthread"
 
 dnl =========================================================================
 dnl = Check if sig_atomic_t is working for C++                              =
@@ -327,6 +334,7 @@ if test "x$bmidir" != "x" ; then
    BMI_CPPFLAGS="-I${bmidir}/include"
    BMI_LIBS="-lbmi"
    BMI_LDFLAGS="-L${bmidir}/lib"
+   IOFSL_CLIENT_LIBS_PKG="${IOFSL_CLIENT_LIBS_PKG} ${BMI_LDFLAGS} ${BMI_LIBS}"
 fi
 
 OLDCPPFLAGS="$CPPFLAGS"
@@ -805,6 +813,8 @@ if test "x${use_zlib}" == "x1" ; then
       LDFLAGS="$LDFLAGS $ZLib_LDFLAGS"
       CFLAGS="$CFLAGS $ZLib_CFLAGS"
       LIBS="$LIBS $ZLib_LIBS"
+    IOFSL_CLIENT_CFLAGS_PKG="${IOFSL_CLIENT_CFLAGS_PKG} ${ZLib_CFLAGS} ${ZLib_CPPFLAGS}"
+    IOFSL_CLIENT_LIBS_PKG="${IOFSL_CLIENT_LIBS_PKG} ${ZLib_LDFLAGS} ${ZLib_LIBS}"
 fi
 
 dnl =========================================================================
@@ -817,6 +827,8 @@ if test -n "$BZIP2_DIR" ;
 then
    CPPFLAGS="$CPPFLAGS -I${BZIP2_DIR}/include"
    LDFLAGS="$LDFLAGS -L${BZIP2_DIR}/lib"
+    IOFSL_CLIENT_CFLAGS_PKG="${IOFSL_CLIENT_CFLAGS_PKG} -I${BZIP2_DIR}/include"
+    IOFSL_CLIENT_LIBS_PKG="${IOFSL_CLIENT_LIBS_PKG} -L${BZIP2_DIR}/lib -lbz2"
 fi
 
 use_bzlib=1
@@ -863,16 +875,24 @@ if test "x${use_openssl}" == "x1" ; then
       LDFLAGS="$LDFLAGS $OpenSSL_LDFLAGS"
       CFLAGS="$CFLAGS $OpenSSL_CFLAGS"
       LIBS="$LIBS $OpenSSL_LIBS"
+    IOFSL_CLIENT_CFLAGS_PKG="${IOFSL_CLIENT_CFLAGS_PKG} ${OPENSSL_CFLAGS}"
+    IOFSL_CLIENT_LIBS_PKG="${IOFSL_CLIENT_LIBS_PKG} ${OPENSSL_LDFLAGS} ${OPENSSL_LIBS}"
 fi
 
 dnl =========================================================================
 dnl =========================================================================
 dnl =========================================================================
 
+#
+# export the client lib and cflags for pkg-config
+#
+AC_SUBST([IOFSL_CLIENT_CFLAGS_PKG])
+AC_SUBST([IOFSL_CLIENT_LIBS_PKG])
+
 AC_CONFIG_FILES([
                  Makefile
-                 zoidfs.pc
-                 zoidfs-local.pc
+                 iofsl.pc
+                 iofslrouter.pc
                  ])
 
 AC_OUTPUT
