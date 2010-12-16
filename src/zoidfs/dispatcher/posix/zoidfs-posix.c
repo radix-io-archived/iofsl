@@ -1104,6 +1104,7 @@ static inline int zoidfs_generic_access (const zoidfs_handle_t *handle, int mem_
    size_t fileofs = 0;
 
    int ret;
+   int zfs_ret = ZFS_OK;
    Descriptor desc;
 
    /* obtain file handle */
@@ -1135,6 +1136,12 @@ static inline int zoidfs_generic_access (const zoidfs_handle_t *handle, int mem_
       else
          ret = saferead (file, mempos, thistransfer, filepos);
 
+      /* detect and set errors from IO calls */
+      if(ret < 0 || ret != thistransfer)
+      {
+        zfs_ret = ZFSERR_IO; 
+      }
+
       memofs += thistransfer;
       fileofs += thistransfer;
       if (memofs == mem_sizes[curmem])
@@ -1151,7 +1158,7 @@ static inline int zoidfs_generic_access (const zoidfs_handle_t *handle, int mem_
    /* release file desc */
    releasefd_handle (&desc);
 
-   return ZFS_OK;
+   return zfs_ret;
 }
 
 
