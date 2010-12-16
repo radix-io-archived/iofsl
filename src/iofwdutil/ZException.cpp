@@ -1,5 +1,5 @@
 #include <boost/foreach.hpp>
-#include <boost/exception/all.hpp>
+#include <boost/exception.hpp>
 #include <boost/format.hpp>
 
 #include "ZException.hh"
@@ -27,11 +27,10 @@ namespace iofwdutil
 
    void ZException::pushMsg (const std::string & msg)
    {
-      std::string * str =
-        boost::get_error_info<zexception_msg> (*this);
-      if (str)
+      std::string * zmsg = const_cast<std::string *>(boost::get_error_info<zexception_msg> (*this)); 
+      if (zmsg)
       {
-         *str += msg;
+         *zmsg += msg;
       }
       else
       {

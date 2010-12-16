@@ -1,7 +1,9 @@
 #ifndef IOFWDUTIL_ZEXCEPTION_HH
 #define IOFWDUTIL_ZEXCEPTION_HH
 
-#include <boost/exception/all.hpp>
+#include <boost/exception.hpp>
+#include <boost/exception/error_info.hpp>
+#include <boost/exception/get_error_info.hpp>
 #include <exception>
 
 #include <vector>
