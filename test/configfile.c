@@ -44,13 +44,12 @@ void dump_configfile (const char * filename, char ** err)
 
 int main (int argc, char ** args)
 {
-   int flags, opt;
+   int opt;
    int nsecs, tfnd;
    int i;
 
    nsecs = 0;
    tfnd = 0;
-   flags = 0;
    while ((opt = getopt(argc, args, "v")) != -1) {
       switch (opt) {
          case 'v':
