@@ -702,7 +702,7 @@ static int zint_pvfs2_io(const zoidfs_handle_t * handle,
 
         buffer = mem_starts[0];
     }
-    else
+    else if(mem_count > 1)
     {
         displacements = malloc(sizeof(PVFS_size) * mem_count);
         if(!displacements)
@@ -727,6 +727,11 @@ static int zint_pvfs2_io(const zoidfs_handle_t * handle,
         }
 
         buffer = PVFS_BOTTOM;
+    }
+    else
+    {
+        ret = ZFSERR_NOMEM;
+        goto error;
     }
 
     if(file_count == 1)
