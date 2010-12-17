@@ -20,10 +20,11 @@
 #define QUICKLIST_H
 
 #include <stdlib.h>
+#include "zoidfs/zoidfs.h"
 
-struct qlist_head {
-    struct qlist_head *next, *prev;
-};
+//struct qlist_head {
+//    struct qlist_head *next, *prev;
+//};
 
 #define QLIST_HEAD_INIT(name) { &(name), &(name) }
 

@@ -6,6 +6,7 @@
 #include <stdio.h>
 #include <string.h>
 #include "c-util/tools.h"
+#include "c-util/quicklist.h"
 
 int zoidfs_hint_create(zoidfs_op_hint_t * hint)
 {

@@ -1,7 +1,5 @@
 lib_LIBRARIES += src/c-util/libiofsl-c-util.a
 
-include_HEADERS += src/c-util/quicklist.h
-
 .PHONY: maintainer-clean-local
 maintainer-clean-local::
 	-rm -f src/c-util/configparser.c

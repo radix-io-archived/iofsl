@@ -13,7 +13,7 @@
 
 #include <stdint.h>
 #include <stddef.h>
-#include "quicklist.h"
+//#include "quicklist.h"
 
 #ifdef __cplusplus
 /*
@@ -162,6 +162,10 @@ typedef enum
 } zoidfs_op_hint_type_t;
 
 /* node in the hint linked list */
+struct qlist_head {
+    struct qlist_head *next, *prev;
+};
+
 typedef struct zoidfs_op_hint_item
 {
     struct qlist_head list;
