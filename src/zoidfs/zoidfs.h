@@ -13,7 +13,7 @@
 
 #include <stdint.h>
 #include <stddef.h>
-#include "c-util/quicklist.h"
+#include "quicklist.h"
 
 #ifdef __cplusplus
 /*
