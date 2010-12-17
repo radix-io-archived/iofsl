@@ -190,3 +190,10 @@ test_throughput_LDADD = $(BOOST_PROGRAM_OPTIONS_LIB) $(BOOST_DATETIME_LIB) \
 			$(BMI_LIBS)
 
 endif
+
+check-local: test/unit-tests/run-local-test.py
+	@$(srcdir)/test/unit-tests/run-local-test.py \
+	   $(top_builddir) $(top_srcdir)
+
+EXTRA_DIST += test/unit-tests/run-local-test.py
+test/unit-tests/run-local-test.py: src/iofwd/iofwd

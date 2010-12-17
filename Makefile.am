@@ -7,6 +7,7 @@ noinst_HEADERS =
 TESTS =
 check_PROGRAMS =
 EXTRA_PROGRAMS =
+EXTRA_DIST =
 
 AM_CPPFLAGS = -I$(top_srcdir)/src \
 	      -I$(top_srcdir)/src/iofwdutil \
@@ -24,6 +25,10 @@ AM_LIBS = @ATOMICS_LIBS@
 
 AM_CXXFLAGS = $(AM_CFLAGS)
 
+#
+# Default server config
+#
+EXTRA_DIST += defaultconfig.cf
 
 #
 # pkgconfig files
