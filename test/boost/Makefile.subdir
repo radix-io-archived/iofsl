@@ -3,7 +3,7 @@ shared_ldadd = \
 	       src/sm/libsm.a \
 	       src/iofwdevent/libiofwdevent.a \
 	       src/iofwdutil/libiofwdutil.a \
-	       src/c-util/libc-util.a \
+	       src/c-util/libiofsl-c-util.a \
 	         $(BOOST_UNIT_TEST_FRAMEWORK_LIB) \
 	       @BOOST_PROGRAM_OPTIONS_LIB@ \
 	       @BOOST_DATE_TIME_LIB@ \
