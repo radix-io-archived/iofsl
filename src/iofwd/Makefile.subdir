@@ -1,5 +1,10 @@
 if BUILD_IOFWD_SERVER
 
+# Try to run the installed server
+# @TODO: replace with version once --version option is added to server
+installcheck-local: src/iofwd/iofwd
+	@$(bindir)/iofwd --help > /dev/null
+
 bin_PROGRAMS += src/iofwd/iofwd
 
 src_iofwd_iofwd_LDADD = \
