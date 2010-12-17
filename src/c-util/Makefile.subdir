@@ -16,6 +16,7 @@ src/c-util/configlex.c: src/c-util/configparser.h
 # src/c-util/configlex.h: src/c-util/configlex.c
 
 src_c_util_libiofsl_c_util_a_SOURCES = \
+src/c-util/quicklist.h \
 src/c-util/configfile.c \
 src/c-util/configfile.h \
 src/c-util/configglue.c \
