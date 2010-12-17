@@ -18,7 +18,8 @@ ZLogFilter::~ZLogFilter ()
 void ZLogFilter::setOption (const std::string & name, const std::string &
       UNUSED(value))
 {
-   throw ZLogException (str(format("Unknown option ('%s')!") % name)); 
+   ZTHROW  (ZLogUnknownOptionException ()
+         << zlog_option_name(name));
 }
 //===========================================================================
    }

@@ -82,7 +82,8 @@ public:
       if (!outcount)
       {
          // Timeout was triggered: throw exception
-         throw BMIException ("timeout in BMIOp.wait()!"); 
+         ZTHROW (BMIException ()
+               << zexception_msg("timeout in BMIOp.wait()!"));
       }
 
       return actual_size; 

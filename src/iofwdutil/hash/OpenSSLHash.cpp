@@ -1,8 +1,8 @@
 
 #include "HashFactory.hh"
 #include "OpenSSLHash.hh"
-#include "NoSuchHashException.hh"
 #include "OpenSSLInit.hh"
+#include "OpenSSLException.hh"
 
 namespace iofwdutil
 {
@@ -10,10 +10,9 @@ namespace iofwdutil
    {
       //=====================================================================
 
-      void OpenSSLHash::error (int )
+      void OpenSSLHash::error (int err)
       {
-         // TODO: get proper errors from OpenSSL
-         throw ZException ("OpenSSLHash error!");
+         ZTHROW (HashOpenSSLException () << hash_openssl_error(err));
       }
 
       OpenSSLHash::OpenSSLHash (const char * name, const EVP_MD * md)
@@ -25,7 +24,7 @@ namespace iofwdutil
          md_ = EVP_get_digestbyname(name);
          if(!md_)
          {
-            throw NoSuchHashException (name);
+            ZTHROW (NoSuchHashException () << hash_name (name));
          }
          EVP_MD_CTX_init(&mdctx_);
 

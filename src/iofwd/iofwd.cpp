@@ -1,6 +1,3 @@
-#include <signal.h>
-#include <iostream>
-#include <boost/program_options.hpp>
 #include "iofwdutil/assert.hh"
 #include "zlog/ZLog.hh"
 #include "iofwdutil/tools.hh"
@@ -10,6 +7,11 @@
 #include "iofwdutil/ConfigFile.hh"
 #include "c-util/txt_configfile.h"
 #include "FactoryHelper.hh"
+
+#include <boost/exception/diagnostic_information.hpp>
+#include <signal.h>
+#include <iostream>
+#include <boost/program_options.hpp>
 
 namespace po = boost::program_options;
 
@@ -34,7 +36,7 @@ static ConfigFile getConfig (const std::string & name)
       const std::string s = 
          str(boost::format("Error opening config file '%s': %s") % name % err);
       free (err);
-      throw ZException (s);
+      ZTHROW (ZException () << zexception_msg (s));
    }
 
    return ConfigFile  (h);
@@ -146,10 +148,10 @@ int main (int argc, char ** args)
 
       return EXIT_SUCCESS; 
    }
-   catch (const ZException & e)
+   catch (const std::exception & e)
    {
       ZLOG_ERROR (mainlog, "Exception occurred:");
-      ZLOG_ERROR (mainlog, e.toString ());
+      ZLOG_ERROR (mainlog, boost::diagnostic_information (e));
       return 1;
    }
    catch  (...)

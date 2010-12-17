@@ -123,7 +123,11 @@ void IOFWDFrontend::init ()
    if (ion.empty())
    {
      ZLOG_ERROR (log_, format("ZOIDFS_ION_NAME is empty"));
-     throw ConfigException ("No ION_NAME specified!");
+     ZTHROW (ConfigException ()
+           << zexception_msg ("No server listen address specified"
+              " in config file or ZOIDFS_ION_NAME environment variable!")
+           << ce_environment ("ZOIDFS_ION_NAME")
+           << ce_key ("listen"));
    }
 
    // IOFW uses bmi, so we need to supply init params here

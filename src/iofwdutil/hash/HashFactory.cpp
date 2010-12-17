@@ -5,7 +5,7 @@
 #include "iofwd_config.h"
 
 #include "HashFactory.hh"
-#include "NoSuchHashException.hh"
+#include "HashException.hh"
 #include "iofwdutil/assert.hh"
 
 #include "SHA1Simple.hh"
@@ -58,8 +58,8 @@ namespace iofwdutil
          FuncMap::const_iterator I = map_.begin();
          if (pos >= map_.size())
          {
-            throw NoSuchHashException (str(format("Invalid hash func number: %i")
-                  % pos));
+            ZTHROW (NoSuchHashException ()
+              << zexception_msg(str(format("Invalid hash func number: %i") % pos)));
          }
          advance (I, pos);
          ASSERT(I!=map_.end());
@@ -80,7 +80,8 @@ namespace iofwdutil
                map_.equal_range (name);
             if (R.first == R.second)
             {
-               throw NoSuchHashException (name);
+               ZTHROW (NoSuchHashException ()
+                     << hash_name (name));
             }
             FuncMap::const_iterator I = R.first;
             while (I != R.second)
@@ -110,7 +111,8 @@ namespace iofwdutil
          std::pair<FuncMap::const_iterator,FuncMap::const_iterator> R = map_.equal_range (name);
          if (R.first == R.second)
          {
-            throw NoSuchHashException (name);
+            ZTHROW (NoSuchHashException ()
+                  << hash_name (name));
          }
          FuncMap::const_iterator best = R.first;
          FuncMap::const_iterator I = R.first;

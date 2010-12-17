@@ -67,7 +67,8 @@ std::string BMI::addressToMethod (const char * addr)
    const std::string s (addr); 
    string::size_type p= s.find ("://"); 
    if (p == string::npos)
-      throw BMIException ("invalid listen address!"); 
+      ZTHROW (BMIException ()
+         << zexception_msg("invalid listen address!"));
 
    return std::string("bmi_") + 
       s.substr (0, p); 
@@ -81,8 +82,11 @@ void BMI::setInitClient ()
 void BMI::setInitServer (const char * listen)
 {
    if (!listen)
-      throw BMIException ("no listen address specified in"
-            " BMI::setInitServer"); 
+   {
+      ZTHROW (BMIException ()
+            << zexception_msg("no listen address specified in"
+            " BMI::setInitServer"));
+   }
 
    int bmi_flags = BMI_INIT_SERVER;
    // bmi automatically increment reference ount on addresses any
@@ -114,7 +118,8 @@ int BMI::handleBMIError (int retcode)
       std::cerr << "Warning: BMI_NON_ERROR_BIT\n"; 
       return retcode; 
    }
-   throw BMIException (retcode); 
+   ZTHROW (BMIException ()
+         << bmi_error_code (retcode));
 }
 
 int BMI::testUnexpected (int in, struct BMI_unexpected_info * info, 

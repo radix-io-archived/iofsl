@@ -76,7 +76,7 @@ struct Factory : public Singleton<Factory<KEY,BASE,TAG> >
          typename ContainerType::const_iterator I = map_.find (key);
          if (I == map_.end())
          {
-            throw FactoryException ("Unknown key in Factory::construct!");
+            ZTHROW (NoSuchFactoryKeyException ());
          }
          return I->second;
       }

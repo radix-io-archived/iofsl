@@ -50,10 +50,12 @@ namespace iofwdutil
             case Z_MEM_ERROR:
             case Z_VERSION_ERROR:
             case Z_STREAM_ERROR:
-               throw TransformException (str(format("ZLib error: %s") %
-                        stream_.msg));
+               ZTHROW (TransformException ()
+                     << zexception_msg(str(format("ZLib error: %s") %
+                        stream_.msg)));
             default:
-               throw TransformException ("Unknown ZLib error!");
+               ZTHROW (TransformException ()
+                     << zexception_msg("Unknown ZLib error!"));
          }
       }
 

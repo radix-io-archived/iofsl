@@ -116,7 +116,6 @@ src/iofwdutil/demangle.hh \
 src/iofwdutil/signals.hh \
 src/iofwdutil/tools.hh \
 src/iofwdutil/typestorage.hh \
-src/iofwdutil/CFKeyMissingException.cpp \
 src/iofwdutil/ConfigContainer.cpp \
 src/iofwdutil/ConfigFile.cpp \
 src/iofwdutil/IOFWDLog.cpp \
@@ -139,8 +138,7 @@ src/iofwdutil/hash/HashFactory.cpp\
 src/iofwdutil/hash/HashFactory.hh\
 src/iofwdutil/hash/HashFunc.cpp\
 src/iofwdutil/hash/HashFunc.hh\
-src/iofwdutil/hash/NoSuchHashException.cpp\
-src/iofwdutil/hash/NoSuchHashException.hh\
+src/iofwdutil/hash/HashException.hh\
 src/iofwdutil/hash/SHA1Simple.cpp\
 src/iofwdutil/hash/SHA1Simple.hh\
 src/iofwdutil/hash/NoneHash.hh \
@@ -164,7 +162,6 @@ src/iofwdutil/mm/BMIMemoryManager.cpp \
 \
 src/iofwdutil/transform/GenericTransform.hh \
 src/iofwdutil/transform/GenericTransform.cpp \
-src/iofwdutil/transform/TransformException.cpp \
 src/iofwdutil/transform/TransformException.hh \
 src/iofwdutil/transform/LZF.cpp \
 src/iofwdutil/transform/LZF.hh \
@@ -208,6 +205,7 @@ endif
 if HAVE_OPENSSL
 src_iofwdutil_libiofwdutil_a_SOURCES += \
 	src/iofwdutil/hash/OpenSSLHash.hh \
+	src/iofwdutil/hash/OpenSSLException.hh \
 	src/iofwdutil/hash/OpenSSLHash.cpp \
 	src/iofwdutil/hash/OpenSSLInit.hh \
 	src/iofwdutil/hash/OpenSSLInit.cpp

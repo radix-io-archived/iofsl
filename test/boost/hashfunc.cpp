@@ -5,7 +5,7 @@
 
 #include "iofwdutil/hash/HashFactory.hh"
 #include "iofwdutil/assert.hh"
-#include "iofwdutil/hash/NoSuchHashException.hh"
+#include "iofwdutil/hash/HashException.hh"
 
 
 using namespace iofwdutil::hash;

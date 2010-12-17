@@ -6,13 +6,7 @@ namespace iofwdutil
    {
       //=====================================================================
 
-      class TransformException : public ZException
-      {
-         public:
-            TransformException (const std::string & msg);
-
-      };
-
+      struct TransformException : public virtual ZException {};
 
       //=====================================================================
    }

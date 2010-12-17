@@ -24,8 +24,10 @@ void ZLogSinkFile::openFile ()
 {
    boost::mutex::scoped_lock l (outputlock_);
    if (filename_.empty())
-      throw ZLogException ("ZLogSinkFile needs a configured filename! "
-            "(option filename)\n");
+      ZTHROW (ZLogException () <<
+           zexception_msg ("ZLogSinkFile needs a configured filename! "
+            "(option filename)\n"));
+
    output_.reset (new std::ofstream (filename_.c_str()));
 }
 
@@ -34,8 +36,9 @@ void ZLogSinkFile::initialize ()
    openFile ();
    if (! *output_)
    {
-      throw ZLogException (str(boost::format("ZLogSinkFile: error opening"
-                  " file '%s'\n") % filename_));
+      ZTHROW (ZLogException ()
+            << zexception_msg(str(boost::format("ZLogSinkFile: error opening"
+                  " file '%s'\n") % filename_)));
 
    }
 }
@@ -47,7 +50,10 @@ void ZLogSinkFile::setOption (const std::string & name, const
    if (name == "filename")
       filename_ = val;
    else
-      throw ZLogException (str(boost::format ("Invalid option ('%s') for ZLogSinkFile!") % name));
+   {
+      ZTHROW (ZLogException () <<
+            zexception_msg (str(boost::format ("Invalid option ('%s') for ZLogSinkFile!") % name)));
+   }
 }
 
 

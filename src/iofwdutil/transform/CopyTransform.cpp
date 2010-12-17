@@ -164,8 +164,9 @@ namespace iofwdutil
 
                case FLUSHED:
                   {
-                     throw TransformException ("Reset needs to be called "
-                           "before transforming more data after flush!");
+                     ZTHROW (TransformException ()
+                           << zexception_msg("Reset needs to be called "
+                           "before transforming more data after flush!"));
                   }
                   break;
                default:

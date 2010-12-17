@@ -31,7 +31,8 @@ ZLogConfigurator::MatchRule::MatchRule (const std::string & rx,
 
    if (!regex_match (rx.c_str(), res, e))
    {
-      throw ZLogException (str(format("Invalid format for rule match: '%s'!") % rx)); 
+      ZTHROW (ZLogException ()
+            << zexception_msg(str(format("Invalid format for rule match: '%s'!") % rx)));
    }
 
    ALWAYS_ASSERT (res.size() == 2 || res.size() == 3); 
@@ -159,7 +160,8 @@ ZLogFilter * ZLogConfigurator::lookupFilter (const std::string & name) const
    FilterMap::const_iterator I = filters_.find (name); 
    if (I == filters_.end())
    {
-      throw ZLogException (str(format("Filter not defined: '%s'!") % name)); 
+      ZTHROW (ZLogException ()
+            << zexception_msg(str(format("Filter not defined: '%s'!") % name)));
    }
    return I->second; 
 }
@@ -169,7 +171,8 @@ ZLogSink * ZLogConfigurator::lookupSink (const std::string & name) const
    SinkMap::const_iterator I = sinks_.find (name); 
    if (I == sinks_.end())
    {
-      throw ZLogException (str(format("Sink not defined: '%s'!") % name)); 
+      ZTHROW (ZLogException ()
+            << zexception_msg (str(format("Sink not defined: '%s'!") % name)));
    }
    return I->second; 
 }

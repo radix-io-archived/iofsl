@@ -32,8 +32,9 @@ void ConfigFile::dumpToStdErr () const
             getSectionHandle (),
             &err) < 0)
    {
-      throw ZException (str(boost::format (
-                  "Error dumping config file: '%s'") % err));
+      ZTHROW (ZException ()
+            << zexception_msg (str(boost::format (
+                  "Error dumping config file: '%s'") % err)));
    }
 
 }
@@ -117,7 +118,7 @@ ConfigFile ConfigFile::openSection (const char * name) const
    if (ret)
       return *ret;
    else
-      throw CFKeyMissingException (name);
+      ZTHROW (CFKeyMissingException () << configfile_key_name(name));
 }
 
 boost::optional<std::string> ConfigFile::getKeyOptional (const char * name)
@@ -147,7 +148,7 @@ std::string ConfigFile::getKey (const char * name) const
 {
    boost::optional<std::string> ret (getKeyOptional (name));
    if (!ret)
-      throw CFKeyMissingException (name);
+      ZTHROW (CFKeyMissingException () << configfile_key_name(name));
    else
       return *ret;
 }
@@ -172,7 +173,7 @@ std::vector<std::string> ConfigFile::getMultiKey (const char * name) const
             name, &data, &count
           ) < 0)
    {
-      throw CFKeyMissingException (name);
+      ZTHROW (CFKeyMissingException () << configfile_key_name(name));
    }
 
    std::vector<std::string> ret (count);

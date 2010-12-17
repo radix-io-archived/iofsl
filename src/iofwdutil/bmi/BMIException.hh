@@ -7,17 +7,11 @@ namespace iofwdutil
    {
 //===========================================================================
 
-class BMIException : public ZException 
-{
-public:
-   BMIException (int error);
-   BMIException (const char * msg); 
+struct BMIException : virtual public ZException {};
 
-   std::string getBMIErrorString () const; 
+typedef boost::error_info<struct tag_bmi_error, int> bmi_error_code;
 
-protected:
-   int error_; 
-}; 
+std::string to_string (const bmi_error_code & c);
 
 
 //===========================================================================

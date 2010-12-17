@@ -1,7 +1,8 @@
 #ifndef IOFWDUTIL_ZEXCEPTION_HH
 #define IOFWDUTIL_ZEXCEPTION_HH
 
-#include <boost/exception.hpp>
+#include <boost/exception/exception.hpp>
+#include <boost/exception/info.hpp>
 #include <boost/exception/error_info.hpp>
 #include <boost/exception/get_error_info.hpp>
 #include <exception>
@@ -11,29 +12,33 @@
 
 namespace iofwdutil
 {
+   //========================================================================
 
    /**
     * This class should be the base class for all exception classes defined in
     * this project.
     */
-   class ZException : public virtual std::exception,
-                      public virtual boost::exception
-   {
-   public:
-      ZException ();
+   struct ZException : public virtual std::exception,
+   public virtual boost::exception  {};
 
-      ZException (const std::string & s);
-
-      void pushMsg (const std::string & msg);
-
-      std::string toString () const;
-   };
-
+   /*
+    * It is possible to add data to an exception object.
+    * Define a tag structure, and the type of data you want to associate.
+    *
+    * For example, the typedef below enables adding a string to an exception
+    * object by using   exception_instance << zexception_msg (str)
+    */
    typedef boost::error_info<struct tag_zexception_msg,std::string>
       zexception_msg;
 
    std::string to_string (const zexception_msg & n);
 
+
+   /**
+    * Add a message to the exception object.
+    * Can be used to add a human readable description for the user.
+    */
+   void addMessage (ZException & e, const std::string & msg);
 
    /**
     * Note: defining custom exception types/hierarchies is as easy as:
@@ -42,11 +47,12 @@ namespace iofwdutil
     * struct MoreSpecificMyException : virtual MyException {};
     */
 
-/**
- * Instead of using throw(x), all code should use ZTHROW(x).
- */
+   /**
+    * Instead of using throw(x), all code should use ZTHROW(x).
+    */
 #define ZTHROW(x) BOOST_THROW_EXCEPTION(x)
 
+   //========================================================================
 }
 
 #endif

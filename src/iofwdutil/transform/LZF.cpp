@@ -93,8 +93,9 @@ namespace iofwdutil
                            block_compressed_ = true;
                            break;
                         default:
-                           throw TransformException ("Invalid header in"
-                                 " stream!");
+                           ZTHROW (TransformException ()
+                            << zexception_msg ("Invalid header in"
+                               " stream!"));
                      }
                      // skip byte
                      ++input;
@@ -104,7 +105,8 @@ namespace iofwdutil
 
                      if (size > LZF_BLOCK_SIZE)
                      {
-                        throw TransformException ("Invalid header in stream!");
+                        ZTHROW (TransformException ()
+                              << zexception_msg("Invalid header in stream!"));
                      }
 
                      block_size_ = size;
@@ -166,7 +168,8 @@ namespace iofwdutil
                            decompress_output_, LZF_BLOCK_SIZE);
 
                      if (!output_size_)
-                        throw TransformException ("Error in lzf_decompress");
+                        ZTHROW (TransformException ()
+                              << zexception_msg("Error in lzf_decompress"));
 
                      internal_state_ = FLUSH_INPUT;
                   }
@@ -209,8 +212,9 @@ namespace iofwdutil
 
                case FLUSHED:
                   {
-                     throw TransformException ("Reset needs to be called "
-                           "before decompressing more data after flush!");
+                     ZTHROW (TransformException ()
+                           << zexception_msg("Reset needs to be called "
+                           "before decompressing more data after flush!"));
                   }
                   break;
                default:

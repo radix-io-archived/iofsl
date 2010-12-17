@@ -3,17 +3,11 @@
 namespace iofwdutil
 {
 
-   class CFKeyMissingException : virtual public ZException
-   {
-      public:
-         CFKeyMissingException (const std::string & keyname);
+   struct ConfigFileException : public virtual ZException {};
 
-         const std::string & getKeyName () const
-         { return keyname_; }
+   struct CFKeyMissingException : public virtual ConfigFileException {};
 
-         virtual ~CFKeyMissingException () throw () {}
+   typedef boost::error_info<struct tag_cf_key_name,std::string>
+      configfile_key_name;
 
-      protected:
-         const std::string keyname_;
-   };
 }

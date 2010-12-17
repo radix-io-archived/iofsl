@@ -25,8 +25,7 @@ void ZLogSinkStd::setOption (const std::string & name, const std::string &
    // block filename option
    if (name == "filename")
    {
-      throw ZLogException (str(format("Invalid option ('%s') for ZLogSinkStd")
-               % name));
+      ZTHROW (ZLogUnknownOptionException () << zlog_option_name (name));
    }
    ZLogSinkFile::setOption (name, val);
 }

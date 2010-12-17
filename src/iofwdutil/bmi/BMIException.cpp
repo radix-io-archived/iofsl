@@ -1,31 +1,23 @@
 #include "BMIException.hh"
 #include "BMIError.hh"
 
-#include <iostream>
+#include <boost/format.hpp>
+
+using namespace boost;
 
 namespace iofwdutil
 {
    namespace bmi
    {
-      BMIException::BMIException (const char * msg)
+      // ====================================================================
+
+      std::string to_string (const bmi_error_code & c)
       {
-         pushMsg (msg); 
+         return str(format("BMI error: %s")
+               % BMIError::errorString (c.value()));
       }
 
-      BMIException::BMIException (int error)
-         : error_(error)
-      {
-         pushMsg (getBMIErrorString ()); 
-      }
-
-      std::string BMIException::getBMIErrorString () const
-      {
-         return BMIError::errorString (error_); 
-      }
-
-
-
-
+      //=====================================================================
    }
 }
 

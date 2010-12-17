@@ -32,7 +32,8 @@ namespace iofwdutil
       {
          if (ret == BZ_OK)
             return ret;
-         throw TransformException (str(format("BZLib error %i") % ret));
+         ZTHROW (TransformException ()
+               << zexception_msg(str(format("BZLib error %i") % ret)));
       }
 
       int BZLib::process (bool flush)

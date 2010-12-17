@@ -82,9 +82,9 @@ public:
    void enableLevel (unsigned int level) const
    {
       if (level >= levels_.size ())
-         throw ZLogException (str(boost::format ("Invalid level (%u)!") % level)); 
+         ZTHROW (ZLogInvalidLevelException () << zlog_level(level));
       
-      levels_[level] = true; 
+      levels_[level] = true;
    }
 
    static bool eqfunc (unsigned int l1, unsigned int l2) { return l1 == l2; } 
@@ -96,7 +96,7 @@ public:
    void handleCompEntry (int comptype, unsigned int limit) const
    {
       if (limit >= levels_.size ())
-         throw ZLogException (str(boost::format ("Invalid level (%u)!") % limit)); 
+         ZTHROW (ZLogInvalidLevelException () << zlog_level(limit));
 
       bool (*func) (unsigned int, unsigned int) = 0;
       switch (comptype)
@@ -190,15 +190,15 @@ void LevelMatch::setup (const char * stri)
    }
    catch (ZLogException & e)
    {
-      e.pushMsg ("in '" + std::string(stri) + "'!\n"); 
-      throw e; 
+      e << zlog_text(std::string(stri));
+      throw;
    }
 
    if (!info.full)
    {
-      throw ZLogException (str(boost::format 
-               ("Could not parse '%s': error at: '%s'!\n") 
-               % stri % info.stop)); 
+      ZTHROW (ZLogParseException ()
+            << zlog_text(std::string(stri))
+            << zlog_location (info.stop));
    }
 
    ready_ = true; 

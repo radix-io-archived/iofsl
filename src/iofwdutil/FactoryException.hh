@@ -5,13 +5,10 @@
 
 namespace iofwdutil
 {
-   struct FactoryException : public ZException 
-   {
-      FactoryException (const std::string & s) : ZException ("Factory")
-      {
-         pushMsg (s);
-      }
-   };
+   struct FactoryException : public virtual ZException { };
+
+   struct NoSuchFactoryKeyException : public virtual FactoryException {};
+
 }
 
 #endif
