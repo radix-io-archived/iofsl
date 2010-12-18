@@ -58,6 +58,12 @@ test_unit_tests_configfile_cunit_LDADD = \
 
 endif
 
+
+#noinst_PROGRAMS += test/rpc
+#test_rpc_SOURCES = test/rpc.cpp
+#test_rpc_LDFLAGS = $(AM_LDFLAGS) ${test_unit_tests_ldflags}
+
+
 #
 # microbenchmark build rules
 #

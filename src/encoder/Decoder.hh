@@ -12,6 +12,9 @@ namespace encoder
    /**
     * This class demonstrates how the Decoder interface looks like.
     * All decoders must derive from this class.
+    *
+    * The decoder (or its process function) will throw a BufferException if it
+    * runs out of buffer space while decoding.
     */
    struct Decoder : public Processor
    {

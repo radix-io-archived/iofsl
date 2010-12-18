@@ -1,0 +1,3 @@
+The 'none' encoder just does a plain copy.
+All types have the same size as the C/C++ type.
+

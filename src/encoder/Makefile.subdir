@@ -9,17 +9,23 @@ src_encoder_libencoder_a_LIBLDFLAGS = \
 
 src_encoder_libencoder_a_SOURCES = \
 	src/encoder/Size.hh \
-	src/encoder/EncoderException.cpp \
 	src/encoder/EncoderWrappers.hh \
 	src/encoder/EncoderException.hh \
 	src/encoder/Util.hh \
+	\
 	src/encoder/xdr/XDRSizeProcessor.hh \
 	src/encoder/xdr/XDRWriter.cpp \
 	src/encoder/xdr/XDRSizeProcessor.cpp \
 	src/encoder/xdr/XDRReader.cpp \
 	src/encoder/xdr/XDRBase.hh \
+	src/encoder/xdr/XDRBase.cpp \
 	src/encoder/xdr/XDRWriter.hh \
 	src/encoder/xdr/XDRReader.hh \
+	\
+	src/encoder/none/Writer.hh \
+	src/encoder/none/Reader.hh \
+	src/encoder/none/Size.hh \
+	\
 	src/encoder/Encoder.hh \
 	src/encoder/SizeSaver.hh \
 	src/encoder/Decoder.hh \

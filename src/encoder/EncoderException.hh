@@ -12,10 +12,14 @@ namespace encoder
     * if an error happened during encoding
     * or decoding.
     */
-   class EncoderException : public iofwdutil::ZException
-   {
-   };
+   class EncoderException : public virtual iofwdutil::ZException {};
 
+   /// When running out of buffer space while encoding or decoding
+   struct BufferException : public virtual EncoderException {};
+
+   /// When types don't match. (float into uint, a 512 len string into a 256
+   /// len string.
+   struct TypeException : public virtual EncoderException {};
 
 //===========================================================================
 }

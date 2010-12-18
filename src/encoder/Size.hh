@@ -75,6 +75,8 @@ namespace encoder
          void incMaxSize (size_t size)
          { max_size_ += size; }
 
+         void incBoth (size_t size)
+         { incActualSize (size); incMaxSize (size); }
 
       protected:
          bool actual_valid_;

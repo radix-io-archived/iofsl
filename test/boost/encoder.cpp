@@ -19,14 +19,20 @@
 
 #include "zoidfs/util/zoidfs-xdr.hh"
 #include "zoidfs/util/zoidfs-wrapped.hh"
+#include "zoidfs/util/zoidfs-ops.hh"
+
 #include "iofwdutil/Timer.hh"
-#include "encoder/xdr/XDRSizeProcessor.hh"
+
 #include "encoder/xdr/XDRSizeProcessor.hh"
 #include "encoder/xdr/XDRReader.hh"
 #include "encoder/xdr/XDRWriter.hh"
+
 #include "encoder/SizeSaver.hh"
 #include "encoder/EncoderException.hh"
-#include "zoidfs/util/zoidfs-ops.hh"
+
+#include "encoder/none/Reader.hh"
+#include "encoder/none/Writer.hh"
+#include "encoder/none/Size.hh"
 
 #define MEMSIZE 32*1024*1024
 
@@ -99,6 +105,12 @@ void doGenericTests (PROC & p)
    mpl::for_each<ITypes> (p);
    mpl::for_each<UITypes> (p);
    mpl::for_each<ZTypes> (p);
+
+   checkBufferProtection (p.size, p.writer, p.reader);
+   
+
+   // @TODO: add wrapper types (string, enum, array)
+   testString (p.size, p.writer, p.reader);
 }
 
 
@@ -106,6 +118,14 @@ void doGenericTests (PROC & p)
 // ==================== HELPER FUNCTIONS FOR DEALING WITH TYPES =============
 // ==========================================================================
 
+
+void randomString (char * dst, size_t bufsize)
+{
+   const size_t len = random () % bufsize;
+   for (size_t i=0; i<len; ++i)
+      dst[i] = 'A' + (random () % 26);
+   dst[len]=0;
+}
 
 // Initialize a type; Must be specialized for special types (i.e. string,
 // ...)
@@ -123,6 +143,15 @@ bool per_type_compare (const T & t1, const T & t2)
    return t1 == t2;
 }
 
+template <>
+void per_type_init (zoidfs_dirent_t & d)
+{
+   std::generate (reinterpret_cast<char*>(&d),
+         reinterpret_cast<char*>(&d) + sizeof(d),
+         random);
+   randomString (d.name, sizeof(d.name));
+}
+
 // ============================================================================
 // ============ Testing Helper functions  =====================================
 // ============================================================================
@@ -136,7 +165,7 @@ Size::SizeInfo getSize (SIZE & size, const T & type)
    SizeSaver<SIZE> restore (size);
 
    size.reset ();
-   size (type);
+   process (size, type);
    return size.size();
 }
 
@@ -176,8 +205,8 @@ void validateSizeProcessor (SIZE & size, WRITER & writer, READER & reader)
    reader.reset (&buf[0], sizeof(buf));
    writer.reset (&buf[0], sizeof(buf));
 
-   writer (dummy);
-   reader (dummy);
+   process (writer, dummy);
+   process (reader, dummy);
    const size_t writersize = writer.getPos ();
    const size_t readersize = reader.getPos ();
    const Size::SizeInfo predictedsize = getSize<T>(size);
@@ -271,15 +300,38 @@ void checkBufferProtection (SIZE & size, ENCODER & encoder, DECODER & decoder)
    decoder.reset (&buf[0], sizeof(buf));
 
    // this should work
-   BOOST_CHECK_NO_THROW (encoder (dummy));
+   BOOST_CHECK_NO_THROW (process (encoder, dummy));
 
    // this should not
-   BOOST_CHECK_THROW (encoder (dummy), EncoderException);
+   BOOST_CHECK_THROW (process (encoder, dummy), EncoderException);
 
-   BOOST_CHECK_NO_THROW (decoder (dummy));
-   BOOST_CHECK_THROW (decoder (dummy), EncoderException);
+   BOOST_CHECK_NO_THROW (process (decoder, dummy));
+   BOOST_CHECK_THROW (process (decoder, dummy), EncoderException);
 }
 
+template <typename SIZE, typename ENCODER, typename DECODER>
+void testString (SIZE & size, ENCODER & encoder, DECODER & decoder)
+{
+   const size_t MAXLEN = 512;
+   boost::scoped_array<char> buf1 (new char[MAXLEN]);
+   boost::scoped_array<char> buf2 (new char[MAXLEN]);
+
+   randomString (&buf1[0], MAXLEN);
+
+   EncString str1 (&buf1[0], MAXLEN);
+   EncString str2 (&buf2[0], MAXLEN);
+
+   size_t encsize = getSize (size, str1).getMaxSize();
+   boost::scoped_array<char> encbuf (new char[encsize]);
+   encoder.reset (encbuf.get(), encsize);
+   process (encoder, str1);
+   decoder.reset (encbuf.get(), encsize);
+   process (decoder, str2);
+
+   BOOST_CHECK(std::equal (&buf1[0], &buf1[0]+strlen(&buf1[0]),
+            &buf2[0]));
+}
+ 
 //____________________________________________________________________________//
 //____________________________________________________________________________//
 //____________________________________________________________________________//
@@ -314,6 +366,10 @@ BOOST_FIXTURE_TEST_CASE( xdrsizes, F )
 
 //____________________________________________________________________________//
 
+
+
+// ========================== XDR ===========================
+
 BOOST_FIXTURE_TEST_CASE( correctsizes_xdr, F)
 {
    BOOST_TEST_MESSAGE("Testing if XDR size prediction matches actual encoding");
@@ -342,6 +398,40 @@ BOOST_FIXTURE_TEST_CASE(correctserdeser_xdr,F)
 }
 
 // --------------------------------------------------------------------------
+
+// ========================== NONE ===========================
+
+BOOST_FIXTURE_TEST_CASE( correctsizes_none, F)
+{
+   BOOST_TEST_MESSAGE("Testing if NONE size prediction matches actual encoding");
+
+   encoder::none::Size   size;
+   encoder::none::Writer writer;
+   encoder::none::Reader reader;
+
+   ValidateSizeProcessor<encoder::none::Size,
+      encoder::none::Writer,
+      encoder::none::Reader>
+        proc (size, writer, reader);
+
+   doGenericTests (proc);
+}
+
+BOOST_FIXTURE_TEST_CASE(correctserdeser_none,F)
+{
+   BOOST_TEST_MESSAGE("Testing if NONE decoding matches encoding");
+
+   encoder::none::Size   size;
+   encoder::none::Writer writer;
+   encoder::none::Reader reader;
+
+   ValidateSizeProcessor<encoder::none::Size,
+      encoder::none::Writer,
+      encoder::none::Reader>
+        proc (size, writer, reader);
+
+   doGenericTests (proc);
+}
 
 
 BOOST_AUTO_TEST_SUITE_END()
