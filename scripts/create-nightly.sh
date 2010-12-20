@@ -29,10 +29,13 @@ ${IOFWD_SRCDIR}/scripts/doeconfig.sh || exit 1
 DISTVERSION=$(make distversion)
 
 cd ${IOFWD_SRCDIR}
-make dist || exit 1
+make dist-bzip2 || exit 1
 
-DESTNAME=${DESTDIR}/iofwd-$(date -d "${GITDATE}" +%Y%m%d).tar.gz
+DESTNAME=${DESTDIR}/iofwd-$(date -d "${GITDATE}" +%Y%m%d).tar.bz2
 
-cp iofwd-${DISTVERSION}.tar.gz ${DESTNAME}
-chmod 644 ${DESTNAME}
+if test ! -f ${DESTNAME} ; then
+   cp iofwd-${DISTVERSION}.tar.bz2 ${DESTNAME}
+   chmod 644 ${DESTNAME}
+   md5sum ${DESTNAME} > ${DESTNAME}.md5sum
+fi
 
