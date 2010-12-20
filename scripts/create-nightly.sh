@@ -36,6 +36,6 @@ DESTNAME=${DESTDIR}/iofwd-$(date -d "${GITDATE}" +%Y%m%d).tar.bz2
 if test ! -f ${DESTNAME} ; then
    cp iofwd-${DISTVERSION}.tar.bz2 ${DESTNAME}
    chmod 644 ${DESTNAME}
-   md5sum ${DESTNAME} > ${DESTNAME}.md5sum
+   ( cd ${DESTDIR} ; md5sum $(basename ${DESTNAME}) > ${DESTNAME}.md5sum )
 fi
 
