@@ -4,20 +4,18 @@ These Python scripts are Python (2.4) compliant.
 
 Short disclosure on autotests files.
 
-build_iofsl.py will prepare, configure, make and make-install the iofsl package.The values generated from the execution of make_IOFSLConfig.py are what build_iofsl.py relies on for this purpose.  
+build_iofsl.py will prepare, configure, make and make-install the iofsl package.  
 
-Executing make_IOFSLConfig.py will result in the creation of iofsl_values.cfg.
 
-build_iofsl.py and iofsl_values.cfg must be in the iofsl directory to execute properly.  
 
 If configuration fails, config.log will be mailed to the address specified in configure_error.sh.  This should be changed to represent either your own address or the mailing list address.  Currently it is set to rjdamore@gmail.gov. 
 
 Make is not email supported at this time.  
 
-The values in make_IOFSLConfig.py must be changed to represent your system.  Currenlty they represent the Turing system at LANL.  Section 5, Section 6, and Section 7 in make_IOFSLConfig.py support build_iofsl.py.
+The values in iofsl_values.cfg  must be changed to represent your system, currently they represent the Turing system at LANL.  Section 5, Section 6, and Section 7 in make_IOFSLConfig.py support build_iofsl.py.
 
-startServerTCP.py, run_cunitMD.py and run_cunitIO.py will run the two cunit tests in a two allocation scenario.  startServerTCP.py must be started first on a single allocation and one of the cunit scripts must be started second on a different allocation.  Section 7 in make_IOFSLConfig.py supports these three scripts.
-These scripts are minimal in functionality and I don't know if they will remainin future commits.
+startServerTCP.py, run_cunitMD.py and run_cunitIO.py will run the two cunit tests in a two allocation scenario.  startServerTCP.py must be started first on a single allocation and one of the cunit scripts must be started second on a different allocation.  Section 7 in iofsl_values.cfg supports these three scripts.
+These scripts are minimal in functionality and I don't know if they will remain in future commits.
 
 
 

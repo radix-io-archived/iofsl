@@ -9,8 +9,18 @@ import os,sys,subprocess,ConfigParser
 from os import path
 
 config = ConfigParser.ConfigParser()
-config.read('iofsl_values.cfg')
+config.readfp(open('/users/rjdamore/iofsl/autotest/iofsl_values.cfg'))
 home = config.get('section7', '$home')
+
+# Execute a git pull, if anyhing has changed we will be updated.
+def diff_repo(): 
+    try:
+	pull = config.get('section2', 'git_pull')
+        os.system(pull)
+    except IOError:
+	print " git command failed, maybe you are in the wrong directory?"
+    else:
+	check_deps()	
 
 # Check for all the dependencies that we need in $HOME/opt.  If everything is good,
 # then proceed to prepare and configure the IOFSL pakage.
@@ -95,9 +105,9 @@ class Mail:
 	    os.system("")
 
 	def configure_mail(self):
-	    os.system("./autotest/configure_error")
+	    os.system("./autotest/configure_error.sh")
 
 def main():
-    check_deps()
+    diff_repo()
 
 if __name__ == '__main__':main()
