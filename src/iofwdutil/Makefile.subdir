@@ -81,9 +81,6 @@ src/iofwdutil/bmi/BMIOp.hh \
 src/iofwdutil/bmi/BMITag.hh \
 src/iofwdutil/bmi/BMIUnexpectedBuffer.hh \
  \
-src/iofwdutil/zconfig/ConfigParser.hh \
-src/iofwdutil/zconfig/ConfigParser.cpp \
- \
 src/iofwdutil/workqueue/CompletionTracker.cpp \
 src/iofwdutil/workqueue/PoolWorkQueue.cpp \
 src/iofwdutil/workqueue/SynchronousWorkQueue.cpp \
@@ -98,7 +95,8 @@ src/iofwdutil/workqueue/WorkItem.hh \
 src/iofwdutil/workqueue/WorkQueue.hh \
 src/iofwdutil/workqueue/WorkQueueBase.hh \
  \
-src/iofwdutil/CFKeyMissingException.hh \
+src/iofwdutil/ConfigException.hh \
+src/iofwdutil/ConfigException.cpp \
 src/iofwdutil/ConfigContainer.hh \
 src/iofwdutil/ConfigFile.hh \
 src/iofwdutil/HybridAllocator.hh \
@@ -141,6 +139,8 @@ src/iofwdutil/hash/HashFunc.hh\
 src/iofwdutil/hash/HashException.hh\
 src/iofwdutil/hash/SHA1Simple.cpp\
 src/iofwdutil/hash/SHA1Simple.hh\
+src/iofwdutil/hash/CRC64.hh \
+src/iofwdutil/hash/CRC64.cpp \
 src/iofwdutil/hash/NoneHash.hh \
 src/iofwdutil/hash/NoneHash.cpp \
 src/iofwdutil/hash/HashAutoRegister.hh\

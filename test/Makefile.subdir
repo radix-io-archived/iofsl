@@ -58,6 +58,12 @@ test_unit_tests_configfile_cunit_LDADD = \
 
 endif
 
+
+#noinst_PROGRAMS += test/rpc
+#test_rpc_SOURCES = test/rpc.cpp
+#test_rpc_LDFLAGS = $(AM_LDFLAGS) ${test_unit_tests_ldflags}
+
+
 #
 # microbenchmark build rules
 #
@@ -196,4 +202,7 @@ check-local: test/unit-tests/run-local-test.py
 	   $(top_builddir) $(top_srcdir)
 
 EXTRA_DIST += test/unit-tests/run-local-test.py
-test/unit-tests/run-local-test.py: src/iofwd/iofwd
+
+# Don't add this dependency, otherwise make dist will depend on it and the 
+# server will be built just to create the dist.
+#test/unit-tests/run-local-test.py: src/iofwd/iofwd

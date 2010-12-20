@@ -6,9 +6,9 @@ extern "C"
 #include <bmi.h>
 }
 
-// Stupid: not possible to put a forward def of ostream because of the 
-// (unspecified) template types...
-#include <iostream>
+// Including iostream in a header is really bad (code bloat);
+// We only need the declaration, so use iosfwd
+#include <iosfwd>
 
 
 namespace iofwdutil

@@ -1,3 +1,0 @@
-noinst_LIBRARIES += src/cache/libcache.a
-src_cache_libcache_a_SOURCES = 
-

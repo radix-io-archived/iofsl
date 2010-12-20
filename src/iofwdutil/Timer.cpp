@@ -1,4 +1,6 @@
+#include <iostream>
 #include <time.h>
+
 #include "Timer.hh"
 #include "always_assert.hh"
 

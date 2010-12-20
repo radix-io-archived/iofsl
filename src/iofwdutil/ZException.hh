@@ -33,7 +33,6 @@ namespace iofwdutil
 
    std::string to_string (const zexception_msg & n);
 
-
    /**
     * Add a message to the exception object.
     * Can be used to add a human readable description for the user.

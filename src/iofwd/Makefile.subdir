@@ -2,7 +2,7 @@ if BUILD_IOFWD_SERVER
 
 # Try to run the installed server
 # @TODO: replace with version once --version option is added to server
-installcheck-local: src/iofwd/iofwd
+installcheck-local:
 	@$(bindir)/iofwd --help > /dev/null
 
 bin_PROGRAMS += src/iofwd/iofwd
@@ -16,6 +16,7 @@ src_iofwd_iofwd_LDADD = \
 	src/c-util/libiofsl-c-util.a \
 	src/zoidfs/libzoidfshints.a \
 	src/iofwdevent/libiofwdevent.a \
+	src/encoder/libencoder.a \
 	@BOOST_PROGRAM_OPTIONS_LIB@ \
 	@BOOST_DATE_TIME_LIB@ \
 	@BOOST_THREAD_LIB@ \

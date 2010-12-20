@@ -4,7 +4,6 @@
 #include <stdlib.h>
 #include <vector>
 #include <list>
-#include <iostream>
 
 #include "zoidfs/zoidfs.h"
 #include "iofwdevent/CBType.hh"

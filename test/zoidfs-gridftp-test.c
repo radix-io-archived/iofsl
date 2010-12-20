@@ -88,9 +88,11 @@ int main()
     zoidfs_resize(&handle, 16000, ZOIDFS_NO_OP_HINT);
 
     zoidfs_lookup(NULL, NULL, "/ftp/127.0.0.1/2811/tmp/gftpwrite.txt", &handle, ZOIDFS_NO_OP_HINT);
-    zoidfs_write(&handle, asize, mem, memsizes, asize, file, filesizes, ZOIDFS_NO_OP_HINT);
+    zoidfs_write(&handle, asize, (const void**) mem, memsizes, asize, file,
+          filesizes, ZOIDFS_NO_OP_HINT);
 
-    zoidfs_read(&handle, asize, memcp, memsizescp, asize, file, filesizes, ZOIDFS_NO_OP_HINT);
+    zoidfs_read(&handle, asize, (void**) memcp, memsizescp, asize, file,
+          filesizes, ZOIDFS_NO_OP_HINT);
 
     for(i = 0 ; i < asize ; i++)
     {

@@ -3,10 +3,16 @@
 #include <typeinfo>
 #include <string.h>
 #include <vector>
+
+#include "iofwdutil/Timer.hh"
+
 #include "encoder/xdr/XDRReader.hh"
 #include "encoder/xdr/XDRWriter.hh"
-#include "iofwdutil/Timer.hh"
 #include "encoder/xdr/XDRSizeProcessor.hh"
+
+#include "encoder/none/Reader.hh"
+#include "encoder/none/Writer.hh"
+#include "encoder/none/Size.hh"
 
 #include "zoidfs/util/zoidfs-xdr.hh"
 #include "zoidfs/util/zoidfs-wrapped.hh"
@@ -15,7 +21,8 @@
 
 
 // How long we measure speeds
-#define MEASURETIME 2.0
+#define MEASURETIME 0.5
+#define LOOP_COUNT 300000
 
 #define MB (1024*1024)
 
@@ -68,12 +75,26 @@ GETNAMEHELPER(double)
 
 // ==================== HELPER FUNCTIONS FOR DEALING WITH TYPES
 
+static void randfill (void * d, size_t max)
+{
+   char * ptr = static_cast<char*>(d);
+   for (unsigned int i=0; i<max; ++i)
+      *ptr++ = static_cast<char>(random());
+}
+
+static void randstring (char * dst, size_t bufsize)
+{
+   assert(bufsize);
+   const size_t len = (random() & 0x01 ? 0 : (random () % bufsize) + 1) ;
+   for (size_t i=0; i<len; ++i)
+      dst[i] = 'A' + (random() % 26);
+   dst[len]=0;
+}
+
 template <typename T>
 void type_init (T & t)
 {
-   char * ptr = (char*) &t;
-   for (unsigned int i=0; i<sizeof(T); ++i)
-      *ptr++ = static_cast<char>(random());
+   randfill (&t, sizeof(T));
 }
 
 template <typename T>
@@ -82,19 +103,37 @@ bool type_compare (const T & t1, const T & t2)
    return memcmp (&t1, &t2, sizeof(T))==0;
 }
 
-template <typename T>
+template <>
+void type_init (zoidfs_dirent_t & d)
+{
+   randfill (&d, sizeof(d));
+   randstring (d.name, sizeof(d.name));
+}
+
+template <typename SIZE, typename T>
+encoder::Size::SizeInfo getSize (const T & t)
+{
+   SIZE size;
+   process (size, t);
+   return size.size ();
+}
+
+template <typename SIZE, typename WRITER, typename READER, typename T>
 void testSpeed (char * mem, size_t size)
 {
-   XDRReader reader (mem, size);
-   XDRWriter writer (mem, size);
+   READER reader (mem, size);
+   WRITER writer (mem, size);
    iofwdutil::Timer t;
    T test;
+
+   type_init (test);
+
    double elapsed;
    int count;
 
    // Round size of basic type up to multiple of 4
    // (see XDR specs)
-   const size_t xdrsize = getXDRSize (test).getActualSize();
+   const size_t xdrsize = getSize<SIZE>(test).getMaxSize();
    const size_t loopcount = size / xdrsize;
 
    cout << "Testing speed of " << getName<T>() << " encode (type size "
@@ -107,7 +146,7 @@ void testSpeed (char * mem, size_t size)
       writer.rewind ();
       t.start ();
       for (unsigned int i=0; i<loopcount; ++i)
-         writer << test;
+         process (writer, test);
       t.stop ();
       elapsed += t.elapsed().toDouble ();
       ++count;
@@ -124,7 +163,7 @@ void testSpeed (char * mem, size_t size)
       reader.rewind();
       t.start ();
       for (unsigned int i=0; i<loopcount; ++i)
-         reader >> test;
+         process (reader, test);
       t.stop ();
       elapsed += t.elapsed().toDouble();
       ++count;
@@ -132,15 +171,15 @@ void testSpeed (char * mem, size_t size)
    cout << double(loopcount * count * sizeof(T))/(MB*elapsed) << "MB/s" << endl;
 }
 
+template <typename SIZE, typename WRITER, typename READER>
 void testCreate ()
 {
-   cout << "Testing xdrmem_create / xdr_destroy speed... ";
+   cout << "Testing create / destroy speed... ";
    cout.flush ();
 
    char mem[4];
    size_t memsize = sizeof (mem);
 
-   const unsigned long  LOOP_COUNT = 3000000;
 
    iofwdutil::Timer t;
    double elapsed = 0;
@@ -150,7 +189,7 @@ void testCreate ()
       t.start();
       for (unsigned long  i=0; i<LOOP_COUNT; ++i)
       {
-         XDRReader r (&mem[0], memsize);
+         READER r (&mem[0], memsize);
       }
       t.stop ();
       ++count;
@@ -161,7 +200,10 @@ void testCreate ()
          / static_cast<double>(count*LOOP_COUNT))  << "us overhead" << endl;
 }
 
-template <typename T>
+/**
+ * See if type can be encoded and decoded.
+ */
+template <typename SIZE, typename WRITER, typename READER, typename T>
 void validate ()
 {
    cout << "Validating " << getName<T>() << " encode/decode... ";
@@ -174,10 +216,10 @@ void validate ()
    // The smallest integer type is 4 bytes in XDR...
    // Also, even opaque data types will be padded so that
    // their size is a multiple of 4...
-   const size_t xdrsize = getXDRSize (source).getActualSize();
+   const size_t xdrsize = getSize<SIZE> (source).getActualSize();
    std::vector<char> buf(xdrsize);
-   XDRReader reader (&buf[0], buf.size());
-   XDRWriter writer (&buf[0], buf.size());
+   READER reader (&buf[0], buf.size());
+   WRITER writer (&buf[0], buf.size());
 
    bool fail = false;
 
@@ -188,8 +230,8 @@ void validate ()
 
       writer.rewind ();
       reader.rewind ();
-      writer << source;
-      reader >> dest;
+      process (writer, source);
+      process (reader, dest);
 
       if (!type_compare(source, dest))
       {
@@ -204,6 +246,11 @@ void validate ()
       cerr << getName<T>() << " FAILED!\n";
 }
 
+/**
+ * Generate random string, try to encode and decode and check if the string is
+ * preserved.
+ */
+template <typename SIZE, typename WRITER, typename READER>
 void validateString ()
 {
    enum {BUFSIZE = 2048} ;
@@ -212,8 +259,8 @@ void validateString ()
 
    char mem[sizeof(buf1)+4];
 
-   XDRReader reader (mem, sizeof (mem));
-   XDRWriter writer (mem, sizeof (mem));
+   READER reader (mem, sizeof (mem));
+   WRITER writer (mem, sizeof (mem));
 
    bool failed = false;
 
@@ -224,7 +271,8 @@ void validateString ()
       memset (buf1, 0, sizeof(buf1));
       memset (buf2, 0, sizeof(buf2));
 
-      const unsigned int len = static_cast<unsigned int>(random () % (sizeof (buf1)-1));
+      const unsigned int len = static_cast<unsigned int>(random () % (sizeof
+               (buf1)-1));
       char * ptr = buf1;
       for (unsigned int j=0; j<len; ++j)
          *ptr++ = static_cast<char>((random() % 254) + 1);
@@ -246,19 +294,26 @@ void validateString ()
    cout << ( failed ? "FAILED" : "OK" ) << endl;
 }
 
-template <typename T>
+/**
+ * Encodes, tries to decode, and checks if the encoded size falls within the
+ * range indicated by the SIZE processor.
+ */
+template <typename SIZE, typename WRITER, typename READER, typename T>
 void validateSizeProcessor ()
 {
-   T dummy = T();
+   T dummy;
+
+   type_init (dummy);
+
    static char buf[4096];
-   XDRReader reader (buf, sizeof(buf));
-   XDRWriter writer (buf, sizeof(buf));
+   READER reader (buf, sizeof(buf));
+   WRITER writer (buf, sizeof(buf));
 
    cout << "Checking if sizes are valid for "
       << getName<T>() << "... ";
    cout.flush ();
-   writer << dummy;
-   reader >> dummy;
+   process (writer, dummy);
+   process (reader, dummy);
    const size_t writersize = writer.getPos ();
    const size_t readersize = reader.getPos ();
    if (readersize == writersize)
@@ -267,27 +322,32 @@ void validateSizeProcessor ()
    }
    else
    {
-      cout << "Failed! (reader: " << readersize << ", writer: "
+      cout << "Failed! Reader and write disagree about encoded size "
+         "(reader: " << readersize << ", writer: "
          << writersize << ")" << endl;
       ret = 1;
    }
    cout.flush ();
-   const Size::SizeInfo predicted = getXDRSize (dummy);
-   const size_t pmin = predicted.getActualSize();
+   const Size::SizeInfo predicted = getSize<SIZE> (dummy);
+   const size_t pactual = predicted.getActualSize();
    const size_t pmax = predicted.getMaxSize();
-   if (readersize <= pmin && readersize <= pmax)
+   if ((readersize != pactual) || (pactual > pmax))
+   {
+      cout << "FAILED: encoded size=" << readersize 
+         << " size processor predicted actual=" <<
+           pactual << ", max=" << pmax << endl;
+      ret = 1;
+    }
+   else
    {
       cout << readersize << " in [" << predicted.getActualSize() << ","
          << predicted.getMaxSize() << "], OK" << endl;
    }
-   else
-   {
-      cout << "FAILED: " << readersize << " not in [" <<
-         predicted.getActualSize() << ","
-         << predicted.getMaxSize() << "]" << endl;
-      ret = 1;
-   }
 }
+
+//===========================================================================
+//===== XDR Specific Tests ==================================================
+//===========================================================================
 
 template <typename T>
 void validateXDRSpecSize (size_t expected)
@@ -307,12 +367,8 @@ void validateXDRSpecSize (size_t expected)
    }
 }
 
-int main (int UNUSED(argc), const char * UNUSED(args[]))
+void validateXDRSizes ()
 {
-   std::vector<char> mem (MEMSIZE);
-
-   iofwdutil::Timer::dumpInfo (cout);
-
    validateXDRSpecSize<uint8_t> (4);
    validateXDRSpecSize<uint16_t> (4);
    validateXDRSpecSize<uint32_t> (4);
@@ -322,58 +378,91 @@ int main (int UNUSED(argc), const char * UNUSED(args[]))
    validateXDRSpecSize<int16_t> (4);
    validateXDRSpecSize<int32_t> (4);
    validateXDRSpecSize<int64_t> (8);
+}
 
-   validateSizeProcessor<uint8_t> ();
-   validateSizeProcessor<uint16_t> ();
-   validateSizeProcessor<uint32_t> ();
-   validateSizeProcessor<uint64_t> ();
+//===========================================================================
+//===========================================================================
+//===========================================================================
 
-   validateSizeProcessor<int8_t> ();
-   validateSizeProcessor<int16_t> ();
-   validateSizeProcessor<int32_t> ();
-   validateSizeProcessor<int64_t> ();
+template <typename SIZE, typename WRITER, typename READER>
+void genericTests ()
+{
+   std::vector<char> mem (MEMSIZE);
 
-   validateSizeProcessor<zoidfs_handle_t> ();
-   validateSizeProcessor<zoidfs_attr_type_t> ();
-   validateSizeProcessor<zoidfs_time_t> ();
-   validateSizeProcessor<zoidfs_attr_t> ();
-   validateSizeProcessor<zoidfs_cache_hint_t> ();
-   validateSizeProcessor<zoidfs_sattr_t> ();
-   validateSizeProcessor<zoidfs_dirent_cookie_t> ();
-   validateSizeProcessor<zoidfs_dirent_t> ();
+   iofwdutil::Timer::dumpInfo (cout);
+   validateSizeProcessor<SIZE,WRITER,READER,uint8_t> ();
+   validateSizeProcessor<SIZE,WRITER,READER,uint16_t> ();
+   validateSizeProcessor<SIZE,WRITER,READER,uint32_t> ();
+   validateSizeProcessor<SIZE,WRITER,READER,uint64_t> ();
 
-   cout << endl;
+   validateSizeProcessor<SIZE,WRITER,READER,int8_t> ();
+   validateSizeProcessor<SIZE,WRITER,READER,int16_t> ();
+   validateSizeProcessor<SIZE,WRITER,READER,int32_t> ();
+   validateSizeProcessor<SIZE,WRITER,READER,int64_t> ();
 
-   validate<uint8_t>  ();
-   validate<uint16_t>  ();
-   validate<uint32_t>  ();
-   validate<uint64_t>  ();
-   validate<int8_t>  ();
-   validate<int16_t>  ();
-   validate<int32_t>  ();
-   validate<int64_t>  ();
-
-
-   validateString ();
-
-   validate<zoidfs_handle_t> ();
-   validate<zoidfs_attr_type_t> ();
+   validateSizeProcessor<SIZE,WRITER,READER,zoidfs_handle_t> ();
+   validateSizeProcessor<SIZE,WRITER,READER,zoidfs_attr_type_t> ();
+   validateSizeProcessor<SIZE,WRITER,READER,zoidfs_time_t> ();
+   validateSizeProcessor<SIZE,WRITER,READER,zoidfs_attr_t> ();
+   validateSizeProcessor<SIZE,WRITER,READER,zoidfs_cache_hint_t> ();
+   validateSizeProcessor<SIZE,WRITER,READER,zoidfs_sattr_t> ();
+   validateSizeProcessor<SIZE,WRITER,READER,zoidfs_dirent_cookie_t> ();
+   validateSizeProcessor<SIZE,WRITER,READER,zoidfs_dirent_t> ();
 
    cout << endl;
 
-   testCreate ();
+   validate<SIZE,WRITER,READER,uint8_t>  ();
+   validate<SIZE,WRITER,READER,uint16_t>  ();
+   validate<SIZE,WRITER,READER,uint32_t>  ();
+   validate<SIZE,WRITER,READER,uint64_t>  ();
+   validate<SIZE,WRITER,READER,int8_t>  ();
+   validate<SIZE,WRITER,READER,int16_t>  ();
+   validate<SIZE,WRITER,READER,int32_t>  ();
+   validate<SIZE,WRITER,READER,int64_t>  ();
 
-   testSpeed<uint8_t> (&mem[0], mem.size());
-   testSpeed<uint16_t> (&mem[0], mem.size());
-   testSpeed<uint32_t> (&mem[0], mem.size());
-   testSpeed<uint64_t> (&mem[0], mem.size());
-   testSpeed<int8_t> (&mem[0], mem.size());
-   testSpeed<int16_t> (&mem[0], mem.size());
-   testSpeed<int32_t> (&mem[0], mem.size());
-   testSpeed<int64_t> (&mem[0], mem.size());
 
-   testSpeed<zoidfs_dirent_t> (&mem[0], mem.size ());
-   testSpeed<zoidfs_handle_t> (&mem[0], mem.size ());
+   validateString<SIZE,WRITER,READER> ();
+
+   validate<SIZE,WRITER,READER,zoidfs_handle_t> ();
+   validate<SIZE,WRITER,READER,zoidfs_attr_type_t> ();
+
+   cout << endl;
+
+   testCreate<SIZE,WRITER,READER> ();
+
+   testSpeed<SIZE,WRITER,READER,uint8_t> (&mem[0], mem.size());
+   testSpeed<SIZE,WRITER,READER,uint16_t> (&mem[0], mem.size());
+   testSpeed<SIZE,WRITER,READER,uint32_t> (&mem[0], mem.size());
+   testSpeed<SIZE,WRITER,READER,uint64_t> (&mem[0], mem.size());
+   testSpeed<SIZE,WRITER,READER,int8_t> (&mem[0], mem.size());
+   testSpeed<SIZE,WRITER,READER,int16_t> (&mem[0], mem.size());
+   testSpeed<SIZE,WRITER,READER,int32_t> (&mem[0], mem.size());
+   testSpeed<SIZE,WRITER,READER,int64_t> (&mem[0], mem.size());
+
+   testSpeed<SIZE,WRITER,READER,zoidfs_dirent_t> (&mem[0], mem.size ());
+   testSpeed<SIZE,WRITER,READER,zoidfs_handle_t> (&mem[0], mem.size ());
+
+}
+
+int main (int UNUSED(argc), const char * UNUSED(args[]))
+{
+   cout << endl;
+   cout << "============================================================\n";
+   cout << "Testing XDR encoding...\n";
+   cout << "============================================================\n";
+   cout << endl;
+
+   validateXDRSizes ();
+   genericTests<XDRSizeProcessor, XDRWriter, XDRReader> ();
+
+   cout << endl;
+   cout << endl;
+   cout << "============================================================\n";
+   cout << "Testing NONE encoding...\n";
+   cout << "============================================================\n";
+   cout << endl;
+   genericTests<encoder::none::Size, encoder::none::Writer,
+      encoder::none::Reader> ();
 
    return ret;
 }

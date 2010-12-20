@@ -3,6 +3,7 @@
 
 #include "c-util/configstoreadapter.h"
 #include "ConfigFile.hh"
+#include "ConfigException.hh"
 
 // @TODO:
 //  get decent error codes in cf_getKey/... so we can differentiate
@@ -32,8 +33,7 @@ void ConfigFile::dumpToStdErr () const
             getSectionHandle (),
             &err) < 0)
    {
-      ZTHROW (ZException ()
-            << zexception_msg (str(boost::format (
+      ZTHROW (ConfigException() << zexception_msg(str(boost::format (
                   "Error dumping config file: '%s'") % err)));
    }
 
@@ -86,7 +86,7 @@ void ConfigFile::error (const std::string & strs) const
    // TODO: decent exception later
 
    // Make a copy because strs might disappear because of stack unwinding
-   throw strs;
+   ZTHROW (ConfigException () << zexception_msg(strs));
 }
 
 boost::optional<ConfigFile> ConfigFile::openSectionOptional (const char *
@@ -118,7 +118,7 @@ ConfigFile ConfigFile::openSection (const char * name) const
    if (ret)
       return *ret;
    else
-      ZTHROW (CFKeyMissingException () << configfile_key_name(name));
+      ZTHROW (CFKeyMissingException () << cfexception_key_name(name));
 }
 
 boost::optional<std::string> ConfigFile::getKeyOptional (const char * name)
@@ -148,7 +148,7 @@ std::string ConfigFile::getKey (const char * name) const
 {
    boost::optional<std::string> ret (getKeyOptional (name));
    if (!ret)
-      ZTHROW (CFKeyMissingException () << configfile_key_name(name));
+      ZTHROW (CFKeyMissingException () << cfexception_key_name(name));
    else
       return *ret;
 }
@@ -173,7 +173,7 @@ std::vector<std::string> ConfigFile::getMultiKey (const char * name) const
             name, &data, &count
           ) < 0)
    {
-      ZTHROW (CFKeyMissingException () << configfile_key_name(name));
+      ZTHROW (CFKeyMissingException () << cfexception_key_name(name));
    }
 
    std::vector<std::string> ret (count);

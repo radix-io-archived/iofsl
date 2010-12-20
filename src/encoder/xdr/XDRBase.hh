@@ -44,6 +44,9 @@ public:
       init ();
    }
 
+   /**
+    * The logic in this function needs to be fixed.
+    */
    void rewind (size_t pos)
    {
       pos += initpos_;
@@ -51,6 +54,7 @@ public:
       if (xdr_setpos (&xdr_, initpos_))
          return;
 
+      // If rewinding fails, we can only go to the beginning of the buffer
       ALWAYS_ASSERT(!pos);
 
       // If setpos failed, recreate XDR mem
@@ -79,10 +83,18 @@ public:
 
    void check (int t)
    {
-      ALWAYS_ASSERT (t);
+      if (t)
+         return;
+
+      // if and xdr operation fails we can only assume it is due to a buffer
+      // problem.
+      bufferFailure ();
    }
 
 protected:
+
+   void bufferFailure ();
+
    void destroy ()
    {
       if (mem_)

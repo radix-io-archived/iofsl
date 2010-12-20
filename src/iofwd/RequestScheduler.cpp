@@ -86,7 +86,8 @@ void RequestScheduler::configure (const iofwdutil::ConfigFile & config)
       ZLOG_ERROR(log_, format("Unknown scheduler specified! ('%s')")
             % schedalgo);
       // @TODO: need configuration file exception
-      throw "bad config";
+      ZTHROW (CFKeyValueException () << cfexception_key_name("schedalgo") <<
+         zexception_msg (str(format("Unknown scheduler specified! ('%s')"))));
    }
 
    /* get the scheduler batch size */

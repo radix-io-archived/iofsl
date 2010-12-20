@@ -20,6 +20,8 @@
 #include "CRC32.hh"
 #endif
 
+#include "CRC64.hh"
+
 using boost::format;
 
 namespace iofwdutil
@@ -40,6 +42,7 @@ namespace iofwdutil
          // HASHFUNC_REFERENCE(SHA1Simple);
 
          HASHFUNC_REFERENCE(NoneHash);
+         HASHFUNC_REFERENCE(CRC64);
 #ifdef HAVE_OPENSSL
          OpenSSLHash::registerHash ();
 #endif

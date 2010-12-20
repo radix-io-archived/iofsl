@@ -13,7 +13,10 @@ namespace encoder
 
 
 /**
- * Encoder wrapper for a typical C string.
+ * Encoder wrapper for a typical C string (variable length).
+ * Maxsize indicates the maximum number of CHARACTERS in the string, not the
+ * maximum encoded size. (i.e. 0 terminators or anything like that is not
+ * counted).
  */
 class EncString
 {
@@ -30,6 +33,7 @@ public:
 
 /**
  * Opaque fixed-length binary data.
+ * ptr shoud point to a buffer of at least size bytes.
  */
 class EncOpaque
 {
@@ -72,6 +76,8 @@ EncEnumHelper<T> EncEnum (T & en)
 
 /**
  * Variable size array.
+ * It should probably be restricted to basic types for T, to avoid calculating
+ * maxsize problems. Or at least to compile time sized objects. Think about it.
  */
 template <typename T, typename C>
 class EncVarArrayHelper

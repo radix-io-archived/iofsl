@@ -1,7 +1,6 @@
 #ifndef IOFWDUTIL_BMI_HH
 #define IOFWDUTIL_BMI_HH
 
-#include <iostream>
 #include <string>
 #include <boost/assert.hpp>
 #include "BMIContext.hh"

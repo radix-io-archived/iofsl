@@ -96,6 +96,9 @@ inline void process (XDRSizeProcessor & f, const EncVarArrayHelper<T,C> & a)
    f.incActualSize (4);
    f.incMaxSize (4);
 
+   ASSERT(a.count_ <= a.maxcount_);
+
+   // @TODO: is this correct???
    for (unsigned int i=0; i<a.count_; ++i)
       process (f, a.ptr_[i]);
    for (unsigned int i=0; i<a.maxcount_; ++i)

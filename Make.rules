@@ -10,6 +10,12 @@
 	$(AM_V_GEN)$(YACC) --defines=$(@:.c=.h) -o $(@:.h=.c)  $< \
 	   || ( $(RM) $(basename $@).h $(basename $@).c ; exit 1)
 
+#
+# Output dist version
+#
+.phony: distversion
+distversion:
+	@echo $(VERSION)
 
 #
 # Easy way to build unit tests without running them

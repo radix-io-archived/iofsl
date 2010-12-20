@@ -1,3 +1,5 @@
+#include <iostream>
+
 #include "BMIAddr.hh"
 #include "BMI.hh"
 

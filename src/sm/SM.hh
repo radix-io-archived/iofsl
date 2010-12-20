@@ -32,9 +32,6 @@
 #include "iofwdutil/demangle.hh"
 #include "iofwdutil/assert.hh"
 
-// for debugging
-#include <iostream>
-
 
 /**
  * TODO:
@@ -493,12 +490,12 @@ protected:
    StateFunc (StateMachine<SMDEF> & sm)
       : sm_(sm)
    {
-      cout << "Constructing state " << S::getStateName() << endl; 
+      //cout << "Constructing state " << S::getStateName() << endl; 
    }
 
    virtual ~StateFunc ()
    {
-      cout << "Destructing state " << S::getStateName() << endl; 
+      //cout << "Destructing state " << S::getStateName() << endl; 
    }
 
 

@@ -11,6 +11,7 @@
 #include "zoidfs/zoidfs-proto.h"
 #include "iofwdutil/Factory.hh"
 #include "iofwdutil/FactoryException.hh"
+#include "iofwdutil/ZException.hh"
 
 using namespace iofwdutil;
 using namespace iofwdutil::workqueue;
@@ -48,8 +49,8 @@ DefRequestHandler::DefRequestHandler (const iofwdutil::ConfigFile & cf)
 
    if (api_->init() != zoidfs::ZFS_OK)
    {
-      // @TODO: make this real exception
-      throw "ZoidFSAPI::init() failed";
+      ZTHROW(iofwdutil::ZException ()
+            << zexception_msg("ZoidFSAPI::init() failed"));
    }
 
    /* start thread pool */

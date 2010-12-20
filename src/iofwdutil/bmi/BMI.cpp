@@ -1,3 +1,4 @@
+#include <iostream>
 #include <string>
 #include "BMI.hh"
 #include "BMIContext.hh"
