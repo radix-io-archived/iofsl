@@ -477,7 +477,7 @@ dnl     Dispatcher POSIX driver control
 dnl =========================================================================
 
 AC_ARG_ENABLE([posix],
-              [AS_HELP_STRING([--enable-posix],[Enable new POSIX zoidfs driver])],
+              [AS_HELP_STRING([--enable-posix],[Enable POSIX zoidfs driver])],
               [case "${enableval}" in
                   yes) use_posix=1;;
                   no) use_posix=0;;
