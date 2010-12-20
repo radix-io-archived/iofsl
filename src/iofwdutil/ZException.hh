@@ -7,7 +7,6 @@
 #include <boost/exception/get_error_info.hpp>
 #include <exception>
 
-#include <vector>
 #include <string>
 
 namespace iofwdutil
