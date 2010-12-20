@@ -1,27 +1,23 @@
 
-This auto-build sub-package is intended to automate the 
-build process for the IOFSL software.  Follow the 
-README.git file to set up the proper method for using git 
-on semi-secure hpc machines.  If your hpc machine allows
-you git access you can choose to clone from there instead.
-Please review each script (including build_iofsl).  Edits which
-indicate where you have installed dependencies and which dependencies you 
-are requiring, may be needed.  
-=======================================================================
+These Python scripts are Python (2.4) compliant.
 
-The "localGitSetup" script should be moved to your home directory
-on your local machine, and executed there.
-=======================================================================
 
-The "targetGitSetup" script should be moved to your home directory
-on your target machine and executed there.
-=======================================================================
+Short disclosure on autotests files.
 
-Following the succesful setup of the git directories execute the 
-"build_iofsl" script from your home directory on your target machine.  
-=======================================================================
+build_iofsl.py will prepare, configure, make and make-install the iofsl package.The values generated from the execution of make_IOFSLConfig.py are what build_iofsl.py relies on for this purpose.  
 
-Included with the package is a "runIofslServer" script which can be used 
-to launch the server on a host machine after a proper build.  This should
-be edited to represent the machine and allocation you are using to submit 
-jobs on your hpc machine.  
+Executing make_IOFSLConfig.py will result in the creation of iofsl_values.cfg.
+
+build_iofsl.py and iofsl_values.cfg must be in the iofsl directory to execute properly.  
+
+If configuration fails, config.log will be mailed to the address specified in configure_error.sh.  This should be changed to represent either your own address or the mailing list address.  Currently it is set to rjdamore@gmail.gov. 
+
+Make is not email supported at this time.  
+
+The values in make_IOFSLConfig.py must be changed to represent your system.  Currenlty they represent the Turing system at LANL.  Section 5, Section 6, and Section 7 in make_IOFSLConfig.py support build_iofsl.py.
+
+startServerTCP.py, run_cunitMD.py and run_cunitIO.py will run the two cunit tests in a two allocation scenario.  startServerTCP.py must be started first on a single allocation and one of the cunit scripts must be started second on a different allocation.  Section 7 in make_IOFSLConfig.py supports these three scripts.
+These scripts are minimal in functionality and I don't know if they will remainin future commits.
+
+
+
