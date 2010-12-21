@@ -1,12 +1,9 @@
 #ifndef ZOIDFS_UTIL_ZOIDFSASYNC_HH
 #define ZOIDFS_UTIL_ZOIDFSASYNC_HH
 
-#include <boost/mpl/list.hpp>  // for factory
-
 #include "zoidfs-wrapped.hh"
 #include "iofwdevent/CBType.hh"
 #include "ZoidFSAPI.hh"
-
 
 namespace zoidfs
 {
@@ -21,7 +18,7 @@ class ZoidFSAsync
 {
    public:
       // ZoidFSAsync derived classes don't need extra constructor parameters
-      typedef boost::mpl::list<> FACTORY_SIGNATURE;
+      FACTORY_CONSTRUCTOR_PARAMS();
 
       virtual int init(void) =0;
 

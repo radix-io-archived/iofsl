@@ -146,6 +146,7 @@ src/iofwdutil/hash/NoneHash.cpp \
 src/iofwdutil/hash/HashAutoRegister.hh\
 \
 src/iofwdutil/Factory.hh \
+src/iofwdutil/FactoryClient.hh \
 src/iofwdutil/FactoryAutoRegister.hh \
 src/iofwdutil/CreateMethod.hh \
 src/iofwdutil/FactoryException.hh \

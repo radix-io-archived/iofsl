@@ -1,7 +1,7 @@
 #ifndef ZOIDFS_ZOIDFSAPI_HH
 #define ZOIDFS_ZOIDFSAPI_HH
 
-#include <boost/mpl/list.hpp>  // for factory
+#include "iofwdutil/FactoryClient.hh"
 #include "zoidfs-wrapped.hh"
 
 namespace zoidfs
@@ -18,7 +18,7 @@ namespace zoidfs
 
          public:
             // ZoidFSAPI derived classes don't take extra constructor parameters
-            typedef boost::mpl::list<> FACTORY_SIGNATURE;
+            FACTORY_CONSTRUCTOR_PARAMS();
 
             virtual int init() =0;
 

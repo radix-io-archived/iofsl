@@ -1,6 +1,5 @@
 #include "iofwdutil/Factory.hh"
 #include "iofwdutil/FactoryAutoRegister.hh"
-#include <boost/mpl/list.hpp>
 
 #include <string>
 #include <memory>
@@ -11,7 +10,7 @@ using namespace std;
 class Unit
 {
    public:
-      typedef boost::mpl::list<size_t> FACTORY_SIGNATURE;
+      FACTORY_CONSTRUCTOR_PARAMS(size_t);
    virtual string getName () const = 0;
 };
 

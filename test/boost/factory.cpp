@@ -1,7 +1,6 @@
 #include "iofwdutil/Factory.hh"
 #include "iofwdutil/FactoryException.hh"
 #include "iofwdutil/FactoryAutoRegister.hh"
-#include <boost/mpl/list.hpp>
 
 #include <boost/ref.hpp>
 #include <boost/utility.hpp>
@@ -15,7 +14,7 @@ using namespace std;
 class Unit
 {
    public:
-      typedef boost::mpl::list<size_t> FACTORY_SIGNATURE;
+      FACTORY_CONSTRUCTOR_PARAMS(size_t);
    virtual string getName () const = 0;
 };
 
@@ -52,7 +51,7 @@ struct nocopy : public boost::noncopyable
 
 struct RefTestBase
 {
-   typedef boost::mpl::list<nocopy &, long> FACTORY_SIGNATURE;
+   FACTORY_CONSTRUCTOR_PARAMS(nocopy &, long);
 
 };
 

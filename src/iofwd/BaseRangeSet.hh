@@ -3,7 +3,7 @@
 
 #include "iofwd/Range.hh"
 
-#include <boost/mpl/list.hpp>
+#include "iofwdutil/FactoryClient.hh"
 
 /*
  * abstract RangeSet class
@@ -15,7 +15,7 @@ class BaseRangeSet
 {
     public:
         /* for the factory */
-        typedef boost::mpl::list<> FACTORY_SIGNATURE;
+        FACTORY_CONSTRUCTOR_PARAMS();
 
         BaseRangeSet()
         {

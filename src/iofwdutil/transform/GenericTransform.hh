@@ -4,7 +4,6 @@
 #include "iofwdutil/Factory.hh"
 #include "iofwdutil/FactoryException.hh"
 #include "iofwdutil/FactoryAutoRegister.hh"
-#include <boost/mpl/list.hpp>
 #include <string>
 
 
@@ -40,7 +39,7 @@ namespace iofwdutil
       public:
          // @TODO: add getName () function
          
-        typedef boost::mpl::list<> FACTORY_SIGNATURE;
+        FACTORY_CONSTRUCTOR_PARAMS();
 
         /**
          * Reset the tranformation engine so that a new stream can be

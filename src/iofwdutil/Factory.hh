@@ -1,12 +1,14 @@
 #ifndef IOFWDUTIL_FACTORY_HH
 #define IOFWDUTIL_FACTORY_HH
 
+#include "FactoryHelper.hh"
+#include "FactoryException.hh"
+#include "Singleton.hh"
+#include "FactoryClient.hh"
+
 #include <boost/thread.hpp>
 #include <algorithm>
 #include <map>
-#include "Singleton.hh"
-#include "FactoryHelper.hh"
-#include "FactoryException.hh"
 
 namespace iofwdutil
 {
@@ -21,10 +23,15 @@ namespace iofwdutil
  *    Factory expects BASE to have the following properties:
  *       
  *     
- *         typedef boost::mpl::list<P1,P2,...,PN> FACTORY_SIGNATURE;
+ *         A macro listing the constructor parameters for this factory base
+ *         type.
+ *
+ *         FACTORY_CONSTRUCTOR_PARAMS(P1,...,Pn);
  *
  *         where P1..Pn are the types of the parameters to the BASE
  *         constructor.
+ *
+ *         FACTORY_CONSTRUCTOR_PARAMS is defined in FactoryClient.hh
  *
  *    Automatic registration can be done by using 
  *
@@ -41,7 +48,7 @@ namespace iofwdutil
  *
  *    struct Circle : public Geometric
  *    {
- *        typedef boost::mpl::list<size_t> FACTORY_SIGNATURE;
+ *        FACTORY_CONSTRUCTOR_PARAMS(unsigned int);
  *
  *        Circle (unsigned int radius)
  *        {
