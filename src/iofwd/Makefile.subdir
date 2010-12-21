@@ -5,6 +5,8 @@ if BUILD_IOFWD_SERVER
 installcheck-local:
 	@$(bindir)/iofwd --help > /dev/null
 
+SERVERSOURCES =
+
 bin_PROGRAMS += src/iofwd/iofwd
 
 src_iofwd_iofwd_LDADD = \
@@ -29,7 +31,8 @@ src_iofwd_iofwd_LDFLAGS = \
     @ZFS_DISPATCHER_LDFLAGS@ \
     @BMI_LDFLAGS@
 
-src_iofwd_iofwd_SOURCES = \
+
+SERVERSOURCES += \
 src/iofwd/FactoryHelper.hh \
 src/iofwd/FactoryHelper.cpp \
 src/iofwd/DefRequestHandler.cpp \
@@ -166,5 +169,8 @@ src/iofwd/frontend/IOFWDResizeRequest.hh \
 src/iofwd/frontend/IOFWDSetAttrRequest.hh \
 src/iofwd/frontend/IOFWDSymLinkRequest.hh \
 src/iofwd/frontend/IOFWDWriteRequest.hh
+
+
+src_iofwd_iofwd_SOURCES = $(SERVERSOURCES)
 
 endif
