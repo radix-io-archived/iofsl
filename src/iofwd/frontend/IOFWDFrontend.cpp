@@ -135,10 +135,7 @@ void IOFWDFrontend::init ()
    //BMI::setInitServer ("tcp://127.0.0.1:1234");
    BMI::setInitServer (ion.c_str());
 
-   // Make sure we have a context open
-   bmictx_ = iofwdutil::bmi::BMI::get().openContext ();
-
-   res_.bmictx_ = bmictx_;
+   BMI::instance ();
 
    stop_ = false;
 

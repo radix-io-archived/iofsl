@@ -67,17 +67,14 @@ src/iofwdutil/zlog/ZLogSource.hh \
 src/iofwdutil/bmi/BMI.cpp \
 src/iofwdutil/bmi/BMIAddr.cpp \
 src/iofwdutil/bmi/BMIBuffer.cpp \
-src/iofwdutil/bmi/BMIContext.cpp \
 src/iofwdutil/bmi/BMIError.cpp \
 src/iofwdutil/bmi/BMIException.cpp \
 src/iofwdutil/bmi/BMIUnexpectedBuffer.cpp \
 src/iofwdutil/bmi/BMI.hh \
 src/iofwdutil/bmi/BMIAddr.hh \
 src/iofwdutil/bmi/BMIBuffer.hh \
-src/iofwdutil/bmi/BMIContext.hh \
 src/iofwdutil/bmi/BMIError.hh \
 src/iofwdutil/bmi/BMIException.hh \
-src/iofwdutil/bmi/BMIOp.hh \
 src/iofwdutil/bmi/BMITag.hh \
 src/iofwdutil/bmi/BMIUnexpectedBuffer.hh \
  \

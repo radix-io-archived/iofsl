@@ -4,7 +4,6 @@
 #include "iofwdutil/bmi/BMI.hh"
 #include "iofwdutil/bmi/BMIAddr.hh"
 #include "iofwdutil/bmi/BMIBuffer.hh"
-#include "iofwdutil/bmi/BMIOp.hh"
 #include "iofwdutil/bmi/BMITag.hh"
 #include "iofwdutil/bmi/BMIUnexpectedBuffer.hh"
 
@@ -158,9 +157,6 @@ protected:
 
    /// Some general resources such as bmi, timer, ...
    IOFWDResources & r_;
-
-   // BMI connection
-   iofwdutil::bmi::BMIContext & bmi_;
 
    // Memory holding the request
    iofwdutil::bmi::BMIUnexpectedBuffer raw_request_;

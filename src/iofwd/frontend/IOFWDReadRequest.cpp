@@ -1,5 +1,4 @@
 #include "IOFWDReadRequest.hh"
-#include "iofwdutil/bmi/BMIOp.hh"
 #include "zoidfs/zoidfs-proto.h"
 #include "iofwd_config.h"
 

@@ -28,9 +28,6 @@ struct IOFWDResources
    iofwdevent::BMIResource          &  rbmi_;
    iofwdevent::TokenResource        &  rtoken_;
 
-   // This needs to go once we migrate fully to resources
-   iofwdutil::bmi::BMIContextPtr        bmictx_;
-
    /// Provides access to the frontend log
    iofwdutil::zlog::ZLogSource      &  log_;
 };

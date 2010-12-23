@@ -1,7 +1,6 @@
 #include <iostream>
 #include <string>
 #include "BMI.hh"
-#include "BMIContext.hh"
 #include "BMIException.hh"
 
 using namespace boost; 
@@ -56,12 +55,6 @@ BMI::~BMI()
    finalize (); 
 }
 
-BMIContextPtr BMI::openContext ()
-{
-   bmi_context_id ctx; 
-   check(BMI_open_context (&ctx)); 
-   return BMIContextPtr(new BMIContext (ctx)); 
-}
 
 std::string BMI::addressToMethod (const char * addr)
 {

@@ -3,9 +3,10 @@
 
 #include <string>
 #include <boost/assert.hpp>
-#include "BMIContext.hh"
 #include "iofwdutil/assert.hh"
 #include "iofwdutil/Singleton.hh"
+
+#include "BMIAddr.hh"
 
 extern "C"
 {
@@ -20,7 +21,6 @@ namespace iofwdutil
 //===========================================================================
 
    // Forward
-   class BMIContext;
    class BMIAddr;
 
    /**
@@ -62,8 +62,6 @@ namespace iofwdutil
 
       ~BMI ();
 
-      BMIContextPtr openContext ();
-
       void * alloc (BMIAddr addr, size_t memsize, AllocType type )
       {
          void * ret = BMI_memalloc (addr, memsize, static_cast<bmi_op_type>(type));
@@ -95,9 +93,7 @@ namespace iofwdutil
 
 
    protected:
-      friend class BMIContext;
       friend class BMIAddr;
-      friend class BMIOp;
 
       static int handleBMIError (int retcode);
 

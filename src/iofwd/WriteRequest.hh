@@ -3,9 +3,6 @@
 
 #include "Request.hh"
 #include "zoidfs/zoidfs.h"
-#include "iofwdutil/bmi/BMI.hh"
-#include "iofwdutil/bmi/BMIAddr.hh"
-#include "iofwdutil/bmi/BMIBuffer.hh"
 #include "iofwd/RetrievedBuffer.hh"
 
 namespace iofwd
@@ -54,8 +51,6 @@ public:
 
   // for pipeline mode
   virtual void recvPipelineBufferCB(iofwdevent::CBType cb, RetrievedBuffer * rb, size_t size) = 0;
-
-  //virtual iofwdutil::bmi::BMIAddr getRequestAddr() = 0;
 
   virtual void initRequestParams(ReqParam & p, void * bufferMem) = 0;
 
