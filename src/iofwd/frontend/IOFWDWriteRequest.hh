@@ -48,6 +48,8 @@ private:
    iofwdutil::HybridAllocator<4096> h;
    zoidfs::zoidfs_handle_t handle_;
    zoidfs::zoidfs_op_hint_t op_hint_;
+   bmi_size_t mem_expected_size;
+   bmi_size_t * bmi_mem_sizes;
 };
 
 //===========================================================================

@@ -20,8 +20,6 @@ public:
      char ** mem_starts;
      size_t * mem_sizes;
      size_t mem_total_size;
-     bmi_size_t mem_expected_size;
-     bmi_size_t * bmi_mem_sizes;
      size_t file_count;
      zoidfs::zoidfs_file_ofs_t * file_starts;
      zoidfs::zoidfs_file_ofs_t * file_sizes;
@@ -33,8 +31,10 @@ public:
 
      size_t max_buffer_size;
 
-     ReqParam_() : handle(NULL), mem_count(0), mem_starts(NULL), mem_sizes(NULL), mem_total_size(0), mem_expected_size(0),
-        bmi_mem_sizes(NULL), file_count(0), file_starts(NULL), file_sizes(NULL), pipeline_size(0), op_hint(NULL), op_hint_pipeline_enabled(true), max_buffer_size(0)
+     ReqParam_() : handle(NULL), mem_count(0), mem_starts(NULL),
+     mem_sizes(NULL), mem_total_size(0), file_count(0), file_starts(NULL),
+     file_sizes(NULL), pipeline_size(0), op_hint(NULL),
+     op_hint_pipeline_enabled(true), max_buffer_size(0)
      {
      }
 

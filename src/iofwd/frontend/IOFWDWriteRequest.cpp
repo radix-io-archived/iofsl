@@ -20,8 +20,8 @@ IOFWDWriteRequest::~IOFWDWriteRequest ()
       delete[] param_.file_starts;
    if (param_.file_sizes)
       delete[] param_.file_sizes;
-   if (param_.bmi_mem_sizes)
-      delete[] param_.bmi_mem_sizes;
+   if (bmi_mem_sizes)
+      delete[] bmi_mem_sizes;
 #else
    if (param_.mem_starts)
       h.hafree(param_.mem_starts);
@@ -31,8 +31,8 @@ IOFWDWriteRequest::~IOFWDWriteRequest ()
       h.hafree(param_.file_starts);
    if (param_.file_sizes)
       h.hafree(param_.file_sizes);
-   if (param_.bmi_mem_sizes)
-      h.hafree(param_.bmi_mem_sizes);
+   if (bmi_mem_sizes)
+      h.hafree(bmi_mem_sizes);
 #endif
    zoidfs::hints::zoidfs_hint_free(param_.op_hint);
 }
@@ -99,7 +99,7 @@ IOFWDWriteRequest::ReqParam & IOFWDWriteRequest::decodeParam ()
 
    // init the rest of the write request params to 0
    param_.mem_total_size = 0;
-   param_.mem_expected_size = 0;
+   mem_expected_size = 0;
 
    // init the handle
    param_.handle = &handle_;
@@ -150,15 +150,15 @@ void IOFWDWriteRequest::initRequestParams(ReqParam & p, void * bufferMem)
         // if this is a 32bit system, allocate a mem_size buffer using bmi_size_t
 #ifndef USE_TASK_HA
 #if SIZEOF_SIZE_T != SIZEOF_INT64_T
-        param_.bmi_mem_sizes = new bmi_size_t[param_.file_count];
+        bmi_mem_sizes = new bmi_size_t[param_.file_count];
 #else
-        param_.bmi_mem_sizes = NULL;
+        bmi_mem_sizes = NULL;
 #endif
 #else
 #if SIZEOF_SIZE_T != SIZEOF_INT64_T
-        param_.bmi_mem_sizes = (h.hamalloc<bmi_size_t>(param_.file_count));
+        bmi_mem_sizes = (h.hamalloc<bmi_size_t>(param_.file_count));
 #else
-        param_.bmi_mem_sizes = NULL;
+        bmi_mem_sizes = NULL;
 #endif
 #endif
         // setup the mem offset buffer
@@ -169,7 +169,7 @@ void IOFWDWriteRequest::initRequestParams(ReqParam & p, void * bufferMem)
             param_.mem_sizes[i] = param_.file_sizes[i];
         // if this is a 32bit system, set the bmi_size_t mem size buffer
 #if SIZEOF_SIZE_T != SIZEOF_INT64_T
-            param_.bmi_mem_sizes[i] = param_.file_sizes[i];
+            bmi_mem_sizes[i] = param_.file_sizes[i];
 #endif
             cur += param_.file_sizes[i];
         }
@@ -195,21 +195,21 @@ void IOFWDWriteRequest::releaseBuffer(RetrievedBuffer * rb)
 
 void IOFWDWriteRequest::recvBuffers(const CBType & cb, RetrievedBuffer * rb)
 {
-    param_.mem_expected_size = 0;
+    mem_expected_size = 0;
 
 #if SIZEOF_SIZE_T == SIZEOF_INT64_T
    r_.rbmi_.post_recv_list(cb, addr_, reinterpret_cast<void*const*>(param_.mem_starts), reinterpret_cast<const bmi_size_t *>(param_.mem_sizes),
-                            param_.mem_count, param_.mem_total_size, &(param_.mem_expected_size), dynamic_cast<iofwdutil::mm::BMIMemoryAlloc *>(rb->buffer_)->bmiType(), tag_, 0);
+                            param_.mem_count, param_.mem_total_size, &(mem_expected_size), dynamic_cast<iofwdutil::mm::BMIMemoryAlloc *>(rb->buffer_)->bmiType(), tag_, 0);
 #else
-   r_.rbmi_.post_recv_list (cb, addr_, reinterpret_cast<void*const*>(param_.mem_starts), reinterpret_cast<const bmi_size_t*>(param_.bmi_mem_sizes),
-                            param_.mem_count, param_.mem_total_size, &(param_.mem_expected_size), dynamic_cast<iofwdutil::mm::BMIMemoryAlloc *>(rb->buffer_)->bmiType(), tag_, 0);
+   r_.rbmi_.post_recv_list (cb, addr_, reinterpret_cast<void*const*>(param_.mem_starts), reinterpret_cast<const bmi_size_t*>(bmi_mem_sizes),
+                            param_.mem_count, param_.mem_total_size, &(mem_expected_size), dynamic_cast<iofwdutil::mm::BMIMemoryAlloc *>(rb->buffer_)->bmiType(), tag_, 0);
 #endif
 }
 
 void IOFWDWriteRequest::recvPipelineBufferCB(iofwdevent::CBType cb, RetrievedBuffer * rb, size_t size)
 {
-   param_.mem_expected_size = 0;
-   r_.rbmi_.post_recv(cb, addr_, dynamic_cast<iofwdutil::mm::BMIMemoryAlloc *>(rb->buffer_)->getMemory(), size, &(param_.mem_expected_size), 
+   mem_expected_size = 0;
+   r_.rbmi_.post_recv(cb, addr_, dynamic_cast<iofwdutil::mm::BMIMemoryAlloc *>(rb->buffer_)->getMemory(), size, &(mem_expected_size), 
         dynamic_cast<iofwdutil::mm::BMIMemoryAlloc *>(rb->buffer_)->bmiType(), tag_, 0);
 }
 

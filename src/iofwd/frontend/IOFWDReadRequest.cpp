@@ -20,8 +20,8 @@ IOFWDReadRequest::~IOFWDReadRequest ()
       delete[] param_.file_starts;
    if (param_.file_sizes)
       delete[] param_.file_sizes;
-   if (param_.bmi_mem_sizes)
-      delete[] param_.bmi_mem_sizes;
+   if (bmi_mem_sizes)
+      delete[] bmi_mem_sizes;
 #else
    if (param_.mem_starts)
       h.hafree(param_.mem_starts);
@@ -31,8 +31,8 @@ IOFWDReadRequest::~IOFWDReadRequest ()
       h.hafree(param_.file_starts);
    if (param_.file_sizes)
       h.hafree(param_.file_sizes);
-   if (param_.bmi_mem_sizes)
-      h.hafree(param_.bmi_mem_sizes);
+   if (bmi_mem_sizes)
+      h.hafree(bmi_mem_sizes);
 #endif
    zoidfs::hints::zoidfs_hint_free(param_.op_hint);
 }
@@ -100,7 +100,7 @@ IOFWDReadRequest::ReqParam & IOFWDReadRequest::decodeParam ()
    }
 
    // init other param vars
-   param_.mem_total_size = 0;
+   mem_total_size = 0;
 
    // get the max buffer size from BMI
    r_.rbmi_.get_info(addr_, BMI_CHECK_MAXSIZE, static_cast<void *>(&param_.max_buffer_size));
@@ -118,7 +118,7 @@ void IOFWDReadRequest::initRequestParams(ReqParam & p, void * bufferMem)
         // compute the total size of the io op
         for(size_t i = 0 ; i < param_.mem_count ; i++)
         {
-            param_.mem_total_size += param_.mem_sizes[i];
+            mem_total_size += param_.mem_sizes[i];
         }
 
         // create the bmi buffer
@@ -149,15 +149,15 @@ void IOFWDReadRequest::initRequestParams(ReqParam & p, void * bufferMem)
 
 #ifndef USE_TASK_HA
 #if SIZEOF_SIZE_T != SIZEOF_INT64_T
-        param_.bmi_mem_sizes = new bmi_size_t[param_.file_count];
+        bmi_mem_sizes = new bmi_size_t[param_.file_count];
 #else
-        param_.bmi_mem_sizes = NULL;
+        bmi_mem_sizes = NULL;
 #endif
 #else
 #if SIZEOF_SIZE_T != SIZEOF_INT64_T
-        param_.bmi_mem_sizes = (h.hamalloc<bmi_size_t>(param_.file_count));
+        bmi_mem_sizes = (h.hamalloc<bmi_size_t>(param_.file_count));
 #else
-        param_.bmi_mem_sizes = NULL;
+        bmi_mem_sizes = NULL;
 #endif
 #endif
 
@@ -168,7 +168,7 @@ void IOFWDReadRequest::initRequestParams(ReqParam & p, void * bufferMem)
             param_.mem_starts[i] = mem + cur;
             param_.mem_sizes[i] = param_.file_sizes[i];
 #if SIZEOF_SIZE_T != SIZEOF_INT64_T
-            param_.bmi_mem_sizes[i] = param_.mem_sizes[i];
+            bmi_mem_sizes[i] = param_.mem_sizes[i];
 #endif
             cur += param_.file_sizes[i];
         }
@@ -182,11 +182,11 @@ void IOFWDReadRequest::sendBuffers(const iofwdevent::CBType & cb, RetrievedBuffe
 #if SIZEOF_SIZE_T == SIZEOF_INT64_T
    /* Send the mem_sizes_ array */
    r_.rbmi_.post_send_list(cb, addr_, reinterpret_cast<const void*const*>(param_.mem_starts), reinterpret_cast<const bmi_size_t *>(param_.mem_sizes),
-                            param_.mem_count, param_.mem_total_size, dynamic_cast<iofwdutil::mm::BMIMemoryAlloc *>(rb->buffer_)->bmiType(), tag_, 0);
+                            param_.mem_count, mem_total_size, dynamic_cast<iofwdutil::mm::BMIMemoryAlloc *>(rb->buffer_)->bmiType(), tag_, 0);
 #else
    /* Send the bmi_mem_sizes_ array */
-   r_.rbmi_.post_send_list(cb, addr_, reinterpret_cast<const void*const*>(param_.mem_starts), reinterpret_cast<const bmi_size_t *>(param_.bmi_mem_sizes),
-                            param_.mem_count, param_.mem_total_size, dynamic_cast<iofwdutil::mm::BMIMemoryAlloc *>(rb->buffer_)->bmiType(), tag_, 0);
+   r_.rbmi_.post_send_list(cb, addr_, reinterpret_cast<const void*const*>(param_.mem_starts), reinterpret_cast<const bmi_size_t *>(bmi_mem_sizes),
+                            param_.mem_count, mem_total_size, dynamic_cast<iofwdutil::mm::BMIMemoryAlloc *>(rb->buffer_)->bmiType(), tag_, 0);
 #endif
 }
 

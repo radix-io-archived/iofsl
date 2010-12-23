@@ -19,9 +19,7 @@ public:
       size_t mem_count;
       void ** mem_starts;
       size_t * mem_sizes;
-      bmi_size_t * bmi_mem_sizes;
       size_t file_count;
-      bmi_size_t mem_total_size;
       zoidfs::zoidfs_file_ofs_t * file_starts;
       zoidfs::zoidfs_file_ofs_t * file_sizes;
       size_t pipeline_size;
@@ -32,8 +30,11 @@ public:
 
      size_t max_buffer_size;
 
-     ReqParam_() : handle(NULL), mem_count(0), mem_starts(NULL), mem_sizes(NULL), bmi_mem_sizes(NULL),
-        file_count(0), mem_total_size(0), file_starts(NULL), file_sizes(NULL), pipeline_size(0), op_hint(NULL), op_hint_pipeline_enabled(true), max_buffer_size(0)
+     ReqParam_()
+        : handle(NULL), mem_count(0), mem_starts(NULL), mem_sizes(NULL),
+          file_count(0), file_starts(NULL), file_sizes(NULL),
+          pipeline_size(0), op_hint(NULL), op_hint_pipeline_enabled(true),
+          max_buffer_size(0)
      {
      }
    } ReqParam;
