@@ -2,6 +2,9 @@
 #include "zoidfs/zoidfs-proto.h"
 #include "iofwd_config.h"
 
+#include "iofwdevent/BMIResource.hh"
+
+
 namespace iofwd
 {
    namespace frontend

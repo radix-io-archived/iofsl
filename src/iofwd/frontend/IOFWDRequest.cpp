@@ -1,5 +1,7 @@
 #include "IOFWDRequest.hh"
 
+#include "iofwdevent/BMIResource.hh"
+
 namespace iofwd
 {
    namespace frontend

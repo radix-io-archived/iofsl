@@ -4,28 +4,37 @@
 #include "iofwdutil/IOFWDLog.hh"
 #include "iofwdutil/signals.hh"
 
-using namespace iofwdutil; 
+// Services
+#include "Log.hh"
+#include "Config.hh"
+
+using namespace iofwdutil;
+
+SERVICE_REGISTER(iofwd::IOFWDMain, iofwdserver);
 
 namespace iofwd
 {
 //===========================================================================
 
-IOFWDMain::IOFWDMain (bool notrap, const iofwdutil::ConfigFile & co)
-   : mainlog_ (IOFWDLog::getSource ()), notrap_(notrap),
-     config_ (co)
+IOFWDMain::IOFWDMain (service::ServiceManager & man)
+   : service::Service (man),
+     log_service_ (lookupService<Log>("log")),
+     config_service_ (lookupService<Config>("config")),
+     frontend_ (lookupService<frontend::Frontend>("bmifrontend")),
+     mainlog_ (log_service_->getSource ()),
+     config_ (config_service_->getConfig ()),
+     notrap_ (!manager_.getParam ("iofwdserver.notrap").empty())
 {
+   
    // Make sure that we do have signals sent to a random thread
-   disableAllSignals (notrap); 
+   disableAllSignals (notrap_);
 }
 
 void IOFWDMain::boot ()
 {
-   ZLOG_DEBUG (mainlog_, "Starting Resources");
-   resources_.reset (new Resources ());
-
    ZLOG_DEBUG (mainlog_, "Starting IOFWD Frontend"); 
 
-   frontend_.reset (new frontend::IOFWDFrontend (*resources_));
+   //frontend_.reset (new frontend::IOFWDFrontend (*resources_));
    
    frontend_->setConfig (config_.openSectionDefault ("frontend"));
 
@@ -46,9 +55,6 @@ void IOFWDMain::shutdown ()
    frontend_->destroy (); 
 
    requesthandler_.reset ();
-
-   ZLOG_DEBUG (mainlog_, "Stopping resources...");
-   resources_.reset (0);
 
    ZLOG_DEBUG (mainlog_, "Stopping thread pool...");
    iofwdutil::ThreadPool::instance().reset(); 

@@ -17,11 +17,10 @@ extern "C"
 
 namespace iofwdevent
 {
-   //===========================================================================
+   //==========================================================================
 
    /**
-    * @TODO: consider adding cancel: make operations return some opaque value
-    * (pointer to internal entry) and provide a cancel method.
+    * @TODO: Provide cancel support for normal send/receive
     */
    class BMIResource : public ThreadedResource
    {
@@ -86,12 +85,13 @@ namespace iofwdevent
          /**
           * Return new BMI entry
           */
-         inline BMIEntry * newEntry (const CBType & cb, bmi_size_t * actual = 0);
+         inline BMIEntry * newEntry (const CBType & cb,
+               bmi_size_t * actual = 0);
 
          /**
-          * Check for normal BMI errors not associated with requests
+          * Check for normal BMI errors not associated with requests.
           */
-         inline void checkBMI (int ret) { ALWAYS_ASSERT(ret >= 0); };
+         inline void checkBMI (int ret);
 
       public:
 
@@ -247,9 +247,19 @@ namespace iofwdevent
 
          void checkNewUEMessages ();
 
+         /// Throw a BMI exception
+         void throwBMIError (int ret);
    };
 
    //===========================================================================
+         
+   void BMIResource::checkBMI (int ret)
+   {
+      if (ret >= 0)
+         return;
+
+      throwBMIError (ret);
+   }
 
    BMIResource::BMIEntry * BMIResource::newEntry (const CBType &  u,
          bmi_size_t * actual)
@@ -260,22 +270,26 @@ namespace iofwdevent
 
    void BMIResource::completeEntry (BMIEntry * e, int bmiret)
    {
+      CBType cb;
+      cb.swap (e->cb);
+      delete (e);
+
       try
       {
          if (bmiret >= 0)
          {
-            e->cb (CBException ());
+            /* no errors */
+            cb (CBException ());
          }
          else
          {
-            handleBMIError (e->cb, bmiret);
+            handleBMIError (cb, bmiret);
          }
       }
       catch (...)
       {
          ALWAYS_ASSERT(false && "Callback should not throw");
       }
-      delete (e);
    }
 
 

@@ -20,6 +20,15 @@ namespace iofwdevent
 {
 //===========================================================================
 
+/**
+ * Timer resource
+ *   
+ *   Calls specified callback when timer expires.
+ *
+ *   @TODO: remove singleton once all components are migrated to
+ *   iofwd::service::Service
+ *
+ */
 class TimerResource : public ThreadedResource,
                       public iofwdutil::Singleton<TimerResource>
 {

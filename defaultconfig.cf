@@ -18,9 +18,12 @@ log {
 
 }
 
+bmi
+{
+  listen = "tcp://127.0.0.1:1234";
+}
 
 frontend {
-  listen = "tcp://127.0.0.1:1234";
 
   //
   // bmi buffer pool options
