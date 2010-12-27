@@ -3,7 +3,6 @@
 
 #include "iofwdevent/TimerResource.hh"
 #include "iofwdevent/BMIResource.hh"
-#include "iofwdevent/TokenResource.hh"
 #include "iofwdevent/ResourceWrapper.hh"
 
 namespace iofwd
@@ -20,19 +19,16 @@ namespace iofwd
       public:
          Resources ()
             : rtimer_(iofwdevent::TimerResource::instance ()),
-            timerwrap (&rtimer_), bmiwrap (&rbmi_), 
-            tokenwrap (&rtoken_)
+            timerwrap (&rtimer_), bmiwrap (&rbmi_)
       {
       }
 
          iofwdevent::TimerResource  &       rtimer_;
          iofwdevent::BMIResource            rbmi_;
-         iofwdevent::TokenResource          rtoken_;
 
       private:
          iofwdevent::ResourceWrapper        timerwrap;
          iofwdevent::ResourceWrapper        bmiwrap;
-         iofwdevent::ResourceWrapper        tokenwrap;
    };
 
 //===========================================================================
