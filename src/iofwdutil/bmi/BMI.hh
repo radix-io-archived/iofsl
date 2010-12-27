@@ -50,9 +50,6 @@ namespace iofwdutil
        */
       static void setInitClient ();
 
-      static bool isCreated ()
-      { return created_; };
-
       static BMI & get ()
       {
         return instance();

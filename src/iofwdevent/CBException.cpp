@@ -9,6 +9,11 @@ namespace iofwdevent
 {
    //========================================================================
 
+   CBException CBException::current_exception ()
+   {
+      return CBException (boost::current_exception ());
+   }
+
    void CBException::swap (CBException & other)
    {
       if (this == boost::addressof(other))

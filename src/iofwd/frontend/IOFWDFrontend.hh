@@ -5,11 +5,24 @@
 #include <boost/smart_ptr.hpp>
 #include <boost/array.hpp>
 
+#include <csignal>
+
 #include "Frontend.hh"
 #include "iofwdutil/IOFWDLog.hh"
-#include "iofwd/Resources.hh"
 #include "iofwdutil/bmi/BMI.hh"
 #include "IOFWDResources.hh"
+#include "iofwdevent/Resource.hh"
+#include "iofwdevent/CBException.hh"
+
+#include "iofwd/service/Service.hh"
+
+// Service forward declarations
+namespace iofwd
+{
+   class Log;
+   class BMI;
+   class Config;
+}
 
 namespace iofwd
 {
@@ -17,12 +30,12 @@ namespace iofwd
    {
 //===========================================================================
 
-class IOFWDFrontend : public Frontend
+class IOFWDFrontend : public Frontend,
+                      public service::Service
 {
 public:
 
-   /// res = the BMI resource to use
-   IOFWDFrontend (Resources & r);
+   IOFWDFrontend (service::ServiceManager & m);
 
    virtual ~IOFWDFrontend ();
 
@@ -43,9 +56,13 @@ protected:
    void post_testunexpected ();
 
 protected:
+   boost::shared_ptr<Log> log_service_;
+   boost::shared_ptr<BMI> bmi_service_;
+   boost::shared_ptr<Config> config_service_;
+
    iofwdutil::IOFWDLogSource & log_;
 
-   Resources & r_;
+   iofwdevent::BMIResource & rbmi_;
 
 private:
    enum { BATCH_SIZE = 128 };

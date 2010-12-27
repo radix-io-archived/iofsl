@@ -35,6 +35,14 @@ src_iofwd_iofwd_LDFLAGS = \
 
 
 SERVERSOURCES += \
+src/iofwd/Timer.hh \
+src/iofwd/Timer.cpp \
+src/iofwd/Log.hh \
+src/iofwd/Log.cpp \
+src/iofwd/Config.hh \
+src/iofwd/Config.cpp \
+src/iofwd/BMI.hh \
+src/iofwd/BMI.cpp \
 src/iofwd/IofwdLinkHelper.hh \
 src/iofwd/IofwdLinkHelper.cpp \
 src/iofwd/DefRequestHandler.cpp \
@@ -101,7 +109,6 @@ src/iofwd/TaskHelper.hh \
 src/iofwd/ThreadTasks.hh \
 src/iofwd/WriteRequest.hh \
 src/iofwd/WriteTask.hh \
-src/iofwd/Resources.hh \
 \
 src/iofwd/tasksm/BaseTaskSM.hh \
 src/iofwd/tasksm/CreateTaskSM.hh \

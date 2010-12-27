@@ -1,8 +1,12 @@
 #ifndef IOFWD_FRONTEND_IOFWDRESOURCES_HH
 #define IOFWD_FRONTEND_IOFWDRESOURCES_HH
 
-#include "iofwd/Resources.hh"
-#include "iofwdutil/IOFWDLog.hh"
+#include "iofwdutil/IOFWDLog-fwd.hh"
+
+namespace iofwdevent
+{
+   class BMIResource;
+}
 
 namespace iofwd
 {
@@ -17,10 +21,9 @@ namespace iofwd
  */
 struct IOFWDResources
 {
-   IOFWDResources (Resources & r,
+   IOFWDResources (iofwdevent::BMIResource & bmi,
          iofwdutil::zlog::ZLogSource & l)
-      : rbmi_(r.rbmi_),
-      log_(l)
+      : rbmi_(bmi), log_(l)
    {
    }
 

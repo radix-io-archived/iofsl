@@ -8,8 +8,8 @@
 #include "frontend/IOFWDFrontend.hh"
 #include "iofwdutil/zlog/ZLogSource.hh"
 #include "iofwdutil/ConfigFile.hh"
-#include "Resources.hh"
 #include "iofwdutil/IOFSLKeyValueStorage.hh"
+#include "iofwd/service/Service.hh"
 
 namespace iofwd
 {
@@ -17,16 +17,18 @@ namespace iofwd
 
 // Forwards
 class RequestHandler;
+class Config;
+class Log;
 
 /**
  * Main object; Represents the whole I/O forwarding server
  * Groups resources and provides a single startup/shutdown point
  */
-class IOFWDMain
+class IOFWDMain : public service::Service
 {
 public:
 
-   IOFWDMain (bool notrap, const iofwdutil::ConfigFile & config_);
+   IOFWDMain (service::ServiceManager & man);
 
    // Called to initialize the server
    void boot ();
@@ -37,20 +39,20 @@ public:
    void shutdown ();
 
 protected:
-   std::auto_ptr<frontend::Frontend> frontend_;
-   std::auto_ptr<RequestHandler> requesthandler_;
 
+   // Service dependencies
+   boost::shared_ptr<RequestHandler>     requesthandler_;
+
+   boost::shared_ptr<Log>                log_service_;
+   boost::shared_ptr<Config>             config_service_;
+   boost::shared_ptr<frontend::Frontend> frontend_;
    iofwdutil::zlog::ZLogSource & mainlog_;
 
-   // ===== Resources ====
-   std::auto_ptr<Resources> resources_;
+   // COnfig file
+   const iofwdutil::ConfigFile config_;
 
    // If set, don't catch CTRL-C and don't protect threads from signals
    bool notrap_;
-
-   // COnfig file
-   const iofwdutil::ConfigFile & config_;
-
    boost::scoped_ptr<iofwdutil::IOFSLKeyValueStorage> kvstore_;
 };
 

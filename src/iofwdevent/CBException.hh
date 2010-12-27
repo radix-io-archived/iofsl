@@ -78,6 +78,11 @@ namespace iofwdevent
           */
          static CBException cancelledOperation (Handle h);
 
+         /**
+          * Return a CBException object for the current exception. Can only be
+          * called from within a catch block.
+          */
+         static CBException current_exception ();
 
          /**
           * Swap internal state with another CBException

@@ -1,5 +1,6 @@
 #include "IofwdLinkHelper.hh"
 #include "iofwdutil/LinkHelper.hh"
+#include "iofwd/service/Service.hh"
 
 /*
  * List the modules that need to be registered below...
@@ -17,6 +18,16 @@ void registerIofwdFactoryClients ()
             (requestscheduler) \
             (hierarchical) \
             (intervaltree) \
+      );
+
+      // Register services
+      SERVICE_LINKHELPER( \
+            (config) \
+            (bmi) \
+            (log) \
+            (iofwdserver) \
+            (timer) \
+            (bmifrontend) \
       );
 }
 
