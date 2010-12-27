@@ -7,6 +7,8 @@ installcheck-local:
 
 SERVERSOURCES =
 
+include src/iofwd/service/Makefile.subdir
+
 bin_PROGRAMS += src/iofwd/iofwd
 
 src_iofwd_iofwd_LDADD = \
