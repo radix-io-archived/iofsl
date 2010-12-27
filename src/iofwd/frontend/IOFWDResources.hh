@@ -19,12 +19,11 @@ struct IOFWDResources
 {
    IOFWDResources (Resources & r,
          iofwdutil::zlog::ZLogSource & l)
-      : rtimer_(r.rtimer_), rbmi_(r.rbmi_),
+      : rbmi_(r.rbmi_),
       log_(l)
    {
    }
 
-   iofwdevent::TimerResource        &  rtimer_;
    iofwdevent::BMIResource          &  rbmi_;
 
    /// Provides access to the frontend log

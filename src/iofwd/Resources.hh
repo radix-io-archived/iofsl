@@ -18,16 +18,13 @@ namespace iofwd
    {
       public:
          Resources ()
-            : rtimer_(iofwdevent::TimerResource::instance ()),
-            timerwrap (&rtimer_), bmiwrap (&rbmi_)
+            : bmiwrap (&rbmi_)
       {
       }
 
-         iofwdevent::TimerResource  &       rtimer_;
          iofwdevent::BMIResource            rbmi_;
 
       private:
-         iofwdevent::ResourceWrapper        timerwrap;
          iofwdevent::ResourceWrapper        bmiwrap;
    };
 
