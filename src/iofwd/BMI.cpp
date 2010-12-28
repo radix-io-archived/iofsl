@@ -7,6 +7,8 @@
 #include "iofwd/ConfigException.hh"
 #include "iofwdutil/bmi/BMI.hh"
 
+#include <boost/foreach.hpp>
+
 SERVICE_REGISTER(iofwd::BMI,bmi);
 
 using namespace iofwdutil;
@@ -33,12 +35,17 @@ namespace iofwd
    {
       done ();
    }
-
-   void BMI::init ()
+/*
+   BMI_addr_t BMI::lookupAddr (const std::string & s) const
    {
-      ZLOG_DEBUG (log_, "Initializing BMI");
+      BMI_addr_t addr;
+      iofwdutil::bmi::BMI::check (BMI_addr_lookup (&addr, s.c_str()));
+      return addr;
+   } */
 
-      ConfigFile bmiconfig (config_.openSection ("bmi"));
+   std::string BMI::singleServerMode (const iofwdutil::ConfigFile & bmiconfig)
+   {
+      ZLOG_DEBUG(log_, "Single-server mode");
       std::string ion = bmiconfig.getKeyDefault ("listen", "");
       const char * ion_name = getenv("ZOIDFS_ION_NAME");
       if (ion_name)
@@ -54,22 +61,82 @@ namespace iofwd
                << ce_key ("listen"));
       }
 
+      serverrank_ = 0;
+      // servercount_ = 1;
+      servernames_.clear ();
+      servernames_.push_back (ion);
+      return ion;
+   }
+
+   std::string BMI::multiServerMode (const iofwdutil::ConfigFile & bmiconfig)
+   {
+      ZLOG_DEBUG(log_, "Multi-server mode");
+
+      std::vector<std::string> list =
+         bmiconfig.getMultiKey ("serverlist");
+
+      const char * rank = getenv ("ZOIDFS_SERVER_RANK");
+      if (!rank)
+      {
+         ZTHROW (ConfigException ()
+               << iofwdutil::zexception_msg ("No ZOIDFS_SERVER_RANK set!"));
+      }
+      unsigned int numrank;
+      try
+      {
+         numrank = boost::lexical_cast<unsigned int>(rank);
+      }
+      catch (boost::bad_lexical_cast & b)
+      {
+         ZLOG_ERROR(log_, "Invalid value in ZOIDFS_SERVER_RANK!");
+         ZTHROW (ConfigException ()
+               << iofwdutil::zexception_msg("Could not "
+                  "parse ZOIDFS_SERVER_RANK!"));
+      }
+      if (numrank >= list.size())
+      {
+         ZTHROW (ConfigException ()
+               << iofwdutil::zexception_msg(
+                  "Invalid server rank specified!"));
+      }
+      // servercount_ = list.size();
+      serverrank_ = numrank;
+
+      servernames_.swap(list);
+      return servernames_[serverrank_];
+   }
+
+   void BMI::init ()
+   {
+      ZLOG_DEBUG (log_, "Initializing BMI");
+
+
+      ConfigFile bmiconfig (config_.openSection ("bmi"));
+
+      std::string ion;
+      if (bmiconfig.hasMultiKey ("serverlist"))
+      {
+         ion = multiServerMode (bmiconfig);
+      }
+      else
+      {
+         ion = singleServerMode (bmiconfig);
+      }
+
       // IOFW uses bmi, so we need to supply init params here
       ZLOG_INFO (log_, format("Server listening on %s") % ion);
       iofwdutil::bmi::BMI::setInitServer (ion.c_str());
 
       // Force instantiation
       iofwdutil::bmi::BMI::instance ();
-
-      // Make sure we have a context open
-      // @TODO: get rid of this context stuff (or better, collect all BMI
-      // utils and move them into one location/class)
-
-      // @TODO: Maybe merge iofwdutil::BMI functionality in here
-
-      /* bmictx_ = iofwdutil::bmi::BMI::get().openContext ();
-      res_.bmictx_ = bmictx_; */
-   }
+   
+      /*servers_.reserve (servernames_.size());
+      BOOST_FOREACH (const std::string & s, servernames_)
+      {
+         ZLOG_DEBUG(log_, format("Looking up peer '%s'...") % s);
+         servers_.push_back (lookupAddr (s));
+      } */
+}
 
    void BMI::done ()
    {
