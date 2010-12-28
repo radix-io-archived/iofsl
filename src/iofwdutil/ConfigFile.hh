@@ -48,6 +48,11 @@ public:
    /// Return key value or default if key is missing
    std::string getKeyDefault (const char * name, const std::string & def) const;
 
+   /// Try to access multikey; return false if key is missing; throw if error
+   /// occured.
+   bool tryGetMultiKey (const char * name, std::vector<std::string> & s)
+      const;
+
    /// Return multikey array or exception if missing
    std::vector<std::string> getMultiKey (const char * name) const;
 
@@ -68,6 +73,13 @@ public:
    ConfigHandle getConfigHandle () const;
 
    SectionHandle getSectionHandle () const;
+
+   /// Return true if named key is present and the key type is single-value
+   bool hasKey (const char * name) const;
+
+   /// Return true if a multi-key is present with the given name.
+   /// Returns false if it is not a multi key or is not present
+   bool hasMultiKey (const char * name) const;
 
 protected:
 

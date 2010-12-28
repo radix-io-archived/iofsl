@@ -162,6 +162,20 @@ std::string ConfigFile::getKeyDefault (const char * name, const std::string & de
       return *ret;
 }
 
+bool ConfigFile::tryGetMultiKey (const char * name, std::vector<std::string> &
+      v) const
+{
+   try
+   {
+      v = getMultiKey (name);
+   }
+   catch (CFKeyMissingException & e)
+   {
+      return false;
+   }
+   return true;
+}
+
 std::vector<std::string> ConfigFile::getMultiKey (const char * name) const
 {
    char ** data;
@@ -184,6 +198,29 @@ std::vector<std::string> ConfigFile::getMultiKey (const char * name) const
    }
    free (data);
    return ret;
+}
+
+bool ConfigFile::hasMultiKey (const char * name) const
+{
+   try
+   {
+      std::vector<std::string> s = getMultiKey (name);
+      return true;
+   }
+   catch (CFKeyMissingException & e)
+   {
+      return false;
+   }
+}
+
+bool ConfigFile::hasKey (const char * name) const
+{
+   int ret = cf_getKey (getConfigHandle (),
+         getSectionHandle (),
+         name, 0, 0);
+   if (ret < 0)
+      return false;
+   return true;
 }
 
 }
