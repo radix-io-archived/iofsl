@@ -5,6 +5,13 @@
 #include "iofwdutil/IOFWDLog-fwd.hh"
 
 #include <boost/scoped_ptr.hpp>
+#include <vector>
+#include <string>
+
+extern "C"
+{
+#include <bmi.h>
+}
 
 namespace iofwdevent
 {
@@ -34,6 +41,7 @@ namespace iofwd
     *
     * @TODO: Move BMI configuration options in here as much as possible
     *        (for example, buffer/memory management)
+    *
     */
    struct BMI : public service::Service
    {
@@ -45,6 +53,16 @@ namespace iofwd
          iofwdevent::BMIResource & get ()
          { return *resource_; }
 
+         unsigned int getServerCount () const
+         { return servernames_.size (); }
+
+         unsigned int getServerRank () const
+         { return serverrank_; }
+
+         const std::string & getServer (unsigned int pos) const
+         { return servernames_[pos]; }
+
+
       protected:
 
          /// Initialize BMI
@@ -52,6 +70,12 @@ namespace iofwd
 
          /// shutdown BMI
          void done ();
+
+         std::string multiServerMode (const iofwdutil::ConfigFile & c);
+
+         std::string singleServerMode (const iofwdutil::ConfigFile & c);
+
+         // BMI_addr_t lookupAddr (const std::string & s) const;
 
       protected:
          // Services
@@ -63,6 +87,11 @@ namespace iofwd
          boost::scoped_ptr<iofwdevent::BMIResource> resource_;
          const iofwdutil::ConfigFile & config_;
          iofwdutil::IOFWDLogSource & log_;
+
+         unsigned int serverrank_;
+
+         // std::vector<BMI_addr_t> servers_;
+         std::vector<std::string> servernames_;
    };
 
    //========================================================================
