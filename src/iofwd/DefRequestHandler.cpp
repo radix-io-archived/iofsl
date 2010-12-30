@@ -17,6 +17,8 @@ using namespace iofwdutil;
 using namespace iofwdutil::workqueue;
 using namespace boost::lambda;
 
+// @TODO: get separate requesthandler for state machines / threads
+
 namespace iofwd
 {
 //===========================================================================
@@ -86,6 +88,8 @@ DefRequestHandler::DefRequestHandler (const iofwdutil::ConfigFile & cf)
       event_mode_ = EVMODE_SM;
    }
 
+   // @TODO: Move PoolWorkQueue to iofwdevent, merge thread pool
+   // implementations, get rid of workitem
    iofwdutil::ConfigFile csec = config_.openSectionDefault("workqueue");
    workqueue_normal_.reset (new PoolWorkQueue (csec.getKeyAsDefault("minthreadnum", 0),
                                                csec.getKeyAsDefault("maxthreadnum", 100)));
