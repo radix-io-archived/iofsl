@@ -121,3 +121,5 @@ zoidfs-local.pc
 zoidfs.pc
 test/unit-tests/configfile-cunit
 buildlogs
+iofsl.pc
+iofslrouter.pc
