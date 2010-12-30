@@ -2,6 +2,7 @@
 
 #include "c-util/txt_configfile.h"
 #include "iofwd/service/ServiceManager.hh"
+#include "iofwd/ConfigException.hh"
 
 #include <boost/format.hpp>
 
@@ -19,7 +20,9 @@ namespace iofwd
       std::string file = man.getParam ("config.configfile");
       if (file.empty())
       {
-         throw 3;
+         ZTHROW (ConfigException ()
+               << iofwdutil::zexception_msg("config.configfile needs to be"
+                  " set!"));
       }
       config_ = loadConfig (file);
    }
