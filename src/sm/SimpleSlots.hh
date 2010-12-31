@@ -34,9 +34,8 @@ namespace sm
          typedef SimpleSlots<SLOTS,T> SELF;
 
       public:
-         SimpleSlots (T & client, bool nothread = false)
-            : client_(client),
-              nothread_ (nothread)
+         SimpleSlots (T & client)
+            : client_(client)
          {
          }
 
@@ -188,7 +187,6 @@ namespace sm
          };
 
          T & client_;
-         bool nothread_;
 
          boost::array<Slot, SLOTS> slots_;
          boost::array<boost::mutex, SLOTS> locks_;
