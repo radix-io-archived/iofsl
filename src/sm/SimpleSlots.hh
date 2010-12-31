@@ -22,6 +22,10 @@ namespace sm
     *
     * Note: no locking needed, The same callback slot cannot be used
     * concurrently.
+    *
+    * @TODO: Instead of using a per-slot lock, to reduce class size, consider
+    * using a class wide lock. This would only affect cases were multiple
+    * slots complete at the same time.
     */
    template <size_t SLOTS, typename T>
    class SimpleSlots
