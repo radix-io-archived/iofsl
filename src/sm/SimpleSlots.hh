@@ -151,6 +151,18 @@ namespace sm
             callbackhelper (self, POS, status);
          }
 
+         /**
+          * Here we're trading space for speed.
+          * Binding more than a pointer worth of data incurs overhead
+          * (additional allocation/free, and copying) so instead of binding
+          * the slot number and the 'this' pointer, we generate a custom
+          * callback function for a slot number, basically encoding the slot
+          * number in the address of the function.
+          *
+          * We do this for the first 10 slots (assuming more than 10 slots
+          * will be rarely needed). If a higher slot number is requested,
+          * getCallback falls back to binding both parameters.
+          */
          iofwdevent::CBType getCallback (size_t pos)
          {
             ASSERT( pos < SLOTS);
