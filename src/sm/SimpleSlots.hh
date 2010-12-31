@@ -66,7 +66,16 @@ namespace sm
             return getCallback (pos);
          }
 
-         void wait (size_t pos, typename T::next_method_t next)
+         /**
+          * If the slot already completed, wait sets the next state of T to
+          * next. If not, it causes the callback to set T's next state to next
+          * when the callback completes.
+          *
+          * Note that SimpleSlots enforces a deterministic ordering, even if
+          * multiple slots are active, as it only allows waiting on a single
+          * slot at a time.
+          */
+        void wait (size_t pos, typename T::next_method_t next)
          {
             boost::mutex::scoped_lock l(locks_[pos]);
 
@@ -94,7 +103,7 @@ namespace sm
             client_.setNextMethod (next, status);
          }
 
-      protected:
+       protected:
 
          void callback (int pos, int status)
          {
