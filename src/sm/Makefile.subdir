@@ -17,8 +17,6 @@ src/sm/SMManager.cpp \
 src/sm/SMManager.hh \
 src/sm/SMResourceClient.cpp \
 src/sm/SMResourceClient.hh \
-src/sm/SMResourceOp.cpp \
-src/sm/SMResourceOp.hh \
 src/sm/SM_OLD.hh \
 src/sm/SimpleSM.hh \
 src/sm/SimpleSM.cpp \

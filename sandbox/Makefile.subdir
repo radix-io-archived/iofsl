@@ -90,14 +90,6 @@ sandbox_vl_test_SOURCES = sandbox/vl-test.cpp
 sandbox_vl_test_LDFLAGS = $(sandbox_ldflags)
 sandbox_vl_test_LDADD = $(sandbox_ldadd)
 
-EXTRA_PROGRAMS += sandbox/smmanager
-sandbox_smmanager_SOURCES = sandbox/smmanager.cpp
-sandbox_smmanager_LDFLAGS = $(sandbox_ldflags) $(BMI_LDFLAGS)
-sandbox_smmanager_LDADD = $(top_builddir)/src/sm/libsm.a \
-			  $(top_builddir)/src/iofwdevent/libiofwdevent.a \
-			  $(top_builddir)/src/iofwdutil/libiofwdutil.a \
-			  $(BMI_LIBS)
-
 EXTRA_PROGRAMS += sandbox/factory
 sandbox_factory_SOURCES = sandbox/factory.cpp
 sandbox_factory_LDFLAGS = $(sandbox_ldflags)
