@@ -89,9 +89,10 @@ static const size_t BMIP_SERVER_EX_SPACE = (16 * (1<<20));
 #else
 #ifdef BMIPSERVERMEM
 #warning server mem
+#define BMIP_SERVER_EX_SPACE (512ul * 1024ul * 1024ul)
 //#define BMIP_SERVER_EX_SPACE (1ul * 1024ul * 1024ul * 1024ul)
 //#define BMIP_SERVER_EX_SPACE (2ul * 1024ul * 1024ul * 1024ul)
-#define BMIP_SERVER_EX_SPACE (4ul * 1024ul * 1024ul * 1024ul)
+//#define BMIP_SERVER_EX_SPACE (4ul * 1024ul * 1024ul * 1024ul)
 //#define BMIP_SERVER_EX_SPACE (8ul * 1024ul * 1024ul * 1024ul)
 #else
 #warning client mem
@@ -138,6 +139,7 @@ static QLIST_HEAD(bmip_cur_ops);
 static QLIST_HEAD(bmip_done_ops);
 static QLIST_HEAD(bmip_server_pending_send_ops);
 static QLIST_HEAD(bmip_server_pending_recv_ops);
+static QLIST_HEAD(bmip_addr_seq_list);
 
 /* lock for list accesses */
 static gen_mutex_t list_mutex = GEN_MUTEX_INITIALIZER;
@@ -155,11 +157,59 @@ static int workfdmax = -1;
 static int workfds[2];
 static int unexworkfds[2];
 
+#ifdef BMIP_TRACE
+#define BMIP_EV_TRACE_LIMIT (64ul * 1024ul * 1024ul)
+static int bmip_server_events[BMIP_EV_TRACE_LIMIT];
+static int64_t bmip_server_mb[BMIP_EV_TRACE_LIMIT];
+static int bmip_server_pid[BMIP_EV_TRACE_LIMIT];
+static int bmip_server_nid[BMIP_EV_TRACE_LIMIT];
+static int bmip_server_events_counter = 0;
+static int bmip_client_events[BMIP_EV_TRACE_LIMIT];
+static int64_t bmip_client_mb[BMIP_EV_TRACE_LIMIT];
+static int bmip_client_pid[BMIP_EV_TRACE_LIMIT];
+static int bmip_client_nid[BMIP_EV_TRACE_LIMIT];
+static int bmip_client_handler[BMIP_EV_TRACE_LIMIT];
+static int bmip_client_events_counter = 0;
+#endif
+
+static unsigned int bmip_client_seq = 0;
+
 /* portals addr index... this never changes! */
 #define BMIP_PTL_INDEX 37
 
 /* server data allocation space */
 static mspace portals_data_space = NULL;
+
+unsigned int bmip_get_addr_seq(ptl_process_id_t pid)
+{
+	int found = 0;
+	unsigned int s = 0;
+
+	bmip_seq_t * n = NULL, * nsafe = NULL;
+	qlist_for_each_entry_safe(n, nsafe, &bmip_addr_seq_list, list)
+        {
+		if(n->target.pid == pid.pid && n->target.nid == pid.nid)
+		{	
+			found = 1;
+			n->counter++;
+			s = n->counter;
+			break;
+		}
+	}
+
+	/* if we did not find the address, make a new seq number for it */
+	if(!found)
+	{
+		bmip_seq_t * n = malloc(sizeof(bmip_seq_t));
+		n->counter = 0;
+		s = n->counter;
+		n->target.pid = pid.pid;
+		n->target.nid = pid.nid;
+		qlist_add_tail(&n->list, &bmip_addr_seq_list);
+	}
+
+	return s;
+}
 
 int bmip_get_max_ex_msg_size(void)
 {
@@ -179,7 +229,7 @@ void bmip_monitor_shutdown(void)
 void bmip_data_init(size_t len)
 {
 	bmip_ex_space_end = bmip_ex_space + len;
-	fprintf(stderr, "%s:%i space = %p, space end = %p, len = %lli\n", __func__, __LINE__, bmip_ex_space, bmip_ex_space_end, len);
+	//fprintf(stderr, "%s:%i space = %p, space end = %p, len = %lli\n", __func__, __LINE__, bmip_ex_space, bmip_ex_space_end, len);
 
         portals_data_space = create_mspace_with_base(bmip_ex_space, len, 1);
 }
@@ -757,13 +807,47 @@ out:
         return ret;
 }
 
-int bmip_wait_local_get(void)
+int bmip_wait_local_get(struct qlist_head * pelist)
 {
 	int ecount = 0;
 	int etype = 0;
+	int i = 0;
+
+        bmip_pending_event_t * n = NULL, * nsafe = NULL;
+        qlist_for_each_entry_safe(n, nsafe, pelist, list)
+        {
+		if(n->eventid == PTL_EVENT_SEND_END)
+                {
+                        qlist_del(&n->list);
+			free(n);
+                        ecount++;
+                }
+		else if(n->eventid == PTL_EVENT_REPLY_END)
+                {
+                        qlist_del(&n->list);
+			free(n);
+                        ecount++;
+                }
+		if(ecount == 2)
+                       	break;
+        }
+
 	while(ecount < 2)
 	{
-		etype = bmip_wait_ex_event(NULL);
+		ptl_event_t ev;
+		etype = bmip_wait_ex_event(&ev);
+
+#ifdef BMIP_TRACE
+		/* track all of the events */
+                if(bmip_client_events_counter >= BMIP_EV_TRACE_LIMIT)
+                        bmip_client_events_counter = 0;
+                int eindex = bmip_client_events_counter++;
+                bmip_client_events[eindex] = etype;
+                bmip_client_pid[eindex] = ev.initiator.pid;
+                bmip_client_nid[eindex] = ev.initiator.nid;
+                bmip_client_mb[eindex] = ev.match_bits;
+                bmip_client_handler[eindex] = 1;
+#endif
 #if 0
 		if(etype == PTL_EVENT_SEND_START)
 		{
@@ -784,17 +868,52 @@ int bmip_wait_local_get(void)
 		{
 			ecount++;
 		}
+		else
+		{
+			bmip_pending_event_t * pe = (bmip_pending_event_t *) malloc(sizeof(bmip_pending_event_t));
+			pe->eventid = etype;
+			pe->event = ev;
+			qlist_add_tail(&pe->list, pelist);
+		}
 	}
 	return 0;
 }
 
-int bmip_wait_unex_remote_get(void)
+int bmip_wait_unex_remote_get(struct qlist_head * pelist)
 {
 	int ecount = 0;
 	int etype = 0;
+        int i = 0;
+
+        bmip_pending_event_t * n = NULL, * nsafe = NULL;
+        qlist_for_each_entry_safe(n, nsafe, pelist, list)
+        {
+                if(n->eventid == PTL_EVENT_GET_END)
+                {
+                        qlist_del(&n->list);
+			free(n);
+                        ecount++;
+                }
+                if(ecount == 1)
+                        break;
+        }
+
         while(ecount < 1)
         {
-                etype = bmip_wait_unex_event(NULL);
+		ptl_event_t ev;
+                etype = bmip_wait_unex_event(&ev);
+
+                /* track all of the events */
+#ifdef BMIP_TRACE
+                if(bmip_client_events_counter >= BMIP_EV_TRACE_LIMIT)
+                        bmip_client_events_counter = 0;
+                int eindex = bmip_client_events_counter++;
+                bmip_client_events[eindex] = etype;
+                bmip_client_pid[eindex] = ev.initiator.pid;
+                bmip_client_nid[eindex] = ev.initiator.nid;
+                bmip_client_mb[eindex] = ev.match_bits;
+                bmip_client_handler[eindex] = 2;
+#endif
 #if 0
                 if(etype == PTL_EVENT_GET_START)
                 {
@@ -805,17 +924,52 @@ int bmip_wait_unex_remote_get(void)
                 {
                         ecount++;
                 }
+                else
+                {
+                        bmip_pending_event_t * pe = (bmip_pending_event_t *)malloc(sizeof(bmip_pending_event_t));
+                        pe->eventid = etype;
+                        pe->event = ev;
+			qlist_add_tail(&pe->list, pelist);
+                }
         }
 	return 0;
 }
 
-int bmip_wait_remote_get(void)
+int bmip_wait_remote_get(struct qlist_head * pelist)
 {
 	int ecount = 0;
 	int etype = 0;
+        int i = 0;
+
+        bmip_pending_event_t * n = NULL, * nsafe = NULL;
+        qlist_for_each_entry_safe(n, nsafe, pelist, list)
+        {
+                if(n->eventid == PTL_EVENT_GET_END)
+                {
+                        qlist_del(&n->list);
+			free(n);
+                        ecount++;
+                }
+                if(ecount == 1)
+                        break;
+        }
+
         while(ecount < 1)
         {
-                etype = bmip_wait_ex_event(NULL);
+		ptl_event_t ev;
+                etype = bmip_wait_ex_event(&ev);
+
+#ifdef BMIP_TRACE
+                /* track all of the events */
+                if(bmip_client_events_counter >= BMIP_EV_TRACE_LIMIT)
+                        bmip_client_events_counter = 0;
+                int eindex = bmip_client_events_counter++;
+                bmip_client_events[eindex] = etype;
+                bmip_client_pid[eindex] = ev.initiator.pid;
+                bmip_client_nid[eindex] = ev.initiator.nid;
+                bmip_client_mb[eindex] = ev.match_bits;
+                bmip_client_handler[eindex] = 3;
+#endif
 #if 0
                 if(etype == PTL_EVENT_GET_START)
                 {
@@ -826,17 +980,58 @@ int bmip_wait_remote_get(void)
                 {
                         ecount++;
                 }
+                else
+                {
+                        bmip_pending_event_t * pe = (bmip_pending_event_t *)malloc(sizeof(bmip_pending_event_t));
+                        pe->eventid = etype;
+                        pe->event = ev;
+			qlist_add_tail(&pe->list, pelist);
+                }
         }
 	return 0;
 }
 
-int bmip_wait_local_put(void)
+int bmip_wait_local_put(struct qlist_head * pelist)
 {
         int ecount = 0;
 	int etype = 0;
+        int i = 0;
+
+        bmip_pending_event_t * n = NULL, * nsafe = NULL;
+        qlist_for_each_entry_safe(n, nsafe, pelist, list)
+        {
+                if(n->eventid == PTL_EVENT_SEND_END)
+                {
+                        qlist_del(&n->list);
+			free(n);
+                        ecount++;
+                }
+                else if(n->eventid == PTL_EVENT_ACK)
+                {
+                        qlist_del(&n->list);
+			free(n);
+                        ecount++;
+                }
+                if(ecount == 2)
+                        break;
+        }
+
         while(ecount < 2)
         {
-                etype = bmip_wait_ex_event(NULL);
+		ptl_event_t ev;
+                etype = bmip_wait_ex_event(&ev);
+
+#ifdef BMIP_TRACE
+                /* track all of the events */
+                if(bmip_client_events_counter >= BMIP_EV_TRACE_LIMIT)
+                        bmip_client_events_counter = 0;
+                int eindex = bmip_client_events_counter++;
+                bmip_client_events[eindex] = etype;
+                bmip_client_pid[eindex] = ev.initiator.pid;
+                bmip_client_nid[eindex] = ev.initiator.nid;
+                bmip_client_mb[eindex] = ev.match_bits;
+                bmip_client_handler[eindex] = 4;
+#endif
 #if 0
                 if(etype == PTL_EVENT_SEND_START)
                 {
@@ -851,18 +1046,54 @@ int bmip_wait_local_put(void)
                 {
                         ecount++;
                 }
+                else
+                {
+                        bmip_pending_event_t * pe = (bmip_pending_event_t *)malloc(sizeof(bmip_pending_event_t));
+                        pe->eventid = etype;
+                        pe->event = ev;
+			qlist_add_tail(&pe->list, pelist);
+                }
         }
 
 	return 0;
 }
 
-int bmip_wait_remote_put(void)
+int bmip_wait_remote_put(struct qlist_head * pelist)
 {
 	int ecount = 0;
 	int etype = 0;
+        int i = 0;
+
+        bmip_pending_event_t * n = NULL, * nsafe = NULL;
+        qlist_for_each_entry_safe(n, nsafe, pelist, list)
+        {
+                if(n->eventid == PTL_EVENT_PUT_END)
+                {
+                        qlist_del(&n->list);
+			free(n);
+                        ecount++;
+                }
+                if(ecount == 1)
+                        break;
+        }
+
         while(ecount < 1)
         {
-                etype = bmip_wait_ex_event(NULL);
+		ptl_event_t ev;
+                etype = bmip_wait_ex_event(&ev);
+
+#ifdef BMIP_TRACE
+                /* track all of the events */
+                if(bmip_client_events_counter >= BMIP_EV_TRACE_LIMIT)
+                        bmip_client_events_counter = 0;
+                int eindex = bmip_client_events_counter++;
+                bmip_client_events[eindex] = etype;
+                bmip_client_pid[eindex] = ev.initiator.pid;
+                bmip_client_nid[eindex] = ev.initiator.nid;
+                bmip_client_mb[eindex] = ev.match_bits;
+                bmip_client_handler[eindex] = 5;
+#endif
+
 #if 0
                 if(etype == PTL_EVENT_PUT_START)
                 {
@@ -872,6 +1103,13 @@ int bmip_wait_remote_put(void)
                 if(etype == PTL_EVENT_PUT_END)
                 {
                         ecount++;
+                }
+                else
+                {
+                        bmip_pending_event_t * pe = (bmip_pending_event_t *)malloc(sizeof(bmip_pending_event_t));
+                        pe->eventid = etype;
+                        pe->event = ev;
+			qlist_add_tail(&pe->list, pelist);
                 }
         }
 	return 0;
@@ -883,13 +1121,19 @@ int bmip_client_unex_send(ptl_process_id_t target, int num, void * buffer, size_
         int ecount = 0;
         int ret = PTL_OK;
         int i = 0;
+	bmip_pending_event_t * n = NULL, * nsafe = NULL;
+	QLIST_HEAD(pelist);
+        int tagseq = (tag << 3) | (bmip_client_seq & 0x7);
 
+        bmip_client_seq++;
+	
         /* handles and mdesc for each request */
         ptl_handle_md_t put_req_md = PTL_HANDLE_INVALID;
         ptl_md_t put_req_mdesc;
 
         /* match bits */
-        ptl_match_bits_t mb = tag;
+        ptl_match_bits_t mb = tagseq;
+        //ptl_match_bits_t mb = tag;
 
         /* setup of the MDs */
         put_req_mdesc.start = buffer;
@@ -916,7 +1160,7 @@ int bmip_client_unex_send(ptl_process_id_t target, int num, void * buffer, size_
                 goto out;
         }
 
-	bmip_wait_local_put();
+	bmip_wait_local_put(&pelist);
 
 	/* unlink the request */
 	ret = bmip_ptl_md_unlink(put_req_md);
@@ -927,9 +1171,15 @@ int bmip_client_unex_send(ptl_process_id_t target, int num, void * buffer, size_
         }	
 	put_req_md = PTL_HANDLE_INVALID;
 
-	bmip_wait_unex_remote_get();
+	bmip_wait_unex_remote_get(&pelist);
 
 out:
+        qlist_for_each_entry_safe(n, nsafe, &pelist, list)
+        {
+		qlist_del(&n->list);
+		free(n);
+	}
+
 	return 1;
 }
 
@@ -940,6 +1190,11 @@ int bmip_client_send(ptl_process_id_t target, int num, void ** buffers, size_t *
 	int ecount = 0;
 	int ret = PTL_OK;
 	int i = 0;
+	bmip_pending_event_t * n = NULL, * nsafe = NULL;
+	QLIST_HEAD(pelist);
+	int tagseq = (tag << 3) | (bmip_client_seq & 0x7);
+
+	bmip_client_seq++;
 
 	/* handles and mdesc for each request */
 	ptl_handle_md_t put_req_md = PTL_HANDLE_INVALID;
@@ -948,7 +1203,8 @@ int bmip_client_send(ptl_process_id_t target, int num, void ** buffers, size_t *
         ptl_md_t put_mdesc;
 
 	/* match bits */
-        ptl_match_bits_t mb = tag;
+        ptl_match_bits_t mb = tagseq;
+        //ptl_match_bits_t mb = tag;
 
 	/* setup of the MDs */
         put_req_mdesc.start = buffers[0];
@@ -985,11 +1241,11 @@ int bmip_client_send(ptl_process_id_t target, int num, void ** buffers, size_t *
         }
 
 
-	bmip_wait_local_put();
+	bmip_wait_local_put(&pelist);
 
-	bmip_wait_remote_get();
+	bmip_wait_remote_get(&pelist);
 
-	bmip_wait_remote_put();
+	bmip_wait_remote_put(&pelist);
 	
 	/* cleanup */
 	ret = bmip_ptl_md_unlink(put_req_md);
@@ -1028,7 +1284,7 @@ int bmip_client_send(ptl_process_id_t target, int num, void ** buffers, size_t *
         		}	
 		
 			/* wait for ack */
-			bmip_wait_local_put();
+			bmip_wait_local_put(&pelist);
 
 			/* cleanup */
 			ret = bmip_ptl_md_unlink(put_md);
@@ -1069,7 +1325,7 @@ int bmip_client_send(ptl_process_id_t target, int num, void ** buffers, size_t *
         		}	
 		
 			/* wait for ack */
-			bmip_wait_local_put();
+			bmip_wait_local_put(&pelist);
 
 			/* cleanup */
 			ret = bmip_ptl_md_unlink(put_md);
@@ -1110,7 +1366,7 @@ int bmip_client_send(ptl_process_id_t target, int num, void ** buffers, size_t *
         		}	
 		
 			/* wait for ack */
-			bmip_wait_local_put();
+			bmip_wait_local_put(&pelist);
 
 			/* cleanup */
 			ret = bmip_ptl_md_unlink(put_md);
@@ -1126,6 +1382,11 @@ int bmip_client_send(ptl_process_id_t target, int num, void ** buffers, size_t *
 	}
 
 out:
+        qlist_for_each_entry_safe(n, nsafe, &pelist, list)
+        {
+                qlist_del(&n->list);
+		free(n);
+        }
 	return ret;
 }
 
@@ -1136,6 +1397,11 @@ int bmip_client_recv(ptl_process_id_t target, int num, void ** buffers, size_t *
 	int ecount = 0;
 	int ret = PTL_OK;
 	int i = 0;
+	bmip_pending_event_t * n = NULL, * nsafe = NULL;
+	QLIST_HEAD(pelist);
+        int tagseq = (tag << 3) | (bmip_client_seq & 0x7);
+
+        bmip_client_seq++;
 
 	/* handles and mdesc for each request */
 	ptl_handle_md_t put_req_md = PTL_HANDLE_INVALID;
@@ -1144,7 +1410,8 @@ int bmip_client_recv(ptl_process_id_t target, int num, void ** buffers, size_t *
         ptl_md_t put_mdesc;
 
 	/* match bits */
-        ptl_match_bits_t mb = tag;
+        ptl_match_bits_t mb = tagseq;
+        //ptl_match_bits_t mb = tag;
 
 	/* setup of the MDs */
         put_req_mdesc.start = buffers[0];
@@ -1181,7 +1448,7 @@ int bmip_client_recv(ptl_process_id_t target, int num, void ** buffers, size_t *
         }
 
 	/* wait for ack... 4 events */
-	bmip_wait_local_put();
+	bmip_wait_local_put(&pelist);
 	
 	/* cleanup */
 	ret = bmip_ptl_md_unlink(put_req_md);
@@ -1192,7 +1459,7 @@ int bmip_client_recv(ptl_process_id_t target, int num, void ** buffers, size_t *
         }	
 	put_req_md = PTL_HANDLE_INVALID;
 
-	bmip_wait_remote_put();
+	bmip_wait_remote_put(&pelist);
 
 	int snum = bmip_ex_rsp_space[0];
 
@@ -1201,7 +1468,7 @@ int bmip_client_recv(ptl_process_id_t target, int num, void ** buffers, size_t *
 		/* set the remote offset */
 		for(i = 0 ; i < num ; i++)
 		{
-			int rlength = 0;
+			size_t rlength = 0;
 
 			/* next offset and length */
 			offset = bmip_ex_rsp_space[i + 1];
@@ -1236,7 +1503,7 @@ int bmip_client_recv(ptl_process_id_t target, int num, void ** buffers, size_t *
         		}	
 	
 			/* wait for ack */
-			bmip_wait_local_get();
+			bmip_wait_local_get(&pelist);
 	
 			/* cleanup */
 			ret = bmip_ptl_md_unlink(put_md);
@@ -1293,7 +1560,7 @@ int bmip_client_recv(ptl_process_id_t target, int num, void ** buffers, size_t *
         		}	
 	
 			/* wait for ack */
-			bmip_wait_local_get();
+			bmip_wait_local_get(&pelist);
 	
 			/* cleanup */
 			ret = bmip_ptl_md_unlink(put_md);
@@ -1345,7 +1612,7 @@ int bmip_client_recv(ptl_process_id_t target, int num, void ** buffers, size_t *
         		}	
 	
 			/* wait for ack */
-			bmip_wait_local_get();
+			bmip_wait_local_get(&pelist);
 	
 			/* cleanup */
 			ret = bmip_ptl_md_unlink(put_md);
@@ -1362,6 +1629,11 @@ int bmip_client_recv(ptl_process_id_t target, int num, void ** buffers, size_t *
 	}
 
 out:
+        qlist_for_each_entry_safe(n, nsafe, &pelist, list)
+        {
+                qlist_del(&n->list);
+		free(n);
+        }
 	return ret;
 }
 
@@ -1403,11 +1675,6 @@ int bmip_server_put_local_get_req_wait(void * op_, int etype)
         {
 		op->put_fetch_req_wait_counter--;
         }
-	else
-	{
-		/* unknown event... store it for later */
-		op->ev_list[op->ev_list_counter++] = etype;
-	}
 
 	/* if counter done... invoke the next function */
 	if(op->put_fetch_req_wait_counter == 0)
@@ -1488,11 +1755,6 @@ int bmip_server_put_local_put_wait(void * op_, int etype)
         {
 		op->put_push_rsp_wait_counter--;
         }
-	else
-	{
-		/* unknown event... store it for later */
-		op->ev_list[op->ev_list_counter++] = etype;
-	}
 
 	/* if counter done... set next function */
 	if(op->put_push_rsp_wait_counter == 0)
@@ -1550,11 +1812,6 @@ int bmip_server_put_remote_put_wait(void * op_, int etype)
         {
 		op->put_remote_put_wait_counter--;
         }
-	else
-	{
-		/* unknown event... store it for later */
-		op->ev_list[op->ev_list_counter++] = etype;
-	}
 
 	if(op->put_remote_put_wait_counter == 0)
 	{
@@ -1630,11 +1887,6 @@ int bmip_server_get_local_put_rsp_info(void * op_, int etype)
         {
 		op->get_local_rsp_wait_counter--;
         }
-	else
-	{
-		/* unknown event... store it for later */
-		op->ev_list[op->ev_list_counter++] = etype;
-	}
 
 	/* invoke */
 	if(op->get_local_rsp_wait_counter == 0)
@@ -1692,11 +1944,6 @@ int bmip_server_get_remote_get_wait(void * op_, int etype)
         {
                 op->get_remote_get_wait_counter--;
         }
-	else
-	{
-		/* unknown event... store it for later */
-		op->ev_list[op->ev_list_counter++] = etype;
-	}
 
 	if(op->get_remote_get_wait_counter == 0)
 	{
@@ -1850,8 +2097,14 @@ bmip_context_t * bmip_server_post_recv(ptl_process_id_t target, int64_t match_bi
 {
 	bmip_portals_conn_op_t * cur_op = NULL;
 	int i = 0;
+	unsigned int s = 0;
 
 	gen_mutex_lock(&list_mutex);
+
+        /* update the sequence and match bits */
+        s = bmip_get_addr_seq(target);
+        match_bits = match_bits | (s & 0x7);
+
 	if((cur_op = bmip_server_recv_pending(target, 0xffffffffULL & match_bits)))
 	{
 		cur_op->num = num;
@@ -1962,8 +2215,14 @@ bmip_context_t * bmip_server_post_send(ptl_process_id_t target, int64_t match_bi
 {
 	bmip_portals_conn_op_t * cur_op = NULL;
 	int i = 0;
+	unsigned int s = 0;
 
 	gen_mutex_lock(&list_mutex);
+	
+	/* update the sequence and match bits */
+        s = bmip_get_addr_seq(target);
+	match_bits = match_bits | (s & 0x7);
+
 	if(!(cur_op = bmip_server_send_pending(target, 0xffffffffULL & match_bits)))
 	{
 		cur_op = (bmip_portals_conn_op_t *)malloc(sizeof(bmip_portals_conn_op_t));
@@ -2022,8 +2281,6 @@ bmip_context_t * bmip_server_post_send(ptl_process_id_t target, int64_t match_bi
 	}
 	else
 	{
-		cur_op->context = (bmip_context_t *)malloc(sizeof(bmip_context_t));
-
 		cur_op->buffers = (void *)malloc(sizeof(void *) * num);
 		cur_op->user_buffers = (void *)malloc(sizeof(void *) * num);
 		cur_op->lengths = (size_t *)malloc(sizeof(size_t) * num);
@@ -2652,6 +2909,17 @@ void * bmip_server_monitor(void * args)
 
 		gen_mutex_lock(&list_mutex);
 
+#ifdef BMIP_TRACE
+		/* track all of the events */
+		if(bmip_server_events_counter >= BMIP_EV_TRACE_LIMIT)
+			bmip_server_events_counter = 0;
+		int eindex = bmip_server_events_counter++;
+		bmip_server_events[eindex] = etype;
+		bmip_server_pid[eindex] = ev.initiator.pid;
+		bmip_server_nid[eindex] = ev.initiator.nid;
+		bmip_server_mb[eindex] = ev.match_bits;
+#endif
+
 		/* check if the message is an unexpected */
 		if(ev.match_bits & unex_mb)
 		{
@@ -2660,6 +2928,9 @@ void * bmip_server_monitor(void * args)
 				/* end of the unex msg */
 				if(etype == PTL_EVENT_PUT_END)
 				{
+					/* update sequence */
+					bmip_get_addr_seq(ev.initiator);
+
 					/* create a new operation */
 					bmip_portals_conn_op_t * cur_op = (bmip_portals_conn_op_t *)malloc(sizeof(bmip_portals_conn_op_t));
 					memset(cur_op, 0, sizeof(bmip_portals_conn_op_t));
@@ -2671,9 +2942,13 @@ void * bmip_server_monitor(void * args)
 					/* setup op info */
 					cur_op->target = ev.initiator;
 					cur_op->match_bits = 0xffffffffULL & ev.match_bits;
+					cur_op->match_bits = cur_op->match_bits >> 3;
+					cur_op->match_bits = cur_op->match_bits << 3;
 
 					/* set the callback */
 					bmip_server_unex_pending(cur_op, etype);
+
+					cur_op->ev_list[cur_op->ev_list_counter++] = etype;
 
 					/* add to the pending op list */
 					qlist_add_tail(&cur_op->list, &bmip_unex_pending);	
@@ -2681,6 +2956,7 @@ void * bmip_server_monitor(void * args)
 			}
 			else
 			{
+				op->ev_list[op->ev_list_counter++] = etype;
 				op->cur_function(op, etype);
 			}	
 		}
@@ -2705,6 +2981,8 @@ void * bmip_server_monitor(void * args)
  
 						cur_op->rnum = (int)ev.hdr_data;
 
+						cur_op->ev_list[cur_op->ev_list_counter++] = etype;
+
 						/* init the put op */
 						bmip_server_put_init(cur_op, etype, ev.initiator);
 					}
@@ -2721,6 +2999,8 @@ void * bmip_server_monitor(void * args)
 
 						/* set the callback */
 						bmip_server_put_pending(cur_op, etype);
+
+						cur_op->ev_list[cur_op->ev_list_counter++] = etype;
 
 						/* add to the pending op list */
 						qlist_add_tail(&cur_op->list, &bmip_server_pending_recv_ops);	
@@ -2744,6 +3024,8 @@ void * bmip_server_monitor(void * args)
 
 						cur_op->rnum = (int)ev.hdr_data;
 
+						cur_op->ev_list[cur_op->ev_list_counter++] = etype;
+
                                                 /* init the put op */
                                                 bmip_server_get_init(cur_op, etype, ev.initiator);
                                         }
@@ -2761,15 +3043,23 @@ void * bmip_server_monitor(void * args)
                                                 /* set the callback */
                                                 bmip_server_get_pending(cur_op, etype);
 
+						cur_op->ev_list[cur_op->ev_list_counter++] = etype;
+
                                                 /* add to the pending op list */
                                                 qlist_add_tail(&cur_op->list, &bmip_server_pending_send_ops);
                                         }
 				}
 			}
+			else
+			{
+				//fprintf(stderr, "%s:%i unaccounted for event... ERROR!\n", __func__, __LINE__);
+				//fprintf(stderr, "%s:%i etype = %s, mb = %llx, nid (%i, %i)\n", __func__, __LINE__, bmip_ptl_ev_type(&ev), ev.match_bits, ev.initiator.nid, ev.initiator.pid);
+			}
 		}
 		/* the event is in progress... advance the event sm */
 		else
 		{
+			op->ev_list[op->ev_list_counter++] = etype;
 			op->cur_function(op, etype);
 		}
 		}

@@ -17,6 +17,20 @@
 
 #define BMIP_EV_LIMIT 128
 
+typedef struct bmip_seq
+{
+	struct qlist_head list;
+	ptl_process_id_t target;
+	unsigned int counter;
+} bmip_seq_t;
+
+typedef struct bmip_pending_event
+{
+	struct qlist_head list;
+	int eventid;
+	ptl_event_t event; 
+} bmip_pending_event_t;
+
 typedef struct bmip_context
 {
 	pthread_barrier_t b;
@@ -128,9 +142,6 @@ int bmip_get_max_ex_msg_size(void);
 int bmip_get_max_unex_msg_size(void);
 
 int bmip_server_put_remote_put(void * op_, int etype);
-
-int bmip_wait_remote_put(void);
-int bmip_wait_local_put(void);
 
 int bmip_server_test_event_id(int ms_timeout, int nums, void ** user_ptrs, size_t * sizes, int64_t comm_id);
 

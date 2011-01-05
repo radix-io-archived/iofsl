@@ -1,6 +1,7 @@
 #include <assert.h>
 #include <stdio.h>
 #include <string.h>
+#include <signal.h>
 
 #include "portals_conn.h"
 #include "portals_comm.h"
@@ -117,11 +118,20 @@ int bmip_comm_barrier(void)
     	return ret;
 }
 
+void bmip_client_sh(int sig)
+{
+	/* force a seg fault */
+	{ int *_int_p = 0L; *_int_p = 1; }
+}
+
 int bmip_client_clone_init(void * args)
 {
 	bmip_is_clone = 1;
 	bmi_method_addr_p listen_addr = (bmi_method_addr_p)args;
 
+	/* signal handler for debug mode */
+	//signal(SIGINT, bmip_client_sh);
+	
 	/* if we have the addr */
 	if(listen_addr)
 	{
@@ -760,7 +770,7 @@ BMI_portals_post_send_list(bmi_op_id_t* id, bmi_method_addr_p dest,
 	{
 		method_op_p mop = bmi_alloc_method_op(0);
 		*id = mop->op_id;
-		bmip_server_post_send(((portals_addr_t *)dest->method_data)->pid, (int64_t)tag, list_count, (void **)buffer_list, (size_t *)size_list, BMIP_USE_CVTEST, user_ptr, *id);
+		bmip_server_post_send(((portals_addr_t *)dest->method_data)->pid, (int64_t)tag, list_count, (const void **)buffer_list, (size_t *)size_list, BMIP_USE_CVTEST, user_ptr, *id);
 		return 0;
 	}
 	else
