@@ -10,11 +10,14 @@
 #include "hash-table.h"
 #include "env-parse.h"
 
+/* TODO silenced the warning, but unsure if this code is needed... so kept it for now */
+#if 0
 #ifndef NDEBUG
 static int do_debug = 0;
 #define hc_debug(format, ...) if(do_debug) fprintf (stderr, "gencache: debug: " format, ##__VA_ARGS__)
 #else
 #define hc_debug(format, ...) {}
+#endif
 #endif
 
 
