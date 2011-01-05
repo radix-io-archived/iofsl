@@ -10,7 +10,8 @@ include $(top_srcdir)/src/module.mk
 include $(top_srcdir)/include/module.mk
 include $(top_srcdir)/tests/module.mk
 include $(top_srcdir)/dev/module.mk 
-include $(top_srcdir)/dev/stdfd/module.mk 
+include $(top_srcdir)/dev/stdfd/module.mk
+include $(top_srcdir)/dev/iofwd/module.mk 
 include $(top_srcdir)/drivers/incore/module.mk 
 include $(top_srcdir)/drivers/native/module.mk 
 include $(top_srcdir)/misc/module.mk 
@@ -47,6 +48,7 @@ __LIBBUILD_DIR__libsysio_a_SOURCES = \
 	$(MISCDIR_SRCS) \
  	$(OPTIONAL_STDDEV_SRCS) \
 	$(OPTIONAL_STDFD_SRCS) \
+        $(IOFWD_SRCS) \
 	$(OPTIONAL_INCORE_SRCS) \
 	$(OPTIONAL_NATIVE_SRCS) 
 
@@ -54,7 +56,7 @@ include $(top_srcdir)/Rules.make
 
 EXTRA_DIST = Rules.make misc/init-env.sh $(TESTS_EXTRA) $(SRCDIR_EXTRA) \
 	$(INCLUDE_EXTRA) $(STDDEV_EXTRA) $(STDFD_EXTRA) $(INCORE_EXTRA) \
-	$(NATIVE_EXTRA) 
+	$(NATIVE_EXTRA) $(IOFWD_EXTRA) 
 
 really-clean: testsclean maintainer-clean
 	-rm -rf autom4te-2.53.cache
