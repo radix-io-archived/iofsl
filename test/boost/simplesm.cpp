@@ -92,7 +92,7 @@ public:
       BOOST_TEST_MESSAGE_TS("In destructor");
    }
 
-   void init (int )
+   void init (iofwdevent::CBException )
    {
       BOOST_TEST_MESSAGE_TS("In Init");
    }

@@ -21,7 +21,7 @@ namespace sm
    {
    public:
 
-      typedef void (T::*next_method_t) (int status);
+      typedef void (T::*next_method_t) (iofwdevent::CBException e);
 
 
    protected:
@@ -45,7 +45,7 @@ namespace sm
 
 
       template <next_method_t PTR>
-      void setNextMethodT (int status)
+      void setNextMethodT (iofwdevent::CBException status)
       {
          setNextMethod (PTR, status);
       }
@@ -54,7 +54,8 @@ namespace sm
        * This method will wake up the SimpleSM if needed, and make it
        * resume execution at the specified method.
        */
-      void resumeSM (next_method_t n, int status = iofwdevent::COMPLETED)
+      void resumeSM (next_method_t n, iofwdevent::CBException status =
+            iofwdevent::CBException ())
       {
          boost::mutex::scoped_lock l(state_lock_);
 
@@ -74,7 +75,8 @@ namespace sm
        * This method is meant for use from within the SimpleSM to make
        * it go to another state unconditionally and without sleeping.
        */
-      void setNextMethod (next_method_t n, int status = iofwdevent::COMPLETED)
+      void setNextMethod (next_method_t n, iofwdevent::CBException status =
+            iofwdevent::CBException ())
       {
          ASSERT(n);
          next_ = n;
@@ -94,7 +96,7 @@ namespace sm
       SMManager & smm_;
 
       next_method_t next_;
-      int next_status_;
+      iofwdevent::CBException next_status_;
       bool yield_;
       bool running_;
 
@@ -107,10 +109,10 @@ namespace sm
 
 template <typename T>
 SimpleSM<T>::SimpleSM (SMManager & m)
-  : smm_(m), next_(0), next_status_(0), yield_(false),
+  : smm_(m), next_(0), yield_(false),
    running_(false)
 {
-   setNextMethodT<&T::init> (0);
+   setNextMethodT<&T::init> (iofwdevent::CBException ());
 }
 
 template <typename T>
@@ -140,32 +142,32 @@ bool SimpleSM<T>::execute ()
    do
    {
 
-         int next_status;
-         next_method_t next;
+      iofwdevent::CBException next_status;
+      next_method_t next;
 
+      {
+         boost::mutex::scoped_lock l2(state_lock_);
+         next = next_;
+         next_status.swap (next_status_);
+         // Need to clear this here because the method we're calling might call
+         // setNextMethod
+         next_ = 0;
+         next_status_.clear ();
+      }
+
+      (dynamic_cast<T*>(this)->*next)(next_status);
+
+      {
+         boost::mutex::scoped_lock l2(state_lock_);
+         if (!next_ || yield_)
          {
-            boost::mutex::scoped_lock l2(state_lock_);
-            next = next_;
-            next_status = next_status_;
-            // Need to clear this here because the method we're calling might call
-            // setNextMethod
-            next_ = 0;
-            next_status_ = -1;
+            running_ = false;
+            // If we yield, we must have something to execute when we get the
+            // CPU back. If not, shouldn't call yield.
+            ALWAYS_ASSERT (!yield_ || next_);
+            break;
          }
-
-         (dynamic_cast<T*>(this)->*next)(next_status);
-
-         {
-            boost::mutex::scoped_lock l2(state_lock_);
-            if (!next_ || yield_)
-            {
-               running_ = false;
-               // If we yield, we must have something to execute when we get the CPU back.
-               // If not, shouldn't call yield.
-               ALWAYS_ASSERT (!yield_ || next_);
-               break;
-            }
-         }
+      }
    } while (true);
 
    ALWAYS_ASSERT(alive());

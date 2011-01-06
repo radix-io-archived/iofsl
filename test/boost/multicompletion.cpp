@@ -24,6 +24,8 @@ using namespace std;
 using namespace boost::posix_time;
 
 const size_t THREADCOUNT = 32;
+
+// @TODO: add tests for exception support
    
 //===========================================================================
 //===========================================================================
@@ -142,7 +144,7 @@ static void mt_main (mt_context & ctx)
       this_thread::sleep (microseconds(delay));
 
       ALWAYS_ASSERT(cb);
-      cb (COMPLETED);
+      cb (iofwdevent::CBException ());
    }
 }
 
@@ -173,7 +175,7 @@ void mt_do_test ()
    block.wait ();
 
    BOOST_TEST_MESSAGE("Trying to clear slot status");
-   BOOST_CHECK_EQUAL(slots.testSome (0, 0, 0), slots.size());
+   BOOST_CHECK_EQUAL(slots.testSome (0, 0), slots.size());
    BOOST_CHECK_EQUAL (ctx.size(), 0);
 
    BOOST_TEST_MESSAGE("---> All callbacks completed");
@@ -200,13 +202,10 @@ void mt_do_test ()
       slots.wait (block, 1);
       block.wait ();
 
-      int status;
-      const int slot = slots.testAny (status);
+      const int slot = slots.testAny ();
       BOOST_TEST_MESSAGE(str(format("Slot %i completed (todo=%i)") % slot %
                todo));
       BOOST_CHECK (-1 != slot);
-      BOOST_CHECK_EQUAL (static_cast<int>(status),
-            static_cast<int>(COMPLETED));
 
       --todo;
 
@@ -233,22 +232,22 @@ void mt_do_test ()
 
    BOOST_TEST_MESSAGE("MultiCompletion, multithreaded test pattern 2");
 
-   size_t MAXRET = randgen_ () % 1024;
-   boost::scoped_array<size_t> slotnums (new size_t[MAXRET]);
+   const unsigned int MAXRET = randgen_ () % 1024;
+   boost::scoped_array<unsigned int> slotnums (new unsigned int[MAXRET]);
    boost::scoped_array<int> statuses (new int[MAXRET]);
 
    while (todo)
    {
       // Check if we have free slots
-      const size_t cansubmit = std::min (slots.avail(), tosubmit);
-      for (size_t i=0; i<cansubmit; ++i)
+      const unsigned int cansubmit = std::min<unsigned int> (slots.avail(), tosubmit);
+      for (unsigned int i=0; i<cansubmit; ++i)
       {
          ctx.addCB (slots);
       }
       tosubmit -= cansubmit;
 
       // Now wait for completion of some
-      const size_t waitcount = (randgen_ () % slots.active()) + 1;
+      const unsigned int waitcount = (randgen_ () % slots.active()) + 1;
       block.reset ();
 
       BOOST_TEST_MESSAGE(str(format("Waiting for completion of %i slots") %
@@ -263,7 +262,7 @@ void mt_do_test ()
       // Get all completed slots
       do
       {
-         const size_t count = slots.testSome (&slotnums[0], &statuses[0],
+         const unsigned int count = slots.testSome (&slotnums[0],
                MAXRET);
          
          // The first time, we expect at least waitcount slots to be done

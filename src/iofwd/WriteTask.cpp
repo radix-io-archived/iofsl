@@ -231,7 +231,8 @@ void WriteTask::execPipelineIO(const WriteRequest::ReqParam & p)
     }
 }
 
-void WriteTask::runPostWriteCB(int status, RetrievedBuffer * rb, int index, iofwdevent::CBType cb)
+void WriteTask::runPostWriteCB(iofwdevent::CBException status,
+      RetrievedBuffer * rb, int index, iofwdevent::CBType cb)
 {
     request_.releaseBuffer(rb);
 
@@ -279,13 +280,14 @@ void WriteTask::postWrite(const WriteRequest::ReqParam & p, int index)
     cur_recv_bytes_ += p_siz_;
 
     iofwdevent::CBType pcb = *(pipeline_blocks_[index]);
-    boost::function<void(int)> bmmCB = boost::bind(&iofwd::WriteTask::runPostWriteCB, 
-            this, 0, rbuffer_[index], index, pcb);
+    iofwdevent::CBType bmmCB = boost::bind(&iofwd::WriteTask::runPostWriteCB,
+            this, _1, rbuffer_[index], index, pcb);
 
     /* enqueue the write */
     api_->write (
         bmmCB, ret, p.handle, p_file_count, (const void**)mem_starts, mem_sizes,
-        p_file_count, file_starts, file_sizes, const_cast<zoidfs::zoidfs_op_hint_t *>(p.op_hint));
+        p_file_count, file_starts, file_sizes,
+        const_cast<zoidfs::zoidfs_op_hint_t *>(p.op_hint));
 }
 
 void WriteTask::runPipelineMode(const WriteRequest::ReqParam & p)

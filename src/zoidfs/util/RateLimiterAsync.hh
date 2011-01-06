@@ -79,7 +79,7 @@ namespace zoidfs
             enum { KB = 1024 } ;
 
             /// Get called every second
-            void timerTick (int status);
+            void timerTick (iofwdevent::CBException e);
 
 
          protected:
@@ -94,7 +94,7 @@ namespace zoidfs
                   {
                   }
 
-                  bool callback (int status);
+                  bool callback (iofwdevent::CBException e);
 
                   void execOp ();
 
@@ -115,7 +115,8 @@ namespace zoidfs
 
                   bool read_;
                   int status_;
-                  int op_status_;  // status returned by read/write op
+                  iofwdevent::CBException op_status_;  // status returned by
+                                                       // read/write op
                   bool delay_issue_;
                   size_t transfersize_;
                   size_t obtained_;
@@ -149,7 +150,7 @@ namespace zoidfs
 
              void scheduleTimer ();
 
-             static void callback (DelayedOp * op, int status);
+             static void callback (DelayedOp * op, iofwdevent::CBException e);
 
          protected:
             iofwdutil::IOFWDLogSource & log_;

@@ -11,11 +11,15 @@ namespace iofwd
     namespace tasksm
     {
 
-class ReadLinkTaskSM : public BaseTaskSM, public iofwdutil::InjectPool< ReadLinkTaskSM >
+class ReadLinkTaskSM : public BaseTaskSM,
+                       public iofwdutil::InjectPool< ReadLinkTaskSM >
 {
     public:
-        ReadLinkTaskSM (sm::SMManager & smm, zoidfs::util::ZoidFSAsync * api, Request * request)
-            : BaseTaskSM(smm, api), ret_(0), request_(static_cast<ReadLinkRequest &>(*request)), buffer_(NULL), bufferlen_(0)
+        ReadLinkTaskSM (sm::SMManager & smm, zoidfs::util::ZoidFSAsync * api,
+              Request * request)
+            : BaseTaskSM(smm, api), ret_(0),
+            request_(static_cast<ReadLinkRequest &>(*request)), buffer_(NULL),
+            bufferlen_(0)
         {
         }
 
@@ -25,14 +29,16 @@ class ReadLinkTaskSM : public BaseTaskSM, public iofwdutil::InjectPool< ReadLink
             delete &request_;
         }
 
-        virtual void postDecodeInput(int UNUSED(status))
+        virtual void postDecodeInput(iofwdevent::CBException e)
         {
+           e.check ();
             p_ = request_.decodeParam();
             setNextMethod(&BaseTaskSM::waitDecodeInput);
         }
 
-        virtual void postRunOp(int UNUSED(status))
+        virtual void postRunOp(iofwdevent::CBException e)
         {
+           e.check ();
             // @TODO: validate buffer_length!
 
             // We will not allocate more memory.
@@ -49,8 +55,9 @@ class ReadLinkTaskSM : public BaseTaskSM, public iofwdutil::InjectPool< ReadLink
             slots_.wait(BASE_SLOT, &ReadLinkTaskSM::waitRunOp);
         }
 
-        virtual void postReply(int UNUSED(status))
+        virtual void postReply(iofwdevent::CBException e)
         {
+           e.check ();
             request_.setReturnCode(ret_);
             request_.reply((slots_[BASE_SLOT]), buffer_, bufferlen_);
             slots_.wait(BASE_SLOT, &ReadLinkTaskSM::waitReply);

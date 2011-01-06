@@ -1,10 +1,10 @@
 #ifndef IOFWDEVENT_RESOURCE_HH
 #define IOFWDEVENT_RESOURCE_HH
 
+#include "Handle.hh"
+
 #include <boost/utility.hpp>
 #include <boost/function.hpp>
-
-#include "CBType.hh"
 
 namespace iofwdevent
 {
@@ -35,6 +35,15 @@ public:
 
    /**
     * This function can be used to cancel a pending operation.
+    * It returns true if the operation could be cancelled, in which case the
+    * callback associated with the operation is called with an exception
+    * derived from EventCancelledException. cancel() /does not return/ before
+    * the callback completed.
+    *
+    * If can no longer be cancelled, this function returns false.
+    *
+    * In either case, the callback will always be called, either during cancel
+    * or, if cancel failed, when the operation completes (or completed).
     */
    virtual bool cancel (Handle h) = 0;
 

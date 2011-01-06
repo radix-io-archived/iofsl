@@ -115,8 +115,9 @@ struct BMIPingPong : TrackLive,
    }
 
    // Is called when the state machine first executes.
-   void init (int UNUSED(status))
+   void init (iofwdevent::CBException e)
    {
+      e.check ();
       ZLOG_DEBUG(log_, format("master(%i)tag(%i)iter(%i): init") % master_ % tag_ % iter_);
       if (master_)
          setNextMethod (&SELF::doMasterSend);
@@ -124,8 +125,9 @@ struct BMIPingPong : TrackLive,
          setNextMethod (&SELF::waitSlaveReceive);
    }
 
-   void doMasterSend (int UNUSED(status))
+   void doMasterSend (iofwdevent::CBException e)
    {
+      e.check ();
       ZLOG_DEBUG(log_, format("master(%i)tag(%i)iter(%i): doMasterSend") % master_ % tag_ % iter_);
 
       bmi_.post_send (slots_[SENDSLOT], mine_, &iter_, sizeof (iter_),
@@ -137,14 +139,16 @@ struct BMIPingPong : TrackLive,
       slots_.wait (RECEIVESLOT, &SELF::waitMasterReceive);
    }
 
-   void waitMasterReceive (int UNUSED(status))
+   void waitMasterReceive (iofwdevent::CBException e)
    {
+      e.check ();
       ZLOG_DEBUG(log_, format("master(%i)tag(%i)iter(%i): receive completed") % master_ % tag_ % iter_);
       slots_.wait (SENDSLOT, &SELF::waitMasterSend);
    }
 
-   void waitMasterSend (int UNUSED(status))
+   void waitMasterSend (iofwdevent::CBException e)
    {
+      e.check ();
       ZLOG_DEBUG(log_, format("master(%i)tag(%i)iter(%i): send completed") % master_ % tag_ % iter_);
       if (++iter_ < iterations_)
          setNextMethod (&SELF::doMasterSend);
@@ -152,8 +156,9 @@ struct BMIPingPong : TrackLive,
 
    // ============= slave ===========
 
-   void waitSlaveReceive (int UNUSED(status))
+   void waitSlaveReceive (iofwdevent::CBException e)
    {
+      e.check ();
       ZLOG_DEBUG(log_, format("slave(%i)tag(%i)iter(%i): receive posted") % master_ % tag_ % iter_);
 
       bmi_.post_recv (slots_[RECEIVESLOT], other_, &buffer_, sizeof(buffer_),
@@ -161,8 +166,9 @@ struct BMIPingPong : TrackLive,
       slots_.wait(RECEIVESLOT, &SELF::slaveReceiveComplete);
    }
 
-   void slaveReceiveComplete (int UNUSED(status))
+   void slaveReceiveComplete (iofwdevent::CBException e)
    {
+      e.check ();
       ZLOG_DEBUG(log_, format("slave(%i)tag(%i)iter(%i): receive completed") % master_ % tag_ % iter_);
       // send back buffer
       bmi_.post_send (slots_[SENDSLOT], mine_, &buffer_, sizeof (buffer_),
@@ -170,8 +176,9 @@ struct BMIPingPong : TrackLive,
       slots_.wait (SENDSLOT, &SELF::slaveComplete);
    }
 
-   void slaveComplete (int UNUSED(status))
+   void slaveComplete (iofwdevent::CBException e)
    {
+      e.check ();
       ZLOG_DEBUG(log_, format("slave(%i)tag(%i)iter(%i): send completed") % master_ % tag_ % iter_);
       if (++iter_ < iterations_)
          setNextMethod (&SELF::waitSlaveReceive);

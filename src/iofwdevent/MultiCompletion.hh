@@ -6,6 +6,8 @@
 
 #include "iofwdutil/assert.hh"
 #include "iofwdevent/CBType.hh"
+#include "CompletionException.hh"
+#include "CBException.hh"
 
 namespace iofwdevent
 {
@@ -17,21 +19,26 @@ namespace iofwdevent
     * concurrent callbacks.
     *
     * This class calls a callback after a user-specified number of its slots
-    * have completed. It can be used to wait for a the completion of any, all
+    * have completed. It can be used to wait for the completion of any, all
     * or some of its slots.
     *
     * Each slot consumes less than 64 bytes.
+    *
+    * @TODO: making this a template just to avoid the extra malloc might have
+    * been overkill. Consider going to boost intrusive containers (linked
+    * list) together with a shared (between all multicompletion instances)
+    * memory pool?
     */
-   template <size_t COUNT>
+   template <unsigned int COUNT>
    class MultiCompletion
    {
    protected:
       /**
-       * Slot status: either a completion result (such as COMPLETED,
-       * CANCELLED,...) or WAITING indicating the slot is armed but waiting
-       * for a callback. FREE indicates the slot is unused.
+       * Slot status:
+       * WAITING indicating the slot is armed but waiting for a callback,
+       * FREE indicates the slot is unused.
        */
-      enum { WAITING = iofwdevent::LAST, FREE };
+      enum { WAITING, FREE, COMPLETED };
 
    public:
       MultiCompletion ();
@@ -49,36 +56,60 @@ namespace iofwdevent
        * Return a callback for the specified slot. Will assert if the slot is
        * already active.
        */
-      CBType operator [] (size_t pos);
+      CBType operator [] (unsigned int pos);
 
 
       /**
-       * Returns the slot number that completed 
-       * or -1 if no slot completed.
-       * If a slot completed, status is set to the completion status.
+       * Returns the slot number that completed or -1 if no slot completed.
+       * If a slot completed with an exception, the exception is rethrown
+       * here. The slot returns becomes available again, regardless if an
+       * exception occured. In case of an exception, the slot_number tag will
+       * be set to the slot number the exception belongs to.
+       *
+       * NOTE: if it ever is a hassle to deal with this function throwing
+       * exceptions, it could be modified to return an exception pointer
+       * instead, enabling the caller to deal with the exception on whever it
+       * is ready to do so.
        */
-      int testAny (int & status);
+      int testAny ();
 
       /**
        * Returns number of completed slots,
-       * and copies slot numbers to slots array and statuses to status array.
+       * and copies slot numbers to slots array.
        * No more than max slots will be completed.
        *
-       * Slots or status can be 0, in which case the data will not be
+       * Slots can be 0, in which case the data will not be
        * returned. (This can be used to clear all completed slots:
-       * use testSome (0, 0, 0))
+       * use testSome (0, 0))
+       *
+       * If an exception is present, it will be rethrown;
+       * The slot the exception belongs to is indicated in the slot_number
+       * tag. The status of the other slots will not chance.
        */
-      size_t testSome (size_t slots[], int status[], size_t max);
+      unsigned int testSome (unsigned int slots[],
+            unsigned int max);
 
       /**
        * Calls the callback when at least count slots completed.
-       * The callback can use testAny or testSome to determine what slots
+       * The callback can use testAny or testSome to determine which slots
        * completed and their status.
        *
        * If count == 0, it will default to the current number of waiting
        * operations. (i.e. the number of armed slots)
+       *
+       * If an exception occurs, cb will be called even if less
+       * than count slots completed. In this case, the cb will be called with
+       * a SlotException exception; The original exception can be retrieved
+       * using testAny or testSome.
+       *
+       * If cancel() is called successfully, cb will be called with an
+       * EventCancelledException.
+       *
+       * Note that cb can be called from within wait if count slots already
+       * completed, or if an exception slot is present. In this case, wait ()
+       * might not return before cb completes.
        */
-      void wait (const CBType & cb, size_t count = 0);
+      void wait (const CBType & cb, unsigned int count = 0);
 
       /**
        * Cancel pending wait.
@@ -89,22 +120,28 @@ namespace iofwdevent
       /**
        * Return number of free slots in the MultiCompletion instance
        */
-      inline size_t avail () const;
+      inline unsigned int avail () const;
 
       /**
        * Return total number of slots
        */
-      inline size_t size() const;
+      inline unsigned int size() const;
 
       /**
        * Return number of active slots (completed or waiting to complete)
        */
-      inline size_t active () const;
+      inline unsigned int active () const;
 
       /**
-       * Return number of completed slots
+       * Return number of completed slots (including the ones that have a
+       * pending exception)
        */
-      inline size_t completed () const;
+      inline unsigned int completed () const;
+
+      /**
+       * Return the number of slots with a pending exception
+       */
+      inline unsigned int exceptionCount () const;
 
       /**
        * Return number of a free slot, or -1 if no slots are free.
@@ -114,50 +151,52 @@ namespace iofwdevent
       /**
        * Returns true if the specified slot is free.
        */
-      inline bool isFree (size_t slot) const;
+      inline bool isFree (unsigned int slot) const;
 
    protected:
 
       /// Returns callback for completing the specified slot.
-      inline CBType getSlotCB (size_t pos);
+      inline CBType getSlotCB (unsigned int pos);
 
 
-      template <size_t P>
-      void completeSlotT (int status)
-      { completeSlot (P, status); }
+      template <unsigned int P>
+      void completeSlotT (CBException e)
+      { completeSlot (P, e); }
 
-      inline void completeSlot (size_t slot, int status);
+      inline void completeSlot (unsigned int slot, CBException e);
 
       // Remove one completed slot from the system
-      void removeCompleted (size_t pos, int & status);
+      void removeCompleted (unsigned int pos, CBException & status);
 
       // Internal check
       void checkInvariants () const;
 
    protected:
 
-      // Note: in the future, the slot will also need to store 
-      // exceptions...
       struct Slot
       {
          int next_;
          int prev_;
          int status_;
+         CBException exception_;
       };
 
    protected:
       boost::array<Slot,COUNT> slots_;
 
-      size_t slots_waiting_;
-      size_t slots_completed_;
+      unsigned int slots_waiting_;
+      unsigned int slots_completed_;
 
       int first_completed_;
       int last_completed_;
       int first_free_;
 
+      // The number of slots with a pending exception
+      unsigned int slots_exception_;
+
       mutable boost::mutex lock_;
 
-      size_t waiting_for_;
+      unsigned int waiting_for_;
 
       CBType cb_;
    };
@@ -166,8 +205,8 @@ namespace iofwdevent
    //========================================================================
    //========================================================================
 
-   template <size_t C>
-   CBType MultiCompletion<C>::operator [] (size_t pos)
+   template <unsigned int C>
+   CBType MultiCompletion<C>::operator [] (unsigned int pos)
    {
       boost::mutex::scoped_lock l(lock_);
 
@@ -195,11 +234,12 @@ namespace iofwdevent
       }
 
       s.status_ = WAITING;
+      ASSERT(!s.exception_.hasException ());
       ++slots_waiting_;
       return getSlotCB (pos);
    }
 
-   template <size_t C>
+   template <unsigned int C>
    MultiCompletion<C>::operator CBType ()
    {
       boost::mutex::scoped_lock l(lock_);
@@ -209,7 +249,7 @@ namespace iofwdevent
       ALWAYS_ASSERT(first_free_ >= 0 && first_free_ < static_cast<int>(C));
 
       Slot & s = slots_[first_free_];
-      const size_t thisslot = first_free_;
+      const unsigned int thisslot = first_free_;
 
       first_free_ = s.next_;
 
@@ -221,6 +261,7 @@ namespace iofwdevent
 
       ALWAYS_ASSERT(FREE == s.status_);
       s.status_ = WAITING;
+      ASSERT(!s.exception_.hasException ());
 
       ++slots_waiting_;
 
@@ -228,8 +269,8 @@ namespace iofwdevent
    }
 
  
-   template <size_t C>
-   CBType MultiCompletion<C>::getSlotCB (size_t pos)
+   template <unsigned int C>
+   CBType MultiCompletion<C>::getSlotCB (unsigned int pos)
    {
       ALWAYS_ASSERT(pos < C);
 
@@ -262,12 +303,12 @@ namespace iofwdevent
    }
 
 
-   template <size_t C>
+   template <unsigned int C>
    MultiCompletion<C>::MultiCompletion ()
       : slots_waiting_(0), slots_completed_(0), first_completed_(-1),
-      last_completed_(-1), first_free_(0), waiting_for_(0)
+      last_completed_(-1), first_free_(0), slots_exception_(0), waiting_for_(0)
    {
-      for (size_t i=0; i<C; ++i)
+      for (unsigned int i=0; i<C; ++i)
       {
          slots_[i].next_ = i+1;
          slots_[i].prev_ = i-1;
@@ -276,21 +317,28 @@ namespace iofwdevent
       slots_[C-1].next_ = -1;
    }
 
-   template <size_t C>
+   template <unsigned int C>
    MultiCompletion<C>::~MultiCompletion()
    {
+      // Is it up to the user of MultiCompletion to ensure that the object
+      // doesn't go out of scope while it is still active or there are
+      // exceptions present.
       ALWAYS_ASSERT(0==slots_waiting_
             && "MultiCompletion destroyed with waiting callbacks!");
+      ALWAYS_ASSERT(0 == slots_exception_
+            && "MultiCompletion destroyed while exceptions are present!");
    }
 
-   template <size_t C>
-   void MultiCompletion<C>::completeSlot (size_t slot, int status)
+   template <unsigned int C>
+   void MultiCompletion<C>::completeSlot (unsigned int slot, CBException e)
    {
       CBType cb;
       {
          boost::mutex::scoped_lock l (lock_);
-      
+
+#ifndef NDEBUG
          checkInvariants ();
+#endif
 
          Slot & s = slots_[slot];
 
@@ -301,13 +349,19 @@ namespace iofwdevent
          --slots_waiting_;
 
          // Add slot to the end of the completed chain
-         s.status_ = status;
+         s.status_ = COMPLETED;
          s.next_ = -1;
          s.prev_ = last_completed_;
+         s.exception_.swap (e);
+
+         if (s.exception_.hasException ())
+         {
+            ++slots_exception_;
+         }
 
          if (s.prev_ != -1)
             slots_[s.prev_].next_ = slot;
-         
+
          last_completed_ = slot;
 
          if (first_completed_ < 0)
@@ -317,50 +371,57 @@ namespace iofwdevent
             first_completed_ = slot;
          }
 
-         if  (waiting_for_)
-         {
-            // The user already called wait ()
-            // Check if the condition is fulfilled
-            if (waiting_for_ > slots_completed_)
-            {
-               // Cannot call user callback yet; wait until another slot
-               // completes
-               return;
-            }
-         }
-         else
+         if  (!waiting_for_)
          {
             // User didn't call wait() yet; we cannot do anything here
+            return;
+         }
+
+         // The user already called wait ()
+         // Check if the condition is fulfilled /or/ if there is an
+         // exception condition
+         if (waiting_for_ > slots_completed_ && !slots_exception_)
+         {
+            // Cannot call user callback yet; wait until another slot
+            // completes
             return;
          }
 
          // Make sure nobody else thinks they get to call the callback
          waiting_for_ = 0;
          cb.swap (cb_);
-      
+
+#ifndef NDEBUG
          checkInvariants ();
+#endif
       }
 
       if (cb)
       {
-         cb (COMPLETED);
+         // If there was an exception, pass a SlotException to the callback
+         cb (slots_exception_ ?
+            CBException (SlotException ())
+          : CBException ());
       }
    }
       
    // Must be called with lock held
-   template <size_t C>
-   void MultiCompletion<C>::removeCompleted (size_t pos, int & status)
+   template <unsigned int C>
+   void MultiCompletion<C>::removeCompleted (unsigned int pos, CBException & e)
    {
 
+#ifndef NDEBUG
       checkInvariants ();
+#endif
 
       ASSERT(slots_completed_);
       ASSERT(first_completed_ >= 0);
 
       // Check it has a valid CB status (i.e. not WAITING/FREE)
       Slot & s = slots_[pos];
-      ASSERT(s.status_ < iofwdevent::LAST);
-      status = s.status_;
+      ASSERT(s.status_ == COMPLETED);
+      e.clear ();
+      e.swap (s.exception_);
 
       // Remove from completed chain
 
@@ -392,17 +453,30 @@ namespace iofwdevent
 
       first_free_ = pos;
       s.status_ = FREE;
+      s.exception_.clear ();
 
       --slots_completed_;
+
+      // If the slot had an exception, update slots_exception_
+      // Use slots_exception_ to see if we need to check in the first place
+      if (slots_exception_ && e.hasException ())
+      {
+         --slots_exception_;
+      }
+
+      // If slots_exception_ == 0, e cannot possibly contain an exception
+      ASSERT(slots_exception_ || !e.hasException ());
 
       ASSERT(slots_completed_ || last_completed_ == -1);
       ASSERT(slots_completed_ || first_completed_ == -1);
 
+#ifndef NDEBUG
       checkInvariants ();
+#endif
    }
 
-   template <size_t C>
-   int MultiCompletion<C>::testAny (int & status)
+   template <unsigned int C>
+   int MultiCompletion<C>::testAny ()
    {
       boost::mutex::scoped_lock l(lock_);
 
@@ -411,24 +485,71 @@ namespace iofwdevent
 
       ASSERT(first_completed_ != -1);
 
-      const size_t slot = first_completed_;
-      removeCompleted(slot, status);
+      const unsigned int slot = first_completed_;
+      CBException e;
+      removeCompleted(slot, e);
+      try
+      {
+         e.check ();
+      }
+      catch (boost::exception & e)
+      {
+         // Add the slot number to the exception
+         e << slot_number (slot);
+         throw;
+      }
+      catch (...)
+      {
+         // All exceptions should derive from ZException
+         ASSERT(false && "Invalid exception type thrown!");
+      }
+
       return slot;
     }
 
-   template <size_t C>
-   size_t MultiCompletion<C>::testSome (size_t * slots, int * status, size_t max)
+   template <unsigned int C>
+   unsigned int MultiCompletion<C>::testSome (unsigned int * slots, unsigned int max)
    {
       boost::mutex::scoped_lock l(lock_);
 
-      int    dummy2;
+      // If an exception slot is present, we always complete that one first.
+      if (slots_exception_)
+      {
+         // find the slot with the exception
+         int curslot = first_completed_;
+         ASSERT(curslot >= 0);
 
-      size_t count = 0;
+         // Go through all completed slots until we find the one with the
+         // exception
+         while (curslot >= 0)
+         {
+            if (slots_[curslot].exception_.hasException ())
+               break;
+            curslot = slots_[curslot].next_;
+         }
+
+         ALWAYS_ASSERT(curslot >= 0 && slots_[curslot].exception_.hasException ());
+         CBException e;
+         completeSlot (curslot, e);
+         try
+         {
+            e.check ();
+         }
+         catch (boost::exception & exception)
+         {
+            exception << slot_number (curslot);
+            throw;
+         }
+         ALWAYS_ASSERT(false && "e should have an exception!");
+         return 1;
+      }
+
+      unsigned int count = 0;
 
       if (!max)
          max = slots_completed_;
 
-      const size_t expect = std::min (max, slots_completed_);
+      const unsigned int expect = std::min (max, slots_completed_);
 
       while (count < max)
       {
@@ -442,29 +563,49 @@ namespace iofwdevent
          if (slots)
             slots[count] = slot;
 
-         removeCompleted (slot,
-                  (status ? status[count] : dummy2));
+         CBException e;
+         removeCompleted (slot, e);
+
+         // There should never be an exception here
+         ALWAYS_ASSERT(!e.hasException ());
+
          ++count;
       }
 
       ALWAYS_ASSERT(count == expect);
       return count;
    }
-   
-   template <size_t C>
+
+   /**
+    * Cancel a wait operation.
+    * If cancelled succesfully, calls the wait callback indicating a cancelled
+    * operation, and return true after the callback completes.
+    *
+    * Otherwise, return false. In this case, the wait callback has already
+    * been called (or will be/is being called right now). Cancel does not wait
+    * until the callback completes in this case.
+    */
+   template <unsigned int C>
    bool MultiCompletion<C>::cancel ()
    {
-      boost::mutex::scoped_lock l(lock_);
+      CBType cb;
 
-      if (!waiting_for_)
-         return false;
-      waiting_for_ = 0;
-      cb_.clear ();
+      {
+         boost::mutex::scoped_lock l(lock_);
+
+         if (!waiting_for_)
+            return false;
+
+         waiting_for_ = 0;
+         cb.swap (cb_);
+      }
+
+      cb (CBException::cancelledOperation (0));
       return true;
    }
 
-   template <size_t C>
-   void MultiCompletion<C>::wait (const CBType & cb, size_t count)
+   template <unsigned int C>
+   void MultiCompletion<C>::wait (const CBType & cb, unsigned int count)
    {
       boost::mutex::scoped_lock l(lock_);
 
@@ -477,10 +618,12 @@ namespace iofwdevent
 
       // If we can complete right away, do it.
       // Unlock before calling callback
-      if (count <= slots_completed_)
+      if (count <= slots_completed_ || slots_exception_)
       {
          l.unlock ();
-         cb (COMPLETED);
+         cb (slots_exception_ ?
+               CBException (SlotException ())
+             : CBException ());
          return;
       }
 
@@ -489,29 +632,29 @@ namespace iofwdevent
       cb_ = cb;
    }
 
-   template <size_t S>
-   inline size_t MultiCompletion<S>::avail () const
+   template <unsigned int S>
+   inline unsigned int MultiCompletion<S>::avail () const
    {
       boost::mutex::scoped_lock l(lock_);
       return  S - slots_waiting_ - slots_completed_;
    }
 
-   template <size_t S>
-   size_t MultiCompletion<S>::active () const
+   template <unsigned int S>
+   unsigned int MultiCompletion<S>::active () const
    {
       boost::mutex::scoped_lock l (lock_);
       return slots_waiting_ + slots_completed_;
    }
 
-   template <size_t S>
-   size_t MultiCompletion<S>::completed () const
+   template <unsigned int S>
+   unsigned int MultiCompletion<S>::completed () const
    {
       boost::mutex::scoped_lock l (lock_);
       return slots_completed_;
    }
 
 
-   template <size_t S>
+   template <unsigned int S>
    int MultiCompletion<S>::nextFree () const
    {
       boost::mutex::scoped_lock l (lock_);
@@ -519,21 +662,21 @@ namespace iofwdevent
    }
 
 
-   template <size_t S>
-   bool MultiCompletion<S>::isFree (size_t pos) const
+   template <unsigned int S>
+   bool MultiCompletion<S>::isFree (unsigned int pos) const
    {
       boost::mutex::scoped_lock l (lock_);
       return slots_[pos].status_ == FREE;
    }
 
-   template <size_t S>
-   size_t MultiCompletion<S>::size() const
+   template <unsigned int S>
+   unsigned int MultiCompletion<S>::size() const
    {
       return S;
    }
 
 
-   template <size_t S>
+   template <unsigned int S>
    void MultiCompletion<S>::checkInvariants () const
    {
       if (slots_completed_ == 0)
@@ -552,9 +695,9 @@ namespace iofwdevent
       }
 
       int pos;
-      size_t count;
+      unsigned int count;
 
-      const size_t avail = S - slots_completed_ - slots_waiting_;
+      const unsigned int avail = S - slots_completed_ - slots_waiting_;
 
       pos = first_completed_;
       count =0;

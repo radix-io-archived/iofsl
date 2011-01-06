@@ -1,6 +1,8 @@
 #ifndef IOFWDEVENT_CBTYPE_HH
 #define IOFWDEVENT_CBTYPE_HH
 
+#include "CBException.hh"
+
 #include <boost/function.hpp>
 
 namespace iofwdevent
@@ -21,11 +23,10 @@ namespace iofwdevent
     * FAILED is really there to indicate an exception,
     * and CANCELLED could(should?) throw its own exception.
     */
-   enum { COMPLETED = 0, CANCELLED, FAILED, LAST };
+   // enum { COMPLETED = 0, CANCELLED, FAILED, LAST };
 
-   typedef boost::function<void (int)> CBType;
+   typedef boost::function<void (CBException e)> CBType;
 
-   typedef void * Handle;
 }
 
 

@@ -106,7 +106,8 @@ private:
    void getBuffer(int index);
    void recvPipelineBuffer(int index);
    void postWrite(const WriteRequest::ReqParam & p, int index);
-   void runPostWriteCB(int status, RetrievedBuffer * rb, int index, iofwdevent::CBType cb);
+   void runPostWriteCB(iofwdevent::CBException status, RetrievedBuffer * rb,
+         int index, iofwdevent::CBType cb);
 
    /* pipeline variables */
    size_t total_bytes_;

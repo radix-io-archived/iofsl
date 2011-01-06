@@ -200,10 +200,14 @@ namespace iofwd
                 cur_recv_bytes_ += p_siz_;
 
                 /* enqueue the write */
-                boost::function<void(int)> barrierCB = boost::bind(&iofwd::tasksm::WriteTaskSM::writeDoneCB, this, 0, my_slot);
+                iofwdevent::CBType barrierCB =
+                   boost::bind(&iofwd::tasksm::WriteTaskSM::writeDoneCB, this,
+                         _1, my_slot);
                 api_->write (
-                    barrierCB, ret, p.handle, p_file_count, (const void**)mem_starts, mem_sizes,
-                    p_file_count, file_starts, file_sizes, const_cast<zoidfs::zoidfs_op_hint_t *>(p.op_hint));
+                    barrierCB, ret, p.handle, p_file_count, (const
+                       void**)mem_starts, mem_sizes, p_file_count,
+                    file_starts, file_sizes,
+                    const_cast<zoidfs::zoidfs_op_hint_t *>(p.op_hint));
 
                 if(cur_recv_bytes_ == total_bytes_)
                 {
@@ -218,8 +222,9 @@ namespace iofwd
         }
     }
 
-void WriteTaskSM::writeDoneCB(int UNUSED(status), int my_slot)
+void WriteTaskSM::writeDoneCB(iofwdevent::CBException status, int my_slot)
 {
+   status.check ();
     int count = 0;
     {
         boost::mutex::scoped_lock l(slot_mutex_);
@@ -240,13 +245,14 @@ void WriteTaskSM::writeDoneCB(int UNUSED(status), int my_slot)
 
     if(count == total_pipeline_ops_)
     {
-        s_(0);
+        s_(status);
     }
 }
 
 /* barrier for writes... will not go to post reply state until all writes complete */
-void WriteTaskSM::waitWriteBarrier(int UNUSED(status))
+void WriteTaskSM::waitWriteBarrier(iofwdevent::CBException e)
 {
+   e.check ();
     int count = 0;
     {
         boost::mutex::scoped_lock l(slot_mutex_);

@@ -3,31 +3,21 @@
 
 namespace iofwdevent
 {
+   //========================================================================
 
    SingleCompletion::SingleCompletion ()
       : status_(UNUSED)
    {
    }
 
-   void SingleCompletion::success ()
+   void SingleCompletion::operator () (CBException e)
    {
-      ALWAYS_ASSERT(status_ == WAITING);
-
-      boost::mutex::scoped_lock l (lock_);
-      status_ = SUCCESS;
-
-      // Normally I would move this outside of the lock but valgrind
-      // doesn't like it.
-      cond_.notify_all ();
-   }
-
-   void SingleCompletion::cancel ()
-   {
-      ALWAYS_ASSERT(status_ == WAITING);
-
       boost::mutex::scoped_lock l (lock_);
 
-      status_ = CANCEL;
+      ALWAYS_ASSERT(status_ == WAITING);
+
+      status_ = COMPLETED;
+      exception_ = e;
 
       cond_.notify_all ();
    }
@@ -36,32 +26,24 @@ namespace iofwdevent
    {
       // If status is WAITING, the resource is still going to call our methods
       // even after we're gone. Bad thing.
+      //
+      // The correct way to deal with this is to cancel the operations and
+      // only leave the scope when the operation was properly cancelled.
       ALWAYS_ASSERT(status_ != WAITING);
-   }
-
-   /** 
-    * Should be called with lock held
-    */
-   void SingleCompletion::checkStatus ()
-   {
-      if (status_ != EXCEPTION)
-         return;
-
-      // Throw stored exception here
-      ALWAYS_ASSERT(false && "todo");
    }
 
    bool SingleCompletion::test ()
    {
-      ALWAYS_ASSERT(status_ != UNUSED);
-
       boost::mutex::scoped_lock l (lock_);
+
+      ALWAYS_ASSERT(status_ != UNUSED);
 
       if (status_ == WAITING)
          return false;
 
-      // Call checkstatus here to throw exception if needed
-      checkStatus ();
+      // Rethrow if an exception occurred
+      exception_.check ();
+
       return true;
    }
 
@@ -77,8 +59,27 @@ namespace iofwdevent
       }
 
       // Call checkstatus here to throw exception if needed
-      checkStatus ();
+      exception_.check ();
    }
 
+   void SingleCompletion::reset ()
+   {
+      // In principle the lock below is not needed. The user should
+      // guarantee that the operation completed before calling reset,
+      // so nobody else should be concurrently modifying status_
+      // boost::mutex::scoped_lock l (lock_);
+
+      if (status_ == UNUSED)
+         return;
+
+      // it is illegal to reset in WAITING state
+      ASSERT(status_ == COMPLETED);
+
+      status_ = UNUSED;
+      // Reset any stored
+      exception_.clear ();
+   }
+
+   //========================================================================
 }
 

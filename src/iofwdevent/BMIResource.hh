@@ -6,6 +6,8 @@ extern "C"
 #include <bmi.h>
 }
 
+#include "CBType.hh"
+
 #include <boost/intrusive/slist.hpp>
 #include <boost/pool/pool_alloc.hpp>
 #include "iofwdutil/tools.hh"
@@ -262,7 +264,7 @@ namespace iofwdevent
       {
          if (bmiret >= 0)
          {
-            e->cb (COMPLETED);
+            e->cb (CBException ());
          }
          else
          {

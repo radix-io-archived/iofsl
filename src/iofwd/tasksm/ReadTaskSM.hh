@@ -32,13 +32,15 @@ class ReadTaskSM : public sm::SimpleSM< ReadTaskSM >, public iofwdutil::InjectPo
         ReadTaskSM(sm::SMManager & smm, zoidfs::util::ZoidFSAsync * api, Request * r);
         ~ReadTaskSM();
 
-        void init(int UNUSED(status))
+        void init(iofwdevent::CBException e)
         {
+           e.check ();
             setNextMethod(&ReadTaskSM::decodeInputParams);
         }
 
-        void decodeInputParams(int UNUSED(status))
+        void decodeInputParams(iofwdevent::CBException e)
         {
+           e.check ();
             decodeInput();
 
             /* compute the total size of the pipeline transfers */
@@ -83,48 +85,56 @@ class ReadTaskSM : public sm::SimpleSM< ReadTaskSM >, public iofwdutil::InjectPo
         }
 
         /* normal mode (non-pipeline) state transitions */
-        void postAllocateSingleBuffer(int UNUSED(status))
+        void postAllocateSingleBuffer(iofwdevent::CBException e)
         {
+           e.check ();
             getSingleBuffer();
         }
 
-        void waitAllocateSingleBuffer(int UNUSED(status))
+        void waitAllocateSingleBuffer(iofwdevent::CBException e)
         {
+           e.check ();
             request_.initRequestParams(p, rbuffer_[0]->buffer_->getMemory());
 
             setNextMethod(&ReadTaskSM::postEnqueueRead);
         }
 
-        void postSendInputBuffers(int UNUSED(status))
+        void postSendInputBuffers(iofwdevent::CBException e)
         {
+           e.check ();
             sendBuffers();
         }
 
-        void waitSendInputBuffers(int UNUSED(status))
+        void waitSendInputBuffers(iofwdevent::CBException e)
         {
+           e.check ();
             /* free the buffer */
             request_.releaseBuffer(rbuffer_[0]);
 
             setNextMethod(&ReadTaskSM::postReply);
         }
 
-        void postEnqueueRead(int UNUSED(status))
+        void postEnqueueRead(iofwdevent::CBException e)
         {
+           e.check ();
             readNormal();
         }
 
-        void waitEnqueueRead(int UNUSED(status))
+        void waitEnqueueRead(iofwdevent::CBException e)
         {
+           e.check ();
             setNextMethod(&ReadTaskSM::postSendInputBuffers);
         }
 
-        void postReply(int UNUSED(status))
+        void postReply(iofwdevent::CBException e)
         {
+           e.check ();
             reply();
         }
 
-        void waitReply(int UNUSED(status))
+        void waitReply(iofwdevent::CBException e)
         {
+           e.check ();
             // done...
         }
 
@@ -138,23 +148,27 @@ class ReadTaskSM : public sm::SimpleSM< ReadTaskSM >, public iofwdutil::InjectPo
          *  4) go back to 1) unless all data was sent to the client
          */
 
-        void postAllocateBuffer(int UNUSED(status))
+        void postAllocateBuffer(iofwdevent::CBException e)
         {
+           e.check ();
             getBuffer();
         }
 
-        void waitAllocateBuffer(int UNUSED(status))
+        void waitAllocateBuffer(iofwdevent::CBException e)
         {
+           e.check ();
             setNextMethod(&ReadTaskSM::postPipelineEnqueueRead);
         }
 
-        void postSendPipelineBuffer(int UNUSED(status))
+        void postSendPipelineBuffer(iofwdevent::CBException e)
         {
+           e.check ();
             sendPipelineBuffer();
         }
 
-        void waitSendPipelineBuffer(int UNUSED(status))
+        void waitSendPipelineBuffer(iofwdevent::CBException e)
         {
+           e.check ();
             /* update the return code */
             if(*(rbuffer_[cw_post_index_]->ret) != zoidfs::ZFS_OK)
             {
@@ -182,8 +196,9 @@ class ReadTaskSM : public sm::SimpleSM< ReadTaskSM >, public iofwdutil::InjectPo
             }
         }
 
-        void postPipelineEnqueueRead(int UNUSED(status))
+        void postPipelineEnqueueRead(iofwdevent::CBException e)
         {
+           e.check ();
             p_siz_ = std::min(pipeline_size_, total_bytes_ - cur_sent_bytes_);
             /* update the rbuffer with the new data entires */
             rbuffer_[cw_post_index_]->siz = p_siz_;
@@ -192,8 +207,9 @@ class ReadTaskSM : public sm::SimpleSM< ReadTaskSM >, public iofwdutil::InjectPo
             execPipelineIO();
         }
 
-        void waitPipelineEnqueueRead(int UNUSED(status))
+        void waitPipelineEnqueueRead(iofwdevent::CBException e)
         {
+           e.check ();
             setNextMethod(&ReadTaskSM::postSendPipelineBuffer);
         }
 
@@ -210,7 +226,7 @@ class ReadTaskSM : public sm::SimpleSM< ReadTaskSM >, public iofwdutil::InjectPo
         void getSingleBuffer();
         void sendPipelineBuffer();
         void execPipelineIO();
-        void readBarrier(int status);
+        void readBarrier(iofwdevent::CBException e);
         void computePipelineFileSegments();
 
         /* @TODO currently set the concurrent pipeline op count to 128... this should be dynamic or tunable */

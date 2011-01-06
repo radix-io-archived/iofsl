@@ -23,7 +23,7 @@ class IOCBWrapper
         {
         }
 
-        void invoke(int status)
+        void invoke(int zoidfsresult, iofwdevent::CBException status)
         {
             boost::mutex::scoped_lock l(lock_);
             
@@ -31,13 +31,17 @@ class IOCBWrapper
             if(count_ == 1)
             {
                 /* set the ret code */
-                *(ret_) = status;
+                *(ret_) = zoidfsresult;
 
                 /* do copies if this is a read op */
                 if(isRead)
                     copy();
 
                 /* invoke the callback */
+                // Normally, there shouldn't be an exception (since we don't
+                // cancel zoidfs operations)
+                status.check ();
+
                 cb_(status);
                 
                 /* unlock */

@@ -14,6 +14,7 @@
 #include "Resource.hh"
 #include "ThreadedResource.hh"
 #include "iofwdutil/IOFWDLog-fwd.hh"
+#include "CBType.hh"
 
 namespace iofwdevent
 {

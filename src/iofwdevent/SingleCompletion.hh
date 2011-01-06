@@ -4,6 +4,8 @@
 #include "iofwdevent/Resource.hh"
 #include "iofwdutil/assert.hh"
 
+#include "CBType.hh"
+
 #include <boost/function.hpp>
 #include <boost/thread.hpp>
 #include <boost/utility.hpp>
@@ -16,13 +18,15 @@ namespace iofwdevent
     * This class enables a thread to block until an operation completes.
     * After the operation completes, it can be reused for another operation.
     *
+    * Note: This class is not threadsafe in the sense that only one thread
+    * should be calling the test or wait methods.
+    *
     * Cannot be copied for two reasons:
     *    1) When using as functor, the user really doesn't want to copy the
     *       functor (and complete the copy) -> force failure is boost::ref
     *       isn't used
     *    2) boost::mutex cannot be copied anyway.
     *
-    * @TODO: exception transport
     * @TODO: This class really has a wrong name
     */
    class SingleCompletion : public boost::noncopyable
@@ -46,29 +50,8 @@ namespace iofwdevent
       /**
        * \brief: CBType compatible functor signature.
        */
-      void operator () (int status)
-      {
-         ALWAYS_ASSERT(status_ == WAITING);
-         switch (status)
-         {
-            case COMPLETED:
-               success ();
-               break;
-            case CANCELLED:
-               cancel ();
-               break;
-            default:
-               ALWAYS_ASSERT(false);
-         }
-      }
+      void operator () (CBException e);
 
-   protected:
-
-      void success ();
-
-      void cancel ();
-
-      void exception ();
    public:
       SingleCompletion ();
 
@@ -82,29 +65,26 @@ namespace iofwdevent
 
       // bool timed_wait ();
 
-      /// Rearm the object so it can be reused for completion testing
-      void reset ()
-      {
-         // In principle the lock below is not needed. The user should
-         // guarantee that the operation completed before calling reset,
-         // so nobody else should be concurrently modifying status_
-         boost::mutex::scoped_lock l (lock_);
-
-         ASSERT(status_ != WAITING);
-         status_ = UNUSED;
-         // Need to reset any stored exception here
-      }
+      /**
+       * Rearm the object so it can be reused for completion testing.
+       * Can only be called if the SingleCompletion instance was not yet armed
+       * (i.e. no callback reference generated) or it completed.
+       */
+      void reset ();
 
       virtual ~SingleCompletion ();
 
    protected:
 
-      /// Check result, throw if needed
-      void checkStatus ();
-   protected:
+      /**
+       * Possible states of the SingleCompletion object:
+       *   - UNUSED: did not generate callback reference yet
+       *   - WAITING: Callback generating, but not yet called
+       *   - COMPLETED: callback was called
+       */
+      enum { UNUSED = 0, WAITING, COMPLETED } status_;
 
-      enum { UNUSED = 0, SUCCESS, CANCEL, EXCEPTION, WAITING };
-      int status_;
+      CBException exception_;
 
       boost::mutex lock_;
       boost::condition_variable cond_;

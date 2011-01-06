@@ -227,14 +227,20 @@ void IOFWDFrontend::post_testunexpected ()
  * This method is called by iofwdevent::BMIResource when an unexpected message
  * comes in.
  */
-void IOFWDFrontend::newUnexpected (int status)
+void IOFWDFrontend::newUnexpected (iofwdevent::CBException e)
 {
-   if (status == iofwdevent::COMPLETED)
+   if (!e.hasException ())
    {
       if (ue_count_ != 0)
       {
          handleIncoming (ue_count_, &info_[0]);
       }
+   }
+   else
+   {
+      // We only except an exception due to cancelling the unexpected receive.
+      if (!e.isCancelled ())
+         e.check ();
    }
    // Wait
    if (!stop_)

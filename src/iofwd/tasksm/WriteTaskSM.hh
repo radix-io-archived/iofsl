@@ -26,19 +26,23 @@ namespace iofwd
     namespace tasksm
     {
 
-class WriteTaskSM : public sm::SimpleSM< WriteTaskSM >, public iofwdutil::InjectPool< WriteTaskSM >
+class WriteTaskSM : public sm::SimpleSM< WriteTaskSM >, public
+                    iofwdutil::InjectPool< WriteTaskSM >
 {
     public:
-        WriteTaskSM(sm::SMManager & smm, zoidfs::util::ZoidFSAsync * api, Request * r);
+        WriteTaskSM(sm::SMManager & smm, zoidfs::util::ZoidFSAsync * api,
+              Request * r);
         ~WriteTaskSM();
 
-        void init(int UNUSED(status))
+        void init(iofwdevent::CBException e)
         {
+           e.check ();
             setNextMethod(&WriteTaskSM::decodeInputParams);
         }
 
-        void decodeInputParams(int UNUSED(status))
+        void decodeInputParams(iofwdevent::CBException e)
         {
+           e.check ();
             decodeInput();
 
             /* compute the total size of the pipeline transfers */
@@ -82,13 +86,15 @@ class WriteTaskSM : public sm::SimpleSM< WriteTaskSM >, public iofwdutil::Inject
             }
         }
     
-        void postAllocateSingleBuffer(int UNUSED(status))
+        void postAllocateSingleBuffer(iofwdevent::CBException e)
         {
+           e.check ();
             getSingleBuffer();
         }
 
-        void waitAllocateSingleBuffer(int UNUSED(status))
+        void waitAllocateSingleBuffer(iofwdevent::CBException e)
         {
+           e.check ();
             // init the task params
             request_.initRequestParams(p, rbuffer_[0]->buffer_->getMemory());
 
@@ -96,36 +102,42 @@ class WriteTaskSM : public sm::SimpleSM< WriteTaskSM >, public iofwdutil::Inject
         }
 
         /* normal mode (non-pipeline) state transitions */
-        void postRecvInputBuffers(int UNUSED(status))
+        void postRecvInputBuffers(iofwdevent::CBException e)
         {
+           e.check ();
             recvBuffers();
         }
 
-        void waitRecvInputBuffers(int UNUSED(status))
+        void waitRecvInputBuffers(iofwdevent::CBException e)
         {
+           e.check ();
             setNextMethod(&WriteTaskSM::postEnqueueWrite);
         }
 
-        void postEnqueueWrite(int UNUSED(status))
+        void postEnqueueWrite(iofwdevent::CBException e)
         {
+           e.check ();
             writeNormal();
         }
 
-        void waitEnqueueWrite(int UNUSED(status))
+        void waitEnqueueWrite(iofwdevent::CBException e)
         {
+           e.check ();
             /* free the buffer */
             request_.releaseBuffer(rbuffer_[0]);
 
             setNextMethod(&WriteTaskSM::postReply);
         }
 
-        void postReply(int UNUSED(status))
+        void postReply(iofwdevent::CBException e)
         {
+           e.check ();
             reply();
         }
 
-        void waitReply(int UNUSED(status))
+        void waitReply(iofwdevent::CBException e)
         {
+           e.check ();
             // done...
         }
 
@@ -139,28 +151,33 @@ class WriteTaskSM : public sm::SimpleSM< WriteTaskSM >, public iofwdutil::Inject
          *  4) go back to 1) unless all data was recv'ed from the client
          */
 
-        void postAllocateBuffer(int UNUSED(status))
+        void postAllocateBuffer(iofwdevent::CBException e)
         {
+           e.check ();
             getBuffer();
         }
 
-        void waitAllocateBuffer(int UNUSED(status))
+        void waitAllocateBuffer(iofwdevent::CBException e)
         {
+           e.check ();
             setNextMethod(&WriteTaskSM::postRecvPipelineBuffer);
         }
 
-        void postRecvPipelineBuffer(int UNUSED(status))
+        void postRecvPipelineBuffer(iofwdevent::CBException e)
         {
+           e.check ();
             recvPipelineBuffer();
         }
 
-        void waitRecvPipelineBuffer(int UNUSED(status))
+        void waitRecvPipelineBuffer(iofwdevent::CBException e)
         {
+           e.check ();
             setNextMethod(&WriteTaskSM::postPipelineEnqueueWrite);
         }
 
-        void postPipelineEnqueueWrite(int UNUSED(status))
+        void postPipelineEnqueueWrite(iofwdevent::CBException e)
         {
+           e.check ();
             /* update the rbuffer with the new data entires */
             rbuffer_[cw_post_index_]->siz = p_siz_;
             rbuffer_[cw_post_index_]->off = cur_recv_bytes_;
@@ -168,8 +185,9 @@ class WriteTaskSM : public sm::SimpleSM< WriteTaskSM >, public iofwdutil::Inject
             execPipelineIO();
         }
 
-        void waitPipelineEnqueueWrite(int UNUSED(status))
+        void waitPipelineEnqueueWrite(iofwdevent::CBException e)
         {
+           e.check ();
             if(mode_ == WRITESM_SERIAL_IO_PIPELINE)
             {
                 /* update the return code */
@@ -223,8 +241,8 @@ class WriteTaskSM : public sm::SimpleSM< WriteTaskSM >, public iofwdutil::Inject
         void getSingleBuffer();
         void recvPipelineBuffer();
         void execPipelineIO();
-        void waitWriteBarrier(int status);
-        void writeDoneCB(int status, int my_slot);
+        void waitWriteBarrier(iofwdevent::CBException e);
+        void writeDoneCB(iofwdevent::CBException status, int my_slot);
 
         void computePipelineFileSegments();
 

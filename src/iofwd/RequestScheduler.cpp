@@ -363,13 +363,15 @@ void RequestScheduler::issue(vector<ChildRange *>& rs)
      dynamic_cast<iofwd::tasksm::SingleSharedIOCB *>(cbs)->loadCB(cbvec[0]);
   }
 
-  const iofwdevent::CBType cbfunc = boost::bind(&iofwd::tasksm::SharedIOCB::issueIOCallbacks, cbs, 0);
+  const iofwdevent::CBType cbfunc =
+     boost::bind(&iofwd::tasksm::SharedIOCB::issueIOCallbacks, cbs, _1);
   if (rs[0]->type_ == RANGE_WRITE) {
-    api_->write(cbfunc, ret, rs[0]->handle_, narrays, (const void**)mem_starts, mem_sizes,
-                                       narrays, file_starts, file_sizes, rs[0]->op_hint_);
+    api_->write(cbfunc, ret, rs[0]->handle_, narrays, (const
+             void**)mem_starts, mem_sizes, narrays, file_starts, file_sizes,
+          rs[0]->op_hint_);
   } else if (rs[0]->type_ == RANGE_READ) {
-    api_->read(cbfunc, ret, rs[0]->handle_, narrays, (void**)mem_starts, mem_sizes,
-                                      narrays, file_starts, file_sizes, rs[0]->op_hint_);
+    api_->read(cbfunc, ret, rs[0]->handle_, narrays, (void**)mem_starts,
+          mem_sizes, narrays, file_starts, file_sizes, rs[0]->op_hint_);
   } else {
     assert(false);
   }

@@ -8,22 +8,38 @@ using namespace iofwdevent;
 class DummyTest
 {
 public:
-   DummyTest (int expected)
-      : expected_(expected), got_ (-1)
+   DummyTest (bool success)
+      : expected_(success), success_ (false),
+        called_(false)
    {
    }
 
    void test () const
    {
-      BOOST_CHECK_EQUAL_TS (expected_, got_);
+      BOOST_CHECK_EQUAL_TS (expected_, success_);
    }
 
-   void operator () (int status)
+   void operator () (iofwdevent::CBException e)
    {
       // Check we haven't been called yet
-      BOOST_CHECK_EQUAL_TS (got_, -1);
+      BOOST_CHECK_TS (!called_);
 
-      got_ = status;
+      called_ = true;
+
+      if (e.hasException ())
+      {
+         if (e.isCancelled ())
+         {
+            success_ = false;
+         }
+         else
+         {
+            // unknown exception??
+            e.check ();
+         }
+      }
+      else
+         success_ = true;
    }
 
    ~DummyTest ()
@@ -32,9 +48,9 @@ public:
    }
 
 protected:
-   int expected_;
-   int got_;
-
+   bool expected_;
+   bool success_;
+   bool called_;
 };
 
 
@@ -53,13 +69,14 @@ BOOST_FIXTURE_TEST_CASE( immediate, SCFixture )
     BOOST_TEST_MESSAGE("Testing DummyResource immediate");
 
     {
-       DummyTest t (COMPLETED);
-       res_.immediate (boost::ref(t), COMPLETED);
+       DummyTest t (true);
+       res_.immediate (boost::ref(t));
     }
 
     {
-       DummyTest t (CANCELLED);
-       res_.immediate (boost::ref(t), CANCELLED);
+       DummyTest t (false);
+       res_.immediate (boost::ref(t),
+             iofwdevent::CBException::cancelledOperation (0));
     }
 }
 
@@ -72,13 +89,14 @@ BOOST_FIXTURE_TEST_CASE( deferred, SCFixture )
     BOOST_TEST_MESSAGE("Testing DummyResource deferred");
 
     {
-       DummyTest t1 (COMPLETED);
-       DummyTest t2 (CANCELLED);
+       DummyTest t1 (true);
+       DummyTest t2 (false);
 
        // Boost ref is needed since we don't want to complete a copy
        // of our DummyTest...
-       res_.defer (boost::ref(t1), COMPLETED);
-       res_.defer (boost::ref(t2), CANCELLED);
+       res_.defer (boost::ref(t1));
+       res_.defer (boost::ref(t2),
+             iofwdevent::CBException::cancelledOperation (0));
        res_.complete ();
     }
 }

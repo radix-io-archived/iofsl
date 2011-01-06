@@ -21,7 +21,8 @@ namespace iofwd
 class BaseTaskSM : public sm::SimpleSM< BaseTaskSM >
 {
     public:
-        BaseTaskSM (sm::SMManager & smm, zoidfs::util::ZoidFSAsync * api) : sm::SimpleSM<BaseTaskSM>(smm), api_(api), slots_(*this)
+        BaseTaskSM (sm::SMManager & smm, zoidfs::util::ZoidFSAsync * api) :
+           sm::SimpleSM<BaseTaskSM>(smm), api_(api), slots_(*this)
         {
         }
 
@@ -29,29 +30,33 @@ class BaseTaskSM : public sm::SimpleSM< BaseTaskSM >
         {
         }
 
-        void init(int UNUSED(status))
+        void init(iofwdevent::CBException e)
         {
+           e.check ();
             setNextMethod(&BaseTaskSM::postDecodeInput);
         }
 
-        virtual void postDecodeInput(int UNUSED(status)) = 0;
+        virtual void postDecodeInput(iofwdevent::CBException e) = 0;
 
-        void waitDecodeInput(int UNUSED(status))
+        void waitDecodeInput(iofwdevent::CBException e)
         {
+           e.check ();
             setNextMethod(&BaseTaskSM::postRunOp);
         }
 
-        virtual void postRunOp(int UNUSED(status)) = 0;
+        virtual void postRunOp(iofwdevent::CBException e) = 0;
 
-        void waitRunOp(int UNUSED(status))
+        void waitRunOp(iofwdevent::CBException e)
         {
+           e.check ();
             setNextMethod(&BaseTaskSM::postReply);
         }
 
-        virtual void postReply(int UNUSED(status)) = 0;
+        virtual void postReply(iofwdevent::CBException e) = 0;
 
-        void waitReply(int UNUSED(status))
+        void waitReply(iofwdevent::CBException e)
         {
+           e.check ();
             // done
         }
 

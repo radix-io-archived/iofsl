@@ -89,9 +89,9 @@ namespace zoidfs
          return ZoidFSAsyncPT::finalize ();
       }
 
-      void RateLimiterAsync::timerTick (int status)
+      void RateLimiterAsync::timerTick (iofwdevent::CBException e)
       {
-         if (status == iofwdevent::CANCELLED)
+         if (e.isCancelled ())
          {
             ZLOG_INFO(log_, "(timer callback) Timer cancelled");
             return;
@@ -159,11 +159,12 @@ namespace zoidfs
        * This method is here to ensure we don't delete a DelayedOp instance
        * from within itself. (although it might still happen ;-)
        */
-      void RateLimiterAsync::callback (DelayedOp * op, int status)
+      void RateLimiterAsync::callback (DelayedOp * op, iofwdevent::CBException
+            e)
       {
          MutexType::scoped_lock l(op->parent_.lock_);
 
-         if (!op->callback (status))
+         if (!op->callback (e))
             delete op;
       }
 
@@ -188,8 +189,7 @@ namespace zoidfs
       /**
        * If it returns false, it gets deleted.
        */
-      bool RateLimiterAsync::DelayedOp::callback (int
-            cbstat)
+      bool RateLimiterAsync::DelayedOp::callback (iofwdevent::CBException e)
       {
          // Cannot use a simple lock here since the callback could be called
          // recursively from for example TokenResource.request.
@@ -210,6 +210,10 @@ namespace zoidfs
                }
                // if we delay issuing exec fall through to getting tokens
             case WAITING_FOR_PRE_EXEC:
+               if (!delay_issue_)
+               {
+                  op_status_ = e;
+               }
                status_ = WAITING_FOR_LAT;
                if (parent_.latency_)
                {
@@ -219,7 +223,7 @@ namespace zoidfs
                }
             case WAITING_FOR_LAT:
                ZLOG_DEBUG_MORE(parent_.log_, format("(op %p): in pre_exec")%this);
-               op_status_ = cbstat;
+               op_status_ = e;
                status_ = WAITING_FOR_TOKEN_1;
                // get tokens for operation
                // Note that the cb could fire immediately (before returning
@@ -284,7 +288,7 @@ namespace zoidfs
                ZLOG_DEBUG_MORE(parent_.log_, format("(op %p): in waiting_for_postexec")%this);
                if (delay_issue_)
                {
-                  op_status_ = cbstat;
+                  op_status_ = e;
                }
                // fall through
             case DONE:
@@ -369,7 +373,7 @@ namespace zoidfs
                mem_starts, mem_sizes, file_count, file_starts, file_sizes,
                hint);
 
-         callback (op, iofwdevent::COMPLETED);
+         callback (op, iofwdevent::CBException ());
       }
 
       void RateLimiterAsync::write(const iofwdevent::CBType & cb, int * ret,
@@ -386,7 +390,7 @@ namespace zoidfs
                mem_starts, mem_sizes, file_count, file_starts, file_sizes,
               hint);
 
-         callback (op, iofwdevent::COMPLETED);
+         callback (op, iofwdevent::CBException ());
       }
 
 

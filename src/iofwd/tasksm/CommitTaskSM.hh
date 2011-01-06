@@ -11,11 +11,14 @@ namespace iofwd
     namespace tasksm
     {
 
-class CommitTaskSM : public BaseTaskSM, public iofwdutil::InjectPool< CommitTaskSM >
+class CommitTaskSM : public BaseTaskSM,
+                     public iofwdutil::InjectPool< CommitTaskSM >
 {
     public:
-        CommitTaskSM (sm::SMManager & smm, zoidfs::util::ZoidFSAsync * api, Request * request)
-            : BaseTaskSM(smm, api), ret_(0), request_(static_cast<CommitRequest &>(*request))
+        CommitTaskSM (sm::SMManager & smm, zoidfs::util::ZoidFSAsync * api,
+              Request * request)
+            : BaseTaskSM(smm, api), ret_(0),
+              request_(static_cast<CommitRequest &>(*request))
         {
         }
 
@@ -24,20 +27,23 @@ class CommitTaskSM : public BaseTaskSM, public iofwdutil::InjectPool< CommitTask
             delete &request_;
         }
 
-        virtual void postDecodeInput(int UNUSED(status))
+        virtual void postDecodeInput(iofwdevent::CBException e)
         {
+           e.check ();
             p_ = request_.decodeParam();
             setNextMethod(&BaseTaskSM::waitDecodeInput);
         }
 
-        virtual void postRunOp(int UNUSED(status))
+        virtual void postRunOp(iofwdevent::CBException e)
         {
+           e.check ();
             api_->commit (slots_[BASE_SLOT], &ret_, p_.handle, p_.op_hint);
             slots_.wait(BASE_SLOT, &CommitTaskSM::waitRunOp);
         }
 
-        virtual void postReply(int UNUSED(status))
+        virtual void postReply(iofwdevent::CBException e)
         {
+           e.check ();
             request_.setReturnCode(ret_);
             request_.reply((slots_[BASE_SLOT]));
             slots_.wait(BASE_SLOT, &CommitTaskSM::waitReply);

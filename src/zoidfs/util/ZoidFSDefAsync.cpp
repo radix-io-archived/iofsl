@@ -35,39 +35,70 @@ namespace zoidfs
            case zoidfs::ZOIDFS_PROTO_NULL:
            {
               /* convert to the write work unit */
-              ZoidFSDefAsyncNullWorkUnit * wu = static_cast<ZoidFSDefAsyncNullWorkUnit *>(bwu);
+              ZoidFSDefAsyncNullWorkUnit * wu =
+                 static_cast<ZoidFSDefAsyncNullWorkUnit *>(bwu);
 
-              /* invoke the write API */
-              *(wu->ret_) = wu->api_->null();
+              boost::exception_ptr e;
+              try
+              {
+                 /* invoke the write API */
+                 *(wu->ret_) = wu->api_->null();
+              }
+              catch (...)
+              {
+                 e = boost::current_exception ();
+              }
 
               /* invoke the callback */
-              wu->cb_(iofwdevent::COMPLETED);
+              wu->cb_(iofwdevent::CBException (e));
 
               break;
            }
            case zoidfs::ZOIDFS_PROTO_GET_ATTR:
            {
               /* convert to the write work unit */
-              ZoidFSDefAsyncGetattrWorkUnit * wu = static_cast<ZoidFSDefAsyncGetattrWorkUnit *>(bwu);
+              ZoidFSDefAsyncGetattrWorkUnit * wu =
+                 static_cast<ZoidFSDefAsyncGetattrWorkUnit *>(bwu);
 
-              /* invoke the write API */
-              *(wu->ret_) = wu->api_->getattr(wu->handle_, wu->attr_, wu->hint_);
+              boost::exception_ptr e;
+
+              try
+              {
+                 /* invoke the write API */
+                 *(wu->ret_) = wu->api_->getattr(wu->handle_, wu->attr_,
+                       wu->hint_);
+              }
+              catch (...)
+              {
+                 e = boost::current_exception ();
+              }
 
               /* invoke the callback */
-              wu->cb_(iofwdevent::COMPLETED);
+              wu->cb_(e);
 
               break;
            }
            case zoidfs::ZOIDFS_PROTO_SET_ATTR:
            {
               /* convert to the write work unit */
-              ZoidFSDefAsyncSetattrWorkUnit * wu = static_cast<ZoidFSDefAsyncSetattrWorkUnit *>(bwu);
+              ZoidFSDefAsyncSetattrWorkUnit * wu =
+                 static_cast<ZoidFSDefAsyncSetattrWorkUnit *>(bwu);
 
-              /* invoke the write API */
-              *(wu->ret_) = wu->api_->setattr(wu->handle_, wu->sattr_, wu->attr_, wu->hint_);
+              boost::exception_ptr e;
+
+              try
+              {
+                 /* invoke the write API */
+                 *(wu->ret_) = wu->api_->setattr(wu->handle_, wu->sattr_,
+                       wu->attr_, wu->hint_);
+              }
+              catch (...)
+              {
+                 e = boost::current_exception ();
+              }
 
               /* invoke the callback */
-              wu->cb_(iofwdevent::COMPLETED);
+              wu->cb_(e);
 
               break;
            }
@@ -76,159 +107,300 @@ namespace zoidfs
               /* convert to the write work unit */
               ZoidFSDefAsyncLookupWorkUnit * wu = static_cast<ZoidFSDefAsyncLookupWorkUnit *>(bwu);
 
-              /* invoke the write API */
-              *(wu->ret_) = wu->api_->lookup(wu->parent_handle_, wu->component_name_, wu->full_path_, wu->handle_, wu->hint_);
+              boost::exception_ptr e;
+
+              try
+              {
+                 /* invoke the write API */
+                 *(wu->ret_) = wu->api_->lookup(wu->parent_handle_,
+                       wu->component_name_, wu->full_path_, wu->handle_,
+                       wu->hint_);
+              }
+              catch (...)
+              {
+                 e = boost::current_exception ();
+              }
 
               /* invoke the callback */
-              wu->cb_(iofwdevent::COMPLETED);
+              wu->cb_(e);
 
               break;
            }
            case zoidfs::ZOIDFS_PROTO_READLINK:
            {
               /* convert to the write work unit */
-              ZoidFSDefAsyncReadlinkWorkUnit * wu = static_cast<ZoidFSDefAsyncReadlinkWorkUnit *>(bwu);
+              ZoidFSDefAsyncReadlinkWorkUnit * wu =
+                 static_cast<ZoidFSDefAsyncReadlinkWorkUnit *>(bwu);
 
-              /* invoke the write API */
-              *(wu->ret_) = wu->api_->readlink(wu->handle_, wu->buffer_, wu->buffer_length_, wu->hint_);
+              boost::exception_ptr e;
+
+              try
+              {
+                 /* invoke the write API */
+                 *(wu->ret_) = wu->api_->readlink(wu->handle_, wu->buffer_,
+                       wu->buffer_length_, wu->hint_);
+              }
+              catch (...)
+              {
+                 e = boost::current_exception ();
+              }
 
               /* invoke the callback */
-              wu->cb_(iofwdevent::COMPLETED);
+              wu->cb_(e);
 
               break;
            }
            case zoidfs::ZOIDFS_PROTO_COMMIT:
            {
               /* convert to the write work unit */
-              ZoidFSDefAsyncCommitWorkUnit * wu = static_cast<ZoidFSDefAsyncCommitWorkUnit *>(bwu);
+              ZoidFSDefAsyncCommitWorkUnit * wu =
+                 static_cast<ZoidFSDefAsyncCommitWorkUnit *>(bwu);
 
-              /* invoke the write API */
-              *(wu->ret_) = wu->api_->commit(wu->handle_, wu->hint_);
+              boost::exception_ptr e;
+
+              try
+              {
+                 /* invoke the write API */
+                 *(wu->ret_) = wu->api_->commit(wu->handle_, wu->hint_);
+              }
+              catch (...)
+              {
+                 e = boost::current_exception ();
+              }
 
               /* invoke the callback */
-              wu->cb_(iofwdevent::COMPLETED);
+              wu->cb_(e);
 
               break;
            }
            case zoidfs::ZOIDFS_PROTO_CREATE:
            {
               /* convert to the write work unit */
-              ZoidFSDefAsyncCreateWorkUnit * wu = static_cast<ZoidFSDefAsyncCreateWorkUnit *>(bwu);
+              ZoidFSDefAsyncCreateWorkUnit * wu =
+                 static_cast<ZoidFSDefAsyncCreateWorkUnit *>(bwu);
 
-              /* invoke the write API */
-              *(wu->ret_) = wu->api_->create(wu->parent_handle_, wu->component_name_, wu->full_path_, wu->sattr_, wu->handle_, wu->created_, wu->hint_);
+              boost::exception_ptr e;
+
+              try
+              {
+                 /* invoke the write API */
+                 *(wu->ret_) = wu->api_->create(wu->parent_handle_,
+                       wu->component_name_, wu->full_path_, wu->sattr_,
+                       wu->handle_, wu->created_, wu->hint_);
+              }
+              catch (...)
+              {
+                 e = boost::current_exception ();
+              }
 
               /* invoke the callback */
-              wu->cb_(iofwdevent::COMPLETED);
+              wu->cb_(e);
 
               break;
            }
            case zoidfs::ZOIDFS_PROTO_REMOVE:
            {
               /* convert to the write work unit */
-              ZoidFSDefAsyncRemoveWorkUnit * wu = static_cast<ZoidFSDefAsyncRemoveWorkUnit *>(bwu);
+              ZoidFSDefAsyncRemoveWorkUnit * wu =
+                 static_cast<ZoidFSDefAsyncRemoveWorkUnit *>(bwu);
 
-              /* invoke the write API */
-              *(wu->ret_) = wu->api_->remove(wu->parent_handle_, wu->component_name_, wu->full_path_, wu->parent_hint_, wu->hint_);
+              boost::exception_ptr e;
+
+              try
+              {
+                 /* invoke the write API */
+                 *(wu->ret_) = wu->api_->remove(wu->parent_handle_,
+                       wu->component_name_, wu->full_path_, wu->parent_hint_,
+                       wu->hint_);
+              }
+              catch (...)
+              {
+                 e = boost::current_exception ();
+              }
 
               /* invoke the callback */
-              wu->cb_(iofwdevent::COMPLETED);
+              wu->cb_(e);
 
               break;
            }
            case zoidfs::ZOIDFS_PROTO_RENAME:
            {
               /* convert to the write work unit */
-              ZoidFSDefAsyncRenameWorkUnit * wu = static_cast<ZoidFSDefAsyncRenameWorkUnit *>(bwu);
+              ZoidFSDefAsyncRenameWorkUnit * wu =
+                 static_cast<ZoidFSDefAsyncRenameWorkUnit *>(bwu);
 
-              /* invoke the write API */
-              *(wu->ret_) = wu->api_->rename(wu->from_parent_handle_, wu->from_component_name_, wu->from_full_path_, wu->to_parent_handle_, wu->to_component_name_, wu->to_full_path_,
-                    wu->from_parent_hint_, wu->to_parent_hint_, wu->hint_);
+              boost::exception_ptr e;
+
+              try
+              {
+                 /* invoke the write API */
+                 *(wu->ret_) = wu->api_->rename(wu->from_parent_handle_,
+                       wu->from_component_name_, wu->from_full_path_,
+                       wu->to_parent_handle_, wu->to_component_name_,
+                       wu->to_full_path_,
+                       wu->from_parent_hint_, wu->to_parent_hint_, wu->hint_);
+              }
+              catch (...)
+              {
+                 e = boost::current_exception ();
+              }
 
               /* invoke the callback */
-              wu->cb_(iofwdevent::COMPLETED);
+              wu->cb_(e);
 
               break;
            }
            case zoidfs::ZOIDFS_PROTO_LINK:
            {
               /* convert to the write work unit */
-              ZoidFSDefAsyncLinkWorkUnit * wu = static_cast<ZoidFSDefAsyncLinkWorkUnit *>(bwu);
+              ZoidFSDefAsyncLinkWorkUnit * wu =
+                 static_cast<ZoidFSDefAsyncLinkWorkUnit *>(bwu);
 
-              /* invoke the write API */
-              *(wu->ret_) = wu->api_->link(wu->from_parent_handle_, wu->from_component_name_, wu->from_full_path_, wu->to_parent_handle_, wu->to_component_name_, wu->to_full_path_,
-                    wu->from_parent_hint_, wu->to_parent_hint_, wu->hint_);
+              boost::exception_ptr e;
+
+              try
+              {
+                 /* invoke the write API */
+                 *(wu->ret_) = wu->api_->link(wu->from_parent_handle_,
+                       wu->from_component_name_, wu->from_full_path_,
+                       wu->to_parent_handle_, wu->to_component_name_,
+                       wu->to_full_path_,
+                       wu->from_parent_hint_, wu->to_parent_hint_, wu->hint_);
+              }
+              catch (...)
+              {
+                 e = boost::current_exception ();
+              }
 
               /* invoke the callback */
-              wu->cb_(iofwdevent::COMPLETED);
+              wu->cb_(e);
 
               break;
            }
            case zoidfs::ZOIDFS_PROTO_SYMLINK:
            {
               /* convert to the write work unit */
-              ZoidFSDefAsyncSymlinkWorkUnit * wu = static_cast<ZoidFSDefAsyncSymlinkWorkUnit *>(bwu);
+              ZoidFSDefAsyncSymlinkWorkUnit * wu =
+                 static_cast<ZoidFSDefAsyncSymlinkWorkUnit *>(bwu);
 
-              /* invoke the write API */
-              *(wu->ret_) = wu->api_->symlink(wu->from_parent_handle_, wu->from_component_name_, wu->from_full_path_, wu->to_parent_handle_, wu->to_component_name_, wu->to_full_path_,
-                    wu->sattr_, wu->from_parent_hint_, wu->to_parent_hint_, wu->hint_);
+              boost::exception_ptr e;
+
+              try
+              {
+                 /* invoke the write API */
+                 *(wu->ret_) = wu->api_->symlink(wu->from_parent_handle_,
+                       wu->from_component_name_, wu->from_full_path_,
+                       wu->to_parent_handle_, wu->to_component_name_,
+                       wu->to_full_path_,
+                       wu->sattr_, wu->from_parent_hint_, wu->to_parent_hint_,
+                       wu->hint_);
+              }
+              catch (...)
+              {
+                 e = boost::current_exception ();
+              }
 
               /* invoke the callback */
-              wu->cb_(iofwdevent::COMPLETED);
+              wu->cb_(e);
 
               break;
            }
            case zoidfs::ZOIDFS_PROTO_MKDIR:
            {
               /* convert to the write work unit */
-              ZoidFSDefAsyncMkdirWorkUnit * wu = static_cast<ZoidFSDefAsyncMkdirWorkUnit *>(bwu);
+              ZoidFSDefAsyncMkdirWorkUnit * wu =
+                 static_cast<ZoidFSDefAsyncMkdirWorkUnit *>(bwu);
 
-              /* invoke the write API */
-              *(wu->ret_) = wu->api_->mkdir(wu->parent_handle_, wu->component_name_, wu->full_path_, wu->sattr_, wu->parent_hint_, wu->hint_);
+              boost::exception_ptr e;
+
+              try
+              {
+                 /* invoke the write API */
+                 *(wu->ret_) = wu->api_->mkdir(wu->parent_handle_,
+                       wu->component_name_, wu->full_path_, wu->sattr_,
+                       wu->parent_hint_, wu->hint_);
+              }
+              catch (...)
+              {
+                 e = boost::current_exception ();
+              }
 
               /* invoke the callback */
-              wu->cb_(iofwdevent::COMPLETED);
+              wu->cb_(e);
 
               break;
            }
            case zoidfs::ZOIDFS_PROTO_READDIR:
            {
               /* convert to the write work unit */
-              ZoidFSDefAsyncReaddirWorkUnit * wu = static_cast<ZoidFSDefAsyncReaddirWorkUnit *>(bwu);
+              ZoidFSDefAsyncReaddirWorkUnit * wu =
+                 static_cast<ZoidFSDefAsyncReaddirWorkUnit *>(bwu);
 
-              /* invoke the write API */
-              *(wu->ret_) = wu->api_->readdir(wu->parent_handle_, wu->cookie_, wu->entry_count_, wu->entries_, wu->flags_, wu->parent_hint_, wu->hint_);
+              boost::exception_ptr e;
+
+              try
+              {
+                 /* invoke the write API */
+                 *(wu->ret_) = wu->api_->readdir(wu->parent_handle_,
+                       wu->cookie_, wu->entry_count_, wu->entries_,
+                       wu->flags_, wu->parent_hint_, wu->hint_);
+              }
+              catch (...)
+              {
+                 e = boost::current_exception ();
+              }
 
               /* invoke the callback */
-              wu->cb_(iofwdevent::COMPLETED);
+              wu->cb_(e);
 
               break;
            }
            case zoidfs::ZOIDFS_PROTO_RESIZE:
            {
               /* convert to the write work unit */
-              ZoidFSDefAsyncResizeWorkUnit * wu = static_cast<ZoidFSDefAsyncResizeWorkUnit *>(bwu);
+              ZoidFSDefAsyncResizeWorkUnit * wu =
+                 static_cast<ZoidFSDefAsyncResizeWorkUnit *>(bwu);
 
-              *(wu->ret_) = wu->api_->resize(wu->handle_, wu->size_, wu->hint_);
+              boost::exception_ptr e;
+
+              try
+              {
+                 *(wu->ret_) = wu->api_->resize(wu->handle_, wu->size_,
+                       wu->hint_);
+              }
+              catch (...)
+              {
+                 e = boost::current_exception ();
+              }
 
               /* invoke the callback */
-              wu->cb_(iofwdevent::COMPLETED);
+              wu->cb_(e);
 
               break;
            }
            case zoidfs::ZOIDFS_PROTO_READ:
            {
               /* convert to the write work unit */
-              ZoidFSDefAsyncReadWorkUnit * wu = static_cast<ZoidFSDefAsyncReadWorkUnit *>(bwu);
+              ZoidFSDefAsyncReadWorkUnit * wu =
+                 static_cast<ZoidFSDefAsyncReadWorkUnit *>(bwu);
 
-              /* invoke the write API */
-              *(wu->ret_) = wu->api_->read(wu->handle_, wu->mem_count_,
-                                wu->mem_starts_, wu->mem_sizes_,
-                                wu->file_count_, wu->file_starts_,
-                                wu->file_sizes_, wu->hint_);
+              boost::exception_ptr e;
+
+              try
+              {
+                 /* invoke the write API */
+                 *(wu->ret_) = wu->api_->read(wu->handle_, wu->mem_count_,
+                       wu->mem_starts_, wu->mem_sizes_,
+                       wu->file_count_, wu->file_starts_,
+                       wu->file_sizes_, wu->hint_);
+              }
+              catch (...)
+              {
+                 e = boost::current_exception ();
+              }
 
               /* invoke the callback */
-              wu->cb_(iofwdevent::COMPLETED);
+              wu->cb_(e);
 
               break;
            }
@@ -236,21 +408,32 @@ namespace zoidfs
            case zoidfs::ZOIDFS_PROTO_WRITE:
            {
               /* convert to the write work unit */
-              ZoidFSDefAsyncWriteWorkUnit * wu = static_cast<ZoidFSDefAsyncWriteWorkUnit *>(bwu);
+              ZoidFSDefAsyncWriteWorkUnit * wu =
+                 static_cast<ZoidFSDefAsyncWriteWorkUnit *>(bwu);
 
-              /* invoke the write API */
-              *(wu->ret_) = wu->api_->write(wu->handle_, wu->mem_count_,
-                                wu->mem_starts_, wu->mem_sizes_,
-                                wu->file_count_, wu->file_starts_,
-                                wu->file_sizes_, wu->hint_);
+              boost::exception_ptr e;
+
+              try
+              {
+                 /* invoke the write API */
+                 *(wu->ret_) = wu->api_->write(wu->handle_, wu->mem_count_,
+                       wu->mem_starts_, wu->mem_sizes_,
+                       wu->file_count_, wu->file_starts_,
+                       wu->file_sizes_, wu->hint_);
+              }
+              catch (...)
+              {
+                 e = boost::current_exception ();
+              }
 
               /* invoke the callback */
-              wu->cb_(iofwdevent::COMPLETED);
+              wu->cb_(e);
 
               break;
            }
            default:
            {
+              ALWAYS_ASSERT(false);
               break;
            }
        };

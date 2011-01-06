@@ -11,11 +11,14 @@ namespace iofwd
     namespace tasksm
     {
 
-class LookupTaskSM : public BaseTaskSM, public iofwdutil::InjectPool< LookupTaskSM >
+class LookupTaskSM : public BaseTaskSM,
+                     public iofwdutil::InjectPool< LookupTaskSM >
 {
     public:
-        LookupTaskSM (sm::SMManager & smm, zoidfs::util::ZoidFSAsync * api, Request * request)
-            : BaseTaskSM(smm, api), ret_(0), request_(static_cast<LookupRequest &>(*request))
+        LookupTaskSM (sm::SMManager & smm, zoidfs::util::ZoidFSAsync * api,
+              Request * request)
+            : BaseTaskSM(smm, api), ret_(0),
+            request_(static_cast<LookupRequest &>(*request))
         {
         }
 
@@ -24,22 +27,27 @@ class LookupTaskSM : public BaseTaskSM, public iofwdutil::InjectPool< LookupTask
             delete &request_;
         }
 
-        virtual void postDecodeInput(int UNUSED(status))
+        virtual void postDecodeInput(iofwdevent::CBException e)
         {
+           e.check ();
             p_ = request_.decodeParam();
             setNextMethod(&BaseTaskSM::waitDecodeInput);
         }
 
-        virtual void postRunOp(int UNUSED(status))
+        virtual void postRunOp(iofwdevent::CBException e)
         {
-            api_->lookup(slots_[BASE_SLOT], &ret_, p_.parent_handle, p_.component_name, p_.full_path, &handle_, p_.op_hint);
+           e.check ();
+            api_->lookup(slots_[BASE_SLOT], &ret_, p_.parent_handle,
+                  p_.component_name, p_.full_path, &handle_, p_.op_hint);
             slots_.wait(BASE_SLOT, &LookupTaskSM::waitRunOp);
         }
 
-        virtual void postReply(int UNUSED(status))
+        virtual void postReply(iofwdevent::CBException e)
         {
+           e.check ();
             request_.setReturnCode (ret_);
-            request_.reply((slots_[BASE_SLOT]), (ret_  == zoidfs::ZFS_OK ? &handle_ : 0));
+            request_.reply((slots_[BASE_SLOT]), (ret_  == zoidfs::ZFS_OK ?
+                     &handle_ : 0));
             slots_.wait(BASE_SLOT, &LookupTaskSM::waitReply);
         }
 

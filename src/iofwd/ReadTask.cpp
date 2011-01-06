@@ -279,7 +279,8 @@ void ReadTask::execPipelineIO(const ReadRequest::ReqParam & p)
     delete [] send_ready;
 }
 
-void ReadTask::runPostReadCB(int status, int index, iofwdevent::CBType cb)
+void ReadTask::runPostReadCB(iofwdevent::CBException status,
+      int index, iofwdevent::CBType cb)
 {
     /* update the ret code */
     if(*(rbuffer_[index]->ret) != zoidfs::ZFS_OK)
@@ -324,8 +325,8 @@ void ReadTask::postRead(const ReadRequest::ReqParam & p, int index)
     rbuffer_[index]->ret = ret;
 
     iofwdevent::CBType pcb = *(pipeline_blocks_[index]);
-    boost::function<void(int)> bmmCB = boost::bind(&iofwd::ReadTask::runPostReadCB,
-            this, 0, index, pcb);
+    iofwdevent::CBType bmmCB = boost::bind(&iofwd::ReadTask::runPostReadCB,
+            this, _1, index, pcb);
 
     /* enqueue the read */
     api_->read (

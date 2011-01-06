@@ -59,18 +59,18 @@ void DummyResource::complete ()
    deferred_.clear ();
 }
 
-void DummyResource::defer (const CBType & cb, int status)
+void DummyResource::defer (const CBType & cb, CBException e)
 {
    boost::mutex::scoped_lock l(lock_);
 
-   deferred_.push_back (boost::bind (cb, status));
+   deferred_.push_back (boost::bind (cb, e));
 }
 
-void DummyResource::immediate (const CBType & cb, int status)
+void DummyResource::immediate (const CBType & cb, CBException e)
 {
    // no need for lock
 
-   cb (status);
+   cb (e);
 }
 
 //===========================================================================

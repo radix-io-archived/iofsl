@@ -39,7 +39,7 @@ BOOST_FIXTURE_TEST_CASE( singlethreaded_test, SCFixture )
     // arm SingleComp object.
 
 
-    dummy_.defer (comp, COMPLETED);
+    dummy_.defer (comp);
     BOOST_CHECK_TS (!comp.test ());
     dummy_.complete ();
     BOOST_CHECK_TS (comp.test ());
@@ -55,7 +55,7 @@ BOOST_FIXTURE_TEST_CASE( singlethreaded_wait, SCFixture )
    BOOST_TEST_MESSAGE("Checking early complete");
     
     // Here the operation completes before we call wait
-    dummy_.immediate (comp, COMPLETED);
+    dummy_.immediate (comp);
 
     boost::system_time t1 = boost::get_system_time ();
 
@@ -87,7 +87,7 @@ BOOST_FIXTURE_TEST_CASE( multithreaded_test, SCFixture )
        
     
     // NEed to arm the SingleCompletion obj first
-    dummy_.defer (comp, COMPLETED);
+    dummy_.defer (comp);
 
     // We use a barrier to make sure the testing thread is running before
     // we complete the SingleCompletion
@@ -129,7 +129,7 @@ BOOST_FIXTURE_TEST_CASE( multithreaded_test2, SCFixture )
       
       // Need to arm the SingleCompletion object by using it as a callback
       // before calling test/wait on it.
-      dummy_.defer (comp, COMPLETED);
+      dummy_.defer (comp);
 
       for (size_t i=0; i<THREADCOUNT; ++i)
       {
@@ -206,7 +206,7 @@ static void mt3_helper (SCFixture & f, bool wait, bool mixed)
 
       boost::barrier bar (THREADCOUNT + 1);
       
-      f.dummy_.defer (f.comp, COMPLETED);
+      f.dummy_.defer (f.comp);
 
       for (size_t i=0; i<THREADCOUNT; ++i)
       {

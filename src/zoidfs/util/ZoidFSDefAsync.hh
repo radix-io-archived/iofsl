@@ -107,7 +107,8 @@ namespace zoidfs
             zoidfs_cache_hint_t * to_parent_hint,
             zoidfs_op_hint_t * hint) ;
 
-      virtual void link(const iofwdevent::CBType & cb, int * ret, const zoidfs_handle_t * from_parent_handle,
+      virtual void link(const iofwdevent::CBType & cb, int * ret,
+            const zoidfs_handle_t * from_parent_handle,
             const char * from_component_name,
             const char * from_full_path,
             const zoidfs_handle_t * to_parent_handle,
@@ -118,7 +119,8 @@ namespace zoidfs
             zoidfs_op_hint_t * hint) ;
 
 
-      virtual void symlink(const iofwdevent::CBType & cb, int * ret, const zoidfs_handle_t * from_parent_handle,
+      virtual void symlink(const iofwdevent::CBType & cb, int * ret,
+            const zoidfs_handle_t * from_parent_handle,
             const char * from_component_name,
             const char * from_full_path,
             const zoidfs_handle_t * to_parent_handle,
@@ -129,14 +131,16 @@ namespace zoidfs
             zoidfs_cache_hint_t * to_parent_hint,
             zoidfs_op_hint_t * hint) ;
 
-      virtual void mkdir(const iofwdevent::CBType & cb, int * ret, const zoidfs_handle_t * parent_handle,
+      virtual void mkdir(const iofwdevent::CBType & cb, int * ret,
+            const zoidfs_handle_t * parent_handle,
             const char * component_name,
             const char * full_path,
             const zoidfs_sattr_t * attr,
             zoidfs_cache_hint_t * parent_hint,
             zoidfs_op_hint_t * hint) ;
 
-      virtual void readdir(const iofwdevent::CBType & cb, int * ret, const zoidfs_handle_t * parent_handle,
+      virtual void readdir(const iofwdevent::CBType & cb, int * ret,
+            const zoidfs_handle_t * parent_handle,
             zoidfs_dirent_cookie_t cookie,
             size_t * entry_count,
             zoidfs_dirent_t * entries,
@@ -144,7 +148,8 @@ namespace zoidfs
             zoidfs_cache_hint_t * parent_hint,
             zoidfs_op_hint_t * hint) ;
 
-      virtual void resize(const iofwdevent::CBType & cb, int * ret, const zoidfs_handle_t * handle,
+      virtual void resize(const iofwdevent::CBType & cb, int * ret,
+            const zoidfs_handle_t * handle,
             zoidfs_file_size_t size,
             zoidfs_op_hint_t * hint) ;
 
@@ -154,22 +159,34 @@ namespace zoidfs
 
       struct OpHelper
       {
-         OpHelper (const iofwdevent::CBType & mcb, int * ret, const boost::function<int ()> & wcb)
+         OpHelper (const iofwdevent::CBType & mcb, int * ret, const
+               boost::function<int ()> & wcb)
             : mcb_(mcb), ret_(ret), wcb_(wcb)
          {
          }
 
          void operator () ()
          {
-            // todo: add exception support
-            *ret_ = wcb_ ();
-            mcb_ (iofwdevent::COMPLETED);
+            try
+            {
+               *ret_ = wcb_ ();
+            }
+            catch (const iofwdutil::ZException & e)
+            {
+               mcb_ (iofwdevent::CBException (boost::current_exception ()));
+               return;
+            }
+            catch (...)
+            {
+               // Nobody should be throwing non-ZException derived exceptions!
+               ALWAYS_ASSERT(false && "Should not happen!");
+            }
+            mcb_ (iofwdevent::CBException ());
          }
 
          void run()
          {
-            *ret_ = wcb_ ();
-            mcb_ (iofwdevent::COMPLETED);
+            this->operator () ();
          }
 
          iofwdevent::CBType mcb_;
@@ -183,7 +200,9 @@ namespace zoidfs
          if (wait_for_threads_)
          {
             /* thread pool owns the OpHelper and is responsible for cleanup */
-            iofwdutil::ThreadPool::instance().addWorkUnit(new OpHelper(cb, ret, item), &OpHelper::run, iofwdutil::ThreadPool::HIGH, true);
+            iofwdutil::ThreadPool::instance().addWorkUnit(new OpHelper(cb,
+                     ret, item), &OpHelper::run, iofwdutil::ThreadPool::HIGH,
+                  true);
          }
          else
          {
@@ -192,7 +211,8 @@ namespace zoidfs
          }
       }
 
-    void submitWorkUnit(const boost::function<void (void)> & wu_, iofwdutil::ThreadPool::TPPrio prio)
+    void submitWorkUnit(const boost::function<void (void)> & wu_,
+          iofwdutil::ThreadPool::TPPrio prio)
     {
         if(wait_for_threads_)
         {

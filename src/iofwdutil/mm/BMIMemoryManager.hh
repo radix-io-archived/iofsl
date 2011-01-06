@@ -147,14 +147,19 @@ class BMIMemoryManager : public IOFWDMemoryManager, public iofwdutil::Singleton 
         static void setMaxMemAmount(size_t mem);
 
     protected:
-        void runBufferAllocCB1(int status, BMIMemoryAlloc * memAlloc, iofwdevent::CBType cb);        
-        void runBufferAllocCB2(int status, BMIMemoryAlloc * memAlloc, iofwdevent::CBType cb);        
+        void runBufferAllocCB1(iofwdevent::CBException status,
+              BMIMemoryAlloc * memAlloc, iofwdevent::CBType cb);
+
+        void runBufferAllocCB2(iofwdevent::CBException status,
+              BMIMemoryAlloc * memAlloc, iofwdevent::CBType cb);
 
         /*
-         * We use a TokenResource to limit the number of buffers consumed by the server
-         *  Currently, we do a 1 to 1 mapping of a token to a buffer of pipelineSize_.
-         *  @TODO: Come up with a better token <-> buffer scheme... not every transfer will
-         *  neeed pipelineSize_ sized buffers 
+         * We use a TokenResource to limit the number of buffers consumed by
+         * the server Currently, we do a 1 to 1 mapping of a token to a buffer
+         * of pipelineSize_.
+         *
+         * @TODO: Come up with a better token <-> buffer scheme... not every
+         * transfer will neeed pipelineSize_ sized buffers 
          */
         iofwdevent::TokenResource * tokens_;
         iofwdevent::TokenResource * mem_;

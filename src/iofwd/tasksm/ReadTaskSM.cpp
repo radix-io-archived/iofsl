@@ -225,8 +225,10 @@ namespace iofwd
 }
 
 /* barrier for reads... will not go to post reply state until all writes complete */
-void ReadTaskSM::readBarrier(int UNUSED(status))
+void ReadTaskSM::readBarrier(iofwdevent::CBException e)
 {
+   e.check ();
+
     boost::mutex::scoped_lock l(slot_mutex_);
 
     io_ops_done_++;

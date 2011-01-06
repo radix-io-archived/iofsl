@@ -1,6 +1,11 @@
 noinst_LIBRARIES += src/iofwdevent/libiofwdevent.a
 
 src_iofwdevent_libiofwdevent_a_SOURCES = \
+src/iofwdevent/CompletionException.hh \
+src/iofwdevent/Handle.hh \
+src/iofwdevent/EventExceptions.hh \
+src/iofwdevent/CBException.hh \
+src/iofwdevent/CBException.cpp \
 src/iofwdevent/DummyResource.hh \
 src/iofwdevent/DummyResource.cpp \
 src/iofwdevent/CBType.hh \

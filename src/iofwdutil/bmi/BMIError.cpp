@@ -20,7 +20,7 @@ const char * BMIError::errorString (int error)
 {
 //   std::cerr << "bmi_error: " << error << std::endl; 
    // BMI_ERROR_BIT is always set
-   ALWAYS_ASSERT (error & BMI_ERROR); 
+//   ALWAYS_ASSERT (error & BMI_ERROR); 
    error &= ~BMI_ERROR; 
 
    switch (error)

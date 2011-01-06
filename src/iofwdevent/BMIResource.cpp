@@ -60,7 +60,7 @@ namespace iofwdevent
          {
             UnexpectedClient * c = & (*I);
             ue_clientlist_.erase (I);
-            c->op (CANCELLED);
+            c->op (CBException::cancelledOperation (h));
             c->~UnexpectedClient ();
             ue_client_pool_.free (c);
             return true;
@@ -138,7 +138,7 @@ namespace iofwdevent
 #endif
          ZLOG_DEBUG_EXTREME(log_,format("unexpected client %p completed") %
                client.op);
-         client.op (COMPLETED);
+         client.op (CBException ());
 #ifndef NDEBUG
       }
       catch (...)

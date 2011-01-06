@@ -37,7 +37,7 @@ protected:
    void handleIncoming (int count, const BMI_unexpected_info * info);
 
    /// BMIResource callback
-   void newUnexpected (int status);
+   void newUnexpected (iofwdevent::CBException e);
 
    /// Reregister request with BMI callback
    void post_testunexpected ();

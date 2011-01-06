@@ -91,17 +91,25 @@ void BMIMemoryAlloc::dealloc()
  *  a wrapper around the callback with some additional memory manager
  *  ops. 
  */
-void BMIMemoryManager::runBufferAllocCB1(int UNUSED(status), BMIMemoryAlloc * memAlloc, iofwdevent::CBType cb)
+void BMIMemoryManager::runBufferAllocCB1(iofwdevent::CBException status,
+      BMIMemoryAlloc * memAlloc, iofwdevent::CBType cb)
 {
-    boost::function<void(int)>bmmCB = boost::bind(&iofwdutil::mm::BMIMemoryManager::runBufferAllocCB2, this, _1, dynamic_cast<BMIMemoryAlloc *>(memAlloc), cb);
-    mem_->request(bmmCB, memAlloc->getReqMemorySize());
+   status.check ();
+
+   iofwdevent::CBType bmmCB =
+      boost::bind(&iofwdutil::mm::BMIMemoryManager::runBufferAllocCB2, this,
+            _1, dynamic_cast<BMIMemoryAlloc *>(memAlloc), cb);
+   mem_->request(bmmCB, memAlloc->getReqMemorySize());
 }
 
-void BMIMemoryManager::runBufferAllocCB2(int status, BMIMemoryAlloc * memAlloc, iofwdevent::CBType cb)
+void BMIMemoryManager::runBufferAllocCB2(iofwdevent::CBException status,
+      BMIMemoryAlloc * memAlloc, iofwdevent::CBType cb)
 {
-    /* have the buffer wrapper allocate the buffer and consume one token */
-    memAlloc->alloc(1);
-    cb(status);
+   status.check ();
+
+   /* have the buffer wrapper allocate the buffer and consume one token */
+   memAlloc->alloc(1);
+   cb(status);
 }
 
 /*
@@ -174,10 +182,12 @@ BMIMemoryManager::~BMIMemoryManager()
 void BMIMemoryManager::alloc(iofwdevent::CBType cb, IOFWDMemoryAlloc * memAlloc)
 {
     /* construct the mem manager callback */
-    boost::function<void(int)>bmmCB = boost::bind(&iofwdutil::mm::BMIMemoryManager::runBufferAllocCB1, this, _1, dynamic_cast<BMIMemoryAlloc *>(memAlloc), cb);
+   iofwdevent::CBType bmmCB =
+      boost::bind(&iofwdutil::mm::BMIMemoryManager::runBufferAllocCB1, this,
+            _1, dynamic_cast<BMIMemoryAlloc *>(memAlloc), cb);
 
     /* get the tokens */
-    tokens_->request(boost::bind(bmmCB, 0), 1);
+    tokens_->request(bmmCB, 1);
 }
 
 /*

@@ -6,6 +6,7 @@
 #include <boost/thread.hpp>
 
 #include "Resource.hh"
+#include "CBType.hh"
 
 namespace iofwdevent
 {
@@ -28,13 +29,15 @@ public:
    ~DummyResource ();
 
    /// Immediately calls the callback with specified status
-   void immediate (const CBType & cb, int status);
+   void immediate (const CBType & cb, iofwdevent::CBException e =
+         iofwdevent::CBException ());
 
    /**
     * Puts cb on waiting list; Will complete with specified status when
     * complete is called.
     */
-   void defer (const CBType & cb, int status);
+   void defer (const CBType & cb, iofwdevent::CBException e =
+         iofwdevent::CBException ());
 
    /**
     * Complete all deferred operations.

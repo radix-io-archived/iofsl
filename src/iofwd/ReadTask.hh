@@ -15,7 +15,8 @@
 namespace iofwd
 {
 
-class ReadTask : public TaskHelper<ReadRequest>, public iofwdutil::InjectPool<ReadTask>
+class ReadTask : public TaskHelper<ReadRequest>,
+   public iofwdutil::InjectPool<ReadTask>
 {
 public:
    ReadTask (ThreadTaskParam & p)
@@ -107,7 +108,8 @@ private:
    void postRead(const ReadRequest::ReqParam & p, int index);
    void computePipelineFileSegments(const ReadRequest::ReqParam & p);
    void sendPipelineBuffer(int index);
-   void runPostReadCB(int status, int index, iofwdevent::CBType cb);
+   void runPostReadCB(iofwdevent::CBException status,
+         int index, iofwdevent::CBType cb);
 
    /* pipeline variables */
    size_t total_bytes_;

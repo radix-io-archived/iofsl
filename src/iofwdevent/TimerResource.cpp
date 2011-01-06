@@ -64,8 +64,6 @@ void TimerResource::threadMain ()
    {
       while (!queue_.empty () && peekNext () <= boost::get_system_time ())
       {
-         const int status = COMPLETED;
-
          TimerEntry * e = *queue_.begin ();
          queue_.erase (queue_.begin ());
 
@@ -83,7 +81,7 @@ void TimerResource::threadMain ()
          l.unlock ();
          try
          {
-            e->cb_ (status);
+            e->cb_ (CBException ());
          }
          catch (...)
          {
@@ -174,7 +172,7 @@ bool TimerResource::cancel (Handle h)
    // call it any longer
    // Call callback and indicate cancel. We drop the main lock in case the
    // callback wants to reschedule.
-   e->cb_ (CANCELLED);
+   e->cb_ (CBException::cancelledOperation (h));
 
    return true;
 }
@@ -190,6 +188,10 @@ void TimerResource::stop ()
    boost::unique_lock<boost::mutex> l (lock_, boost::try_to_lock_t ());
    ALWAYS_ASSERT(l.owns_lock());
 
+   // There should be no remaining requests if everything else did a proper
+   // cleanup and cancel.
+   ALWAYS_ASSERT(queue_.empty ());
+
    // Call cancel on all the remaining requests
    QueueType::iterator I = queue_.begin();
    while (I != queue_.end())
@@ -197,7 +199,7 @@ void TimerResource::stop ()
       TimerEntry * e = *I;
       try
       {
-         e->cb_ (CANCELLED);
+         e->cb_ (CBException::cancelledOperation (0));
       }
       catch (...)
       {

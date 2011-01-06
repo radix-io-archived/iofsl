@@ -28,7 +28,7 @@ class SharedIOCB
         }
 
         /* this is the callback registered with the ZoidFS API */
-        virtual void issueIOCallbacks(int status) = 0;
+        virtual void issueIOCallbacks(iofwdevent::CBException status) = 0;
 
     protected:
         /* only instance of this class can delete / free itself... */
@@ -63,14 +63,17 @@ class MultiSharedIOCB : public SharedIOCB
             cbs_.insert(cbs_.end(), cbvec.begin(), cbvec.end());
         }
 
-        virtual void issueIOCallbacks(int UNUSED(status))
+        virtual void issueIOCallbacks(iofwdevent::CBException status)
         {
+           status.check ();
             for(unsigned int i = 0 ; i < cbs_.size() ; i++)
             {
-                cbs_[i]->invoke(*ret_);
+                cbs_[i]->invoke(*ret_, status);
             }
 
             /* delete this instance */
+            // @TODO: make the callback call a static member function, and
+            // in which 'delete this' is safe...
             delete this;
         }
 
@@ -104,9 +107,10 @@ class SingleSharedIOCB : public SharedIOCB
             cb_ = cb;
         }
 
-        virtual void issueIOCallbacks(int UNUSED(status))
+        virtual void issueIOCallbacks(iofwdevent::CBException status)
         {
-            cb_->invoke(*ret_);
+           status.check ();
+            cb_->invoke(*ret_, status);
 
             /* delete this instance */
             delete this;
