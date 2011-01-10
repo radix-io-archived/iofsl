@@ -9,16 +9,11 @@
 # to the same address. This can be changed easily if the IOFSL-group should be emailed instead.    
 
 
-git pull
-
+#git pull
 
 get_user_email(){
   echo "Locating git user email."
-  git config -l > user_email.tmp
-  grep 'user.email=*' user_email.tmp > user_email.tmp2 ; rm -r user_email.tmp
-  sed 's/user.email=//g'  user_email.tmp2 > user_email.mod ; rm -f user_email.tmp2
-  user_email=$(cat user_email.mod)
-  rm -f user_email.mod
+  user_email=$(git config -l | grep user.email=* | sed 's/user.email=//g')  
   if [[ $user_email == *@* ]]
   then
     echo "User email found ----> "   $user_email
@@ -35,7 +30,7 @@ find_cunit(){
   then
     echo "found cunit! ----> " $wcunit
   else  
-    echo "can't find cunit i ~/opt, or it doesn't have the format \"cunit*\", aborting build" ; exit 0
+    echo "can't find cunit in ~/opt, or it doesn't have the format \"cunit*\", aborting build" ; exit 0
   fi
   echo
 }
@@ -138,7 +133,7 @@ build(){
 }
 check(){
 date > ~/iofsl/autotest/make_check
-make check >> ~/iofsl/autotest/make_check
+make check TESTS_ENVIRONMENT=echo >> ~/iofsl/autotest/make_check
 mail -s "IOFSL build and make_check result" $user_email < ~/iofsl/autotest/make_check
 }
 get_user_email

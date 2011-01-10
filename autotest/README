@@ -1,9 +1,10 @@
 
 These Python scripts are Python (2.4) compliant.
 
+##################################################
 
 Short disclosure on autotests files.
-
+--------------------------------------------------
 build_iofsl.py will prepare, configure, make and make-install the iofsl package.  
 
 
@@ -14,8 +15,21 @@ Make is not email supported at this time.
 
 The values in iofsl_values.cfg  must be changed to represent your system, currently they represent the Turing system at LANL.  Section 5, Section 6, and Section 7 in make_IOFSLConfig.py support build_iofsl.py.
 
+
+
 startServerTCP.py, run_cunitMD.py and run_cunitIO.py will run the two cunit tests in a two allocation scenario.  startServerTCP.py must be started first on a single allocation and one of the cunit scripts must be started second on a different allocation.  Section 7 in iofsl_values.cfg supports these three scripts.
 These scripts are minimal in functionality and I don't know if they will remain in future commits.
 
+##################################################
+
+build_test.sh is a bash script that does not rely on config files for construction of the IOFSL package.
+The build_test.sh script builds, installs, and checks the IOFSL software.  It pulls the latest edition of the IOFSLsoftware
+from the git repo.  The options -c and -m refer to the cunit test framework and the mpich2 distribution 
+respectively.  The script uses these options to locate those installed dependencies.  The boost and cunit 
+dependencies are located automatically since they are not optional.  The dependencies must all be installed in 
+the ~/opt directory.  
+After installation and construction the script runs a "make check" on the build.  Errors from the make check will
+be emailed to the user-email specified in the git global user.email variable.  Configure errors are also mailed 
+to the same address. This can be changed easily if the IOFSL-group should be emailed instead.    
 
 

@@ -4,17 +4,18 @@ Created on Dec 8, 2010
 @author Rico D'Amore
 '''
 
-import os,sys,signal
+import os,sys,signal,ConfigParser
 
-from configobj import ConfigObj
 
-config = ConfigObj('iofsl_config.cfg')
+config = ConfigParser.ConfigParser()
+path = os.getcwd()
+config.readfp(open( path + '/' + 'iofsl_values.cfg'))
 
 def run_cunit_io():
-	home       = config['section7']['$HOME']
-	ion        = config['section7']['ion']
-	test_dir   = config['section7']['cunit_test_dir']
-	cunit_test = config['section7']['cunit_io_test']
+	home       = config.get('section7', '$HOME')
+	ion        = config.get('section7', 'ion')
+	test_dir   = config.get('section7', 'cunit_test_dir')
+	cunit_test = config.get('section7', 'cunit_io_test')
 
 	f=open(home + ion, 'r')
 	for line in f:
@@ -31,7 +32,7 @@ def run_cunit_io():
 			m.configure_mail()
 
 		signal.signal(signal.SIGALRM, handler)
-		signal.alarm(10)	
+		signal.alarm(20)	
 
 	        os.system(home + cunit_test + " " + home + test_dir)
 	

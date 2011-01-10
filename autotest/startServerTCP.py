@@ -5,26 +5,28 @@ Created on Dec 1, 2010
 @author Rico D'Amore
 '''
 
-import os,sys,re,platform
-from configobj import ConfigObj
+import os,sys,re,platform,ConfigParser
 
-config = ConfigObj('iofsl_config.cfg')
+config = ConfigParser.ConfigParser()
+path = os.getcwd()
+config.readfp(open( path + '/' + 'iofsl_values.cfg'))
+
 
 def start_server():
 	node = platform.node()
 	ION_NAME = re.match('(.*?)(.)(.*?)(\\.)',node)
 	ZOIDFS_ION_NAME = "tcp://"+node.split('.')[0]+":12600"
 	os.environ['ZOIDFS_ION_NAME']=ZOIDFS_ION_NAME
-	home = config['section7']['$HOME']
-        ion  = config['section7']['ion']
+	home = config.get('section7', '$HOME')
+        ion  = config.get('section7', 'ion')
 
 	f=open(home + ion,'w')
 	f.write(ZOIDFS_ION_NAME)
 	f.close()
 	
-	server    = config['section7']['server']
-	conf_cmd  = config['section7']['conf_cmd']
-	serv_conf = config['section7']['serv_conf']
+	server    = config.get('section7', 'server')
+	conf_cmd  = config.get('section7', 'conf_cmd')
+	serv_conf = config.get('section7', 'serv_conf')
 	os.system(home + server + " " + conf_cmd + " " + home + serv_conf)
 	
 def main():

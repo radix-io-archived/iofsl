@@ -9,8 +9,10 @@ import os,sys,subprocess,ConfigParser
 from os import path
 
 config = ConfigParser.ConfigParser()
-config.readfp(open('/users/rjdamore/iofsl/autotest/iofsl_values.cfg'))
-home = config.get('section7', '$home')
+path = os.getcwd()
+config.readfp(open( path + '/' + 'iofsl_values.cfg'))
+
+home = config.get('section7', '$HOME')
 
 # Execute a git pull, if anyhing has changed we will be updated.
 def diff_repo(): 
