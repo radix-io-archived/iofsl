@@ -22,7 +22,7 @@ namespace iofwdevent
 void bmi_strerror_r (int error, char * buf, size_t bufsize)
 {
    // BMI_ERROR_BIT is always set
-   ALWAYS_ASSERT (error & BMI_ERROR);
+   // ALWAYS_ASSERT (error & BMI_ERROR);
    error &= ~BMI_ERROR;
 
    switch (error)
