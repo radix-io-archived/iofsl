@@ -7,6 +7,12 @@
 #include <boost/exception/get_error_info.hpp>
 #include <exception>
 
+#include "iofwd_config.h"
+
+#ifdef EXCEPTION_BACKTRACE
+#include "ExceptionBacktrace.hh"
+#endif
+
 #include <string>
 
 namespace iofwdutil
@@ -48,7 +54,13 @@ namespace iofwdutil
    /**
     * Instead of using throw(x), all code should use ZTHROW(x).
     */
+
+#ifdef EXCEPTION_BACKTRACE
+#define ZTHROW(x) BOOST_THROW_EXCEPTION(x \
+      << ::iofwdutil::info_exception_backtrace() )
+#else
 #define ZTHROW(x) BOOST_THROW_EXCEPTION(x)
+#endif
 
    //========================================================================
 }

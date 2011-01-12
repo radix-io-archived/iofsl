@@ -173,6 +173,8 @@ src/iofwdutil/transform/IOReadBuffer.hh \
 src/iofwdutil/transform/IOWriteBuffer.cpp \
 src/iofwdutil/transform/IOWriteBuffer.hh \
 \
+src/iofwdutil/ExceptionBacktrace.hh \
+src/iofwdutil/ExceptionBacktrace.cpp \
 src/iofwdutil/FactoryLinkHelper.hh \
 src/iofwdutil/FactoryLinkHelper.cpp
 

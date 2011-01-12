@@ -169,7 +169,7 @@ AC_LANG([C++])
 
 # Checks for header files.
 AC_HEADER_STDC
-AC_CHECK_HEADERS([stdlib.h string.h unistd.h execinfo.h pthread.h])
+AC_CHECK_HEADERS([stdlib.h string.h unistd.h execinfo.h pthread.h cxxabi.h])
 
 
 # note that we should be using the C++ boost inttypes header instead.
@@ -668,6 +668,22 @@ if test "$pac_cv_gnu_attr_unused" = "yes" ; then
     AC_DEFINE(HAVE_GCC_ATTRIBUTE_UNUSED,[1],
               [Define if GNU __attribute__ unused is supported])
 fi
+
+dnl =========================================================================
+dnl  Exception backtraces
+dnl =========================================================================
+
+dnl
+dnl symbol name lookup requires -rdynamic
+dnl
+AC_ARG_ENABLE([exception-backtrace],
+  AS_HELP_STRING([--enable-exception-backtrace],
+     [Include backtrace in exceptions (debug option - slows down the server)]),
+  [
+     AC_DEFINE([EXCEPTION_BACKTRACE],[1],[Include backtrace in ZTHROW])
+     LDFLAGS="$LDFLAGS -rdynamic"
+  ]
+  )
 
 dnl =========================================================================
 dnl  Valgrind
