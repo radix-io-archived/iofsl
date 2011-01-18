@@ -10,7 +10,7 @@
 #include "iofwd_config.h"
 
 #include "iofwdutil/assert.hh"
-#include "iofwdutil/FactoryLinkHelper.hh"
+#include "iofwdutil/IofwdutilLinkHelper.hh"
 
 #include "iofwdutil/Timer.hh"
 #include "test_common.hh"
@@ -194,7 +194,7 @@ static void testTransform (GenericTransform & encode, GenericTransform &
 BOOST_FIXTURE_TEST_CASE ( transform_encode_decode, Dummy )
 {
    BOOST_TEST_MESSAGE("Registering Transforms...");
-   iofwdutil::initIofwdutilFactory ();
+   registerIofwdutilFactoryClients ();
 
    BOOST_TEST_MESSAGE("Registered transforms:");
 

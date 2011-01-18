@@ -6,7 +6,9 @@
 #include "iofwdutil/ZException.hh"
 #include "iofwdutil/ConfigFile.hh"
 #include "c-util/txt_configfile.h"
-#include "FactoryHelper.hh"
+
+#include "IofwdLinkHelper.hh"
+#include "IofwdutilLinkHelper.hh"
 
 #include <boost/exception/diagnostic_information.hpp>
 #include <signal.h>
@@ -140,7 +142,8 @@ int main (int argc, char ** args)
       }
 
       ZLOG_INFO(mainlog, "Registering factory clients...");
-      iofwd::registerFactoryClients ();
+      registerIofwdFactoryClients ();
+      registerIofwdutilFactoryClients ();
 
       iofwd::IOFWDMain main (opt_notrap, config_); 
 

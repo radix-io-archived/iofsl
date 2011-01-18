@@ -173,8 +173,10 @@ src/iofwdutil/transform/IOReadBuffer.hh \
 src/iofwdutil/transform/IOWriteBuffer.cpp \
 src/iofwdutil/transform/IOWriteBuffer.hh \
 \
-src/iofwdutil/FactoryLinkHelper.hh \
-src/iofwdutil/FactoryLinkHelper.cpp
+src/iofwdutil/ExceptionBacktrace.hh \
+src/iofwdutil/ExceptionBacktrace.cpp \
+src/iofwdutil/IofwdutilLinkHelper.hh \
+src/iofwdutil/IofwdutilLinkHelper.cpp
 
 if HAVE_ZLIB
 src_iofwdutil_libiofwdutil_a_SOURCES += \
