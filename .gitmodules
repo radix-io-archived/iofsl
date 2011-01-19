@@ -1,0 +1,3 @@
+[submodule "lib/bmi"]
+	path = lib/bmi
+	url = git://git.mcs.anl.gov/bmi.git
