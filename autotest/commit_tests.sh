@@ -1,12 +1,9 @@
 #!/bin/bash
-# This script builds, installs, and checks the IOFSL software.  It pulls the latest edition of the IOFSL software
-# from the git repo.  The options -c and -m refer to the cunit test framework and the mpich2 distribution 
-# respectively.  The script uses these options to locate the those installed dependencies.  The boost and cunit 
-# dependencies are located automatically since they are not optional.  The dependencies must all be installed in 
-# the ~/opt directory.  
-# After installation and construction the script runs a "make check" on the build.  Errors from the make check will
-# be emailed to the user-email specified in the git global user.email variable.  Configure errors are also mailed 
-# to the same address. This can be changed easily if the IOFSL-group should be emailed instead.    
+# This script builds, installs, and checks the IOFSL software.  
+# dependencies are located configoption.${HOSTNAME}. 
+# After installation and construction the script runs a "make check" on the build.  
+# the tests specified in the makefile are run and error reports will be mailed to the appropriate # committers address.
+
 
 
 #git pull
@@ -37,7 +34,10 @@ read_commits(){
 }
 
 execute_tests(){
-  for ((i=0; i<${#lines[3]}; i++))
+  hostname=$(hostname)
+  cp ~/iofsl/scripts/configoptions.tu-fe1.lanl.gov ~/iofsl/scripts/configoptions.$hostname
+  touch test_report.txt
+  for ((i=0; i<1; i++))
   do
     set_to_variable_and_test
   done
@@ -53,16 +53,17 @@ set_to_variable_and_test(){
   fi
   export committer_email=$(git cat-file commit $commit | grep committer | awk '{print $4}' | sed 's/<//g' | sed 's/>//g')
   echo "committer_email= $committer_email"
-  echo "testing commit $commit" > runtest_results.txt
+  echo $(date) > runtest_results.txt
+  echo "testing commit $commit" >> runtest_results.txt
   echo "commit $commit committed by $committer_email" >> runtest_results.txt
   git checkout $commit
   scripts/runtest.sh | tee -a runtest_results.txt 
   echo "This concludes the test of commit $commit" >> runtest_results.txt
+  awk 'NR<=5' runtest_results.txt > test_report.txt ; egrep 'Running|PASS' runtest_results.txt >> test_report.txt ; awk '/--Run/{c=4}c&&c--' runtest_results.txt >> test_report.txt; tail -1 runtest_results.txt >> test_report.txt
   echo "$commit" >> autotest/tested_commits.txt
   echo "mailing results"
   ./autotest/runtest_result.mail 
+  rm -f ~/iofsl/configoptions.$hostname
   git checkout master  
 }
-
 get_user_email
-
