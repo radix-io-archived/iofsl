@@ -194,23 +194,6 @@ namespace zoidfs
          boost::function<int ()> wcb_;
       };
 
-      template <typename T>
-      void addWork (const iofwdevent::CBType & cb, int * ret, const T & item)
-      {
-         if (wait_for_threads_)
-         {
-            /* thread pool owns the OpHelper and is responsible for cleanup */
-            iofwdutil::ThreadPool::instance().addWorkUnit(new OpHelper(cb,
-                     ret, item), &OpHelper::run, iofwdutil::ThreadPool::HIGH,
-                  true);
-         }
-         else
-         {
-            boost::thread t (OpHelper (cb, ret, item));
-            // thread detaches when t is destructed.
-         }
-      }
-
     void submitWorkUnit(const boost::function<void (void)> & wu_,
           iofwdutil::ThreadPool::TPPrio prio)
     {
