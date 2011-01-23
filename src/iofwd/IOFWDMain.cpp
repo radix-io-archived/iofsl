@@ -72,7 +72,9 @@ void IOFWDMain::run ()
 
    sigaddset (&set, SIGUSR1); 
 
-   waitSignal (&set); 
+   int signal = waitSignal (&set);
+
+   ALWAYS_ASSERT(signal == SIGINT || signal == SIGUSR1);
 }
 
 

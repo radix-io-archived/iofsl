@@ -203,8 +203,9 @@ def runTest (testexec, configfile, maxtime):
    if not myserver.didStart ():
       error ("Server never started!\n")
    else:
-      if myserver.getExitCode () != 0:
-         error ("Server returned non-zero exit code!\n")
+      ecode = myserver.getExitCode ()
+      if ecode != 0:
+         error ("Server returned non-zero exit code (" + str(ecode) + ")\n")
          testresult = False
    if not mytest.didStart ():
       error ("Test never started!\n")

@@ -1,4 +1,5 @@
 #include "signals.hh"
+#include "assert.hh"
 
 namespace iofwdutil
 {
@@ -21,9 +22,9 @@ int waitSignal (const sigset_t * set)
 {
    int err; 
    int sig; 
-   if ((err=sigwait (set, &sig)) > 0)
-      throw err; 
-   return sig; 
+   err =  sigwait (set, &sig);
+   ALWAYS_ASSERT(err == 0);
+   return sig;
 }
 //===========================================================================
 }

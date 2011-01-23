@@ -15,7 +15,8 @@
 #include "BMI.hh"
 
 #include <boost/exception/diagnostic_information.hpp>
-#include <signal.h>
+#include "iofwdutil/signals.hh"
+// #include <signal.h>
 #include <iostream>
 #include <boost/program_options.hpp>
 
@@ -37,6 +38,10 @@ static bool             opt_help                = false;
 
 int main (int argc, char ** args)
 {
+   // Disable all signals so that only threads prepared to handle signals will
+   // receive them.
+   disableAllSignals (false);
+
    // Try to activate logging as soon as possible, we'll reconfigure
    // logging as soon as we get to our config file.
    iofwdutil::zlog::ZLogSource & mainlog = iofwdutil::IOFWDLog::getSource ();
