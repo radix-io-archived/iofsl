@@ -67,27 +67,25 @@ set_to_variable(){
   if
     grep 'FAIL' runtest_results.txt
   then
-    echo "test results for $commit" > failure_report.txt
+    echo "test results for commit $commit" >> failure_report.txt
     echo >> failure_report.txt
     awk 'NR<=5' runtest_results.txt >> failure_report.txt ; awk '/FAIL/{c=5}c&&c--' runtest_results.txt >> failure_report.txt ; tail -1 runtest_results.txt >> failure_report.txt
     echo "==========================================================" >> failure_report.txt   
-    echo "test results for $commit" > test_report.txt
+    echo "test results for commit $commit" > test_report.txt
     echo >> test_report.txt
     awk 'NR<=5' runtest_results.txt >> test_report.txt ; egrep 'Running|PASS|All' runtest_results.txt >> test_report.txt ; awk '/--Run/{c=4}c&&c--' runtest_results.txt >> test_report.txt; tail -1 runtest_results.txt >> test_report.txt
     echo "==========================================================" >> test_report.txt
     echo "$commit" >>autotest/tested_commits.txt
-    ./autotest/check_test_files.sh
     rm -f ~/iofsl/configoptions.$hostname
     git checkout master
   else
-    echo "test results for $commit" > test_report.txt
+    echo "test results for commit $commit" >> test_report.txt
     echo >> test_report.txt
     awk 'NR<=5' runtest_results.txt >> test_report.txt ; egrep 'Running|PASS|All' runtest_results.txt >> test_report.txt ; awk '/--Run/{c=4}c&&c--' runtest_results.txt >> test_report.txt; tail -1 runtest_results.txt >> test_report.txt
     echo "==========================================================" >> test_report.txt
     echo "$commit" >> autotest/tested_commits.txt
   fi
   rm -f ~/iofsl/configoptions.$hostname
-  ./autotest/check_test_files.sh
   git checkout master  
 }
 
