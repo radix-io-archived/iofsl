@@ -21,12 +21,13 @@ mail_failures(){
 for i in "${failures[@]}"
 do
 mail -s "IOFSL commit test failure report" $i < ~/iofsl/failure_report.txt 
+rm -f ~/iofsl/failure_report.txt
 done  
 }
 
 if [[ -s ~/iofsl/test_report.txt ]]; then
 mail -s "IOFSL commits test report" rjdamore@lanl.gov < ~/iofsl/test_report.txt
-#mail -s "IOFSL commits test report" io-fwd-commits@lists.mcs.anl.gov < ~/iofsl/test_report.txt
+rm -f ~/iofsl/test_report.txt
 else
 echo "test_report.txt is empty"
 fi;
