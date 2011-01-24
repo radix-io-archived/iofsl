@@ -50,6 +50,8 @@
  *  track all memory usage (not just BMI memory usage). The BMIMemoryManager
  *  should be a specialized version of the general memory manager. The token
  *  management could be improved as well as the interface.
+ *
+ *  @TODO: Make this into a service that depends on BMI?
  */
 namespace iofwdutil
 {

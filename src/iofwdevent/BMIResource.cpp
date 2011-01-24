@@ -1,6 +1,7 @@
 #include <numeric>
 #include <boost/format.hpp>
 
+#include "BMIException.hh"
 #include "iofwdutil/tools.hh"
 #include "BMIResource.hh"
 #include "BMIError.hh"
@@ -112,18 +113,30 @@ namespace iofwdevent
    {
    }
 
-   void BMIResource::handleBMIError (const CBType & UNUSED(u), int bmiret)
+   void BMIResource::throwBMIError (int ret)
    {
-      // TODO: convert into exception and call u->exception
-               // TODO: maybe check for cancel?
-               // Shouldn't make a difference right now since we don't do
-               // cancel.
-      char buf[512];
-      // strerror_r always includes 0
-      bmi_strerror_r (bmiret, buf, sizeof(buf));
-
+#ifndef NDEBUG
+      char buf[500];
+      bmi_strerror_r (ret, buf, sizeof(buf));
       ZLOG_INFO(log_, format("BMI error: %s") % buf);
-      ALWAYS_ASSERT(false && "BMI Error occurred!");
+#endif
+      ZTHROW (BMIException () << bmi_error_code (ret));
+   }
+
+   /**
+    * Calls the callback with a BMI exception. Only returns when the callback
+    * has completed.
+    */
+   void BMIResource::handleBMIError (const CBType & u, int bmiret)
+   {
+      try
+      {
+         throwBMIError (bmiret);
+      }
+      catch (BMIException & e)
+      {
+         u (CBException::current_exception ());
+      }
    }
 
    /**

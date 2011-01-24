@@ -5,13 +5,18 @@
 #include "iofwdutil/IOFWDLog.hh"
 #include "iofwdutil/ZException.hh"
 #include "iofwdutil/ConfigFile.hh"
-#include "c-util/txt_configfile.h"
 
 #include "IofwdLinkHelper.hh"
 #include "IofwdutilLinkHelper.hh"
 
+#include "service/ServiceManager.hh"
+
+#include "Config.hh"
+#include "BMI.hh"
+
 #include <boost/exception/diagnostic_information.hpp>
-#include <signal.h>
+#include "iofwdutil/signals.hh"
+// #include <signal.h>
 #include <iostream>
 #include <boost/program_options.hpp>
 
@@ -19,6 +24,8 @@ namespace po = boost::program_options;
 
 using namespace std; 
 using namespace iofwdutil;
+using namespace iofwd::service;
+using namespace iofwd;
 
 // =========== Command Line Options =========================================
 static std::string      opt_configfile; 
@@ -29,36 +36,15 @@ static bool             opt_dumpconfig          = false;
 static bool             opt_help                = false;
 // ==========================================================================
 
-static ConfigFile getConfig (const std::string & name)
-{
-   char * err = 0;
-   try
-   {
-      ConfigHandle h = txtfile_openConfig (name.c_str(), &err); 
-      if (!h || err)
-      {
-         const std::string s = 
-            str(boost::format("Error opening config file '%s': %s") % name % err);
-         free (err);
-         ZTHROW (ConfigIOException () <<  zexception_msg (s));
-      }
-
-      return ConfigFile  (h);
-   }
-   catch (ConfigException & e)
-   {
-      // Add filename to exception
-      e << cfexception_file_name (name);
-      throw;
-   }
-}
-
-
 int main (int argc, char ** args)
 {
+   // Disable all signals so that only threads prepared to handle signals will
+   // receive them.
+   disableAllSignals (false);
+
    // Try to activate logging as soon as possible, we'll reconfigure
    // logging as soon as we get to our config file.
-   iofwdutil::zlog::ZLogSource & mainlog = iofwdutil::IOFWDLog::getSource (); 
+   iofwdutil::zlog::ZLogSource & mainlog = iofwdutil::IOFWDLog::getSource ();
 
    try
    {
@@ -123,14 +109,25 @@ int main (int argc, char ** args)
          return 1;
       }
 
-      // Try to get to config data so we can configure debugging
-      const ConfigFile config_ = getConfig (opt_configfile);
+      // ------------ Link helper -----------------------------
+      ZLOG_DEBUG(mainlog, "Registering factory clients...");
+      registerIofwdFactoryClients ();
+      registerIofwdutilFactoryClients ();
+
+      // ------------ service parameters ---------
+      ServiceManager & services = ServiceManager::instance ();
+      services.setParam ("config.configfile", opt_configfile);
 
       // Initialize default log level from config file
 
       if (opt_dumpconfig)
       {
-         config_.dumpToStdErr ();
+         boost::shared_ptr<Config> config_service
+            (services.loadService<Config>("config"));
+
+         const ConfigFile & config = config_service->getConfig ();
+         config.dumpToStdErr ();
+
          return EXIT_SUCCESS;
       }
 
@@ -139,22 +136,22 @@ int main (int argc, char ** args)
          ZLOG_INFO(mainlog, "--notrap specified: won't protect threads from"
                " CTRL-C. Use SIGUSR1 for a clean"
                " shutdown"); 
+         services.setParam ("iofwdserver.notrap", "1");
       }
 
-      ZLOG_INFO(mainlog, "Registering factory clients...");
-      registerIofwdFactoryClients ();
-      registerIofwdutilFactoryClients ();
-
-      iofwd::IOFWDMain main (opt_notrap, config_); 
+      boost::shared_ptr<IOFWDMain> main
+         (services.loadService<IOFWDMain>("iofwdserver"));
 
       ZLOG_INFO (mainlog, "Booting IOFWDMain..."); 
-      main.boot (); 
+      main->boot (); 
 
       ZLOG_INFO (mainlog, "About to run IOFWDMain..."); 
-      main.run (); 
+      main->run (); 
 
       ZLOG_INFO (mainlog, "Shutting down IOFWDMain..."); 
-      main.shutdown (); 
+      main->shutdown (); 
+
+      main.reset ();
 
       ZLOG_INFO(mainlog, "IOFWD exiting..."); 
 
@@ -170,7 +167,7 @@ int main (int argc, char ** args)
    {
       ZLOG_ERROR (mainlog, "Unhandled exception propagated to main!");
       cerr << "Exception occured!\n";
-      throw; 
+      throw;
    }
 
    ALWAYS_ASSERT(false && "Should not get here!");

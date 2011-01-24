@@ -1,17 +1,26 @@
+#include "IOFWDFrontend.hh"
+
 #include <boost/thread.hpp>
 #include <boost/bind.hpp>
 #include <boost/array.hpp>
 #include <iostream>
-#include <unistd.h>
-#include <csignal>
+
+#include "iofwdevent/BMIResource.hh"
+
 #include "iofwdutil/assert.hh"
-#include "IOFWDFrontend.hh"
-#include "encoder/xdr/XDRReader.hh"
 #include "iofwdutil/bmi/BMIUnexpectedBuffer.hh"
-#include "encoder/xdr/XDRSizeProcessor.hh"
+#include "iofwdutil/IOFWDLog.hh"
+
 #include "zoidfs/util/zoidfs-wrapped.hh"
 #include "zoidfs/zoidfs-proto.h"
-#include "iofwdutil/IOFWDLog.hh"
+
+#include "encoder/xdr/XDRReader.hh"
+#include "encoder/xdr/XDRSizeProcessor.hh"
+
+// Services
+#include "iofwd/Log.hh"
+#include "iofwd/Config.hh"
+#include "iofwd/BMI.hh"
 #include "iofwd/ConfigException.hh"
 
 #include "IOFWDNotImplementedRequest.hh"
@@ -37,6 +46,8 @@
 using namespace iofwdutil::bmi;
 using namespace iofwdutil;
 using namespace zoidfs;
+
+SERVICE_REGISTER(iofwd::frontend::IOFWDFrontend, bmifrontend);
 
 namespace iofwd
 {
@@ -91,12 +102,16 @@ static boost::array<mapfunc_t, ZOIDFS_PROTO_MAX> map_ = {
 //===========================================================================
 //===========================================================================
 
-IOFWDFrontend::IOFWDFrontend (Resources & r)
-   : log_(IOFWDLog::getSource ("iofwdfrontend")),
-   r_(r),
+IOFWDFrontend::IOFWDFrontend (service::ServiceManager & m)
+   : service::Service (m),
+     log_service_ (lookupService<Log>("log")),
+     bmi_service_ (lookupService<BMI>("bmi")),
+     config_service_ (lookupService<Config>("config")),
+     log_(log_service_->getSource ("iofwdfrontend")),
+     rbmi_ (bmi_service_->get ()),
    stop_(false),
    req_minsize_(encoder::xdr::getXDRSize (uint32_t ()).getActualSize()),
-   res_ (r_, log_)
+   res_ (rbmi_, log_)
 {
 }
 
@@ -106,38 +121,13 @@ IOFWDFrontend::~IOFWDFrontend ()
    iofwdutil::mm::BMIMemoryManager::instance().reset();
    delete &iofwdutil::mm::BMIMemoryManager::instance();
 
-   ZLOG_INFO (log_, "Shutting down BMI...");
-   if (BMI::isCreated ())
-      BMI::get().finalize ();
 }
 
 void IOFWDFrontend::init ()
 {
-   ZLOG_DEBUG (log_, "Initializing BMI");
-
-   std::string ion = config_.getKeyDefault ("listen", "");
-   char * ion_name = getenv("ZOIDFS_ION_NAME");
-   if (ion_name)
-      ion = ion_name;
-
-   if (ion.empty())
-   {
-     ZLOG_ERROR (log_, format("ZOIDFS_ION_NAME is empty"));
-     ZTHROW (ConfigException ()
-           << zexception_msg ("No server listen address specified"
-              " in config file or ZOIDFS_ION_NAME environment variable!")
-           << ce_environment ("ZOIDFS_ION_NAME")
-           << ce_key ("listen"));
-   }
-
-   // IOFW uses bmi, so we need to supply init params here
-   ZLOG_INFO (log_, format("Server listening on %s") % ion);
-   //BMI::setInitServer ("tcp://127.0.0.1:1234");
-   BMI::setInitServer (ion.c_str());
-
-   BMI::instance ();
-
    stop_ = false;
+
+   // @TODO Move this into BMI service
 
    /* start the BMI memory manager */
    ZLOG_INFO (log_, "Starting BMI memory manager...");
@@ -159,7 +149,7 @@ void IOFWDFrontend::destroy ()
 {
    stop_ = true;
    ZLOG_INFO (log_, "Cancelling IOFWDFrontend testunexpected resource call");
-   r_.rbmi_.cancel (unexpected_handle_);
+   rbmi_.cancel (unexpected_handle_);
 }
 
 void IOFWDFrontend::handleIncoming (int count, const BMI_unexpected_info  * info )
@@ -218,7 +208,7 @@ void IOFWDFrontend::post_testunexpected ()
    if (stop_)
       return;
 
-   unexpected_handle_ = r_.rbmi_.post_testunexpected
+   unexpected_handle_ = rbmi_.post_testunexpected
       (boost::bind (&IOFWDFrontend::newUnexpected,
             boost::ref(*this), _1), info_.size(), &ue_count_, &info_[0]);
 }
