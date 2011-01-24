@@ -7,6 +7,8 @@
 #include "iofwdutil/assert.hh"
 #include "iofwdutil/tools.hh"
 #include "zoidfs/util/zoidfs-wrapped.hh"
+#include "zoidfs/hints/zoidfs-hints.h"
+#include "zoidfs/util/OpHintHelper.hh"
 #include "encoder/Util.hh"
 #include "encoder/EncoderWrappers.hh"
 
@@ -86,6 +88,14 @@ inline T & process (T & f, P & t,
    process(f,t.mtime);
    process(f,t.ctime);
    return f;
+}
+
+template <typename T, typename P>
+inline T & process (T & f, P t,
+      typename process_filter<P, zoidfs::zoidfs_op_hint_t>::type * =0)
+{
+    process(f, OpHintHelper(&t));
+    return f;
 }
 
 template <typename T, typename P>

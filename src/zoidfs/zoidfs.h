@@ -176,7 +176,8 @@ typedef struct zoidfs_op_hint_item
 
 typedef struct zoidfs_op_hint
 {
-    struct qlist_head * list;
+    struct qlist_head * hlist;
+    int num_items;
     int copy;
 } zoidfs_op_hint_t;
 

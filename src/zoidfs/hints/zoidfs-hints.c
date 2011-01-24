@@ -8,6 +8,11 @@
 #include "c-util/tools.h"
 #include "c-util/quicklist.h"
 
+int zoidfs_hint_get_max_size()
+{
+    return ZOIDFS_HINT_MAX_HINTS * (ZOIDFS_HINT_MAX_KEY_SIZE + ZOIDFS_HINT_MAX_VALUE_SIZE);
+}
+
 int zoidfs_hint_create(zoidfs_op_hint_t * hint)
 {
     int ret = 0;
@@ -20,13 +25,60 @@ int zoidfs_hint_create(zoidfs_op_hint_t * hint)
     }
 
     /* allocate the list */
-    hint->list = (struct qlist_head * ) malloc(sizeof(struct qlist_head));
+    hint->hlist = (struct qlist_head * ) malloc(sizeof(struct qlist_head));
 
     /* initialize the hint list */
-    hint->list->next = hint->list;
-    hint->list->prev = hint->list;
+    hint->hlist->next = hint->hlist;
+    hint->hlist->prev = hint->hlist;
 
+    hint->num_items = 0;
     hint->copy = 0;
+
+out:
+    return ret;
+}
+
+int zoidfs_hint_set_raw(zoidfs_op_hint_t hint, char * key, char * value, int valuelen)
+{
+    int ret = 0;
+    if(!key)
+    {
+        ret = -1;
+        goto out;
+    }
+    if(!value)
+    {
+        ret = -1;
+        goto out;
+    }
+    if(hint.num_items >= ZOIDFS_HINT_MAX_HINTS)
+    {
+        ret = -1;
+        goto out;
+    }
+    if(strlen(key) + 1 > ZOIDFS_HINT_MAX_KEY_SIZE)
+    {
+        ret = 1;
+        goto out;
+    }
+    if(valuelen > ZOIDFS_HINT_MAX_KEY_SIZE)
+    {
+        ret = 1;
+        goto out;
+    }
+
+    /* create the hint item */
+    zoidfs_op_hint_item_t * i = (zoidfs_op_hint_item_t *)malloc(sizeof(zoidfs_op_hint_item_t));
+
+    /* set the key and value */
+    i->key = key;
+    i->value = value;
+    i->valuelen = valuelen;
+
+    hint.num_items++;
+
+    /* store in hint list */
+    qlist_add_tail(&(i->list), hint.hlist);
 
 out:
     return ret;
@@ -43,6 +95,21 @@ int zoidfs_hint_set(zoidfs_op_hint_t hint, char * key, char * value, int bin_len
     if(!value)
     {
         ret = -1;
+        goto out;
+    }
+    if(hint.num_items >= ZOIDFS_HINT_MAX_HINTS)
+    {
+        ret = -1;
+        goto out;
+    }
+    if(strlen(key) + 1 > ZOIDFS_HINT_MAX_KEY_SIZE)
+    {
+        ret = 1;
+        goto out;
+    }
+    if((strlen(value) > ZOIDFS_HINT_MAX_KEY_SIZE && bin_length == 0) || (bin_length > ZOIDFS_HINT_MAX_KEY_SIZE))
+    {
+        ret = 1;
         goto out;
     }
 
@@ -66,8 +133,10 @@ int zoidfs_hint_set(zoidfs_op_hint_t hint, char * key, char * value, int bin_len
         i->valuelen = strlen(value) + 1;
     }
 
+    hint.num_items++;
+
     /* store in hint list */
-    qlist_add_tail(&(i->list), hint.list);
+    qlist_add_tail(&(i->list), hint.hlist);
 
 out:
     return ret;
@@ -79,7 +148,7 @@ int zoidfs_hint_delete(zoidfs_op_hint_t hint, char * key)
     zoidfs_op_hint_item_t * item = NULL, * witem = NULL;
 
     /* look for the item */
-    qlist_for_each_entry_safe(item, witem, hint.list, list)
+    qlist_for_each_entry_safe(item, witem, hint.hlist, list)
     {
         /* compare the key */
         if(strcmp(key, item->key) == 0)
@@ -92,12 +161,77 @@ int zoidfs_hint_delete(zoidfs_op_hint_t hint, char * key)
             free(item->value);
             item->valuelen = 0;
             free(item);
+    
+            hint.num_items--;
 
             /* all done */
             break;
         }
     }
 
+    return ret;
+}
+
+int zoidfs_hint_delete_all(zoidfs_op_hint_t hint)
+{
+    int ret = 0;
+    zoidfs_op_hint_item_t * item = NULL, * witem = NULL;
+
+    /* look for the item */
+    qlist_for_each_entry_safe(item, witem, hint.hlist, list)
+    {
+        /* delete the item from the list */
+        qlist_del(&(item->list));
+
+        /* free the item */
+        free(item->key);
+        free(item->value);
+        item->valuelen = 0;
+        free(item);
+    
+        hint.num_items--;
+    }
+
+    return ret;
+}
+
+void * zoidfs_hint_get_raw(zoidfs_op_hint_t hint, char * key, int valuelen, int * flag)
+{
+    void * ret = NULL;
+    zoidfs_op_hint_item_t * item = NULL, * witem = NULL;
+
+    if(!key)
+    {
+        ret = NULL;
+        goto out;
+    }
+    if(!flag)
+    {
+        ret = NULL;
+        goto out;
+    }
+
+    /* init the flag to 0 */
+    *flag = 0;
+
+    /* look for the item */
+    qlist_for_each_entry_safe(item, witem, hint.hlist, list)
+    {
+        /* compare the key */
+        if(strcmp(key, item->key) == 0)
+        {
+            /* mark the hint as found */
+            *flag = zfsmin(item->valuelen, valuelen);
+
+            /* copy the data */
+            ret = item->value;
+
+            /* all done */
+            break;
+        }
+    }
+
+out:
     return ret;
 }
 
@@ -126,7 +260,7 @@ int zoidfs_hint_get(zoidfs_op_hint_t hint, char * key, int valuelen, char * valu
     *flag = 0;
 
     /* look for the item */
-    qlist_for_each_entry_safe(item, witem, hint.list, list)
+    qlist_for_each_entry_safe(item, witem, hint.hlist, list)
     {
         /* compare the key */
         if(strcmp(key, item->key) == 0)
@@ -136,7 +270,6 @@ int zoidfs_hint_get(zoidfs_op_hint_t hint, char * key, int valuelen, char * valu
 
             /* copy the data */
             memcpy(value, item->value, zfsmin(item->valuelen, valuelen));
-
             /* all done */
             break;
         }
@@ -171,7 +304,7 @@ int zoidfs_hint_get_valuelen(zoidfs_op_hint_t hint, char * key, int * valuelen, 
     *flag = 0;
 
     /* look for the item */
-    qlist_for_each_entry_safe(item, witem, hint.list, list)
+    qlist_for_each_entry_safe(item, witem, hint.hlist, list)
     {
         /* compare the key */
         if(strcmp(key, item->key) == 0)
@@ -194,7 +327,6 @@ out:
 int zoidfs_hint_get_nkeys(zoidfs_op_hint_t hint, int * nkeys)
 {
     int ret = 0;
-    zoidfs_op_hint_item_t * item = NULL, * witem = NULL;
    
     if(!nkeys)
     {
@@ -202,16 +334,32 @@ int zoidfs_hint_get_nkeys(zoidfs_op_hint_t hint, int * nkeys)
         goto out;
     }
  
-    /* init the flag to 0 */
-    *nkeys = 0;
-
-    /* look for the item */
-    qlist_for_each_entry_safe(item, witem, hint.list, list)
-    {
-        (*nkeys)++;
-    }
+    *nkeys = qlist_count(hint.hlist);
 
 out:
+    return ret;
+}
+
+void * zoidfs_hint_get_nthkey_raw(zoidfs_op_hint_t hint, int n)
+{
+    void * ret = NULL;
+    int index = 0;
+    zoidfs_op_hint_item_t * item = NULL, * witem = NULL;
+
+    /* look for the item */
+    qlist_for_each_entry_safe(item, witem, hint.hlist, list)
+    {
+        if(n == index)
+        {
+            /* copy the key */
+            ret = item->key;
+
+            /* all done */
+            break;
+        }
+        index++;
+    }
+
     return ret;
 }
 
@@ -228,7 +376,7 @@ int zoidfs_hint_get_nthkey(zoidfs_op_hint_t hint, int n, char * key)
     }
     
     /* look for the item */
-    qlist_for_each_entry_safe(item, witem, hint.list, list)
+    qlist_for_each_entry_safe(item, witem, hint.hlist, list)
     {
         if(n == index)
         {
@@ -257,7 +405,7 @@ int zoidfs_hint_get_nthkeylen(zoidfs_op_hint_t hint, int n, int * keylen)
     }
     
     /* look for the item */
-    qlist_for_each_entry_safe(item, witem, hint.list, list)
+    qlist_for_each_entry_safe(item, witem, hint.hlist, list)
     {
         if(n == index)
         {
@@ -289,8 +437,9 @@ int zoidfs_hint_copy(zoidfs_op_hint_t * oldhint, zoidfs_op_hint_t * newhint)
     }
 
     /* copy the list pointer */
-    newhint->list = oldhint->list;
+    newhint->hlist = oldhint->hlist;
     newhint->copy = 1;
+    newhint->num_items = oldhint->num_items;
 
 out:
     return ret;
@@ -308,7 +457,7 @@ int zoidfs_hint_dup(zoidfs_op_hint_t oldhint, zoidfs_op_hint_t * newhint)
     }
 
     /* look for the item */
-    qlist_for_each_entry_safe(item, witem, oldhint.list, list)
+    qlist_for_each_entry_safe(item, witem, oldhint.hlist, list)
     {
         /* setup the new hint */
         zoidfs_op_hint_item_t * nitem = malloc(sizeof(zoidfs_op_hint_item_t));
@@ -317,9 +466,11 @@ int zoidfs_hint_dup(zoidfs_op_hint_t oldhint, zoidfs_op_hint_t * newhint)
         nitem->valuelen = item->valuelen;
 
         /* add item to the new hint */
-        qlist_add_tail(&(nitem->list), newhint->list);
+        qlist_add_tail(&(nitem->list), newhint->hlist);
     }
     
+    newhint->num_items = oldhint.num_items;
+
 out:
     return ret;
 }
@@ -338,7 +489,7 @@ int zoidfs_hint_free(zoidfs_op_hint_t * hint)
     if(!hint->copy)
     {
         /* look for the item */
-        qlist_for_each_entry_safe(item, witem, hint->list, list)
+        qlist_for_each_entry_safe(item, witem, hint->hlist, list)
         {
             /* delete the item from the list */
             qlist_del(&(item->list));
@@ -351,8 +502,10 @@ int zoidfs_hint_free(zoidfs_op_hint_t * hint)
         }
 
         /* dealloc the list */
-        free(hint->list);
+        free(hint->hlist);
     }
+
+    hint->num_items = 0;
 
 out:
     return ret;

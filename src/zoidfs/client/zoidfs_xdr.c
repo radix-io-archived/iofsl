@@ -214,33 +214,85 @@ bool_t xdr_zoidfs_op_hint_t(XDR *xdrs, zoidfs_op_hint_t * hint) {
     bool_t ret = 1;
     int hint_size = 0;
     int i = 0;
+    int valid_hint = 0;
 
-    zoidfs_hint_get_nkeys(*hint, &hint_size);
-    for(i = 0 ; i < hint_size ; i++)
+    if(xdrs->x_op == XDR_ENCODE)
     {
-        int flag = 0;
-        int keylength = 0;
-        int valuelength = 0;
-        char * key = NULL;
-        char * value = NULL;
-
-        /* get the next key */
-        zoidfs_hint_get_nthkeylen(*hint, i, &keylength);
-        key = malloc(keylength);
-        zoidfs_hint_get_nthkey(*hint, i, key); 
-
-        /* get the next value */
-        zoidfs_hint_get_valuelen(*hint, key, &valuelength, &flag);
-        value = malloc(valuelength);
-        zoidfs_hint_get_nthkey(*hint, i, key);
- 
-        if(key != NULL && value != NULL && valuelength != 0)
+        if(hint)
         {
-            ret = ret && xdr_zoidfs_op_hint_element_t(xdrs, key, value, valuelength);
+            zoidfs_hint_get_nkeys(*hint, &hint_size);
+        }
+        else
+        {
+            hint_size = 0;
         }
 
-        free(key);
-        free(value);
+        if(hint_size > 0)
+        {
+            valid_hint = 1;
+            ret = xdr_zoidfs_null_param_t(xdrs, &valid_hint);
+            ret = ret && xdr_int(xdrs, &hint_size);
+            
+            for(i = 0 ; i < hint_size ; i++)
+            {
+                int flag = 0;
+                int keylength = 0;
+                int valuelength = 0;
+                char * key = NULL;
+                char * value = NULL;
+
+                /* get the next key */
+                zoidfs_hint_get_nthkeylen(*hint, i, &keylength);
+                key = zoidfs_hint_get_nthkey_raw(*hint, i); /* use raw to avoid mem alloc */
+
+                /* get the next value */
+                zoidfs_hint_get_valuelen(*hint, key, &valuelength, &flag);
+                value = zoidfs_hint_get_raw(*hint, key, valuelength, &flag); /* use raw to avoid mem alloc */
+
+                /* make sure hint data is valid */
+                if(key != NULL && value != NULL && valuelength != 0)
+                {
+                    ret = ret && xdr_zoidfs_op_hint_element_t(xdrs, key, value, valuelength);
+                }
+            }
+        }
+        else
+        {
+            valid_hint = 0;
+            ret = xdr_zoidfs_null_param_t(xdrs, &valid_hint);
+        }
+    }
+    else if(xdrs->x_op == XDR_DECODE)
+    {
+        ret = xdr_zoidfs_null_param_t(xdrs, &valid_hint);
+
+        if(valid_hint && hint)
+        {
+            ret = ret && xdr_int(xdrs, &hint_size);
+            for(i = 0 ; i < hint_size ; i++)
+            {
+                int keylen = 0;
+                int valuelen = 0;
+                char * key = NULL;
+                char * value = NULL;
+
+                /* get the key */
+                ret = ret && xdr_int(xdrs, &keylen);
+                key = (char *)malloc(sizeof(char) * keylen);
+                ret = ret && xdr_string(xdrs, &key, keylen);
+
+                /* get the value */
+                ret = ret && xdr_int(xdrs, &valuelen); 
+                value = (char *)malloc(sizeof(char) * valuelen);
+                ret = ret && xdr_string(xdrs, &value, valuelen);
+
+                /* make sure hint data is valid */
+                if(key != NULL && keylen != 0 && value != NULL && valuelen != 0)
+                {
+                    zoidfs_hint_set_raw(*hint, key, value, valuelen); /* use raw to avoid mem alloc */
+                }
+            }
+        }
     }
     return ret;
 }
