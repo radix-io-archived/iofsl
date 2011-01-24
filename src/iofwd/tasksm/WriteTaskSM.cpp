@@ -1,5 +1,6 @@
 #include "iofwd/tasksm/WriteTaskSM.hh"
 #include "zoidfs/zoidfs-proto.h"
+#include "iofwdutil/IOFSLKeyValueStorage.hh"
 
 namespace iofwd
 {
@@ -11,7 +12,7 @@ namespace iofwd
         : sm::SimpleSM<WriteTaskSM>(smm), api_(api), request_((static_cast<WriteRequest&>(*p))), slots_(*this),
           total_bytes_(0), cur_recv_bytes_(0), p_siz_(0), total_pipeline_ops_(0), total_buffers_(0),
           io_ops_done_(0), cw_post_index_(0), rbuffer_(NULL), mode_(WRITESM_PARA_IO_PIPELINE),
-          ret_(zoidfs::ZFS_OK), pipeline_size_(0)
+          ret_(zoidfs::ZFS_OK), pipeline_size_(0), atomic_append_mode_(false), atomic_append_base_offset_(0)
     {
     }
 
@@ -290,6 +291,15 @@ void WriteTaskSM::recvPipelineBuffer()
 
     /* set the callback and wait */
     slots_.wait(WRITE_SLOT, &WriteTaskSM::waitRecvPipelineBuffer);
+}
+
+void WriteTaskSM::getAtomicAppendOffset()
+{
+    /* request a buffer */
+    iofwdutil::IOFSLKeyValueStorage::instance().fetchAndInc(slots_[WRITE_SLOT], std::string("NEXTAPPENDOFFSET"), total_bytes_, &atomic_append_base_offset_);
+
+    /* set the callback and wait */
+    slots_.wait(WRITE_SLOT, &WriteTaskSM::waitGetAtomicAppendOffset);
 }
 
 //===========================================================================

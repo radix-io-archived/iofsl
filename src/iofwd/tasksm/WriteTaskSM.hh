@@ -10,6 +10,7 @@
 #include "iofwd/WriteRequest.hh"
 
 #include "zoidfs/zoidfs.h"
+#include "zoidfs/hints/zoidfs-hints.h"
 
 #include <cstdio>
 #include <deque>
@@ -40,6 +41,29 @@ class WriteTaskSM : public sm::SimpleSM< WriteTaskSM >, public
             setNextMethod(&WriteTaskSM::decodeInputParams);
         }
 
+        void atomicAppendSMBranch(sm::SimpleSM<WriteTaskSM>::next_method_t not_atomic_append_state)
+        {
+                /* atomic append hint vars */
+                int aavallen = 0;
+                int aaflag = 0;
+
+                /* check if the atomic append hint was set */
+                zoidfs::hints::zoidfs_hint_get_valuelen(*(p.op_hint), ZOIDFS_ATOMIC_APPEND, &aavallen, &aaflag);
+
+                /* if the atomic append flag was set, got to the atomic append SM branch */
+                if(aaflag)
+                {
+                    atomic_append_mode_ = true;
+                    setNextMethod(&WriteTaskSM::postGetAtomicAppendOffset);
+                }
+                /* else, go to the next state */
+                else
+                {
+                    atomic_append_mode_ = false;
+                    setNextMethod(not_atomic_append_state);
+                }
+        }
+
         void decodeInputParams(iofwdevent::CBException e)
         {
            e.check ();
@@ -55,7 +79,8 @@ class WriteTaskSM : public sm::SimpleSM< WriteTaskSM >, public
                 rbuffer_ = new RetrievedBuffer*[1];
                 rbuffer_[0] = new RetrievedBuffer(total_bytes_);
                 total_buffers_ = 1;
-                setNextMethod(&WriteTaskSM::postAllocateSingleBuffer);
+
+                atomicAppendSMBranch(&WriteTaskSM::postAllocateSingleBuffer);
             }
             else
             {
@@ -80,12 +105,61 @@ class WriteTaskSM : public sm::SimpleSM< WriteTaskSM >, public
                         rbuffer_[i] = new RetrievedBuffer(pipeline_size_);
                     }
                 }
+
+                atomicAppendSMBranch(&WriteTaskSM::postAllocateBuffer);
+            }
+        }
+
+        void postGetAtomicAppendOffset(iofwdevent::CBException e)
+        {
+            e.check();
+            getAtomicAppendOffset();
+        }
     
-                /* transition to the allocate buffer state */
+        void waitGetAtomicAppendOffset(iofwdevent::CBException e)
+        {
+            e.check();
+
+            /* update the offsets */
+            zoidfs::hints::zoidfs_hint_delete(*(p.op_hint), ZOIDFS_ATOMIC_APPEND);
+
+            /* set the offset in the hint to send back to the client */
+            char offset_str[ZOIDFS_ATOMIC_APPEND_OFFSET_MAX_BYTES];
+            sprintf(offset_str, "%020lu", atomic_append_base_offset_);
+            zoidfs::hints::zoidfs_hint_set(*(p.op_hint), ZOIDFS_ATOMIC_APPEND_OFFSET, offset_str, 0);
+
+            zoidfs_file_ofs_t cur_ofs = atomic_append_base_offset_;
+
+            /* for non pipeline transfers */
+            if(p.pipeline_size == 0)
+            {
+                for(unsigned int i = 0 ; i < p.file_count ; i++)
+                {
+                    p.file_starts[i] = cur_ofs; 
+                    cur_ofs += p.file_sizes[i];
+                }
+            }
+            /* for pipeline transfers */
+            else
+            {
+                for(unsigned int i = 0 ; i < p_file_starts.size() ; i++)
+                {
+                    p_file_starts[i] = cur_ofs; 
+                    cur_ofs += p_file_sizes[i];
+                }
+            }
+
+            /* set the next method, diff between pipeline and non-pipeline transfers */
+            if(p.pipeline_size == 0)
+            {
+                setNextMethod(&WriteTaskSM::postAllocateSingleBuffer);
+            }
+            else
+            {
                 setNextMethod(&WriteTaskSM::postAllocateBuffer);
             }
         }
-    
+
         void postAllocateSingleBuffer(iofwdevent::CBException e)
         {
            e.check ();
@@ -239,6 +313,7 @@ class WriteTaskSM : public sm::SimpleSM< WriteTaskSM >, public
         /* pipeline mode operations */
         void getBuffer();
         void getSingleBuffer();
+        void getAtomicAppendOffset();
         void recvPipelineBuffer();
         void execPipelineIO();
         void waitWriteBarrier(iofwdevent::CBException e);
@@ -277,6 +352,9 @@ class WriteTaskSM : public sm::SimpleSM< WriteTaskSM >, public
         iofwdevent::CBType s_;
 
         size_t pipeline_size_;
+
+        bool atomic_append_mode_;
+        zoidfs_file_ofs_t atomic_append_base_offset_;
 };
     }
 }

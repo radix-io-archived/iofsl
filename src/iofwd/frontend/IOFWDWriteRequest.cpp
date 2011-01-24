@@ -214,7 +214,7 @@ void IOFWDWriteRequest::recvPipelineBufferCB(iofwdevent::CBType cb, RetrievedBuf
 
 void IOFWDWriteRequest::reply(const CBType & cb)
 {
-   simpleOptReply(cb, getReturnCode(), TSSTART << encoder::EncVarArray(param_.file_sizes, param_.file_count));
+   simpleOptReply(cb, getReturnCode(), TSSTART << encoder::EncVarArray(param_.file_sizes, param_.file_count) << *(param_.op_hint));
 }
 
 //===========================================================================
