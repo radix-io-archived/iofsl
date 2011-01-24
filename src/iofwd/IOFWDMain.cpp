@@ -4,6 +4,7 @@
 #include "iofwdutil/IOFWDLog.hh"
 #include "iofwdutil/signals.hh"
 #include "iofwdutil/IOFSLKeyValueStorage.hh"
+#include "iofwdutil/stats/CounterTable.hh"
 
 // Services
 #include "Log.hh"
@@ -62,6 +63,9 @@ void IOFWDMain::shutdown ()
 
    ZLOG_DEBUG (mainlog_, "Stopping IOFSLKeyValue Storage...");
    iofwdutil::IOFSLKeyValueStorage::instance().reset(); 
+
+   ZLOG_DEBUG (mainlog_, "Dumping counters...");
+   iofwdutil::stats::CounterTable::instance().dumpCounters();
 }
 
 
