@@ -897,6 +897,38 @@ if test "x${use_openssl}" == "x1" ; then
 fi
 
 dnl =========================================================================
+dnl ========= Check for FTB =================================================
+dnl =========================================================================
+
+AC_ARG_WITH(ftb,[  --with-ftb=<location of ftb installation>
+                      ],FTB_DIR="$withval",FTB_DIR="")
+if test -n "$FTB_DIR" ;
+then
+   CPPFLAGS="$CPPFLAGS -I${FTB_DIR}/include"
+   LDFLAGS="$LDFLAGS -L${FTB_DIR}/lib"
+fi
+
+use_ftb=1
+
+AC_CHECK_HEADERS([libftb.h],[],
+                 [use_ftb=])
+
+if test -n $use_ftb; then
+AC_SEARCH_LIBS([FTB_Connect],[ftb],[],
+               [use_ftb=])
+fi
+
+AM_CONDITIONAL([HAVE_FTB],[test "x${use_ftb}" == "x1"])
+
+AC_MSG_CHECKING([if FTB support can be enabled])
+if test "x${use_ftb}" == "x1" ; then
+      AC_DEFINE([HAVE_FTB], [1], [If ftb is available])
+      AC_MSG_RESULT([yes])
+else
+      AC_MSG_RESULT([no])
+fi
+
+dnl =========================================================================
 dnl =========================================================================
 dnl =========================================================================
 
