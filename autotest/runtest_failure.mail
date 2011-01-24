@@ -1,0 +1,2 @@
+mail -s "IOFSL failure report" $user_email < ~/iofsl/failure_report.txt
+mail -s "IOFSL commit test failure report" $committer_email < ~/iofsl/failure_report.txt
