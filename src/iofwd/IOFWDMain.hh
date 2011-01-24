@@ -3,10 +3,13 @@
 
 #include <memory>
 
+#include <boost/scoped_ptr.hpp>
+
 #include "frontend/IOFWDFrontend.hh"
 #include "iofwdutil/zlog/ZLogSource.hh"
 #include "iofwdutil/ConfigFile.hh"
 #include "Resources.hh"
+#include "iofwdutil/IOFSLKeyValueStorage.hh"
 
 namespace iofwd
 {
@@ -47,6 +50,8 @@ protected:
 
    // COnfig file
    const iofwdutil::ConfigFile & config_;
+
+   boost::scoped_ptr<iofwdutil::IOFSLKeyValueStorage> kvstore_;
 };
 
 //===========================================================================

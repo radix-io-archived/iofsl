@@ -3,6 +3,7 @@
 #include "frontend/IOFWDFrontend.hh"
 #include "iofwdutil/IOFWDLog.hh"
 #include "iofwdutil/signals.hh"
+#include "iofwdutil/IOFSLKeyValueStorage.hh"
 
 using namespace iofwdutil; 
 
@@ -12,7 +13,7 @@ namespace iofwd
 
 IOFWDMain::IOFWDMain (bool notrap, const iofwdutil::ConfigFile & co)
    : mainlog_ (IOFWDLog::getSource ()), notrap_(notrap),
-     config_ (co)
+     config_ (co), kvstore_(&iofwdutil::IOFSLKeyValueStorage::instance())
 {
    // Make sure that we do have signals sent to a random thread
    disableAllSignals (notrap); 
@@ -20,6 +21,8 @@ IOFWDMain::IOFWDMain (bool notrap, const iofwdutil::ConfigFile & co)
 
 void IOFWDMain::boot ()
 {
+   ZLOG_DEBUG (mainlog_, "Starting IOFSLKeyValue Storage...");
+
    ZLOG_DEBUG (mainlog_, "Starting Resources");
    resources_.reset (new Resources ());
 
@@ -52,6 +55,9 @@ void IOFWDMain::shutdown ()
 
    ZLOG_DEBUG (mainlog_, "Stopping thread pool...");
    iofwdutil::ThreadPool::instance().reset(); 
+
+   ZLOG_DEBUG (mainlog_, "Stopping IOFSLKeyValue Storage...");
+   iofwdutil::IOFSLKeyValueStorage::instance().reset(); 
 }
 
 
