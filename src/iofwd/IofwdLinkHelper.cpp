@@ -2,6 +2,8 @@
 #include "iofwdutil/LinkHelper.hh"
 #include "iofwd/service/Service.hh"
 
+#include "iofwd_config.h"
+
 /*
  * List the modules that need to be registered below...
  * No particular order required
@@ -33,5 +35,12 @@ void registerIofwdFactoryClients ()
             (bmifrontend) \
             (rpctest) \
       );
+
+#ifdef HAVE_FTB
+      SERVICE_LINKHELPER( \
+            (ftb) \
+         );
+#endif
+
 }
 
