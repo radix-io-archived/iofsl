@@ -3,10 +3,14 @@
 #include "frontend/IOFWDFrontend.hh"
 #include "iofwdutil/IOFWDLog.hh"
 #include "iofwdutil/signals.hh"
+#include "iofwdutil/ConfigException.hh"
+#include "service/ServiceException.hh"
 
 // Services
 #include "Log.hh"
 #include "Config.hh"
+
+#include <boost/foreach.hpp>
 
 using namespace iofwdutil;
 
@@ -30,6 +34,45 @@ IOFWDMain::IOFWDMain (service::ServiceManager & man)
    disableAllSignals (notrap_);
 }
 
+void IOFWDMain::loadServices ()
+{
+   ZLOG_INFO (mainlog_, "Starting extra services...");
+   ConfigFile config (config_.openSectionDefault ("extra_services"));
+   try
+   {
+      std::vector<std::string> keys = config.getMultiKey ("services");
+      BOOST_FOREACH (const std::string & s, keys)
+      {
+         ZLOG_INFO (mainlog_,
+             boost::format("Trying to load extra service '%s'...") % s);
+         custom_services_.push_back (lookupService<ExtraService> (s));
+
+         // Configure nested service
+         custom_services_.back()->configureNested (
+               config.openSectionDefault (s.c_str()));
+      }
+   }
+   catch (const CFKeyMissingException & e)
+   {
+      // It's ok if there's no services key...
+   }
+   // Provide a user error message
+   catch (service::UnknownServiceException & e)
+   {
+      addUserErrorMessage (e, str(boost::format(
+          "Service '%s' unknown. Was the service enabled"
+          " at configure time?") %
+            *boost::get_error_info<service::service_name>(e)));
+      throw;
+   }
+}
+
+void IOFWDMain::stopServices ()
+{
+   ZLOG_INFO (mainlog_, "Stopping extra services...\n");
+   custom_services_.clear ();
+}
+
 void IOFWDMain::boot ()
 {
    ZLOG_DEBUG (mainlog_, "Starting IOFWD Frontend"); 
@@ -46,11 +89,16 @@ void IOFWDMain::boot ()
 
    // Start frontend and begin accepting requests
    frontend_->run ();
+
+   // Load any extra services
+   loadServices ();
 }
 
 
 void IOFWDMain::shutdown ()
 {
+   stopServices ();
+
    ZLOG_DEBUG (mainlog_, "Stopping IOFWD Frontend"); 
    frontend_->destroy (); 
 

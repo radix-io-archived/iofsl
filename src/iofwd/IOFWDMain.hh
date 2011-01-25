@@ -7,6 +7,7 @@
 #include "iofwdutil/zlog/ZLogSource.hh"
 #include "iofwdutil/ConfigFile.hh"
 #include "iofwd/service/Service.hh"
+#include "iofwd/ExtraService.hh"
 
 namespace iofwd
 {
@@ -20,6 +21,11 @@ class Log;
 /**
  * Main object; Represents the whole I/O forwarding server
  * Groups resources and provides a single startup/shutdown point
+ *
+ * @TODO: Make this (or add somewhere) a servercontrol service which can be
+ * used to shutdown the server? Add a CBException parameter to shutdown, so
+ * that when a component thread has an exception we can properly shutdown and
+ * then rethrow the exception in the main thread.
  */
 class IOFWDMain : public service::Service
 {
@@ -37,6 +43,14 @@ public:
 
 protected:
 
+   /// Load custom services
+   void loadServices ();
+
+   /// Stop custom services
+   void stopServices ();
+
+protected:
+
    // Service dependencies
    boost::shared_ptr<RequestHandler>     requesthandler_;
 
@@ -50,6 +64,9 @@ protected:
 
    // If set, don't catch CTRL-C and don't protect threads from signals
    bool notrap_;
+
+   typedef boost::shared_ptr<ExtraService> ServicePtr;
+   std::vector<ServicePtr> custom_services_;
 };
 
 //===========================================================================
