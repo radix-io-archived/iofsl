@@ -6,4 +6,3 @@ endif
 
 
 include src/iofwd/extraservice/rpctest/Makefile.subdir
-
