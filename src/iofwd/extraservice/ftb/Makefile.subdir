@@ -1,0 +1,6 @@
+SERVERSOURCES += \
+src/iofwd/extraservice/ftb/FTBService.hh \
+src/iofwd/extraservice/ftb/FTBService.cpp \
+src/iofwd/extraservice/ftb/FTBException.hh \
+src/iofwd/extraservice/ftb/FTBException.cpp
+
