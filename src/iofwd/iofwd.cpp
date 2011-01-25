@@ -105,7 +105,7 @@ int main (int argc, char ** args)
 
       if (opt_configfile.empty())
       {
-         cerr << "No config file specified (--config)!\n";
+         std::cerr << "No config file specified (--config)!\n";
          return 1;
       }
 
@@ -159,7 +159,12 @@ int main (int argc, char ** args)
    }
    catch (const std::exception & e)
    {
-      ZLOG_ERROR (mainlog, "Exception occurred:");
+      std::string usermsg = iofwdutil::getUserErrorMessage (e);
+      if (!usermsg.empty ())
+      {
+         ZLOG_ERROR (mainlog, format ("Error occured: %s") % usermsg);
+      }
+      ZLOG_ERROR (mainlog, "Diagnostic information (relevent to developers):");
       ZLOG_ERROR (mainlog, boost::diagnostic_information (e));
       return 1;
    }
