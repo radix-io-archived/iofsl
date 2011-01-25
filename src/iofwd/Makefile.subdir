@@ -34,6 +34,8 @@ src_iofwd_iofwd_LDFLAGS = \
     @BMI_LDFLAGS@
 
 SERVERSOURCES += \
+src/iofwd/ExtraService.hh \
+src/iofwd/ExtraService.cpp \
 src/iofwd/NestedConfigurable.hh \
 src/iofwd/NestedConfigurable.cpp \
 src/iofwd/Timer.hh \
