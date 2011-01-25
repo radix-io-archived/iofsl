@@ -1,6 +1,8 @@
 #include "ServiceManager.hh"
 #include "Service.hh"
+#include "ServiceException.hh"
 
+#include "iofwdutil/FactoryException.hh"
 #include "iofwdutil/IOFWDLog.hh"
 
 #include <boost/format.hpp>
@@ -44,7 +46,17 @@ namespace iofwd
 
          ZLOG_DEBUG(log_, format("creating service %s...") % name);
 
-         boost::shared_ptr<Service> srv (ServiceFactory::construct (name)(*this));
+         boost::shared_ptr<Service> srv;
+         try
+         {
+            srv.reset (ServiceFactory::construct (name)(*this));
+         }
+         catch (const iofwdutil::NoSuchFactoryKeyException & e )
+         {
+            // Translate exception (don't leak internal implementation details
+            // (factory))
+            ZTHROW (UnknownServiceException () << service_name (name));
+         }
 
          boost::mutex::scoped_lock l(lock_);
          running_[name] = srv;
