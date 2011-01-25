@@ -35,7 +35,6 @@ src_iofwd_iofwd_LDFLAGS = \
     @ZFS_DISPATCHER_LDFLAGS@ \
     @BMI_LDFLAGS@
 
-
 SERVERSOURCES += \
 src/iofwd/RPCException.hh \
 src/iofwd/ExtraService.hh \
