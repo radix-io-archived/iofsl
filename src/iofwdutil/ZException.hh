@@ -36,13 +36,21 @@ namespace iofwdutil
    typedef boost::error_info<struct tag_zexception_msg,std::string>
       zexception_msg;
 
+
    std::string to_string (const zexception_msg & n);
 
    /**
     * Add a message to the exception object.
-    * Can be used to add a human readable description for the user.
+    * This should only be used for errors we expect to show to the user!
     */
-   void addMessage (ZException & e, const std::string & msg);
+   boost::exception & addUserErrorMessage (boost::exception & e,
+         const std::string & msg);
+
+   /**
+    * Retrieve an error message we can show to the user.
+    * Return empty string if no such message can be found.
+    */
+   std::string getUserErrorMessage (const std::exception & e);
 
    /**
     * Note: defining custom exception types/hierarchies is as easy as:

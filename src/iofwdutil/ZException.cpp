@@ -1,6 +1,7 @@
 #include "ZException.hh"
 #include "backtrace.hh"
 
+#include <boost/shared_ptr.hpp>
 #include <boost/format.hpp>
 #include <boost/exception/diagnostic_information.hpp>
 
@@ -10,6 +11,9 @@ using namespace boost;
 namespace iofwdutil
 {
    //========================================================================
+
+   typedef boost::error_info<struct tag_zexception_user_msg, std::string>
+      zexception_usermsg;
 
   /* ZException::ZException ()
    {
@@ -38,6 +42,25 @@ namespace iofwdutil
          *this << zexception_msg (msg);
       }
    } */
+
+   std::string getUserErrorMessage (const std::exception & e)
+   {
+      // Work around get_error_info API modification in
+      // certain versions of boost. Sometimes it returns a raw pointer,
+      // sometimes a shared pointer.
+      if (boost::get_error_info<zexception_usermsg>(e))
+         return *boost::get_error_info<zexception_usermsg>(e);
+      else
+         return std::string ();
+   }
+   
+   boost::exception & addUserErrorMessage (boost::exception & e,
+         const std::string & msg)
+   {
+      // @TODO: add instead of replace
+      e << zexception_usermsg (msg);
+      return e;
+   }
 
    void addMessage (ZException & e, const std::string & msg)
    {
