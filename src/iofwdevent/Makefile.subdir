@@ -1,6 +1,10 @@
 noinst_LIBRARIES += src/iofwdevent/libiofwdevent.a
 
 src_iofwdevent_libiofwdevent_a_SOURCES = \
+src/iofwdevent/ZeroCopyOutputStream.hh \
+src/iofwdevent/ZeroCopyOutputStream.cpp \
+src/iofwdevent/ZeroCopyInputStream.hh \
+src/iofwdevent/ZeroCopyInputStream.cpp \
 src/iofwdevent/BMIException.hh \
 src/iofwdevent/CompletionException.hh \
 src/iofwdevent/Handle.hh \
