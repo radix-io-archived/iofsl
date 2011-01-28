@@ -254,6 +254,7 @@ static inline struct qlist_head * qlist_find(
     return NULL;
 }
 
+#define qlist_get_head(h, l) do{ if(l){ h = l->next; } }while(0)
 /*
  * Local variables:
  *  c-indent-level: 4
