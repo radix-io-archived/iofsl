@@ -1,12 +1,15 @@
-#include <numeric>
-#include <boost/format.hpp>
-
+#include "BMIResource.hh"
 #include "BMIException.hh"
 #include "iofwdutil/tools.hh"
-#include "BMIResource.hh"
 #include "BMIError.hh"
 
+#include <numeric>
+#include <boost/format.hpp>
+#include <boost/date_time/posix_time/posix_time_types.hpp>
+
 using namespace boost;
+
+using namespace boost::posix_time;
 
 namespace iofwdevent
 {
@@ -19,7 +22,7 @@ namespace iofwdevent
    BMIResource::Handle BMIResource::post_testunexpected (const CBType &  u,
          int incount, int * outcount, BMI_unexpected_info * info)
    {
-      boost::mutex::scoped_lock l (ue_lock_);
+      mutex::scoped_lock l (ue_lock_);
 
       ALWAYS_ASSERT(incount > 0);
 
@@ -47,7 +50,7 @@ namespace iofwdevent
     */
    bool BMIResource::cancel (Handle h)
    {
-      boost::mutex::scoped_lock l(ue_lock_);
+      mutex::scoped_lock l(ue_lock_);
 
       const size_t seq = static_cast<size_t> (reinterpret_cast<intptr_t> (h));
 
@@ -74,16 +77,28 @@ namespace iofwdevent
    void BMIResource::start ()
    {
       checkBMI(BMI_open_context (&context_));
-      ThreadedResource::start ();
-      ZLOG_DEBUG(log_,format("BMIResource started... BMI context: %p") % context_);
+      if (poll_thread_)
+      {
+         ThreadedResource::start ();
+         ZLOG_DEBUG(log_,format("BMIResource started... BMI context: %p") %
+               context_);
+      }
+      else
+      {
+         ZLOG_DEBUG(log_, "Not starting BMI thread. Using polling instead...");
+      }
    }
 
    void BMIResource::stop ()
    {
-      ThreadedResource::stop ();
-      // somehow, BMI_close_context does not return an error code.
+      if (poll_thread_)
+      {
+         ThreadedResource::stop ();
+         // somehow, BMI_close_context does not return an error code.
+      }
       BMI_close_context (context_);
-      ZLOG_DEBUG(log_,format("BMIResource stopped... BMI context: %p") % context_);
+      ZLOG_DEBUG(log_,format("BMIResource stopped... BMI context: %p") %
+            context_);
    }
 
    BMIResource::~BMIResource ()
@@ -109,8 +124,19 @@ namespace iofwdevent
       : ue_sequence_ (0),
       ue_message_pool_ (sizeof (UnexpectedMessage)),
       ue_client_pool_ (sizeof (UnexpectedClient)),
-      log_ (iofwdutil::IOFWDLog::getSource ("bmiresource"))
+      log_ (iofwdutil::IOFWDLog::getSource ("bmiresource")),
+      polling_ (false),
+      opids_ (CHECK_COUNT),
+      errors_ (CHECK_COUNT),
+      users_ (CHECK_COUNT),
+      sizes_ (CHECK_COUNT),
+      poll_thread_ (true)
    {
+   }
+
+   void BMIResource::enablePollingThread (bool f)
+   {
+      poll_thread_ = f;
    }
 
    void BMIResource::throwBMIError (int ret)
@@ -175,7 +201,7 @@ namespace iofwdevent
     */
    void BMIResource::checkNewUEMessages ()
    {
-      boost::array<BMI_unexpected_info, UNEXPECTED_SIZE> ue_info;
+      array<BMI_unexpected_info, UNEXPECTED_SIZE> ue_info;
 
       // Check if there are new messages
       int outcount;
@@ -270,53 +296,114 @@ namespace iofwdevent
       }
    }
 
+   void BMIResource::poll (size_t minwaitms, size_t maxwaitms)
+   {
+      // Calculate min time we want to try polling
+      system_time mintimeout = get_system_time () + milliseconds (minwaitms);
+      system_time maxtimeout = get_system_time () + milliseconds (maxwaitms);
+
+      // Try to get the polling right until minwaitms has passed
+      {
+         mutex::scoped_lock l (poll_lock_);
+         while (polling_)
+         {
+            if (!poll_cond_.timed_wait (l, mintimeout))
+            {
+               // Timeout; somebody else is still pollling
+               return;
+            }
+         }
+
+         polling_ = true;
+      }
+
+      // We try to poll for the remainder of the time (until maxtimeout)
+      time_duration polltime (maxtimeout - get_system_time ());
+      size_t remaining = std::max(0L, polltime.total_milliseconds ());
+
+      // If we did specify a timeout and it already passed, don't try to poll.
+      // Otherwise, if the timeout was zero, try to poll once.
+      if (!remaining && maxwaitms != 0)
+         return;
+
+      poll_unprotected (remaining);
+
+      // Release polling token and wake waiters
+      mutex::scoped_lock l (poll_lock_);
+      polling_ = false;
+      poll_cond_.notify_one ();
+   }
+
+   void BMIResource::poll_unprotected (size_t maxwait)
+   {
+      ASSERT(opids_.size () ==  CHECK_COUNT);
+      ASSERT(errors_.size() == CHECK_COUNT);
+      ASSERT(users_.size () == CHECK_COUNT);
+      ASSERT(sizes_.size () == CHECK_COUNT);
+
+      int outcount;
+
+      // Try to deal with unexpected messages; If we cannot get the lock,
+      // somebody is currently calling testunexpected and that thread is
+      // going to poll testunexpected any moment now.
+      {
+         mutex::scoped_try_lock ul (ue_lock_);
+         // For now, don't try to queue unexpected messages. Only try to
+         // retrieve them if we know we have a client.
+         // This is TEMPORARY and only here so that we don't steal unexpected
+         // messages from other components in the system.
+         if (!ue_clientlist_.empty ())
+         {
+            if (ul.owns_lock ())
+               checkUnexpected ();
+         }
+      }
+      checkBMI (BMI_testcontext (opids_.size(), &opids_[0],
+               &outcount, &errors_[0], &sizes_[0],
+               reinterpret_cast<void**>(&users_[0]), maxwait, context_));
+      ZLOG_DEBUG_MORE(log_, format("BMI_context: outcount=%i") % outcount);
+
+      for (int i=0; i<outcount; ++i)
+      {
+         checkBMI (errors_[i]);
+         BMIEntry & e = *users_[i];
+
+         if (e.actual)
+            *e.actual = sizes_[i];
+
+         // completeEntry frees the BMIEntry
+         completeEntry (&e, errors_[i]);
+      }
+   }
+
    /**
     * Worker thread: just calls testcontext over and over.
     */
    void BMIResource::threadMain ()
    {
-      std::vector<bmi_op_id_t> opids_ (CHECK_COUNT);
-      std::vector<bmi_error_code_t> errors_ (CHECK_COUNT);
-      std::vector<BMIEntry *> users_ (CHECK_COUNT);
-      std::vector<bmi_size_t> sizes_ (CHECK_COUNT);
+      // If we have a polling thread, it can keep the poll lock as nobody else
+      // needs to poll
+      {
+         mutex::scoped_lock l (poll_lock_);
+         while (polling_)
+         {
+            poll_cond_.wait (l);
+         }
+         polling_ = true;
+      }
 
       ZLOG_DEBUG(log_, "polling thread started");
 
       while (!needShutdown ())
       {
-         int outcount;
+         poll_unprotected (WAIT_TIME);
+      }
 
-         // Try to deal with unexpected messages; If we cannot get the lock,
-         // somebody is currently calling testunexpected and that thread is
-         // going to poll testunexpected any moment now.
-         {
-            boost::mutex::scoped_try_lock ul (ue_lock_);
-            // For now, don't try to queue unexpected messages. Only try to
-            // retrieve them if we know we have a client.
-            // This is TEMPORARY and only here so that we don't steal unexpected
-            // messages from other components in the system.
-            if (!ue_clientlist_.empty ())
-            {
-               if (ul.owns_lock ())
-                  checkUnexpected ();
-            }
-         }
-         checkBMI (BMI_testcontext (opids_.size(), &opids_[0],
-                  &outcount, &errors_[0], &sizes_[0],
-                  reinterpret_cast<void**>(&users_[0]), WAIT_TIME, context_));
-         ZLOG_DEBUG_MORE(log_, format("BMI_context: outcount=%i") % outcount);
-
-         for (int i=0; i<outcount; ++i)
-         {
-            checkBMI (errors_[i]);
-            BMIEntry & e = *users_[i];
-
-            if (e.actual)
-               *e.actual = sizes_[i];
-
-            // completeEntry frees the BMIEntry
-            completeEntry (&e, errors_[i]);
-         }
+      {
+         mutex::scoped_lock l (poll_lock_);
+         polling_ = false;
+         // wake up anybody blocked in poll
+         poll_cond_.notify_one ();
       }
 
       ZLOG_DEBUG(log_, "Polling thread stopped");
