@@ -48,6 +48,21 @@ namespace iofwdevent
 
          virtual bool cancel (Handle h);
 
+         /**
+          * maxsleepms indicates the maximum time the poll function is allowed
+          * to sleep.
+          * minsleepms ensures the function will keep trying to poll for at
+          * least minsleepms milliseconds, even if somebody else is already
+          * polling.
+          */
+         void poll (size_t minsleepms, size_t maxsleepms);
+
+         /**
+          * Enable or disable the internal polling thread. Must be called
+          * before calling start() and cannot be changed afterwards.
+          */
+         void enablePollingThread (bool f);
+
       protected:
          // Note: don't store objects in here, mempool doesn't
          // destruct/construct properly
@@ -62,6 +77,8 @@ namespace iofwdevent
          };
 
       protected:
+
+         void poll_unprotected (size_t polltime);
 
          virtual void threadMain ();
 
@@ -251,6 +268,18 @@ namespace iofwdevent
          boost::pool<> ue_client_pool_;
 
          iofwdutil::zlog::ZLogSource & log_;
+
+         // Poll arrays
+         boost::mutex poll_lock_;
+         boost::condition_variable poll_cond_;
+         bool polling_;
+
+         std::vector<bmi_op_id_t> opids_;
+         std::vector<bmi_error_code_t> errors_;
+         std::vector<BMIEntry *> users_;
+         std::vector<bmi_size_t> sizes_;
+
+         bool poll_thread_;
 
        protected:
          void lookupHelper (const CBType & u, const std::string & s,
