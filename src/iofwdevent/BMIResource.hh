@@ -136,23 +136,23 @@ namespace iofwdevent
                bmi_hint hints);
 
          inline void post_sendunexpected_list(const CBType &  u,
-				 BMI_addr_t dest,
-				 const void *const *buffer_list,
-				 const bmi_size_t *size_list,
-				 int list_count,
-				 /* "total_size" is the sum of the size list */
-				 bmi_size_t total_size,
-				 enum bmi_buffer_type buffer_type,
-				 bmi_msg_tag_t tag,
+                                 BMI_addr_t dest,
+                                 const void *const *buffer_list,
+                                 const bmi_size_t *size_list,
+                                 int list_count,
+                                 /* "total_size" is the sum of the size list */
+                                 bmi_size_t total_size,
+                                 enum bmi_buffer_type buffer_type,
+                                 bmi_msg_tag_t tag,
                                  bmi_hint hints);
 
 
          inline void post_sendunexpected(const CBType &  u,
-			    BMI_addr_t dest,
-			    const void *buffer,
-			    bmi_size_t size,
-			    enum bmi_buffer_type buffer_type,
-			    bmi_msg_tag_t tag,
+                            BMI_addr_t dest,
+                            const void *buffer,
+                            bmi_size_t size,
+                            enum bmi_buffer_type buffer_type,
+                            bmi_msg_tag_t tag,
                             bmi_hint hints);
 
          /**
@@ -162,6 +162,10 @@ namespace iofwdevent
                int incount,
                int * outcount,
                BMI_unexpected_info * info);
+
+
+         Handle lookup (const CBType & u, const std::string & s,
+               BMI_addr_t * addr);
 
 
        protected:
@@ -238,6 +242,10 @@ namespace iofwdevent
          iofwdutil::zlog::ZLogSource & log_;
 
        protected:
+         void lookupHelper (const CBType & u, const std::string & s,
+               BMI_addr_t * addr);
+
+
          static size_t accumulate_helper (size_t other,
                const UnexpectedClient & in);
 
