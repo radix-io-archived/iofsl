@@ -34,7 +34,7 @@ int main(int argc, char **argv)
     zoidfs_handle_t handle;
     zoidfs_handle_t basedir_handle;
     char filename[] = "aa-write-test";
-    int i, numproc, rank, ret;
+    int i, j, numproc, rank, ret;
     zoidfs_op_hint_t op_hint;
 
     /* init MPI, get the rank, get the size of comm world */
@@ -140,6 +140,8 @@ int main(int argc, char **argv)
     /* init the hint */
     zoidfs_hint_create(&op_hint);
 
+    for( j = 0 ; j < 2 ; j++)
+    {
     /* write params */
     zoidfs_file_size_t fsize = (4 * 1024 * 1024); 
     size_t buffer_size = (4 * 1024 * 1024); 
@@ -184,12 +186,31 @@ int main(int argc, char **argv)
         zoidfs_hint_delete_all(op_hint);
 #endif
     }
+        if(j == 0)
+        {
+            fprintf(stderr, "done with first set of writes\n");
+            if(rank == 0)
+            {
+                zoidfs_file_ofs_t seek_ofs = (buffer_size * numproc *
+                    BUFS_PER_RANK) + 1024;
+                char value[ZOIDFS_ATOMIC_APPEND_OFFSET_MAX_BYTES];
+
+                sprintf(value, "%020lu", seek_ofs);
+                fprintf(stderr, "%s:%i seek to offset %lu\n", __func__,
+                    __LINE__, seek_ofs); 
+                zoidfs_hint_set(op_hint, ZOIDFS_ATOMIC_APPEND_SEEK, value, 0);
+                zoidfs_lookup(&basedir_handle, filename, NULL, &handle, &op_hint);
+                zoidfs_hint_delete_all(op_hint);
+            }
+            MPI_Barrier(MPI_COMM_WORLD);
+        }
+
+        /* free the write buffer */
+        free(buffer);
+    }
  
     /* free the hint */
     zoidfs_hint_free(&op_hint);
-
-    /* free the write buffer */
-    free(buffer);
 
     MPI_Barrier(MPI_COMM_WORLD);
 

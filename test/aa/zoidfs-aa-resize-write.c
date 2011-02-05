@@ -34,7 +34,7 @@ int main(int argc, char **argv)
     zoidfs_handle_t handle;
     zoidfs_handle_t basedir_handle;
     char filename[] = "aa-write-test";
-    int i, numproc, rank, ret;
+    int i, j, numproc, rank, ret;
     zoidfs_op_hint_t op_hint;
 
     /* init MPI, get the rank, get the size of comm world */
@@ -140,6 +140,8 @@ int main(int argc, char **argv)
     /* init the hint */
     zoidfs_hint_create(&op_hint);
 
+    for( j = 0 ; j < 2 ; j++)
+    {
     /* write params */
     zoidfs_file_size_t fsize = (4 * 1024 * 1024); 
     size_t buffer_size = (4 * 1024 * 1024); 
@@ -184,12 +186,21 @@ int main(int argc, char **argv)
         zoidfs_hint_delete_all(op_hint);
 #endif
     }
+        if(j == 0)
+        {
+            if(rank == 0)
+            {
+                zoidfs_resize(&handle, 1024, ZOIDFS_NO_OP_HINT);
+            }
+            MPI_Barrier(MPI_COMM_WORLD);
+        }
+    /* free the write buffer */
+    free(buffer);
+
+    }
  
     /* free the hint */
     zoidfs_hint_free(&op_hint);
-
-    /* free the write buffer */
-    free(buffer);
 
     MPI_Barrier(MPI_COMM_WORLD);
 

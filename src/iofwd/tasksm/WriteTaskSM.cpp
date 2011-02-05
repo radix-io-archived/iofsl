@@ -295,8 +295,14 @@ void WriteTaskSM::recvPipelineBuffer()
 
 void WriteTaskSM::getAtomicAppendOffset()
 {
+    iofwdutil::IOFSLKey::IOFSLKey key = iofwdutil::IOFSLKey();
+    
+    key.setFileHandle(p.handle);
+    key.setDataKey(std::string("NEXTAPPENDOFFSET"));
+
     /* request a buffer */
-    iofwdutil::IOFSLKeyValueStorage::instance().fetchAndInc(slots_[WRITE_SLOT], std::string("NEXTAPPENDOFFSET"), total_bytes_, &atomic_append_base_offset_);
+    iofwdutil::IOFSLKeyValueStorage::instance().fetchAndInc(slots_[WRITE_SLOT],
+        key, total_bytes_, &atomic_append_base_offset_);
 
     /* set the callback and wait */
     slots_.wait(WRITE_SLOT, &WriteTaskSM::waitGetAtomicAppendOffset);

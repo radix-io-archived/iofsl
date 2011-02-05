@@ -66,8 +66,22 @@ class RemoveTaskSM : public sm::SimpleSM< RemoveTaskSM >,
 
         virtual void postDropAtomicAppendOffset(iofwdevent::CBException e)
         {
+            iofwdutil::IOFSLKey key = iofwdutil::IOFSLKey();
+
+            key.setParentHandle(p_.parent_handle);
+            if(p_.component_name)
+            {
+                key.setComponentName(std::string(p_.component_name));
+            }
+            if(p_.full_path)
+            {
+                key.setFilePath(std::string(p_.full_path));
+            }
+            key.setDataKey(std::string("NEXTAPPENDOFFSET"));
+
             e.check ();
-            iofwdutil::IOFSLKeyValueStorage::instance().fetchAndDrop<zoidfs::zoidfs_file_ofs_t>(slots_[BASE_SLOT], std::string("NEXTAPPENDOFFSET"));
+
+            iofwdutil::IOFSLKeyValueStorage::instance().fetchAndDrop<zoidfs::zoidfs_file_ofs_t>(slots_[BASE_SLOT], key);
             slots_.wait(BASE_SLOT, &RemoveTaskSM::waitDropAtomicAppendOffset);
         }
 

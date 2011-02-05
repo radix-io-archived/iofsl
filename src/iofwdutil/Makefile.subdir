@@ -127,6 +127,8 @@ src/iofwdutil/PerfCounters.hh \
 src/iofwdutil/PerfCounters.cpp \
 src/iofwdutil/ThreadPool.hh \
 src/iofwdutil/ThreadPool.cpp \
+src/iofwdutil/IOFSLKey.hh \
+src/iofwdutil/IOFSLKey.cpp \
 src/iofwdutil/IOFSLKeyValueStorage.hh \
 src/iofwdutil/IOFSLKeyValueStorage.cpp \
 src/iofwdutil/InjectPool.hh \

@@ -18,6 +18,12 @@
 #include "iofwdevent/CBType.hh"
 #include "iofwdevent/CBException.hh"
 
+#include "zoidfs/util/zoidfs-c-util.h"
+
+#include "iofwdutil/IOFSLKey.hh"
+
+#include <cstdio>
+
 namespace iofwdutil
 {
 
@@ -91,7 +97,46 @@ class IOFSLKeyValueStorage : public Singleton< IOFSLKeyValueStorage >
         }
 
         template <typename T>
-        void fetchAndInc(iofwdevent::CBType cb, std::string key, T nextValueInc, T * curValue=NULL)
+        void initKeyValue(iofwdevent::CBType cb, iofwdutil::IOFSLKey key, T
+            initialValue)
+        {
+            /* atomic fetch and inc of the value */
+            {
+                boost::mutex::scoped_lock l(table_mutex_);
+            
+                /* find they key in the table */
+                std::map<iofwdutil::IOFSLKey, void *>::iterator it = table_.find(key);
+
+                /* if the key is in the table */
+                if(it != table_.end())
+                {
+                    /* get the value */
+                    T * val = static_cast<T *>(table_[key]);
+
+                    /* erase the key / value from the map */
+                    table_.erase(it);
+
+                    /* assign new value */
+                    *val = initialValue;
+
+                    /* add key back to the table */
+                    table_[key] = val;
+                }
+                /* else, the key is not in the table... add it */
+                else
+                {
+                    T * val = new T();
+                    *val = initialValue;
+                    table_[key] = val;
+                }
+            } 
+
+            /* invoke the callback */
+            cb(iofwdevent::CBException());
+        }
+
+        template <typename T>
+        void fetchAndInc(iofwdevent::CBType cb, iofwdutil::IOFSLKey key, T nextValueInc, T * curValue=NULL)
         {
             /* atomic fetch and inc of the value */
             {
@@ -117,9 +162,19 @@ class IOFSLKeyValueStorage : public Singleton< IOFSLKeyValueStorage >
                         T * tval = static_cast<T *>(table_[key]);
                         if(curValue)
                         {
-                            *curValue = *tval;
+                            if(tval)
+                            {
+                                *curValue = *tval;
+                            }
+                            else
+                            {
+                                *curValue = NULL;
+                            }
                         }
-                        *tval += nextValueInc;
+                        if(tval)
+                        {
+                            *tval += nextValueInc;
+                        }
                     }
                 }
             }
@@ -129,7 +184,7 @@ class IOFSLKeyValueStorage : public Singleton< IOFSLKeyValueStorage >
         }
 
         template <typename T>
-        void fetchAndDrop(iofwdevent::CBType cb, std::string key, T * curValue=NULL)
+        void fetchAndDrop(iofwdevent::CBType cb, iofwdutil::IOFSLKey key, T * curValue=NULL)
         {
             /* atomic drop of the value */
             {
@@ -148,13 +203,49 @@ class IOFSLKeyValueStorage : public Singleton< IOFSLKeyValueStorage >
                     else
                     {
                         T * tval = static_cast<T *>(table_[key]);
+                        std::map<iofwdutil::IOFSLKey, void *>::iterator it;
+     
+                        /* find the val associated with the key */ 
+                        it = table_.find(key);
+ 
                         if(curValue)
                         {
-                            *curValue = *tval;
+                            if(tval)
+                            {
+                                *curValue = *tval;
+                            }
+                            else
+                            {
+                                *curValue = NULL;
+                            }
                         }
-                        table_.erase(key);
+                        /* erase the value */
+                        table_.erase(it);
+                        
+                        /* cleanup the value */
                         delete tval;
                     }
+                }
+            }
+
+            /* invoke the callback */
+            cb(iofwdevent::CBException());
+        }
+       
+        template <typename T>
+        void updateKey(iofwdevent::CBType cb, iofwdutil::IOFSLKey old_key,
+            iofwdutil::IOFSLKey new_key)
+        {
+            {
+                boost::mutex::scoped_lock l(table_mutex_);
+           
+                /* get the value for the old key */ 
+                T * tval = static_cast<T *>(table_[old_key]);
+                
+                if(tval)
+                {
+                    table_.erase(old_key);
+                    table_[new_key] = tval;
                 }
             }
 
@@ -187,7 +278,7 @@ class IOFSLKeyValueStorage : public Singleton< IOFSLKeyValueStorage >
         typedef boost::intrusive::slist<KVRequest, KVMemberHook, boost::intrusive::cache_last<true>  > KVRequestList;
         
         boost::mutex table_mutex_;
-        std::map< std::string, void * > table_;
+        std::map< iofwdutil::IOFSLKey, void * > table_;
 
         KVRequestList pending_kv_requests_; 
         boost::mutex request_list_mutex_;
