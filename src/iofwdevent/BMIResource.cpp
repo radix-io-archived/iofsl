@@ -15,6 +15,37 @@ namespace iofwdevent
 {
 //===========================================================================
 
+   void BMIResource::lookupHelper (const CBType & u, const std::string & s,
+         BMI_addr_t * addr)
+   {
+      try
+      {
+         checkBMI (BMI_addr_lookup (addr, s.c_str()));
+         u (iofwdevent::CBException ());
+         return;
+      }
+      catch (BMIException & e)
+      {
+         u (CBException::current_exception ());
+      }
+      catch (const boost::thread_interrupted & e)
+      {
+         // someone cancelled us
+         u (CBException::cancelledOperation (0));
+      }
+   }
+
+   BMIResource::Handle BMIResource::lookup (const CBType & u, const
+         std::string & s, BMI_addr_t * addr)
+   {
+      // We do the lookup in a separate thread (bmi does not support async
+      // lookup)
+      // @TODO: Use threadpool or another method of having cancel support?
+      boost::thread thr (boost::bind (&BMIResource::lookupHelper, this, u, s,
+               addr));
+      return 0;
+   }
+
    /**
     * Note: this method may complete before returning if there are unexpected
     * messages ready.
