@@ -28,6 +28,8 @@ static BMI_addr_t * peer_addr = NULL;
 static BMI_addr_t * def_peer_addr = NULL;
 static bmi_context_id context;
 
+static const zoidfs_file_ofs_t aa_file_starts_sentinel[1] = {0};
+
 /* addr manipulation funcs */
 
 void zoidfs_client_swap_addr(BMI_addr_t * naddr)
@@ -3063,6 +3065,24 @@ int zoidfs_write(const zoidfs_handle_t *handle, size_t mem_count,
     file_starts_transfer.len = file_count;
     file_sizes_transfer.data = (void *)file_sizes;
     file_sizes_transfer.len = file_count;
+
+    /* if the atomic append mode hint is set */
+    if(op_hint != ZOIDFS_NO_OP_HINT)
+    {
+        int aa_valuelen = 0;
+        int aa_flag = 0;
+
+        /* check for the atomic append hint */
+        zoidfs_hint_get_valuelen(*op_hint, ZOIDFS_ATOMIC_APPEND,
+            &aa_valuelen, &aa_flag);
+
+        /* if the atomic append hint was detected */
+        if(aa_flag)
+        {
+            file_starts_transfer.data = (void *)aa_file_starts_sentinel;
+            file_starts_transfer.len = 1;
+        }
+    }
 
     /* if file_count or mem_count are 0, return imeadietly */
     if(file_count == 0 || mem_count == 0)
