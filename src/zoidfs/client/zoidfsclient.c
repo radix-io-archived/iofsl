@@ -1086,6 +1086,20 @@ int zoidfs_getattr(const zoidfs_handle_t *handle, zoidfs_attr_t *attr, zoidfs_op
     ZOIDFS_SEND_MSG_INIT(send_msg, ZOIDFS_PROTO_GET_ATTR);
     ZOIDFS_RECV_MSG_INIT(recv_msg);
 
+    /* validate input params */
+    if(!handle)
+    {
+        fprintf(stderr, "%s:%i ERROR, handle is NULL\n", __func__, __LINE__);
+        ret = ZFSERR_OTHER;
+        goto getattr_cleanup;
+    }
+    if(!attr)
+    {
+        fprintf(stderr, "%s:%i ERROR, attr is NULL\n", __func__, __LINE__);
+        ret = ZFSERR_OTHER;
+        goto getattr_cleanup;
+    }
+
     /* calculate the send buffer size */
     send_msg.sendbuflen = zoidfs_xdr_size_processor(ZFS_OP_ID_T, &send_msg.zoidfs_op_id) +
                           zoidfs_xdr_size_processor(ZFS_HANDLE_T, (void *)handle) +
@@ -1184,6 +1198,26 @@ int zoidfs_setattr(const zoidfs_handle_t *handle, const zoidfs_sattr_t *sattr,
     /* init the zoidfs xdr data */
     ZOIDFS_SEND_MSG_INIT(send_msg, ZOIDFS_PROTO_SET_ATTR);
     ZOIDFS_RECV_MSG_INIT(recv_msg);
+
+    /* validate input params */
+    if(!handle)
+    {
+        fprintf(stderr, "%s:%i ERROR, handle is NULL\n", __func__, __LINE__);
+        ret = ZFSERR_OTHER;
+        goto setattr_cleanup;
+    }
+    if(!attr)
+    {
+        fprintf(stderr, "%s:%i ERROR, attr is NULL\n", __func__, __LINE__);
+        ret = ZFSERR_OTHER;
+        goto setattr_cleanup;
+    }
+    if(!sattr)
+    {
+        fprintf(stderr, "%s:%i ERROR, sattr is NULL\n", __func__, __LINE__);
+        ret = ZFSERR_OTHER;
+        goto setattr_cleanup;
+    }
 
     recv_msg.recvbuflen = zoidfs_xdr_size_processor(ZFS_OP_STATUS_T, &recv_msg.op_status) +
                           zoidfs_xdr_size_processor(ZFS_ATTR_T, attr);
@@ -1288,6 +1322,20 @@ int zoidfs_readlink(const zoidfs_handle_t *handle, char *buffer,
 
     /* setup internal buffers... ZOIDFS_PATH_MAX + 1 */
     intl_buffer = (char *) malloc(sizeof(char) * intl_buffer_length_uint64_t); 
+
+    /* validate input params */
+    if(!handle)
+    {
+        fprintf(stderr, "%s:%i ERROR, handle is NULL\n", __func__, __LINE__);
+        ret = ZFSERR_OTHER;
+        goto readlink_cleanup;
+    }
+    if(!buffer)
+    {
+        fprintf(stderr, "%s:%i ERROR, buffer is NULL\n", __func__, __LINE__);
+        ret = ZFSERR_OTHER;
+        goto readlink_cleanup;
+    }
 
     send_msg.sendbuflen = zoidfs_xdr_size_processor(ZFS_OP_ID_T, &send_msg.zoidfs_op_id) +
                           zoidfs_xdr_size_processor(ZFS_HANDLE_T, (void *)handle) +
@@ -1687,6 +1735,13 @@ int zoidfs_commit(const zoidfs_handle_t *handle,
     ZOIDFS_SEND_MSG_INIT(send_msg, ZOIDFS_PROTO_COMMIT);
     ZOIDFS_RECV_MSG_INIT(recv_msg);
 
+    /* validate input params */
+    if(!handle)
+    {
+        fprintf(stderr, "%s:%i ERROR, handle is NULL\n", __func__, __LINE__);
+        ret = ZFSERR_OTHER;
+        goto commit_cleanup;
+    }
     recv_msg.recvbuflen = zoidfs_xdr_size_processor(ZFS_OP_STATUS_T, &recv_msg.op_status);
     send_msg.sendbuflen = zoidfs_xdr_size_processor(ZFS_OP_ID_T, &send_msg.zoidfs_op_id) +
                           zoidfs_xdr_size_processor(ZFS_HANDLE_T, (void *)handle) +
@@ -1771,6 +1826,26 @@ int zoidfs_create(const zoidfs_handle_t *parent_handle,
     /* init the zoidfs xdr data */
     ZOIDFS_SEND_MSG_INIT(send_msg, ZOIDFS_PROTO_CREATE);
     ZOIDFS_RECV_MSG_INIT(recv_msg);
+
+    /* validate input params */
+    if(!handle)
+    {
+        fprintf(stderr, "%s:%i ERROR, handle is NULL\n", __func__, __LINE__);
+        ret = ZFSERR_OTHER;
+        goto create_cleanup;
+    }
+    if(!sattr)
+    {
+        fprintf(stderr, "%s:%i ERROR, sattr is NULL\n", __func__, __LINE__);
+        ret = ZFSERR_OTHER;
+        goto create_cleanup;
+    }
+    if(!created)
+    {
+        fprintf(stderr, "%s:%i ERROR, created is NULL\n", __func__, __LINE__);
+        ret = ZFSERR_OTHER;
+        goto create_cleanup;
+    }
 
     /*
      * Check for invalid path params. The caller should either specify the
@@ -2358,6 +2433,14 @@ int zoidfs_symlink(const zoidfs_handle_t *from_parent_handle,
     ZOIDFS_SEND_MSG_INIT(send_msg, ZOIDFS_PROTO_SYMLINK);
     ZOIDFS_RECV_MSG_INIT(recv_msg);
 
+    /* validate input params */
+    if(!sattr)
+    {
+        fprintf(stderr, "%s:%i ERROR, sattr is NULL\n", __func__, __LINE__);
+        ret = ZFSERR_OTHER;
+        goto symlink_cleanup;
+    }
+
     /*
      * Check for invalid path params. The caller should either specify the
      * full_path or specify the parent_handle AND the component_name.
@@ -2566,6 +2649,14 @@ int zoidfs_mkdir(const zoidfs_handle_t *parent_handle,
     ZOIDFS_SEND_MSG_INIT(send_msg, ZOIDFS_PROTO_MKDIR);
     ZOIDFS_RECV_MSG_INIT(recv_msg);
 
+    /* validate input params */
+    if(!sattr)
+    {
+        fprintf(stderr, "%s:%i ERROR, sattr is NULL\n", __func__, __LINE__);
+        ret = ZFSERR_OTHER;
+        goto mkdir_cleanup;
+    }
+
     /*
      * Check for invalid path params. The caller should either specify the
      * full_path or specify the parent_handle AND the component_name.
@@ -2728,6 +2819,26 @@ int zoidfs_readdir(const zoidfs_handle_t *parent_handle,
     ZOIDFS_SEND_MSG_INIT(send_msg, ZOIDFS_PROTO_READDIR);
     ZOIDFS_RECV_MSG_INIT(recv_msg);
 
+    /* validate input params */
+    if(!parent_handle)
+    {
+        fprintf(stderr, "%s:%i ERROR, parent_handle is NULL\n", __func__, __LINE__);
+        ret = ZFSERR_OTHER;
+        goto readdir_cleanup;
+    }
+    if(!entry_count)
+    {
+        fprintf(stderr, "%s:%i ERROR, entry_count is NULL\n", __func__, __LINE__);
+        ret = ZFSERR_OTHER;
+        goto readdir_cleanup;
+    }
+    if(!entries)
+    {
+        fprintf(stderr, "%s:%i ERROR, entries is NULL\n", __func__, __LINE__);
+        ret = ZFSERR_OTHER;
+        goto readdir_cleanup;
+    }
+
     /* server sends int32_t (returncode) followed by int32_t (entry_count)
     * followed by an array of zoidfs_dirent_t followed by the
     * zoidfs_cache_hint_t */
@@ -2873,6 +2984,14 @@ int zoidfs_resize(const zoidfs_handle_t *handle, zoidfs_file_size_t size,
     ZOIDFS_SEND_MSG_INIT(send_msg, ZOIDFS_PROTO_RESIZE);
     ZOIDFS_RECV_MSG_INIT(recv_msg);
 
+    /* validate input params */
+    if(!handle)
+    {
+        fprintf(stderr, "%s:%i ERROR, handle is NULL\n", __func__, __LINE__);
+        ret = ZFSERR_OTHER;
+        goto resize_cleanup;
+    }
+
     recv_msg.recvbuflen = zoidfs_xdr_size_processor(ZFS_OP_STATUS_T, &recv_msg.op_status);
     send_msg.sendbuflen = zoidfs_xdr_size_processor(ZFS_OP_ID_T, &send_msg.zoidfs_op_id) +
                           zoidfs_xdr_size_processor(ZFS_HANDLE_T, (void *)handle) +
@@ -2972,6 +3091,48 @@ int zoidfs_write(const zoidfs_handle_t *handle, size_t mem_count,
     ZOIDFS_SEND_MSG_INIT(send_msg, ZOIDFS_PROTO_WRITE);
     ZOIDFS_SEND_MSG_DATA_INIT(send_msg_data);
     ZOIDFS_RECV_MSG_INIT(recv_msg);
+
+    /* validate input params */
+    if(!handle)
+    {
+        fprintf(stderr, "%s:%i ERROR, handle is NULL\n", __func__, __LINE__);
+        ret = ZFSERR_OTHER;
+        goto write_cleanup;
+    }
+    if(!mem_starts)
+    {
+        fprintf(stderr, "%s:%i ERROR, mem_starts is NULL\n", __func__, __LINE__);
+        ret = ZFSERR_OTHER;
+        goto write_cleanup;
+    }
+    for(i = 0 ; i < mem_count ; i++)
+    {
+        if(!mem_starts[i])
+        {
+            fprintf(stderr, "%s:%i ERROR, mem_starts[%lu] is NULL\n", __func__,
+                __LINE__, i);
+            ret = ZFSERR_OTHER;
+            goto write_cleanup;
+        }
+    }
+    if(!mem_sizes)
+    {
+        fprintf(stderr, "%s:%i ERROR, mem_sizes is NULL\n", __func__, __LINE__);
+        ret = ZFSERR_OTHER;
+        goto write_cleanup;
+    }
+    if(!file_starts)
+    {
+        fprintf(stderr, "%s:%i ERROR, file_starts is NULL\n", __func__, __LINE__);
+        ret = ZFSERR_OTHER;
+        goto write_cleanup;
+    }
+    if(!file_sizes)
+    {
+        fprintf(stderr, "%s:%i ERROR, file_sizes is NULL\n", __func__, __LINE__);
+        ret = ZFSERR_OTHER;
+        goto write_cleanup;
+    }
 
     /* init the transfer array wrappers */ 
     mem_sizes_transfer.data = (void *)mem_sizes;
@@ -3331,6 +3492,49 @@ int zoidfs_read(const zoidfs_handle_t *handle, size_t mem_count,
     /* init the zoidfs xdr data */
     ZOIDFS_SEND_MSG_INIT(send_msg, ZOIDFS_PROTO_READ);
     ZOIDFS_RECV_MSG_INIT(recv_msg);
+
+    /* validate input params */
+    if(!handle)
+    {
+        fprintf(stderr, "%s:%i ERROR, handle is NULL\n", __func__, __LINE__);
+        ret = ZFSERR_OTHER;
+        goto read_cleanup;
+    }
+    if(!mem_starts)
+    {
+        fprintf(stderr, "%s:%i ERROR, mem_starts is NULL\n", __func__,
+            __LINE__);
+        ret = ZFSERR_OTHER;
+        goto read_cleanup;
+    }
+    for(i = 0 ; i < mem_count ; i++)
+    {
+        if(!mem_starts[i])
+        {
+            fprintf(stderr, "%s:%i ERROR, mem_starts[%lu] is NULL\n", __func__,
+                __LINE__, i);
+            ret = ZFSERR_OTHER;
+            goto read_cleanup;
+        }
+    }
+    if(!mem_sizes)
+    {
+        fprintf(stderr, "%s:%i ERROR, mem_sizes is NULL\n", __func__, __LINE__);
+        ret = ZFSERR_OTHER;
+        goto read_cleanup;
+    }
+    if(!file_starts)
+    {
+        fprintf(stderr, "%s:%i ERROR, file_starts is NULL\n", __func__, __LINE__);
+        ret = ZFSERR_OTHER;
+        goto read_cleanup;
+    }
+    if(!file_sizes)
+    {
+        fprintf(stderr, "%s:%i ERROR, file_sizes is NULL\n", __func__, __LINE__);
+        ret = ZFSERR_OTHER;
+        goto read_cleanup;
+    }
 
     /* init the transfer array wrappers */
     mem_sizes_transfer.data = (void *)mem_sizes;
