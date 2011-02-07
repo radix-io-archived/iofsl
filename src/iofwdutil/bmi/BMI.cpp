@@ -46,7 +46,9 @@ void BMI::finalize ()
 
    if (!active_)
       return;
-   BMI_finalize ();
+
+    /* XXX This call crashes / core dumps ... need to figure out why */
+   //BMI_finalize ();
    active_ = false; 
 }
 
