@@ -1,7 +1,7 @@
 #ifndef IOFWDUTIL_STATS_COUNTERTABLE_HH
 #define IOFWDUTIL_STATS_COUNTERTABLE_HH
 
-#include <string>
+#include <string.h>
 #include <map>
 #include <vector>
 #include "iofwdutil/Singleton.hh"
