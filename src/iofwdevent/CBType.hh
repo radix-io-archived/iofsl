@@ -13,18 +13,7 @@ namespace iofwdevent
     * and defines some status codes.
     */
 
-   /**
-    * Callback completion indicators.
-    *
-    * LAST indicates the first free code (and can be used classes such as
-    * SingleCompletion or MultiCompletion)
-    *
-    * Maybe COMPLETED is the only code needed;
-    * FAILED is really there to indicate an exception,
-    * and CANCELLED could(should?) throw its own exception.
-    */
-   // enum { COMPLETED = 0, CANCELLED, FAILED, LAST };
-
+   /* Use default constructor CBException() to signal no exception */
    typedef boost::function<void (CBException e)> CBType;
 
 }

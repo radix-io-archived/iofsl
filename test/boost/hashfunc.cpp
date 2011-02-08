@@ -2,6 +2,7 @@
 #include <boost/format.hpp>
 #include <cstring>
 #include <boost/test/unit_test.hpp>
+#include <boost/smart_ptr.hpp>
 
 #include "iofwdutil/hash/HashFactory.hh"
 #include "iofwdutil/assert.hh"

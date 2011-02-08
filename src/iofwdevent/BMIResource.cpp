@@ -319,7 +319,8 @@ namespace iofwdevent
 
       // We try to poll for the remainder of the time (until maxtimeout)
       time_duration polltime (maxtimeout - get_system_time ());
-      size_t remaining = std::max(0L, polltime.total_milliseconds ());
+      size_t remaining = std::max((boost::int64_t) 0, 
+                                  polltime.total_milliseconds ());
 
       // If we did specify a timeout and it already passed, don't try to poll.
       // Otherwise, if the timeout was zero, try to poll once.
