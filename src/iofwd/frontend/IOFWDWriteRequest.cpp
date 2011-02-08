@@ -11,6 +11,9 @@ namespace iofwd
    {
 //===========================================================================
 
+/**
+ * Deconstructor for IOFWDWriteRequest. 
+ */
 IOFWDWriteRequest::~IOFWDWriteRequest ()
 {
 #ifndef USE_TASK_HA

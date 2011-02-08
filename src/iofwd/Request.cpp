@@ -10,8 +10,11 @@ namespace iofwd
 // @TODO: Move this into the zoidsf-proto.h header
 //  so that the data cannot get out of sync
 
+/**
+ * Contains valid IOFSL operation names
+ */
 static const char * opidnames[] =
-{
+{ 
 "ZOIDFS_NULL",
 "ZOIDFS_GET_ATTR",
 "ZOIDFS_SET_ATTR",
@@ -30,6 +33,11 @@ static const char * opidnames[] =
 "ZOIDFS_LINK"
 };
 
+/**
+ * Convert operation id (opid) to operation name.
+ * @param opid Operation ID number (int)
+ * @return Char * Containing ASCII name for operation
+ */
 const char * Request::opid2Name (int opid) const
 {
    if (opid < 0 ||
@@ -40,6 +48,10 @@ const char * Request::opid2Name (int opid) const
    return opidnames[opid];
 }
 
+/**
+ * Constructor for Request class
+ * @param opid Opearation ID for operation requested 
+ */
 Request::Request (int opid)
    : opid_(opid), alloc_id_(0)
 {

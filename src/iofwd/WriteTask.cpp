@@ -1,3 +1,8 @@
+/**
+ * @file iofwd/WriteTask.cpp
+ * Contains I/O write request handlers for the I/O fowarding server.
+ */
+
 #include "WriteTask.hh"
 #include "zoidfs/util/ZoidFSAPI.hh"
 #include "zoidfs/zoidfs-proto.h"
@@ -13,6 +18,15 @@ namespace iofwd
 {
 //===========================================================================
 
+/**
+ * Write task for non pipeline case. This task recieves write data from the 
+ * client (in non-pipeline mode) and write's that data out to the file specified
+ * by the users initial request. (This is the entry point for non-pipeline 
+ * write request's)
+ *
+ * @param p Request parameter's recieved from the user (this should be a 
+ *          Non-pipeline write request only).
+ */
 void WriteTask::runNormalMode(WriteRequest::ReqParam & p)
 {
    // setup the memory wrappers
@@ -52,6 +66,13 @@ void WriteTask::runNormalMode(WriteRequest::ReqParam & p)
    block_.wait();
 }
 
+/**
+ * Computes the number of pipeline file segments that are expected to be written
+ * to disk. This information is calculated from data recieved in the initial 
+ * client request (WriteRequest::ReqParam & p).
+ *
+ * @param p Request parameter's recieved from the client (pipeline write only)
+ */
 void WriteTask::computePipelineFileSegments(const WriteRequest::ReqParam & p)
 {
     const zoidfs::zoidfs_file_ofs_t * file_starts = p.file_starts;
@@ -77,7 +98,8 @@ void WriteTask::computePipelineFileSegments(const WriteRequest::ReqParam & p)
 
         while(cur_file_size > 0)
         {
-            /* if the data left in the current file is large than the remaining pipeline buffer */
+            /* if the data left in the current file is large than the 
+               remaining pipeline buffer */
             if(cur_file_size > cur_pipe_buffer_size)
             {
                 /* update the pipeline segment data */
@@ -118,6 +140,11 @@ void WriteTask::computePipelineFileSegments(const WriteRequest::ReqParam & p)
     }
 }
 
+/**
+ * Receive a pipeline buffer from the client.
+ *
+ * @param index Specifys what index in rbuffer_ to place the request data.
+ */
 void WriteTask::recvPipelineBuffer(int index)
 {
     /* if there is still data to be recieved */
@@ -129,6 +156,11 @@ void WriteTask::recvPipelineBuffer(int index)
     block_.wait();
 }
 
+/**
+ * Handles write pipeline I/O requests. 
+ *
+ * @param p Request parameter's recieved from the client (pipeline write only)
+ */
 void WriteTask::execPipelineIO(const WriteRequest::ReqParam & p)
 {
     int index = 0;
@@ -231,6 +263,16 @@ void WriteTask::execPipelineIO(const WriteRequest::ReqParam & p)
     }
 }
 
+/**
+ * Sets up a callback function for write I/O operations.
+ *
+ * @param status Contains the status of the callback including error information
+ *               ??? (may need a correction).
+ * @param rb Buffer retrieved from the client for the write request.
+ * @param index Index which the buffer (rb) is now stored in (rbuffer_[index])
+ * @param cb Callback function which will recieve the current status of the 
+ *           PostWriteCB operation
+ */
 void WriteTask::runPostWriteCB(iofwdevent::CBException status,
       RetrievedBuffer * rb, int index, iofwdevent::CBType cb)
 {
@@ -245,6 +287,13 @@ void WriteTask::runPostWriteCB(iofwdevent::CBException status,
     cb(status);
 }
 
+/**
+ * Posts a write recieve for a pipeline seqment. This function is called by 
+ * WriteTask::execPipelineIO to handle reading individual pipeline data segments
+ *
+ * @param p Request parameter's recieved from the client (pipeline write only)
+ * @param index Buffer index to store the write data recieved from the client.
+ */
 void WriteTask::postWrite(const WriteRequest::ReqParam & p, int index)
 { 
     const char * p_buf = (char *)rbuffer_[index]->buffer_->getMemory();
@@ -290,6 +339,12 @@ void WriteTask::postWrite(const WriteRequest::ReqParam & p, int index)
         const_cast<zoidfs::zoidfs_op_hint_t *>(p.op_hint));
 }
 
+/**
+ * Starts a pipeline write from the client (this is the entry point for pipeline 
+ * write requests).
+ * 
+ * @param p Request parameter's recieved from the client (pipeline write only)
+ */
 void WriteTask::runPipelineMode(const WriteRequest::ReqParam & p)
 {
    // run the pipeline IO transfer code

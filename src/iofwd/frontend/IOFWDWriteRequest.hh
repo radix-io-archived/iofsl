@@ -14,12 +14,32 @@ namespace iofwd
    {
 //===========================================================================
 
+/**
+ * @class IOFWDWriteRequest
+ *
+ * @brief Handles write request's from the client 
+ *
+ * Write request handler for the I/O fowarding server. This class takes care of
+ * shared operations between the pipeline and non-pipeline write requests 
+ * (such as reading a buffer, decoding the request parameters, ect). Actual
+ * file writing and other specific pipeline/non-pipeline functions take place 
+ * in iofwd/WriteTask.cpp and iofwd/Request.cpp
+ *
+ */
 class IOFWDWriteRequest
    : public IOFWDRequest,
      public WriteRequest,
      public iofwdutil::InjectPool<IOFWDWriteRequest>
 {
 public:
+   /**
+    * Constructor for IOFWDWriteRequest
+    * 
+    * @param opid Operation ID for the client request 
+    * @param info Unexpected message recieved from the client (all initial 
+    *             write reuqest's should be unexpected).
+    * @param res  Resources availible to handle this request???
+    */
    IOFWDWriteRequest (int opid, const BMI_unexpected_info & info,
          IOFWDResources & res)
      : IOFWDRequest (info,res), WriteRequest (opid)
