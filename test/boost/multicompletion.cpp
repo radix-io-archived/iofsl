@@ -8,6 +8,7 @@
 #include <boost/functional/hash.hpp>
 #include <boost/lexical_cast.hpp>
 #include <boost/date_time/posix_time/posix_time_duration.hpp>
+#include <boost/smart_ptr.hpp>
 
 #include "ThreadSafety.hh"
 

@@ -13,6 +13,7 @@
 #include <boost/mpl/list.hpp>
 #include <boost/bind.hpp>
 #include <boost/mpl/for_each.hpp>
+#include <boost/smart_ptr.hpp> 
 
 #include "iofwd_config.h"
 #include "ThreadSafety.hh"
