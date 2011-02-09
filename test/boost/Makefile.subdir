@@ -122,3 +122,15 @@ test_boost_sm_SOURCES = test/boost/simplesm.cpp \
 test_boost_sm_LDFLAGS = $(shared_ldflags)
 test_boost_sm_LDADD = $(shared_ldadd)
 
+#############################################################################
+# InputMemoryZeroCopy Test
+#############################################################################
+TESTS += test/boost/inputmemorystream
+check_PROGRAMS += test/boost/inputmemorystream
+test_boost_inputmemorystream_SOURCES = test/boost/InputMemoryStream.cpp \
+				   test/boost/ThreadSafety.cpp \
+				   test/boost/ThreadSafety.hh 
+
+test_boost_inputmemorystream_LDFLAGS = $(shared_ldflags)
+test_boost_inputmemorystream_LDADD = $(shared_ldadd)
+
