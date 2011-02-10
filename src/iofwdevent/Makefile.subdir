@@ -31,4 +31,6 @@ src/iofwdevent/BMIError.hh \
 src/iofwdevent/BMIError.cpp \
 src/iofwdevent/Resource-fwd.hh \
 src/iofwdevent/ZeroCopyMemoryInput.cpp \
-src/iofwdevent/ZeroCopyMemoryInput.hh
+src/iofwdevent/ZeroCopyMemoryInput.hh \
+src/iofwdevent/ZeroCopyMemoryOutput.cpp \
+src/iofwdevent/ZeroCopyMemoryOutput.hh 
