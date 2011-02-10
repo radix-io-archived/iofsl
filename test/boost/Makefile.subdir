@@ -134,3 +134,15 @@ test_boost_inputmemorystream_SOURCES = test/boost/InputMemoryStream.cpp \
 test_boost_inputmemorystream_LDFLAGS = $(shared_ldflags)
 test_boost_inputmemorystream_LDADD = $(shared_ldadd)
 
+#############################################################################
+# OutputMemoryZeroCopy Test
+#############################################################################
+TESTS += test/boost/outputmemorystream
+check_PROGRAMS += test/boost/outputmemorystream
+test_boost_outputmemorystream_SOURCES = test/boost/OutputMemoryStream.cpp \
+				   test/boost/ThreadSafety.cpp \
+				   test/boost/ThreadSafety.hh 
+
+test_boost_outputmemorystream_LDFLAGS = $(shared_ldflags)
+test_boost_outputmemorystream_LDADD = $(shared_ldadd)
+
