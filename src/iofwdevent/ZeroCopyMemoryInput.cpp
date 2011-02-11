@@ -63,6 +63,21 @@ size_t ZeroCopyMemoryInput::spaceRemaining (void)
 
 
 /**
+ * Resets the ZeroCopyMemoryInput stream and sets it to a new memory 
+ * location
+ * @param[in] in        Region of memory (with data) to convert into an 
+ *                      input stream
+ * @param[in] len       Length of the memory region void * in.
+ */
+int ZeroCopyMemoryInput::reset (const void * in, size_t len)
+{
+  this->mem = in;
+  this->pos = 0;
+  this->memSize = len;
+}
+
+
+/**
  * Allows for the stream to be "rewinded" and unused portions of a read to be
  * returned to ZeroCopyMemoryInput. This prevents data being skipped on 
  * subsequent reads.

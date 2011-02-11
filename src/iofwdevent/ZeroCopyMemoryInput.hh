@@ -39,6 +39,10 @@ namespace iofwdevent {
       /* Rewind the input stream */
       Handle rewindInput (size_t , const CBType & );
 
+      /* Resets the ZeroCopyMemoryInput stream and sets it to a new memory 
+         location */
+      int reset (const void *, size_t);
+
       /* Amount of space remaining that has not be read in this->mem */
       size_t spaceRemaining (void);
   };
