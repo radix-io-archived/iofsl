@@ -39,6 +39,8 @@ namespace iofwdevent {
       /* Flush internal buffers, if any */
       Handle flush (const CBType & );
 
+      /* Amount of space remaining in this->mem */
+      size_t spaceRemaining (void);
   };
 }
 

@@ -73,6 +73,16 @@ Handle ZeroCopyMemoryOutput::rewindOutput (size_t size, const CBType & cb)
 }
 
 /**
+ * Returns the amount of buffer remaining for the write
+ * @return              Value containing remaining space left in buffer 
+ *                      (this->mem)
+ */
+size_t ZeroCopyMemoryOutput::spaceRemaining (void)
+{
+  return this->memSize - this->pos;
+}
+
+/**
  * Flush the internal buffer (permanently advance the pointer).
  * @param[in] cb        Callback to use when the operation is completed (called 
  *                      immedietly).
