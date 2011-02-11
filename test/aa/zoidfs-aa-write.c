@@ -18,6 +18,8 @@
 #define ENABLE_AA_MODE
 #endif
 
+//#define ENABLE_NB_SERVER_MODE
+
 /*
 * simple test program for atomic append mode
 * 
@@ -59,7 +61,8 @@ int main(int argc, char **argv)
     }
 
     /* lookup the directory on the cmd line, verify that it is valid */
-    ret = zoidfs_lookup(NULL, NULL, argv[1], &basedir_handle, ZOIDFS_NO_OP_HINT);
+    ret = zoidfs_lookup(NULL, NULL, argv[1], &basedir_handle,
+            ZOIDFS_NO_OP_HINT);
     if(ret != ZFS_OK)
     {
         fprintf(stderr, "%s:%i zoidfs_lookup error\n", __func__, __LINE__);
@@ -78,7 +81,8 @@ int main(int argc, char **argv)
     sattr.mtime.seconds = now.tv_sec;
     sattr.mtime.nseconds = now.tv_usec;
 
-    /* rank 0 will create the file. if the file exists, if will delete it and recreate an empty file */
+    /* rank 0 will create the file. if the file exists, if will delete it
+       and recreate an empty file */
     if(rank == 0)
     {
         int created = 0;
@@ -88,7 +92,8 @@ int main(int argc, char **argv)
             &handle, &created, ZOIDFS_NO_OP_HINT);
         if(ret != ZFS_OK)
         {
-            fprintf(stderr, "%s:%i create file error\n", __func__, __LINE__);
+            fprintf(stderr, "%s:%i create file error\n", __func__,
+                    __LINE__);
             MPI_Abort(MPI_COMM_WORLD, -1);
         }
 
@@ -96,10 +101,12 @@ int main(int argc, char **argv)
         if(!created)
         {
             /* remove the file */
-            ret = zoidfs_remove(&basedir_handle, filename, NULL, NULL, ZOIDFS_NO_OP_HINT);
+            ret = zoidfs_remove(&basedir_handle, filename, NULL, NULL,
+                    ZOIDFS_NO_OP_HINT);
             if(ret != ZFS_OK)
             {
-                fprintf(stderr, "%s:%i could not remove existing file\n", __func__, __LINE__);
+                fprintf(stderr, "%s:%i could not remove existing file\n",
+                        __func__, __LINE__);
                 MPI_Abort(MPI_COMM_WORLD, -1);
             }
            
@@ -109,13 +116,15 @@ int main(int argc, char **argv)
                 &handle, &created, ZOIDFS_NO_OP_HINT);
             if(ret != ZFS_OK)
             {
-                fprintf(stderr, "%s:%i create file error\n", __func__, __LINE__);
+                fprintf(stderr, "%s:%i create file error\n", __func__,
+                        __LINE__);
                 MPI_Abort(MPI_COMM_WORLD, -1);
             }
             /* could not recreate the file, abort */
             if(!created)
             {
-                fprintf(stderr, "%s:%i could not create file\n", __func__, __LINE__);
+                fprintf(stderr, "%s:%i could not create file\n", __func__,
+                        __LINE__);
                 MPI_Abort(MPI_COMM_WORLD, -1);
             }
         }
@@ -129,10 +138,12 @@ int main(int argc, char **argv)
         MPI_Barrier(MPI_COMM_WORLD);
 
         /* lookup the file handle */
-        ret = zoidfs_lookup(&basedir_handle, filename, NULL, &handle, ZOIDFS_NO_OP_HINT);
+        ret = zoidfs_lookup(&basedir_handle, filename, NULL, &handle,
+                ZOIDFS_NO_OP_HINT);
         if(ret != ZFS_OK)
         {
-            fprintf(stderr, "%s:%i file lookup error\n", __func__, __LINE__);
+            fprintf(stderr, "%s:%i file lookup error\n", __func__,
+                    __LINE__);
             MPI_Abort(MPI_COMM_WORLD, -1);
         }
     }
@@ -154,29 +165,40 @@ int main(int argc, char **argv)
 #ifdef ENABLE_AA_MODE 
         int flag = 0;
         /* set the atomic append hint */
-        zoidfs_hint_set(op_hint, ZOIDFS_ATOMIC_APPEND, ZOIDFS_HINT_ENABLED, 0);
+        zoidfs_hint_set(op_hint, ZOIDFS_ATOMIC_APPEND,
+                ZOIDFS_HINT_ENABLED, 0);
+#endif
+#ifdef ENABLE_NB_SERVER_MODE
+        zoidfs_hint_set(op_hint, ZOIDFS_NONBLOCK_SERVER_IO,
+                ZOIDFS_HINT_ENABLED, 0);
 #endif
 
         /* issue a write with the atomic append hint */
-        ret = zoidfs_write(&handle, 1, (const void **)&buffer, &buffer_size, 1, &fofs, &fsize, &op_hint); 
+        ret = zoidfs_write(&handle, 1, (const void **)&buffer, &buffer_size,
+                1, &fofs, &fsize, &op_hint); 
         if(ret != ZFS_OK)
         {
             MPI_Abort(MPI_COMM_WORLD, -1);
         }
        
 #ifdef ENABLE_AA_MODE 
-        char value[ZOIDFS_ATOMIC_APPEND_OFFSET_MAX_BYTES]; /* length defined in zoidfs-hints.h */
+        /* length defined in zoidfs-hints.h */
+        char value[ZOIDFS_ATOMIC_APPEND_OFFSET_MAX_BYTES];
 
         /* get the atomic append offset */ 
-        zoidfs_hint_get(op_hint, ZOIDFS_ATOMIC_APPEND_OFFSET, ZOIDFS_ATOMIC_APPEND_OFFSET_MAX_BYTES, value, &flag);
+        zoidfs_hint_get(op_hint, ZOIDFS_ATOMIC_APPEND_OFFSET,
+                ZOIDFS_ATOMIC_APPEND_OFFSET_MAX_BYTES, value, &flag);
         
         newoff = (long unsigned)atol(value);
 #else
         newoff = fofs;
 #endif
 
-        /* output file write info... where did the client specify the file write (old offset) and where write exists in the file (new offset) */
-        fprintf(stderr, "%s:%i rank = %i, orig offset = %lu, append offset = %lu\n", __func__, __LINE__, rank, fofs, newoff);
+        /* output file write info... where did the client specify the
+           file write (old offset) and where write exists in the
+           file (new offset) */
+        fprintf(stderr, "%s:%i rank = %i, orig offset = %lu, append offset = %lu\n",
+                __func__, __LINE__, rank, fofs, newoff);
         fofs += buffer_size; 
 
 #ifdef ENABLE_AA_MODE 
@@ -197,10 +219,12 @@ int main(int argc, char **argv)
     if(rank == 0)
     {
         /* remove the file */ 
-        ret = zoidfs_remove(&basedir_handle, filename, NULL, NULL, ZOIDFS_NO_OP_HINT);
+        ret = zoidfs_remove(&basedir_handle, filename, NULL, NULL,
+                ZOIDFS_NO_OP_HINT);
         if(ret != ZFS_OK)
         {
-            fprintf(stderr, "%s:%i zoidfs_remove error\n", __func__, __LINE__);
+            fprintf(stderr, "%s:%i zoidfs_remove error\n", __func__,
+                    __LINE__);
             MPI_Abort(MPI_COMM_WORLD, -1);
         }
     }
