@@ -50,7 +50,7 @@ BOOST_FIXTURE_TEST_CASE ( testRead, Fixture)
   {
     ((char *)mem_array)[x] = (char)(x % 10);
   }
-  iofwdevent::ZeroCopyMemoryInput x((void **)&mem_array, size);
+  iofwdevent::ZeroCopyMemoryInput x((const void *)mem_array, size);
   h = x.read(((const void **)(&readloc)), &readSize, cb, 250);
   for (int x = 0; x < readSize; x++)
   {
@@ -70,7 +70,7 @@ BOOST_FIXTURE_TEST_CASE (testRewind, Fixture)
   {
     ((char *)mem_array)[x] = (char)(x % 10);
   }
-  iofwdevent::ZeroCopyMemoryInput x((void **)&mem_array, size);
+  iofwdevent::ZeroCopyMemoryInput x((const void *)mem_array, size);
   h = x.read(((const void **)(&readloc)), &readSize, cb, 250);
   h = x.rewindInput(readSize, cb);
   h = x.read(((const void **)(&readloc)), &readSize, cb, 250);

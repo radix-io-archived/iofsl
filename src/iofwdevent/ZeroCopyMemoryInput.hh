@@ -22,13 +22,13 @@ namespace iofwdevent {
    */
   class ZeroCopyMemoryInput: public ZeroCopyInputStream {
     protected:
-      boost::scoped_ptr <char> mem; /*< Stores memory location data */
+      const void * mem; /*< Stores memory location data */
       size_t memSize;       /*< Stores the size of the memory location */
       size_t pos;           /*< Stores current pointer position inside mem */
 
     public:
       /* Constructor for ZeroCopyMemoryInput. */
-      ZeroCopyMemoryInput  (void ** , size_t );
+      ZeroCopyMemoryInput  (const void * , size_t );
 
       /* Cancel operation (not used since this class does not block) */
       void cancel (Handle x) {}; 
