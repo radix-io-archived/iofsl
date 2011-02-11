@@ -51,6 +51,16 @@ Handle ZeroCopyMemoryInput::read (const void ** ptr, size_t * size,
   return (void *)0;  
 }
 
+/**
+ * Returns the amount of buffer remaining that has not been read 
+ * @return              Value containing remaining space left in buffer 
+ *                      (this->mem)
+ */
+size_t ZeroCopyMemoryInput::spaceRemaining (void)
+{
+  return this->memSize - this->pos;
+}
+
 
 /**
  * Allows for the stream to be "rewinded" and unused portions of a read to be
