@@ -462,6 +462,7 @@ int zoidfs_hint_dup(zoidfs_op_hint_t oldhint, zoidfs_op_hint_t * newhint)
         /* setup the new hint */
         zoidfs_op_hint_item_t * nitem = malloc(sizeof(zoidfs_op_hint_item_t));
         nitem->key = strdup(item->key);
+        nitem->value = malloc(sizeof(char) * item->valuelen);
         memcpy(nitem->value, item->value, item->valuelen);
         nitem->valuelen = item->valuelen;
 
