@@ -20,7 +20,7 @@ namespace iofwdevent {
   /**
    * Creates an input zero copy stream from a memory region 
    */
-  class ZeroCopyMemoryInput: public ZeroCopyInputStream {
+  class ZeroCopyMemoryInput : public ZeroCopyInputStream {
     protected:
       const void * mem; /*< Stores memory location data */
       size_t memSize;       /*< Stores the size of the memory location */

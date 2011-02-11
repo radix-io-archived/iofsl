@@ -146,3 +146,14 @@ test_boost_outputmemorystream_SOURCES = test/boost/OutputMemoryStream.cpp \
 test_boost_outputmemorystream_LDFLAGS = $(shared_ldflags)
 test_boost_outputmemorystream_LDADD = $(shared_ldadd)
 
+#############################################################################
+# ZeroCopyTransformInput Test
+#############################################################################
+TESTS += test/boost/TestZeroCopyTransformInput
+check_PROGRAMS += test/boost/TestZeroCopyTransformInput
+test_boost_TestZeroCopyTransformInput_SOURCES = test/boost/TestZeroCopyTransformInput.cpp \
+				   test/boost/ThreadSafety.cpp \
+				   test/boost/ThreadSafety.hh 
+
+test_boost_TestZeroCopyTransformInput_LDFLAGS = $(shared_ldflags)
+test_boost_TestZeroCopyTransformInput_LDADD = $(shared_ldadd)

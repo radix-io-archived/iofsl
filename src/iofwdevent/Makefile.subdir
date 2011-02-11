@@ -38,4 +38,6 @@ src/iofwdevent/Resource-fwd.hh \
 src/iofwdevent/ZeroCopyMemoryInput.cpp \
 src/iofwdevent/ZeroCopyMemoryInput.hh \
 src/iofwdevent/ZeroCopyMemoryOutput.cpp \
-src/iofwdevent/ZeroCopyMemoryOutput.hh 
+src/iofwdevent/ZeroCopyMemoryOutput.hh \
+src/iofwdevent/ZeroCopyTransformInput.cpp \
+src/iofwdevent/ZeroCopyTransformInput.hh
