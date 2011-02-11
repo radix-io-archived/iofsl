@@ -34,7 +34,7 @@ void testReadCB (CBException e)
 BOOST_FIXTURE_TEST_CASE( testConstructor, Fixture )
 {
   size = 500;
-  iofwdevent::ZeroCopyMemoryOutput x((void **)&mem_array, size);
+  iofwdevent::ZeroCopyMemoryOutput x((void *)mem_array, size);
 }
 
 BOOST_FIXTURE_TEST_CASE ( testWrite, Fixture)
@@ -42,10 +42,10 @@ BOOST_FIXTURE_TEST_CASE ( testWrite, Fixture)
   Handle h;
   CBType cb = &testReadCB;
   size = 501;
-  void * readloc;
+  void * readloc = malloc(sizeof(char) * 501);
   size_t readSize; 
 
-  iofwdevent::ZeroCopyMemoryOutput x((void **)&readloc, size);
+  iofwdevent::ZeroCopyMemoryOutput x(readloc, size);
   h = x.write(((void **)(&mem_array)), &readSize, cb, 501);
   for (int x = 0; x < 500; x++)
   {
@@ -57,6 +57,7 @@ BOOST_FIXTURE_TEST_CASE ( testWrite, Fixture)
   {
     BOOST_CHECK_EQUAL ( (char)(x % 10), ((char *)readloc)[x]);
   }
+  free(readloc);
 }
 /*
 BOOST_FIXTURE_TEST_CASE (testRewind, Fixture)

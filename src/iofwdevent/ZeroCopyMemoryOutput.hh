@@ -19,14 +19,13 @@ using namespace boost;
 namespace iofwdevent {
   class ZeroCopyMemoryOutput: public ZeroCopyOutputStream {
     protected:
-      boost::scoped_ptr <char> mem; /*< Stores memory location data */
+      void * mem; /*< Stores memory location data */
       size_t memSize;       /*< Stores the size of the memory location */
       size_t pos;           /*< Stores current pointer position inside mem */
       size_t offset;        /*< Minimum possible memory position for M */
-      void ** output;       /*< Where a write will be flushed to */
     public:
       /* Constructor for InputMemoryZeroCopy. */
-      ZeroCopyMemoryOutput  (void ** ,size_t );
+      ZeroCopyMemoryOutput  (void * ,size_t );
 
       /* Cancel operation (not used since this class does not block) */
       void cancel (Handle x) {}; 
