@@ -161,6 +161,8 @@ src/iofwdutil/rm/IntervalMergeTree.cpp \
 src/iofwdutil/mm/IOFWDMemoryManager.hh \
 src/iofwdutil/mm/BMIMemoryManager.hh \
 src/iofwdutil/mm/BMIMemoryManager.cpp \
+src/iofwdutil/mm/NBIOMemoryManager.hh \
+src/iofwdutil/mm/NBIOMemoryManager.cpp \
 \
 src/iofwdutil/transform/GenericTransform.hh \
 src/iofwdutil/transform/GenericTransform.cpp \

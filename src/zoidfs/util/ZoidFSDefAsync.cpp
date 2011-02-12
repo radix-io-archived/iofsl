@@ -14,6 +14,7 @@
 
 #include "zoidfs/hints/zoidfs-hints.h"
 
+#include "iofwdutil/mm/NBIOMemoryManager.hh"
 using boost::format;
 
 GENERIC_FACTORY_CLIENT(std::string,
@@ -243,8 +244,8 @@ namespace zoidfs
                  *(wu->ret_) = wu->api_->rename(wu->from_parent_handle_,
                        wu->from_component_name_, wu->from_full_path_,
                        wu->to_parent_handle_, wu->to_component_name_,
-                       wu->to_full_path_,
-                       wu->from_parent_hint_, wu->to_parent_hint_, wu->hint_);
+                       wu->to_full_path_, wu->from_parent_hint_,
+                       wu->to_parent_hint_, wu->hint_);
               }
               catch (...)
               {
@@ -434,7 +435,7 @@ namespace zoidfs
                         /* free mem allocated for this request */
                         for(i = 0 ; i < wu->mem_count_ ; i++)
                         {
-                            delete static_cast<char *>(const_cast<void *>
+                            delete [] static_cast<char *>(const_cast<void *>
                                 (wu->mem_starts_[i])); 
                         }
                         delete [] wu->mem_starts_;
@@ -451,7 +452,8 @@ namespace zoidfs
                         }
         
                         {
-                            boost::mutex::scoped_lock l(ZoidFSDefAsync::async_write_op_mutex_);
+                            boost::mutex::scoped_lock
+                                l(ZoidFSDefAsync::async_write_op_mutex_);
                             std::map<zoidfs_async_write_op_key, bool>::iterator it =
                                 ZoidFSDefAsync::pending_async_write_ops.find(*(wu->op_key_));
 
@@ -754,84 +756,103 @@ namespace zoidfs
             zoidfs_handle_t * iofsl_h = NULL;
             zoidfs_op_hint_t * iofsl_hint = NULL;
             zoidfs_async_write_op_key * op_key = NULL;
+            size_t total_size = 0;
 
-            /* TODO limit memory allocations */
-
-            try
+            /* compute the total amount of mem required */
+            for(i = 0 ; i < mem_count ; i++)
             {
-                /* copy the handle */
-                iofsl_h = new zoidfs_handle_t;
-                memcpy(iofsl_h, handle, sizeof(zoidfs_handle_t));
+                total_size += mem_sizes[i];
+            }
 
-                /* duplicate the hint */
-                if(hint)
+            /* allocate the buffer wrapper */
+            iofwdutil::mm::NBIOMemoryAlloc * nbio_buffer =
+                new iofwdutil::mm::NBIOMemoryAlloc(total_size);
+            if(iofwdutil::mm::NBIOMemoryManager::instance().try_alloc(nbio_buffer))
+            {
+                try
                 {
-                    iofsl_hint = new zoidfs_op_hint_t;
-                    zoidfs::hints::zoidfs_hint_create(iofsl_hint);
-                    zoidfs::hints::zoidfs_hint_dup(*hint, iofsl_hint);
-                }
+                    /* copy the handle */
+                    iofsl_h = new zoidfs_handle_t;
+                    memcpy(iofsl_h, handle, sizeof(zoidfs_handle_t));
 
-                /* copy the mem params */
-                iofsl_mem_starts = new void*[mem_count];
-                iofsl_mem_sizes = new size_t[mem_count];
-                for(i = 0 ; i < mem_count ; i++)
-                {
-                    iofsl_mem_sizes[i] = mem_sizes[i];
-                    iofsl_mem_starts[i] = new char[mem_sizes[i]];
-                    memcpy(iofsl_mem_starts[i], mem_starts[i], mem_sizes[i]); 
-                }
+                    /* duplicate the hint */
+                    if(hint)
+                    {
+                        iofsl_hint = new zoidfs_op_hint_t;
+                        zoidfs::hints::zoidfs_hint_create(iofsl_hint);
+                        zoidfs::hints::zoidfs_hint_dup(*hint, iofsl_hint);
+                    }
 
-                /* copy the file params */
-                iofsl_file_starts = new zoidfs_file_ofs_t[file_count];
-                iofsl_file_sizes = new zoidfs_file_size_t[file_count];
-                for(i = 0 ; i < file_count ; i++)
-                {
-                    iofsl_file_starts[i] = file_starts[i];
-                    iofsl_file_sizes[i] = file_sizes[i];
-                }
+                    /* copy the mem params */
+                    iofsl_mem_starts = new void*[mem_count];
+                    iofsl_mem_sizes = new size_t[mem_count];
+                    for(i = 0 ; i < mem_count ; i++)
+                    {
+                        iofsl_mem_sizes[i] = mem_sizes[i];
+                        iofsl_mem_starts[i] = new char[mem_sizes[i]];
+                        memcpy(iofsl_mem_starts[i], mem_starts[i], mem_sizes[i]); 
+                    }
 
-                /* track the write operation */
-                {
-                    boost::mutex::scoped_lock 
-                        l(ZoidFSDefAsync::async_write_op_mutex_);
-                    op_key = new zoidfs_async_write_op_key(*iofsl_h,
+                    /* copy the file params */
+                    iofsl_file_starts = new zoidfs_file_ofs_t[file_count];
+                    iofsl_file_sizes = new zoidfs_file_size_t[file_count];
+                    for(i = 0 ; i < file_count ; i++)
+                    {
+                        iofsl_file_starts[i] = file_starts[i];
+                        iofsl_file_sizes[i] = file_sizes[i];
+                    }
+
+                    /* track the write operation */
+                    {
+                        boost::mutex::scoped_lock 
+                            l(ZoidFSDefAsync::async_write_op_mutex_);
+                        op_key = new zoidfs_async_write_op_key(*iofsl_h,
                             ++ZoidFSDefAsync::write_op_count_);
-                    ZoidFSDefAsync::pending_async_write_ops[*op_key] = true;
-                }
+                        ZoidFSDefAsync::pending_async_write_ops[*op_key] = true;
+                    }
  
-                /* create the zoidfs write work unit using the copied
-                   params */
-                ZoidFSDefAsyncWriteWorkUnit * wu = new
-                    ZoidFSDefAsyncWriteWorkUnit(cb, ret, api_.get(), tp_,
-                            iofsl_h, mem_count, const_cast<const void
-                            **>(iofsl_mem_starts), iofsl_mem_sizes,
-                            file_count, iofsl_file_starts,
-                            iofsl_file_sizes, iofsl_hint, op_key);
+                    /* create the zoidfs write work unit using the copied
+                       params */
+                    ZoidFSDefAsyncWriteWorkUnit * wu = new
+                        ZoidFSDefAsyncWriteWorkUnit(cb, ret, api_.get(), tp_,
+                                iofsl_h, mem_count, const_cast<const void
+                                **>(iofsl_mem_starts), iofsl_mem_sizes,
+                                file_count, iofsl_file_starts,
+                                iofsl_file_sizes, iofsl_hint, op_key);
 
-                /* submit the work unit to the TP */
-                if(highpriooplist_[zoidfs::ZOIDFS_PROTO_WRITE])
-                {
-                    submitWorkUnit(boost::bind(&ZoidFSDefAsync::runWorkUnit,
-                                wu), iofwdutil::ThreadPool::HIGH);
-                }
-                else
-                {
-                    submitWorkUnit(boost::bind(&ZoidFSDefAsync::runWorkUnit,
-                                wu), iofwdutil::ThreadPool::LOW);
-                }
+                    /* submit the work unit to the TP */
+                    if(highpriooplist_[zoidfs::ZOIDFS_PROTO_WRITE])
+                    {
+                        submitWorkUnit(boost::bind(&ZoidFSDefAsync::runWorkUnit,
+                                    wu), iofwdutil::ThreadPool::HIGH);
+                    }
+                    else
+                    {
+                        submitWorkUnit(boost::bind(&ZoidFSDefAsync::runWorkUnit,
+                                    wu), iofwdutil::ThreadPool::LOW);
+                    }
 
-                /* set the return code to success */
-                *ret = ZFS_OK;
+                    /* set the return code to success */
+                    *ret = ZFS_OK;
+                }
+                catch(...)
+                {
+                    e = boost::current_exception();
+                }
+                /* invoke the callback now */
+                cb(e);
             }
-            catch(...)
+            /* we could not allocate the buffer space for the nbio...
+               switch to blocking io and ignore hint */
+            else
             {
-                e = boost::current_exception();
+                nbflag = false;
+                delete nbio_buffer;
             }
-            /* invoke the callback now */
-            cb(e);
         }
+
         /* blocking IO mode */
-        else
+        if(!nbflag)
         {
             /* create the zoidfs write work unit using the copied params */
             ZoidFSDefAsyncWriteWorkUnit * wu = new

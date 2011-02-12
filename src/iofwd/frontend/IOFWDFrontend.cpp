@@ -42,6 +42,7 @@
 #include "IOFWDLinkRequest.hh"
 
 #include "iofwdutil/mm/BMIMemoryManager.hh"
+#include "iofwdutil/mm/NBIOMemoryManager.hh"
 
 using namespace iofwdutil::bmi;
 using namespace iofwdutil;
@@ -121,6 +122,10 @@ IOFWDFrontend::~IOFWDFrontend ()
    iofwdutil::mm::BMIMemoryManager::instance().reset();
    delete &iofwdutil::mm::BMIMemoryManager::instance();
 
+   ZLOG_INFO (log_, "Stopping NBIO memory manager...");
+   iofwdutil::mm::NBIOMemoryManager::instance().reset();
+   delete &iofwdutil::mm::NBIOMemoryManager::instance();
+
 }
 
 void IOFWDFrontend::init ()
@@ -136,6 +141,14 @@ void IOFWDFrontend::init ()
    /* set the max amount of BMI memory allocs by total bytes (def is 256 MB) */
    iofwdutil::mm::BMIMemoryManager::instance().setMaxMemAmount(lc.getKeyAsDefault("maxmem", 256UL * 1024UL * 1024UL));
    iofwdutil::mm::BMIMemoryManager::instance().start();
+
+   /* start the NBIO memory manager */
+   ZLOG_INFO (log_, "Starting NBIO memory manager...");
+   lc = config_.openSectionDefault("nbiomemorymanager");
+   iofwdutil::mm::NBIOMemoryManager::instance().setMaxNumBuffers(lc.getKeyAsDefault("maxnumbuffers", 0));
+   /* set the max amount of NBIO memory allocs by total bytes (def is 256 MB) */
+   iofwdutil::mm::NBIOMemoryManager::instance().setMaxMemAmount(lc.getKeyAsDefault("maxmem", 256UL * 1024UL * 1024UL));
+   iofwdutil::mm::NBIOMemoryManager::instance().start();
 }
 
 void IOFWDFrontend::run()
