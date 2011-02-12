@@ -444,7 +444,8 @@ namespace zoidfs
                         delete [] wu->file_sizes_;
 
                         delete wu->handle_;
-                 
+                
+                        iofwdutil::mm::NBIOMemoryManager::instance().dealloc(wu->alloc_); 
                         if(wu->hint_)
                         {
                             zoidfs::hints::zoidfs_hint_free(wu->hint_);
@@ -818,7 +819,8 @@ namespace zoidfs
                                 iofsl_h, mem_count, const_cast<const void
                                 **>(iofsl_mem_starts), iofsl_mem_sizes,
                                 file_count, iofsl_file_starts,
-                                iofsl_file_sizes, iofsl_hint, op_key);
+                                iofsl_file_sizes, iofsl_hint, op_key,
+                                nbio_buffer);
 
                     /* submit the work unit to the TP */
                     if(highpriooplist_[zoidfs::ZOIDFS_PROTO_WRITE])

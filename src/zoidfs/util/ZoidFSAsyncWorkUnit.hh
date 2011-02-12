@@ -7,6 +7,7 @@
 #include "iofwdutil/LinkHelper.hh"
 #include "zoidfs/zoidfs-proto.h"
 #include "src/zoidfs/util/zoidfs-ops.hh"
+#include "iofwdutil/mm/NBIOMemoryManager.hh"
 
 namespace zoidfs
 {
@@ -100,7 +101,8 @@ namespace zoidfs
                         const zoidfs_file_ofs_t file_starts[],
                         const zoidfs_file_size_t file_sizes[],
                         zoidfs_op_hint_t * hint,
-                        zoidfs_async_write_op_key * op_key = NULL) :
+                        zoidfs_async_write_op_key * op_key = NULL,
+                        iofwdutil::mm::NBIOMemoryAlloc * alloc = NULL) :
 
                     ZoidFSDefAsyncWorkUnit(cb, ret, api,
                             zoidfs::ZOIDFS_PROTO_WRITE, tp),
@@ -111,7 +113,8 @@ namespace zoidfs
                     file_starts_(file_starts),
                     file_sizes_(file_sizes),
                     hint_(hint),
-                    op_key_(op_key)
+                    op_key_(op_key),
+                    alloc_(alloc)
                 {
                 }
 
@@ -124,6 +127,7 @@ namespace zoidfs
                 const zoidfs_file_size_t * file_sizes_;
                 zoidfs_op_hint_t * hint_;
                 zoidfs_async_write_op_key * op_key_;
+                iofwdutil::mm::NBIOMemoryAlloc * alloc_;
         };
 
         class ZoidFSDefAsyncGetattrWorkUnit : public ZoidFSDefAsyncWorkUnit
