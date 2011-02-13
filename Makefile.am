@@ -9,6 +9,18 @@ check_PROGRAMS =
 EXTRA_PROGRAMS =
 EXTRA_DIST =
 
+#
+# Client library (C++)
+#   List all the .cpp / .hh files that need to go in the library in this
+#   variable
+#
+CPPCLIENTLIB =
+
+#
+# Client librar (C)
+#   List all the .c / .h files
+CLIENTLIB =
+
 AM_CPPFLAGS = -I$(top_srcdir)/src \
 	      -I$(top_srcdir)/src/iofwdutil \
 	      -I$(top_srcdir)/src/zoidfs \
@@ -42,6 +54,7 @@ $(pkgconfig_DATA): config.status
 #
 include Make.rules
 
+include $(top_srcdir)/src/iofwdclient/Makefile.subdir
 include $(top_srcdir)/src/sm/Makefile.subdir
 include $(top_srcdir)/src/iofwdevent/Makefile.subdir
 include $(top_srcdir)/src/iofwd/Makefile.subdir

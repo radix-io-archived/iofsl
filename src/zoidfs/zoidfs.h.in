@@ -219,6 +219,7 @@ enum {
     ZFSERR_DQUOT=69,
     ZFSERR_STALE=70,
     ZFSERR_WFLUSH=99,
+    ZFSERR_TIMEOUT=1000,
     ZFSERR_OTHER=99999
 };
 
@@ -231,17 +232,24 @@ typedef uint64_t zoidfs_file_size_t;
 typedef uint64_t zoidfs_file_ofs_t;
 
 /**
- * OPTIONAL
+ * Initialize the zoidfs library.
+ * Can be called multiple times.
+ * This method is *NOT* threadsafe.
  */
 int zoidfs_init(void);
 
 /**
- * OPTIONAL
+ * Shut down the zoidfs library.
+ * Should be called once for each call to zoidfs_init.
+ * This method is *NOT* threadsafe.
  */
 int zoidfs_finalize(void);
 
-/* START-ZOID-SCANNER ID=1 INIT=__zoidfs_init FINI=__zoidfs_finalize PROC=NULL */
 
+/**
+ * Perform a null operation. Can be used to check if the forwarding server is
+ * responding.
+ */
 int zoidfs_null(void);
 
 /** 

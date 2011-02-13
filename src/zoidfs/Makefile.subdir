@@ -1,7 +1,8 @@
 # empty
 
 include_HEADERS = src/zoidfs/zoidfs.h \
-                  src/zoidfs/hints/zoidfs-hints.h
+                  src/zoidfs/hints/zoidfs-hints.h \
+		  src/zoidfs/zoidfs-async.h
 
 noinst_HEADERS += \
 		 src/zoidfs/zoidfs-comm.h \
