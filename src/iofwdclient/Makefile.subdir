@@ -1,0 +1,22 @@
+CPPCLIENTLIB += \
+    src/iofwdclient/IOFWDRequest.hh \
+    src/iofwdclient/IOFWDRequest.cpp \
+    src/iofwdclient/RequestTracker.hh \
+    src/iofwdclient/RequestTracker.cpp \
+    src/iofwdclient/IOFWDClientCB.hh \
+    src/iofwdclient/IOFWDClient.hh \
+    src/iofwdclient/IOFWDClient.cpp \
+    src/iofwdclient/CBClient.hh \
+    src/iofwdclient/CBClient.cpp \
+    src/iofwdclient/ASClient.hh \
+    src/iofwdclient/ASClient.cpp \
+    src/iofwdclient/ScopedRequest.hh \
+    src/iofwdclient/iofwdclientlib.cpp
+
+#
+# It is OK to define this here, even if we add sources to CLIENTLIB later on;
+# The expression is not evaluated at this point.
+#
+lib_LIBRARIES += src/iofwdclient/libiofwdclient.a
+src_iofwdclient_libiofwdclient_a_SOURCES = $(CPPCLIENTLIB)
+
