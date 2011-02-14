@@ -2,6 +2,8 @@
 #define ZOIDFS_UTIL_ZOIDFSDEFASYNC_HH
 
 #include <boost/thread.hpp>
+#include <boost/thread/mutex.hpp>
+#include <boost/thread/condition.hpp>
 #include "ZoidFSAPI.hh"
 #include "ZoidFSAsync.hh"
 #include "iofwdutil/ThreadPool.hh"
@@ -20,6 +22,56 @@ namespace zoidfs
 
     namespace util
     {
+
+        /* async io error and pending trackers */
+        class ZoidFSTrackerData
+        {
+            public:
+                ZoidFSTrackerData() :
+                    ref_count_(0), err_(ZFS_OK)
+                {
+                }
+
+                ZoidFSTrackerData(const ZoidFSTrackerData & rhs)
+                {
+                    /* lock the rhs */
+                    boost::mutex::scoped_lock
+                        lock(const_cast<ZoidFSTrackerData &>(rhs).mutex_);
+
+                    /* copy rhs to lhs */
+                    ref_count_ = rhs.ref_count_;
+                    err_ = rhs.err_;
+                }
+
+                const ZoidFSTrackerData & operator= (const ZoidFSTrackerData &
+                        rhs)
+                {
+                    /* check if this is the same obj */
+                    if(this == &rhs)
+                        return *this;
+
+                    /* lock both objs */
+                    boost::mutex::scoped_lock lock1(&mutex_ < &rhs.mutex_ ?
+                        mutex_ : const_cast<ZoidFSTrackerData &>(rhs).mutex_);
+                    boost::mutex::scoped_lock lock2(&mutex_ >
+                        &rhs.mutex_ ? mutex_ : 
+                        const_cast<ZoidFSTrackerData &>(rhs).mutex_);
+
+                    /* copy rhs to lhs */
+                    ref_count_ = rhs.ref_count_;
+                    err_ = rhs.err_;
+
+                    return *this;
+                }
+
+                uint64_t ref_count_;
+                int err_;
+                boost::mutex mutex_;
+                boost::condition condition_;
+        };
+
+        typedef std::map<zoidfs_handle_t, ZoidFSTrackerData *> ZoidFSHandleTracker;
+
 //==========================================================================
 
    /**
@@ -245,10 +297,8 @@ namespace zoidfs
       iofwdutil::ThreadPool & tp_;
       bool highpriooplist_[zoidfs::ZOIDFS_PROTO_MAX];
 
-      static boost::mutex async_write_op_mutex_;
-      static std::map<zoidfs_async_write_op_key, bool>
-          pending_async_write_ops;
-      static uint64_t write_op_count_;
+      static boost::mutex handle_tracker_mutex_;
+      static ZoidFSHandleTracker handle_tracker_;
    };
 
 //==========================================================================
