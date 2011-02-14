@@ -447,7 +447,7 @@ namespace iofwdevent
 
       for (int i=0; i<outcount; ++i)
       {
-         checkBMI (errors_[i]);
+         // checkBMI (errors_[i]);
          BMIEntry & e = *users_[i];
 
          if (e.actual)
