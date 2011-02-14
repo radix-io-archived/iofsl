@@ -1,0 +1,15 @@
+my_net_sources += \
+	src/net/bmi/BMIConnector.hh  \
+	src/net/bmi/BMIConnector.cpp \
+	src/net/bmi/BMIInputStream.hh \
+	src/net/bmi/BMIInputStream.cpp \
+	src/net/bmi/BMIOutputStream.cpp \
+	src/net/bmi/BMIOutputStream.hh \
+	src/net/bmi/BMIInput.hh \
+	src/net/bmi/BMIInput.cpp \
+	src/net/bmi/BMIOutput.cpp \
+	src/net/bmi/BMIOutput.hh \
+	src/net/bmi/BMIStreamHeaders.hh \
+	src/net/bmi/BMIStreamHeaders.cpp \
+	src/net/bmi/BMIAddress.hh \
+	src/net/bmi/BMIAddress.cpp

@@ -21,7 +21,17 @@ AM_CPPFLAGS = -I$(top_srcdir)/src \
 	
 AM_CFLAGS = @FUSE_CFLAGS@ @ZFS_DISPATCHER_CFLAGS@ @ATOMICS_CFLAGS@
 
-AM_LIBS = @ATOMICS_LIBS@
+AM_LIBS = @BOOST_DATE_TIME_LIB@ @BOOST_PROGRAM_OPTIONS_LIB@ @BOOST_REGEX_LIB@ \
+	  @BOOST_THREAD_LIB@ @BOOST_UNIT_TEST_FRAMEWORK_LIB@ \
+	  @CUNIT_LIBS@ @FUSE_LIBS@ @GLIB_LIBS@ @OPENPA_LIBS@ @OPENSSL_LIBS@ \
+	  @PVFS2_LIBS@ @SYSIO_LIBS@ @ZLIB_LIBS@ @ATOMICS_LIBS@ @BMI_LIBS@ \
+	  @ATOMICS_LIBS@
+
+AM_LDFLAGS = @BOOST_LDFLAGS@ @BMI_LDFLAGS@ @CUNIT_LDFLAGS@ @FUSE_LDFLAGS@ \
+	     @GLIB_LDFLAGS@ @GRIDFTP_LDFLAGS@ @OPENPA_LDFLAGS@ \
+	     @OPENSSL_LDFLAGS@ \
+	     @PVFS2_LDFLAGS@ @SYSIO_LDFLAGS@ @ZFS_DISPATCHER_LDFLAGS@ \
+	     @ZLIB_LDFLAGS@ @BMI_LDFLAGS@
 
 AM_CXXFLAGS = $(AM_CFLAGS)
 
@@ -42,6 +52,7 @@ $(pkgconfig_DATA): config.status
 #
 include Make.rules
 
+include $(top_srcdir)/src/net/Makefile.subdir
 include $(top_srcdir)/src/sm/Makefile.subdir
 include $(top_srcdir)/src/iofwdevent/Makefile.subdir
 include $(top_srcdir)/src/iofwd/Makefile.subdir
