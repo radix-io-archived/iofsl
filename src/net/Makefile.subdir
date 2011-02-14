@@ -1,0 +1,19 @@
+noinst_LIBRARIES += src/net/libnet.a
+
+my_net_sources = \
+   src/net/Connection.hh \
+   src/net/Net.hh \
+   src/net/Net.cpp \
+   src/net/Address.hh \
+   src/net/Address.cpp \
+   src/net/Group.hh \
+   src/net/Group.cpp \
+   src/net/Net-fwd.hh \
+   src/net/Communicator.hh 
+
+
+include src/net/bmi/Makefile.subdir
+include src/net/loopback/Makefile.subdir
+
+
+src_net_libnet_a_SOURCES = $(my_net_sources)
