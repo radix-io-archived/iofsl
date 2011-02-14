@@ -63,6 +63,34 @@ endif
 #test_rpc_SOURCES = test/rpc.cpp
 #test_rpc_LDFLAGS = $(AM_LDFLAGS) ${test_unit_tests_ldflags}
 
+cppldflags = $(AM_LDFLAGS) ${test_unit_tests_ldflags} \
+		       @BMI_LDFLAGS@ @BOOST_LDFLAGS@
+
+cppldadd = \
+	${top_builddir}/src/net/libnet.a \
+	${top_builddir}/src/zoidfs/libzoidfs-util.a \
+	${top_builddir}/src/zoidfs/libzoidfsprofile.a \
+	${top_builddir}/src/zoidfs/libzoidfs.a \
+	${top_builddir}/src/sm/libsm.a \
+	${top_builddir}/src/iofwdutil/libiofwdutil.a \
+	${top_builddir}/src/c-util/libiofsl-c-util.a \
+	${top_builddir}/src/zoidfs/libzoidfshints.a \
+	${top_builddir}/src/iofwdevent/libiofwdevent.a \
+	${top_builddir}/src/encoder/libencoder.a \
+	@BOOST_PROGRAM_OPTIONS_LIB@ \
+	@BOOST_DATE_TIME_LIB@ \
+	@BOOST_THREAD_LIB@ \
+	@BOOST_REGEX_LIB@ \
+    @ZFS_DISPATCHER_LIBS@ \
+    @BMI_LIBS@ \
+	${test_unit_tests_ldadd}
+
+
+noinst_PROGRAMS += test/net
+test_net_SOURCES = test/net.cpp test/TrackLive.cpp test/TrackLive.hh \
+		   test/boost/DataGenerator.hh test/boost/DataValidator.hh
+test_net_LDFLAGS = ${cppldflags}
+test_net_LDADD = ${cppldadd}
 
 #
 # microbenchmark build rules

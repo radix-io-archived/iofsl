@@ -1,14 +1,16 @@
 #ifndef TEST_BOOST_TESTDATA_HH
 #define TEST_BOOST_TESTDATA_HH
 
-#include <boost/test/unit_test.hpp>
 #include <boost/format.hpp>
 #include "iofwdutil/assert.hh"
+#include "test/boost/DataValidator.hh"
+#include "test/boost/DataGenerator.hh"
 
 /**
  * Generates data (or validates it)
  */
-struct TestData
+struct TestData : public DataValidator,
+                  public DataGenerator
 {
    public:
       
@@ -43,7 +45,8 @@ struct TestData
          {
             if (*p != nextval_)
             {
-               BOOST_FAIL(str(boost::format("Was expecting %i, got %i. Aborting")
+               throw std::string (
+                    str(boost::format("Was expecting %i, got %i. Aborting")
                         % (int) *p % (int) nextval_));
             }
             ++nextval_;

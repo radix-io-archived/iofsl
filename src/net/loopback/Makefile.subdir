@@ -1,0 +1,11 @@
+my_net_sources += \
+	src/net/loopback/LoopbackInput.hh \
+	src/net/loopback/LoopbackOutput.hh \
+	src/net/loopback/LoopbackInput.cpp \
+	src/net/loopback/LoopbackOutput.cpp \
+	src/net/loopback/LoopbackConnector.cpp \
+	src/net/loopback/LoopbackConnector.hh \
+	src/net/loopback/MessageQueue.hh \
+	src/net/loopback/MessageQueue.cpp \
+	src/net/loopback/LoopbackAddress.hh \
+	src/net/loopback/LoopbackAddress.cpp
