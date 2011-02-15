@@ -31,7 +31,7 @@ namespace iofwdevent {
       ZeroCopyMemoryInput  (const void * , size_t );
 
       /* Cancel operation (not used since this class does not block) */
-      void cancel (Handle x) {}; 
+      void cancel (Handle x) {x = (Handle)0;}; 
 
       /* Read from the input stream */
       Handle read (const void **, size_t * , const CBType &, size_t );
