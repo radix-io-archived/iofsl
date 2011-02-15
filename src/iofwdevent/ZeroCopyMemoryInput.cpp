@@ -68,12 +68,14 @@ size_t ZeroCopyMemoryInput::spaceRemaining (void)
  * @param[in] in        Region of memory (with data) to convert into an 
  *                      input stream
  * @param[in] len       Length of the memory region void * in.
+ * @return              Status of the operation ( > 0 = success)
  */
 int ZeroCopyMemoryInput::reset (const void * in, size_t len)
 {
   this->mem = in;
   this->pos = 0;
   this->memSize = len;
+  return 1;
 }
 
 
@@ -90,7 +92,9 @@ int ZeroCopyMemoryInput::reset (const void * in, size_t len)
  */
 Handle ZeroCopyMemoryInput::rewindInput (size_t size, const CBType & cb)
 {
-  if (size - this->pos >= 0)
+  int64_t adjustPos = size;
+  int64_t curPos = this->pos;
+  if (adjustPos - curPos >= 0)
     this->pos = this->pos - size;
   cb(*(new CBException()));
   return (void *)0; 
