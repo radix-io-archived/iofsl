@@ -2,10 +2,18 @@
 #define IOFWDCLIENT_CBCLIENT_HH
 
 #include "iofwdclient/IOFWDClientCB.hh"
+#include "iofwdclient/clientsm/GetAttrClientSM.hh"
 
 #include "zoidfs/zoidfs-async.h"
 
 #include "iofwdutil/IOFWDLog-fwd.hh"
+
+#include "sm/SMManager.hh"
+
+#include <boost/scoped_ptr.hpp>
+
+#include <queue>
+
 
 namespace iofwdclient
 {
@@ -17,7 +25,7 @@ namespace iofwdclient
    class CBClient
    {
       public:
-         CBClient ();
+         CBClient (bool poll = true);
 
          ~CBClient ();
 
@@ -32,6 +40,10 @@ namespace iofwdclient
 
       protected:
          iofwdutil::IOFWDLogSource & log_;
+         boost::scoped_ptr<sm::SMManager> smm_;
+         bool poll_;
+
+         std::queue<iofwdclient::clientsm::GetAttrClientSM *> temp_smclient_queue_;
    };
 
    //========================================================================

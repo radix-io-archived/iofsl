@@ -5,6 +5,10 @@
 
 #include "iofwdutil/assert.hh"
 #include "SMManager.hh"
+#include "iofwdutil/tools.hh"
+
+#include <boost/date_time/posix_time/posix_time.hpp>
+#include <boost/thread/thread_time.hpp>
 
 using boost::format;
 
@@ -108,17 +112,75 @@ SMManager::~SMManager ()
 }
 
 
-SMManager::SMManager (size_t count) 
-   : threads_(count), high_prio_tp_(true),
-   finish_(false),
-   log_(iofwdutil::IOFWDLog::getSource ("smmanager")),
-   tp_(iofwdutil::ThreadPool::instance())
+SMManager::SMManager (bool poll_enabled, size_t count) :
+    poll_enabled_(poll_enabled),
+    polling_(false),
+    threads_(count),
+    high_prio_tp_(true),
+    finish_(false),
+    log_(iofwdutil::IOFWDLog::getSource ("smmanager")),
+    tp_(iofwdutil::ThreadPool::instance())
 {
 }
 
 void SMManager::useHighPrioTP(bool mode)
 {
     high_prio_tp_ = mode;
+}
+
+/* derived from the BMIResource poll() code */
+void SMManager::poll(size_t minwaitms, size_t maxwaitms)
+{
+    // Calculate min time we want to try polling
+    boost::system_time mintimeout = boost::get_system_time() +
+        boost::posix_time::milliseconds(minwaitms);
+    boost::system_time maxtimeout = boost::get_system_time() +
+        boost::posix_time::milliseconds(maxwaitms);
+
+    // Try to get the polling right until minwaitms has passed
+    {
+        boost::mutex::scoped_lock l(poll_lock_);
+        while(polling_)
+        {
+            if(!poll_cond_.timed_wait(l, mintimeout))
+            {
+                // Timeout; somebody else is still polling
+                return;
+            }
+        }
+    }
+
+    /* we're polling */
+    polling_ = true;
+
+    // We try to poll for the remainder of the time (until maxtimeout)
+    boost::posix_time::time_duration polltime(maxtimeout -
+            boost::get_system_time());
+    size_t remaining = std::max((boost::int64_t) 0,
+        polltime.total_milliseconds());
+
+    // If we did specify a timeout and it already passed, don't try to poll.
+    // Otherwise, if the timeout was zero, try to poll once.
+    if(!remaining && maxwaitms != 0)
+        return;
+
+    poll_unprotected(remaining);
+
+    // Release polling token and wake waiters
+    boost::mutex::scoped_lock l(poll_lock_);
+
+    /* we're done polling */
+    polling_ = false;
+    poll_cond_.notify_one();
+}
+
+void SMManager::poll_unprotected(size_t UNUSED(maxwait))
+{
+}
+
+void SMManager::enableThreadPool(bool usetp)
+{
+    poll_enabled_ = !usetp;
 }
 
 //===========================================================================

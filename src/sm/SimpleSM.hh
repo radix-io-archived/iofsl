@@ -13,7 +13,7 @@ namespace sm
 
    /**
     *
-    *   Type T must contain a init(int status) method.
+    *   Type T must contain a init(CBException) method.
     *
     */
    template <typename T>
@@ -37,7 +37,7 @@ namespace sm
       { yield_ = true; }
 
    public:
-      SimpleSM (SMManager & smm);
+      SimpleSM (SMManager & smm, bool poll);
 
       virtual ~SimpleSM ();
 
@@ -66,7 +66,18 @@ namespace sm
 
          if (!running_)
          {
-            smm_.schedule (this);
+             /* if we are in poll mode, execute the next state now ! */
+             if(poll_)
+             {
+                /* XXX Is this safe to do ? */
+                l.unlock();
+                execute();
+             }
+             /* other wise, submit to the SMManager */
+             else
+             {
+                smm_.schedule(this);
+             }
          }
       }
 
@@ -99,6 +110,7 @@ namespace sm
       iofwdevent::CBException next_status_;
       bool yield_;
       bool running_;
+      bool poll_;
 
       boost::mutex state_lock_;
    };
@@ -108,9 +120,9 @@ namespace sm
 //===========================================================================
 
 template <typename T>
-SimpleSM<T>::SimpleSM (SMManager & m)
+SimpleSM<T>::SimpleSM (SMManager & m, bool poll = false)
   : smm_(m), next_(0), yield_(false),
-   running_(false)
+   running_(false), poll_(poll)
 {
    setNextMethodT<&T::init> (iofwdevent::CBException ());
 }
