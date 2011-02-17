@@ -2,12 +2,16 @@
 #define SM_SMMANAGER_HH
 
 #include <vector>
-#include <boost/thread.hpp>
 #include <queue>
 #include <csignal>
+
 #include "iofwdutil/IOFWDLog.hh"
 #include "SMClient.hh"
+#include "iofwdevent/ThreadedResource.hh"
 #include "iofwdutil/ThreadPool.hh"
+
+#include <boost/thread.hpp>
+#include <boost/thread/thread_time.hpp>
 
 namespace sm
 {
@@ -30,13 +34,18 @@ public:
    /**
     * Construct an SMManager with the specified number of worker threads.
     */
-   SMManager (size_t threads  = 0);
+   SMManager (bool enable_poll = false, size_t threads  = 0);
 
    /**
     * Queue an item for execution.
     * Will keep the item alive until it executed.
     */
    void schedule (SMClient * client);
+
+   /*
+      Poll for item completion based on time limits
+    */
+   void poll(size_t minwaitms, size_t maxwaitms);
 
    /**
     * Immediately execute the client until it blocks.
@@ -51,13 +60,18 @@ public:
    void stopThreads();
 
    void useHighPrioTP(bool mode);
-protected:
 
+   void enableThreadPool(bool usetp);
+
+protected:
+   void poll_unprotected(size_t maxwait);
 
    /// Worker thread entry point.
    void workerMain ();
 
 protected:
+   bool poll_enabled_;
+   bool polling_;
    size_t threads_;
    bool high_prio_tp_;
 
@@ -74,6 +88,10 @@ protected:
    iofwdutil::zlog::ZLogSource & log_;
 
    iofwdutil::ThreadPool & tp_;
+
+   /* polling mode locks */
+   boost::mutex poll_lock_;
+   boost::condition_variable poll_cond_;
 
    class SMWrapper
    {
