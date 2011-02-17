@@ -104,6 +104,10 @@ sandbox_factory_SOURCES = sandbox/factory.cpp
 sandbox_factory_LDFLAGS = $(sandbox_ldflags)
 sandbox_factory_LDADD = $(top_builddir)/src/iofwdutil/libiofwdutil.a
 
+EXTRA_PROGRAMS += sandbox/cbclienttest
+sandbox_cbclienttest_SOURCES = sandbox/cbclienttest.cpp
+sandbox_cbclienttest_LDFLAGS = $(sandbox_ldflags)
+sandbox_cbclienttest_LDADD = $(top_builddir)/src/iofwdclient/libiofwdclient.a $(top_builddir)/src/sm/libsm.a $(top_builddir)/src/iofwdevent/libiofwdevent.a $(sandbox_ldadd) $(sandbox_ldflags)
 
 #if HAVE_MPI
 #EXTRA_PROGRAMS += sandbox/mpi-server
