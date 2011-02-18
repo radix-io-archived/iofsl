@@ -34,16 +34,16 @@ namespace zoidfs
 //===========================================================================
 
 
-#define LOG(a) ZLOG_DEBUG((*log_.get()),a)
+#define LOG(a) ZLOG_DEBUG((*log_),a)
 
 void LogAPI::configure (const iofwdutil::ConfigFile & config)
 {
    std::string logsource = config.getKeyDefault ("logname", "LogAPI");
    std::string apiname = config.getKeyDefault ("blocking_api", "zoidfs");
 
-   log_.reset (&iofwdutil::IOFWDLog::getSource (logsource.c_str()));
-   ZLOG_INFO((*log_.get()), format("Using log source name '%s'") % logsource);
-   ZLOG_INFO((*log_.get()), format("Using zoidfs blocking API '%s'") % apiname);
+   log_ = &iofwdutil::IOFWDLog::getSource (logsource.c_str());
+   ZLOG_INFO((*log_), format("Using log source name '%s'") % logsource);
+   ZLOG_INFO((*log_), format("Using zoidfs blocking API '%s'") % apiname);
    api_.reset (iofwdutil::Factory<
                         std::string,
                         zoidfs::util::ZoidFSAPI>::construct(apiname)());
@@ -293,7 +293,7 @@ void LogAPI::checkerror (int ret) const
    if (ret == zoidfs::ZFS_OK)
       return;
 
-   ZLOG_DEBUG((*log_.get()),format("!!ZoidFS call returned error!!: %s") %
+   ZLOG_DEBUG((*log_),format("!!ZoidFS call returned error!!: %s") %
          zfserror2string(ret))
 }
 
