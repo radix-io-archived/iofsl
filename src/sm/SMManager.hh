@@ -101,7 +101,7 @@ protected:
             {
             }
 
-            SMClient * client_;
+            boost::intrusive_ptr<SMClient> client_;
             iofwdutil::ThreadPool & tp_;
             
    };
@@ -117,12 +117,6 @@ protected:
                 {
                 } while (w->client_->execute());
     
-                /* TODO: we shouldn't need to manually manage the ref count */
-                if (!w->client_->removeref())
-                {
-                    delete w->client_;
-                }
-
                 /* reschedule the thread with more work from the tp */
 #ifndef USE_CRAY_TP
                 boost::this_thread::at_thread_exit(iofwdutil::ThreadPoolKick(w->tp_));

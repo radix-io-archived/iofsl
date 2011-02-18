@@ -34,9 +34,6 @@ void SMManager::schedule (SMClient * client)
    /* use submitWorkUnit method to avoid the tp queues */
    SMWrapper * w = new SMWrapper(client, tp_);
 
-   /* TODO: we shouldn't need to manually manage the ref count */
-   client->addref();
-
    if(high_prio_tp_)
     tp_.submitWorkUnit(boost::bind(&SMManager::submitWorkUnit, w), iofwdutil::ThreadPool::HIGH);
    else
