@@ -7,6 +7,7 @@
 #include "zoidfs/zoidfs-async.h"
 
 #include "iofwdutil/IOFWDLog-fwd.hh"
+#include "src/iofwdutil/always_assert.hh"
 
 #include "sm/SMManager.hh"
 #include "sm/SMClient.hh"
@@ -44,12 +45,10 @@ namespace iofwdclient
         class CBSMWrapper
         {
             public:
-                CBSMWrapper(const IOFWDClientCB & cb,
-                        sm::SMClient * sm = NULL) :
-                    cb_(cb),
-                    sm_(sm),
-                    wcb_(boost::bind(&CBClient::cbWrapper, this, _1, _2))
+                static CBSMWrapper * createCBSMWrapper(const IOFWDClientCB & cb,
+                        sm::SMClient * sm = NULL)
                 {
+                    return new CBSMWrapper(cb, sm);
                 }
 
                 void set(sm::SMClient * sm)
@@ -69,6 +68,41 @@ namespace iofwdclient
                 }
 
             protected:
+                /* prevent stack allocation and copying of CBWrapper objects */
+                CBSMWrapper(const IOFWDClientCB & cb,
+                        sm::SMClient * sm = NULL) :
+                    cb_(cb),
+                    sm_(sm),
+                    wcb_(boost::bind(&CBClient::cbWrapper, this, _1, _2))
+                {
+                }
+
+                CBSMWrapper() : 
+                    cb_(boost::bind(&CBSMWrapper::cbsentinel, this, _1, _2)),
+                    sm_(NULL),
+                    wcb_(boost::bind(&CBSMWrapper::cbsentinel, this, _1, _2))
+                {
+                }
+
+                CBSMWrapper(const CBSMWrapper & rhs) :
+                    cb_(rhs.cb_),
+                    sm_(rhs.sm_),
+                    wcb_(rhs.wcb_)
+                {
+                }
+
+                CBSMWrapper & operator=(const CBSMWrapper & UNUSED(rhs))
+                {
+                    return *this;
+                }
+
+                /* empty callback... should never be invoked */
+                void cbsentinel(zoidfs::zoidfs_comp_mask_t UNUSED(mask),
+                        const iofwdevent::CBException & UNUSED(cbexception))
+                {
+                    ALWAYS_ASSERT(false && "CBSMWrapper::cbsentinel was invoked");
+                }
+
                 /* access to CBClient::cbWrapper */
                 friend class CBClient;
 
