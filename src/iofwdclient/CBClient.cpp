@@ -43,7 +43,7 @@ namespace iofwdclient
          zoidfs_op_hint_t * op_hint)
    {
        /* create the empty wrapper */
-       CBSMWrapper * cbsm = new CBSMWrapper(cb);
+       CBSMWrapper * cbsm = CBSMWrapper::createCBSMWrapper(cb);
 
        /* create the state machine */
        iofwdclient::clientsm::GetAttrClientSM * sm =
