@@ -43,7 +43,6 @@ namespace sm
 
       virtual bool execute ();
 
-
       template <next_method_t PTR>
       void setNextMethodT (iofwdevent::CBException status)
       {
@@ -69,9 +68,7 @@ namespace sm
              /* if we are in poll mode, execute the next state now ! */
              if(poll_)
              {
-                /* XXX Is this safe to do ? */
-                l.unlock();
-                execute();
+                unprotected_execute();
              }
              /* other wise, submit to the SMManager */
              else
@@ -102,6 +99,8 @@ namespace sm
       }
 
    protected:
+
+      bool unprotected_execute();
 
       // For rescheduling in setNextMethod
       SMManager & smm_;
@@ -171,6 +170,48 @@ bool SimpleSM<T>::execute ()
 
       {
          boost::mutex::scoped_lock l2(state_lock_);
+         if (!next_ || yield_)
+         {
+            running_ = false;
+            // If we yield, we must have something to execute when we get the
+            // CPU back. If not, shouldn't call yield.
+            ALWAYS_ASSERT (!yield_ || next_);
+            break;
+         }
+      }
+   } while (true);
+
+   ALWAYS_ASSERT(alive());
+   return yield_;
+}
+
+template <typename T>
+bool SimpleSM<T>::unprotected_execute()
+{
+   {
+      // This shouldn't execute if there isn't a next state to go to.
+      ALWAYS_ASSERT(next_);
+      running_ = true;
+   }
+
+   do
+   {
+
+      iofwdevent::CBException next_status;
+      next_method_t next;
+
+      {
+         next = next_;
+         next_status.swap (next_status_);
+         // Need to clear this here because the method we're calling might call
+         // setNextMethod
+         next_ = 0;
+         next_status_.clear ();
+      }
+
+      (dynamic_cast<T*>(this)->*next)(next_status);
+
+      {
          if (!next_ || yield_)
          {
             running_ = false;
