@@ -148,7 +148,7 @@ namespace zoidfs
 
          protected:
             boost::scoped_ptr<ZoidFSAPI> api_;
-            boost::scoped_ptr<iofwdutil::IOFWDLogSource> log_;
+            iofwdutil::IOFWDLogSource * log_;
       };
 
 

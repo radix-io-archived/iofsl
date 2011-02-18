@@ -40,6 +40,13 @@ class IOFWDLog : public Singleton<IOFWDLog>
 
 public:
 
+   /**
+    * @TODO: Return refcounted pointers instead of reference, so we can
+    * properly cleanup/release memory.
+    *
+    * Note: for now, don't try to delete the returned reference!
+    * (For that matter, never try to delete &some_reference !)
+    */
     static zlog::ZLogSource & getSource (const char * sourcename = 0)
     {
        if (!sourcename)
