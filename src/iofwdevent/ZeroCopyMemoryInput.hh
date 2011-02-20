@@ -9,6 +9,8 @@
  * the ZeroCopyInputStream interfacing style.
  *
  */
+#ifndef SRC_IOFWDEVENT_ZEROCOPYMEMORYINPUT
+#define SRC_IOFWDEVENT_ZEROCOPYMEMORYINPUT
 #include "ZeroCopyInputStream.hh"
 #include "CBType.hh"
 #include "Handle.hh"
@@ -43,9 +45,12 @@ namespace iofwdevent {
          location */
       int reset (const void *, size_t);
 
+      /* set the position offset for last read */
+      void setOffset(size_t);
+
       /* Amount of space remaining that has not be read in this->mem */
       size_t spaceRemaining (void);
   };
 }
-
+#endif
 

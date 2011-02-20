@@ -1,7 +1,7 @@
-#define BOOST_TEST_MODULE "Test ZeroCopyTransformInput"
+#define BOOST_TEST_MODULE "Test ZeroCopyTransformOutput"
 #define BOOST_TEST_DYN_LINK
 #include <boost/test/unit_test.hpp>
-#include "iofwdevent/ZeroCopyTransformInput.hh"
+#include "iofwdevent/ZeroCopyTransformOutput.hh"
 #include "iofwdevent/ZeroCopyMemoryInput.hh"
 #include "iofwdutil/transform/GenericTransform.hh"
 #include "iofwdevent/CBType.hh"
@@ -12,7 +12,7 @@ using namespace iofwdevent;
 using namespace iofwdutil;
 using namespace boost;
 
-BOOST_AUTO_TEST_SUITE( ZeroCopyTransformInput );
+BOOST_AUTO_TEST_SUITE( ZeroCopyTransformOutput );
 struct Fixture {
     Fixture()
     {
@@ -32,9 +32,10 @@ protected:
 BOOST_FIXTURE_TEST_CASE( testConstructor, Fixture )
 {
   /*
-  iofwdevent::ZeroCopyMemoryInput * m;
+  size = 100;
+  iofwdevent::ZeroCopyMemoryOutput m (mem_array, size);
   iofwdutil::transform::GenericTransform * n;
-  iofwdevent::ZeroCopyTransformInput t((ZeroCopyInputStream *)m,n);
+  iofwdevent::ZeroCopyTransformOutput t((ZeroCopyOutputStream *)&m, n, (size_t)500);
   */
 }
 BOOST_AUTO_TEST_SUITE_END()

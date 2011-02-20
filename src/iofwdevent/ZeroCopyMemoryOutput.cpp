@@ -16,7 +16,32 @@ ZeroCopyMemoryOutput::ZeroCopyMemoryOutput (void * output, size_t len)
   this->offset = 0;
 }
 
+void ZeroCopyMemoryOutput::reset()
+{
+  this->pos = 0;
+  this->offset = 0;
+}
 
+
+void * ZeroCopyMemoryOutput::getMemPtr()
+{ 
+  return this->mem;
+}
+
+size_t ZeroCopyMemoryOutput::getTotalLen()
+{
+  return this->memSize;
+}
+
+size_t ZeroCopyMemoryOutput::getOffset()
+{
+  return this->offset;
+}
+
+void ZeroCopyMemoryOutput::setOffset(size_t offset)
+{
+  this->offset = offset;
+}
 /**
  * Write to the stream returning a pointer to the region of memory where 
  * the data can be written to. 
