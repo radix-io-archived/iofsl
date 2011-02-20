@@ -15,6 +15,11 @@ ZeroCopyMemoryInput::ZeroCopyMemoryInput (const void * in, size_t len)
   this->memSize = len;
 }
 
+void ZeroCopyMemoryInput::setOffset(size_t offset)
+{
+  this->pos = offset;
+}
+
 /**
  * Read's from the stream returning a pointer to the region of memory where 
  * the data is stored. 

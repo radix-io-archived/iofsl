@@ -9,6 +9,8 @@
  * the ZeroCopyOutputStream interfacing style.
  *
  */
+#ifndef SRC_IOFWDEVENT_ZEROCOPYMEMORYOUTPUT
+#define SRC_IOFWDEVENT_ZEROCOPYMEMORYOUTPUT
 #include "ZeroCopyOutputStream.hh"
 #include "CBType.hh"
 #include "Handle.hh"
@@ -28,7 +30,7 @@ namespace iofwdevent {
       ZeroCopyMemoryOutput  (void * ,size_t );
 
       /* Cancel operation (not used since this class does not block) */
-      void cancel (Handle x) {}; 
+      void cancel (Handle x) { x = (Handle) 0; }; 
 
       /* Returns pointer to memory area where a write can take place */
       Handle write (void **, size_t *, const CBType & , size_t);
@@ -41,7 +43,22 @@ namespace iofwdevent {
 
       /* Amount of space remaining in this->mem */
       size_t spaceRemaining (void);
+  
+      /* Return the initial starting pointer for memory (used in conversion 
+         between ZeroCopyMemoryOutput -> ZeroCopyMemoryInput ) */
+      void * getMemPtr(void);
+
+      /* Gets the total length of the memory location mem */
+      size_t getTotalLen(void);
+
+      /* reset the stream */
+      void reset(void);
+
+      /* Get current offset value */
+      size_t getOffset(void);
+
+      void setOffset(size_t);
   };
 }
-
+#endif
 

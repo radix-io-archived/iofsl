@@ -27,6 +27,7 @@ protected:
 
 void testReadCB (CBException e)
 {
+  e.check();
   return;
 }
 
@@ -52,7 +53,7 @@ BOOST_FIXTURE_TEST_CASE ( testRead, Fixture)
   }
   iofwdevent::ZeroCopyMemoryInput x((const void *)mem_array, size);
   h = x.read(((const void **)(&readloc)), &readSize, cb, 250);
-  for (int x = 0; x < readSize; x++)
+  for (int x = 0; x < (int) readSize; x++)
   {
     BOOST_CHECK_EQUAL ( (char)(x % 10), ((char *)readloc)[x]);
   }
@@ -74,7 +75,7 @@ BOOST_FIXTURE_TEST_CASE (testRewind, Fixture)
   h = x.read(((const void **)(&readloc)), &readSize, cb, 250);
   h = x.rewindInput(readSize, cb);
   h = x.read(((const void **)(&readloc)), &readSize, cb, 250);
-  for (int x = 0; x < readSize; x++)
+  for (int x = 0; x < (int) readSize; x++)
   {
     BOOST_CHECK_EQUAL ( (char)(x % 10), ((char *)readloc)[x]);
   }
