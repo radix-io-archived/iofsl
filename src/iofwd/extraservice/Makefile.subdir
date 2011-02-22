@@ -4,3 +4,6 @@ if HAVE_FTB
 include src/iofwd/extraservice/ftb/Makefile.subdir
 endif
 
+
+include src/iofwd/extraservice/rpctest/Makefile.subdir
+

@@ -66,6 +66,7 @@ include Make.rules
 
 include $(top_srcdir)/src/iofwdclient/Makefile.subdir
 include $(top_srcdir)/src/net/Makefile.subdir
+include $(top_srcdir)/src/rpc/Makefile.subdir
 include $(top_srcdir)/src/sm/Makefile.subdir
 include $(top_srcdir)/src/iofwdevent/Makefile.subdir
 include $(top_srcdir)/src/iofwd/Makefile.subdir

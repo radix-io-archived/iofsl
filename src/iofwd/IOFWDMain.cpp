@@ -8,6 +8,8 @@
 #include "iofwdutil/stats/CounterTable.hh"
 #include "iofwdutil/ZException.hh"
 
+#include <boost/foreach.hpp>
+
 // Services
 #include "Log.hh"
 #include "Config.hh"

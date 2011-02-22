@@ -13,6 +13,8 @@ include src/iofwd/extraservice/Makefile.subdir
 bin_PROGRAMS += src/iofwd/iofwd
 
 src_iofwd_iofwd_LDADD = \
+	src/rpc/librpc.a \
+	src/net/libnet.a \
 	src/zoidfs/libzoidfs-util.a \
 	src/zoidfs/libzoidfsprofile.a \
 	src/zoidfs/libzoidfs.a \
@@ -35,10 +37,17 @@ src_iofwd_iofwd_LDFLAGS = \
     @BMI_LDFLAGS@
 
 SERVERSOURCES += \
+src/iofwd/RPCException.hh \
 src/iofwd/ExtraService.hh \
 src/iofwd/ExtraService.cpp \
 src/iofwd/NestedConfigurable.hh \
 src/iofwd/NestedConfigurable.cpp \
+src/iofwd/Net.hh \
+src/iofwd/Net.cpp \
+src/iofwd/RPCServer.hh \
+src/iofwd/RPCServer.cpp \
+src/iofwd/RPCClient.hh \
+src/iofwd/RPCClient.cpp \
 src/iofwd/Timer.hh \
 src/iofwd/Timer.cpp \
 src/iofwd/Log.hh \
@@ -62,7 +71,6 @@ src/iofwd/RequestScheduler.cpp \
 src/iofwd/Task.cpp \
 src/iofwd/ThreadTasks.cpp \
 src/iofwd/WriteTask.cpp \
-src/iofwd/iofwd.cpp \
 src/iofwd/CommitRequest.hh \
 src/iofwd/CommitTask.hh \
 src/iofwd/ConfigException.hh \
@@ -223,6 +231,7 @@ src/iofwd/rossfrontend/ROSSSymLinkRequest.hh \
 src/iofwd/rossfrontend/ROSSWriteRequest.hh
 endif
 
-src_iofwd_iofwd_SOURCES = $(SERVERSOURCES)
+src_iofwd_iofwd_SOURCES = $(SERVERSOURCES) \
+			  src/iofwd/iofwd.cpp
 
 endif

@@ -29,8 +29,12 @@ void registerIofwdFactoryClients ()
             (log) \
             (iofwdserver) \
             (timer) \
+            (rpcclient) \
+            (rpcserver) \
+            (net) \
             (bmifrontend) \
             (requesthandler) \
+            (rpctest) \
       );
 
 #ifdef HAVE_FTB
