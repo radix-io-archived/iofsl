@@ -6,6 +6,8 @@
 #include "iofwdutil/IOFSLKeyValueStorage.hh"
 #include "iofwdutil/stats/CounterTable.hh"
 
+#include <boost/foreach.hpp>
+
 // Services
 #include "Log.hh"
 #include "Config.hh"

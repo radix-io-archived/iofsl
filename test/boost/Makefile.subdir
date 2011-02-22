@@ -1,5 +1,6 @@
 
-shared_ldadd = \
+shared_ldadd = src/rpc/librpc.a \
+	       src/iofwdevent/libiofwdevent.a \
 	       src/sm/libsm.a \
 	       src/iofwdevent/libiofwdevent.a \
 	       src/iofwdutil/libiofwdutil.a \
@@ -16,7 +17,11 @@ shared_ldadd = \
 shared_ldflags = \
     @BOOST_LDFLAGS@ \
     @ZFS_DISPATCHER_LDFLAGS@ \
-    @BMI_LDFLAGS@
+    @BMI_LDFLAGS@ \
+	       $(BOOST_UNIT_TEST_FRAMEWORK_LIB) \
+	       $(BOOST_DATE_TIME_LIB) \
+	       $(BOOST_THREAD_LIB) \
+	       $(BOOST_REGEX_LIB) $(BMI_LIBS) $(AM_LIBS)
 
 #############################################################################
 #  Dummy test case (for debugging)
@@ -62,8 +67,8 @@ test_boost_bmi_pingpong_SOURCES = test/boost/bmi-pingpong.cpp \
 				   test/BMILink.hh \
 				   test/BMIInit.hh
 
-test_boost_bmi_pingpong_LDFLAGS = $(shared_ldflags) @BMI_LDFLAGS@
-test_boost_bmi_pingpong_LDADD = $(shared_ldadd)  @BMI_LIBS@
+test_boost_bmi_pingpong_LDFLAGS = $(shared_ldflags)
+test_boost_bmi_pingpong_LDADD = $(shared_ldadd)
 
 
 
@@ -122,3 +127,63 @@ test_boost_sm_SOURCES = test/boost/simplesm.cpp \
 test_boost_sm_LDFLAGS = $(shared_ldflags)
 test_boost_sm_LDADD = $(shared_ldadd)
 
+#############################################################################
+# InputMemoryZeroCopy Test
+#############################################################################
+TESTS += test/boost/inputmemorystream
+check_PROGRAMS += test/boost/inputmemorystream
+test_boost_inputmemorystream_SOURCES = test/boost/InputMemoryStream.cpp \
+				   test/boost/ThreadSafety.cpp \
+				   test/boost/ThreadSafety.hh 
+
+test_boost_inputmemorystream_LDFLAGS = $(shared_ldflags)
+test_boost_inputmemorystream_LDADD = $(shared_ldadd)
+
+#############################################################################
+# OutputMemoryZeroCopy Test
+#############################################################################
+TESTS += test/boost/outputmemorystream
+check_PROGRAMS += test/boost/outputmemorystream
+test_boost_outputmemorystream_SOURCES = test/boost/OutputMemoryStream.cpp \
+				   test/boost/ThreadSafety.cpp \
+				   test/boost/ThreadSafety.hh 
+
+test_boost_outputmemorystream_LDFLAGS = $(shared_ldflags)
+test_boost_outputmemorystream_LDADD = $(shared_ldadd)
+
+#############################################################################
+# ZeroCopyTransformInput Test
+#############################################################################
+TESTS += test/boost/TestZeroCopyTransformInput
+check_PROGRAMS += test/boost/TestZeroCopyTransformInput
+test_boost_TestZeroCopyTransformInput_SOURCES = test/boost/TestZeroCopyTransformInput.cpp \
+				   test/boost/ThreadSafety.cpp \
+				   test/boost/ThreadSafety.hh 
+
+test_boost_TestZeroCopyTransformInput_LDFLAGS = $(shared_ldflags)
+test_boost_TestZeroCopyTransformInput_LDADD = $(shared_ldadd)
+
+#############################################################################
+# ZeroCopyTransformOutput Test
+#############################################################################
+TESTS += test/boost/TestZeroCopyTransformOutput
+check_PROGRAMS += test/boost/TestZeroCopyTransformOutput
+test_boost_TestZeroCopyTransformOutput_SOURCES = test/boost/TestZeroCopyTransformOutput.cpp \
+				   test/boost/ThreadSafety.cpp \
+				   test/boost/ThreadSafety.hh 
+
+test_boost_TestZeroCopyTransformOutput_LDFLAGS = $(shared_ldflags)
+test_boost_TestZeroCopyTransformOutput_LDADD = $(shared_ldadd)
+
+#############################################################################
+# RPC Library
+#############################################################################
+check_PROGRAMS += test/boost/rpc
+TESTS += test/boost/rpc
+test_boost_rpc_SOURCES = test/boost/rpc.cpp \
+				   test/boost/ThreadSafety.hh \
+				   test/boost/ThreadSafety.cpp \
+				   test/boost/rpc_bmi.cpp \
+				   test/boost/rpc_wrapper.cpp
+test_boost_rpc_LDFLAGS = $(shared_ldflags)
+test_boost_rpc_LDADD = $(shared_ldadd)

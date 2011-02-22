@@ -12,7 +12,6 @@
 #include "service/ServiceManager.hh"
 
 #include "Config.hh"
-#include "BMI.hh"
 
 #include <boost/exception/diagnostic_information.hpp>
 #include "iofwdutil/signals.hh"
@@ -138,6 +137,9 @@ int main (int argc, char ** args)
                " shutdown"); 
          services.setParam ("iofwdserver.notrap", "1");
       }
+
+//      boost::shared_ptr<RPC> rpc (services.loadService<RPC> ("bmirpc"));
+//      rpc->barrier ();
 
       boost::shared_ptr<IOFWDMain> main
          (services.loadService<IOFWDMain>("iofwdserver"));

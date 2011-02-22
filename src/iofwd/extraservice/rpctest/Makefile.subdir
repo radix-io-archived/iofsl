@@ -1,0 +1,3 @@
+SERVERSOURCES += \
+		 src/iofwd/extraservice/rpctest/RPCTest.hh \
+		 src/iofwd/extraservice/rpctest/RPCTest.cpp

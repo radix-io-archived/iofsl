@@ -27,7 +27,11 @@ void registerIofwdFactoryClients ()
             (log) \
             (iofwdserver) \
             (timer) \
+            (rpcclient) \
+            (rpcserver) \
+            (net) \
             (bmifrontend) \
+            (rpctest) \
       );
 }
 

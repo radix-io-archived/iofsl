@@ -28,7 +28,7 @@ test_xdrspeed_LDADD = src/encoder/libencoder.a \
 noinst_PROGRAMS += test/zoidfs-gridftp-test
 test_zoidfs_gridftp_test_SOURCES = test/zoidfs-gridftp-test.c
 test_zoidfs_gridftp_test_LDADD = src/zoidfs/libzoidfsclient.a ${test_unit_tests_ldadd}
-test_zoidfs_gridftp_test_LDFLAGS = ${test_unit_tests_ldflags}
+test_zoidfs_gridftp_test_LDFLAGS = $(AM_LDFLAGS) ${test_unit_tests_ldflags}
 
 noinst_PROGRAMS += test/unit-tests/zoidfs-md-cunit test/unit-tests/zoidfs-md-cunit-local test/unit-tests/zoidfs-io-cunit \
 test/unit-tests/zoidfs-io-cunit-local
@@ -67,6 +67,7 @@ cppldflags = $(AM_LDFLAGS) ${test_unit_tests_ldflags} \
 		       @BMI_LDFLAGS@ @BOOST_LDFLAGS@
 
 cppldadd = \
+	${top_builddir}/src/rpc/librpc.a \
 	${top_builddir}/src/net/libnet.a \
 	${top_builddir}/src/zoidfs/libzoidfs-util.a \
 	${top_builddir}/src/zoidfs/libzoidfsprofile.a \
@@ -85,6 +86,11 @@ cppldadd = \
     @BMI_LIBS@ \
 	${test_unit_tests_ldadd}
 
+
+noinst_PROGRAMS += test/rpcservice
+test_rpcservice_SOURCES = test/rpcservice.cpp $(SERVERSOURCES)
+test_rpcservice_LDFLAGS = ${cppldflags}
+test_rpcservice_LDADD = ${cppldadd}
 
 noinst_PROGRAMS += test/net
 test_net_SOURCES = test/net.cpp test/TrackLive.cpp test/TrackLive.hh \

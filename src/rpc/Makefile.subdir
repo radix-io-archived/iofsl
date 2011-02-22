@@ -1,0 +1,18 @@
+noinst_LIBRARIES += src/rpc/librpc.a
+
+src_rpc_librpc_a_SOURCES = \
+	src/rpc/RPCException.hh \
+	src/rpc/RPCServer.cpp \
+	src/rpc/RPCServer.hh \
+	src/rpc/RPCClient.hh \
+	src/rpc/RPCClient.cpp \
+	src/rpc/RPCKey.hh \
+	src/rpc/RPCKey.cpp \
+	src/rpc/RPCHandler.hh \
+	src/rpc/RPCRegistry.hh \
+	src/rpc/RPCRegistry.cpp \
+	src/rpc/RPCHeader.hh \
+	src/rpc/RPCInfo.hh \
+	src/rpc/RPC-fwd.hh \
+	src/rpc/RPCEncoder.hh
+
