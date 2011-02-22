@@ -6,6 +6,8 @@
 #include "iofwdutil/ConfigException.hh"
 #include "service/ServiceException.hh"
 
+#include <boost/foreach.hpp>
+
 // Services
 #include "Log.hh"
 #include "Config.hh"
