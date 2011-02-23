@@ -5,9 +5,14 @@
 #include "iofwd/Config.hh"
 #include "iofwd/ConfigException.hh"
 
+#include "iofwdevent/SingleCompletion.hh"
+
+#include "net/Group.hh"
 #include "net/Communicator.hh"
 #include "net/bmi/BMIConnector.hh"
 #include "net/loopback/LoopbackConnector.hh"
+
+#include <vector>
 
 SERVICE_REGISTER(iofwd::Net, net);
 
@@ -30,17 +35,45 @@ namespace iofwd
          bmi_service_ = lookupService<BMI>("bmi");
          net_.reset (new net::bmi::BMIConnector (bmi_service_->get (),
                   log_service_->getSource ("net")));
+
+         std::vector<std::string> s;
+         for (size_t i =0; i<bmi_service_->getServerCount (); ++i)
+            s.push_back (bmi_service_->getServer (i));
+         createServerComm (s, bmi_service_->getServerRank ());
       }
       else if (type == "local")
       {
          net_.reset (new net::loopback::LoopbackConnector ());
 
+         std::vector<std::string> s;
+         s.push_back ("local");
+         createServerComm (s, 0);
       }
       else
       {
          ZTHROW (ConfigException () << ce_key ("type") <<
                ce_environment ("net"));
       }
+   }
+
+   void Net::createServerComm (const std::vector<std::string> & l,
+         size_t myrank)
+   {
+      iofwdevent::SingleCompletion block;
+
+      net::GroupHandle g = new net::Group ();
+
+      for (size_t i=0; i<l.size(); ++i)
+      {
+         net::AddressPtr a;
+
+         block.reset ();
+         net_->lookup (l[i].c_str(), &a, block);
+         block.wait ();
+
+         g->push_back (a);
+      }
+      servercomm_.reset (new net::Communicator (g, myrank));
    }
 
    net::ConstCommunicatorHandle Net::getServerComm () const

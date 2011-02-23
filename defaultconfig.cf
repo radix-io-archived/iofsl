@@ -26,8 +26,8 @@ bmi
 
 net
 {
-   type = "local";
-//     type = "bmi";
+//   type = "local";
+     type = "bmi";
 }
 
 

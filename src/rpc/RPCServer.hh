@@ -5,6 +5,7 @@
 #include "net/Net.hh"
 #include "RPCHandler.hh"
 #include "RPCKey.hh"
+#include "RPCInfo.hh" // simplify using RPC
 
 namespace rpc
 {

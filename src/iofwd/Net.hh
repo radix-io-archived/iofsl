@@ -4,6 +4,7 @@
 #include "iofwd/service/Service.hh"
 #include "net/Net-fwd.hh"
 
+#include <vector>
 #include <boost/scoped_ptr.hpp>
 
 namespace iofwd
@@ -30,6 +31,10 @@ namespace iofwd
          net::ConstCommunicatorHandle getServerComm () const;
 
          virtual ~Net ();
+
+      protected:
+         void createServerComm (const std::vector<std::string> & l, size_t
+               myrank);
 
       protected:
          boost::shared_ptr<Config> config_service_;
