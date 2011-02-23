@@ -92,6 +92,12 @@ test_rpcservice_SOURCES = test/rpcservice.cpp $(SERVERSOURCES)
 test_rpcservice_LDFLAGS = ${cppldflags}
 test_rpcservice_LDADD = ${cppldadd}
 
+noinst_PROGRAMS += test/servercomm
+test_servercomm_SOURCES = test/servercomm.cpp $(SERVERSOURCES)
+test_servercomm_LDFLAGS = ${cppldflags}
+test_servercomm_LDADD = ${cppldadd}
+
+
 noinst_PROGRAMS += test/net
 test_net_SOURCES = test/net.cpp test/TrackLive.cpp test/TrackLive.hh \
 		   test/boost/DataGenerator.hh test/boost/DataValidator.hh
