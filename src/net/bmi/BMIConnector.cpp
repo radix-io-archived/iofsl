@@ -25,7 +25,7 @@ namespace net
          postReceive ();
       }
 
-      BMI_addr_t BMIConnector::getBMIAddr (const AddressPtr & ptr) const
+      BMI_addr_t BMIConnector::getBMIAddr (const ConstAddressPtr & ptr) const
       {
          const BMIAddress & a = dynamic_cast<const BMIAddress &> (*ptr);
          return a.getAddr ();
@@ -36,7 +36,7 @@ namespace net
        * outgoing tag range, but we expect the other party to respond with
        * expected messages in the incoming tag range.
        */
-      Connection BMIConnector::connect (const AddressPtr & destptr)
+      Connection BMIConnector::connect (const ConstAddressPtr & destptr)
       {
          BMI_addr_t dest = getBMIAddr (destptr);
          bmi_msg_tag_t newtag = getTag (dest);
