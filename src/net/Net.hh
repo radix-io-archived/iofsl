@@ -41,7 +41,7 @@ namespace net
 
          struct AcceptInfo
          {
-            AddressPtr source;
+            ConstAddressPtr source;
             ZeroCopyInputStream  * in;
             ZeroCopyOutputStream * out;
          };
@@ -69,7 +69,7 @@ namespace net
           * Actually, could be a send packet and receive
           * packet size.
           */
-         virtual Connection connect (const AddressPtr & addr) = 0;
+         virtual Connection connect (const ConstAddressPtr & addr) = 0;
 
 
          // ------------------------------------------------------

@@ -45,7 +45,7 @@ namespace net
        * Create two MessageQueues, basically two unidirectional pipes, one for
        * reading from the remote and one for sending to the remote
        */
-      Connection LoopbackConnector::connect (const AddressPtr & )
+      Connection LoopbackConnector::connect (const ConstAddressPtr & )
       {
          MessageQueuePtr chan1 (new MessageQueue ());
          MessageQueuePtr chan2 (new MessageQueue ());

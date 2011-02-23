@@ -43,7 +43,7 @@ namespace net
 
             void setAcceptHandler (const AcceptHandler & h);
 
-            Connection connect (const AddressPtr & addr);
+            Connection connect (const ConstAddressPtr & addr);
          
             void createGroup (GroupHandle * group,
                const std::vector<std::string> & members,
