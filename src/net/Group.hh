@@ -18,7 +18,7 @@ namespace net
    class Group : public iofwdutil::IntrusiveHelper
    {
       public:
-         void push (const AddressPtr & n)
+         void push_back (const ConstAddressPtr & n)
          { addrs_.push_back (n); }
 
       public:
@@ -28,7 +28,7 @@ namespace net
          { return ConstAddressPtr (addrs_[pos].get()); }
 
       protected:
-         std::vector<AddressPtr> addrs_;
+         std::vector<ConstAddressPtr> addrs_;
    };
 
    INTRUSIVE_PTR_HELPER (Group);

@@ -41,7 +41,7 @@ namespace net
 
             virtual void setAcceptHandler (const AcceptHandler & handler);
 
-            virtual Connection connect (const AddressPtr & addr);
+            virtual Connection connect (const ConstAddressPtr & addr);
 
 
             virtual void createGroup (GroupHandle * group,
@@ -52,7 +52,7 @@ namespace net
 
             struct LookupHelper;
 
-            BMI_addr_t getBMIAddr (const AddressPtr & addr) const;
+            BMI_addr_t getBMIAddr (const ConstAddressPtr & addr) const;
 
             /// Called when new unexpected messages are available
             void incoming (const iofwdevent::CBException & e);
