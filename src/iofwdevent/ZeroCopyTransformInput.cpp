@@ -5,6 +5,7 @@ namespace iofwdevent {
    * @param[in] in        Transformed input stream which needs to be 
    *                      transformed back into its original stream.
    * @param[in] transform Transform to use on input data (in)
+   * @param[in] bufSize   Buffer size for the internal streams (0 = Default)
    */
   ZeroCopyTransformInput::ZeroCopyTransformInput  (ZeroCopyInputStream * in, 
                                                    GenericTransform * transform,
@@ -30,33 +31,52 @@ namespace iofwdevent {
     this->transform = transform;
   }
 
-  void ZeroCopyTransformInput::transformStorageCB(CBException e, size_t * len,
-                                                  CBType cb)
+  /**
+   * Read from the input stream and preform the transform from 
+   * transformed input -> output.
+   * @param[out] out       Pointer to location where output is going to be 
+   *                       stored.
+   * @param[out] len       size of out (actual)
+   * @param[in]  cb        Callback to call when operation is complete 
+   * @param[in]  suggested Size the client would like to see returned when 
+   *                       read operation is completed. This is a best
+   *                       effort and the actual size may vary from 
+   *                       suggested.
+   */
+  Handle ZeroCopyTransformInput::read (const void ** out, size_t * len, 
+                                       const CBType & cb, size_t suggested)
   {
-    e.check();
+    /* Check to see if any non-read transformed data is availible, if so 
+       return it */
+    if (transformStorage->getTotalLen() > 0)
+    {
+      readTransformStorage(out, len, cb, suggested);
+      return (Handle) 0;
+    }
 
-    this->transformStorage->setOffset(*len + this->transformStorage->getOffset());
-
-    if (this->transformStorage->spaceRemaining() == 0)
-      this->transformStorage->reset();
-
-    cb(*(new CBException()));
+    /* If there is still unconsumed input, go directly to transformation 
+       state */
+    if (streamStorage->getTotalLen() > 0)
+    {
+      doTransform (out, len, cb, suggested);
+      return (Handle) 0;
+    }
+  
+    /* If nether of the above cases hold, read the underlying stream */
+    return this->readStream( out, len, cb, suggested);
   }
-
-
-  void ZeroCopyTransformInput::streamStorageCB(CBException e, size_t * len,
-                                                  CBType cb)
-  {
-    e.check();
-
-    this->streamStorage->setOffset(*len + this->streamStorage->getOffset());
-
-    if (this->streamStorage->spaceRemaining() == 0)
-      this->streamStorage->reset();
-
-    cb(*(new CBException()));
-  }
-
+  
+  /**
+   * Reads the internal Transform Storage stream.
+   * @param[out] out       Pointer to location where output is going to be 
+   *                       stored.
+   * @param[out] len       size of out (actual)
+   * @param[in]  cb        Callback to call when operation is complete 
+   * @param[in]  suggested Size the client would like to see returned when 
+   *                       read operation is completed. This is a best
+   *                       effort and the actual size may vary from 
+   *                       suggested.
+   */
   void ZeroCopyTransformInput::readTransformStorage (const void ** out,
                                                      size_t * len,
                                                      const CBType & cb,
@@ -79,33 +99,28 @@ namespace iofwdevent {
       ret = x->read( out, len, newCB, suggested);
     }
   }
-
-  void ZeroCopyTransformInput::readStreamStorage (const void ** out,
-                                                  size_t * len,
-                                                  const CBType & cb,
-                                                  size_t suggested)
+  
+  /**
+   * Callback return from Transform Storage read
+   * @param[in] e    Callback exception class
+   * @param[in] len  Length of the read 
+   * @param[in] cb   Callback to use to signal that task is completed 
+   */
+  void ZeroCopyTransformInput::transformStorageCB(CBException e, size_t * len,
+                                                  CBType cb)
   {
-    Handle ret;
-    /* Create a new callback for when the stream read is compleated */
-    CBType newCB;
+    e.check();
 
-    ZeroCopyMemoryInput * x;
+    this->transformStorage->setOffset(*len + this->transformStorage->getOffset());
 
-    newCB = boost::bind(&ZeroCopyTransformInput::streamStorageCB,
-                        boost::ref(*this), _1, len, cb);
+    if (this->transformStorage->spaceRemaining() == 0)
+      this->transformStorage->reset();
 
-    /* If there is any transformed input not read return unread transformed input */  
-    if (this->streamStorage->getTotalLen() > 0)
-    {
-      x = this->convertToMemoryInput(this->streamStorage);
-
-      ret = x->read( out, len, newCB, suggested);
-    }
+    cb(*(new CBException()));
   }
 
   /**
-   * Read from the input stream and preform the transform from 
-   * transformed input -> output.
+   * Read the stream and write the results into streamStorage 
    * @param[out] out       Pointer to location where output is going to be 
    *                       stored.
    * @param[out] len       size of out (actual)
@@ -115,32 +130,78 @@ namespace iofwdevent {
    *                       effort and the actual size may vary from 
    *                       suggested.
    */
-  Handle ZeroCopyTransformInput::read (const void ** out, size_t * len, 
-                                       const CBType & cb, size_t suggested)
+  Handle ZeroCopyTransformInput::readStream  (const void ** out,
+                                              size_t * len,
+                                              const CBType & cb,
+                                              size_t suggested)
   {
-    ZeroCopyInputWU * wu;
+    Handle x;  
+    void * writeLoc;
+    size_t writeSize = 0;
 
-    /* Check to see if any non-read transformed data is availible, if so return 
-       it */
-    if (this->transformStorage->getTotalLen() > 0)
-    {
-      this->readTransformStorage(out, len, cb, suggested);
-      return (Handle) 0;
-    }
-    
-    /* if no transformed data is availible, create a callback to transform data
-       after the underlying stream is compleated reading */
-    wu = new ZeroCopyInputWU( out, len, cb, suggested);
-    
-    /* read the underlying stream */
-    return this->readStream(wu);
+    CBType nullCB = boost::bind(&ZeroCopyTransformInput::nullCB, 
+                                boost::ref(*this), _1);
+    x = streamStorage->write (&writeLoc, &writeSize, nullCB, suggested);    
+
+    /* Create a new callback for when the stream read is compleated */
+    CBType newCB = boost::bind(&ZeroCopyTransformInput::transformationState,
+                                boost::ref(*this), _1, out, len, cb, suggested,
+                                writeSize);
+
+    return stream->read((const void **) &writeLoc, &writeSize, 
+                        newCB, writeSize);
   }
 
   void ZeroCopyTransformInput::nullCB (CBException e)
   {
     e.check();
   }
-  void ZeroCopyTransformInput::doTransform (ZeroCopyInputWU * wu)
+
+  /**
+   * Prepares the streamStorage stream for transformation in doTransform
+   * @param[out] out       Pointer to location where output is going to be 
+   *                       stored.
+   * @param[out] len       size of out (actual)
+   * @param[in]  cb        Callback to call when operation is complete 
+   * @param[in]  suggested Size the client would like to see returned when 
+   *                       read operation is completed. This is a best
+   *                       effort and the actual size may vary from 
+   *                       suggested.
+   * @param[in]  writeLoc  Location of where the data read from stream is 
+   *                       being stored 
+   * @param[in]  writeSize Size of the data read from the stream 
+   */
+  void ZeroCopyTransformInput::transformationState (CBException e,
+                                                    const void ** out,
+                                                    size_t * len,
+                                                    const CBType & cb,
+                                                    size_t suggested,
+                                                    size_t writeSize)
+  {
+    e.check();
+    CBType nullCB = boost::bind(&ZeroCopyTransformInput::nullCB, 
+                                boost::ref(*this), _1);
+        
+    streamStorage->rewindOutput(suggested - writeSize, nullCB);
+  
+    doTransform ( out, len, cb, suggested);
+  }
+
+  /**
+   * Preform the transform between input and output 
+   * @param[out] out       Pointer to location where output is going to be 
+   *                       stored.
+   * @param[out] len       size of out (actual)
+   * @param[in]  cb        Callback to call when operation is complete 
+   * @param[in]  suggested Size the client would like to see returned when 
+   *                       read operation is completed. This is a best
+   *                       effort and the actual size may vary from 
+   *                       suggested.
+   */
+  void ZeroCopyTransformInput::doTransform (const void ** out,
+                                            size_t * len,
+                                            const CBType & cb,
+                                            size_t suggested)
   {
     Handle ret;
     void * transStorage;
@@ -148,67 +209,36 @@ namespace iofwdevent {
     size_t transOut = 0;
     bool flushFlag = false;
     int outState = 0;
+    void * streamData = streamStorage->getMemPtr();
+    size_t streamLen  = streamStorage->getTotalLen();
 
     /* Create a null callback for reading of transformStorage (non blocking) */
     CBType nullCB = boost::bind(&ZeroCopyTransformInput::nullCB,
                                 boost::ref(*this), _1);
 
     /* Get write pointer for transform storage */
-    this->transformStorage->write(&transStorage, &transSize, nullCB, 
-                                  wu->suggested);
+    transformStorage->write(&transStorage, &transSize, nullCB, suggested);
 
     /* preform the transform */
-    this->transform->transform ((const void *const) wu->streamData, wu->streamLen,
-                                transStorage, transSize, &transOut,
-                                &outState, flushFlag);
-    
-    /* Create a new callback to preform the read from the transform stream */
-    CBType readCB = boost::bind(&ZeroCopyTransformInput::readTransformStorage,
-                                boost::ref(*this), wu->ptr, wu->size, wu->cb, 
-                                wu->suggested);
-    
-    /* Return any unused portions from the stream */
-    ret = this->transformStorage->rewindOutput(transSize - transOut, readCB);
+    transform->transform ((const void *const) streamData, streamLen,
+                          transStorage, transSize, &transOut,
+                          &outState, flushFlag);
+
+    ret = transformStorage->rewindOutput(transSize - transOut, nullCB);
+
+    /* If we are out of data to trasnform, read more of the stream */
+    if (outState == SUPPLY_INBUF)
+    {
+      streamStorage->reset();
+      ret = readStream( out, len, cb, suggested);
+    }
+    /* if the output is full return */
+    else if (outState == CONSUME_OUTBUF)
+    {
+      readTransformStorage(out, len, cb, suggested);
+    }
   }
 
-  void ZeroCopyTransformInput::transformationState (CBException e, ZeroCopyInputWU * wu)
-  {
-    /* Check the exception */
-    e.check();
-
-    /* Create the function bindings for the transformation queue (this function 
-       is blocking) */
-    boundFunc f = boost::bind(&ZeroCopyTransformInput::doTransform,
-                              boost::ref(*this), wu); 
-    
-    /* Add it to the process queue */
-    this->workqueue.push_back(f);
-  }
-
-  /* Read the stream and write the results into this->streamStorage (wu->streamData,
-    wu->streamLen) */
-  Handle ZeroCopyTransformInput::readStream (ZeroCopyInputWU * wu)
-  {
-    /* Create a new callback for when the stream read is compleated */
-    CBType newCB = boost::bind(&ZeroCopyTransformInput::transformationState,
-                                boost::ref(*this), _1, wu);
-
-    return this->stream->read((const void **) &wu->streamData, &wu->streamLen, 
-                              newCB, wu->suggested);
-  }
-
-  /**
-   * Return undigested input back to the stream 
-   * @param[in] len        Size of data that is being returned to the stream
-   * @param[in] cb         Callback when operation is complete.
-   */
-  Handle ZeroCopyTransformInput::rewindInput (size_t len, const CBType & cb)
-  {
-    this->transformStorage->setOffset(this->transformStorage->getOffset() - 
-                                      len);
-    cb(*(new CBException()));
-    return (Handle) 0;
-  }
   /**
    * Converts ZeroCopyMemoryOutput -> ZeroCopyMemoryInput. This is
    * used for changing the direction of the internal ZeroCopyMemory stream 
@@ -226,5 +256,17 @@ namespace iofwdevent {
     return v;
   }
 
+  /**
+   * Return undigested input back to the stream 
+   * @param[in] len        Size of data that is being returned to the stream
+   * @param[in] cb         Callback when operation is complete.
+   */
+  Handle ZeroCopyTransformInput::rewindInput (size_t len, const CBType & cb)
+  {
+    this->transformStorage->setOffset(this->transformStorage->getOffset() - 
+                                      len);
+    cb(*(new CBException()));
+    return (Handle) 0;
+  }
 }
 

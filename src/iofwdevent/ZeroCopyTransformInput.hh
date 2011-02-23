@@ -41,16 +41,15 @@ namespace iofwdevent {
    * Creates an input zero copy stream from a memory region 
    */
   class ZeroCopyTransformInput : public ZeroCopyInputStream {
-    typedef boost::function< void() > boundFunc;
     typedef iofwdutil::transform::GenericTransform GenericTransform;
     protected:
       ZeroCopyMemoryOutput * transformStorage;
       ZeroCopyMemoryOutput * streamStorage;
       ZeroCopyInputStream * stream; /*< Stores input stream from which to transform */
       GenericTransform * transform; /*< Stores transform information */
-      size_t memSize;          /*< Stores the size of the memory location */
-      size_t pos;              /*< Stores current pointer position inside mem */
-      std::deque< boundFunc > workqueue; 
+      static const int SUPPLY_INBUF = iofwdutil::transform::SUPPLY_INBUF;
+      static const int TRANSFORM_DONE = iofwdutil::transform::TRANSFORM_DONE;
+      static const int CONSUME_OUTBUF = iofwdutil::transform::CONSUME_OUTBUF;
     public:
       /**
        * Constructor for ZeroCopyTransformInput.
@@ -89,22 +88,24 @@ namespace iofwdevent {
 
       /* Callback when transformStorage read is complete */ 
       void transformStorageCB(CBException, size_t *, CBType);
-      /* Callback used when StreamStorage read complete */
-      void streamStorageCB(CBException, size_t *, CBType);
 
       /* Read the transform storage stream */
       void readTransformStorage (const void **, size_t *, const CBType &, 
                                  size_t);
 
-      /* read the stream storage stream */
-      void readStreamStorage (const void **, size_t *, const CBType &, 
-                              size_t);
+      /* Perform the transformation */
+      void doTransform (const void **, size_t *, const CBType &, 
+                        size_t);
 
-      void doTransform (ZeroCopyInputWU * wu);
+      /* Convert between a memory input and a memory output class (rework 
+         this to be more of a swap) */
       ZeroCopyMemoryInput * convertToMemoryInput(ZeroCopyMemoryOutput * );
-      Handle readStream (ZeroCopyInputWU *);
+  
+      
+      Handle readStream (const void **, size_t *, const CBType &,  size_t);
       void nullCB (CBException e);
-      void transformationState (CBException, ZeroCopyInputWU *);
+      void transformationState (CBException, const void ** , size_t * , 
+                                const CBType & , size_t , size_t );
   };
 }
 
