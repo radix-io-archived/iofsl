@@ -25,9 +25,9 @@ namespace iofwd
 
          RPCClient (service::ServiceManager & m);
 
-         rpc::RPCClientHandle rpcConnect (const char * s, const net::AddressPtr & addr);
+         rpc::RPCClientHandle rpcConnect (const char * s, const net::ConstAddressPtr & addr);
 
-         rpc::RPCClientHandle rpcConnect (const rpc::RPCKey & k, const net::AddressPtr & addr);
+         rpc::RPCClientHandle rpcConnect (const rpc::RPCKey & k, const net::ConstAddressPtr & addr);
 
          virtual ~RPCClient ();
 

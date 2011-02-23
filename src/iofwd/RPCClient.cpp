@@ -19,12 +19,12 @@ namespace iofwd
    {
    }
 
-   rpc::RPCClientHandle RPCClient::rpcConnect (const char * s, const net::AddressPtr & addr)
+   rpc::RPCClientHandle RPCClient::rpcConnect (const char * s, const net::ConstAddressPtr & addr)
    {
       return rpcConnect (rpc::getRPCKey (s), addr);
    }
 
-   rpc::RPCClientHandle RPCClient::rpcConnect (const rpc::RPCKey & k, const net::AddressPtr & addr)
+   rpc::RPCClientHandle RPCClient::rpcConnect (const rpc::RPCKey & k, const net::ConstAddressPtr & addr)
    {
       net::Connection con = net_service_->getNet()->connect (addr);
       return rpc::RPCClient::rpcConnect (k, con);
