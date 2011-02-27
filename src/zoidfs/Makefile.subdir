@@ -6,7 +6,8 @@ include_HEADERS = src/zoidfs/zoidfs.h \
 
 noinst_HEADERS += \
 		 src/zoidfs/zoidfs-comm.h \
-		 src/zoidfs/zoidfs-proto.h
+		 src/zoidfs/zoidfs-proto.h \
+		 src/zoidfs/zoidfs-rpc.h
 
 
 include $(top_srcdir)/src/zoidfs/hints/Makefile.subdir
