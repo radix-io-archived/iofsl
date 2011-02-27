@@ -21,6 +21,8 @@ CPPCLIENTLIB += \
     src/iofwdclient/PollQueue.cpp \
     src/iofwdclient/FakeBlocker.hh \
     \
+    src/iofwdclient/clientsm/BMIServerHelper.hh \
+    src/iofwdclient/clientsm/BMIServerSM.hh \
     src/iofwdclient/clientsm/RPCServerHelper.hh \
     src/iofwdclient/clientsm/RPCServerSM.hh \
     src/iofwdclient/clientsm/GetAttrClientSM.hh \
