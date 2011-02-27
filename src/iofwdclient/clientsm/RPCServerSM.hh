@@ -2,6 +2,7 @@
 #define IOFWDCLIENT_CLIENTSM_RPCSERVERSM
 
 #include "sm/SMManager.hh"
+#include "sm/SMClient.hh"
 #include "sm/SimpleSM.hh"
 #include "sm/SimpleSlots.hh"
 

@@ -3,6 +3,7 @@
 
 #include "sm/SMManager.hh"
 #include "sm/SimpleSM.hh"
+#include "sm/SMClient.hh"
 #include "sm/SimpleSlots.hh"
 
 #include "iofwdutil/tools.hh"
@@ -65,7 +66,7 @@ class GetAttrClientSM :
         GetAttrInStream in_;
         GetAttrOutStream out_;
 
-        boost::scoped_ptr< RPCServerSM<GetAttrInStream, GetAttrOutStream> > server_sm_;
+        sm::SMClientSharedPtr server_sm_;
 };
 
     }
