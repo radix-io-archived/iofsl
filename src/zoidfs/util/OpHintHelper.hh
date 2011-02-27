@@ -82,10 +82,10 @@ namespace encoder
             int flag = 0;
 
             zoidfs::hints::zoidfs_hint_get_nthkeylen(h.op_hint_, i, &key_len);
-            key = malloc(key_len);
+            key = (char *)malloc(key_len);
             zoidfs::hints::zoidfs_hint_get_nthkey(h.op_hint_, i, key);
             zoidfs::hints::zoidfs_hint_get_valuelen(h.op_hint_, key, &value_len, &flag);
-            value = malloc(value_len);
+            value = (char *)malloc(value_len);
             zoidfs::hints::zoidfs_hint_get(h.op_hint_, key, value_len, value, &flag);
 
             process (p, key_len);
