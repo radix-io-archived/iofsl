@@ -12,8 +12,7 @@
 
 #include "zoidfs/zoidfs.h"
 
-#include "iofwdclient/streamwrappers/GetAttrInStream.hh"
-#include "iofwdclient/streamwrappers/GetAttrOutStream.hh"
+#include "iofwdclient/streamwrappers/ZoidFSStreamWrappers.hh"
 
 #include <cstdio>
 
@@ -39,7 +38,7 @@ class GetAttrClientSM :
             slots_(*this),
             cb_(cb),
             ret_(ret),
-            in_(handle, op_hint),
+            in_(GetAttrInStream(handle, op_hint)),
             out_(attr, op_hint),
             server_sm_(NULL)
         {
@@ -63,7 +62,7 @@ class GetAttrClientSM :
         const IOFWDClientCB & cb_;
         int * ret_;
 
-        const GetAttrInStream in_;
+        GetAttrInStream in_;
         GetAttrOutStream out_;
 
         boost::scoped_ptr< RPCServerSM<GetAttrInStream, GetAttrOutStream> > server_sm_;
