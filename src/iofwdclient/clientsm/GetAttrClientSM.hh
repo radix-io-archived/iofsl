@@ -8,13 +8,19 @@
 #include "iofwdutil/tools.hh"
 
 #include "iofwdclient/IOFWDClientCB.hh"
+#include "iofwdclient/clientsm/RPCServerSM.hh"
 
 #include "zoidfs/zoidfs.h"
+
+#include "iofwdclient/streamwrappers/GetAttrInStream.hh"
+#include "iofwdclient/streamwrappers/GetAttrOutStream.hh"
 
 #include <cstdio>
 
 namespace iofwdclient
 {
+    using namespace streamwrappers;
+
     namespace clientsm
     {
 
@@ -33,36 +39,19 @@ class GetAttrClientSM :
             slots_(*this),
             cb_(cb),
             ret_(ret),
-            handle_(handle),
-            attr_(attr),
-            op_hint_(op_hint)
+            in_(handle, op_hint),
+            out_(attr, op_hint),
+            server_sm_(NULL)
         {
             fprintf(stderr, "%s:%i\n", __func__, __LINE__);
         }
 
-        virtual ~GetAttrClientSM();
+        ~GetAttrClientSM();
 
         void init(iofwdevent::CBException e);
 
-        /* step 1 */
-        void postOpenConnection(iofwdevent::CBException e);
-        void waitOpenConnection(iofwdevent::CBException e);
-
-        /* step 2 */
-        void postEncodeRequest(iofwdevent::CBException e);
-        void waitEncodeRequest(iofwdevent::CBException e);
-
-        /* step 3 */
-        void postFlushRequest(iofwdevent::CBException e);
-        void waitFlushRequest(iofwdevent::CBException e);
-
-        /* step 4 */
-        void postWaitResponse(iofwdevent::CBException e);
-        void waitWaitResponse(iofwdevent::CBException e);
-
-        /* setp 5 */
-        void postDecodeResponse(iofwdevent::CBException e);
-        void waitDecodeResponse(iofwdevent::CBException e);
+        void postRPCServerSM(iofwdevent::CBException e);
+        void waitRPCServerSM(iofwdevent::CBException e);
 
         void postSMErrorState(iofwdevent::CBException e);
 
@@ -73,9 +62,11 @@ class GetAttrClientSM :
 
         const IOFWDClientCB & cb_;
         int * ret_;
-        const zoidfs::zoidfs_handle_t * handle_;
-        zoidfs::zoidfs_attr_t * attr_;
-        zoidfs::zoidfs_op_hint_t * op_hint_;
+
+        const GetAttrInStream in_;
+        GetAttrOutStream out_;
+
+        boost::scoped_ptr< RPCServerSM<GetAttrInStream, GetAttrOutStream> > server_sm_;
 };
 
     }

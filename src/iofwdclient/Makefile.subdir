@@ -20,8 +20,14 @@ CPPCLIENTLIB += \
     src/iofwdclient/PollQueue.hh \
     src/iofwdclient/PollQueue.cpp \
     src/iofwdclient/FakeBlocker.hh \
+    \
+    src/iofwdclient/clientsm/RPCServerHelper.hh \
+    src/iofwdclient/clientsm/RPCServerSM.hh \
     src/iofwdclient/clientsm/GetAttrClientSM.hh \
-    src/iofwdclient/clientsm/GetAttrClientSM.cpp
+    src/iofwdclient/clientsm/GetAttrClientSM.cpp \
+    \
+    src/iofwdclient/streamwrappers/GetAttrInStream.hh \
+    src/iofwdclient/streamwrappers/GetAttrOutStream.hh
 
 #
 # It is OK to define this here, even if we add sources to CLIENTLIB later on;
