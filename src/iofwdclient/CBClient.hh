@@ -52,7 +52,7 @@ namespace iofwdclient
 
                 void set(sm::SMClient * sm)
                 {
-                    sm_ = boost::intrusive_ptr<sm::SMClient>(sm);
+                    sm_ = sm::SMClientSharedPtr(sm);
                 }
 
                 void call(zoidfs::zoidfs_comp_mask_t mask, const
@@ -106,7 +106,7 @@ namespace iofwdclient
                 friend class CBClient;
 
                 const IOFWDClientCB & cb_;
-                boost::intrusive_ptr<sm::SMClient> sm_;
+                sm::SMClientSharedPtr sm_;
                 const IOFWDClientCB wcb_;
          };
         
