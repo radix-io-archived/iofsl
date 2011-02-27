@@ -9,8 +9,8 @@
 
 #include "iofwdclient/IOFWDClientCB.hh"
 #include "iofwdclient/clientsm/RPCServerHelper.hh"
-#include "iofwdclient/streamwrappers/GetAttrInStream.hh"
-#include "iofwdclient/streamwrappers/GetAttrOutStream.hh"
+
+#include "iofwdclient/streamwrappers/ZoidFSStreamWrappers.hh"
 
 #include "iofwd/RPCClient.hh"
 #include "iofwd/service/ServiceManager.hh"
@@ -24,6 +24,11 @@
 #include "rpc/RPCEncoder.hh"
 
 #include <cstdio>
+
+using namespace iofwdclient;
+using namespace iofwdclient::streamwrappers;
+using namespace encoder;
+using namespace encoder::xdr;
 
 namespace iofwdclient
 {
@@ -96,7 +101,7 @@ class RPCServerSM :
             /* create the encoder */
             e_.coder_ = rpc::RPCEncoder(e_.data_ptr_, e_.data_size_);
 
-            encoder::process(e_.coder_, e_.data_);
+            process(e_.coder_, e_.data_);
 
             e_.zero_copy_stream_->rewindOutput(e_.net_data_size_ - e_.coder_.getPos(), slots_[BASE_SLOT]);
 
@@ -149,7 +154,7 @@ class RPCServerSM :
 
             d_.coder_ = rpc::RPCDecoder(d_.data_ptr_, d_.data_size_);
 
-            encoder::process(d_.coder_, d_.data_);
+            process(d_.coder_, d_.data_);
 
             if(d_.coder_.getPos() != d_.data_size_)
             {
