@@ -1,4 +1,5 @@
 #include "iofwdclient/ASClient.hh"
+#include "iofwdclient/CBClient.hh"
 #include "iofwdclient/RequestTracker.hh"
 #include "iofwdclient/IOFWDRequest.hh"
 
@@ -11,7 +12,10 @@ namespace iofwdclient
 {
    //========================================================================
 
-   ASClient::ASClient ()
+   ASClient::ASClient (iofwdutil::IOFWDLogSource & log, CBClient & cb)
+      : log_ (log),
+        cbclient_ (cb),
+        tracker_ (new RequestTracker ())
    {
       // We expect timeout to be at least a 32 bit type
       STATIC_ASSERT (sizeof (zoidfs_timeout_t) >= 4);
@@ -81,7 +85,7 @@ namespace iofwdclient
       //   the lack of automatic refcounting in the C API
       IOFWDRequestPtr r (tracker_->newRequest ());
 
-      cbgetattr (tracker_->getCB (r),
+      cbclient_.cbgetattr (tracker_->getCB (r),
                  r->getReturnPointer (),
                  handle, attr, op_hint);
 

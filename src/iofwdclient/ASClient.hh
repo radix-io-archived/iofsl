@@ -1,15 +1,18 @@
 #ifndef IOFWDCLIENT_ASCLIENT_HH
 #define IOFWDCLIENT_ASCLIENT_HH
 
-#include "iofwdclient/CBClient.hh"
+#include "iofwdclient/iofwdclient-fwd.hh"
+
+#include "iofwdutil/IOFWDLog-fwd.hh"
 
 #include "zoidfs/zoidfs-async.h"
+
+#include <boost/scoped_ptr.hpp>
 
 namespace iofwdclient
 {
    //========================================================================
 
-   class RequestTracker;
    class IOFWDRequest;
 
    /**
@@ -18,10 +21,10 @@ namespace iofwdclient
     * Takes a ZoidFS CB async implementation and builds the
     * non-blocking zoidfs functions on top of it.
     */
-   class ASClient : public CBClient
+   class ASClient
    {
       public:
-         ASClient ();
+         ASClient (iofwdutil::IOFWDLogSource & log, CBClient & c);
 
          ~ASClient ();
 
@@ -49,7 +52,9 @@ namespace iofwdclient
          IOFWDRequest * getRequest (zoidfs::zoidfs_request_t req) const;
 
       protected:
-         RequestTracker * tracker_;
+         iofwdutil::IOFWDLogSource & log_;
+         CBClient & cbclient_;
+         boost::scoped_ptr<RequestTracker> tracker_;
    };
 
    //========================================================================

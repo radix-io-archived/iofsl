@@ -17,6 +17,9 @@ namespace iofwdclient
     * Be careful in this class: think long and hard about when to use a normal
     * (IOFWDRequest *) and when to use a 
     * reference counted request pointer (IOFWDRequestPtr)...
+    *
+    * @TODO: either here or in the users of this class, make sure at least one
+    * thread is calling zoidfs_progress () instead of waiting.
     */
    class RequestTracker
    {
