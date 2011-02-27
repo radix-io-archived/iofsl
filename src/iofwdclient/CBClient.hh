@@ -1,21 +1,19 @@
 #ifndef IOFWDCLIENT_CBCLIENT_HH
 #define IOFWDCLIENT_CBCLIENT_HH
 
+#include "iofwdclient/iofwdclient-fwd.hh"
 #include "iofwdclient/IOFWDClientCB.hh"
-#include "iofwdclient/clientsm/GetAttrClientSM.hh"
 
 #include "zoidfs/zoidfs-async.h"
 
 #include "iofwdutil/IOFWDLog-fwd.hh"
-#include "src/iofwdutil/always_assert.hh"
+#include "iofwdutil/always_assert.hh"
+#include "iofwdutil/tools.hh"
 
 #include "sm/SMManager.hh"
 #include "sm/SMClient.hh"
 
 #include <boost/scoped_ptr.hpp>
-
-#include <queue>
-
 
 namespace iofwdclient
 {
@@ -27,7 +25,8 @@ namespace iofwdclient
    class CBClient
    {
       public:
-         CBClient (bool poll = true);
+         CBClient (iofwdutil::IOFWDLogSource & log,
+               CommStream & net, bool poll = true);
 
          ~CBClient ();
 
@@ -115,9 +114,12 @@ namespace iofwdclient
             zoidfs::zoidfs_comp_mask_t mask,
             const iofwdevent::CBException & cbexception);
 
+      protected:
          iofwdutil::IOFWDLogSource & log_;
-         boost::scoped_ptr<sm::SMManager> smm_;
+         CommStream & net_;
          bool poll_;
+
+         boost::scoped_ptr<sm::SMManager> smm_;
    };
 
    //========================================================================

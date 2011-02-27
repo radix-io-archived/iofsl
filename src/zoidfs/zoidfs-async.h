@@ -72,6 +72,29 @@ int zoidfs_request_get_comp_state(zoidfs_request_t request,
 int zoidfs_request_test(zoidfs_request_t request, zoidfs_timeout_t timeout,
         zoidfs_comp_mask_t mask);
 
+/* ========================================================================
+ * ==== Async ZoidFS functions ============================================
+ * ======================================================================== */
+
+/* Background progress function.
+ *    - minwait indicates the minimum amount of time this function needs
+ *      to try to make progress. Unless there is an error, zoidfs_progress()
+ *      will not return before minwait time elapses.
+ *
+ * In general (i.e. no error), this function will wait until:
+ *    - minwait time elapses
+ *    - At least one progress event occured
+ *       -or- maxwait time elapses.
+ *
+ * (Possible todo: have function return an error condition if there is no work
+ * pending)
+ */
+int zoidfs_progress (zoidfs_timeout_t minwait, zoidfs_timeout_t maxwait);
+
+/* ========================================================================
+ * ==== Async ZoidFS functions ============================================
+ * ======================================================================== */
+
 int zoidfs_igetattr(zoidfs_request_t * request, /* in:ptr */
         const zoidfs_handle_t * handle /*in:ptr */,
         zoidfs_attr_t * attr /* inout:ptr */,

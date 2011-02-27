@@ -1,5 +1,7 @@
 #include "iofwdclient/CBClient.hh"
 
+#include "iofwdclient/CommStream.hh"
+
 #include "iofwdutil/IOFWDLog.hh"
 #include "iofwdutil/tools.hh"
 
@@ -11,10 +13,12 @@ namespace iofwdclient
 {
    //========================================================================
 
-   CBClient::CBClient (bool poll)
-      : log_ (iofwdutil::IOFWDLog::getSource ()),
-      smm_(new sm::SMManager(poll)),
-      poll_(poll)
+   CBClient::CBClient (iofwdutil::IOFWDLogSource & log,
+         CommStream & net, bool poll)
+      : log_ (log),
+        net_ (net),
+        poll_(poll),
+        smm_(new sm::SMManager(poll))
    {
    }
 
