@@ -6,7 +6,9 @@
 #include "zoidfs/util/OpHintHelper.hh"
 #include "iofwdutil/tools.hh"
 #include "encoder/Util.hh"
-#include "encoder/EncoderWrappers.hh"
+
+using namespace encoder;
+using namespace encoder::xdr;
 
 namespace iofwdclient
 {
@@ -26,32 +28,18 @@ class GetAttrOutStream
         zoidfs::zoidfs_attr_t * attr_;
         encoder::OpHintHelper op_helper_;
 };
+
+template <typename Enc, typename Wrapper>
+inline Enc & process (Enc & e,
+        Wrapper & w,
+        typename process_filter<Wrapper, GetAttrOutStream>::type * UNUSED(d) = NULL)
+{
+    process(e, *(w.attr_));
+    process(e, w.op_helper_);
+
+    return e;
+}
     }
-}
-
-namespace encoder
-{
-
-template <typename Enc>
-inline Enc & process (Enc & e,
-        iofwdclient::streamwrappers::GetAttrOutStream & w,
-        typename encoder::only_decoder_processor<Enc>::type * UNUSED(d)= 0)
-{
-    encoder::xdr::process(e, *(w.attr_));
-    //encoder::xdr::process(e, w.op_helper_);
-    return e;
-}
-
-template <typename Enc>
-inline Enc & process (Enc & e,
-        const iofwdclient::streamwrappers::GetAttrOutStream & w,
-        typename encoder::only_size_processor<Enc>::type * UNUSED(d)= 0)
-{
-    encoder::xdr::process(e, *(w.attr_));
-    //encoder::xdr::process(e, w.op_helper_);
-    return e;
-}
-
 }
 
 #endif
