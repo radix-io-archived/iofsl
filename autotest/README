@@ -1,6 +1,16 @@
 
-These Python scripts are Python (2.4) compliant.
+IOFSL-dist-test.sh:
+#################################################
+The IOFSL-dist-test.sh script will configure, build and distcheck commits as far back in history as the 
+user specifies.  The script has two options, -n and -b.  The -n option referes to the number of commits the user wishes to test into history.  Example:  IOFSL-dist-test.sh -n 10: will test 10 commits backwards in history from the first commit referenced in a git log command.  The -b option refers to the branch the user wishes to execute the test harness on.  If the user wishes to use the master branch it is the default, and therefor no option is required to execute on master.  An implementation that specifies a specific commit is being worked on.  This would allow a user to specify a certain commit or range of commits that he/she wished to execute the test harness on.  More info to follow.  
 
+
+
+
+
+
+
+Python scripts:
 ##################################################
 
 Short disclosure on autotests files.
