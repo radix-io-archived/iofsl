@@ -53,6 +53,12 @@ frontend {
     //  default: 0
     //
     maxnumbuffers = "100";
+
+    //
+    // the max amount of mem allocated by the nbio pool
+    // default: 256MB
+    //
+    maxmem = "268435456";
   }
 
 }
