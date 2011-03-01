@@ -19,6 +19,7 @@
 
 using namespace boost;
 namespace iofwdevent {
+  class ZeroCopyMemoryInput;
   class ZeroCopyMemoryOutput: public ZeroCopyOutputStream {
     protected:
       void * mem; /*< Stores memory location data */
@@ -56,8 +57,14 @@ namespace iofwdevent {
 
       /* Get current offset value */
       size_t getOffset(void);
-
+      
+      /* Set the streams offset */
       void setOffset(size_t);
+      
+      /* Convert an ZeroCopyMemoryInput stream to a ZeroCopyMemoryOutput 
+         stream */
+      void convertToOutput (ZeroCopyMemoryInput * );
+
   };
 }
 #endif

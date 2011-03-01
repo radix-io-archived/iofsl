@@ -12,6 +12,7 @@
 #ifndef SRC_IOFWDEVENT_ZEROCOPYMEMORYINPUT
 #define SRC_IOFWDEVENT_ZEROCOPYMEMORYINPUT
 #include "ZeroCopyInputStream.hh"
+#include "ZeroCopyMemoryOutput.hh"
 #include "CBType.hh"
 #include "Handle.hh"
 #include "CBException.hh"
@@ -19,15 +20,18 @@
 
 using namespace boost;
 namespace iofwdevent {
+  class ZeroCopyMemoryOutput;
   /**
    * Creates an input zero copy stream from a memory region 
    */
   class ZeroCopyMemoryInput : public ZeroCopyInputStream {
     protected:
       const void * mem; /*< Stores memory location data */
-      size_t memSize;       /*< Stores the size of the memory location */
+      size_t memSize;       /*< Stores the size of the memory location 
+                                (readable size) */
       size_t pos;           /*< Stores current pointer position inside mem */
-
+      size_t totalSize;     /*< Stores the total size of the buffer 
+                                (unreadble memory size) */
     public:
       /* Constructor for ZeroCopyMemoryInput. */
       ZeroCopyMemoryInput  (const void * , size_t );
@@ -50,6 +54,18 @@ namespace iofwdevent {
 
       /* Amount of space remaining that has not be read in this->mem */
       size_t spaceRemaining (void);
+
+      /* Converts a memory output stream to input stream */
+      void convertToInput ( ZeroCopyMemoryOutput *);
+
+      /* get the memory pointer for this location */
+      void * getMemPtr(void);
+
+      /* Get the current offset for the stream (pos) */
+      size_t getOffset(void);
+
+      /* Get the total lenght of the underlying stream */
+      size_t getTotalLen(void);
   };
 }
 #endif
