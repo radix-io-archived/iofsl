@@ -105,7 +105,7 @@ namespace iofwdevent {
       Handle readStream (const void **, size_t *, const CBType &,  size_t);
       void nullCB (CBException e);
       void transformationState (CBException, const void ** , size_t * , 
-                                const CBType & , size_t , size_t );
+                                const CBType & , size_t , size_t *);
   };
 }
 

@@ -1,4 +1,6 @@
 #include "ZeroCopyTransformInput.hh"
+#include <iostream>
+using namespace std;
 namespace iofwdevent {
   /**
    * Constructor for ZeroCopyTransformInput.
@@ -48,7 +50,8 @@ namespace iofwdevent {
   {
     /* Check to see if any non-read transformed data is availible, if so 
        return it */
-    if (transformStorage->getTotalLen() > 0)
+    cout << "Transform Size is " << transformStorage->getOffset() << endl;
+    if (transformStorage->getOffset() > 0)
     {
       readTransformStorage(out, len, cb, suggested);
       return (Handle) 0;
@@ -56,7 +59,7 @@ namespace iofwdevent {
 
     /* If there is still unconsumed input, go directly to transformation 
        state */
-    if (streamStorage->getTotalLen() > 0)
+    if (streamStorage->getOffset() > 0)
     {
       doTransform (out, len, cb, suggested);
       return (Handle) 0;
@@ -92,7 +95,7 @@ namespace iofwdevent {
                         boost::ref(*this), _1, len, cb);
 
     /* If there is any transformed input not read return unread transformed input */  
-    if (this->transformStorage->getTotalLen() > 0)
+    if (this->transformStorage->getOffset() > 0)
     {
       x = this->convertToMemoryInput(this->transformStorage);
 
@@ -136,20 +139,20 @@ namespace iofwdevent {
                                               size_t suggested)
   {
     Handle x;  
-    void * writeLoc;
-    size_t writeSize = 0;
-
+    void ** writeLoc = new void * [1];
+    size_t * writeSize = new size_t[1];
     CBType nullCB = boost::bind(&ZeroCopyTransformInput::nullCB, 
                                 boost::ref(*this), _1);
-    x = streamStorage->write (&writeLoc, &writeSize, nullCB, suggested);    
+    x = streamStorage->write (writeLoc, writeSize, nullCB, suggested);
 
     /* Create a new callback for when the stream read is compleated */
     CBType newCB = boost::bind(&ZeroCopyTransformInput::transformationState,
                                 boost::ref(*this), _1, out, len, cb, suggested,
                                 writeSize);
 
-    return stream->read((const void **) &writeLoc, &writeSize, 
-                        newCB, writeSize);
+    x = stream->read((const void **) writeLoc, writeSize,
+                        newCB, (size_t)(*writeSize));
+    return x;
   }
 
   void ZeroCopyTransformInput::nullCB (CBException e)
@@ -176,14 +179,14 @@ namespace iofwdevent {
                                                     size_t * len,
                                                     const CBType & cb,
                                                     size_t suggested,
-                                                    size_t writeSize)
+                                                    size_t * writeSize)
   {
     e.check();
     CBType nullCB = boost::bind(&ZeroCopyTransformInput::nullCB, 
                                 boost::ref(*this), _1);
         
-    streamStorage->rewindOutput(suggested - writeSize, nullCB);
-  
+    streamStorage->rewindOutput(suggested - *writeSize, nullCB);
+    streamStorage->setOffset(*writeSize);
     doTransform ( out, len, cb, suggested);
   }
 
@@ -204,24 +207,28 @@ namespace iofwdevent {
                                             size_t suggested)
   {
     Handle ret;
-    void * transStorage;
+    void ** transStorage = new void * [1];
     size_t transSize = 0;
     size_t transOut = 0;
     bool flushFlag = false;
     int outState = 0;
     void * streamData = streamStorage->getMemPtr();
-    size_t streamLen  = streamStorage->getTotalLen();
-
+    size_t streamLen  = streamStorage->getOffset();
+    if (streamLen == 0)
+    {
+    	flushFlag = true;
+    }
     /* Create a null callback for reading of transformStorage (non blocking) */
     CBType nullCB = boost::bind(&ZeroCopyTransformInput::nullCB,
                                 boost::ref(*this), _1);
 
     /* Get write pointer for transform storage */
-    transformStorage->write(&transStorage, &transSize, nullCB, suggested);
+    transformStorage->write(transStorage, &transSize, nullCB, suggested);
+
 
     /* preform the transform */
     transform->transform ((const void *const) streamData, streamLen,
-                          transStorage, transSize, &transOut,
+                          *transStorage, transSize, &transOut,
                           &outState, flushFlag);
 
     ret = transformStorage->rewindOutput(transSize - transOut, nullCB);
@@ -232,11 +239,11 @@ namespace iofwdevent {
       streamStorage->reset();
       ret = readStream( out, len, cb, suggested);
     }
-    /* if the output is full return */
-    else if (outState == CONSUME_OUTBUF)
-    {
-      readTransformStorage(out, len, cb, suggested);
-    }
+//    /* if the output is full return */
+//    else if (outState == CONSUME_OUTBUF)
+//    {
+//      readTransformStorage(out, len, cb, suggested);
+//    }
   }
 
   /**
