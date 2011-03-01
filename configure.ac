@@ -22,6 +22,52 @@ AM_PROG_CC_C_O
 AC_PROG_CXX
 AC_PROG_RANLIB
 
+dnl =========================================================================
+dnl == Google's PerfTools ===================================================
+dnl =========================================================================
+
+AC_ARG_WITH(perftools,
+    AS_HELP_STRING([--with-perftools=dir],
+                   [Location of google perftools installation]),
+    PERFTOOL_DIR="$withval",PERFTOOL_DIR="")
+
+AC_MSG_WARN($PERFTOOL_DIR)
+
+if test -n "$PERFTOOL_DIR" ;
+then
+   CPPFLAGS="$CPPFLAGS -I${PERFTOOL_DIR}/include"
+   LDFLAGS="$LDFLAGS -L${BZIP2_DIR}/lib"
+   IOFSL_CLIENT_CFLAGS_PKG="${IOFSL_CLIENT_CFLAGS_PKG} -I${PERFTOOL_DIR}/include"
+   IOFSL_CLIENT_LIBS_PKG="${IOFSL_CLIENT_LIBS_PKG} -L${PERFTOOL_DIR}/lib -lbz2"
+fi
+
+if test -n "$PERFTOOL_DIR" ;
+then
+use_perftools=1
+else
+use_perftools=
+fi
+
+AC_CHECK_HEADERS([google/tcmalloc.h],[],
+                 [use_perftools=])
+
+if test -n "$use_perftools"; then
+AC_CHECK_LIB([tcmalloc],[tc_new],[],[use_perftools=])
+fi
+
+AM_CONDITIONAL([HAVE_PERFTOOLS],[test "x${use_perftools}" == "x1"])
+
+AC_MSG_CHECKING([if Google Perftools are used])
+if test "x${use_perftools}" == "x1" ; then
+      AC_DEFINE([HAVE_PERFTOOLS], [1], [If google perftools are available])
+      AC_MSG_RESULT([yes])
+else
+      AC_MSG_RESULT([no])
+fi
+
+dnl ==================================================================
+dnl === MPI ==========================================================
+dnl ==================================================================
 
 AC_ARG_WITH([mpi],[AS_HELP_STRING([--with-mpi@<:@=DIR@:>@],
                         [location of MPI library])],
