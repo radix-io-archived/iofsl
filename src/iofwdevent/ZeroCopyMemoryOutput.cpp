@@ -1,4 +1,5 @@
 #include "ZeroCopyMemoryOutput.hh"
+#include "ZeroCopyMemoryInput.hh"
 using namespace boost;
 namespace iofwdevent {
 
@@ -22,15 +23,14 @@ void ZeroCopyMemoryOutput::reset()
   this->offset = 0;
 }
 
+void ZeroCopyMemoryOutput::setOffset(size_t s)
+{
+  this->offset = s;
+}
 
 void * ZeroCopyMemoryOutput::getMemPtr()
 { 
   return this->mem;
-}
-
-size_t ZeroCopyMemoryOutput::getTotalLen()
-{
-  return this->memSize;
 }
 
 size_t ZeroCopyMemoryOutput::getOffset()
@@ -38,10 +38,24 @@ size_t ZeroCopyMemoryOutput::getOffset()
   return this->offset;
 }
 
-void ZeroCopyMemoryOutput::setOffset(size_t offset)
+size_t ZeroCopyMemoryOutput::getTotalLen()
 {
-  this->offset = offset;
+  return this->memSize;
 }
+/**
+ * Converts a ZeroCopyMemoryInput stream to a ZeroCopyOutputStream. Consider
+ * the input stream (ZeroCopyInputStream * in) to be invalid after this 
+ * conversion takes place.
+ * @param[in] in Memory Input stream to convert. Reset will be called on this 
+ *               Stream at the end of this function call.
+ */
+void ZeroCopyMemoryOutput::convertToOutput ( ZeroCopyMemoryInput * in)
+{
+  mem = in->getMemPtr();
+  offset = in->getOffset();
+  memSize = in->getTotalLen();
+}
+
 /**
  * Write to the stream returning a pointer to the region of memory where 
  * the data can be written to. 
