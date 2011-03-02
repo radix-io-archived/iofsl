@@ -233,7 +233,7 @@ namespace iofwdevent {
       ret = readStream( out, len, cb, suggested);
     }
     /* if the output is full return */
-    else if (outState == CONSUME_OUTBUF)
+    else if (outState == CONSUME_OUTBUF || outState == TRANSFORM_DONE)
     {
       readTransformStorage(out, len, cb, suggested);
     }
