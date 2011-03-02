@@ -44,7 +44,8 @@ namespace iofwdevent {
     typedef iofwdutil::transform::GenericTransform GenericTransform;
     protected:
       ZeroCopyMemoryOutput * transformStorage;
-      ZeroCopyMemoryOutput * streamStorage;
+      ZeroCopyMemoryInput * streamStorage;
+      ZeroCopyMemoryInput * tempInputStream;
       ZeroCopyInputStream * stream; /*< Stores input stream from which to transform */
       GenericTransform * transform; /*< Stores transform information */
       static const int SUPPLY_INBUF = iofwdutil::transform::SUPPLY_INBUF;
@@ -87,7 +88,7 @@ namespace iofwdevent {
       Handle rewindInput (size_t , const CBType & );
 
       /* Callback when transformStorage read is complete */ 
-      void transformStorageCB(CBException, size_t *, CBType);
+      void transformStorageCB(CBException, CBType);
 
       /* Read the transform storage stream */
       void readTransformStorage (const void **, size_t *, const CBType &, 
@@ -105,7 +106,7 @@ namespace iofwdevent {
       Handle readStream (const void **, size_t *, const CBType &,  size_t);
       void nullCB (CBException e);
       void transformationState (CBException, const void ** , size_t * , 
-                                const CBType & , size_t , size_t *);
+                                const CBType & , size_t , size_t *, void **);
   };
 }
 
