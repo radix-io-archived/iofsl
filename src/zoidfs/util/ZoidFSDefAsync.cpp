@@ -32,7 +32,11 @@ namespace zoidfs
 
    //=====================================================================
         boost::mutex ZoidFSDefAsync::handle_tracker_mutex_;
+        boost::mutex ZoidFSDefAsync::commit_mutex_;
         ZoidFSHandleTracker ZoidFSDefAsync::handle_tracker_;
+        uint64_t ZoidFSDefAsync::handle_tracker_id_ = 0;
+        uint64_t ZoidFSDefAsync::commit_tracker_id_ = 0;
+        ZoidFSHandleCommitTracker ZoidFSDefAsync::handle_commit_tracker_;
 
    void ZoidFSDefAsync::runWorkUnit(ZoidFSDefAsyncWorkUnit * bwu)
    {
@@ -165,6 +169,7 @@ namespace zoidfs
 
               boost::exception_ptr e;
 
+            boost::mutex::scoped_lock mlock(commit_mutex_);
             try
             {
                 int nbio_flag = 0;
@@ -188,44 +193,37 @@ namespace zoidfs
                         boost::mutex::scoped_lock lock(handle_tracker_mutex_);
 
                         /* if the handle is in the map, get it */
-                        if((it = handle_tracker_.find(*(wu->handle_))) != 
+                        if((it = handle_tracker_.find(ZoidFSTrackerKey(wu->handle_))) != 
                                 handle_tracker_.end())
                         {
                             data = it->second;
-                            handle_tracker_.erase(it);
                         }
                     }
 
                     /* if the handle was in the tracker table */
                     if(data)
                     {
-                        boost::mutex::scoped_lock 
-                            handle_lock(data->mutex_);
+                        uint64_t ref_count = 0;
+                        uint64_t ref_count_orig = 0;
 
-                        /* while there are pending ops, wait */
-                        while(data->ref_count_ > 0)
                         {
-                            /* wait on the condition variable */
-                            data->condition_.wait(handle_lock);
+                            boost::mutex::scoped_lock lock(data->mutex_);
+
+                            data->flush_ = true;
+                            ref_count = data->ref_count_;
+                            ref_count_orig = data->ref_count_;
+
+                            while(ref_count > 0)
+                            {
+                                data->condition_.wait(lock);
+                                ref_count--;
+                            }
                         }
 
-                        /* if any errors were detected on async calls, pass back the 
-                        error code here */
                         if(data->err_ != ZFS_OK)
                         {
                             *(wu->ret_) = data->err_;
-                        }
-
-                        /* delete the handle */
-                        handle_lock.unlock();
-                        delete data;
-
-                        /* remove the handle from the tracker */
-                        {
-                            boost::mutex::scoped_lock
-                                mlock(handle_tracker_mutex_);
-
-                            handle_tracker_.erase(handle_tracker_.find(*(wu->handle_)));
+                            data->err_ = ZFS_OK;
                         }
                     }
                  }
@@ -503,8 +501,6 @@ namespace zoidfs
                         delete [] wu->file_starts_; 
                         delete [] wu->file_sizes_;
 
-                        delete wu->handle_;
-                
                         iofwdutil::mm::NBIOMemoryManager::instance().dealloc(wu->alloc_); 
                         if(wu->hint_)
                         {
@@ -527,30 +523,38 @@ namespace zoidfs
                                 handle_lock(handle_tracker_mutex_);
                             ZoidFSHandleTracker::iterator it;
 
-                           if((it = handle_tracker_.find(*(wu->handle_)))
+                           if((it = handle_tracker_.find(ZoidFSTrackerKey(wu->handle_)))
                                    != handle_tracker_.end())
                            {
                                data = it->second;
-                           } 
+                           }
+                           if(!issue_cb)
+                           {
+                               delete wu->handle_;
+                           }
                         }
-                        if(data)
+                        if(data && !issue_cb)
                         {
-                            boost::mutex::scoped_lock 
-                                handle_lock(data->mutex_); 
-                    
-                            /* dec the handle ref count */
-                            assert(data->ref_count_ > 0);
-                            data->ref_count_--;
-
-                            /* check the error code and update the error tracker if
-                            a failure was detected */
-                            if(*(wu->ret_) != ZFS_OK)
                             {
-                                data->err_ = *(wu->ret_);
-                            }
+                                boost::mutex::scoped_lock 
+                                    handle_lock(data->mutex_); 
+                    
+                                /* dec the handle ref count */
+                                assert(data->ref_count_ > 0);
+                                data->ref_count_--;
 
-                            /* notify the cv */
-                            data->condition_.notify_one();
+                                /* check the error code and update the error tracker if
+                                a failure was detected */
+                                if(*(wu->ret_) != ZFS_OK)
+                                {
+                                    data->err_ = *(wu->ret_);
+                                }
+
+                                if(data->flush_)
+                                {
+                                    data->condition_.notify_one();
+                                }
+                            }
                         }
                     }
                 }
@@ -894,6 +898,7 @@ namespace zoidfs
                     }
 
                     /* track the write operation */
+                    uint64_t op_key_handle_id = 0;
                     {
                         ZoidFSTrackerData * data = NULL;
 
@@ -903,12 +908,14 @@ namespace zoidfs
                                 lock(ZoidFSDefAsync::handle_tracker_mutex_);
                             ZoidFSHandleTracker::iterator it;
 
+                            op_key_handle_id = handle_tracker_id_++;
+
                             /* if the handle was not in the tracker, make a new one and add
                             * it */
-                            if((it = handle_tracker_.find(*(handle))) != handle_tracker_.end())
+                            if((it = handle_tracker_.find(ZoidFSTrackerKey(iofsl_h))) == handle_tracker_.end())
                             {
                                 data = new ZoidFSTrackerData();
-                                handle_tracker_[*(handle)] = data;
+                                handle_tracker_[ZoidFSTrackerKey(iofsl_h)] = data;
                             }
                             /* the handle data was already made, get it */
                             else
@@ -921,11 +928,13 @@ namespace zoidfs
                         /* update the handle data */
                         {
                             boost::mutex::scoped_lock lock(data->mutex_);
-
                             data->ref_count_++;
                         }
                     }
  
+                    /* create the op key */
+                    op_key = new zoidfs_async_write_op_key(*iofsl_h, op_key_handle_id);
+
                     /* create the zoidfs write work unit using the copied
                        params */
                     ZoidFSDefAsyncWriteWorkUnit * wu = new

@@ -19,7 +19,8 @@ namespace zoidfs
                 zoidfs_async_write_op_key(zoidfs_handle_t handle,
                         uint64_t id) :
                     handle_(handle),
-                    id_(id)
+                    id_(id),
+                    commit_id_(0)
                 {
                 }
 
@@ -49,6 +50,7 @@ namespace zoidfs
 
                 zoidfs_handle_t handle_;
                 uint64_t id_;
+                uint64_t commit_id_;
         };
 
         class ZoidFSDefAsyncWorkUnit

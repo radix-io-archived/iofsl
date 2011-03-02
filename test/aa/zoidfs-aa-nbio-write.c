@@ -209,7 +209,6 @@ int main(int argc, char **argv)
     }
 
 #ifdef ENABLE_NB_SERVER_MODE
-    if(rank == 0)
     {
         zoidfs_hint_set(op_hint, ZOIDFS_NONBLOCK_SERVER_IO,
                 ZOIDFS_HINT_ENABLED, 0);

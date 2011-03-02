@@ -13,6 +13,8 @@
 #include "iofwdutil/IOFWDLog.hh"
 
 #include "zoidfs/zoidfs-proto.h"
+#include "zoidfs/util/zoidfs-c-util.h"
+
 #include "src/zoidfs/util/ZoidFSAsyncWorkUnit.hh"
 
 #include <map>
@@ -28,7 +30,9 @@ namespace zoidfs
         {
             public:
                 ZoidFSTrackerData() :
-                    ref_count_(0), err_(ZFS_OK)
+                    ref_count_(0),
+                    err_(ZFS_OK),
+                    flush_(false)
                 {
                 }
 
@@ -68,9 +72,48 @@ namespace zoidfs
                 int err_;
                 boost::mutex mutex_;
                 boost::condition condition_;
+                bool flush_;
         };
 
-        typedef std::map<zoidfs_handle_t, ZoidFSTrackerData *> ZoidFSHandleTracker;
+        class ZoidFSTrackerKey
+        {
+            public:
+                ZoidFSTrackerKey(const zoidfs_handle_t * handle)
+                {
+                    memcpy(&handle_, handle, sizeof(zoidfs_handle_t));
+                }
+
+                ZoidFSTrackerKey()
+                {
+                    memset(&handle_, 0, sizeof(zoidfs_handle_t));
+                }
+
+                bool operator== (const ZoidFSTrackerKey & rhs) const
+                {
+                    if(memcmp(&handle_, &rhs.handle_, sizeof(zoidfs_handle_t)) == 0)
+                    {
+                        return true;
+                    }
+                    return false;
+                }
+
+                bool operator< (const ZoidFSTrackerKey & rhs) const
+                {
+                    if(memcmp(&handle_, &rhs.handle_, sizeof(zoidfs_handle_t)) < 0)
+                    {
+                        return true;
+                    }
+                    return false;
+                }
+
+                zoidfs_handle_t handle_;
+        };
+
+        typedef std::map<ZoidFSTrackerKey, ZoidFSTrackerData *> ZoidFSHandleTracker;
+
+        typedef std::map<uint64_t, uint64_t> ZoidFSCommitTracker;
+        typedef std::map<zoidfs_handle_t, ZoidFSCommitTracker>
+            ZoidFSHandleCommitTracker;
 
 //==========================================================================
 
@@ -298,7 +341,11 @@ namespace zoidfs
       bool highpriooplist_[zoidfs::ZOIDFS_PROTO_MAX];
 
       static boost::mutex handle_tracker_mutex_;
+      static boost::mutex commit_mutex_;
       static ZoidFSHandleTracker handle_tracker_;
+      static uint64_t handle_tracker_id_;
+      static uint64_t commit_tracker_id_;
+      static ZoidFSHandleCommitTracker handle_commit_tracker_;
    };
 
 //==========================================================================
