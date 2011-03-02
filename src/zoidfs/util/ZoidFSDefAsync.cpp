@@ -35,8 +35,6 @@ namespace zoidfs
         boost::mutex ZoidFSDefAsync::commit_mutex_;
         ZoidFSHandleTracker ZoidFSDefAsync::handle_tracker_;
         uint64_t ZoidFSDefAsync::handle_tracker_id_ = 0;
-        uint64_t ZoidFSDefAsync::commit_tracker_id_ = 0;
-        ZoidFSHandleCommitTracker ZoidFSDefAsync::handle_commit_tracker_;
 
    void ZoidFSDefAsync::runWorkUnit(ZoidFSDefAsyncWorkUnit * bwu)
    {

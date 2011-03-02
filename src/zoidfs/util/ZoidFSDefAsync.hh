@@ -111,10 +111,6 @@ namespace zoidfs
 
         typedef std::map<ZoidFSTrackerKey, ZoidFSTrackerData *> ZoidFSHandleTracker;
 
-        typedef std::map<uint64_t, uint64_t> ZoidFSCommitTracker;
-        typedef std::map<zoidfs_handle_t, ZoidFSCommitTracker>
-            ZoidFSHandleCommitTracker;
-
 //==========================================================================
 
    /**
@@ -344,8 +340,6 @@ namespace zoidfs
       static boost::mutex commit_mutex_;
       static ZoidFSHandleTracker handle_tracker_;
       static uint64_t handle_tracker_id_;
-      static uint64_t commit_tracker_id_;
-      static ZoidFSHandleCommitTracker handle_commit_tracker_;
    };
 
 //==========================================================================
