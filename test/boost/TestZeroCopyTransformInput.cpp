@@ -78,15 +78,15 @@ void TestEncode ( GenericTransform &  e)
   
   void ** read = new void * [128];
   size_t readSize = 0;
-  size_t suggested = 10000;
+  size_t suggested = 1000;
   CBType cb = boost::bind(&EncodeComplete, _1);
   for (int i = 0; i < 128; i++)
   {
     trans.read((const void **) read, &readSize, (const CBType) cb, 
                suggested);
+    cout << "Read Once " << readSize << endl;
     if (readSize == 0)
     {
-      cout << "Read complete " << i << endl;
       break;
     }
     //read++;
@@ -145,7 +145,7 @@ BOOST_FIXTURE_TEST_CASE( testConstructor, Fixture )
   BOOST_FOREACH (const std::string & s, cantest)
   {
      BOOST_TEST_MESSAGE(format("Testing %s") % s);
-
+     cout << "Testing " << s << endl;
      boost::scoped_ptr<GenericTransform> encodetr (
         GenericTransformEncodeFactory::instance().construct(s)());
      boost::scoped_ptr<GenericTransform> decodetr (

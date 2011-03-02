@@ -52,7 +52,6 @@ void ZeroCopyMemoryInput::convertToInput (ZeroCopyMemoryOutput * out)
   out->reset();
 }
 
-
 /**
  * Read's from the stream returning a pointer to the region of memory where 
  * the data is stored. 
