@@ -4,7 +4,7 @@
 #include "rpc/RPCClient.hh"
 #include "net/Net-fwd.hh"
 #include "iofwdevent/Resource-fwd.hh"
-
+#include <boost/scoped_ptr.hpp>
 namespace iofwdclient
 {
    //========================================================================
