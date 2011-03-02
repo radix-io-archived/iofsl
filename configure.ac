@@ -956,7 +956,7 @@ fi
 
 use_ftb=1
 
-AC_CHECK_HEADERS([libftb.h],[],
+AC_CHECK_HEADERS([ftb.h],[],
                  [use_ftb=])
 
 if test -n $use_ftb; then

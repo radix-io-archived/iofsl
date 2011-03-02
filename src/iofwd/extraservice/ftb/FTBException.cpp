@@ -1,7 +1,7 @@
 #include "FTBException.hh"
 
 #include <boost/format.hpp>
-#include <libftb.h>
+#include <ftb.h>
 
 namespace iofwd
 {

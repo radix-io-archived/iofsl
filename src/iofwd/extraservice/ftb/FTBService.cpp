@@ -8,7 +8,7 @@
 #include <boost/format.hpp>
 #include <boost/date_time/posix_time/posix_time_types.hpp>
 
-#include <libftb.h>
+#include <ftb.h>
 
 
 SERVICE_REGISTER(iofwd::FTBService, ftb);
