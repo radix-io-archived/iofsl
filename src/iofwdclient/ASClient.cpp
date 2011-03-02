@@ -93,5 +93,357 @@ namespace iofwdclient
    }
 
 
+
+   int ASClient::isetattr(zoidfs::zoidfs_request_t * request,
+                             const zoidfs::zoidfs_handle_t *handle,
+                             const zoidfs::zoidfs_sattr_t *sattr,
+                             zoidfs::zoidfs_attr_t *attr, 
+                             zoidfs::zoidfs_op_hint_t * op_hint)
+   {
+      // validate arguments
+      // Can op_hint be 0?
+      if (*request || !handle || !attr || !sattr)
+         return ZFSERR_INVAL;
+
+      // Create request
+      //   newRequest automatically increments the refcount to compensate for
+      //   the lack of automatic refcounting in the C API
+      IOFWDRequestPtr r (tracker_->newRequest ());
+
+      cbclient_.cbsetattr(tracker_->getCB (r),
+                 r->getReturnPointer (),handle,sattr, attr, op_hint);
+      return ZFS_OK;
+   }
+
+
+   int ASClient::ilookup(zoidfs::zoidfs_request_t * request,
+                            const zoidfs::zoidfs_handle_t *parent_handle,
+                            const char *component_name, 
+                            const char *full_path,
+                            zoidfs::zoidfs_handle_t *handle,
+                            zoidfs::zoidfs_op_hint_t * op_hint)
+   {
+            // validate arguments
+      // Can op_hint be 0?
+      if (*request || !parent_handle || !component_name || !full_path ||
+          !handle)
+         return ZFSERR_INVAL;
+
+      // Create request
+      //   newRequest automatically increments the refcount to compensate for
+      //   the lack of automatic refcounting in the C API
+      IOFWDRequestPtr r (tracker_->newRequest ());
+
+      cbclient_.cblookup(tracker_->getCB (r), r->getReturnPointer (), 
+                         parent_handle, component_name, full_path, handle, 
+                         op_hint);
+      return ZFS_OK;
+   }
+               
+   int ASClient::ireadlink(zoidfs::zoidfs_request_t * request,
+                              const zoidfs::zoidfs_handle_t *handle,  
+                              char *buffer,   
+                              size_t buffer_length,
+                              zoidfs::zoidfs_op_hint_t * op_hint)
+   {
+            // validate arguments
+      // Can op_hint be 0?
+      if (*request || !handle || !buffer || !buffer_length)
+         return ZFSERR_INVAL;
+
+      // Create request
+      //   newRequest automatically increments the refcount to compensate for
+      //   the lack of automatic refcounting in the C API
+      IOFWDRequestPtr r (tracker_->newRequest ());
+
+      cbclient_.cbreadlink(tracker_->getCB (r), r->getReturnPointer (),
+                           handle, buffer, buffer_length,  op_hint);
+      return ZFS_OK;
+   }
+                 
+   int ASClient::icommit(zoidfs::zoidfs_request_t * request,
+                            const zoidfs::zoidfs_handle_t *handle,
+                            zoidfs::zoidfs_op_hint_t * op_hint)
+   {
+            // validate arguments
+      // Can op_hint be 0?
+      if (*request || !handle )
+         return ZFSERR_INVAL;
+
+      // Create request
+      //   newRequest automatically increments the refcount to compensate for
+      //   the lack of automatic refcounting in the C API
+      IOFWDRequestPtr r (tracker_->newRequest ());
+
+      cbclient_.cbcommit( tracker_->getCB (r), r->getReturnPointer (), 
+                          handle, op_hint);
+      return ZFS_OK;
+   }
+               
+   int ASClient::icreate(zoidfs::zoidfs_request_t * request,
+                            const zoidfs::zoidfs_handle_t *parent_handle,
+                            const char *component_name, 
+                            const char *full_path,
+                            const zoidfs::zoidfs_sattr_t *sattr, 
+                            zoidfs::zoidfs_handle_t *handle,
+                            int *created,
+                            zoidfs::zoidfs_op_hint_t * op_hint)
+   {
+            // validate arguments
+      // Can op_hint be 0?
+      if (*request || !handle || !parent_handle || !component_name || 
+          !full_path || !sattr || !created)
+         return ZFSERR_INVAL;
+
+      // Create request
+      //   newRequest automatically increments the refcount to compensate for
+      //   the lack of automatic refcounting in the C API
+      IOFWDRequestPtr r (tracker_->newRequest ());
+
+      cbclient_.cbcreate (tracker_->getCB (r), r->getReturnPointer (), 
+                          parent_handle, component_name, full_path, sattr, 
+                          handle, created, op_hint);
+      return ZFS_OK;
+   }
+              
+   int ASClient::iremove(zoidfs::zoidfs_request_t * request,
+                            const zoidfs::zoidfs_handle_t *parent_handle,
+                            const char *component_name, const char *full_path,
+                            zoidfs::zoidfs_cache_hint_t *parent_hint,
+                            zoidfs::zoidfs_op_hint_t * op_hint)
+   {
+            // validate arguments
+      // Can op_hint be 0?
+      if (*request || !parent_handle || !parent_hint || !full_path )
+         return ZFSERR_INVAL;
+
+      // Create request
+      //   newRequest automatically increments the refcount to compensate for
+      //   the lack of automatic refcounting in the C API
+      IOFWDRequestPtr r (tracker_->newRequest ());
+
+      cbclient_.cbremove (tracker_->getCB (r),
+                          r->getReturnPointer (), parent_handle, component_name, 
+                          full_path, parent_hint, op_hint);
+      return ZFS_OK;
+   }
+               
+   int ASClient::irename(zoidfs::zoidfs_request_t * request,
+                            const zoidfs::zoidfs_handle_t *from_parent_handle,
+                            const char *from_component_name,
+                            const char *from_full_path,
+                            const zoidfs::zoidfs_handle_t *to_parent_handle,
+                            const char *to_component_name,
+                            const char *to_full_path,
+                            zoidfs::zoidfs_cache_hint_t *from_parent_hint,
+                            zoidfs::zoidfs_cache_hint_t *to_parent_hint,
+                            zoidfs::zoidfs_op_hint_t * op_hint)
+   {
+            // validate arguments
+      // Can op_hint be 0?
+      if (*request || !from_parent_handle || !from_component_name ||
+          !from_full_path || !to_parent_handle || !to_component_name ||
+          !to_full_path || !from_parent_hint || !to_parent_hint )
+         return ZFSERR_INVAL;
+
+      // Create request
+      //   newRequest automatically increments the refcount to compensate for
+      //   the lack of automatic refcounting in the C API
+      IOFWDRequestPtr r (tracker_->newRequest ());
+
+      cbclient_.cbrename ( tracker_->getCB (r), r->getReturnPointer (), 
+                           from_parent_handle, 
+                           from_component_name, from_full_path, 
+                           to_parent_handle, to_component_name, 
+                           to_full_path, from_parent_hint, 
+                           to_parent_hint, op_hint);
+      return ZFS_OK;
+   }
+               
+   int ASClient::ilink(zoidfs::zoidfs_request_t * request,
+                          const zoidfs::zoidfs_handle_t *from_parent_handle,
+                          const char *from_component_name,
+                          const char *from_full_path,
+                          const zoidfs::zoidfs_handle_t *to_parent_handle,
+                          const char *to_component_name,
+                          const char *to_full_path,
+                          zoidfs::zoidfs_cache_hint_t *from_parent_hint,
+                          zoidfs::zoidfs_cache_hint_t *to_parent_hint,
+                          zoidfs::zoidfs_op_hint_t * op_hint)
+   {
+            // validate arguments
+      // Can op_hint be 0?
+      if (*request || !from_parent_handle || !from_component_name ||
+          !from_full_path || !to_parent_handle || !to_component_name ||
+          !to_full_path || !from_parent_hint || !to_parent_hint )
+         return ZFSERR_INVAL;
+
+      // Create request
+      //   newRequest automatically increments the refcount to compensate for
+      //   the lack of automatic refcounting in the C API
+      IOFWDRequestPtr r (tracker_->newRequest ());
+
+      cbclient_.cblink(tracker_->getCB (r), r->getReturnPointer (), 
+                       from_parent_handle, from_component_name,
+                       from_full_path, to_parent_handle, 
+                       to_component_name, to_full_path, 
+                       from_parent_hint, to_parent_hint,
+                       op_hint);   
+      return ZFS_OK;
+   }
+             
+   int ASClient::isymlink(zoidfs::zoidfs_request_t * request,
+                             const zoidfs::zoidfs_handle_t *from_parent_handle,
+                             const char *from_component_name,
+                             const char *from_full_path,
+                             const zoidfs::zoidfs_handle_t *to_parent_handle,
+                             const char *to_component_name,
+                             const char *to_full_path,
+                             const zoidfs::zoidfs_sattr_t *sattr,
+                             zoidfs::zoidfs_cache_hint_t *from_parent_hint,
+                             zoidfs::zoidfs_cache_hint_t *to_parent_hint,
+                             zoidfs::zoidfs_op_hint_t * op_hint)
+   {
+            // validate arguments
+      // Can op_hint be 0?
+      if (*request || !from_parent_handle || !from_component_name || !sattr ||
+          !from_full_path || !to_parent_handle || !to_component_name ||
+          !to_full_path || !from_parent_hint || !to_parent_hint )
+         return ZFSERR_INVAL;
+
+      // Create request
+      //   newRequest automatically increments the refcount to compensate for
+      //   the lack of automatic refcounting in the C API
+      IOFWDRequestPtr r (tracker_->newRequest ());
+
+      cbclient_.cbsymlink ( tracker_->getCB (r), r->getReturnPointer (), 
+                            from_parent_handle, from_component_name,
+                            from_full_path, to_parent_handle, 
+                            to_component_name, to_full_path,
+                            sattr, from_parent_hint, to_parent_hint,
+                            op_hint);
+
+      return ZFS_OK;
+   }
+   int ASClient::imkdir(zoidfs::zoidfs_request_t * request,
+                           const zoidfs::zoidfs_handle_t *parent_handle,
+                           const char *component_name, const char *full_path,
+                           const zoidfs::zoidfs_sattr_t *sattr,
+                           zoidfs::zoidfs_cache_hint_t *parent_hint,
+                           zoidfs::zoidfs_op_hint_t * op_hint)
+   {
+            // validate arguments
+      // Can op_hint be 0?
+      if (*request || !parent_handle || !component_name || !full_path ||
+          !sattr || !parent_hint)
+         return ZFSERR_INVAL;
+
+      // Create request
+      //   newRequest automatically increments the refcount to compensate for
+      //   the lack of automatic refcounting in the C API
+      IOFWDRequestPtr r (tracker_->newRequest ());
+
+      cbclient_.cbmkdir(tracker_->getCB (r), r->getReturnPointer (), 
+                        parent_handle, component_name, full_path,
+                        sattr, parent_hint, op_hint);
+      return ZFS_OK;
+   }
+                      
+   int ASClient::ireaddir(zoidfs::zoidfs_request_t * request,
+                             const zoidfs::zoidfs_handle_t *parent_handle,
+                             zoidfs::zoidfs_dirent_cookie_t cookie, size_t *entry_count_,
+                             zoidfs::zoidfs_dirent_t *entries, uint32_t flags,
+                             zoidfs::zoidfs_cache_hint_t *parent_hint,
+                             zoidfs::zoidfs_op_hint_t * op_hint)
+   {
+            // validate arguments
+      // Can op_hint be 0?
+      if (*request || !parent_handle || !cookie || !entry_count_ || !entries
+         || !flags || !parent_hint )
+         return ZFSERR_INVAL;
+
+      // Create request
+      //   newRequest automatically increments the refcount to compensate for
+      //   the lack of automatic refcounting in the C API
+      IOFWDRequestPtr r (tracker_->newRequest ());
+
+      cbclient_.cbreaddir(tracker_->getCB (r),
+                          r->getReturnPointer (), parent_handle, cookie, 
+                          entry_count_, entries, flags, parent_hint, op_hint);
+      return ZFS_OK;
+   }
+
+   int ASClient::iresize(zoidfs::zoidfs_request_t * request,
+                            const zoidfs::zoidfs_handle_t *handle, 
+                            zoidfs::zoidfs_file_size_t size,
+                            zoidfs::zoidfs_op_hint_t * op_hint)
+   {
+            // validate arguments
+      // Can op_hint be 0?
+      if (*request || !handle || !size)
+         return ZFSERR_INVAL;
+
+      // Create request
+      //   newRequest automatically increments the refcount to compensate for
+      //   the lack of automatic refcounting in the C API
+      IOFWDRequestPtr r (tracker_->newRequest ());
+
+      cbclient_.cbresize(tracker_->getCB (r),
+                         r->getReturnPointer (), handle, size, op_hint);
+      return ZFS_OK;
+   }
+               
+             
+   int ASClient::iread(zoidfs::zoidfs_request_t * request,
+                          const zoidfs::zoidfs_handle_t *handle, size_t mem_count,
+                          void *mem_starts[], const size_t mem_sizes[],
+                          size_t file_count, 
+                          const zoidfs::zoidfs_file_ofs_t file_starts[],
+                          zoidfs::zoidfs_file_size_t file_sizes[],
+                          zoidfs::zoidfs_op_hint_t * op_hint)
+   {
+            // validate arguments
+      // Can op_hint be 0?
+      if (*request || !handle || !mem_count || !mem_starts || !mem_sizes ||
+          !file_count || !file_sizes)
+         return ZFSERR_INVAL;
+
+      // Create request
+      //   newRequest automatically increments the refcount to compensate for
+      //   the lack of automatic refcounting in the C API
+      IOFWDRequestPtr r (tracker_->newRequest ());
+
+      cbclient_.cbread(tracker_->getCB (r),
+                       r->getReturnPointer (), handle, mem_count, mem_starts,
+                       mem_sizes, file_count, file_starts, file_sizes, op_hint);
+      return ZFS_OK;
+   }
+              
+   int ASClient::iwrite(zoidfs::zoidfs_request_t * request,
+                         const zoidfs::zoidfs_handle_t *handle, size_t mem_count,
+                         const void *mem_starts[], const size_t mem_sizes[],
+                         size_t file_count, 
+                         const zoidfs::zoidfs_file_ofs_t file_starts[],
+                         zoidfs::zoidfs_file_ofs_t file_sizes[],
+                         zoidfs::zoidfs_op_hint_t * op_hint)
+   {
+            // validate arguments
+      // Can op_hint be 0?
+      if (*request || !handle || !mem_count || !mem_starts || !mem_sizes ||
+          !file_count || !file_sizes)
+         return ZFSERR_INVAL;
+
+      // Create request
+      //   newRequest automatically increments the refcount to compensate for
+      //   the lack of automatic refcounting in the C API
+      IOFWDRequestPtr r (tracker_->newRequest ());
+
+      cbclient_.cbwrite(tracker_->getCB (r),
+                        r->getReturnPointer (), handle, mem_count, mem_starts, 
+                        mem_sizes, file_count, file_starts, file_sizes, 
+                        op_hint);
+      return ZFS_OK;
+   }
+
    //========================================================================
 }
