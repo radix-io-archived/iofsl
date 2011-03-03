@@ -13,4 +13,4 @@ include $(top_srcdir)/src/zoidfs/util/Makefile.subdir
 include $(top_srcdir)/src/zoidfs/dispatcher/Makefile.subdir
 include $(top_srcdir)/src/zoidfs/client/Makefile.subdir
 include $(top_srcdir)/src/zoidfs/profiler/Makefile.subdir
-
+include $(top_srcdir)/src/zoidfs/ftb/Makefile.subdir

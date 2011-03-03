@@ -1,0 +1,10 @@
+if HAVE_FTB
+
+lib_LIBRARIES += src/zoidfs/ftb/libzoidfsftb.a
+
+src_zoidfs_ftb_libzoidfsftb_a_SOURCES = \
+	src/zoidfs/ftb/zoidfsftb.cpp \
+	src/zoidfs/ftb/ServerSelector.hh \
+	src/zoidfs/ftb/ServerSelector.cpp
+
+endif
