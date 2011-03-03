@@ -1,3 +1,10 @@
+#
+# Protocol buffer compilation
+#
+#
+%.pb.cc %.pb.h: %.proto
+	$(AM_V_GEN)$(PROTOC) --cpp_out=. $< \
+           || ( $(RM) $(@.proto=.cc) $(@.proto=.h); exit 1)
 
 #
 # flex & bison deps
@@ -13,14 +20,6 @@
 %.h %.c: %.yy
 	$(AM_V_GEN)$(YACC) --defines=$(@:.c=.h) -o $(@:.h=.c)  $< \
 	   || ( $(RM) $(@:.c=.h) $(@:.h=.c).c ; exit 1)
-
-# %.c %.h: %.ll
-#	$(FLEX) -o $(patsubst %.ll,%.c,$^) \
-#	   --header-file=$(patsubst %.ll,%.h,$^) $^
-
-#%.c %.h: %.yy
-#	$(BISON) --defines=$(patsubst %.yy,%.h,$^) \
-#	   -o $(patsubst %.yy,%.c,$^) $^
 
 #
 # Output dist version

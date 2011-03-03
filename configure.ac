@@ -973,6 +973,45 @@ else
 fi
 
 dnl =========================================================================
+dnl == protocol buffer support ==============================================
+dnl =========================================================================
+
+
+PROTOBUF_LDFLAGS=
+PROTOBUF_CFLAGS=
+PROTOBUF_CPPFLAGS=
+PROTOBUF_LIBS=
+PKG_CHECK_MODULES([protobuf],[protobuf-lite],[use_protobuf=1],
+                  [use_protobuf=0])
+PROTOBUF_LDFLAGS="$protobuf_LDFLAGS"
+PROTOBUF_CFLAGS="$protobuf_CFLAGS"
+PROTOBUF_CPPFLAGS="$protobuf_CPPFLAGS"
+PROTOBUF_LIBS="$protobuf_LIBS"
+AC_SUBST([PROTOBUF_LDFLAGS])
+AC_SUBST([PROTOBUF_CFLAGS])
+AC_SUBST([PROTOBUF_CPPFLAGS])
+AC_SUBST([PROTOBUF_LIBS])
+AM_CONDITIONAL([HAVE_PROTOBUF],[test "x${use_protobuf}" == "x1"])
+if test "x${use_protobuf}" == "x1" ; then
+      AC_DEFINE([HAVE_PROTOBUF], [1], [If OpenSSL is available])
+      CPPFLAGS="$CPPFLAGS $protobuf_CPPFLAGS"
+      LDFLAGS="$LDFLAGS $protobuf_LDFLAGS"
+      CFLAGS="$CFLAGS $protobuf_CFLAGS"
+      LIBS="$LIBS $protobuf_LIBS"
+      IOFSL_CLIENT_CFLAGS_PKG="${IOFSL_CLIENT_CFLAGS_PKG} ${PROTOBUF_CFLAGS}"
+      IOFSL_CLIENT_LIBS_PKG="${IOFSL_CLIENT_LIBS_PKG} ${PROTOBUF_LDFLAGS} ${PROTOBUF_LIBS}"
+
+      PROTO_EXECDIR="`pkg-config --variable=exec_prefix protobuf-lite`/bin"
+
+      AC_CHECK_PROG([PROTOC],[protoc],[${PROTO_EXECDIR}/protoc],[],[${PROTO_EXECDIR}])
+      if test -z ${PROTOC}; then
+         AC_MSG_ERROR([pkg-config found protobuf, but cannot find protoc?])
+      fi
+fi
+
+
+
+dnl =========================================================================
 dnl =========================================================================
 dnl =========================================================================
 
