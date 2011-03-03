@@ -15,43 +15,13 @@ namespace iofwdutil
    typedef boost::error_info<struct tag_zexception_user_msg, std::string>
       zexception_usermsg;
 
-  /* ZException::ZException ()
-   {
-   }
-
-   ZException::ZException (const std::string & s)
-   {
-      pushMsg (s);
-   }
-
-   std::string ZException::toString () const
-   {
-      return diagnostic_information (*this);
-   } */
-
-   /*void ZException::pushMsg (const std::string & msg)
-   {
-      boost::shared_ptr<std::string> zmsg =
-         boost::get_error_info<zexception_msg> (*this);
-      if (zmsg)
-      {
-         *zmsg += msg;
-      }
-      else
-      {
-         *this << zexception_msg (msg);
-      }
-   } */
-
    std::string getUserErrorMessage (const std::exception & e)
    {
       // Work around get_error_info API modification in
       // certain versions of boost. Sometimes it returns a raw pointer,
       // sometimes a shared pointer.
-      if (boost::get_error_info<zexception_usermsg>(e))
-         return *boost::get_error_info<zexception_usermsg>(e);
-      else
-         return std::string ();
+      const std::string * r = zexception_info<zexception_usermsg>(e);
+      return (r ? *r : std::string ("unknown error"));
    }
    
    boost::exception & addUserErrorMessage (boost::exception & e,

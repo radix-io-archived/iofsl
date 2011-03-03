@@ -70,6 +70,22 @@ namespace iofwdutil
 #define ZTHROW(x) BOOST_THROW_EXCEPTION(x)
 #endif
 
+   /**
+    * Portable boost::get_error_info<T>. Always returns const value_type *
+    * ptr.
+    */
+   template <class ErrorInfo, typename T>
+   typename ErrorInfo::error_info::value_type const *
+       zexception_info (T const & x)
+   {
+      // Trick:
+      //  older boost versions return shared_ptr<value_type>,
+      //  newer versions return const value_type *
+      //
+      // By using &(*...) we always get a plain pointer.
+      return &(*boost::get_error_info<ErrorInfo> (x));
+   }
+
    //========================================================================
 }
 

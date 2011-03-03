@@ -63,7 +63,7 @@ void IOFWDMain::loadServices ()
       addUserErrorMessage (e, str(boost::format(
           "Service '%s' unknown. Was the service enabled"
           " at configure time?") %
-            *boost::get_error_info<service::service_name>(e)));
+            *iofwdutil::zexception_info<service::service_name>(e)));
       throw;
    }
 }
