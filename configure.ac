@@ -3,7 +3,9 @@
 
 AC_PREREQ(2.61)
 AC_INIT([iofwd],[1.0.0],[Submit trouble tickets at http://trac.mcs.anl.gov/projects/iofsl/newticket],[],[http://trac.mcs.anl.gov/projects/iofsl/wiki])
-
+ZOIDFS_MAJOR_VERSION="1"
+ZOIDFS_MINOR_VERSION="0"
+ZOIDFS_PATCH_VERSION="0"
 AC_CANONICAL_TARGET
 AC_CANONICAL_SYSTEM
 AC_CANONICAL_HOST
@@ -981,11 +983,14 @@ dnl =========================================================================
 #
 AC_SUBST([IOFSL_CLIENT_CFLAGS_PKG])
 AC_SUBST([IOFSL_CLIENT_LIBS_PKG])
-
+AC_SUBST([ZOIDFS_MAJOR_VERSION])
+AC_SUBST([ZOIDFS_MINOR_VERSION])
+AC_SUBST([ZOIDFS_PATCH_VERSION])
 AC_CONFIG_FILES([
                  Makefile
                  iofsl.pc
                  iofslrouter.pc
+                 src/zoidfs/zoidfs.h
                  ])
 
 AC_OUTPUT
