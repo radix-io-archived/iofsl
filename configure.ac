@@ -31,8 +31,6 @@ AC_ARG_WITH(perftools,
                    [Location of google perftools installation]),
     PERFTOOL_DIR="$withval",PERFTOOL_DIR="")
 
-AC_MSG_WARN($PERFTOOL_DIR)
-
 if test -n "$PERFTOOL_DIR" ;
 then
    CPPFLAGS="$CPPFLAGS -I${PERFTOOL_DIR}/include"
