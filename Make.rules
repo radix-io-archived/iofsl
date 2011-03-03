@@ -1,14 +1,24 @@
 
 #
 # flex & bison deps
+# @TODO: get real configure test for flex/bison instead of hoping that yacc
+# and lex act like flex and bison
 #
-%.c %.h: %.l
+%.c %.h: %.ll
 	$(AM_V_GEN)$(LEX) --header-file=$(@:.c=.h) -o $(@:.h=.c) $< \
-	   || ( $(RM) $(basename $@).h $(basename $@).c ; exit 1) 
+	   || ( $(RM) $(@:.c=.h) $(@:.h=.c).c ; exit 1) 
 
-%.c %.h: %.y
+%.c %.h: %.yy
 	$(AM_V_GEN)$(YACC) --defines=$(@:.c=.h) -o $(@:.h=.c)  $< \
-	   || ( $(RM) $(basename $@).h $(basename $@).c ; exit 1)
+	   || ( $(RM) $(@:.c=.h) $(@:.h=.c).c ; exit 1)
+
+# %.c %.h: %.ll
+#	$(FLEX) -o $(patsubst %.ll,%.c,$^) \
+#	   --header-file=$(patsubst %.ll,%.h,$^) $^
+
+#%.c %.h: %.yy
+#	$(BISON) --defines=$(patsubst %.yy,%.h,$^) \
+#	   -o $(patsubst %.yy,%.c,$^) $^
 
 #
 # Output dist version

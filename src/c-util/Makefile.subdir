@@ -1,19 +1,22 @@
 lib_LIBRARIES += src/c-util/libiofsl-c-util.a
 
-.PHONY: maintainer-clean-local
-maintainer-clean-local::
-	-rm -f src/c-util/configparser.c
-	-rm -f src/c-util/configparser.h
-	-rm -f src/c-util/configlex.c
-	-rm -f src/c-util/configlex.h
+#.PHONY: maintainer-clean-local
+#maintainer-clean-local::
+#	-rm -f src/c-util/configparser.c
+#	-rm -f src/c-util/configparser.h
+#	-rm -f src/c-util/configlex.c
+#	-rm -f src/c-util/configlex.h
 
-#BUILD_SOURCES += src/c-util/configparser.c \
-#		 src/c-util/configparser.h \
-#		 src/c-util/configlex.h \
-#		 src/c-util/configlex.c 
+BUILT_SOURCES += src/c-util/configparser.c \
+		 src/c-util/configparser.h \
+		 src/c-util/configlex.h \
+		 src/c-util/configlex.c 
 
-src/c-util/configlex.c: src/c-util/configparser.h
+#src/c-util/configlex.c: src/c-util/configparser.h
 # src/c-util/configlex.h: src/c-util/configlex.c
+
+EXTRA_DIST += src/c-util/configparser.yy \
+	      src/c-util/configlex.ll
 
 src_c_util_libiofsl_c_util_a_SOURCES = \
 src/c-util/quicklist.h \
