@@ -126,6 +126,13 @@ namespace iofwdclient
                    zoidfs::zoidfs_file_ofs_t file_sizes[],
                    zoidfs::zoidfs_op_hint_t * op_hint);
 
+         int init (zoidfs::zoidfs_op_hint_t * op_hint);
+         
+         int finalize (zoidfs::zoidfs_op_hint_t * op_hint);
+
+         int null ( zoidfs::zoidfs_op_hint_t * op_hint);
+
+
       protected:
 
          int waitOp (zoidfs::zoidfs_request_t r, zoidfs::zoidfs_comp_mask_t);

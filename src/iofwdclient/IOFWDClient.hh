@@ -131,6 +131,14 @@ namespace iofwdclient
                    size_t file_count, const zoidfs::zoidfs_file_ofs_t file_starts[],
                    zoidfs::zoidfs_file_ofs_t file_sizes[],
                    zoidfs::zoidfs_op_hint_t * op_hint);
+
+         int init (zoidfs::zoidfs_op_hint_t * op_hint);
+         
+         int finalize (zoidfs::zoidfs_op_hint_t * op_hint);
+
+         int null ( zoidfs::zoidfs_op_hint_t * op_hint);
+
+
          // -----------------------------------------------------------------
          // -------------- zoidfs async methods -----------------------------
          // -----------------------------------------------------------------
@@ -247,6 +255,14 @@ namespace iofwdclient
                     zoidfs::zoidfs_op_hint_t * op_hint);
                    
 
+         int iinit (zoidfs::zoidfs_request_t * request,
+                    zoidfs::zoidfs_op_hint_t * op_hint);
+
+         int ifinalize (zoidfs::zoidfs_request_t * request,
+                        zoidfs::zoidfs_op_hint_t * op_hint);
+
+         int inull ( zoidfs::zoidfs_request_t * request,
+                    zoidfs::zoidfs_op_hint_t * op_hint);
 
          // -----------------------------------------------------------------
          // ------------------ Requests & Testing ---------------------------

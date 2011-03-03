@@ -996,7 +996,7 @@ static void * zfs_bmi_client_recvbuf = NULL;
  * to the CN.
  *
  */
-int zoidfs_null(void) {
+int zoidfs_null(zoidfs_op_hint_t * op_hint) {
     int ret = ZFS_OK;
     zoidfs_send_msg_t send_msg;
     zoidfs_recv_msg_t recv_msg;
@@ -3667,7 +3667,7 @@ static int zoidfs_read_pipeline(BMI_addr_t l_peer_addr, size_t pipeline_size,
  * zoidfs_init
  * Initialize the client subsystems.
  */
-int zoidfs_init(void) {
+int zoidfs_init(zoidfs_op_hint_t * op_hint) {
     int ret = ZFS_OK;
     char * pipeline_size = NULL;
 
@@ -3778,7 +3778,7 @@ int zoidfs_init(void) {
  * zoidfs_finalize
  * Finalize the client subsystems.
  */
-int zoidfs_finalize(void) {
+int zoidfs_finalize(zoidfs_op_hint_t * op_hint) {
     int ret = ZFS_OK;
 
     /* cleanup buffers */

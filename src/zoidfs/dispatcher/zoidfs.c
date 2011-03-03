@@ -90,7 +90,7 @@ static inline int zoidfs_full_path_validate(const char * path)
     return 0;
 }
 
-int zoidfs_null(void)
+int zoidfs_null(zoidfs_op_hint_t * op_hint)
 {
    return zint_ping_handlers (); 
 }
@@ -609,7 +609,7 @@ int zoidfs_resize(const zoidfs_handle_t * handle,
 /**
  * OPTIONAL
  */
-int zoidfs_init(void)
+int zoidfs_init(zoidfs_op_hint_t * op_hint)
 {
    return zint_initialize_handlers ();
 }
@@ -617,7 +617,7 @@ int zoidfs_init(void)
 /**
  * OPTIONAL
  */
-int zoidfs_finalize(void)
+int zoidfs_finalize(zoidfs_op_hint_t * op_hint)
 {
    return zint_finalize_handlers (); 
 }
@@ -626,13 +626,13 @@ int zoidfs_finalize(void)
 void __zoidfs_init(int UNUSED(pset_mpi_proc_count), int UNUSED(argc), 
       int UNUSED(envc), const char* UNUSED(argenvint))
 {
-    zoidfs_init();
+    zoidfs_init(ZOIDFS_NO_OP_HINT);
 }
 
 /* Only needed by the BGP ZOID version.  */
 void __zoidfs_finalize(void)
 {
-    zoidfs_finalize();
+    zoidfs_finalize(ZOIDFS_NO_OP_HINT);
 }
 
 

@@ -142,6 +142,16 @@ namespace iofwdclient
                     zoidfs::zoidfs_file_ofs_t file_sizes[],
                     zoidfs::zoidfs_op_hint_t * op_hint);
 
+
+         int iinit (zoidfs::zoidfs_request_t * request,
+                    zoidfs::zoidfs_op_hint_t * op_hint);
+
+         int ifinalize (zoidfs::zoidfs_request_t * request,
+                        zoidfs::zoidfs_op_hint_t * op_hint);
+
+         int inull ( zoidfs::zoidfs_request_t * request,
+                    zoidfs::zoidfs_op_hint_t * op_hint);
+
         // ------------------ Requests & Testing ----------------
 
          int request_test (zoidfs::zoidfs_request_t request,

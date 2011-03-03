@@ -139,7 +139,7 @@ int zoidfs_null(void) {
     ZOIDFS_PROF_INC_COUNTER(zoidfs_null_call_count, zoidfs_null_mutex);
     ZOIDFS_TRACE();
 
-    ZOIDFS_PROF_TIME(ret = Pzoidfs_null(), zoidfs_null_time, zoidfs_null_mutex);
+    ZOIDFS_PROF_TIME(ret = Pzoidfs_null(ZOIDFS_NO_OP_HINT), zoidfs_null_time, zoidfs_null_mutex);
 
     return ret;
 }
@@ -459,7 +459,7 @@ int zoidfs_init(void) {
     ZOIDFS_PROF_INC_COUNTER(zoidfs_init_call_count, zoidfs_init_mutex);
     ZOIDFS_TRACE();
 
-    ZOIDFS_PROF_TIME(ret = Pzoidfs_init(), zoidfs_init_time, zoidfs_init_mutex);
+    ZOIDFS_PROF_TIME(ret = Pzoidfs_init(ZOIDFS_NO_OP_HINT), zoidfs_init_time, zoidfs_init_mutex);
 
     return ret;
 }
@@ -474,7 +474,7 @@ int zoidfs_finalize(void) {
     ZOIDFS_PROF_INC_COUNTER(zoidfs_finalize_call_count, zoidfs_finalize_mutex);
     ZOIDFS_TRACE();
 
-    ZOIDFS_PROF_TIME(ret = Pzoidfs_finalize(), zoidfs_finalize_time, zoidfs_finalize_mutex);
+    ZOIDFS_PROF_TIME(ret = Pzoidfs_finalize(ZOIDFS_NO_OP_HINT), zoidfs_finalize_time, zoidfs_finalize_mutex);
 
     /* print the counter values */
     fprintf(stderr, "ZOIDFS API CALL COUNTS:\n");

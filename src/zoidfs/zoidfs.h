@@ -393,11 +393,11 @@ int zoidfs_resize(const zoidfs_handle_t * handle /* in:ptr */,
  * Provides hooks for profile / instrumentation libs
  * Similar to MPI profiling interface...
  */
-int Pzoidfs_init(void);
+int Pzoidfs_init(zoidfs_op_hint_t * op_hint);
 
-int Pzoidfs_finalize(void);
+int Pzoidfs_finalize(zoidfs_op_hint_t * op_hint);
 
-int Pzoidfs_null(void);
+int Pzoidfs_null(zoidfs_op_hint_t * op_hint);
 
 int Pzoidfs_getattr(const zoidfs_handle_t * handle /* in:ptr */,
                    zoidfs_attr_t * attr /* inout:ptr */,
