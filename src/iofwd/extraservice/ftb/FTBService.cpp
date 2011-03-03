@@ -109,6 +109,7 @@ namespace iofwd
             FTB_client_handle_t h;
             checkFTB (FTB_Connect (&clientinfo, &h));
             ftbhandle_ = h;
+            break;
          }
          catch (FTBError & e)
          {
