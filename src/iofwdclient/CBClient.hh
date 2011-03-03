@@ -158,6 +158,16 @@ namespace iofwdclient
                     zoidfs::zoidfs_file_ofs_t file_sizes[],
                     zoidfs::zoidfs_op_hint_t * op_hint);
 
+
+         int cbinit(const IOFWDClientCB & cb, int * ret, 
+                    zoidfs::zoidfs_op_hint_t * op_hint);
+
+
+         int cbfinalize(const IOFWDClientCB & cb, int * ret, 
+                    zoidfs::zoidfs_op_hint_t * op_hint);
+
+         int cbnull(const IOFWDClientCB & cb, int * ret, 
+                    zoidfs::zoidfs_op_hint_t * op_hint);
       protected:
 
         class CBSMWrapper

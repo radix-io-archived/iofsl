@@ -218,6 +218,27 @@ namespace iofwdclient
       return (ret == ZFS_OK ? waitOp (req, ZFS_COMP_DONE) : ret); 
    }
 
+   int SyncClient::init (zoidfs::zoidfs_op_hint_t * op_hint)
+   {
+      zoidfs_request_t req;
+      int ret = asclient_.iinit ( &req, op_hint);
+      return (ret == ZFS_OK ? waitOp (req, ZFS_COMP_DONE) : ret);       
+   }
+   
+   int SyncClient::finalize (zoidfs::zoidfs_op_hint_t * op_hint)
+   {
+      zoidfs_request_t req;
+      int ret = asclient_.ifinalize ( &req, op_hint);
+      return (ret == ZFS_OK ? waitOp (req, ZFS_COMP_DONE) : ret);     
+   }
+
+   int SyncClient::null ( zoidfs::zoidfs_op_hint_t * op_hint)
+   {
+      zoidfs_request_t req;
+      int ret = asclient_.inull ( &req, op_hint);
+      return (ret == ZFS_OK ? waitOp (req, ZFS_COMP_DONE) : ret);     
+   }
+
    /**
     * Wait until r completes and return the operation's return code.
     * Releases r

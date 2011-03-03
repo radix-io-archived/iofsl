@@ -445,5 +445,52 @@ namespace iofwdclient
       return ZFS_OK;
    }
 
+   int ASClient::iinit (zoidfs::zoidfs_request_t * request,
+                        zoidfs::zoidfs_op_hint_t * op_hint)
+   {
+      if (*request)
+         return ZFSERR_INVAL;
+
+      // Create request
+      //   newRequest automatically increments the refcount to compensate for
+      //   the lack of automatic refcounting in the C API
+      IOFWDRequestPtr r (tracker_->newRequest ());
+
+
+      cbclient_.cbinit(tracker_->getCB (r), r->getReturnPointer (), op_hint);
+      return ZFS_OK;
+   }
+
+   int ASClient::ifinalize (zoidfs::zoidfs_request_t * request,
+                            zoidfs::zoidfs_op_hint_t * op_hint)
+   {
+      if (*request)
+         return ZFSERR_INVAL;
+
+      // Create request
+      //   newRequest automatically increments the refcount to compensate for
+      //   the lack of automatic refcounting in the C API
+      IOFWDRequestPtr r (tracker_->newRequest ());
+
+      cbclient_.cbfinalize(tracker_->getCB (r), r->getReturnPointer (), 
+                           op_hint);
+      return ZFS_OK;
+
+   }
+
+   int ASClient::inull ( zoidfs::zoidfs_request_t * request,
+                         zoidfs::zoidfs_op_hint_t * op_hint)
+   {
+      if (*request)
+         return ZFSERR_INVAL;
+
+      // Create request
+      //   newRequest automatically increments the refcount to compensate for
+      //   the lack of automatic refcounting in the C API
+      IOFWDRequestPtr r (tracker_->newRequest ());
+
+      cbclient_.cbnull(tracker_->getCB (r), r->getReturnPointer (), op_hint);
+      return ZFS_OK;
+   }
    //========================================================================
 }

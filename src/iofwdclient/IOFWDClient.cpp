@@ -193,6 +193,21 @@ namespace iofwdclient
                              file_count, file_starts, file_sizes, op_hint);
    }
 
+   int IOFWDClient::null ( zoidfs::zoidfs_op_hint_t * op_hint)
+   {
+      return sclient_->null (op_hint);
+   }
+
+   int IOFWDClient::finalize (zoidfs::zoidfs_op_hint_t * op_hint)
+   {
+      return sclient_->finalize (op_hint);
+   }
+   
+   int IOFWDClient::init (zoidfs::zoidfs_op_hint_t * op_hint)
+   {
+      return sclient_->init (op_hint);
+   }
+   
 
    // -----------------------------------------------------------------
    // -------------- zoidfs async methods -----------------------------
@@ -381,6 +396,24 @@ namespace iofwdclient
                                op_hint);
    }
             
+   int IOFWDClient::inull ( zoidfs::zoidfs_request_t * request,
+                            zoidfs::zoidfs_op_hint_t * op_hint)
+   {
+      return asclient_->inull (request, op_hint);
+   }
+
+   int IOFWDClient::ifinalize (zoidfs::zoidfs_request_t * request,
+                               zoidfs::zoidfs_op_hint_t * op_hint)
+   {
+      return asclient_->ifinalize (request, op_hint);
+   }
+   
+   int IOFWDClient::iinit (zoidfs::zoidfs_request_t * request,
+                           zoidfs::zoidfs_op_hint_t * op_hint)
+   {
+      return asclient_->iinit (request, op_hint);
+   }
+
 
    int IOFWDClient::request_test (zoidfs::zoidfs_request_t request,
                    zoidfs::zoidfs_timeout_t timeout,
