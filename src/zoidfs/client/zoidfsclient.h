@@ -1,6 +1,6 @@
 #ifndef ZOIDFSCLIENT_H
 #define ZOIDFSCLIENT_H
-
+#define ZOIDFS_VERSION 1.0.0
 void zoidfs_client_swap_addr(BMI_addr_t * naddr);
 void zoidfs_client_def_addr(void);
 void zoidfs_client_set_def_addr(BMI_addr_t * addr);
