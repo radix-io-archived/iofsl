@@ -67,6 +67,22 @@ namespace iofwd
       ZTHROW (FTBError () << ftb_errorcode (ret));
    }
 
+   void FTBService::FTBLoop ()
+   {
+      boost::system_time nextwakeup = boost::get_system_time ();
+
+      while (!needShutdown ())
+      {
+         FTB_event_handle_t ehandle;
+
+         ZLOG_DEBUG (log_, "Publishing events...");
+         checkFTB (FTB_Publish (*ftbhandle_, "TEST", 0, &ehandle));
+
+         nextwakeup += boost::posix_time::seconds (opt_sleeptime_);
+         sleep (nextwakeup);
+      }
+   }
+
    /**
     * NOTE: This function must be exception safe and properly catch
     * exceptions.
@@ -75,7 +91,6 @@ namespace iofwd
     */
    void FTBService::FTBMain ()
    {
-      FTB_client_handle_t ftbhandle;
       FTB_client_t clientinfo;
 
       /* Specify the client information and call FTB_Connect */
@@ -86,28 +101,61 @@ namespace iofwd
       strncpy(clientinfo.client_subscription_style, "FTB_SUBSCRIPTION_NONE",
             sizeof(clientinfo.client_subscription_style));
 
-      ZLOG_DEBUG (log_, "Connection to FTB...");
-      checkFTB (FTB_Connect (&clientinfo, &ftbhandle));
-
-      ZLOG_DEBUG (log_, "Registering events...");
-      checkFTB (FTB_Declare_publishable_events (ftbhandle, 0, ftb_events,
-               sizeof(ftb_events)/sizeof(ftb_events[0])));
-
-      boost::system_time nextwakeup = boost::get_system_time ();
-
       while (!needShutdown ())
       {
-         FTB_event_handle_t ehandle;
+         try
+         {
+            ZLOG_DEBUG (log_, "Connection to FTB...");
+            FTB_client_handle_t h;
+            checkFTB (FTB_Connect (&clientinfo, &h));
+            ftbhandle_ = h;
+         }
+         catch (FTBError & e)
+         {
+            ZLOG_ERROR (log_, format("FTB_Connect failed (%s)... Will retry"
+                     " in %u seconds...") % getFTBErrorString (e)
+                  % opt_sleeptime_);
 
-         ZLOG_DEBUG (log_, "Publishing events...");
-         checkFTB (FTB_Publish (ftbhandle, "TEST", 0, &ehandle));
-
-         nextwakeup += boost::posix_time::seconds (opt_sleeptime_);
-         sleep (nextwakeup);
+            sleep (boost::get_system_time () +
+                  boost::posix_time::seconds (opt_sleeptime_));
+         }
       }
 
-      ZLOG_DEBUG (log_, "Disconnecting from FTB...");
-      checkFTB (FTB_Disconnect (ftbhandle));
+      try
+      {
+         if (!needShutdown ())
+         {
+            ZLOG_DEBUG (log_, "Registering events...");
+            checkFTB (FTB_Declare_publishable_events (*ftbhandle_, 0,
+                     ftb_events, sizeof(ftb_events)/sizeof(ftb_events[0])));
+         }
+      }
+      catch (const FTBError & e)
+      {
+         ZLOG_ERROR (log_, format("Error registering publishable events (%)"
+                  " - fatal: shutting down FTB thread")
+               % getFTBErrorString (e));
+         setShutdown ();
+      }
+
+      if (!needShutdown ())
+      {
+         FTBLoop ();
+      }
+
+      try
+      {
+         if (ftbhandle_)
+         {
+            ZLOG_DEBUG (log_, "Disconnecting from FTB...");
+            checkFTB (FTB_Disconnect (*ftbhandle_));
+         }
+      }
+      catch (const FTBError & e)
+      {
+         ZLOG_ERROR (log_, format("FTB_Disconnect failed (ignored): %s")
+               % getFTBErrorString (e));
+      }
    }
 
    bool FTBService::sleep (const boost::system_time & abstime)
@@ -123,13 +171,22 @@ namespace iofwd
       return shutdown_;
    }
 
+   void FTBService::wakeFTB ()
+   {
+      boost::mutex::scoped_lock l(lock_);
+      cond_.notify_one ();
+   }
+
+   void FTBService::setShutdown ()
+   {
+      boost::mutex::scoped_lock l(lock_);
+      shutdown_ = true;
+      cond_.notify_one ();
+   }
+
    void FTBService::shutdownFTB ()
    {
-      {
-         boost::mutex::scoped_lock l(lock_);
-         shutdown_ = true;
-         cond_.notify_one ();
-      }
+      setShutdown ();
       ZLOG_DEBUG (log_, "Waiting for FTB thread to end...");
       thread_->join ();
       thread_.reset ();

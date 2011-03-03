@@ -17,9 +17,6 @@ namespace iofwdutil
 
    std::string getUserErrorMessage (const std::exception & e)
    {
-      // Work around get_error_info API modification in
-      // certain versions of boost. Sometimes it returns a raw pointer,
-      // sometimes a shared pointer.
       const std::string * r = zexception_info<zexception_usermsg>(e);
       return (r ? *r : std::string ("unknown error"));
    }

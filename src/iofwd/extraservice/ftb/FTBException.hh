@@ -17,6 +17,9 @@ namespace iofwd
    // Convert FTB error to string (if possible)
    std::string getFTBErrorString (int ret);
 
+   // Convert exception into a user-readable error
+   std::string getFTBErrorString (const FTBError & e);
+
    //========================================================================
 }
 

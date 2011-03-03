@@ -4,7 +4,9 @@
 #include "iofwd/ExtraService.hh"
 #include "iofwdutil/IOFWDLog-fwd.hh"
 
+#include <ftb.h>
 #include <boost/thread.hpp>
+#include <boost/optional.hpp>
 
 namespace iofwd
 {
@@ -35,6 +37,9 @@ namespace iofwd
          /// FTB thread
          void FTBMain ();
 
+         /// FTB Main loop
+         void FTBLoop ();
+
          /// (For FTB thread): until specified time, unless we get interrupted
          /// Returns false if we should shutdown
          bool sleep (const boost::system_time & abstime);
@@ -44,6 +49,12 @@ namespace iofwd
 
          /// Signal and wait until FTB shuts down
          void shutdownFTB ();
+
+         /// Indicate shutdown is needed
+         void setShutdown ();
+
+         /// Wakeup thread and republish now (if possible)
+         void wakeFTB ();
 
       protected:
          int checkFTB (int ret) const;
@@ -61,6 +72,9 @@ namespace iofwd
 
          /// How long we sleep between publishing events
          size_t opt_sleeptime_;
+
+         /// FTB Client handle
+         boost::optional<FTB_client_handle_t> ftbhandle_;
    };
 
    //========================================================================

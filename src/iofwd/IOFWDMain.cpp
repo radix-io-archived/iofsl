@@ -6,6 +6,7 @@
 #include "iofwdutil/ConfigException.hh"
 #include "service/ServiceException.hh"
 #include "iofwdutil/stats/CounterTable.hh"
+#include "iofwdutil/ZException.hh"
 
 // Services
 #include "Log.hh"

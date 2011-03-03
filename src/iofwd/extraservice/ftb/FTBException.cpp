@@ -50,5 +50,19 @@ ERRORDEF(FTB_ERR_NETWORK_NO_ROUTE);
             % getFTBErrorString(e.value ()));
    }
 
+   /**
+    * Convert FTB exception to user error
+    */
+   std::string getFTBErrorString (const FTBError & e)
+   {
+      const int * err = iofwdutil::zexception_info <ftb_errorcode> (e);
+      if (!err)
+         return "(no error information)";
+      else
+         return std::string (getFTBErrorString (*err));
+   }
+
+
+
    //========================================================================
 }
