@@ -2,10 +2,11 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ(2.61)
-AC_INIT([iofwd],[1.0.0],[Submit trouble tickets at http://trac.mcs.anl.gov/projects/iofsl/newticket],[],[http://trac.mcs.anl.gov/projects/iofsl/wiki])
+AC_INIT([iofwd],[1.1.0],[Submit trouble tickets at http://trac.mcs.anl.gov/projects/iofsl/newticket],[],[http://trac.mcs.anl.gov/projects/iofsl/wiki])
 ZOIDFS_MAJOR_VERSION="1"
-ZOIDFS_MINOR_VERSION="0"
+ZOIDFS_MINOR_VERSION="1"
 ZOIDFS_PATCH_VERSION="0"
+
 AC_CANONICAL_TARGET
 AC_CANONICAL_SYSTEM
 AC_CANONICAL_HOST
