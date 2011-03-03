@@ -4,11 +4,13 @@
 # @TODO: get real configure test for flex/bison instead of hoping that yacc
 # and lex act like flex and bison
 #
-%.c %.h: %.ll
+# Note: output relative to $@ for VPATH handling
+#
+%.h %.c: %.ll
 	$(AM_V_GEN)$(LEX) --header-file=$(@:.c=.h) -o $(@:.h=.c) $< \
 	   || ( $(RM) $(@:.c=.h) $(@:.h=.c).c ; exit 1) 
 
-%.c %.h: %.yy
+%.h %.c: %.yy
 	$(AM_V_GEN)$(YACC) --defines=$(@:.c=.h) -o $(@:.h=.c)  $< \
 	   || ( $(RM) $(@:.c=.h) $(@:.h=.c).c ; exit 1)
 
