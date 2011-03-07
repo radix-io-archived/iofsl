@@ -173,13 +173,22 @@ src/iofwdutil/transform/IOReadBuffer.hh \
 src/iofwdutil/transform/IOWriteBuffer.cpp \
 src/iofwdutil/transform/IOWriteBuffer.hh \
 \
+src/iofwdutil/stats/CounterHelper.hh \
+src/iofwdutil/stats/BaseCounter.hh \
+src/iofwdutil/stats/SingleCounter.hh \
+src/iofwdutil/stats/CounterWindow.hh \
 src/iofwdutil/stats/ByteCounter.hh \
-src/iofwdutil/stats/Counter.hh \
+src/iofwdutil/stats/ByteCounterWindow.hh \
 src/iofwdutil/stats/CounterTable.cpp \
 src/iofwdutil/stats/CounterTable.hh \
-src/iofwdutil/stats/FPCounter.hh \
+src/iofwdutil/stats/DoublePrecisionCounter.hh \
+src/iofwdutil/stats/DoublePrecisionCounterWindow.hh \
 src/iofwdutil/stats/IncCounter.hh \
 src/iofwdutil/stats/TimeCounter.hh \
+src/iofwdutil/stats/TimeCounterWindow.hh \
+src/iofwdutil/stats/AutoCounter.hh \
+src/iofwdutil/stats/ScopedCounter.hh \
+src/iofwdutil/stats/ScopedTimer.hh \
 \
 src/iofwdutil/ExceptionBacktrace.hh \
 src/iofwdutil/ExceptionBacktrace.cpp \
