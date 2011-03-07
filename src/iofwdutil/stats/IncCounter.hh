@@ -1,61 +1,65 @@
-#ifndef SRC_IOFWDUTIL_STATS_INCCOUNTER_HH
-#define SRC_IOFWDUTIL_STATS_INCCOUNTER_HH
+#ifndef IOFWDUTIL_STATS_INCCOUNTER_HH
+#define IOFWDUTIL_STATS_INCCOUNTER_HH
 
 #include <string>
-#include "iofwdutil/stats/Counter.hh"
-#include "iofwdutil/atomics.hh"
+#include "iofwdutil/stats/SingleCounter.hh"
+#include "iofwdutil/stats/CounterHelper.hh"
 #include "iofwdutil/tools.hh"
-#include <time.h>
-#include <assert.h>
-#include "iofwdutil/TimeVal.hh"
+#include <boost/lexical_cast.hpp>
+#include <iostream>
 
 namespace iofwdutil
 {
     namespace stats
     {
 
-class IncCounter
+class IncCounter : public SingleCounter< uint64_t >, public
+                   CounterHelper< IncCounter >
 {
     public:
-        IncCounter(const std::string & name, bool run=true) : val_(0), cv_(name + std::string("_inc"), std::string("%llu")), run_(run)
+        void update(const uint64_t & val=1)
         {
-            if(run)
+            /* protect while we update the counter */
             {
-                val_ = 1;
+                boost::mutex::scoped_lock(mutex_);
+
+                val_ += val;
             }
-            else
-            {
-                val_ = 0;
-                cv_.get() = 0;
-            }
-        }
-
-        ~IncCounter()
-        {
-            (cv_.get()) += val_;
-        }
-
-        uint64_t curValue()
-        {
-            uint64_t v = 0;
-
-            v = val_ + cv_.get();
-        }
-
-        void operator+=(IncCounter a)
-        {
-            val_ += a.val_;
+            SingleCounter< uint64_t >::update(val);
         }
 
         double toDouble()
         {
-            return static_cast<double>(val_);
+            return boost::lexical_cast<double>(val_);
+        }
+
+        void print()
+        {
+            std::cout << name_ << " " << boost::lexical_cast<std::string>(val_)
+                << std::endl;
+        }
+
+        std::string pack()
+        {
+            return boost::lexical_cast<std::string>(val_);
+        }
+
+        virtual void reset()
+        {
+            val_ = 0;
         }
 
     protected:
-        uint64_t val_;
-        Counter< uint64_t  > cv_;
-        bool run_;
+        friend class CounterHelper< IncCounter >;
+
+        IncCounter(const std::string & name) :
+            SingleCounter<uint64_t>(name + std::string("_inc"), 0)
+        {
+        }
+
+        ~IncCounter()
+        {
+        }
 };
 
     } /* stats */

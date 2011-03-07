@@ -1,57 +1,65 @@
-#ifndef SRC_IOFWDUTIL_STATS_BYTECOUNTER_HH
-#define SRC_IOFWDUTIL_STATS_BYTECOUNTER_HH
+#ifndef IOFWDUTIL_STATS_BYTECOUNTER_HH
+#define IOFWDUTIL_STATS_BYTECOUNTER_HH
 
 #include <string>
-#include "iofwdutil/stats/Counter.hh"
-#include "iofwdutil/atomics.hh"
+#include "iofwdutil/stats/SingleCounter.hh"
+#include "iofwdutil/stats/CounterHelper.hh"
 #include "iofwdutil/tools.hh"
-#include <time.h>
-#include <assert.h>
-#include "iofwdutil/TimeVal.hh"
+#include <boost/lexical_cast.hpp>
+#include <iostream>
 
 namespace iofwdutil
 {
     namespace stats
     {
 
-class ByteCounter
+class ByteCounter : public SingleCounter<uint64_t>, public CounterHelper<ByteCounter>
 {
     public:
-        ByteCounter(const std::string & name, uint64_t bytes, bool run=true) : cv_(name + std::string("_byte"), std::string("%llu")), run_(run), val_(bytes)
+        virtual void update(const uint64_t & bytes)
         {
+            /* protect while we update the counter */
+            {
+                boost::mutex::scoped_lock(mutex_);
+
+                val_ += bytes;
+            }
+
+            SingleCounter<uint64_t>::update(bytes);
         }
 
-        ~ByteCounter()
+        virtual double toDouble()
         {
-            cv_.get() += val_;
+            return boost::lexical_cast<double>(val_);
         }
 
-        uint64_t curValue()
+        virtual void print()
         {
-            return cv_.get() + val_;
+            std::cout << name_ << " " << boost::lexical_cast<std::string>(val_)
+                << std::endl;
         }
 
-        void operator+=(ByteCounter a)
+        virtual std::string pack()
         {
-            val_ += a.val_;
+            return boost::lexical_cast<std::string>(val_);
         }
 
-        double toDouble()
+        virtual void reset()
         {
-            return static_cast<double>(val_);
+            val_ = 0;
         }
 
     protected:
-        double getCurrent() const
+        friend class CounterHelper< ByteCounter>;
+
+        ByteCounter(const std::string & name) :
+            SingleCounter<uint64_t>(name + std::string("_byte"), 0)
         {
-            struct timespec tp;
-            assert(clock_gettime(CLOCK_REALTIME, &tp) == 0);
-            return TimeVal(tp.tv_sec, tp.tv_nsec).toDouble();
         }
 
-        Counter< uint64_t > cv_;
-        bool run_;
-        uint64_t val_;
+        virtual ~ByteCounter()
+        {
+        }
 };
 
     } /* stats */
