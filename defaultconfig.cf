@@ -33,7 +33,9 @@ net
 extra_services {
    // List extra services that need to be started
    // services = ( "ftb" );
-   services = ( "rpctest");
+   //services = ( "rpctest");
+   // Atomic Append RPC service
+   services = ( "aarpc");
 
 
    ftb {

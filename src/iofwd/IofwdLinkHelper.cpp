@@ -34,6 +34,7 @@ void registerIofwdFactoryClients ()
             (net) \
             (bmifrontend) \
             (rpctest) \
+            (aarpc) \
       );
 
 #ifdef HAVE_FTB
