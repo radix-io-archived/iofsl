@@ -20,52 +20,50 @@ class TimeCounter : public SingleCounter< double >, public
     public:
         virtual void update(const double & time)
         {
-            /* protect while we update the counter */
+            if(enabled())
             {
-                boost::mutex::scoped_lock(mutex_);
+                /* protect while we update the counter */
+                {
+                    //boost::mutex::scoped_lock(mutex_);
 
-                val_ += time;
+                    val_ += time;
+                }
+                SingleCounter< double >::update(time);
             }
-
-            SingleCounter< double >::update(time);
-        }
-
-        virtual double toDouble()
-        {
-            return val_;
-        }
-
-        virtual void print()
-        {
-            std::cout << name_ << " " << boost::lexical_cast<std::string>(val_)
-                << std::endl;
-        }
-
-        virtual std::string pack()
-        {
-            return boost::lexical_cast<std::string>(val_);
         }
 
         virtual void reset()
         {
-            val_ = 0.0;
+            if(enabled())
+            {
+                val_ = 0.0;
+            }
         }
 
         double start()
         {
-            return getCurTime();
+            if(enabled_)
+            {
+                return getCurTime();
+            }
+            return 0;
         }
 
         double stop()
         {
-            return getCurTime();
+            if(enabled_)
+            {
+                return getCurTime();
+            }
+            return 0;
         }
 
     protected:
         friend class CounterHelper< TimeCounter >;
 
         TimeCounter(const std::string & name) :
-            SingleCounter<double>(name + std::string("_time"), 0.0)
+            SingleCounter<double>(name + std::string("_time"), name +
+                    std::string(".time"), 0.0)
         {
         }
 

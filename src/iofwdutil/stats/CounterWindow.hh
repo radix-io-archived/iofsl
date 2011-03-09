@@ -277,7 +277,10 @@ class CounterWindow : public BaseCounter
 
     protected:
         CounterWindow(std::string name) :
-            BaseCounter(name + "_window_" +
+            BaseCounter(name + std::string("_window_") +
+                    boost::lexical_cast<std::string>(N),
+                    name +
+                    std::string(".window.") +
                     boost::lexical_cast<std::string>(N)),
             acc_(new CounterWindowAccumulator()),
             update_window_stats_(false)

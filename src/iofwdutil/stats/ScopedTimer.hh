@@ -12,7 +12,7 @@ class ScopedTimer
 {
     public:
         ScopedTimer(std::string name) :
-            timer_(TimeCounter::get(name + "_scoped")),
+            timer_(TimeCounter::get(name + std::string(".timer.scoped"))),
             start_(0.0)
         {
             start_ = timer_->start();
