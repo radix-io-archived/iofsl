@@ -26,18 +26,49 @@ class SingleCounter : public BaseCounter
     public:
         virtual void update(const T & val)
         {
+            if(enabled())
             {
-                boost::mutex::scoped_lock(mutex_);
+                //boost::mutex::scoped_lock(mutex_);
 
                 /* update the accumulator */
                 (*acc_)(val);
             }
         }
 
+        virtual double toDouble()
+        {
+            if(enabled())
+            {
+                return boost::lexical_cast<double>(val_);
+            }
+            return 0;
+        }
+
+        virtual std::string pack()
+        {
+            if(enabled())
+            {
+                return boost::lexical_cast<std::string>(val_);
+            }
+            return std::string("");
+        }
+
+        virtual void print()
+        {
+            if(enabled())
+            {
+                std::cout << name_ 
+                          << " "
+                          << boost::lexical_cast<std::string>(val_)
+                          << std::endl;
+            }
+        }
+
         virtual void reset()
         {
+            if(enabled())
             {
-                boost::mutex::scoped_lock(mutex_);
+                //boost::mutex::scoped_lock(mutex_);
                 delete acc_;
                 acc_ = new SingleCounterAccumulator();
             }
@@ -45,32 +76,52 @@ class SingleCounter : public BaseCounter
 
         double counter_min()
         {
-            boost::mutex::scoped_lock(mutex_);
-            return boost::accumulators::min(*acc_);
+            if(enabled())
+            {
+                //boost::mutex::scoped_lock(mutex_);
+                return boost::accumulators::min(*acc_);
+            }
+            return 0;
         }
 
         double counter_max()
         {
-            boost::mutex::scoped_lock(mutex_);
-            return boost::accumulators::max(*acc_);
+            if(enabled())
+            {
+                //boost::mutex::scoped_lock(mutex_);
+                return boost::accumulators::max(*acc_);
+            }
+            return 0;
         }
 
         double counter_mean()
         {
-            boost::mutex::scoped_lock(mutex_);
-            return boost::accumulators::mean(*acc_);
+            if(enabled())
+            {
+                //boost::mutex::scoped_lock(mutex_);
+                return boost::accumulators::mean(*acc_);
+            }
+            return 0;
         }
 
         double counter_variance()
         {
-            boost::mutex::scoped_lock(mutex_);
-            return boost::accumulators::variance(*acc_);
+            if(enabled())
+            {
+                //boost::mutex::scoped_lock(mutex_);
+                return boost::accumulators::variance(*acc_);
+            }
+            return 0;
         }
 
         double counter_count()
         {
-            boost::mutex::scoped_lock(mutex_);
-            return boost::accumulators::count(*acc_);
+            if(enabled())
+            {
+                //boost::mutex::scoped_lock(mutex_);
+                return boost::accumulators::count(*acc_);
+            }
+            return 0;
         }
 
         typedef T type;
@@ -83,17 +134,26 @@ class SingleCounter : public BaseCounter
                 boost::accumulators::tag::variance, boost::accumulators::tag::count>
                     > SingleCounterAccumulator;
 
-        SingleCounter(std::string name, T val) :
-            BaseCounter(name + std::string("_single")),
+        SingleCounter(std::string name,
+                std::string config_key,
+                T val) :
+            BaseCounter(name + std::string("_single"), config_key +
+                    std::string(".single")),
             val_(val),
-            acc_(new SingleCounterAccumulator)
+            acc_(NULL)
         {
-            fprintf(stderr, "%s:%i\n", __func__, __LINE__);
+            if(enabled())
+            {
+                acc_ = new SingleCounterAccumulator();
+            }
         }
 
         ~SingleCounter()
         {
-            delete acc_;
+            if(enabled())
+            {
+                delete acc_;
+            }
         }
 
         T val_;

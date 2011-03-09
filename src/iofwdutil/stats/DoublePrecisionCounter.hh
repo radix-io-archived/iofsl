@@ -19,41 +19,32 @@ class DoublePrecisionCounter : public SingleCounter< double >, public
     public:
         virtual void update(const double & val)
         {
+            if(enabled())
             {
-                /* protect while we update the counter */
-                boost::mutex::scoped_lock(mutex_);
+                {
+                    /* protect while we update the counter */
+                    //boost::mutex::scoped_lock(mutex_);
 
-                val_ += val;
+                    val_ += val;
+                }
+                SingleCounter< double >::update(val);
             }
-            SingleCounter< double >::update(val);
-        }
-
-        virtual double toDouble()
-        {
-            return val_;
-        }
-
-        virtual std::string pack()
-        {
-            return boost::lexical_cast<std::string>(val_);
-        }
-
-        virtual void print()
-        {
-            std::cout << name_ << " " << boost::lexical_cast<std::string>(val_)
-                << std::endl;
         }
 
         virtual void reset()
         {
-            val_ = 0.0;
+            if(enabled())
+            {
+                val_ = 0.0;
+            }
         }
 
     protected:
         friend class CounterHelper< DoublePrecisionCounter>;
 
         DoublePrecisionCounter(const std::string & name) :
-            SingleCounter<double>(name + std::string("_double"), 0.0)
+            SingleCounter<double>(name + std::string("_double"), name +
+                    std::string(".double"), 0.0)
         {
         }
 

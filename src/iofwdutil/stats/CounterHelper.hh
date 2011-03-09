@@ -32,6 +32,12 @@ class CounterHelper
                 iofwdutil::stats::CounterTable::instance().store(name, c);
             }
 
+            if(!c->enabled())
+            {
+                iofwdutil::stats::CounterTable::instance().unlock();
+                return NULL;
+            }
+
             /* unlock the table */
             iofwdutil::stats::CounterTable::instance().unlock();
 
