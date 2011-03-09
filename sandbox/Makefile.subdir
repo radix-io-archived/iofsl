@@ -16,7 +16,11 @@ sandbox_ldadd =          \
     $(top_builddir)/src/zoidfs/libzoidfshints.a \
     @CUNIT_LIBS@                 \
     @ZFS_DISPATCHER_LIBS@ \
-    @BMI_LIBS@
+    @BMI_LIBS@ \
+    @BOOST_PROGRAM_OPTIONS_LIB@ \
+    @BOOST_DATE_TIME_LIB@ \
+    @BOOST_THREAD_LIB@ \
+    @BOOST_REGEX_LIB@
 
 EXTRA_PROGRAMS += sandbox/zoidfs-io-bsize
 sandbox_zoidfs_io_bsize_SOURCES = sandbox/zoidfs-io-bsize.c
@@ -84,6 +88,11 @@ EXTRA_PROGRAMS += sandbox/PerfCountersTest
 sandbox_PerfCountersTest_SOURCES = sandbox/PerfCountersTest.cpp
 sandbox_PerfCountersTest_LDFLAGS = $(sandbox_ldflags)
 sandbox_PerfCountersTest_LDADD = $(sandbox_ldadd)
+
+EXTRA_PROGRAMS += sandbox/countertest
+sandbox_countertest_SOURCES = sandbox/countertest.cpp
+sandbox_countertest_LDFLAGS = $(sandbox_ldflags)
+sandbox_countertest_LDADD = $(sandbox_ldadd)
 
 EXTRA_PROGRAMS += sandbox/vl-test
 sandbox_vl_test_SOURCES = sandbox/vl-test.cpp

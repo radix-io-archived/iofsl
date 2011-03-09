@@ -9,10 +9,13 @@
 #include "iofwdutil/stats/TimeCounterWindow.hh"
 #include "iofwdutil/stats/ScopedTimer.hh"
 #include "iofwdutil/stats/ScopedCounter.hh"
+#include "iofwdutil/stats/CounterConfig.hh"
 
 int main()
 {
     size_t i = 0;
+
+    iofwdutil::stats::CounterConfig::instance().configAllCounters(true);
 
     for(int j = 0 ; j < 10 ; j++)
     {
@@ -147,11 +150,14 @@ int main()
         for(i = 0 ; i < 1024 ; i++)
         {
             iofwdutil::stats::ScopedCounter<
-                iofwdutil::stats::DoublePrecisionCounter > s1("sctest1", 3.124);
+                iofwdutil::stats::DoublePrecisionCounter,
+                iofwdutil::stats::CounterConfigDefault > s1("sctest1", 3.124);
             iofwdutil::stats::ScopedCounter<
-                iofwdutil::stats::IncCounter > s2("sctest2", 0);
+                iofwdutil::stats::IncCounter,
+                iofwdutil::stats::CounterConfigDefault > s2("sctest2", 0);
             iofwdutil::stats::ScopedCounter<
-                iofwdutil::stats::ByteCounter > s3("sctest3", 1024);
+                iofwdutil::stats::ByteCounter,
+                iofwdutil::stats::CounterConfigDefault > s3("sctest3", 1024);
         }
 
         for(i = 0 ; i < 1010 ; i++)
