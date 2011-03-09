@@ -32,7 +32,33 @@ extra_services {
    }
 }
 
+//
+// configure the counters
+//
+counters
+{
+    //
+    // request counters
+    //
+    request =
+        "request.auto.inc.single.counter,write.request.auto.inc.single.counter,read.request.auto.inc.single.counter";
 
+    //
+    // state machine counters
+    //
+    sm =
+        "write.sm.auto.byte.single.counter,read.sm.auto.byte.single.counter";
+
+    //
+    // BMI (network specific) counters
+    //
+    bmi = "";
+
+    //
+    // zoidfs api counters
+    //
+    zoidfsapi = "";
+}
 
 frontend {
 
