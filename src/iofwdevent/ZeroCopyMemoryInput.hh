@@ -13,6 +13,7 @@
 #include "CBType.hh"
 #include "Handle.hh"
 #include "CBException.hh"
+#include "iofwdutil/tools.hh"
 #include <boost/smart_ptr.hpp>
 
 using namespace boost;
@@ -31,7 +32,7 @@ namespace iofwdevent {
       ZeroCopyMemoryInput  (void ** , size_t );
 
       /* Cancel operation (not used since this class does not block) */
-      void cancel (Handle x) {}; 
+      void cancel (Handle UNUSED(x)) {}; 
 
       /* Read from the input stream */
       Handle read (const void **, size_t * , const CBType &, size_t );

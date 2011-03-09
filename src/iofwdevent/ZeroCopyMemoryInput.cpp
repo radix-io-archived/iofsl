@@ -61,7 +61,7 @@ Handle ZeroCopyMemoryInput::read (const void ** ptr, size_t * size,
  */
 Handle ZeroCopyMemoryInput::rewindInput (size_t size, const CBType & cb)
 {
-  if (size - this->pos >= 0)
+  if (size >= this->pos)
     this->pos = this->pos - size;
   cb(*(new CBException()));
   return (void *)0; 
