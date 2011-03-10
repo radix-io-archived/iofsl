@@ -58,6 +58,8 @@ namespace iofwd
       ZLOG_INFO (log_, format("Server listening on %s") % ion);
       iofwdutil::bmi::BMI::setInitServer (ion.c_str());
 
+      listen_ = ion;
+
       // Force instantiation
       iofwdutil::bmi::BMI::instance ();
 

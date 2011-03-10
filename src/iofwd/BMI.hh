@@ -45,6 +45,9 @@ namespace iofwd
          iofwdevent::BMIResource & get ()
          { return *resource_; }
 
+         std::string getListenAddress () const
+         { return listen_; }
+
       protected:
 
          /// Initialize BMI
@@ -63,6 +66,8 @@ namespace iofwd
          boost::scoped_ptr<iofwdevent::BMIResource> resource_;
          const iofwdutil::ConfigFile & config_;
          iofwdutil::IOFWDLogSource & log_;
+
+         std::string listen_;
    };
 
    //========================================================================
