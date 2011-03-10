@@ -18,7 +18,7 @@
 static int bmi2zfs (int ret)
 {
    if (ret < 0)
-      return ZFSERR_OTHER;
+      return ZFSERR_NETWORK;
    else
       return ret;
 }
@@ -58,7 +58,7 @@ int bmi_comm_send(BMI_addr_t peer_addr, const void *buffer, bmi_size_t buflen,
         if (actual_size != buflen) {
             fprintf(stderr, "bmi_comm_send: Expected %ld but received %lu\n",
                     buflen, actual_size);
-            return ZFSERR_OTHER;
+            return ZFSERR_NETWORK;
         }
     }
 
@@ -216,7 +216,7 @@ int bmi_comm_sendu(BMI_addr_t peer_addr, const void *buffer, bmi_size_t buflen,
         if (actual_size != buflen) {
             fprintf(stderr, "bmi_comm_sendu: Expected %ld but received %lu\n",
                     buflen, actual_size);
-            return ZFSERR_OTHER;
+            return ZFSERR_NETWORK;
         }
     }
 
@@ -338,7 +338,7 @@ int bmi_comm_send_list(BMI_addr_t peer_addr, size_t list_count,
         if (actual_size != total_size) {
             fprintf(stderr, "bmi_comm_send_list: Expected %ld but received %lu\n",
                     total_size, actual_size);
-            return ZFSERR_OTHER;
+            return ZFSERR_NETWORK;
         }
     }
 

@@ -214,6 +214,7 @@ enum {
     ZFSERR_DQUOT=69,
     ZFSERR_STALE=70,
     ZFSERR_WFLUSH=99,
+    ZFSERR_NETWORK=100,    /* Any communcation/transport error */
     ZFSERR_OTHER=99999
 };
 
