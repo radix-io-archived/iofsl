@@ -90,7 +90,7 @@ static inline int zoidfs_full_path_validate(const char * path)
     return 0;
 }
 
-int zoidfs_null(zoidfs_op_hint_t * op_hint)
+int zoidfs_null(zoidfs_op_hint_t * UNUSED(op_hint))
 {
    return zint_ping_handlers (); 
 }
@@ -609,7 +609,7 @@ int zoidfs_resize(const zoidfs_handle_t * handle,
 /**
  * OPTIONAL
  */
-int zoidfs_init(zoidfs_op_hint_t * op_hint)
+int zoidfs_init(zoidfs_op_hint_t * UNUSED(op_hint))
 {
    return zint_initialize_handlers ();
 }
@@ -617,7 +617,7 @@ int zoidfs_init(zoidfs_op_hint_t * op_hint)
 /**
  * OPTIONAL
  */
-int zoidfs_finalize(zoidfs_op_hint_t * op_hint)
+int zoidfs_finalize(zoidfs_op_hint_t * UNUSED(op_hint))
 {
    return zint_finalize_handlers (); 
 }
