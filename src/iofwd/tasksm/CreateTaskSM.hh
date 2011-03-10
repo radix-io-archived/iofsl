@@ -13,6 +13,8 @@
 #include "iofwd/CreateRequest.hh"
 #include "zoidfs/zoidfs.h"
 
+#include "iofwd/extraservice/aarpc/AtomicAppendClientRPC.hh"
+
 namespace iofwd
 {
     namespace tasksm
@@ -75,6 +77,7 @@ class CreateTaskSM : public sm::SimpleSM< CreateTaskSM >,
             /* if the file was created */ 
             if(created_) 
             {
+#if 0
                 iofwdutil::IOFSLKey key = iofwdutil::IOFSLKey();
                 zoidfs::zoidfs_file_ofs_t aa_offset = 0;
 
@@ -93,6 +96,14 @@ class CreateTaskSM : public sm::SimpleSM< CreateTaskSM >,
                 iofwdutil::IOFSLKeyValueStorage::instance().initKeyValue<
                     zoidfs::zoidfs_file_ofs_t >(slots_[BASE_SLOT], key, aa_offset);
                 slots_.wait(BASE_SLOT, &CreateTaskSM::waitCreateAtomicAppendOffset);
+#else
+                iofwd::extraservice::AtomicAppendClientRPC rpc;
+                zoidfs::zoidfs_file_ofs_t aa_offset = 0;
+                uint64_t retcode = 0;
+
+                rpc.createOffset(handle_, aa_offset, retcode);
+                setNextMethod(&CreateTaskSM::postReply);
+#endif
             }
             /* file already exists */
             else

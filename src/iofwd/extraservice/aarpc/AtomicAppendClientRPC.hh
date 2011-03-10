@@ -19,6 +19,8 @@
 #include "zoidfs/zoidfs.h"
 #include "zoidfs/util/zoidfs-xdr.hh"
 
+#include "iofwd/extraservice/aarpc/AtomicAppendServerRPC.hh"
+
 namespace iofwd
 {
     namespace extraservice
@@ -26,7 +28,7 @@ namespace iofwd
         class AtomicAppendClientRPC
         {
             public:
-                AtomicAppendClientRPC(std::string aarpc_master_addr) :
+                AtomicAppendClientRPC() :
                     man_(iofwd::service::ServiceManager::instance()),
                     netservice_(man_.loadService<iofwd::Net>("net")),
                     rpcclient_(man_.loadService<iofwd::RPCClient>("rpcclient"))
@@ -35,7 +37,8 @@ namespace iofwd
 
                     /* get the address */
                     net::Net * net = netservice_->getNet();
-                    net->lookup(aarpc_master_addr.c_str(), &addr_, block);
+                    net->lookup(iofwd::extraservice::AtomicAppendServerRPC::aarpc_master_addr_.c_str(),
+                            &addr_, block);
                    
                     /* wait for the lookup to complete */ 
                     block.wait();

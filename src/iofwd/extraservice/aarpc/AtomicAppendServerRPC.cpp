@@ -79,6 +79,8 @@ namespace iofwd
             ZeroCopyOutputStream * out,
             const rpc::RPCInfo & )
       {
+          std::cout << "AtomicAppendServerRPC::createOffset" << std::endl;
+
           /* streams */
           boost::scoped_ptr<ZeroCopyInputStream> instream(in);
           boost::scoped_ptr<ZeroCopyOutputStream> outstream(out);
@@ -148,6 +150,8 @@ namespace iofwd
             ZeroCopyOutputStream * out,
             const rpc::RPCInfo & )
       {
+          std::cout << "AtomicAppendServerRPC::deleteOffset" << std::endl;
+
           /* streams */
           boost::scoped_ptr<ZeroCopyInputStream> instream(in);
           boost::scoped_ptr<ZeroCopyOutputStream> outstream(out);
@@ -214,6 +218,8 @@ namespace iofwd
             ZeroCopyOutputStream * out,
             const rpc::RPCInfo & )
       {
+          std::cout << "AtomicAppendServerRPC::getNextOffset" << std::endl;
+
           /* streams */
           boost::scoped_ptr<ZeroCopyInputStream> instream(in);
           boost::scoped_ptr<ZeroCopyOutputStream> outstream(out);
