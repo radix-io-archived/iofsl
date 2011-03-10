@@ -13,6 +13,7 @@ include src/iofwd/extraservice/Makefile.subdir
 bin_PROGRAMS += src/iofwd/iofwd
 
 src_iofwd_iofwd_LDADD = \
+	src/common/libcommon.a \
 	src/zoidfs/libzoidfs-util.a \
 	src/zoidfs/libzoidfsprofile.a \
 	src/zoidfs/libzoidfs.a \

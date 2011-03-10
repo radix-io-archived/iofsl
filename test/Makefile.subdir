@@ -7,6 +7,7 @@ if BUILD_IOFWD_CLIENT
 if HAVE_CUNIT
 
 test_unit_tests_ldadd =          \
+	${top_builddir}/src/common/libcommon.a \
 	${top_builddir}/src/zoidfs/libzoidfs-util.a  \
 	${top_builddir}/src/iofwdutil/libiofwdutil.a \
 	${top_builddir}/src/c-util/libiofsl-c-util.a       \

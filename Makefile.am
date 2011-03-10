@@ -42,6 +42,7 @@ $(pkgconfig_DATA): config.status
 #
 include Make.rules
 
+include $(top_srcdir)/src/common/Makefile.subdir
 include $(top_srcdir)/src/sm/Makefile.subdir
 include $(top_srcdir)/src/iofwdevent/Makefile.subdir
 include $(top_srcdir)/src/iofwd/Makefile.subdir
