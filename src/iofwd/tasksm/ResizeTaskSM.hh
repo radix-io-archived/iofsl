@@ -71,13 +71,16 @@ class ResizeTaskSM : public sm::SimpleSM< ResizeTaskSM >,
 
             {
                 iofwdutil::IOFSLKey key = iofwdutil::IOFSLKey();
+                zoidfs::zoidfs_file_ofs_t aa_offset =
+                    static_cast<zoidfs::zoidfs_file_ofs_t>(p_.size);
 
                 key.setFileHandle(p_.handle);
                 key.setDataKey(std::string("NEXTAPPENDOFFSET"));
 
                 iofwdutil::IOFSLKeyValueStorage::instance().initKeyValue< 
                     zoidfs::zoidfs_file_ofs_t >(slots_[BASE_SLOT], key,
-                    static_cast<zoidfs::zoidfs_file_ofs_t>(p_.size));
+                    aa_offset);
+
                 slots_.wait(BASE_SLOT,
                     &ResizeTaskSM::waitResetAtomicAppendOffset);
             }

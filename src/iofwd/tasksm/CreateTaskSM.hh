@@ -76,6 +76,7 @@ class CreateTaskSM : public sm::SimpleSM< CreateTaskSM >,
             if(created_) 
             {
                 iofwdutil::IOFSLKey key = iofwdutil::IOFSLKey();
+                zoidfs::zoidfs_file_ofs_t aa_offset = 0;
 
                 key.setParentHandle(p_.parent_handle);
                 if(p_.component_name)
@@ -90,7 +91,7 @@ class CreateTaskSM : public sm::SimpleSM< CreateTaskSM >,
                 key.setDataKey(std::string("NEXTAPPENDOFFSET"));
 
                 iofwdutil::IOFSLKeyValueStorage::instance().initKeyValue<
-                    zoidfs::zoidfs_file_ofs_t >(slots_[BASE_SLOT], key, 0);
+                    zoidfs::zoidfs_file_ofs_t >(slots_[BASE_SLOT], key, aa_offset);
                 slots_.wait(BASE_SLOT, &CreateTaskSM::waitCreateAtomicAppendOffset);
             }
             /* file already exists */
