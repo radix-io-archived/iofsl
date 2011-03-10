@@ -97,8 +97,8 @@ class IOFSLKeyValueStorage : public Singleton< IOFSLKeyValueStorage >
         }
 
         template <typename T>
-        void initKeyValue(iofwdevent::CBType cb, iofwdutil::IOFSLKey key, T
-            initialValue)
+        void rpcInitKeyValue(iofwdutil::IOFSLKey & key, T
+            & initialValue)
         {
             /* atomic fetch and inc of the value */
             {
@@ -130,13 +130,23 @@ class IOFSLKeyValueStorage : public Singleton< IOFSLKeyValueStorage >
                     table_[key] = val;
                 }
             } 
+        }
+
+        template <typename T>
+        void initKeyValue(iofwdevent::CBType cb,
+                    iofwdutil::IOFSLKey & key,
+                    T & initialValue)
+        {
+            rpcInitKeyValue(key, initialValue);
 
             /* invoke the callback */
             cb(iofwdevent::CBException());
         }
 
         template <typename T>
-        void fetchAndInc(iofwdevent::CBType cb, iofwdutil::IOFSLKey key, T nextValueInc, T * curValue=NULL)
+        void rpcFetchAndInc(iofwdutil::IOFSLKey & key,
+                T & nextValueInc,
+                T * curValue=NULL)
         {
             /* atomic fetch and inc of the value */
             {
@@ -178,13 +188,22 @@ class IOFSLKeyValueStorage : public Singleton< IOFSLKeyValueStorage >
                     }
                 }
             }
+        }
+
+        template <typename T>
+        void fetchAndInc(iofwdevent::CBType cb,
+                iofwdutil::IOFSLKey & key,
+                T & nextValueInc,
+                T * curValue=NULL)
+        {
+            rpcFetchAndInc(key, nextValueInc, curValue);
 
             /* invoke the callback */
             cb(iofwdevent::CBException());
         }
 
         template <typename T>
-        void fetchAndDrop(iofwdevent::CBType cb, iofwdutil::IOFSLKey key, T * curValue=NULL)
+        void rpcFetchAndDrop(iofwdutil::IOFSLKey & key, T * curValue=NULL)
         {
             /* atomic drop of the value */
             {
@@ -227,6 +246,14 @@ class IOFSLKeyValueStorage : public Singleton< IOFSLKeyValueStorage >
                     }
                 }
             }
+        }
+
+        template <typename T>
+        void fetchAndDrop(iofwdevent::CBType cb,
+                iofwdutil::IOFSLKey & key,
+                T * curValue=NULL)
+        {
+            rpcFetchAndDrop(key, curValue);
 
             /* invoke the callback */
             cb(iofwdevent::CBException());
