@@ -49,7 +49,10 @@ namespace iofwd
             return boost::bind(&threadRPC, orig, _1, _2, _3);
          }
 
+
       }
+
+      std::string AtomicAppendServerRPC::aarpc_master_addr_ = std::string("");
 
       AtomicAppendServerRPC::AtomicAppendServerRPC(service::ServiceManager & m)
          : ExtraService (m),

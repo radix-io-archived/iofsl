@@ -37,6 +37,11 @@ extra_services {
    // Atomic Append RPC service
    services = ( "aarpc");
 
+   aarpc
+   {
+       master = "tcp://127.0.0.1:12345"
+   }
+
 
    ftb {
       period = "60";

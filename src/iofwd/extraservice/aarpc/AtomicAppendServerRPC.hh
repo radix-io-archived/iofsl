@@ -20,9 +20,15 @@ namespace iofwd
          public:
             AtomicAppendServerRPC(service::ServiceManager & m);
 
-            virtual void configureNested(const iofwdutil::ConfigFile &) {}
+            virtual void configureNested(const iofwdutil::ConfigFile & f)
+            {
+                aarpc_master_addr_ =
+                    f.getKeyAsDefault<std::string>("master",""); 
+            }
 
             virtual ~AtomicAppendServerRPC();
+
+            static std::string aarpc_master_addr_;
 
          protected:
 
