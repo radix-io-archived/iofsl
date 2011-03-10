@@ -28,7 +28,7 @@ extra_services {
    services = ( "ftb" );
 
    ftb {
-      period = "60";
+      period = "1";
    }
 }
 

@@ -2,3 +2,13 @@ noinst_LIBRARIES += src/common/libcommon.a
 
 src_common_libcommon_a_SOURCES =
 
+
+# Since we have to distribute the sources, protobuf is NOT optional for
+# developer builds!!!
+# if HAVE_PROTOBUF
+BUILT_SOURCES += src/common/ftb/ftb.pb.cc \
+		 src/common/ftb/ftb.pb.h
+
+src_common_libcommon_a_SOURCES += src/common/ftb/ftb.pb.cc \
+				 src/common/ftb/ftb.pb.h
+# endif

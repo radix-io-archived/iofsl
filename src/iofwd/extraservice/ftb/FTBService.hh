@@ -8,11 +8,14 @@
 #include <boost/thread.hpp>
 #include <boost/optional.hpp>
 
+#include <google/protobuf/message.h>
+
 namespace iofwd
 {
    //========================================================================
 
    class Log;
+   class BMI;
 
    /**
     * FTB service
@@ -56,11 +59,16 @@ namespace iofwd
          /// Wakeup thread and republish now (if possible)
          void wakeFTB ();
 
+         void publishPB (const char * name, const
+               google::protobuf::MessageLite &
+               msg);
+
       protected:
          int checkFTB (int ret) const;
 
       protected:
          boost::shared_ptr<Log> log_service_;
+         boost::shared_ptr<BMI> bmi_service_;
 
          iofwdutil::IOFWDLogSource & log_;
 

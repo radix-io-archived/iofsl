@@ -1,11 +1,21 @@
 #include "zoidfs/zoidfs.h"
 
+#include "ServerSelector.hh"
+#include "FTBClient.hh"
+
+#include "iofwdutil/assert.hh"
+
+#include <boost/thread.hpp>
+#include <boost/date_time/posix_time/posix_time_types.hpp>
+
 #include <iostream>
 
 extern "C"
 {
 #include <bmi.h>
 }
+
+using namespace boost::posix_time;
 
 extern "C"
 {
@@ -17,11 +27,56 @@ namespace zoidfs
 {
    //========================================================================
 
+   boost::scoped_ptr<ServerSelector> sel_;
+   boost::scoped_ptr<FTBClient> ftb_;
+
+   bool takeAction (int act)
+   {
+      bool ret;
+      switch (act)
+      {
+         case ServerSelector::ACTION_RETURN:
+            ret = false;
+            break;
+         case ServerSelector::ACTION_WAITRETRY:
+            boost::this_thread::sleep (seconds (1));
+            ret = true;
+            break;
+         case ServerSelector::ACTION_RETRY:
+            ret = true;
+            break;
+         case ServerSelector::ACTION_NEWSERVER:
+            {
+            ret = true;
+            BMI_addr_t * n = new BMI_addr_t ();
+            *n = sel_->getServer ();
+            zoidfs_client_swap_addr (n);
+            break;
+            }
+         default:
+            ret = false;
+            ALWAYS_ASSERT(false);
+      }
+
+      return ret;
+   }
+
+   void checkAction ()
+   {
+      ftb_->poll ();
+      takeAction (sel_->getAction ());
+   }
+
    // Return true here will cause an immediate retry of the operation
    bool checkRet (int ret)
    {
       switch (ret)
       {
+         case ZFSERR_NETWORK:
+            return takeAction (sel_->reportProblem ());
+         case ZFS_OK:
+            return false;
+
          default:
             return false;
       };
@@ -35,6 +90,7 @@ namespace zoidfs
 
       int zoidfs_null(void) 
       {
+         checkAction ();
          int ret = 0;
          do
          {
@@ -47,6 +103,7 @@ namespace zoidfs
       int zoidfs_getattr(const zoidfs_handle_t *handle, zoidfs_attr_t *attr,
             zoidfs_op_hint_t * op_hint)
       {
+         checkAction ();
          int ret = 0;
          do
          {
@@ -64,6 +121,7 @@ namespace zoidfs
             const zoidfs_sattr_t *sattr, zoidfs_attr_t *attr,
             zoidfs_op_hint_t * op_hint)
       {
+         checkAction ();
          int ret = 0;
          do
          {
@@ -80,6 +138,7 @@ namespace zoidfs
       int zoidfs_readlink(const zoidfs_handle_t *handle, char *buffer,
             size_t buffer_length, zoidfs_op_hint_t * op_hint)
       {
+         checkAction ();
          int ret = 0;
          do
          {
@@ -98,6 +157,7 @@ namespace zoidfs
             const char *component_name, const char *full_path,
             zoidfs_handle_t *handle, zoidfs_op_hint_t * op_hint)
       {
+         checkAction ();
          int ret = 0;
          do
          {
@@ -116,6 +176,7 @@ namespace zoidfs
             const char *component_name, const char *full_path,
             zoidfs_cache_hint_t *parent_hint, zoidfs_op_hint_t * op_hint)
       {
+         checkAction ();
          int ret = 0;
          do
          {
@@ -133,6 +194,7 @@ namespace zoidfs
       int zoidfs_commit(const zoidfs_handle_t *handle,
             zoidfs_op_hint_t * op_hint)
       {
+         checkAction ();
          int ret = 0;
          do
          {
@@ -151,6 +213,7 @@ namespace zoidfs
             const zoidfs_sattr_t *sattr, zoidfs_handle_t *handle,
             int *created, zoidfs_op_hint_t * op_hint)
       {
+         checkAction ();
          int ret = 0;
          do
          {
@@ -174,6 +237,7 @@ namespace zoidfs
             zoidfs_cache_hint_t *to_parent_hint,
             zoidfs_op_hint_t * op_hint)
       {
+         checkAction ();
          int ret = 0;
          do
          {
@@ -199,6 +263,7 @@ namespace zoidfs
             zoidfs_cache_hint_t *to_parent_hint,
             zoidfs_op_hint_t * op_hint)
       {
+         checkAction ();
          int ret = 0;
          do
          {
@@ -225,6 +290,7 @@ namespace zoidfs
             zoidfs_cache_hint_t *to_parent_hint,
             zoidfs_op_hint_t * op_hint)
       {
+         checkAction ();
          int ret = 0;
          do
          {
@@ -246,6 +312,7 @@ namespace zoidfs
             zoidfs_cache_hint_t *parent_hint,
             zoidfs_op_hint_t * op_hint)
       {
+         checkAction ();
          int ret = 0;
          do
          {
@@ -268,6 +335,7 @@ namespace zoidfs
             zoidfs_cache_hint_t *parent_hint,
             zoidfs_op_hint_t * op_hint)
       {
+         checkAction ();
          int ret = 0;
          do
          {
@@ -285,6 +353,7 @@ namespace zoidfs
       int zoidfs_resize(const zoidfs_handle_t *handle, uint64_t size,
             zoidfs_op_hint_t * op_hint)
       {
+         checkAction ();
          int ret = 0;
          do
          {
@@ -302,6 +371,7 @@ namespace zoidfs
             size_t file_count_, const zoidfs_file_ofs_t file_starts[],
             zoidfs_file_size_t file_sizes[], zoidfs_op_hint_t * op_hint)
       {
+         checkAction ();
          int ret = 0;
          do
          {
@@ -321,6 +391,7 @@ namespace zoidfs
             size_t file_count_, const zoidfs_file_ofs_t file_starts[],
             zoidfs_file_size_t file_sizes[], zoidfs_op_hint_t * op_hint) 
       {
+         checkAction ();
          int ret = 0;
          do
          {
@@ -337,6 +408,9 @@ namespace zoidfs
       int zoidfs_init(void)
       {
          std::cerr << "zoidfsftb active...\n";
+         sel_.reset (new ServerSelector ());
+         ftb_.reset (new FTBClient (*sel_));
+
          int ret = 0;
          ret = Pzoidfs_init();
          return ret;
@@ -348,6 +422,7 @@ namespace zoidfs
        */
       int zoidfs_finalize(void) 
       {
+         sel_.reset ();
          int ret = 0;
          ret = Pzoidfs_finalize();
          return ret;
