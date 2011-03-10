@@ -92,6 +92,11 @@ test_rpcservice_SOURCES = test/rpcservice.cpp $(SERVERSOURCES)
 test_rpcservice_LDFLAGS = ${cppldflags}
 test_rpcservice_LDADD = ${cppldadd}
 
+noinst_PROGRAMS += test/aarpcservice
+test_aarpcservice_SOURCES = test/aarpcservice.cpp $(SERVERSOURCES)
+test_aarpcservice_LDFLAGS = ${cppldflags}
+test_aarpcservice_LDADD = ${cppldadd}
+
 noinst_PROGRAMS += test/servercomm
 test_servercomm_SOURCES = test/servercomm.cpp $(SERVERSOURCES)
 test_servercomm_LDFLAGS = ${cppldflags}
