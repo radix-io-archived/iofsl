@@ -1,6 +1,7 @@
 *.o
 *.a
-
+*.pb.h
+*.pb.cc
 iofwd_config.h.in
 Makefile
 config.log
