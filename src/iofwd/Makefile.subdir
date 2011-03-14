@@ -189,7 +189,14 @@ src/iofwd/frontend/IOFWDRequest.hh \
 src/iofwd/frontend/IOFWDResizeRequest.hh \
 src/iofwd/frontend/IOFWDSetAttrRequest.hh \
 src/iofwd/frontend/IOFWDSymLinkRequest.hh \
-src/iofwd/frontend/IOFWDWriteRequest.hh
+src/iofwd/frontend/IOFWDWriteRequest.hh \
+\
+src/iofwd/rpcfrontend/IOFSLRPCRequest.hh \
+src/iofwd/rpcfrontend/IOFSLRPCRequest.cpp \
+src/iofwd/rpcfrontend/IOFSLRPCGetAttrRequest.hh \
+src/iofwd/rpcfrontend/IOFSLRPCGetAttrRequest.cpp \
+src/iofwd/rpcfrontend/IOFSLRPCLookupRequest.hh \
+src/iofwd/rpcfrontend/IOFSLRPCLookupRequest.cpp
 
 if DISPATCH_ROSS
 SERVERSOURCES += \

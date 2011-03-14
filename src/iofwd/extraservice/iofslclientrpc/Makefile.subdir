@@ -1,0 +1,3 @@
+SERVERSOURCES += \
+src/iofwd/extraservice/iofslclientrpc/IOFSLClientRPCService.hh \
+src/iofwd/extraservice/iofslclientrpc/IOFSLClientRPCService.cpp
