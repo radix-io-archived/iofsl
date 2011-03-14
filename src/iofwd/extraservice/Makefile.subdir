@@ -7,3 +7,6 @@ endif
 
 include src/iofwd/extraservice/rpctest/Makefile.subdir
 
+# clientrpc service
+include src/iofwd/extraservice/iofslclientrpc/Makefile.subdir
+
