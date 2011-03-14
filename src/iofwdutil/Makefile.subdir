@@ -177,6 +177,7 @@ src/iofwdutil/stats/CounterHelper.hh \
 src/iofwdutil/stats/BaseCounter.hh \
 src/iofwdutil/stats/SingleCounter.hh \
 src/iofwdutil/stats/CounterWindow.hh \
+src/iofwdutil/stats/CounterConfig.hh \
 src/iofwdutil/stats/ByteCounter.hh \
 src/iofwdutil/stats/ByteCounterWindow.hh \
 src/iofwdutil/stats/CounterTable.cpp \
