@@ -183,6 +183,45 @@ src/iofwd/frontend/IOFWDSetAttrRequest.hh \
 src/iofwd/frontend/IOFWDSymLinkRequest.hh \
 src/iofwd/frontend/IOFWDWriteRequest.hh
 
+if DISPATCH_ROSS
+SERVERSOURCES += \
+src/iofwd/rossfrontend/ROSSCommitRequest.cpp \
+src/iofwd/rossfrontend/ROSSCreateRequest.cpp \
+src/iofwd/rossfrontend/ROSSGetAttrRequest.cpp \
+src/iofwd/rossfrontend/ROSSLinkRequest.cpp \
+src/iofwd/rossfrontend/ROSSLookupRequest.cpp \
+src/iofwd/rossfrontend/ROSSMkdirRequest.cpp \
+src/iofwd/rossfrontend/ROSSNotImplementedRequest.cpp \
+src/iofwd/rossfrontend/ROSSNullRequest.cpp \
+src/iofwd/rossfrontend/ROSSReadDirRequest.cpp \
+src/iofwd/rossfrontend/ROSSReadLinkRequest.cpp \
+src/iofwd/rossfrontend/ROSSReadRequest.cpp \
+src/iofwd/rossfrontend/ROSSRemoveRequest.cpp \
+src/iofwd/rossfrontend/ROSSRenameRequest.cpp \
+src/iofwd/rossfrontend/ROSSRequest.cpp \
+src/iofwd/rossfrontend/ROSSResizeRequest.cpp \
+src/iofwd/rossfrontend/ROSSSetAttrRequest.cpp \
+src/iofwd/rossfrontend/ROSSSymLinkRequest.cpp \
+src/iofwd/rossfrontend/ROSSWriteRequest.cpp \
+src/iofwd/rossfrontend/ROSSCommitRequest.hh \
+src/iofwd/rossfrontend/ROSSCreateRequest.hh \
+src/iofwd/rossfrontend/ROSSGetAttrRequest.hh \
+src/iofwd/rossfrontend/ROSSLinkRequest.hh \
+src/iofwd/rossfrontend/ROSSLookupRequest.hh \
+src/iofwd/rossfrontend/ROSSMkdirRequest.hh \
+src/iofwd/rossfrontend/ROSSNotImplementedRequest.hh \
+src/iofwd/rossfrontend/ROSSNullRequest.hh \
+src/iofwd/rossfrontend/ROSSReadDirRequest.hh \
+src/iofwd/rossfrontend/ROSSReadLinkRequest.hh \
+src/iofwd/rossfrontend/ROSSReadRequest.hh \
+src/iofwd/rossfrontend/ROSSRemoveRequest.hh \
+src/iofwd/rossfrontend/ROSSRenameRequest.hh \
+src/iofwd/rossfrontend/ROSSRequest.hh \
+src/iofwd/rossfrontend/ROSSResizeRequest.hh \
+src/iofwd/rossfrontend/ROSSSetAttrRequest.hh \
+src/iofwd/rossfrontend/ROSSSymLinkRequest.hh \
+src/iofwd/rossfrontend/ROSSWriteRequest.hh
+endif
 
 src_iofwd_iofwd_SOURCES = $(SERVERSOURCES)
 
