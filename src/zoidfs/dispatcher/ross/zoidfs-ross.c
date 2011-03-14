@@ -84,7 +84,6 @@ static int zoidfs_ross_create(const zoidfs_handle_t * UNUSED(parent_handle),
                       int * UNUSED(created),
                       zoidfs_op_hint_t * UNUSED(op_hint))
 {
-    zoidfs_ross_handle_create(parent_handle, component_name, full_path, handle);
     return ZFS_OK;
 }
 
