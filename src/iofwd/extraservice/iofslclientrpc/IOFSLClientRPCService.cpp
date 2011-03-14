@@ -26,24 +26,6 @@ namespace iofwd
 {
    namespace extraservice
    {
-      namespace
-      {
-
-         /* TODO change this to use the ThreadPool */
-         static void threadRPC(const rpc::RPCHandler & h,
-               iofwdevent::ZeroCopyInputStream * in,
-               iofwdevent::ZeroCopyOutputStream * out,
-               const rpc::RPCInfo & info)
-         {
-            boost::thread(boost::bind(h, in, out, info));
-         }
-
-         rpc::RPCHandler rpcExec(const rpc::RPCHandler & orig)
-         {
-            return boost::bind(&threadRPC, orig, _1, _2, _3);
-         }
-      }
-
       IOFSLClientRPCService::IOFSLClientRPCService(service::ServiceManager & m)
          : ExtraService(m),
            log_service_(lookupService<Log>("log")),
@@ -51,9 +33,9 @@ namespace iofwd
            log_(log_service_->getSource("iofslclientrpc"))
       {
          rpcserver_->registerRPC("iofslclientrpc.getattr",
-               rpcExec(boost::bind(&IOFSLClientRPCService::getattr, this, _1, _2, _3)));
+               boost::bind(&IOFSLClientRPCService::getattr, this, _1, _2, _3));
          rpcserver_->registerRPC("iofslclientrpc.lookup",
-               rpcExec(boost::bind(&IOFSLClientRPCService::getattr, this, _1, _2, _3)));
+               boost::bind(&IOFSLClientRPCService::getattr, this, _1, _2, _3));
       }
 
       IOFSLClientRPCService::~IOFSLClientRPCService()
