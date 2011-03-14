@@ -405,6 +405,26 @@ AC_SUBST([BMI_LDFLAGS])
 AC_SUBST([BMI_LIBS])
 
 #
+# ROSS
+#
+DISPATCH_ROSS=0
+FRONTEND_ROSS=0
+ROSS_CPPFLAGS=
+ROSS_CFLAGS=
+ROSS_LIBS=
+ROSS_LDFLAGS=
+AC_ARG_WITH([ross],[AS_HELP_STRING([--with-ross@<:@=DIR@:>@],
+            [location of ROSS])], [rossdir=$withval])
+use_ross=0
+
+if test "x$rossdir" != "x" ; then
+    use_ross=1
+fi
+
+AM_CONDITIONAL([DISPATCH_ROSS],[test ${use_ross} == 1])
+AM_CONDITIONAL([FRONTEND_ROSS],[test ${use_ross} == 1])
+
+#
 # GridFTP
 #
 DISPATCH_GRIDFTP=0
