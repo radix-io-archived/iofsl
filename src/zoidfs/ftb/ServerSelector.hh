@@ -4,6 +4,7 @@
 #include "iofwdutil/IOFWDLog-fwd.hh"
 #include <boost/uuid/uuid.hpp>
 #include <boost/random/mersenne_twister.hpp>
+#include <boost/random/uniform_real.hpp>
 
 extern "C"
 {
@@ -37,8 +38,10 @@ namespace zoidfs
 
          enum
          {
-            TIME_EXPIRE     = 600     // Time in seconds before we forget
+            TIME_EXPIRE     = 600,    // Time in seconds before we forget
                                       // about a server
+            MAX_ERRORS      = 3,
+            MAX_RETRY       = 3
 
          };
 
@@ -59,6 +62,10 @@ namespace zoidfs
                bool add = true);
 
       protected:
+         struct ServerEntry;
+
+         // Rate this server (number in [0,1], 0 being best)
+         double rankServer (const ServerEntry & e) const;
 
          // Decide if we switch servers
          bool trySwitch (size_t servercount, double loaddiff) const;
@@ -67,6 +74,9 @@ namespace zoidfs
 
          // Returns true if current server is removed
          bool doExpire ();
+
+         // Get a random boost value
+         double getBoost () const;
 
       protected:
          boost::mutex lock_;
@@ -79,14 +89,19 @@ namespace zoidfs
             std::string               servername;
             double                    load;
             boost::posix_time::ptime  lastupdate;
+            boost::posix_time::ptime  lasterror;
+            size_t                    errorcount;
+            double                    boost;
+
+            double calcServerRank () const;
+            ServerEntry ();
          };
 
-         struct LoadCompare : public
+         struct ServerCompare : public
                               std::binary_function<ServerEntry,ServerEntry,bool>
          {
             bool operator () (const ServerEntry & e1, const ServerEntry & e2)
-               const
-            { return e1.load < e2.load; }
+               const;
          };
 
       protected:
@@ -99,6 +114,7 @@ namespace zoidfs
          int nextaction_;
 
          mutable boost::mt11213b rnd_;
+         mutable boost::uniform_real<double> boostfactor_;
    };
 
    //========================================================================

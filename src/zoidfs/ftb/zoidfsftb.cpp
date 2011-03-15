@@ -47,11 +47,11 @@ namespace zoidfs
             break;
          case ServerSelector::ACTION_NEWSERVER:
             {
-            ret = true;
-            BMI_addr_t * n = new BMI_addr_t ();
-            *n = sel_->getServer ();
-            zoidfs_client_swap_addr (n);
-            break;
+               ret = true;
+               BMI_addr_t * n = new BMI_addr_t ();
+               *n = sel_->getServer ();
+               zoidfs_client_swap_addr (n);
+               break;
             }
          default:
             ret = false;
