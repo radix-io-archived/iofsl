@@ -26,7 +26,10 @@ static size_t opt_groupsize = 64;
 static size_t opt_blocksize = 4*MB;
 static bool opt_collective = false;
 static size_t opt_count = 1024;
+static size_t opt_loops;
 static std::string opt_mapping;
+static bool opt_verbose;
+static bool opt_noworld;
 
 struct MyGenerator
 {
@@ -82,11 +85,13 @@ void reduceData (MPI_Comm comm, const std::vector<double> & val, ACC & acc)
    
 }
 
-static void calcStats (MPI_Comm comm, size_t groupnum, int rank, int , const
-      std::vector<double> & data)
+static void calcStats (MPI_Comm comm, bool read, size_t iter, size_t groupnum,
+      int rank, int , const std::vector<double> & data)
 {
    int worldrank;
+   int worldsize;
    MPI_Comm_rank (MPI_COMM_WORLD, &worldrank);
+   MPI_Comm_size (MPI_COMM_WORLD, &worldsize);
 
    typedef accumulator_set<double, features<tag::sum, tag::min, tag::max,
       tag::median, tag::moment<1>, tag::variance> > Accumulator;
@@ -95,18 +100,27 @@ static void calcStats (MPI_Comm comm, size_t groupnum, int rank, int , const
    // Calculate local statistics
    std::for_each (data.begin(), data.end(), boost::bind(ref(acc), _1));
 
-   MPI_Barrier (MPI_COMM_WORLD);
+   if (!opt_noworld)
+      MPI_Barrier (MPI_COMM_WORLD);
 
-   boost::format f("   %i %i %i %i %.12f %.12f %.12f %.12f %.12f %.12f\n");
+   boost::format f("%c %c %i %i %i %i %i %.12f %.12f %.12f %.12f %.12f %.12f\n");
    if (!worldrank)
    {
-      cout << "=== Individual data \n";
-      cout << "    worldrank groupnum grouprank samples min max avg median sum variance\n";
+      if (opt_verbose)
+      {
+         cout << "R/W type iter worldrank groupnum grouprank samples "
+            "min max avg median sum variance\n";
+      }
       cout.flush ();
    }
-   MPI_Barrier (MPI_COMM_WORLD);
 
-   f % worldrank
+   if (!opt_noworld)
+      MPI_Barrier (MPI_COMM_WORLD);
+
+   f         % (read ? 'R' : 'W')
+             % 'I'
+             % iter
+             % worldrank
              % groupnum
              % rank
              % accumulators::count(acc)
@@ -119,64 +133,68 @@ static void calcStats (MPI_Comm comm, size_t groupnum, int rank, int , const
    cout << str(f);
    cout.flush ();
 
-   MPI_Barrier (MPI_COMM_WORLD);
-   if (!worldrank)
+   if (opt_groupsize != 1)
    {
-      cout << "=== Group data \n";
-      cout << "    worldrank groupnum grouprank min max avg median sum variance\n";
-      cout.flush ();
+      // clear statistics
+      acc = Accumulator ();
+      reduceData (comm, data, acc);
+
+      if (!rank)
+      {
+         f  % (read ? 'R' : 'W')
+            % 'G'
+            % iter
+            % worldrank
+            % groupnum
+            % rank
+            % accumulators::count(acc)
+            % accumulators::min(acc)
+            % accumulators::max(acc)
+            % accumulators::moment<1>(acc)
+            % accumulators::median(acc)
+            % accumulators::sum(acc)
+            % accumulators::variance(acc);
+         cout << str(f);
+         cout.flush ();
+      }
+
+      if (!opt_noworld)
+         MPI_Barrier (MPI_COMM_WORLD);
    }
-   MPI_Barrier (MPI_COMM_WORLD);
 
-   // clear statistics
-   acc = Accumulator ();
-   reduceData (comm, data, acc);
-
-   if (!rank)
+   if (opt_groupsize != worldsize && !opt_noworld)
    {
-      f % worldrank
-         % groupnum
-         % rank
-         % accumulators::count(acc)
-         % accumulators::min(acc)
-         % accumulators::max(acc)
-         % accumulators::moment<1>(acc)
-         % accumulators::median(acc)
-         % accumulators::sum(acc)
-         % accumulators::variance(acc);
-      cout << str(f);
-      cout.flush ();
+      // clear statistics
+      acc = Accumulator ();
+      reduceData (MPI_COMM_WORLD, data, acc);
+
+      if (!worldrank)
+      {
+         f  % (read ? 'R' : 'W')
+            % 'W'
+            % iter
+            % worldrank
+            % groupnum
+            % rank
+            % accumulators::count(acc)
+            % accumulators::min(acc)
+            % accumulators::max(acc)
+            % accumulators::moment<1>(acc)
+            % accumulators::median(acc)
+            % accumulators::sum(acc)
+            % accumulators::variance(acc);
+         cout << str(f);
+         cout.flush ();
+      }
+
+      if (!opt_noworld)
+         MPI_Barrier (MPI_COMM_WORLD);
    }
-
-   MPI_Barrier (MPI_COMM_WORLD);
-
-   // clear statistics
-   acc = Accumulator ();
-   reduceData (MPI_COMM_WORLD, data, acc);
-
-   if (!worldrank)
-   {
-      f % worldrank
-         % groupnum
-         % rank
-         % accumulators::count(acc)
-         % accumulators::min(acc)
-         % accumulators::max(acc)
-         % accumulators::moment<1>(acc)
-         % accumulators::median(acc)
-         % accumulators::sum(acc)
-         % accumulators::variance(acc);
-      cout << "=== MPI_COMM_WORLD data \n";
-      cout << "    worldrank groupnum grouprank samples min max avg median sum variance\n";
-      cout << str(f);
-      cout.flush ();
-   }
-   MPI_Barrier (MPI_COMM_WORLD);
  }
 
 
-static void runTest (MPI_Comm comm, size_t groupnum, const std::string &
-      filename)
+static void runTest (size_t iter, MPI_Comm comm, size_t groupnum,
+      const std::string & filename)
 {
 
    int commrank;
@@ -196,19 +214,15 @@ static void runTest (MPI_Comm comm, size_t groupnum, const std::string &
    MPI_Comm_rank (comm, &commrank);
    MPI_Comm_size (comm, &commsize);
 
-   if (!commrank)
-      cout << str(format("Group %i: filename '%s'\n") % groupnum % filename);
 
    scoped_array<unsigned char> data (new unsigned char[opt_blocksize]);
    MyGenerator gen (groupnum, commrank, commsize);
    std::generate (&data[0], &data[opt_blocksize], gen);
 
    MPI_Barrier (MPI_COMM_WORLD);
-   if (!worldrank)
+   if (!worldrank && opt_verbose)
    {
-      cout << endl;
-      cout << "Write testing...\n";
-      cout << endl;
+      cout << "# Write testing...\n";
    }
    MPI_Barrier (MPI_COMM_WORLD);
 
@@ -242,15 +256,13 @@ static void runTest (MPI_Comm comm, size_t groupnum, const std::string &
    }
    MPI_File_close (&file);
 
-   calcStats (comm, groupnum, commrank, commsize, vals);
+   calcStats (comm, true, iter, groupnum, commrank, commsize, vals);
 
 
    MPI_Barrier (MPI_COMM_WORLD);
-   if (!worldrank)
+   if (!worldrank && opt_verbose)
    {
-      cout << endl;
-      cout << "Read testing...\n";
-      cout << endl;
+      cout << "# Read testing...\n";
    }
    MPI_Barrier (MPI_COMM_WORLD);
 
@@ -285,7 +297,7 @@ static void runTest (MPI_Comm comm, size_t groupnum, const std::string &
    }
    MPI_File_close (&file);
 
-   calcStats (comm, groupnum, commrank, commsize, vals);
+   calcStats (comm, false, iter, groupnum, commrank, commsize, vals);
 }
 
 std::string lookupFile (MPI_Comm comm, const std::string & mapfile, unsigned
@@ -358,6 +370,10 @@ int main (int argc, char ** args)
         "Size (in KB) of block")
        ("mapping", value<std::string>(&opt_mapping),
           "File describing group->file mapping")
+       ("loop", value<size_t>(&opt_loops)->default_value(1),
+        "Number of times to run each test")
+       ("verbose", "Be more verbose")
+       ("noworld", "Don't calculate MPI_COMMWORLD number")
     ;
 
    positional_options_description p;
@@ -369,7 +385,9 @@ int main (int argc, char ** args)
 
    do
    {
+      opt_verbose = vm.count("verbose");
       opt_collective = vm.count("collective");
+      opt_noworld = vm.count("noworld");
 
       if (vm.count("mapping") != 1)
       {
@@ -410,7 +428,13 @@ int main (int argc, char ** args)
          MPI_Abort (MPI_COMM_WORLD, 1);
       }
 
-      runTest (newcomm, groupnum, destfile);
+      cout << str(format("# Group %i: filename '%s'\n")
+            % groupnum % destfile);
+
+      for (size_t l = 0; l<opt_loops; ++l)
+      {
+         runTest (l, newcomm, groupnum, destfile);
+      }
 
       MPI_Comm_free (&newcomm);
    } while (false);
