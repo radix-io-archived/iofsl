@@ -41,9 +41,10 @@ class CounterConfig : public iofwdutil::Singleton< CounterConfig >
 
         friend bool const & counterEnabled(std::string & key);
 
-        void enable(std::string & key)
+        void enable(std::string & key, std::string alias=std::string(""))
         {
             counter_config_[key] = true;
+            counter_alias_config_[alias] = key;
         }
 
         bool const & operator[] (std::string & name)
@@ -79,7 +80,19 @@ class CounterConfig : public iofwdutil::Singleton< CounterConfig >
                 /* for each counter name, enable it */
                 for(i = config_tokens.begin() ; i != config_tokens.end() ; i++)
                 {
-                    enable((*i));
+                    std::vector<std::string> counter_name_alias;
+
+                    boost::split(counter_name_alias, (*i),
+                            boost::is_any_of(":"));
+
+                    if(counter_name_alias.size() == 2)
+                    {
+                        enable(counter_name_alias[0], counter_name_alias[1]);
+                    }
+                    else
+                    {
+                        enable((*i));
+                    }
                     ZLOG_INFO(log_, std::string("\tEnable: ") + (*i));
                 }
             } 
@@ -93,6 +106,7 @@ class CounterConfig : public iofwdutil::Singleton< CounterConfig >
         ~CounterConfig();
 
         std::map<std::string, bool> counter_config_;
+        std::map<std::string, std::string> counter_alias_config_;
 
         iofwdutil::IOFWDLogSource & log_;
 
