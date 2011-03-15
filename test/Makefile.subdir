@@ -53,6 +53,7 @@ test_unit_tests_zoidfs_io_cunit_LDFLAGS = ${test_unit_tests_ldflags}
 test_unit_tests_zoidfs_io_cunit_auto_SOURCES = test/unit-tests/zoidfs-io-cunit.c
 test_unit_tests_zoidfs_io_cunit_auto_LDADD =  src/zoidfs/ftb/libzoidfsftb.a \
 					      src/zoidfs/libzoidfsclient.a \
+                                              src/iofwdutil/libiofwdutil.a \
 					      @BOOST_PROGRAM_OPTIONS_LIB@ \
 					      @BOOST_DATE_TIME_LIB@ \
 					      @BOOST_REGEX_LIB@ \
