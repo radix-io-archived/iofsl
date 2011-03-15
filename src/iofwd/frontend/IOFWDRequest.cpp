@@ -15,7 +15,8 @@ IOFWDRequest::IOFWDRequest (const BMI_unexpected_info & info,
    raw_request_ (info), addr_ (raw_request_.getAddr()),
    tag_(raw_request_.getTag()),
    req_reader_(raw_request_.get(), raw_request_.size()),
-   buffer_send_ (addr_, iofwdutil::bmi::BMI::ALLOC_SEND)
+   buffer_send_ (addr_, iofwdutil::bmi::BMI::ALLOC_SEND),
+   request_counter_("request", 1)
 {
    // opid may not be used
    int32_t opid;

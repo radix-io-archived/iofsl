@@ -23,6 +23,9 @@
 
 #include "iofwdutil/mm/BMIMemoryManager.hh"
 
+#include "iofwdutil/stats/AutoCounter.hh"
+#include "iofwdutil/stats/IncCounter.hh"
+
 namespace iofwd
 {
    namespace frontend
@@ -172,6 +175,9 @@ protected:
    encoder::xdr::XDRWriter reply_writer_;
 
    iofwdutil::bmi::BMIBuffer buffer_send_;
+
+   iofwdutil::stats::AutoCounter<iofwdutil::stats::IncCounter>
+       request_counter_;
 };
 
 //===========================================================================
