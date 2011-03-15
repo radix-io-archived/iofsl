@@ -80,9 +80,11 @@ void IOFWDMain::boot ()
    ZLOG_DEBUG (mainlog_, "Starting IOFWD Frontend"); 
 
    //frontend_.reset (new frontend::IOFWDFrontend (*resources_));
-   
-   frontend_->setConfig (config_.openSectionDefault ("frontend"));
+  
+   ZLOG_DEBUG (mainlog_, "Configure counters...");
+   iofwdutil::stats::CounterConfig::instance().parseConfig(config_.openSectionDefault ("counters"));
 
+   frontend_->setConfig (config_.openSectionDefault ("frontend")); 
    frontend_->init ();
 
    // Set handler for frontend
