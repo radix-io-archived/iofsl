@@ -196,7 +196,18 @@ src/iofwdutil/stats/ScopedTimer.hh \
 src/iofwdutil/ExceptionBacktrace.hh \
 src/iofwdutil/ExceptionBacktrace.cpp \
 src/iofwdutil/IofwdutilLinkHelper.hh \
-src/iofwdutil/IofwdutilLinkHelper.cpp
+src/iofwdutil/IofwdutilLinkHelper.cpp \
+\
+src/iofwdutil/fparser/fptypes.hh \
+src/iofwdutil/fparser/fpaux.hh \
+src/iofwdutil/fparser/fpconfig.hh \
+src/iofwdutil/fparser/fptypes.h \
+src/iofwdutil/fparser/fparser.hh \
+src/iofwdutil/fparser/fparser_mpfr.hh \
+src/iofwdutil/fparser/fpoptimizer.cc \
+src/iofwdutil/fparser/fparser.cc \
+src/iofwdutil/fparser/fp_opcode_add.inc \
+src/iofwdutil/fparser/fp_identifier_parser.inc
 
 if HAVE_ZLIB
 src_iofwdutil_libiofwdutil_a_SOURCES += \
