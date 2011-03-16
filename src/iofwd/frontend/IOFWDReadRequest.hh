@@ -8,6 +8,9 @@
 #include "iofwdutil/InjectPool.hh"
 #include "iofwdutil/HybridAllocator.hh"
 
+#include "iofwdutil/stats/AutoCounter.hh"
+#include "iofwdutil/stats/IncCounter.hh"
+
 namespace iofwd
 {
    namespace frontend
@@ -22,7 +25,8 @@ class  IOFWDReadRequest
 public:
    IOFWDReadRequest (int opid, const BMI_unexpected_info & info,
          IOFWDResources & res)
-      : IOFWDRequest (info,res), ReadRequest (opid)
+      : IOFWDRequest (info,res), ReadRequest (opid),
+        read_request_counter_("read.request", 1)
    {
    }
    virtual ~IOFWDReadRequest ();
@@ -48,6 +52,9 @@ private:
    zoidfs::zoidfs_op_hint_t op_hint_;
    bmi_size_t * bmi_mem_sizes;
    bmi_size_t mem_total_size;
+
+   iofwdutil::stats::AutoCounter<iofwdutil::stats::IncCounter>
+                     read_request_counter_;
 };
 
 //===========================================================================

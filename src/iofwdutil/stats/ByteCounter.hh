@@ -46,7 +46,6 @@ class ByteCounter : public SingleCounter<uint64_t>, public CounterHelper<ByteCou
             SingleCounter<uint64_t>(name + std::string("_byte"), name +
                     std::string(".byte"), 0)
         {
-            std::cout << config_key_ << std::endl;
         }
 
         virtual ~ByteCounter()

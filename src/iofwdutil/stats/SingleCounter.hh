@@ -31,8 +31,16 @@ class SingleCounter : public BaseCounter
                 //boost::mutex::scoped_lock(mutex_);
 
                 /* update the accumulator */
-                (*acc_)(val);
+                if(acc_)
+                {
+                    (*acc_)(val);
+                }
             }
+        }
+
+        static std::string getID()
+        {
+            return std::string(".single") + BaseCounter::getID();
         }
 
         virtual double toDouble()
@@ -137,8 +145,7 @@ class SingleCounter : public BaseCounter
         SingleCounter(std::string name,
                 std::string config_key,
                 T val) :
-            BaseCounter(name + std::string("_single"), config_key +
-                    std::string(".single")),
+            BaseCounter(name, config_key),
             val_(val),
             acc_(NULL)
         {

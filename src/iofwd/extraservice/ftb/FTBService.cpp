@@ -3,6 +3,7 @@
 
 #include "iofwd/service/ServiceManager.hh"
 #include "iofwdutil/IOFWDLog.hh"
+#include "iofwdutil/stats/CounterTable.hh"
 #include "iofwd/Log.hh"
 #include "iofwd/BMI.hh"
 
@@ -120,7 +121,7 @@ namespace iofwd
 
          ZLOG_DEBUG (log_, "Publishing events...");
 
-         load_update.set_load (0.5);
+         load_update.set_load(computeLoadMetric());
 
          publishPB ("loadupdate", load_update);
 
@@ -129,6 +130,30 @@ namespace iofwd
          nextwakeup += boost::posix_time::seconds (opt_sleeptime_);
          sleep (nextwakeup);
       }
+   }
+
+   double FTBService::computeLoadMetric()
+   {
+        double a = 0, b = 0, c = 0;
+
+        a = iofwdutil::stats::CounterTable::instance().find(
+                std::string("write.request.auto.inc.single.counter"))->toDouble();
+        b = iofwdutil::stats::CounterTable::instance().find(
+                std::string("read.request.auto.inc.single.counter"))->toDouble();
+        c = iofwdutil::stats::CounterTable::instance().find(
+                std::string("request.auto.inc.single.counter"))->toDouble();
+
+        if(c > 0.0)
+        {
+            return (a + b) / c;
+        }
+        else
+        {
+            return 1.0;
+        }
+
+        /* should never get here */
+        return -1.0;
    }
 
    /**

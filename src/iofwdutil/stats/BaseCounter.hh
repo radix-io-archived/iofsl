@@ -5,7 +5,6 @@
 #include <boost/thread/mutex.hpp>
 
 #include "iofwdutil/stats/CounterConfig.hh"
-//#include "iofwdutil/stats/CounterConfigOptions.hh"
 
 namespace iofwdutil
 {
@@ -24,7 +23,13 @@ class BaseCounter
 
         bool enabled()
         {
-            return enabled_;
+            //return enabled_;
+            return true;
+        }
+
+        static std::string getID()
+        {
+            return std::string(".counter");
         }
 
     protected:
@@ -34,7 +39,7 @@ class BaseCounter
 
         BaseCounter(std::string name, std::string config_key) :
             name_(name),
-            config_key_(config_key + std::string(".counter")),
+            config_key_(config_key),
             enabled_(iofwdutil::stats::CounterConfig::instance()[config_key_])
         {
         }

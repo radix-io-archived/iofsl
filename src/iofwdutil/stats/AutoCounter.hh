@@ -16,7 +16,7 @@ class AutoCounter
         AutoCounter(std::string name,
                 typename T::type val,
                 bool timed=false) :
-            counter_(T::get(name + std::string(".auto"))),
+            counter_(T::get(name + std::string(".auto") + T::getID())),
             start_(0.0),
             val_(val),
             timed_(timed),
@@ -51,6 +51,16 @@ class AutoCounter
                     timer_->update(stop - start_);
                 }
             }
+        }
+
+        static std::string getID()
+        {
+            return std::string(".auto") + T::getID();
+        }
+
+        static std::string getTimerID()
+        {
+            return std::string(".timer.auto") + T::getID();
         }
 
     protected:

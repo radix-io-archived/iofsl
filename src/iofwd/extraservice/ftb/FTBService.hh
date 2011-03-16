@@ -63,6 +63,8 @@ namespace iofwd
                google::protobuf::MessageLite &
                msg);
 
+         double computeLoadMetric();
+
       protected:
          int checkFTB (int ret) const;
 

@@ -23,12 +23,12 @@ class CounterTable : public iofwdutil::Singleton< CounterTable >
 
         void lock()
         {
-            mutex_.lock();
+            //mutex_.lock();
         }
 
         void unlock()
         {
-            mutex_.unlock();
+            //mutex_.unlock();
         }
 
         /* get the counter */
@@ -49,7 +49,8 @@ class CounterTable : public iofwdutil::Singleton< CounterTable >
             if(it != counters_.end())
             {
                 /* hash the counter name to the counter mem */
-                c = (counters_)[name];
+                //c = (counters_)[name];
+                c = it->second;
             }
             else
             {

@@ -42,7 +42,8 @@ public:
     */
    IOFWDWriteRequest (int opid, const BMI_unexpected_info & info,
          IOFWDResources & res)
-     : IOFWDRequest (info,res), WriteRequest (opid)
+     : IOFWDRequest (info,res), WriteRequest (opid),
+       write_request_counter_("write.request", 1)
    {
    }
 
@@ -70,6 +71,9 @@ private:
    zoidfs::zoidfs_op_hint_t op_hint_;
    bmi_size_t mem_expected_size;
    bmi_size_t * bmi_mem_sizes;
+
+   iofwdutil::stats::AutoCounter<iofwdutil::stats::IncCounter>
+              write_request_counter_;
 };
 
 //===========================================================================

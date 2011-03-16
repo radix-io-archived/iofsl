@@ -39,12 +39,16 @@ class IncCounter : public SingleCounter< uint64_t >, public
             }
         }
 
+        static std::string getID()
+        {
+            return std::string(".inc") + SingleCounter<uint64_t>::getID();
+        }
+
     protected:
         friend class CounterHelper< IncCounter >;
 
         IncCounter(const std::string & name) :
-            SingleCounter<uint64_t>(name + std::string("_inc"), name +
-                    std::string(".inc"), 0)
+            SingleCounter<uint64_t>(name, name, 0)
         {
         }
 
