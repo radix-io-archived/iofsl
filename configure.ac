@@ -78,6 +78,8 @@ ENABLE_MPI=
 ORIG_CC=
 ORIG_CPP=
 ORIG_CXX=
+MPI_PATH=$with_mpi
+
 AS_IF([test "x$with_mpi" != "xno"],
 [
  if test "x$with_mpi" != "xcheck" -a "x$with_mpi" != "xyes"; then
@@ -418,9 +420,29 @@ AC_ARG_WITH([ross],[AS_HELP_STRING([--with-ross@<:@=DIR@:>@],
 use_ross=0
 
 if test "x$rossdir" != "x" ; then
-    ROSS_CPPFLAGS="-I${rossdir}/src"
-    ROSS_LDFLAGS="-L${rossdir}/src"
-    ROSS_LIBS="-lROSS"
+    ROSS_CPPFLAGS="-I${MPI_PATH}/include -I${rossdir}/trunk/ross -DROSS_QUEUE_splay -DROSS_RAND_clcg4 -DROSS_MEMORY -DROSS_NETWORK_mpi -DROSS_CLOCK_amd64 -DROSS_GVT_mpi_allreduce"
+    ROSS_LDFLAGS="-L${rossdir}/rossnet-build/ross"
+    ROSS_LIBS="-lROSS -lm"
+
+    OLDCPPFLAGS="$CPPFLAGS"
+    OLDLDFLAGS="$LDFLAGS"
+    OLDLIBS="$LIBS"
+    CPPFLAGS="$CPPFLAGS $ROSS_CPPFLAGS"
+    LDFLAGS="$LDFLAGS $ROSS_LDFLAGS"
+    LIBS="$ROSS_LIBS"
+
+    AC_LANG_PUSH([C])
+    AC_CHECK_HEADERS([ross.h], [], 
+            [AC_MSG_ERROR([Could not find usable ROSS header!])])
+    AC_CHECK_LIB([ROSS], [tw_init],[],
+             [AC_MSG_ERROR([Could not find usable ROSS library!])])
+    AC_LANG_POP
+
+    CPPFLAGS="$OLDCPPFLAGS"
+    LDFLAGS="$OLDLDFLAGS"
+    LIBS="$OLDLIBS"
+
+    AC_DEFINE([USE_DISPATCHER_ROSS],[1],[Build ROSS zoidfs dispatcher driver])
     use_ross=1
 fi
 
