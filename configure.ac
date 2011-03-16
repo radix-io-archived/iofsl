@@ -418,6 +418,9 @@ AC_ARG_WITH([ross],[AS_HELP_STRING([--with-ross@<:@=DIR@:>@],
 use_ross=0
 
 if test "x$rossdir" != "x" ; then
+    ROSS_CPPFLAGS="-I${rossdir}/src"
+    ROSS_LDFLAGS="-L${rossdir}/src"
+    ROSS_LIBS="-lROSS"
     use_ross=1
 fi
 
