@@ -29,6 +29,8 @@ src_encoder_libencoder_a_SOURCES = \
 	src/encoder/Encoder.hh \
 	src/encoder/SizeSaver.hh \
 	src/encoder/Decoder.hh \
-	src/encoder/Processor.hh
-
+	src/encoder/Processor.hh \
+   src/encoder/EncoderStruct.hh \
+   src/encoder/EncoderString.hh \
+   src/encoder/EncoderString.cpp
 
