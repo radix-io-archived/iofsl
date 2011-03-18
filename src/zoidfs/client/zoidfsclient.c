@@ -3163,6 +3163,7 @@ int zoidfs_write(const zoidfs_handle_t *handle, size_t mem_count,
     size_t i;
     size_t pipeline_size = 0;
     bmi_size_t total_size = 0;
+    zoidfs_file_ofs_t total_file_size = 0;
     zoidfs_size_t_array_transfer_t mem_sizes_transfer;
     zoidfs_file_ofs_array_transfer_t file_starts_transfer;
     zoidfs_file_ofs_array_transfer_t file_sizes_transfer;
@@ -3323,6 +3324,7 @@ int zoidfs_write(const zoidfs_handle_t *handle, size_t mem_count,
         {
             bmi_mem_sizes[i] = (bmi_size_t)mem_sizes[i];
             total_size += bmi_mem_sizes[i];
+            total_file_size += (zoidfs_file_ofs_t)file_sizes[0];
             if(mem_sizes[i] > (size_t)zfsmin((size_t)PIPELINE_SIZE, op_hint_pipeline_size_req))
                 pipeline_size = (size_t)zfsmin((size_t)PIPELINE_SIZE, op_hint_pipeline_size_req);
         }
@@ -3330,6 +3332,19 @@ int zoidfs_write(const zoidfs_handle_t *handle, size_t mem_count,
     else
     {
         total_size = (bmi_size_t)mem_sizes[0];
+        total_file_size = (zoidfs_file_ofs_t)file_sizes[0];
+    }
+
+    /* no memory to be written from input... exit */
+    if(total_size == 0)
+    {
+        goto write_cleanup; 
+    }
+
+    /* no file data to be written from input... exit */
+    if(total_file_size == 0)
+    {
+        goto write_cleanup; 
     }
 
     /* 
@@ -3597,6 +3612,7 @@ int zoidfs_read(const zoidfs_handle_t *handle, size_t mem_count,
     size_t i;
     size_t pipeline_size = 0;
     bmi_size_t total_size = 0;
+    zoidfs_file_ofs_t total_file_size = 0;
     zoidfs_size_t_array_transfer_t mem_sizes_transfer;
     zoidfs_file_ofs_array_transfer_t file_starts_transfer;
     zoidfs_file_ofs_array_transfer_t file_sizes_transfer;
@@ -3702,6 +3718,7 @@ int zoidfs_read(const zoidfs_handle_t *handle, size_t mem_count,
         {
             bmi_mem_sizes[i] = (bmi_size_t)mem_sizes[i];
             total_size += bmi_mem_sizes[i];
+            total_file_size += (zoidfs_file_ofs_t)file_sizes[i];
             if (mem_sizes[i] > (size_t)zfsmin((size_t)PIPELINE_SIZE, op_hint_pipeline_size_req))
                 pipeline_size = (size_t)zfsmin((size_t)PIPELINE_SIZE, op_hint_pipeline_size_req);
         }
@@ -3709,6 +3726,19 @@ int zoidfs_read(const zoidfs_handle_t *handle, size_t mem_count,
     else
     {
         total_size = (bmi_size_t)mem_sizes[0];
+        total_file_size = (zoidfs_file_ofs_t)file_sizes[0];
+    }
+
+    /* no memory to be written from input... exit */
+    if(total_size == 0)
+    {
+        goto read_cleanup;
+    }
+
+    /* no file data to be written from input... exit */
+    if(total_file_size == 0)
+    {
+        goto read_cleanup;
     }
 
     /* 
