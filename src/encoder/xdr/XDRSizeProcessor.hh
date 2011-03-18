@@ -64,16 +64,17 @@ inline Size::SizeInfo getXDRSize (const T & dummy)
 }
 
 
-// FixedSizeOpaque always has same size
-inline void process (XDRSizeProcessor & f, const EncOpaque & o)
-{
-      f.incActualSize (o.size_);
-      f.incMaxSize (o.size_);
-}
-
 inline size_t xdrsize_roundup4 (size_t s)
 {
    return (((s+3)/4)*4);
+}
+
+
+// FixedSizeOpaque always has same size
+inline void process (XDRSizeProcessor & f, const EncOpaque & o)
+{
+      f.incActualSize (xdrsize_roundup4(o.size_));
+      f.incMaxSize (xdrsize_roundup4(o.maxsize_));
 }
 
 

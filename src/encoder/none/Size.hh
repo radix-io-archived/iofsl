@@ -53,7 +53,8 @@ NONESIZE_SIMPLE(float);
 
        inline void process (::encoder::none::Size & s, const EncOpaque & e)
        {
-          s.incBoth (e.size_);
+          s.incMaxSize ( e.maxsize_);
+          s.incActualSize ( e.size_);
        }
 
        template <typename T>
