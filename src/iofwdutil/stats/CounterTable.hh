@@ -6,6 +6,7 @@
 #include "iofwdutil/Singleton.hh"
 #include <boost/thread/mutex.hpp>
 #include "iofwdutil/stats/BaseCounter.hh"
+#include "iofwdutil/stats/SentinelCounter.hh"
 
 namespace iofwdutil
 {
@@ -54,7 +55,7 @@ class CounterTable : public iofwdutil::Singleton< CounterTable >
             }
             else
             {
-                c = NULL;
+                c = &sentinel_;
             }
             return c;
         }
@@ -64,6 +65,7 @@ class CounterTable : public iofwdutil::Singleton< CounterTable >
 
     protected:
         boost::mutex mutex_;
+        SentinelCounter sentinel_;
         std::map< std::string, BaseCounter * > counters_;
 };
 
