@@ -38,13 +38,14 @@ public:
 class EncOpaque
 {
 public:
-   EncOpaque (const void * ptr, size_t size)
-      : ptr_(const_cast<void*>(ptr)), size_(size)
+   EncOpaque (const void * ptr, size_t size, size_t maxsize = size)
+      : ptr_(const_cast<void*>(ptr)), size_(size), maxsize_(maxsize)
    {
    }
 
    mutable void * ptr_;
-   size_t size_;
+   const size_t size_;
+   const size_t maxsize_;
 };
 
 
