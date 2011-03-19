@@ -27,6 +27,7 @@ static char *ion_name;
 static BMI_addr_t * peer_addr = NULL;
 static BMI_addr_t * def_peer_addr = NULL;
 static bmi_context_id context;
+static char skip_zero_byte_ops = 0;
 
 static const zoidfs_file_ofs_t aa_file_starts_sentinel[1] = {0};
 
@@ -3324,10 +3325,16 @@ int zoidfs_write(const zoidfs_handle_t *handle, size_t mem_count,
         {
             bmi_mem_sizes[i] = (bmi_size_t)mem_sizes[i];
             total_size += bmi_mem_sizes[i];
-            total_file_size += (zoidfs_file_ofs_t)file_sizes[0];
             if(mem_sizes[i] > (size_t)zfsmin((size_t)PIPELINE_SIZE, op_hint_pipeline_size_req))
                 pipeline_size = (size_t)zfsmin((size_t)PIPELINE_SIZE, op_hint_pipeline_size_req);
         }
+
+        for(i = 0 ; i < file_count ; i++)
+        {
+            total_file_size += (zoidfs_file_ofs_t)file_sizes[i];
+        }
+
+        /* TODO prune empty buffers from list IO requests sent to servers */
     }
     else
     {
@@ -3335,17 +3342,22 @@ int zoidfs_write(const zoidfs_handle_t *handle, size_t mem_count,
         total_file_size = (zoidfs_file_ofs_t)file_sizes[0];
     }
 
-    /* no memory to be written from input... exit */
-    if(total_size == 0)
+    if(skip_zero_byte_ops)
     {
-        goto write_cleanup; 
+        /* no memory to be written from input... exit */
+        if(total_size == 0)
+        {
+            goto write_cleanup; 
+        }
+
+        /* no file data to be written from input... exit */
+        if(total_file_size == 0)
+        {
+            goto write_cleanup; 
+        }
     }
 
-    /* no file data to be written from input... exit */
-    if(total_file_size == 0)
-    {
-        goto write_cleanup; 
-    }
+    /* */
 
     /* 
      * if the total size is greater than the pipeline size, set the pipeline size
@@ -3718,10 +3730,16 @@ int zoidfs_read(const zoidfs_handle_t *handle, size_t mem_count,
         {
             bmi_mem_sizes[i] = (bmi_size_t)mem_sizes[i];
             total_size += bmi_mem_sizes[i];
-            total_file_size += (zoidfs_file_ofs_t)file_sizes[i];
             if (mem_sizes[i] > (size_t)zfsmin((size_t)PIPELINE_SIZE, op_hint_pipeline_size_req))
                 pipeline_size = (size_t)zfsmin((size_t)PIPELINE_SIZE, op_hint_pipeline_size_req);
         }
+
+        for(i = 0 ; i < file_count ; i++)
+        {
+            total_file_size += (zoidfs_file_ofs_t)file_sizes[i];
+        }
+
+        /* TODO prune empty buffers from list IO requests sent to servers */
     }
     else
     {
@@ -3729,16 +3747,19 @@ int zoidfs_read(const zoidfs_handle_t *handle, size_t mem_count,
         total_file_size = (zoidfs_file_ofs_t)file_sizes[0];
     }
 
-    /* no memory to be written from input... exit */
-    if(total_size == 0)
+    if(skip_zero_byte_ops)
     {
-        goto read_cleanup;
-    }
+        /* no memory to be written from input... exit */
+        if(total_size == 0)
+        {
+            goto read_cleanup;
+        }
 
-    /* no file data to be written from input... exit */
-    if(total_file_size == 0)
-    {
-        goto read_cleanup;
+        /* no file data to be written from input... exit */
+        if(total_file_size == 0)
+        {
+            goto read_cleanup;
+        }
     }
 
     /* 
@@ -4058,6 +4079,16 @@ int zoidfs_init(void) {
     {
         fprintf(stderr, "zoidfs_init: getenv(\"%s\") failed.\n", ION_ENV);
         return ZFSERR_OTHER;
+    }
+    
+    char * szbo = getenv("ZOIDFS_SKIP_ZERO_BYTE_OPS");
+    if(szbo != NULL)
+    {
+        skip_zero_byte_ops = 1;
+    }
+    else
+    {
+        skip_zero_byte_ops = 0;
     }
     
     /* Perform an address lookup on the ION */
