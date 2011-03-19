@@ -29,72 +29,12 @@ namespace iofwdutil
 
 /*
  * Key / value storage for IOFSL
- *
- * Currently, this is just accessible by a single IOFSL server
- *
  */
 class IOFSLKeyValueStorage : public Singleton< IOFSLKeyValueStorage >
 {
     public:
         IOFSLKeyValueStorage();
         ~IOFSLKeyValueStorage();
-
-        void lockTable()
-        {
-        }
-
-        void unlockTable()
-        {
-        }
-
-        void process(iofwdevent::CBType cb, boost::function<void(void)> wu) 
-        {
-                boost::mutex::scoped_lock rll(request_list_mutex_);
-
-                if(executeRequest(wu, rll))
-                {
-                    cb(iofwdevent::CBException());
-                    return;
-                }
-
-                /* could not access the table */
-                KVRequest * k = new KVRequest(cb, wu); 
-                pending_kv_requests_.push_back(*k);
-
-                return;
-        }
-
-        void progress()
-        {
-            boost::mutex::scoped_lock rll(request_list_mutex_);
-            if(pending_kv_requests_.empty())
-            {
-                /* push work unit onto thread pool */
-            }
-        }
-
-        bool executeRequest(boost::function<void(void)> wu, boost::mutex::scoped_lock & rll)
-        {
-                /* allow fifo processing of requests */
-                if(!pending_kv_requests_.empty())
-                {
-                    return false;
-                }
-
-                boost::mutex::scoped_try_lock tl(table_mutex_);
-                if(tl.owns_lock())
-                {
-                    /* remove the lock on the kv request list */
-                    rll.unlock();
-
-                    /* update the KV */
-                    wu();
-
-                    return true;
-                }
-
-                return false;
-        }
 
         template <typename T>
         void rpcInitKeyValue(iofwdutil::IOFSLKey & key, T
@@ -280,18 +220,15 @@ class IOFSLKeyValueStorage : public Singleton< IOFSLKeyValueStorage >
             cb(iofwdevent::CBException());
         }
 
-        void reset()
-        {
-            /* purge all key / value pairs */
-        }
-
     protected:
 
         class KVRequest
         {
             public:
-                KVRequest (const iofwdevent::CBType & cb, boost::function<void(void)> wu)
-                    : cb_(cb), wu_(wu)
+                KVRequest (const iofwdevent::CBType & cb,
+                        boost::function<void(void)> wu)
+                    : cb_(cb),
+                    wu_(wu)
                 {
                 }
 
@@ -301,8 +238,11 @@ class IOFSLKeyValueStorage : public Singleton< IOFSLKeyValueStorage >
                 boost::intrusive::slist_member_hook<> list_hook_;
         }; 
 
-        typedef boost::intrusive::member_hook<KVRequest, boost::intrusive::slist_member_hook<>, &KVRequest::list_hook_ > KVMemberHook;
-        typedef boost::intrusive::slist<KVRequest, KVMemberHook, boost::intrusive::cache_last<true>  > KVRequestList;
+        typedef boost::intrusive::member_hook<KVRequest,
+                boost::intrusive::slist_member_hook<>, &KVRequest::list_hook_ >
+                    KVMemberHook;
+        typedef boost::intrusive::slist<KVRequest, KVMemberHook,
+                boost::intrusive::cache_last<true>  > KVRequestList;
         
         boost::mutex table_mutex_;
         std::map< iofwdutil::IOFSLKey, void * > table_;

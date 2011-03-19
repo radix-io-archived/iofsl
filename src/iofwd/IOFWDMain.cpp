@@ -111,9 +111,6 @@ void IOFWDMain::shutdown ()
    ZLOG_DEBUG (mainlog_, "Stopping thread pool...");
    iofwdutil::ThreadPool::instance().reset(); 
 
-   ZLOG_DEBUG (mainlog_, "Stopping IOFSLKeyValue Storage...");
-   iofwdutil::IOFSLKeyValueStorage::instance().reset(); 
-
    ZLOG_DEBUG (mainlog_, "Dumping counters...");
    iofwdutil::stats::CounterTable::instance().dumpCounters();
 }
