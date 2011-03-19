@@ -55,61 +55,13 @@ class CreateTaskSM : public sm::SimpleSM< CreateTaskSM >,
         void waitRunOp(iofwdevent::CBException e)
         {
             e.check ();
-            setNextMethod(&CreateTaskSM::postCreateAtomicAppendOffset);
+            setNextMethod(&CreateTaskSM::postReply);
         }
 
         void waitReply(iofwdevent::CBException e)
         {
             e.check ();
             // done
-        }
-
-        virtual void waitCreateAtomicAppendOffset(iofwdevent::CBException e)
-        {
-            e.check ();
-            setNextMethod(&CreateTaskSM::postReply);
-        }
-
-        virtual void postCreateAtomicAppendOffset(iofwdevent::CBException e)
-        {
-            e.check ();
-          
-            /* if the file was created */ 
-            if(created_) 
-            {
-#if 0
-                iofwdutil::IOFSLKey key = iofwdutil::IOFSLKey();
-                zoidfs::zoidfs_file_ofs_t aa_offset = 0;
-
-                key.setParentHandle(p_.parent_handle);
-                if(p_.component_name)
-                {
-                    key.setComponentName(std::string(p_.component_name));
-                }
-                if(p_.full_path)
-                {
-                    key.setFilePath(std::string(p_.full_path));
-                }
-                key.setFileHandle(&handle_);
-                key.setDataKey(std::string("NEXTAPPENDOFFSET"));
-
-                iofwdutil::IOFSLKeyValueStorage::instance().initKeyValue<
-                    zoidfs::zoidfs_file_ofs_t >(slots_[BASE_SLOT], key, aa_offset);
-                slots_.wait(BASE_SLOT, &CreateTaskSM::waitCreateAtomicAppendOffset);
-#else
-                iofwd::extraservice::AtomicAppendClientRPC rpc;
-                zoidfs::zoidfs_file_ofs_t aa_offset = 0;
-                uint64_t retcode = 0;
-
-                rpc.createOffset(handle_, aa_offset, retcode);
-                setNextMethod(&CreateTaskSM::postReply);
-#endif
-            }
-            /* file already exists */
-            else
-            {
-                setNextMethod(&CreateTaskSM::postReply);
-            }
         }
 
         virtual void postDecodeInput(iofwdevent::CBException e)
