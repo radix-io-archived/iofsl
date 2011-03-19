@@ -2,9 +2,15 @@
 #define EXTRASERVICE_AARPC_ATOMICAPPENDSERVERRPC_HH
 
 #include "iofwd/ExtraService.hh"
+#include "iofwd/extraservice/aarpc/AtomicAppendRPCTypes.hh"
+
 #include "rpc/RPCHandler.hh"
+#include "rpc/RPCInfo.hh"
+#include "rpc/RPCEncoder.hh"
 
 #include "iofwdutil/IOFWDLog-fwd.hh"
+
+#include "iofwdevent/SingleCompletion.hh"
 
 #include "zoidfs/zoidfs.h"
 
@@ -34,30 +40,94 @@ namespace iofwd
 
             /* rpc handlers */
 
-            void getNextOffset(iofwdevent::ZeroCopyInputStream *,
-                  iofwdevent::ZeroCopyOutputStream *,
-                  const rpc::RPCInfo &);
-
-            void createOffset(iofwdevent::ZeroCopyInputStream *,
-                  iofwdevent::ZeroCopyOutputStream *,
-                  const rpc::RPCInfo &);
-
-            void deleteOffset(iofwdevent::ZeroCopyInputStream *,
-                  iofwdevent::ZeroCopyOutputStream *,
-                  const rpc::RPCInfo &);
+            void createOffset(const AARPCCreateOffsetIn & in,
+                    AARPCCreateOffsetOut & out);
+            
+            void deleteOffset(const AARPCDeleteOffsetIn & in,
+                    AARPCDeleteOffsetOut & out);
+            
+            void getNextOffset(const AARPCGetNextOffsetIn & in,
+                    AARPCGetNextOffsetOut & out);
 
             /* key value storage helpers */
 
-            uint64_t getNextOffsetFromStorage(zoidfs::zoidfs_file_size_t inc,
-                    zoidfs::zoidfs_handle_t & handle,
+            uint64_t getNextOffsetFromStorage(const zoidfs::zoidfs_file_size_t inc,
+                    const zoidfs::zoidfs_handle_t & handle,
                     zoidfs::zoidfs_file_size_t & atomic_append_base_offset);
             
-            uint64_t createOffsetInStorage(zoidfs::zoidfs_handle_t & handle,
+            uint64_t createOffsetInStorage(const zoidfs::zoidfs_handle_t & handle,
                     zoidfs::zoidfs_file_size_t & atomic_append_base_offset);
 
-            uint64_t deleteOffsetInStorage(zoidfs::zoidfs_handle_t & handle);
+            uint64_t deleteOffsetInStorage(const zoidfs::zoidfs_handle_t & handle);
+            
+            template <typename IN, typename OUT>
+                void aarpcHelper(
+                        const boost::function<void (AtomicAppendServerRPC *
+                            base, const IN &, OUT &)> & rpc_func,
+                        iofwdevent::ZeroCopyInputStream * in,
+                        iofwdevent::ZeroCopyOutputStream * out,
+                        const rpc::RPCInfo & )
+                {
+                    /* streams */
+                    boost::scoped_ptr<iofwdevent::ZeroCopyInputStream> instream(in);
+                    boost::scoped_ptr<iofwdevent::ZeroCopyOutputStream> outstream(out);
 
-         protected:
+                    IN rpc_func_arg_in;
+                    OUT rpc_func_arg_out;
+
+                    /* read data tracking */
+                    const char * read_ptr;
+                    size_t read_size = 0;
+          
+                      /* write data tracking */
+                    char * write_ptr;
+                    size_t write_size = 0;
+
+                    /* max request size */
+                    const size_t insize =
+                        rpc::getRPCEncodedSize(zoidfs::zoidfs_handle_t()).getMaxSize () +
+                        rpc::getRPCEncodedSize(zoidfs::zoidfs_file_ofs_t()).getMaxSize();
+
+                    /* max response size */
+                    const size_t outsize =
+                        rpc::getRPCEncodedSize(uint64_t()).getMaxSize();
+
+                    /* comp block */
+                    iofwdevent::SingleCompletion block;
+                
+                    /* prepare to read from the stream */
+                    in->read(reinterpret_cast<const void **>(&read_ptr),
+                            &read_size, block, insize);
+                    block.wait();
+          
+                    /* decode the XDR in the RPC request */
+                    rpc::RPCDecoder dec(read_ptr, read_size);
+                    process(dec, rpc_func_arg_in);
+                    
+                    /* get the atomic offset */
+                    rpc_func(this, rpc_func_arg_in, rpc_func_arg_out);
+              
+                    /* prepare to send the response back to the caller */
+                    block.reset();
+                    out->write(reinterpret_cast<void**>(&write_ptr), &write_size,
+                            block, outsize);
+                    block.wait();
+                    
+                    /* encode the offset into XDR for the RPC response */
+                    rpc::RPCEncoder enc(write_ptr, write_size);
+                    process(enc, rpc_func_arg_out);
+
+                    /* rewind */
+                    block.reset();
+                    out->rewindOutput(write_size - enc.getPos(), block);
+                    block.wait();
+                    
+                    /* flush the reponse */
+                    block.reset();
+                    out->flush(block);
+                    block.wait(); 
+                }
+
             boost::shared_ptr<Log> log_service_;
             boost::shared_ptr<RPCServer> rpcserver_;
             iofwdutil::IOFWDLogSource & log_;

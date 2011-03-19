@@ -85,7 +85,7 @@ class IOFSLKeyValueStorage : public Singleton< IOFSLKeyValueStorage >
 
         template <typename T>
         void rpcFetchAndInc(iofwdutil::IOFSLKey & key,
-                T & nextValueInc,
+                const T & nextValueInc,
                 T * curValue=NULL)
         {
             /* atomic fetch and inc of the value */

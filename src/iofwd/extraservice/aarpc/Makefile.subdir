@@ -1,4 +1,5 @@
 SERVERSOURCES += \
+src/iofwd/extraservice/aarpc/AtomicAppendRPCTypes.hh \
 src/iofwd/extraservice/aarpc/AtomicAppendServerRPC.hh \
 src/iofwd/extraservice/aarpc/AtomicAppendServerRPC.cpp \
 src/iofwd/extraservice/aarpc/AtomicAppendClientRPC.hh \
