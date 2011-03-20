@@ -3,14 +3,20 @@
 
 #include "zoidfs/util/zoidfs-wrapped.hh"
 #include "zoidfs/zoidfs.h"
-
+#include "encoder/EncoderStruct.hh"
 #include "iofwd/GetAttrRequest.hh"
 #include "iofwd/rpcfrontend/IOFSLRPCRequest.hh"
-
+#include "encoder/Util.hh"
 namespace iofwd
 {
    namespace rpcfrontend
    {
+typedef zoidfs::zoidfs_handle_t zoidfs_handle_t;
+typedef zoidfs::zoidfs_attr_t zoidfs_attr_t;
+ENCODERSTRUCT (IOFSLRPCGetAttrDec, ((zoidfs_handle_t)(handle))
+                                   ((zoidfs_attr_t)(attr)))
+ENCODERSTRUCT (IOFSLRPCGetAttrEnc, ((int)(returnCode))
+                                    ((zoidfs_attr_t)(attr_enc_)))
 
 class IOFSLRPCGetAttrRequest :
     public IOFSLRPCRequest,
@@ -41,10 +47,9 @@ class IOFSLRPCGetAttrRequest :
         /* data size helpers for this request */ 
         virtual size_t rpcEncodedInputDataSize(); 
         virtual size_t rpcEncodedOutputDataSize();
-
+        IOFSLRPCGetAttrDec dec_struct;
+        IOFSLRPCGetAttrEnc enc_struct;
         ReqParam param_;
-        zoidfs::zoidfs_handle_t handle_;
-        zoidfs::zoidfs_attr_t attr_;
         zoidfs::zoidfs_op_hint_t op_hint_;
         zoidfs::zoidfs_attr_t * attr_enc_;
 };
