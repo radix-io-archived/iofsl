@@ -13,6 +13,7 @@
 #include "rpc/RPCInfo.hh"
 #include "rpc/RPCEncoder.hh"
 
+#include <iostream>
 #include <string>
 #include <unistd.h>
 
@@ -76,6 +77,76 @@ namespace iofwd
                 }
 
             protected:
+
+            template < typename IN, typename OUT >
+            void aarpcClientHelper(
+                    const boost::function<void (AtomicAppendServerRPC *
+                        base, const IN &, OUT &)> & rpc_func,
+                    rpc::RPCClientHandle h,
+                    const rpc::RPCInfo &)
+            {
+                iofwdevent::SingleCompletion block;
+                IN rpc_arg_in;
+                OUT rpc_arg_out;
+
+                {
+                    // wait until outgoing RPC ready
+                    block.reset();
+                    h->waitOutReady(block);
+                    block.wait();
+                    
+                    // Now we can use the outgoing stream
+                    boost::scoped_ptr<iofwdevent::ZeroCopyOutputStream> out (h->getOut());
+
+                    // encode input arguments for remote RPC
+
+                    void * write_ptr;
+                    size_t write_size;
+                    const size_t sendsize =
+                        rpc::getRPCEncodedSize(IN()).getMaxSize();;
+
+                    block.reset();
+                    out->write(&write_ptr, &write_size, block, sendsize);
+                    block.wait();
+
+                    rpc::RPCEncoder enc(write_ptr, write_size);
+                    process(enc, rpc_arg_in);
+
+                    block.reset();
+                    out->rewindOutput(write_size - enc.getPos(), block);
+                    block.wait();
+
+                    block.reset();
+                    out->flush(block);
+                    block.wait();
+                }
+
+                // Read response
+                {
+                    block.reset();
+                    h->waitInReady(block);
+                    block.wait();
+
+                    boost::scoped_ptr<iofwdevent::ZeroCopyInputStream> in (h->getIn ());
+
+                    const void * read_ptr;
+                    size_t read_size;
+
+                    const size_t recvsize =
+                        rpc::getRPCEncodedSize(OUT()).getMaxSize();;
+
+                    block.reset();
+                    in->read(&read_ptr, &read_size, block, recvsize);
+                    block.wait();
+
+                    rpc::RPCDecoder dec(read_ptr, read_size);
+                    process(dec, rpc_arg_out);
+
+                    if(dec.getPos() != read_size)
+                        std::cout << "Extra bytes at end of RPC response?" << std::endl;
+                }
+            }
+
                 void getNextOffsetImpl(rpc::RPCClientHandle h,
                         zoidfs::zoidfs_handle_t & handle,
                         zoidfs::zoidfs_file_size_t incsize,
