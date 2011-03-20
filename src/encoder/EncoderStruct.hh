@@ -2,6 +2,7 @@
 #define SRC_ENCODER_ENCODERSTRUCT_HH
 
 #include "encoder/Util.hh"
+#include "encoder/EncoderWrappers.hh"
 #include <boost/preprocessor/seq/for_each.hpp>
 #include <boost/preprocessor/seq/elem.hpp>
 #include <boost/preprocessor/seq/fold_left.hpp>
@@ -15,13 +16,13 @@
       BOOST_PP_SEQ_FOR_EACH(EMSG_ENCODEHELPER, , LIST)                       \
    };                                                                        \
    template <typename PROC, typename WRAPPER>                                \
-   inline Enc & process (PROC & e,                                           \
+   inline PROC & process(PROC & e,                                           \
                          WRAPPER & w,                                        \
-                         typename process_filter<WRAPPER, NAME>::type * UNUSED(d) = \
+         typename encoder::process_filter<WRAPPER, NAME>::type * UNUSED(d) = \
                          NULL)                                               \
    {                                                                         \
       BOOST_PP_SEQ_FOR_EACH(EMSG_ENCODERHELPER2, , LIST)                     \
-    return e;                                                                \
+      return e;                                                              \
    }
 
 #define EMSG_ENCODEHELPER(r, data, elem) EMSG_PROCESS1(elem)
@@ -36,5 +37,5 @@
 #define EMSG_PROCESS2(elem) process (e,w.EMSG_PICKNAME(elem));
 #define EMSG_PICKNAME(elem) BOOST_PP_SEQ_CAT(BOOST_PP_SEQ_TAIL(elem))
 
-
+//ENCODERSTRUCT (Hello, ((int)(doubleu))((char)(test)))
 #endif
