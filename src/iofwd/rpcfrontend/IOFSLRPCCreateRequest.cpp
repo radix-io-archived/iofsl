@@ -17,16 +17,16 @@ namespace iofwd
       const IOFSLRPCCreateRequest::ReqParam & IOFSLRPCCreateRequest::decodeParam() 
       { 
           decodeRPCInput(); 
-          if (full_path.value.size() > 0)
+          if (dec_struct.full_path.value.size() > 0)
           {
-            param_.full_path = const_cast<char *>(full_path.value.c_str());
+            param_.full_path = const_cast<char *>(dec_struct.full_path.value.c_str());
             param_.component_name = 0;
             param_.parent_handle = 0; 
           }
           else
           {
             param_.parent_handle = &dec_struct.handle;    
-            param_.component_name = const_cast<char *>(component_name.value.c_str()); 
+            param_.component_name = const_cast<char *>(dec_struct.component_name.value.c_str()); 
             param_.full_path = 0;
           }
           param_.attr = &dec_struct.attr ; 
