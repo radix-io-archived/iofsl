@@ -55,10 +55,14 @@ namespace iofwd
       std::string AtomicAppendServerRPC::aarpc_master_addr_ = std::string("");
 
       AtomicAppendServerRPC::AtomicAppendServerRPC(service::ServiceManager & m)
-         : ExtraService (m),
+         : ExtraService(m),
            log_service_ (lookupService<Log>("log")),
            rpcserver_ (lookupService<RPCServer>("rpcserver")),
-           log_ (log_service_->getSource("aarpc"))
+           log_ (log_service_->getSource("aarpc")),
+           netservice_(m.loadService<iofwd::Net>("net")),
+           net_(netservice_->getNet()),
+           comm_(netservice_->getServerComm()),
+           rank_(comm_->rank())
       {
          rpcserver_->registerRPC("aarpc.getnextoffset",
                  rpcExec(boost::bind(

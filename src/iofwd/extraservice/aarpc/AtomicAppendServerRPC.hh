@@ -1,12 +1,16 @@
 #ifndef EXTRASERVICE_AARPC_ATOMICAPPENDSERVERRPC_HH
 #define EXTRASERVICE_AARPC_ATOMICAPPENDSERVERRPC_HH
 
+#include "iofwd/Net.hh"
 #include "iofwd/ExtraService.hh"
 #include "iofwd/extraservice/aarpc/AtomicAppendRPCTypes.hh"
 
 #include "rpc/RPCHandler.hh"
 #include "rpc/RPCInfo.hh"
 #include "rpc/RPCEncoder.hh"
+
+#include "net/Net.hh"
+#include "net/Communicator.hh"
 
 #include "iofwdutil/IOFWDLog-fwd.hh"
 
@@ -131,6 +135,10 @@ namespace iofwd
             boost::shared_ptr<Log> log_service_;
             boost::shared_ptr<RPCServer> rpcserver_;
             iofwdutil::IOFWDLogSource & log_;
+            boost::shared_ptr<iofwd::Net> netservice_;
+            net::Net * net_;
+            net::ConstCommunicatorHandle comm_;
+            const size_t rank_;
       };
    }
 }
