@@ -3,4 +3,6 @@ src/iofwd/extraservice/aarpc/AtomicAppendRPCTypes.hh \
 src/iofwd/extraservice/aarpc/AtomicAppendServerRPC.hh \
 src/iofwd/extraservice/aarpc/AtomicAppendServerRPC.cpp \
 src/iofwd/extraservice/aarpc/AtomicAppendClientRPC.hh \
-src/iofwd/extraservice/aarpc/AtomicAppendClientRPC.cpp
+src/iofwd/extraservice/aarpc/AtomicAppendClientRPC.cpp \
+src/iofwd/extraservice/aarpc/AtomicAppendUtil.hh \
+src/iofwd/extraservice/aarpc/AtomicAppendUtil.cpp
