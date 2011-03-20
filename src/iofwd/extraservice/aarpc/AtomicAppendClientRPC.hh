@@ -29,65 +29,69 @@ namespace iofwd
         class AtomicAppendClientRPC
         {
             public:
-                AtomicAppendClientRPC() :
-                    man_(iofwd::service::ServiceManager::instance()),
-                    netservice_(man_.loadService<iofwd::Net>("net")),
-                    rpcclient_(man_.loadService<iofwd::RPCClient>("rpcclient"))
-                {
-                    iofwdevent::SingleCompletion block;
-
-                    /* get the address */
-                    net::Net * net = netservice_->getNet();
-                    net->lookup(iofwd::extraservice::AtomicAppendServerRPC::aarpc_master_addr_.c_str(),
-                            &addr_, block);
-                   
-                    /* wait for the lookup to complete */ 
-                    block.wait();
-                }
-
-                ~AtomicAppendClientRPC()
-                {
-                }
+                AtomicAppendClientRPC();
+                ~AtomicAppendClientRPC();
 
                 void getNextOffset(zoidfs::zoidfs_handle_t & handle,
                         zoidfs::zoidfs_file_size_t incsize,
                         zoidfs::zoidfs_file_ofs_t & offset,
                         uint64_t & retcode)
                 {
-                    getNextOffsetImpl(
+                    AARPCGetNextOffsetIn in;
+                    AARPCGetNextOffsetOut out;
+
+                    in.handle = handle;
+                    in.inc = incsize;
+
+                    aarpcClientHelper(
                             rpcclient_->rpcConnect("aarpc.getnextoffset", addr_),
-                            handle, incsize, offset, retcode);
+                            in, out);
+
+                    offset = out.offset;
+                    retcode = out.retcode;
                 }
 
                 void createOffset(zoidfs::zoidfs_handle_t & handle,
                         zoidfs::zoidfs_file_ofs_t & offset,
                         uint64_t & retcode)
                 {
-                    createOffsetImpl(
+                    AARPCCreateOffsetIn in;
+                    AARPCCreateOffsetOut out;
+
+                    in.handle = handle;
+
+                    aarpcClientHelper(
                             rpcclient_->rpcConnect("aarpc.createoffset", addr_),
-                            handle, offset, retcode);
+                            in, out);
+
+                    retcode = out.retcode;
+                    offset = out.offset;
                 }
 
                 void deleteOffset(zoidfs::zoidfs_handle_t & handle,
                         uint64_t & retcode)
                 {
-                    deleteOffsetImpl(
+                    AARPCDeleteOffsetIn in;
+                    AARPCDeleteOffsetOut out;
+
+                    in.handle = handle;
+
+                    aarpcClientHelper(
                             rpcclient_->rpcConnect("aarpc.deleteoffset", addr_),
-                            handle, retcode);
+                            in, out);
+
+                    retcode = out.retcode;
                 }
 
             protected:
 
             template < typename IN, typename OUT >
             void aarpcClientHelper(
-                    const boost::function<void (AtomicAppendServerRPC *
-                        base, const IN &, OUT &)> & rpc_func,
                     rpc::RPCClientHandle h,
-                    const rpc::RPCInfo &)
+                    const IN & rpc_arg_in,
+                    OUT & rpc_arg_out)
             {
                 iofwdevent::SingleCompletion block;
-                IN rpc_arg_in;
-                OUT rpc_arg_out;
 
                 {
                     // wait until outgoing RPC ready
@@ -146,21 +150,6 @@ namespace iofwd
                         std::cout << "Extra bytes at end of RPC response?" << std::endl;
                 }
             }
-
-                void getNextOffsetImpl(rpc::RPCClientHandle h,
-                        zoidfs::zoidfs_handle_t & handle,
-                        zoidfs::zoidfs_file_size_t incsize,
-                        zoidfs::zoidfs_file_ofs_t & offset,
-                        uint64_t & retcode);
-                
-                void createOffsetImpl(rpc::RPCClientHandle h,
-                        zoidfs::zoidfs_handle_t & handle,
-                        zoidfs::zoidfs_file_ofs_t offset,
-                        uint64_t & retcode);
-                
-                void deleteOffsetImpl(rpc::RPCClientHandle h,
-                        zoidfs::zoidfs_handle_t & handle,
-                        uint64_t & retcode);
 
                 iofwd::service::ServiceManager & man_;
                 boost::shared_ptr<iofwd::Net> netservice_;
