@@ -13,6 +13,7 @@
 #include <boost/intrusive/slist.hpp>
 #include <boost/function.hpp>
 #include <boost/bind.hpp>
+#include <boost/lexical_cast.hpp>
 
 #include "iofwdutil/Singleton.hh"
 #include "iofwdevent/CBType.hh"
@@ -21,6 +22,7 @@
 #include "zoidfs/util/zoidfs-c-util.h"
 
 #include "iofwdutil/IOFSLKey.hh"
+#include "iofwdutil/tools.hh"
 
 #include <cstdio>
 
@@ -83,10 +85,18 @@ class IOFSLKeyValueStorage : public Singleton< IOFSLKeyValueStorage >
             cb(iofwdevent::CBException());
         }
 
-        template <typename T>
+        template <typename T, typename A>
+        static T rpcFetchAndIncSentinel(A * UNUSED(args)=NULL)
+        {
+            return boost::lexical_cast<T>(0);
+        }
+
+        template <typename T, typename A>
         void rpcFetchAndInc(iofwdutil::IOFSLKey & key,
                 const T & nextValueInc,
-                T * curValue=NULL)
+                T * curValue=NULL,
+                boost::function<T(A *)> init_func=&IOFSLKeyValueStorage::rpcFetchAndIncSentinel<T,void>,
+                A * init_args=NULL)
         {
             /* atomic fetch and inc of the value */
             {
@@ -101,7 +111,8 @@ class IOFSLKeyValueStorage : public Singleton< IOFSLKeyValueStorage >
                         *val = nextValueInc;
                         if(curValue)
                         {
-                            *curValue = 0; /* init to 0 */
+                            //*curValue = 0; /* init to 0 */
+                            *curValue = init_func(init_args); 
                         }
 
                         table_[key] = val;

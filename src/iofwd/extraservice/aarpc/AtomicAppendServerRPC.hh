@@ -17,6 +17,7 @@
 #include "iofwdevent/SingleCompletion.hh"
 
 #include "zoidfs/zoidfs.h"
+#include "zoidfs/util/zoidfs-wrapped.hh"
 
 namespace iofwd
 {
@@ -129,6 +130,39 @@ namespace iofwd
                     block.wait(); 
                 }
 
+            class AARPCOffsetInfo
+            {
+                public:
+                    AARPCOffsetInfo(const zoidfs::zoidfs_handle_t * h) :
+                        handle(h)
+                    {
+                    }
+
+                    const zoidfs::zoidfs_handle_t * handle;
+            };
+
+            static zoidfs::zoidfs_file_size_t aarpcOffsetInitializer(
+                    AARPCOffsetInfo * args)
+            {
+                int ret = 0;
+                zoidfs::zoidfs_file_size_t size = 0;
+                zoidfs::zoidfs_attr_t attr;
+
+                attr.mask = ZOIDFS_ATTR_SIZE;
+                ret = zoidfs::zoidfs_getattr(args->handle, &attr, NULL);
+                
+                if(ret == zoidfs::ZFS_OK && attr.mask == ZOIDFS_ATTR_SIZE)
+                {
+                    size = attr.size;
+                }
+                else
+                {
+                    size = 0;
+                }
+
+                return size;
+            }
+
             boost::shared_ptr<Log> log_service_;
             boost::shared_ptr<RPCServer> rpcserver_;
             iofwdutil::IOFWDLogSource & log_;
@@ -136,6 +170,7 @@ namespace iofwd
             net::Net * net_;
             net::ConstCommunicatorHandle comm_;
             const size_t rank_;
+            boost::function< zoidfs::zoidfs_file_size_t(AARPCOffsetInfo *) > offset_init_func_;
       };
    }
 }

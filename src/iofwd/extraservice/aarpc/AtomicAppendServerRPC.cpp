@@ -62,7 +62,8 @@ namespace iofwd
            netservice_(m.loadService<iofwd::Net>("net")),
            net_(netservice_->getNet()),
            comm_(netservice_->getServerComm()),
-           rank_(comm_->rank())
+           rank_(comm_->rank()),
+           offset_init_func_(&AtomicAppendServerRPC::aarpcOffsetInitializer)
       {
          rpcserver_->registerRPC("aarpc.getnextoffset",
                  rpcExec(boost::bind(
@@ -144,6 +145,8 @@ namespace iofwd
               const zoidfs::zoidfs_handle_t & handle,
               zoidfs::zoidfs_file_size_t & offset)
       {
+          AARPCOffsetInfo offset_init_args(&handle);
+
           iofwdutil::IOFSLKey::IOFSLKey key = iofwdutil::IOFSLKey();
         
           /* build the key */ 
@@ -152,7 +155,7 @@ namespace iofwd
          
           /* fetch and inc the offset for the key */ 
           iofwdutil::IOFSLKeyValueStorage::instance().rpcFetchAndInc(key,
-                  inc, &offset);
+                  inc, &offset, offset_init_func_, &offset_init_args);
 
           return 0;
       }
