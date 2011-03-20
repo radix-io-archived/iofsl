@@ -11,6 +11,23 @@ namespace iofwd
 {
    namespace rpcfrontend
    {
+      typedef zoidfs::zoidfs_dirent_t zoidfs_dirent_t;
+      typedef zoidfs::zoidfs_op_hint_t zoidfs_op_hint_t;
+      typedef zoidfs::zoidfs_handle_t zoidfs_handle_t;
+      typedef zoidfs::zoidfs_dirent_cookie_t zoidfs_dirent_cookie_t;
+      typedef zoidfs::zoidfs_cache_hint_t zoidfs_cache_hint_t;
+      typedef encoder::EncoderString<0, ZOIDFS_PATH_MAX> EncoderString;
+
+      ENCODERSTRUCT (IOFSLRPCReadDirDec, ((zoidfs_handle_t)(handle)) 
+                                        ((zoidfs_dirent_cookie_t)(cookie))
+                                        ((uint32_t)(entry_count))              
+                                        ((zoidfs_dirent_t)(entries))
+                                        ((uint32_t)(flags)))
+
+      ENCODERSTRUCT (IOFSLRPCReadDirEnc, ((int)(returnCode))
+                                         ((uint32_t)(entry_count))
+                                         ((zoidfs_dirent_t)(entries))
+                                         ((zoidfs_cache_hint_t)(cache)))
 
       class IOFSLRPCReadDirRequest :
           public IOFSLRPCRequest,
@@ -21,8 +38,7 @@ namespace iofwd
                       iofwdevent::ZeroCopyInputStream * in,
                       iofwdevent::ZeroCopyOutputStream * out) :
                   IOFSLRPCRequest(in, out),
-                  ReadDirRequest(opid),
-                  attr_enc_(NULL)
+                  ReadDirRequest(opid)
               {
               }
             
@@ -44,10 +60,14 @@ namespace iofwd
               virtual size_t rpcEncodedOutputDataSize();
 
               ReqParam param_;
-              zoidfs::zoidfs_handle_t handle_;
-              zoidfs::zoidfs_attr_t attr_;
+
+              IOFSLRPCReadDirDec dec_struct;
+              IOFSLRPCReadDirEnc enc_struct;
+              
+              uint32_t entry_count;
+              zoidfs::zoidfs_dirent_t * entries;
+              zoidfs::zoidfs_cache_hint_t * cache;
               zoidfs::zoidfs_op_hint_t op_hint_;
-              zoidfs::zoidfs_attr_t * attr_enc_;
       };
 
    }
