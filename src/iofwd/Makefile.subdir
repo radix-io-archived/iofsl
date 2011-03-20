@@ -198,7 +198,9 @@ src/iofwd/rpcfrontend/IOFSLRPCGetAttrRequest.cpp \
 src/iofwd/rpcfrontend/IOFSLRPCLookupRequest.hh \
 src/iofwd/rpcfrontend/IOFSLRPCLookupRequest.cpp \
 src/iofwd/rpcfrontend/IOFSLRPCCreateRequest.hh \
-src/iofwd/rpcfrontend/IOFSLRPCCreateRequest.cpp 
+src/iofwd/rpcfrontend/IOFSLRPCCreateRequest.cpp \
+src/iofwd/rpcfrontend/IOFSLRPCLinkRequest.hh \
+src/iofwd/rpcfrontend/IOFSLRPCLinkRequest.cpp 
 
 if DISPATCH_ROSS
 SERVERSOURCES += \
