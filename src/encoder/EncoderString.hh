@@ -6,6 +6,7 @@
 #include "Size.hh"
 #include "EncoderException.hh"
 #include "EncoderWrappers.hh"
+#include <boost/utility/enable_if.hpp>
 namespace encoder {
    template <size_t MINSIZE, size_t MAXSIZE>
    struct EncoderString
@@ -15,7 +16,7 @@ namespace encoder {
 
    template <typename ENC, size_t MINSIZE, size_t MAXSIZE>
    static void process (ENC e, EncoderString<MINSIZE,MAXSIZE> & p,
-         typename only_size_processor<ENC>::type * )
+         typename only_size_processor<ENC>::type * = 0)
    {
       uint32_t len = p.value.size();
       process (e, len);
@@ -24,10 +25,10 @@ namespace encoder {
 
    template <typename ENC, size_t MINSIZE, size_t MAXSIZE>
    static void process (ENC e, EncoderString<MINSIZE,MAXSIZE> & p,
-                        typename only_decoder_processor<ENC>::type *)
+                        typename only_decoder_processor<ENC>::type * = 0)
    {
       uint32_t len;
-      process (e, &len);      
+      process (e, len);      
 
       if (len < MINSIZE || len > MAXSIZE)
       {
@@ -35,13 +36,13 @@ namespace encoder {
           "Invalid length (ether too large or too small for EncoderString)"));
       }
 
-      p.value.resize (len)
+      p.value.resize (len);
       process (e, EncOpaque (p.value.c_str(), len, MAXSIZE));
    }
 
    template <typename ENC, size_t MINSIZE, size_t MAXSIZE>
    static void process (ENC e, EncoderString<MINSIZE,MAXSIZE> & p,
-                   typename only_encoder_processor<ENC>::type *)
+                   typename only_encoder_processor<ENC>::type * = 0)
    {
       /* Get the encoder and string length */
       uint32_t stringLen = p.value.size();
