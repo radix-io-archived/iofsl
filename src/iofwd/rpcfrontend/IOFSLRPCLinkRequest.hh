@@ -3,7 +3,8 @@
 
 #include "zoidfs/util/zoidfs-wrapped.hh"
 #include "zoidfs/zoidfs.h"
-
+#include "encoder/EncoderStruct.hh"
+#include "encoder/EncoderString.hh"
 #include "iofwd/LinkRequest.hh"
 #include "iofwd/rpcfrontend/IOFSLRPCRequest.hh"
 
@@ -11,22 +12,36 @@ namespace iofwd
 {
    namespace rpcfrontend
    {
+      typedef zoidfs::zoidfs_handle_t zoidfs_handle_t;
+      typedef zoidfs::zoidfs_sattr_t zoidfs_sattr_t;
+      typedef zoidfs::zoidfs_op_hint_t zoidfs_op_hint_t;
+      typedef zoidfs::zoidfs_cache_hint_t zoidfs_cache_hint_t;
 
+      typedef encoder::EncoderString<0, ZOIDFS_PATH_MAX> EncoderString;
+      ENCODERSTRUCT (IOFSLRPCLinkDec, ((EncoderString)(from_full_path)) 
+                                        ((zoidfs_handle_t)(from_parent_handle))
+                                        ((EncoderString)(from_component_name))              
+                                        ((EncoderString)(to_full_path))
+                                        ((zoidfs_handle_t)(to_parent_handle))
+                                        ((EncoderString)(to_component_name)))
+
+      ENCODERSTRUCT (IOFSLRPCLinkEnc, ((int)(returnCode))
+                                        ((zoidfs_cache_hint_t)(from_parent_hint))
+                                        ((zoidfs_cache_hint_t)(to_parent_hint)))
       class IOFSLRPCLinkRequest :
           public IOFSLRPCRequest,
           public LinkRequest
       {
           public:
-              IOFSLRPCCreateRequest(int opid,
+              IOFSLRPCLinkRequest(int opid,
                       iofwdevent::ZeroCopyInputStream * in,
                       iofwdevent::ZeroCopyOutputStream * out) :
                   IOFSLRPCRequest(in, out),
-                  LinkRequest(opid),
-                  attr_enc_(NULL)
+                  LinkRequest(opid)
               {
               }
             
-              virtual ~IOFSLRPCCreateRequest();
+              virtual ~IOFSLRPCLinkRequest();
 
               /* encode and decode helpers for RPC data */
               virtual void decode();
@@ -38,7 +53,7 @@ namespace iofwd
                                   const zoidfs::zoidfs_cache_hint_t *
                                     from_parent_hint, 
                                   const zoidfs::zoidfs_cache_hint_t * 
-                                    to_parent_hint) = 0;
+                                    to_parent_hint);
           
           protected:
               /* data size helpers for this request */ 
@@ -46,10 +61,11 @@ namespace iofwd
               virtual size_t rpcEncodedOutputDataSize();
 
               ReqParam param_;
-              zoidfs::zoidfs_handle_t handle_;
-              zoidfs::zoidfs_attr_t attr_;
+              IOFSLRPCLinkDec dec_struct;
+              IOFSLRPCLinkEnc enc_struct;
+              zoidfs::zoidfs_cache_hint_t * from_parent_hint;
+              zoidfs::zoidfs_cache_hint_t * to_parent_hint;
               zoidfs::zoidfs_op_hint_t op_hint_;
-              zoidfs::zoidfs_attr_t * attr_enc_;
       };
 
    }
