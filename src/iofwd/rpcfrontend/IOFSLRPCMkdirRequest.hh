@@ -12,17 +12,31 @@ namespace iofwd
    namespace rpcfrontend
    {
 
+      typedef zoidfs::zoidfs_sattr_t zoidfs_sattr_t;
+      typedef zoidfs::zoidfs_op_hint_t zoidfs_op_hint_t;
+      typedef zoidfs::zoidfs_handle_t zoidfs_handle_t;
+      typedef zoidfs::zoidfs_cache_hint_t zoidfs_cache_hint_t;
+
+      typedef encoder::EncoderString<0, ZOIDFS_PATH_MAX> EncoderString;
+      ENCODERSTRUCT (IOFSLRPCMkdirDec, ((EncoderString)(full_path)) 
+                                        ((zoidfs_handle_t)(parent_handle))
+                                        ((EncoderString)(component_name))              
+                                        ((zoidfs_sattr_t)(sattr)))
+
+      ENCODERSTRUCT (IOFSLRPCMkdirEnc, ((int)(returnCode))
+                                       ((zoidfs_cache_hint_t)(parent_hint)))
+
+
       class IOFSLRPCMkdirRequest :
           public IOFSLRPCRequest,
           public MkdirRequest
       {
           public:
-              IOFSLRPCMkdirRequestt(int opid,
+              IOFSLRPCMkdirRequest(int opid,
                       iofwdevent::ZeroCopyInputStream * in,
                       iofwdevent::ZeroCopyOutputStream * out) :
                   IOFSLRPCRequest(in, out),
-                  MkdirRequest(opid),
-                  attr_enc_(NULL)
+                  MkdirRequest(opid)
               {
               }
             
@@ -43,10 +57,10 @@ namespace iofwd
               virtual size_t rpcEncodedOutputDataSize();
 
               ReqParam param_;
-              zoidfs::zoidfs_handle_t handle_;
-              zoidfs::zoidfs_attr_t attr_;
+              IOFSLRPCMkdirDec dec_struct;
+              IOFSLRPCMkdirEnc enc_struct;
+              zoidfs::zoidfs_cache_hint_t * parent_hint;
               zoidfs::zoidfs_op_hint_t op_hint_;
-              zoidfs::zoidfs_attr_t * attr_enc_;
       };
 
    }
