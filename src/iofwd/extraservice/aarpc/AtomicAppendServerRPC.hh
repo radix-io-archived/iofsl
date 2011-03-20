@@ -88,13 +88,10 @@ namespace iofwd
                     size_t write_size = 0;
 
                     /* max request size */
-                    const size_t insize =
-                        rpc::getRPCEncodedSize(zoidfs::zoidfs_handle_t()).getMaxSize () +
-                        rpc::getRPCEncodedSize(zoidfs::zoidfs_file_ofs_t()).getMaxSize();
+                    const size_t insize = rpc::getRPCEncodedSize(IN()).getMaxSize();
 
                     /* max response size */
-                    const size_t outsize =
-                        rpc::getRPCEncodedSize(uint64_t()).getMaxSize();
+                    const size_t outsize = rpc::getRPCEncodedSize(OUT()).getMaxSize();
 
                     /* comp block */
                     iofwdevent::SingleCompletion block;
