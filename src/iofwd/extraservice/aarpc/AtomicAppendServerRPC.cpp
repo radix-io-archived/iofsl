@@ -66,21 +66,21 @@ namespace iofwd
       {
          rpcserver_->registerRPC("aarpc.getnextoffset",
                  rpcExec(boost::bind(
-                         &AtomicAppendServerRPC::aarpcHelper<AARPCGetNextOffsetIn,
+                         &AtomicAppendServerRPC::aarpcServerHelper<AARPCGetNextOffsetIn,
                          AARPCGetNextOffsetOut >, this,
                          &AtomicAppendServerRPC::getNextOffset,
                          _1, _2, _3)));
 
          rpcserver_->registerRPC("aarpc.createoffset",
                  rpcExec(boost::bind(
-                         &AtomicAppendServerRPC::aarpcHelper<AARPCCreateOffsetIn,
+                         &AtomicAppendServerRPC::aarpcServerHelper<AARPCCreateOffsetIn,
                         AARPCCreateOffsetOut >, this,
                          &AtomicAppendServerRPC::createOffset,
                          _1, _2, _3)));
 
          rpcserver_->registerRPC("aarpc.deleteoffset",
                  rpcExec(boost::bind(
-                         &AtomicAppendServerRPC::aarpcHelper<AARPCDeleteOffsetIn,
+                         &AtomicAppendServerRPC::aarpcServerHelper<AARPCDeleteOffsetIn,
                          AARPCDeleteOffsetOut >, this,
                          &AtomicAppendServerRPC::deleteOffset,
                          _1, _2, _3)));

@@ -65,7 +65,7 @@ namespace iofwd
             uint64_t deleteOffsetInStorage(const zoidfs::zoidfs_handle_t & handle);
             
             template <typename IN, typename OUT>
-                void aarpcHelper(
+                void aarpcServerHelper(
                         const boost::function<void (AtomicAppendServerRPC *
                             base, const IN &, OUT &)> & rpc_func,
                         iofwdevent::ZeroCopyInputStream * in,
