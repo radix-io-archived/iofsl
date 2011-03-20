@@ -30,6 +30,6 @@ src_encoder_libencoder_a_SOURCES = \
 	src/encoder/SizeSaver.hh \
 	src/encoder/Decoder.hh \
 	src/encoder/Processor.hh \
-   src/encoder/EncoderStruct.hh \
-   src/encoder/EncoderString.hh 
+  src/encoder/EncoderStruct.hh \
+  src/encoder/EncoderString.hh 
 

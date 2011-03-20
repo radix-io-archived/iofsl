@@ -3,6 +3,7 @@
 
 #include "encoder/Util.hh"
 #include "encoder/EncoderWrappers.hh"
+#include "encoder/EncoderString.hh"
 #include <boost/preprocessor/seq/for_each.hpp>
 #include <boost/preprocessor/seq/elem.hpp>
 #include <boost/preprocessor/seq/fold_left.hpp>
