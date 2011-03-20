@@ -28,11 +28,5 @@
           int returnCode = getReturnCode();                                  \
           BOOST_PP_SEQ_FOR_EACH(RPC_ENCODER, , ENCLIST)                      \
           process (enc_, enc_struct);                                        \
-      }                                                                      \
-      const NAME::ReqParam & NAME::decodeParam()                             \
-      {                                                                      \
-          decodeRPCInput();                                                  \
-          BOOST_PP_SEQ_FOR_EACH(RPC_DECPARAM, , DECODELIST)                  \
-          param_.op_hint = &op_hint_;                                        \
-          return param_;                                                     \
-      }
+      }                                                                      
+
