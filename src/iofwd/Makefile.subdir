@@ -196,7 +196,9 @@ src/iofwd/rpcfrontend/IOFSLRPCRequest.cpp \
 src/iofwd/rpcfrontend/IOFSLRPCGetAttrRequest.hh \
 src/iofwd/rpcfrontend/IOFSLRPCGetAttrRequest.cpp \
 src/iofwd/rpcfrontend/IOFSLRPCLookupRequest.hh \
-src/iofwd/rpcfrontend/IOFSLRPCLookupRequest.cpp
+src/iofwd/rpcfrontend/IOFSLRPCLookupRequest.cpp \
+src/iofwd/rpcfrontend/IOFSLRPCCreateRequest.hh \
+src/iofwd/rpcfrontend/IOFSLRPCCreateRequest.cpp 
 
 
 src_iofwd_iofwd_SOURCES = $(SERVERSOURCES) \
