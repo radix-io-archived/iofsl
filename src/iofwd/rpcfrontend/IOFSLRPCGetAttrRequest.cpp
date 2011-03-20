@@ -12,7 +12,14 @@ namespace iofwd
                                               ((*)(attr_enc_)))
 
 
-
+      const IOFSLRPCGetAttrRequest::ReqParam & IOFSLRPCGetAttrRequest::decodeParam() 
+      { 
+          decodeRPCInput(); 
+          param_.handle = &dec_struct.handle ; 
+          param_.attr = &dec_struct.attr ; 
+          param_.op_hint = &op_hint_; 
+          return param_; 
+      }
       void IOFSLRPCGetAttrRequest::reply(const CBType & UNUSED(cb),
               const zoidfs::zoidfs_attr_t * attr)
       {
