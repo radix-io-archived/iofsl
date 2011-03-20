@@ -8,10 +8,12 @@
 #include "iofwd/service/Service.hh"
 #include "iofwdutil/ZException.hh"
 #include "iofwdevent/SingleCompletion.hh"
-#include "net/Net.hh"
 
 #include "rpc/RPCInfo.hh"
 #include "rpc/RPCEncoder.hh"
+
+#include "net/Net.hh"
+#include "net/Communicator.hh"
 
 #include <iostream>
 #include <string>
@@ -21,6 +23,7 @@
 #include "zoidfs/util/zoidfs-xdr.hh"
 
 #include "iofwd/extraservice/aarpc/AtomicAppendServerRPC.hh"
+#include "iofwd/extraservice/aarpc/AtomicAppendUtil.hh"
 
 namespace iofwd
 {
@@ -39,12 +42,15 @@ namespace iofwd
                 {
                     AARPCGetNextOffsetIn in;
                     AARPCGetNextOffsetOut out;
+                    size_t server_rank = AtomicAppendFileHandleHash(&handle) %
+                        comm_size_;
 
                     in.handle = handle;
                     in.inc = incsize;
 
                     aarpcClientHelper(
-                            rpcclient_->rpcConnect("aarpc.getnextoffset", addr_),
+                            rpcclient_->rpcConnect("aarpc.getnextoffset",
+                                (*comm_)[server_rank]),
                             in, out);
 
                     offset = out.offset;
@@ -57,11 +63,14 @@ namespace iofwd
                 {
                     AARPCCreateOffsetIn in;
                     AARPCCreateOffsetOut out;
+                    size_t server_rank = AtomicAppendFileHandleHash(&handle) %
+                        comm_size_;
 
                     in.handle = handle;
 
                     aarpcClientHelper(
-                            rpcclient_->rpcConnect("aarpc.createoffset", addr_),
+                            rpcclient_->rpcConnect("aarpc.createoffset",
+                                (*comm_)[server_rank]),
                             in, out);
 
                     retcode = out.retcode;
@@ -73,11 +82,14 @@ namespace iofwd
                 {
                     AARPCDeleteOffsetIn in;
                     AARPCDeleteOffsetOut out;
+                    size_t server_rank = AtomicAppendFileHandleHash(&handle) %
+                        comm_size_;
 
                     in.handle = handle;
 
                     aarpcClientHelper(
-                            rpcclient_->rpcConnect("aarpc.deleteoffset", addr_),
+                            rpcclient_->rpcConnect("aarpc.deleteoffset",
+                                (*comm_)[server_rank]),
                             in, out);
 
                     retcode = out.retcode;
@@ -154,7 +166,10 @@ namespace iofwd
                 iofwd::service::ServiceManager & man_;
                 boost::shared_ptr<iofwd::Net> netservice_;
                 boost::shared_ptr<iofwd::RPCClient> rpcclient_;
+                net::Net * net_;
+                net::ConstCommunicatorHandle comm_;
                 net::AddressPtr addr_;
+                const size_t comm_size_;
         };
     }
 }

@@ -59,10 +59,6 @@ namespace iofwd
            log_service_ (lookupService<Log>("log")),
            rpcserver_ (lookupService<RPCServer>("rpcserver")),
            log_ (log_service_->getSource("aarpc")),
-           netservice_(m.loadService<iofwd::Net>("net")),
-           net_(netservice_->getNet()),
-           comm_(netservice_->getServerComm()),
-           rank_(comm_->rank()),
            offset_init_func_(&AtomicAppendServerRPC::aarpcOffsetInitializer)
       {
          rpcserver_->registerRPC("aarpc.getnextoffset",

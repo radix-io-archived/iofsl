@@ -167,9 +167,6 @@ namespace iofwd
             boost::shared_ptr<RPCServer> rpcserver_;
             iofwdutil::IOFWDLogSource & log_;
             boost::shared_ptr<iofwd::Net> netservice_;
-            net::Net * net_;
-            net::ConstCommunicatorHandle comm_;
-            const size_t rank_;
             boost::function< zoidfs::zoidfs_file_size_t(AARPCOffsetInfo *) > offset_init_func_;
       };
    }

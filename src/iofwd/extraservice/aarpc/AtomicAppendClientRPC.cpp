@@ -7,7 +7,10 @@ namespace iofwd
         AtomicAppendClientRPC::AtomicAppendClientRPC() :
             man_(iofwd::service::ServiceManager::instance()),
             netservice_(man_.loadService<iofwd::Net>("net")),
-            rpcclient_(man_.loadService<iofwd::RPCClient>("rpcclient"))
+            rpcclient_(man_.loadService<iofwd::RPCClient>("rpcclient")),
+            net_(netservice_->getNet()),
+            comm_(netservice_->getServerComm()),
+            comm_size_(comm_->size())
         {
             iofwdevent::SingleCompletion block;
             
