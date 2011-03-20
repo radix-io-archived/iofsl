@@ -53,6 +53,7 @@ namespace iofwd
       }
 
       std::string AtomicAppendServerRPC::aarpc_master_addr_ = std::string("");
+      std::string AtomicAppendServerRPC::aarpc_mode_ = std::string("");
 
       AtomicAppendServerRPC::AtomicAppendServerRPC(service::ServiceManager & m)
          : ExtraService(m),

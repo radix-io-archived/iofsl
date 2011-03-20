@@ -33,13 +33,26 @@ namespace iofwd
 
             virtual void configureNested(const iofwdutil::ConfigFile & f)
             {
-                aarpc_master_addr_ =
-                    f.getKeyAsDefault<std::string>("master",""); 
+                aarpc_mode_ = f.getKeyAsDefault<std::string>("mode","distributed");
+
+                /* if mode == master */
+                if(aarpc_mode_.compare("master"))
+                {
+                    /* get the master address */
+                    aarpc_master_addr_ =
+                        f.getKeyAsDefault<std::string>("master","");
+                }
+                /* if mode == distributed */
+                else if(aarpc_mode_.compare("distributed"))
+                {
+                    /* do nothing */
+                }
             }
 
             virtual ~AtomicAppendServerRPC();
 
             static std::string aarpc_master_addr_;
+            static std::string aarpc_mode_;
 
          protected:
 

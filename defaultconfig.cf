@@ -39,6 +39,18 @@ extra_services {
 
    aarpc
    {
+       //
+       // mode, how should the AARPC service distribute offset data
+       //  distributed (default) : distribute offset data with all IOFSL
+       //  servers
+       //  master : single IOFSL server tracks all offset data
+       //
+       mode = "distributed";
+
+       //
+       // master, where is the master server located
+       //  BMI address of the master
+       //
        master = "tcp://127.0.0.1:12345"
    }
 
