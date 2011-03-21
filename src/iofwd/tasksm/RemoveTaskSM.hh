@@ -66,6 +66,7 @@ class RemoveTaskSM : public sm::SimpleSM< RemoveTaskSM >,
 
         virtual void postDropAtomicAppendOffset(iofwdevent::CBException e)
         {
+#if 1
             iofwdutil::IOFSLKey key = iofwdutil::IOFSLKey();
 
             key.setParentHandle(p_.parent_handle);
@@ -83,6 +84,15 @@ class RemoveTaskSM : public sm::SimpleSM< RemoveTaskSM >,
 
             iofwdutil::IOFSLKeyValueStorage::instance().fetchAndDrop<zoidfs::zoidfs_file_ofs_t>(slots_[BASE_SLOT], key);
             slots_.wait(BASE_SLOT, &RemoveTaskSM::waitDropAtomicAppendOffset);
+#else
+            /* issue the rpc using the nonblocking aa manager */
+            iofwd::extraservice::AtomicAppendManager::instance().issueDeleteOffsetRPC(
+                slots_[BASE_SLOT],
+                p_.handle,
+                &atomic_append_base_offset_);
+
+            slots_.wait(BASE_SLOT, &RemoveTaskSM::waitDropAtomicAppendOffset);
+#endif
         }
 
         virtual void postDecodeInput(iofwdevent::CBException e)

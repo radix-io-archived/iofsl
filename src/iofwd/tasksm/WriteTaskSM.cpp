@@ -2,7 +2,7 @@
 #include "zoidfs/zoidfs-proto.h"
 #include "iofwdutil/IOFSLKeyValueStorage.hh"
 
-#include "iofwd/extraservice/aarpc/AtomicAppendClientRPC.hh"
+#include "iofwd/extraservice/aarpc/AtomicAppendManager.hh"
 
 namespace iofwd
 {
@@ -297,27 +297,14 @@ void WriteTaskSM::recvPipelineBuffer()
 
 void WriteTaskSM::getAtomicAppendOffset()
 {
-#if 0
-    iofwdutil::IOFSLKey::IOFSLKey key = iofwdutil::IOFSLKey();
-    
-    key.setFileHandle(p.handle);
-    key.setDataKey(std::string("NEXTAPPENDOFFSET"));
+    /* issue the rpc using the nonblocking aa manager */
+    iofwd::extraservice::AtomicAppendManager::instance().issueGetNextOffsetRPC(
+            slots_[WRITE_SLOT],
+            p.handle,
+            total_bytes_,
+            &atomic_append_base_offset_);
 
-    /* request a buffer */
-    iofwdutil::IOFSLKeyValueStorage::instance().fetchAndInc(slots_[WRITE_SLOT],
-        key, total_bytes_, &atomic_append_base_offset_);
-
-    /* set the callback and wait */
     slots_.wait(WRITE_SLOT, &WriteTaskSM::waitGetAtomicAppendOffset);
-#else
-    iofwd::extraservice::AtomicAppendClientRPC rpc;
-    uint64_t retcode = 0;
-
-    rpc.getNextOffset(*(p.handle), total_bytes_, atomic_append_base_offset_,
-            retcode);
-
-    setNextMethod(&WriteTaskSM::waitGetAtomicAppendOffset);
-#endif
 }
 
 //===========================================================================

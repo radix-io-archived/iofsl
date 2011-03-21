@@ -7,9 +7,8 @@ namespace iofwd
 {
     namespace extraservice
     {
-
-    uint64_t AtomicAppendFileHandleHash(zoidfs::zoidfs_handle_t * h);
-
+        /* produce a hash of the file handle */
+        uint64_t AtomicAppendFileHandleHash(zoidfs::zoidfs_handle_t * h);
     }
 }
 
