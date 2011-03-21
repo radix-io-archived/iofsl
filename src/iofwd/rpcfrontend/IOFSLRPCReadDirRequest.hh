@@ -21,7 +21,6 @@ namespace iofwd
       ENCODERSTRUCT (IOFSLRPCReadDirDec, ((zoidfs_handle_t)(handle)) 
                                         ((zoidfs_dirent_cookie_t)(cookie))
                                         ((uint32_t)(entry_count))              
-                                        ((zoidfs_dirent_t)(entries))
                                         ((uint32_t)(flags)))
 
       ENCODERSTRUCT (IOFSLRPCReadDirEnc, ((int)(returnCode))
