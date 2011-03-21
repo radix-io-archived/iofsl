@@ -206,7 +206,9 @@ src/iofwd/rpcfrontend/IOFSLRPCMkdirRequest.cpp \
 src/iofwd/rpcfrontend/IOFSLRPCReadDirRequest.hh \
 src/iofwd/rpcfrontend/IOFSLRPCReadDirRequest.cpp \
 src/iofwd/rpcfrontend/IOFSLRPCReadLinkRequest.hh \
-src/iofwd/rpcfrontend/IOFSLRPCReadLinkRequest.cpp
+src/iofwd/rpcfrontend/IOFSLRPCReadLinkRequest.cpp \
+src/iofwd/rpcfrontend/IOFSLRPCReadRequest.hh \
+src/iofwd/rpcfrontend/IOFSLRPCReadRequest.cpp
 
 src_iofwd_iofwd_SOURCES = $(SERVERSOURCES) \
 			  src/iofwd/iofwd.cpp
