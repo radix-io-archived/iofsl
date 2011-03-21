@@ -3,9 +3,11 @@
 
 #include "zoidfs/util/FileSpecHelper.hh"
 #include "zoidfs/util/OpHintHelper.hh"
-
+#include "iofwdevent/CBType.hh"
 #include "zoidfs/util/zoidfs-wrapped.hh"
 #include "zoidfs/util/zoidfs-xdr.hh"
+
+#include "encoder/EncoderStruct.hh"
 
 #include "rpc/RPCInfo.hh"
 #include "rpc/RPCEncoder.hh"
@@ -136,6 +138,10 @@ namespace iofwd
                    out_->flush(block);
                    block.wait();
                }
+              void NullCB (iofwdevent::CBException e)
+              {
+                e.check();
+              }
 
                /* data members */
 
