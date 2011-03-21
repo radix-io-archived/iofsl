@@ -11,7 +11,38 @@ namespace iofwd
 {
    namespace rpcfrontend
    {
+//      zoidfs::zoidfs_handle_t * handle;
+//      size_t mem_count;
+//      void ** mem_starts;
+//      size_t * mem_sizes;
+//      size_t file_count;
+//      zoidfs::zoidfs_file_ofs_t * file_starts;
+//      zoidfs::zoidfs_file_ofs_t * file_sizes;
+//      size_t pipeline_size;
+//      zoidfs::zoidfs_op_hint_t * op_hint;
 
+//      typedef zoidfs::zoidfs_dirent_t zoidfs_dirent_t;
+//      typedef zoidfs::zoidfs_op_hint_t zoidfs_op_hint_t;
+//      typedef zoidfs::zoidfs_handle_t zoidfs_handle_t;
+//      typedef zoidfs::zoidfs_dirent_cookie_t zoidfs_dirent_cookie_t;
+//      typedef zoidfs::zoidfs_cache_hint_t zoidfs_cache_hint_t;
+//      typedef encoder::EncoderString<0, ZOIDFS_PATH_MAX> EncoderString;
+
+//      ENCODERSTRUCT (IOFSLRPCReadDirDec, ((zoidfs_handle_t)(handle)) 
+//                                        ((zoidfs_dirent_cookie_t)(cookie))
+//                                        ((uint32_t)(entry_count))              
+//                                        ((zoidfs_dirent_t)(entries))
+//                                        ((uint32_t)(flags)))
+
+//      ENCODERSTRUCT (IOFSLRPCReadDirEnc, ((int)(returnCode))
+//                                         ((uint32_t)(entry_count))
+//                                         ((zoidfs_dirent_t)(entries))
+//                                         ((zoidfs_cache_hint_t)(cache)))
+
+      /* decoded hint values */
+      bool op_hint_pipeline_enabled;
+
+      size_t max_buffer_size;
       class IOFSLRPCReadRequest :
           public IOFSLRPCRequest,
           public ReadRequest
