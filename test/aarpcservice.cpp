@@ -438,34 +438,6 @@ static void add (const int & in, int & out)
    ZLOG_INFO (log_, format("add called (in=%i, out=%i)...") % in % out);
 }
 
-static void testManual (RPCClientHandle h)
-{
-   SingleCompletion block;
-
-   // Before we can access the output channel we need to wait until the RPC
-   // code did its thing
-   block.reset ();
-   h->waitOutReady (block);
-   block.wait ();
-
-   // After waitOutReady completes we can access the output stream
-   // (note: we're responsible for deleting it)
-   scoped_ptr<ZeroCopyOutputStream> out (h->getOut ());
-
-   // We should also flush (when we don't want to add any more data right now)
-   block.reset ();
-   out->flush (block);
-   block.wait ();
-
-   // Same for input, need to wait until RPC code is ready with the stream
-   block.reset();
-   h->waitInReady (block);
-   block.wait ();
-
-   // And we need to delete the stream when done
-   scoped_ptr<ZeroCopyInputStream> in (h->getIn ());
-}
-
 int main (int argc, char ** args)
 {
    try
