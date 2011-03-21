@@ -34,16 +34,6 @@ namespace iofwd
           return param_; 
       }
 
-
-
-//      RPC_GENPROCESS (IOFSLRPCCreateRequest, ((&)(handle))               
-//                                              (()(full_path))
-//                                              (()(component_name))
-//                                              ((&)(attr)),
-//                                              (()(returnCode))
-//                                              ((*)(handle))
-//                                              (()(created)))
-
       void IOFSLRPCCreateRequest::reply(const CBType & UNUSED(cb),
               const zoidfs_handle_t * handle_, int created_)
       {
