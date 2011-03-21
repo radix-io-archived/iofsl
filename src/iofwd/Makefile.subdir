@@ -222,7 +222,9 @@ src/iofwd/rpcfrontend/IOFSLRPCRemoveRequest.cpp \
 src/iofwd/rpcfrontend/IOFSLRPCRenameRequest.hh \
 src/iofwd/rpcfrontend/IOFSLRPCRenameRequest.cpp \
 src/iofwd/rpcfrontend/IOFSLRPCResizeRequest.hh \
-src/iofwd/rpcfrontend/IOFSLRPCResizeRequest.cpp
+src/iofwd/rpcfrontend/IOFSLRPCResizeRequest.cpp \
+src/iofwd/rpcfrontend/IOFSLRPCSetAttrRequest.hh \
+src/iofwd/rpcfrontend/IOFSLRPCSetAttrRequest.cpp
 
 src_iofwd_iofwd_SOURCES = $(SERVERSOURCES) \
 			  src/iofwd/iofwd.cpp
