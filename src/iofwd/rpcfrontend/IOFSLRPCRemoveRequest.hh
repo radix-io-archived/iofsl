@@ -3,14 +3,30 @@
 
 #include "zoidfs/util/zoidfs-wrapped.hh"
 #include "zoidfs/zoidfs.h"
-
+#include "encoder/EncoderStruct.hh"
+#include "encoder/EncoderString.hh"
 #include "iofwd/RemoveRequest.hh"
 #include "iofwd/rpcfrontend/IOFSLRPCRequest.hh"
+#include "encoder/EncoderWrappers.hh"
+using namespace encoder;
 
 namespace iofwd
 {
    namespace rpcfrontend
    {
+
+      typedef zoidfs::zoidfs_sattr_t zoidfs_sattr_t;
+      typedef zoidfs::zoidfs_op_hint_t zoidfs_op_hint_t;
+      typedef zoidfs::zoidfs_handle_t zoidfs_handle_t;
+      typedef zoidfs::zoidfs_cache_hint_t zoidfs_cache_hint_t;
+      typedef encoder::EncoderString<0, ZOIDFS_PATH_MAX> EncoderString;
+
+      ENCODERSTRUCT (IOFSLRPCRemoveDec, ((EncoderString)(full_path))
+                                        ((EncoderString)(component_name))
+                                        ((zoidfs_handle_t)(parent_handle)))
+
+      ENCODERSTRUCT (IOFSLRPCRemoveEnc, ((int)(returnCode))
+                                        ((zoidfs_cache_hint_t)(parent_hint)))
 
       class IOFSLRPCRemoveRequest :
           public IOFSLRPCRequest,
@@ -21,42 +37,31 @@ namespace iofwd
                       iofwdevent::ZeroCopyInputStream * in,
                       iofwdevent::ZeroCopyOutputStream * out) :
                   IOFSLRPCRequest(in, out),
-                  RemoveRequest(opid),
-                  attr_enc_(NULL)
+                  RemoveRequest(opid)
               {
               }
-            
-              virtual ~IOFSLRPCRemoveRequest();
 
               /* encode and decode helpers for RPC data */
               virtual void decode();
               virtual void encode();
 
-              /**
-              * Retrieve the request input parameters 
-              */
-              virtual const ReqParam & decodeParam ()  = 0; 
-
-              /**
-              * Reply with the handle or 0 if an error occurred and the handle does not
-              * need to be transmitted
-              */
-              virtual void reply (const CBType & cb,
-                 const zoidfs::zoidfs_cache_hint_t * parent_hint) = 0;
-                              
+              /* request processing */
+              virtual const ReqParam & decodeParam();
+              virtual void reply (const CBType & cb, 
+                              const zoidfs::zoidfs_cache_hint_t * parent_hint_);
+              ~IOFSLRPCRemoveRequest();
           protected:
               /* data size helpers for this request */ 
               virtual size_t rpcEncodedInputDataSize(); 
               virtual size_t rpcEncodedOutputDataSize();
 
               ReqParam param_;
-              zoidfs::zoidfs_handle_t handle_;
-              zoidfs::zoidfs_attr_t attr_;
-              zoidfs::zoidfs_op_hint_t op_hint_;
-              zoidfs::zoidfs_attr_t * attr_enc_;
-      };
+              IOFSLRPCRemoveDec dec_struct;
+              IOFSLRPCRemoveEnc enc_struct;
+              zoidfs::zoidfs_cache_hint_t * parent_hint;
 
+              zoidfs::zoidfs_op_hint_t op_hint_;
+      };
    }
 }
-
 #endif
