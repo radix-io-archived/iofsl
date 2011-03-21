@@ -218,7 +218,10 @@ src/iofwd/rpcfrontend/IOFSLRPCNotImplementedRequest.cpp \
 src/iofwd/rpcfrontend/IOFSLRPCNullRequest.hh \
 src/iofwd/rpcfrontend/IOFSLRPCNullRequest.cpp \
 src/iofwd/rpcfrontend/IOFSLRPCRemoveRequest.hh \
-src/iofwd/rpcfrontend/IOFSLRPCRemoveRequest.cpp
+src/iofwd/rpcfrontend/IOFSLRPCRemoveRequest.cpp \
+src/iofwd/rpcfrontend/IOFSLRPCRenameRequest.hh \
+src/iofwd/rpcfrontend/IOFSLRPCRenameRequest.cpp
+
 
 if DISPATCH_ROSS
 SERVERSOURCES += \
