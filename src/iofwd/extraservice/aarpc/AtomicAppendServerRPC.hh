@@ -19,6 +19,8 @@
 #include "zoidfs/zoidfs.h"
 #include "zoidfs/util/zoidfs-wrapped.hh"
 
+#include <iostream>
+
 namespace iofwd
 {
    class Log;
@@ -36,14 +38,14 @@ namespace iofwd
                 aarpc_mode_ = f.getKeyAsDefault<std::string>("mode","distributed");
 
                 /* if mode == master */
-                if(aarpc_mode_.compare("master"))
+                if(strcmp(aarpc_mode_.c_str(), "master") == 0)
                 {
                     /* get the master address */
                     aarpc_master_addr_ =
                         f.getKeyAsDefault<std::string>("master","");
                 }
                 /* if mode == distributed */
-                else if(aarpc_mode_.compare("distributed"))
+                else if(strcmp(aarpc_mode_.c_str(), "distributed") == 0)
                 {
                     /* do nothing */
                 }
