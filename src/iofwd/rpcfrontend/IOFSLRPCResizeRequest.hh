@@ -3,14 +3,21 @@
 
 #include "zoidfs/util/zoidfs-wrapped.hh"
 #include "zoidfs/zoidfs.h"
-
+#include "encoder/EncoderStruct.hh"
+#include "encoder/EncoderString.hh"
 #include "iofwd/ResizeRequest.hh"
 #include "iofwd/rpcfrontend/IOFSLRPCRequest.hh"
-
+#include "encoder/EncoderWrappers.hh"
 namespace iofwd
 {
    namespace rpcfrontend
    {
+      typedef zoidfs::zoidfs_handle_t zoidfs_handle_t;
+
+      ENCODERSTRUCT (IOFSLRPCResizeDec, ((zoidfs_handle_t)(handle))
+                                        ((size_t)(size)))
+
+      ENCODERSTRUCT (IOFSLRPCResizeEnc, ((int)(returnCode)))
 
       class IOFSLRPCResizeRequest :
           public IOFSLRPCRequest,
@@ -21,30 +28,30 @@ namespace iofwd
                       iofwdevent::ZeroCopyInputStream * in,
                       iofwdevent::ZeroCopyOutputStream * out) :
                   IOFSLRPCRequest(in, out),
-                  ResizeRequest(opid),
-                  attr_enc_(NULL)
+                  ResizeRequest(opid)
               {
               }
             
               virtual ~IOFSLRPCResizeRequest();
 
               /* encode and decode helpers for RPC data */
-              virtual void decode();
-              virtual void encode();
+              void decode();
+              void encode();
 
-              virtual const ReqParam & decodeParam () = 0;
+              const ReqParam & decodeParam ();
 
-              virtual void reply (const CBType & cb) = 0;
+              void reply (const CBType & cb);
           protected:
               /* data size helpers for this request */ 
               virtual size_t rpcEncodedInputDataSize(); 
               virtual size_t rpcEncodedOutputDataSize();
 
               ReqParam param_;
-              zoidfs::zoidfs_handle_t handle_;
-              zoidfs::zoidfs_attr_t attr_;
+              IOFSLRPCResizeDec dec_struct;
+              IOFSLRPCResizeEnc enc_struct;
+
               zoidfs::zoidfs_op_hint_t op_hint_;
-              zoidfs::zoidfs_attr_t * attr_enc_;
+
       };
 
    }
