@@ -212,7 +212,9 @@ src/iofwd/rpcfrontend/IOFSLRPCReadRequest.cpp \
 src/iofwd/rpcfrontend/IOFSLRPCWriteRequest.hh \
 src/iofwd/rpcfrontend/IOFSLRPCWriteRequest.cpp \
 src/iofwd/rpcfrontend/IOFSLRPCCommitRequest.hh \
-src/iofwd/rpcfrontend/IOFSLRPCCommitRequest.cpp
+src/iofwd/rpcfrontend/IOFSLRPCCommitRequest.cpp \
+src/iofwd/rpcfrontend/IOFSLRPCNotImplementedRequest.hh \
+src/iofwd/rpcfrontend/IOFSLRPCNotImplementedRequest.cpp
 
 src_iofwd_iofwd_SOURCES = $(SERVERSOURCES) \
 			  src/iofwd/iofwd.cpp
