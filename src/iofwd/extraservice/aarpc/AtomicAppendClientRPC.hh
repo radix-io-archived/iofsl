@@ -6,6 +6,7 @@
 #include "iofwd/Net.hh"
 #include "iofwd/IofwdLinkHelper.hh"
 #include "iofwd/service/Service.hh"
+#include "iofwd/ExtraService.hh"
 #include "iofwdutil/ZException.hh"
 #include "iofwdevent/SingleCompletion.hh"
 
@@ -14,6 +15,8 @@
 
 #include "net/Net.hh"
 #include "net/Communicator.hh"
+
+#include "iofwdutil/tools.hh"
 
 #include <iostream>
 #include <string>
@@ -29,11 +32,16 @@ namespace iofwd
 {
     namespace extraservice
     {
-        class AtomicAppendClientRPC
+        class AtomicAppendClientRPC : public ExtraService
         {
             public:
-                AtomicAppendClientRPC();
+                AtomicAppendClientRPC(service::ServiceManager & m);
                 ~AtomicAppendClientRPC();
+
+                virtual void configureNested(const iofwdutil::ConfigFile &
+                        UNUSED(f)) 
+                {
+                }
 
                 void getNextOffset(zoidfs::zoidfs_handle_t & handle,
                         zoidfs::zoidfs_file_size_t incsize,

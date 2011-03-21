@@ -19,7 +19,9 @@ namespace iofwd
         {
             public:
                 AtomicAppendManager() :
-                    aarpc_tp_(iofwdutil::ThreadPool::instance())
+                    aarpc_tp_(iofwdutil::ThreadPool::instance()),
+                    rpc_(iofwd::service::ServiceManager::instance().loadService<
+                            iofwd::extraservice::AtomicAppendClientRPC>("aarpcclient"))
                 {
                 }
 
@@ -37,9 +39,8 @@ namespace iofwd
                     AA_UNKNOWN_WU,
                 };
 
-                static iofwd::extraservice::AtomicAppendClientRPC rpc_;
-
                 iofwdutil::ThreadPool & aarpc_tp_;
+                boost::shared_ptr<iofwd::extraservice::AtomicAppendClientRPC> rpc_;
 
                 /* base type for the atomic append work units */
                 class AtomicAppendWorkUnit
@@ -47,16 +48,19 @@ namespace iofwd
                     public:
                         AtomicAppendWorkUnit(const iofwdevent::CBType & cb,
                              int type,
-                             iofwdutil::ThreadPool & tp) :
-                         cb_(cb),
-                         type_(type),
-                            tp_(tp)
+                             iofwdutil::ThreadPool & tp,
+                             boost::shared_ptr<iofwd::extraservice::AtomicAppendClientRPC> rpc) :
+                            cb_(cb),
+                            type_(type),
+                            tp_(tp),
+                            rpc_(rpc)
                         {
                         }
 
                         const iofwdevent::CBType cb_;
                         int type_;
                         iofwdutil::ThreadPool & tp_;
+                        boost::shared_ptr<iofwd::extraservice::AtomicAppendClientRPC> rpc_;
                 };
 
                 /* Create offset work unit */
@@ -65,9 +69,11 @@ namespace iofwd
                     public:
                         AtomicAppendCreateOffsetWorkUnit(const iofwdevent::CBType & cb, 
                                 iofwdutil::ThreadPool & tp,
+                                boost::shared_ptr<iofwd::extraservice::AtomicAppendClientRPC> rpc,
                                 zoidfs::zoidfs_handle_t * h,
                                 zoidfs::zoidfs_file_size_t * o) :
-                            AtomicAppendWorkUnit(cb, AA_CREATE_OFFSET_WU, tp),
+                            AtomicAppendWorkUnit(cb, AA_CREATE_OFFSET_WU, tp,
+                                    rpc),
                             handle(h),
                             offset(o),
                             retcode(0)
@@ -85,9 +91,10 @@ namespace iofwd
                     public:
                         AtomicAppendDeleteOffsetWorkUnit(const iofwdevent::CBType & cb, 
                                 iofwdutil::ThreadPool & tp,
+                                boost::shared_ptr<iofwd::extraservice::AtomicAppendClientRPC> rpc,
                                 zoidfs::zoidfs_handle_t * h,
                                 zoidfs::zoidfs_file_size_t * o) :
-                            AtomicAppendWorkUnit(cb, AA_DELETE_OFFSET_WU, tp),
+                            AtomicAppendWorkUnit(cb, AA_DELETE_OFFSET_WU, tp, rpc),
                             handle(h),
                             offset(o),
                             retcode(0)
@@ -107,11 +114,11 @@ namespace iofwd
                         AtomicAppendGetNextOffsetWorkUnit(
                                 const iofwdevent::CBType & cb, 
                                 iofwdutil::ThreadPool & tp,
+                                boost::shared_ptr<iofwd::extraservice::AtomicAppendClientRPC> rpc,
                                 zoidfs::zoidfs_handle_t * h,
                                 zoidfs::zoidfs_file_size_t i,
                                 zoidfs::zoidfs_file_size_t * o) :
-                            AtomicAppendWorkUnit(cb, AA_GETNEXT_OFFSET_WU,
-                                    tp),
+                            AtomicAppendWorkUnit(cb, AA_GETNEXT_OFFSET_WU, tp, rpc),
                             handle(h),
                             incsize(i),
                             offset(o),

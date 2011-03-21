@@ -1,12 +1,11 @@
 #include "iofwd/extraservice/aarpc/AtomicAppendManager.hh"
 
+#include "iofwd/service/ServiceManager.hh"
+
 namespace iofwd
 {
     namespace extraservice
     {
-        /* static aarpc client */
-        iofwd::extraservice::AtomicAppendClientRPC AtomicAppendManager::rpc_;
-
         void AtomicAppendManager::runAARPCWorkUnit(AtomicAppendWorkUnit * aawu)
         {
             boost::exception_ptr e;
@@ -21,7 +20,7 @@ namespace iofwd
                         static_cast<AtomicAppendCreateOffsetWorkUnit *>(aawu);
                         
                     /* invoke the rpc */
-                    rpc_.createOffset(*(wu->handle), *(wu->offset), wu->retcode);
+                    wu->rpc_->createOffset(*(wu->handle), *(wu->offset), wu->retcode);
                         
                     /* invoke the callback */
                     wu->cb_(iofwdevent::CBException(e));
@@ -36,7 +35,7 @@ namespace iofwd
                         static_cast<AtomicAppendDeleteOffsetWorkUnit *>(aawu);
                         
                     /* invoke the rpc */
-                    rpc_.deleteOffset(*(wu->handle), wu->retcode);
+                    wu->rpc_->deleteOffset(*(wu->handle), wu->retcode);
                         
                     /* invoke the callback */
                     wu->cb_(iofwdevent::CBException(e));
@@ -51,7 +50,7 @@ namespace iofwd
                         static_cast<AtomicAppendGetNextOffsetWorkUnit *>(aawu);
                         
                     /* invoke the rpc */
-                    rpc_.getNextOffset(*(wu->handle), wu->incsize, *(wu->offset),
+                    wu->rpc_->getNextOffset(*(wu->handle), wu->incsize, *(wu->offset),
                             wu->retcode);
                         
                     /* invoke the callback */
@@ -81,7 +80,7 @@ namespace iofwd
                 zoidfs::zoidfs_file_size_t * offset)
         {
             AtomicAppendCreateOffsetWorkUnit * wu = new
-                AtomicAppendCreateOffsetWorkUnit(cb, aarpc_tp_, handle,
+                AtomicAppendCreateOffsetWorkUnit(cb, aarpc_tp_, rpc_, handle,
                         offset);
 
             submitWorkUnit(boost::bind(&AtomicAppendManager::runAARPCWorkUnit, wu),
@@ -94,7 +93,7 @@ namespace iofwd
                 zoidfs::zoidfs_file_size_t * offset)
         {
             AtomicAppendDeleteOffsetWorkUnit * wu = new
-                AtomicAppendDeleteOffsetWorkUnit(cb, aarpc_tp_, handle,
+                AtomicAppendDeleteOffsetWorkUnit(cb, aarpc_tp_, rpc_, handle,
                         offset);
 
             submitWorkUnit(boost::bind(&AtomicAppendManager::runAARPCWorkUnit, wu),
@@ -108,7 +107,7 @@ namespace iofwd
                 zoidfs::zoidfs_file_size_t * offset)
         {
             AtomicAppendGetNextOffsetWorkUnit * wu = new
-                AtomicAppendGetNextOffsetWorkUnit(cb, aarpc_tp_, handle,
+                AtomicAppendGetNextOffsetWorkUnit(cb, aarpc_tp_, rpc_, handle,
                         incsize, offset);
 
             submitWorkUnit(boost::bind(&AtomicAppendManager::runAARPCWorkUnit, wu),

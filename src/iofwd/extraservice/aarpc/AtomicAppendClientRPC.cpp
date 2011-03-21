@@ -1,10 +1,15 @@
 #include "iofwd/extraservice/aarpc/AtomicAppendClientRPC.hh"
 
+#include "iofwd/service/Service.hh"
+
+SERVICE_REGISTER(iofwd::extraservice::AtomicAppendClientRPC, aarpcclient);
+
 namespace iofwd
 {
     namespace extraservice
     {
-        AtomicAppendClientRPC::AtomicAppendClientRPC() :
+        AtomicAppendClientRPC::AtomicAppendClientRPC(service::ServiceManager & m) :
+            ExtraService(m),
             man_(iofwd::service::ServiceManager::instance()),
             netservice_(man_.loadService<iofwd::Net>("net")),
             rpcclient_(man_.loadService<iofwd::RPCClient>("rpcclient")),
