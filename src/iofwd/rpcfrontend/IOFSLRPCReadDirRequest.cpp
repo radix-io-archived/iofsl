@@ -9,7 +9,6 @@ namespace iofwd
       RPC_GENPROCESS (IOFSLRPCReadDirRequest,((&)(handle)) 
                                              ((&)(cookie))
                                              (()(entry_count))              
-                                             ((&)(entries))
                                              (()(flags)),
                                              (()(returnCode))
                                              (()(entry_count))
@@ -21,7 +20,7 @@ namespace iofwd
       { 
           decodeRPCInput(); 
           param_.entry_count = dec_struct.entry_count;
-          param_.entries = &dec_struct.entries;
+          param_.entries = new zoidfs::zoidfs_dirent_t[dec_struct.entry_count];
           param_.flags = dec_struct.flags;
           param_.cookie = dec_struct.cookie;
           param_.op_hint = &op_hint_; 
