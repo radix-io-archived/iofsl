@@ -6,13 +6,34 @@
 
 #include "iofwd/WriteRequest.hh"
 #include "iofwd/rpcfrontend/IOFSLRPCRequest.hh"
-
+#include "iofwdutil/mm/BMIMemoryManager.hh"
 namespace iofwd
 {
    namespace rpcfrontend
    {
 
-      class IOFSLRPCGetAttrRequest :
+      typedef zoidfs::zoidfs_dirent_t zoidfs_dirent_t;
+      typedef zoidfs::zoidfs_op_hint_t zoidfs_op_hint_t;
+      typedef zoidfs::zoidfs_handle_t zoidfs_handle_t;
+      typedef zoidfs::zoidfs_dirent_cookie_t zoidfs_dirent_cookie_t;
+      typedef zoidfs::zoidfs_file_ofs_t zoidfs_file_ofs_t;
+
+      ENCODERSTRUCT (IOFSLRPCWriteDec, ((zoidfs_handle_t)(handle)) 
+                                        ((size_t)(mem_count))
+                                        ((void**)(mem_starts))              
+                                        ((size_t*)(mem_sizes))
+                                        ((size_t)(file_count))
+                                        ((zoidfs_file_ofs_t)(file_starts))
+                                        ((zoidfs_file_ofs_t)(file_sizes))
+                                        ((size_t)(pipeline_size)))
+
+
+      ENCODERSTRUCT (IOFSLRPCWriteEnc, ((int)(returnCode))
+                                       ((zoidfs_file_ofs_t)(file_starts))
+                                       ((zoidfs_file_ofs_t)(file_sizes)))
+
+
+      class IOFSLRPCWriteRequest :
           public IOFSLRPCRequest,
           public WriteRequest
       {
@@ -21,39 +42,36 @@ namespace iofwd
                       iofwdevent::ZeroCopyInputStream * in,
                       iofwdevent::ZeroCopyOutputStream * out) :
                   IOFSLRPCRequest(in, out),
-                  WriteRequest(opid),
-                  attr_enc_(NULL)
+                  WriteRequest(opid)
               {
               }
             
-              virtual ~IOFSLRPCWriteRequest();
+              ~IOFSLRPCWriteRequest();
 
               /* encode and decode helpers for RPC data */
-              virtual void decode();
-              virtual void encode();
+              void decode();
+              void encode();
 
-              /* request processing */
-              virtual const ReqParam & decodeParam() = 0;
-              virtual void reply(const CBType & cb,
-                                 const zoidfs::zoidfs_attr_t * attr) = 0;
-              virtual ReqParam & decodeParam () = 0;
-  
-              virtual void reply(const CBType & cb) = 0;
-              
-//               for normal mode
-//              virtual void recvBuffers(const CBType & cb, RetrievedBuffer * rb);
+              ReqParam & decodeParam () = 0;
 
-//               for pipeline mode
-//              virtual void recvPipelineBufferCB(iofwdevent::CBType cb, 
-//                                                RetrievedBuffer * rb, 
-//                                                size_t size);
+              void reply(const CBType & cb) = 0;
 
-//              virtual void initRequestParams(ReqParam & p, void * bufferMem);
+              // for normal mode
+              void recvBuffers(const CBType & cb, RetrievedBuffer * rb) = 0;
 
-//              virtual void allocateBuffer(iofwdevent::CBType cb, 
-//                                          RetrievedBuffer * rb);
+              // for pipeline mode
+              void recvPipelineBufferCB(iofwdevent::CBType cb, 
+                                                RetrievedBuffer * rb, 
+                                                size_t size) = 0;
 
-//              virtual void releaseBuffer(RetrievedBuffer * rb);
+              void initRequestParams(ReqParam & p, void * bufferMem) = 0;
+
+              void allocateBuffer(iofwdevent::CBType cb, RetrievedBuffer * rb) = 0;
+
+              void releaseBuffer(RetrievedBuffer * rb) = 0;
+
+              size_t readBuffer (void * buff, size_t size, bool forceSize);
+
 
           protected:
               /* data size helpers for this request */ 
@@ -61,10 +79,13 @@ namespace iofwd
               virtual size_t rpcEncodedOutputDataSize();
 
               ReqParam param_;
-              zoidfs::zoidfs_handle_t handle_;
-              zoidfs::zoidfs_attr_t attr_;
+
+              IOFSLRPCWriteEnc enc_struct;
+              IOFSLRPCWriteDec dec_struct;
+              // @TODO: This should not be specified here. however its required
+              //        to use the memory manager (BMIMemoryManager)
+              iofwdutil::bmi::BMIAddr * addr_;
               zoidfs::zoidfs_op_hint_t op_hint_;
-              zoidfs::zoidfs_attr_t * attr_enc_;
       };
 
    }

@@ -176,7 +176,7 @@ namespace iofwd
                writeBuffer (param_.mem_starts[i],  param_.mem_sizes[i], FALSE);
           }
           out_->flush(nullcb);
-         cb(*(new iofwdevent::CBException()));
+          cb(*(new iofwdevent::CBException()));
       }
 
       void IOFSLRPCReadRequest::sendPipelineBufferCB (const iofwdevent::CBType cb, 
