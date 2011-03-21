@@ -214,7 +214,10 @@ src/iofwd/rpcfrontend/IOFSLRPCWriteRequest.cpp \
 src/iofwd/rpcfrontend/IOFSLRPCCommitRequest.hh \
 src/iofwd/rpcfrontend/IOFSLRPCCommitRequest.cpp \
 src/iofwd/rpcfrontend/IOFSLRPCNotImplementedRequest.hh \
-src/iofwd/rpcfrontend/IOFSLRPCNotImplementedRequest.cpp
+src/iofwd/rpcfrontend/IOFSLRPCNotImplementedRequest.cpp \
+src/iofwd/rpcfrontend/IOFSLRPCNullRequest.hh \
+src/iofwd/rpcfrontend/IOFSLRPCNullRequest.cpp
+
 
 
 if DISPATCH_ROSS
