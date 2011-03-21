@@ -64,8 +64,6 @@ namespace iofwd
 
               IOFSLRPCCreateDec dec_struct;
               IOFSLRPCCreateEnc enc_struct;
-              encoder::EncoderString<0, ZOIDFS_PATH_MAX> full_path;
-              encoder::EncoderString<0, ZOIDFS_PATH_MAX> component_name;
               zoidfs_handle_t * handle;
               int created;
       };
