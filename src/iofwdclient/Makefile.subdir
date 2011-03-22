@@ -27,6 +27,8 @@ CPPCLIENTLIB += \
     src/iofwdclient/clientsm/RPCServerSM.hh \
     src/iofwdclient/clientsm/GetAttrClientSM.hh \
     src/iofwdclient/clientsm/GetAttrClientSM.cpp \
+    src/iofwdclient/clientsm/CreateClientSM.hh \
+    src/iofwdclient/clientsm/CreateClientSM.cpp \
     \
     src/iofwdclient/streamwrappers/GetAttrInStream.hh \
     src/iofwdclient/streamwrappers/GetAttrOutStream.hh
