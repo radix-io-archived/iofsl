@@ -276,6 +276,7 @@ namespace iofwdevent
     */
    void BMIResource::checkUnexpected ()
    {
+       bool retry = false;
       // If somebody is already in this function, just exit. No point in
       // racing against eachother to call the callbacks.
       boost::mutex::scoped_try_lock ul (ue_dequeue_lock_);
@@ -291,6 +292,10 @@ namespace iofwdevent
       // Now, for as long as we have messages to hand out
       // (either new ones, or queued in ue_ready_) _and_ we have clients
       // we didn't check give them to the client to process them.
+      do
+      {
+          /* reset the rety flag */
+          retry = false;
       UEClientListType::iterator I = ue_clientlist_.begin();
 
       
@@ -366,11 +371,30 @@ namespace iofwdevent
             ue_lock_.lock ();
             // We need the lock to protect access to the mem pool
             ue_client_pool_.free (&c);
+
+            /* XXX: revisit this later */
+            /* It looks like the above code causes the I iterator
+               for the ue_clientlist to become invalidated.
+               On the next pass through the while
+               loop, an invalid element (null address) is assigned to c
+               and crashes the server. That's reflected in point (2)
+               above, but the comments on the while() loop mention
+               that the iterators are not invalidated. Also, ue_lock_
+               is unlocked above but comments on completeUnexpetedClient
+               indicate that the lock needs to be held (tried to unlock it... 
+               deadlocked the server).
+            */
+            break;
+
+            /* we invalidated the iterator... start over and recheck */
+            retry = true;
          }
 
          // Try next client
          ++I;
       }
+      }
+      while(retry);
    }
 
    void BMIResource::poll (size_t minwaitms, size_t maxwaitms)
