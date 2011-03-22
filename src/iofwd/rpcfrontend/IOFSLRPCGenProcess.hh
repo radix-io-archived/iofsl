@@ -8,14 +8,14 @@
 
 #define RPC_ENCODER(r,data,elem) RPC_ENCPROCESS(elem)
 #define RPC_ENCPROCESS(elem) enc_struct.RPC_PICKNAME(elem) = RPC_GETNAME(elem);
-#define RPC_GETNAME(elem)    BOOST_PP_SEQ_FOLD_LEFT(EMSG_DOFOLD,             \
+#define RPC_GETNAME(elem)    BOOST_PP_SEQ_FOLD_LEFT(RPC_WFOLD,               \
                                         BOOST_PP_SEQ_HEAD(elem),             \
                                         BOOST_PP_SEQ_TAIL(elem))
 #define RPC_PICKNAME(elem)  BOOST_PP_SEQ_CAT(BOOST_PP_SEQ_TAIL(elem))
 
 #define RPC_DECPARAM(r,data,elem) RPC_DECPROCESS(elem)
 #define RPC_DECPROCESS(elem) param_.RPC_PICKNAME(elem) = &dec_struct.RPC_PICKNAME(elem);
-
+#define RPC_WFOLD(r,data,elem) data elem
 #define RPC_GENPROCESS(NAME, DECODELIST, ENCLIST)                            \
       void NAME::decode()                                                    \
       {                                                                      \
