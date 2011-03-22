@@ -11,9 +11,6 @@ namespace iofwd
 {
    namespace rpcfrontend
    {
-      typedef struct 
-      {} ReqParam;
-      
       class IOFSLRPCNullRequest :
           public IOFSLRPCRequest,
           public NullRequest
@@ -27,7 +24,7 @@ namespace iofwd
               {
               }
             
-              virtual ~IOFSLRPCNullRequest();
+              ~IOFSLRPCNullRequest();
 
               /* encode and decode helpers for RPC data */
               void decode() {};

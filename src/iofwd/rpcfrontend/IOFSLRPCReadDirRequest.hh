@@ -41,22 +41,22 @@ namespace iofwd
               {
               }
             
-              virtual ~IOFSLRPCReadDirRequest();
+              ~IOFSLRPCReadDirRequest();
 
               /* encode and decode helpers for RPC data */
-              virtual void decode();
-              virtual void encode();
+              void decode();
+              void encode();
 
               /* request processing */
-              virtual const ReqParam & decodeParam();
-              virtual void reply (const CBType & cb, uint32_t entry_count,
+              const ReqParam & decodeParam();
+              void reply (const CBType & cb, uint32_t entry_count,
                                   zoidfs::zoidfs_dirent_t * entries,
-                                  zoidfs::zoidfs_cache_hint_t * cache) = 0;
+                                  zoidfs::zoidfs_cache_hint_t * cache);
           
           protected:
               /* data size helpers for this request */ 
-              virtual size_t rpcEncodedInputDataSize(); 
-              virtual size_t rpcEncodedOutputDataSize();
+              size_t rpcEncodedInputDataSize(); 
+              size_t rpcEncodedOutputDataSize();
 
               ReqParam param_;
 

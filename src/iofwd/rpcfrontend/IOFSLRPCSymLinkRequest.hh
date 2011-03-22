@@ -42,7 +42,7 @@ namespace iofwd
               {
               }
             
-              virtual ~IOFSLRPCSymLinkRequest();
+               ~IOFSLRPCSymLinkRequest();
 
               /* encode and decode helpers for RPC data */
               void decode();
@@ -51,7 +51,7 @@ namespace iofwd
               /**
               * Retrieve the request input parameters
               */
-              const ReqParam & decodeParam ()  = 0;
+              const ReqParam & decodeParam ();
 
               /**
               * Reply with the handle or 0 if an error occurred and the handle does not
@@ -63,8 +63,8 @@ namespace iofwd
 
           protected:
               /* data size helpers for this request */ 
-              virtual size_t rpcEncodedInputDataSize(); 
-              virtual size_t rpcEncodedOutputDataSize();
+               size_t rpcEncodedInputDataSize(); 
+               size_t rpcEncodedOutputDataSize();
 
               ReqParam param_;
               IOFSLRPCSymLinkDec dec_struct;

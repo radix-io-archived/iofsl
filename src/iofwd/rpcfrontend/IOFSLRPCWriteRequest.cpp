@@ -34,6 +34,20 @@ namespace iofwd
           process (enc_, encoder::EncVarArray(&enc_struct.file_sizes, dec_struct.file_count));
       }
 
+      IOFSLRPCWriteRequest::ReqParam & IOFSLRPCWriteRequest::decodeParam() 
+      { 
+          decodeRPCInput(); 
+          param_.handle = &dec_struct.handle;
+          param_.mem_starts = (char **)dec_struct.mem_starts;
+          param_.mem_sizes = dec_struct.mem_sizes;
+          param_.mem_count = dec_struct.mem_count;
+          param_.file_count = dec_struct.file_count;
+          param_.file_sizes = &dec_struct.file_sizes;
+          param_.file_starts = &dec_struct.file_starts;
+          param_.pipeline_size = dec_struct.pipeline_size;
+          param_.op_hint = &op_hint_; 
+          return param_; 
+      }
       void IOFSLRPCWriteRequest::initRequestParams(ReqParam & p, void * bufferMem)
       {
           // allocate buffer for normal mode
@@ -138,6 +152,22 @@ namespace iofwd
           /* invoke the callback */
           //cb();
       }
+
+      IOFSLRPCWriteRequest::~IOFSLRPCWriteRequest()
+      {
+         zoidfs::hints::zoidfs_hint_free(&op_hint_);
+      }
+
+      size_t IOFSLRPCWriteRequest::rpcEncodedInputDataSize()
+      {
+          return 0;
+      }
+
+      size_t IOFSLRPCWriteRequest::rpcEncodedOutputDataSize()
+      {
+          return 0;
+      }
+
 
    }
 }

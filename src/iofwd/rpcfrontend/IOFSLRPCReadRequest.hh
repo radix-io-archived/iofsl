@@ -31,10 +31,6 @@ namespace iofwd
                                       ((zoidfs_file_ofs_t)(file_starts))
                                       ((zoidfs_file_ofs_t)(file_sizes)))
 
-      /* decoded hint values */
-      bool op_hint_pipeline_enabled;
-
-      size_t max_buffer_size;
       class IOFSLRPCReadRequest :
           public IOFSLRPCRequest,
           public ReadRequest
