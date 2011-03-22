@@ -9,7 +9,7 @@
 #define CLIENT_GENSTREAMWRAP_DECL_S1(elem) BOOST_PP_CAT(CLIENT_GENSTREAMWRAP_S2 (elem),_);
 
 #define CLIENT_GENSTREAMWRAP_PARAMS(r,data,elem) CLIENT_GENSTREAMWRAP_S1(elem)
-#define CLIENT_GENSTREAMWRAP_S1(elem) CLIENT_GENSTREAMWRAP_S2 (elem),
+#define CLIENT_GENSTREAMWRAP_S1(elem) CLIENT_GENSTREAMWRAP_S2 (elem) = NULL,
 #define CLIENT_GENSTREAMWRAP_S2(elem) BOOST_PP_SEQ_FOLD_LEFT(CLIENT_DOFOLD,  \
                                         BOOST_PP_SEQ_HEAD(elem),             \
                                         BOOST_PP_SEQ_TAIL(elem))
@@ -32,11 +32,15 @@
    {                                                                         \
       namespace streamwrappers                                               \
       {                                                                      \
+      typedef zoidfs::zoidfs_handle_t zoidfs_handle_t;\
+      typedef zoidfs::zoidfs_sattr_t zoidfs_sattr_t;\
+      typedef zoidfs::zoidfs_op_hint_t zoidfs_op_hint_t;\
+      typedef encoder::EncoderString<0, ZOIDFS_PATH_MAX> EncoderString;\
          class INSTREAMNAME                                                  \
          {                                                                   \
             public:                                                          \
                  INSTREAMNAME(BOOST_PP_SEQ_FOR_EACH(CLIENT_GENSTREAMWRAP_PARAMS, , INPARAMS) \
-                              zoidfs::zoidfs_op_hint_t * op_hint) : \
+                              zoidfs::zoidfs_op_hint_t * op_hint = 0) : \
                  BOOST_PP_SEQ_FOR_EACH (CLIENT_GENSTREAMWRAP_PARAM_INIT, ,INPARAMS) \
                  op_helper_(op_hint)                                          \
         {                                                                     \
@@ -47,7 +51,7 @@
       class OUTSTREAMNAME                                                        \
       {                                                                          \
           public:                                                                \
-              GetAttrOutStream(BOOST_PP_SEQ_FOR_EACH(CLIENT_GENSTREAMWRAP_PARAMS, , OUTPARAMS) \
+              OUTSTREAMNAME(BOOST_PP_SEQ_FOR_EACH(CLIENT_GENSTREAMWRAP_PARAMS, , OUTPARAMS) \
                                zoidfs::zoidfs_op_hint_t * op_hint = NULL) :       \
                BOOST_PP_SEQ_FOR_EACH(CLIENT_GENSTREAMWRAP_PARAM_INIT, ,OUTPARAMS) \
                op_helper_(op_hint)                                                \
@@ -68,7 +72,7 @@
       template <typename Enc, typename Wrapper>                                   \
       inline Enc & process (Enc & e,                                              \
            Wrapper & w,                                                           \
-           typename process_filter<Wrapper, GetAttrOutStream>::type * UNUSED(d) = \
+           typename process_filter<Wrapper, OUTSTREAMNAME>::type * UNUSED(d) = \
            NULL)                                                                  \
       {                                                                           \
          BOOST_PP_SEQ_FOR_EACH(CLIENT_GENSTREAMWRAP_DECPARAM, ,OUTPROCESS)        \
@@ -77,10 +81,4 @@
       }                                                                           \
    }                                                                              \
    }                                                                              
-
-
-
-CLIENT_GENSTREAMWRAP (GetAttrStream, GetAttrInStream, ((zoidfs_handle_t)(handle)) ,
-                      ((*)(handle)), GetAttrOutStream, ((zoidfs_attr_t)(attr)),
-                      ((*)(attr)))
 
