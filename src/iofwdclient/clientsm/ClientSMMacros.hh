@@ -5,7 +5,7 @@
 #include <boost/preprocessor/cat.hpp>
 #include <boost/preprocessor/seq/pop_back.hpp>
                    
-#define CLIENT_GENERATESM(CLASSNAME, OUTSTREAMNAME, NAME)                    \
+#define CLIENT_GENERATESM(CLASSNAME, INSTREAMNAME, OUTSTREAMNAME, NAME)      \
    namespace iofwdclient                                                     \
    {                                                                         \
        namespace clientsm                                                    \
@@ -23,7 +23,7 @@
    {                                                                         \
        fprintf(stderr, "%s:%i\n", __func__, __LINE__);                       \
        e.check();                                                            \
-       server_sm_.reset(new RPCServerSM< CLASSNAME, OUTSTREAMNAME >(smm_,    \
+       server_sm_.reset(new RPCServerSM< INSTREAMNAME, OUTSTREAMNAME >(smm_,    \
                   poll_, slots_[BASE_SLOT], NAME, in_, out_));    \
        slots_.wait(BASE_SLOT, &CLASSNAME::waitRPCServerSM);                  \
    }                                                                         \
@@ -83,7 +83,7 @@
           protected:                                                         \
               enum {BASE_SLOT = 0, NUM_BASE_SLOTS};                          \
               sm::SimpleSlots<NUM_BASE_SLOTS,                                \
-                  iofwdclient::clientsm::GetAttrClientSM> slots_;            \
+                  iofwdclient::clientsm::CLASSNAME> slots_;                  \
               const IOFWDClientCB & cb_;                                     \
               int * ret_;                                                    \
               INSTREAMNAME in_;                                              \
@@ -91,4 +91,5 @@
               sm::SMClientSharedPtr server_sm_;                              \
         };                                                                   \
     }                                                                        \
-   }                                                                         
+   } 
+                                                                
