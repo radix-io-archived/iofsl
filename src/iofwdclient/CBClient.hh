@@ -15,6 +15,54 @@
 
 #include <boost/scoped_ptr.hpp>
 
+/*==========================================================================*/
+/* CBClient Creation Macros */
+#include <boost/preprocessor/seq/for_each.hpp>
+#include <boost/preprocessor/seq/elem.hpp>
+#include <boost/preprocessor/seq/fold_left.hpp>
+#include <boost/preprocessor/seq/cat.hpp>
+#include <boost/preprocessor/cat.hpp>
+#include <boost/preprocessor/seq/pop_back.hpp>
+
+/* creates list of input params (aka zoidfs_handle_t * handle,....) */
+#define CLIENT_CBCLIENT_PARAMS(r,data,elem) CLIENT_CBCLIENT_PARAMS_S1(elem)
+#define CLIENT_CBCLIENT_PARAMS_S1(elem) CLIENT_CBCLIENT_PARAMS_S2(elem),
+#define CLIENT_CBCLIENT_PARAMS_S2(elem) BOOST_PP_SEQ_FOLD_LEFT(CLIENT_CBCLIENT_DOFOLD, \
+                                        BOOST_PP_SEQ_HEAD(elem),             \
+                                        BOOST_PP_SEQ_TAIL(elem))
+#define CLIENT_CBCLIENT_DOFOLD(r,data,elem) data elem
+
+/* creates parameter list from PARAMETERS */
+#define CLIENT_CBCLIENT_PLIST(r,data,elem) CLIENT_CBCLIENT_PLIST_S1(elem)
+#define CLIENT_CBCLIENT_PLIST_S1(elem) CLIENT_CBCLIENT_PLIST_S2(elem),
+#define CLIENT_CBCLIENT_PLIST_S2(elem) BOOST_PP_SEQ_CAT(BOOST_PP_SEQ_TAIL(elem))
+
+/* defines the function for the class, takes 3 parameter'. 
+   FUNCNAME = the name of the function to be written. 
+   SMNAME = Name of the state machine class to use. 
+   PARAMETERS = BOOST list of parameters for the function ex: 
+      ((zoidfs_handle_t)(handle))((zoidfs_cache_hint_t)(cache)). op_hint is
+      to be excluded from this list (it is included by default)
+*/
+   
+#define CLIENT_CBCLIENT_MACRO(FUNCNAME, SMNAME, PARAMETERS)                  \
+   void CBClient::FUNCNAME(const IOFWDClientCB & cb,                         \
+         int * ret,                                                          \
+         BOOST_PP_SEQ_FOR_EACH(CLIENT_CBCLIENT_PARAMS, , PARAMETERS)         \
+         zoidfs_op_hint_t * op_hint)                                         \
+   {                                                                         \
+      CBSMWrapper * cbsm =  CBSMWrapper::createCBSMWrapper(cb);              \
+      iofwdclient::clientsm::SMNAME(*smm_, poll_, cbsm->getWCB(), ret,       \
+         BOOST_PP_SEQ_FOR_EACH(CLIENT_CBCLIENT_PLIST, , PARAMETERS)          \
+         op_hint);                                                           \
+      cbsm->set(sm);                                                         \
+      sm->execute();                                                         \
+   }
+/*==========================================================================*/
+
+
+
+
 namespace iofwdclient
 {
    //========================================================================
