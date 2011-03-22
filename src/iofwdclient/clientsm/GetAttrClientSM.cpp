@@ -1,5 +1,5 @@
 #include "iofwdclient/clientsm/GetAttrClientSM.hh"
-#include "iofwdclient/FakeBlocker.hh"
+//#include "iofwdclient/FakeBlocker.hh"
 
 #include "zoidfs/zoidfs-async.h"
 #include "zoidfs/zoidfs-rpc.h"

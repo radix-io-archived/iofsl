@@ -9,6 +9,9 @@
 #include "iofwdutil/IOFWDLog-fwd.hh"
 
 #include <boost/scoped_ptr.hpp>
+#include "iofwd/RPCClient.hh"
+
+#include <boost/shared_ptr.hpp>
 
 namespace iofwdclient
 {
@@ -25,7 +28,7 @@ namespace iofwdclient
 
          // this is zoidfs_finalize
          ~IOFWDClient ();
-
+         void RPCMode (boost::shared_ptr<iofwd::RPCClient> rpcclient);
 
          // -----------------------------------------------------------------
          // ------------- blocking ZoidFS functions -------------------------
@@ -282,6 +285,7 @@ namespace iofwdclient
       protected:
          iofwdutil::IOFWDLogSource & log_;
 
+         boost::shared_ptr<iofwd::RPCClient> client_;
          boost::scoped_ptr<PollQueue>   pollqueue_;
          boost::scoped_ptr<ASClient>    asclient_;
          boost::scoped_ptr<SyncClient>  sclient_;

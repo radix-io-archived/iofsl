@@ -29,9 +29,12 @@ CPPCLIENTLIB += \
     src/iofwdclient/clientsm/GetAttrClientSM.cpp \
     src/iofwdclient/clientsm/CreateClientSM.hh \
     src/iofwdclient/clientsm/CreateClientSM.cpp \
-    \
-    src/iofwdclient/streamwrappers/GetAttrInStream.hh \
-    src/iofwdclient/streamwrappers/GetAttrOutStream.hh
+    src/iofwdclient/clientsm/LookupClientSM.hh \
+    src/iofwdclient/clientsm/LookupClientSM.cpp \
+    src/iofslclient/streamwrappers/LookupStreams.hh 
+
+#    src/iofwdclient/streamwrappers/GetAttrInStream.hh \
+#    src/iofwdclient/streamwrappers/GetAttrOutStream.hh 
 
 #
 # It is OK to define this here, even if we add sources to CLIENTLIB later on;
