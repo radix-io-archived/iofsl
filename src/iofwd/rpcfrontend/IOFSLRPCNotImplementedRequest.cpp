@@ -11,5 +11,9 @@ namespace iofwd
           /* encode */
           encodeRPCOutput();
         }
+      IOFSLRPCNotImplementedRequest::~IOFSLRPCNotImplementedRequest()
+      {
+      }
+
    }
 }

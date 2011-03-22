@@ -33,19 +33,19 @@ namespace iofwd
               {
               }
             
-              virtual ~IOFSLRPCSetAttrRequest();
+               ~IOFSLRPCSetAttrRequest();
 
               /* encode and decode helpers for RPC data */
-              virtual void decode();
-              virtual void encode();
+               void decode();
+               void encode();
 
-              virtual const ReqParam & decodeParam () = 0;
-              virtual void reply (const CBType & cb,
-                 const zoidfs::zoidfs_attr_t * attr) = 0;
+               const ReqParam & decodeParam ();
+               void reply (const CBType & cb,
+                 const zoidfs::zoidfs_attr_t * attr) ;
           protected:
               /* data size helpers for this request */ 
-              virtual size_t rpcEncodedInputDataSize(); 
-              virtual size_t rpcEncodedOutputDataSize();
+               size_t rpcEncodedInputDataSize(); 
+               size_t rpcEncodedOutputDataSize();
 
               ReqParam param_;
               IOFSLRPCSetAttrDec dec_struct;

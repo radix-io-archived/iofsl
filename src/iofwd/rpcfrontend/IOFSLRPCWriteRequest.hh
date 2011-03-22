@@ -52,31 +52,31 @@ namespace iofwd
               void decode();
               void encode();
 
-              ReqParam & decodeParam () = 0;
+              ReqParam & decodeParam ();
 
-              void reply(const CBType & cb) = 0;
+              void reply(const CBType & cb);
 
               // for normal mode
-              void recvBuffers(const CBType & cb, RetrievedBuffer * rb) = 0;
+              void recvBuffers(const CBType & cb, RetrievedBuffer * rb);
 
               // for pipeline mode
               void recvPipelineBufferCB(iofwdevent::CBType cb, 
                                                 RetrievedBuffer * rb, 
-                                                size_t size) = 0;
+                                                size_t size);
 
-              void initRequestParams(ReqParam & p, void * bufferMem) = 0;
+              void initRequestParams(ReqParam & p, void * bufferMem);
 
-              void allocateBuffer(iofwdevent::CBType cb, RetrievedBuffer * rb) = 0;
+              void allocateBuffer(iofwdevent::CBType cb, RetrievedBuffer * rb);
 
-              void releaseBuffer(RetrievedBuffer * rb) = 0;
+              void releaseBuffer(RetrievedBuffer * rb);
 
               size_t readBuffer (void * buff, size_t size, bool forceSize);
 
 
           protected:
               /* data size helpers for this request */ 
-              virtual size_t rpcEncodedInputDataSize(); 
-              virtual size_t rpcEncodedOutputDataSize();
+               size_t rpcEncodedInputDataSize(); 
+               size_t rpcEncodedOutputDataSize();
 
               ReqParam param_;
 

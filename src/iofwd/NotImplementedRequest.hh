@@ -18,7 +18,7 @@ public:
    }
 
    virtual void reply (const CBType & cb) = 0;
-
+   typedef struct { } ReqParam;
 };
 
 

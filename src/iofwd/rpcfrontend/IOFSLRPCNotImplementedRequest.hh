@@ -13,9 +13,6 @@ namespace iofwd
 {
    namespace rpcfrontend
    {
-      typedef struct 
-      {} ReqParam;
-      
       class IOFSLRPCNotImplementedRequest :
           public IOFSLRPCRequest,
           public NotImplementedRequest
@@ -29,7 +26,7 @@ namespace iofwd
               {
               }
             
-              virtual ~IOFSLRPCNotImplementedRequest();
+              ~IOFSLRPCNotImplementedRequest();
 
               /* encode and decode helpers for RPC data */
               void decode() {};
