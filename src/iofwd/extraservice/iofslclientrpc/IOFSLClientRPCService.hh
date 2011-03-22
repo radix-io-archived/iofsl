@@ -16,6 +16,10 @@
 
 #include <boost/shared_ptr.hpp>
 
+#define RPC_GENCLIENTHEADERS(CLASSNAME, RPCNAME)                             \
+      void RPCNAME   (iofwdevent::ZeroCopyInputStream * in,                  \
+                    iofwdevent::ZeroCopyOutputStream * out,                  \
+                    const rpc::RPCInfo & );
 namespace iofwd
 {
    class Log;
@@ -38,13 +42,32 @@ namespace iofwd
 
             /* rpc handlers */
 
-            void getattr(iofwdevent::ZeroCopyInputStream * in,
-                    iofwdevent::ZeroCopyOutputStream * out,
-                    const rpc::RPCInfo & );
+            RPC_GENCLIENTHEADERS (IOFSLRPCCommitRequest, commit)
+            RPC_GENCLIENTHEADERS (IOFSLRPCCreateRequest, create)
+            RPC_GENCLIENTHEADERS (IOFSLRPCGetAttrRequest, getattr)
+            RPC_GENCLIENTHEADERS (IOFSLRPCLinkRequest, link)
+            RPC_GENCLIENTHEADERS (IOFSLRPCLookupRequest, lookup)
+            RPC_GENCLIENTHEADERS (IOFSLRPCMkdirRequest, mkdir)
+            RPC_GENCLIENTHEADERS (IOFSLRPCNotImplementedRequest, notimplemented)
+            RPC_GENCLIENTHEADERS (IOFSLRPCNullRequest, null)
+            RPC_GENCLIENTHEADERS (IOFSLRPCReadDirRequest, readdir)
+            RPC_GENCLIENTHEADERS (IOFSLRPCReadLinkRequest, readlink)
+            RPC_GENCLIENTHEADERS (IOFSLRPCReadRequest, read)
+            RPC_GENCLIENTHEADERS (IOFSLRPCRemoveRequest, remove)
+            RPC_GENCLIENTHEADERS (IOFSLRPCRenameRequest, rename)
+            RPC_GENCLIENTHEADERS (IOFSLRPCResizeRequest, resize)
+            RPC_GENCLIENTHEADERS (IOFSLRPCSetAttrRequest, setattr)
+            RPC_GENCLIENTHEADERS (IOFSLRPCSymLinkRequest, symlink)
+            RPC_GENCLIENTHEADERS (IOFSLRPCWriteRequest, write)
 
-            void lookup(iofwdevent::ZeroCopyInputStream * in,
-                    iofwdevent::ZeroCopyOutputStream * out,
-                    const rpc::RPCInfo & );
+
+//            void getattr(iofwdevent::ZeroCopyInputStream * in,
+//                    iofwdevent::ZeroCopyOutputStream * out,
+//                    const rpc::RPCInfo & );
+
+//            void lookup(iofwdevent::ZeroCopyInputStream * in,
+//                    iofwdevent::ZeroCopyOutputStream * out,
+//                    const rpc::RPCInfo & );
 
          protected:
             boost::shared_ptr<Log> log_service_;
