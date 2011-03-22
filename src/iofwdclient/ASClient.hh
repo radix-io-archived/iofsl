@@ -158,7 +158,7 @@ namespace iofwdclient
                    zoidfs::zoidfs_timeout_t timeout,
                    zoidfs::zoidfs_comp_mask_t mask);
 
-         int request_get_error (zoidfs::zoidfs_request_t request, int * error);
+         int request_get_error (zoidfs::zoidfs_request_t request, int * error) {};
 
          int request_get_comp_state (zoidfs::zoidfs_request_t,
                zoidfs::zoidfs_comp_mask_t *);

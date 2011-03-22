@@ -4,6 +4,10 @@
 #include "iofwdclient/ASClient.hh"
 #include "iofwdclient/SyncClient.hh"
 
+#include "iofwd/RPCClient.hh"
+
+#include <boost/shared_ptr.hpp>
+
 #include "iofwdutil/IOFWDLog.hh"
 
 using namespace zoidfs;
@@ -24,6 +28,12 @@ namespace iofwdclient
    }
    
    // @TODO: repeat for other functions
+
+
+   void IOFWDClient::RPCMode (boost::shared_ptr<iofwd::RPCClient> rpcclient)
+   {
+      client_ = rpcclient; 
+   }
 
    // -----------------------------------------------------------------
    // ------------- blocking ZoidFS functions -------------------------

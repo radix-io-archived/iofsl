@@ -6,7 +6,7 @@
 #include "iofwdutil/tools.hh"
 
 #include "iofwdclient/clientsm/GetAttrClientSM.hh"
-
+#include "iofwdclient/clientsm/LookupClientSM.hh"
 using namespace zoidfs;
 
 namespace iofwdclient
@@ -59,6 +59,30 @@ namespace iofwdclient
 
        /* execute the sm */
        sm->execute();
+   }
+
+   int CBClient::cblookup (  const IOFWDClientCB & cb,
+                              int * ret,
+                              const zoidfs::zoidfs_handle_t *parent_handle,
+                              const char *component_name, 
+                              const char *full_path,
+                              zoidfs::zoidfs_handle_t *handle,  
+                              zoidfs::zoidfs_op_hint_t * op_hint)
+   {
+       /* create the empty wrapper */
+       CBSMWrapper * cbsm = CBSMWrapper::createCBSMWrapper(cb);
+
+       /* create the state machine */
+       iofwdclient::clientsm::LookupClientSM * sm =
+           new iofwdclient::clientsm::LookupClientSM(*smm_, poll_,
+                   cbsm->getWCB(), ret, parent_handle, component_name, full_path,
+                   handle, op_hint);
+      
+       /* add the sm to the cb wrapper */ 
+       cbsm->set(sm);
+
+       /* execute the sm */
+       sm->execute();      
    }
 
    //========================================================================
