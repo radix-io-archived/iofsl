@@ -18,7 +18,6 @@
 
 #include "iofwdutil/tools.hh"
 
-#include <iostream>
 #include <string>
 #include <unistd.h>
 
@@ -56,10 +55,20 @@ namespace iofwd
                     in.handle = handle;
                     in.inc = incsize;
 
-                    aarpcClientHelper(
-                            rpcclient_->rpcConnect("aarpc.getnextoffset",
-                                (*comm_)[server_rank]),
-                            in, out);
+                    if(master_mode_)
+                    {
+                        aarpcClientHelper(
+                                rpcclient_->rpcConnect("aarpc.getnextoffset",
+                                    addr_),
+                                in, out);
+                    }
+                    else
+                    {
+                        aarpcClientHelper(
+                                rpcclient_->rpcConnect("aarpc.getnextoffset",
+                                    (*comm_)[server_rank]),
+                                in, out);
+                    }
 
                     offset = out.offset;
                     retcode = out.retcode;
@@ -76,10 +85,20 @@ namespace iofwd
 
                     in.handle = handle;
 
-                    aarpcClientHelper(
-                            rpcclient_->rpcConnect("aarpc.createoffset",
-                                (*comm_)[server_rank]),
-                            in, out);
+                    if(master_mode_)
+                    {
+                        aarpcClientHelper(
+                                rpcclient_->rpcConnect("aarpc.getnextoffset",
+                                    addr_),
+                                in, out);
+                    }
+                    else
+                    {
+                        aarpcClientHelper(
+                                rpcclient_->rpcConnect("aarpc.createoffset",
+                                    (*comm_)[server_rank]),
+                                in, out);
+                    }
 
                     retcode = out.retcode;
                     offset = out.offset;
@@ -95,10 +114,20 @@ namespace iofwd
 
                     in.handle = handle;
 
-                    aarpcClientHelper(
-                            rpcclient_->rpcConnect("aarpc.deleteoffset",
-                                (*comm_)[server_rank]),
-                            in, out);
+                    if(master_mode_)
+                    {
+                        aarpcClientHelper(
+                                rpcclient_->rpcConnect("aarpc.getnextoffset",
+                                    addr_),
+                                in, out);
+                    }
+                    else
+                    {
+                        aarpcClientHelper(
+                                rpcclient_->rpcConnect("aarpc.deleteoffset",
+                                    (*comm_)[server_rank]),
+                                in, out);
+                    }
 
                     retcode = out.retcode;
                 }
@@ -126,8 +155,7 @@ namespace iofwd
 
                     void * write_ptr;
                     size_t write_size;
-                    const size_t sendsize =
-                        rpc::getRPCEncodedSize(IN()).getMaxSize();;
+                    const size_t sendsize = rpc::getRPCEncodedSize(IN()).getMaxSize();;
 
                     block.reset();
                     out->write(&write_ptr, &write_size, block, sendsize);
@@ -177,7 +205,8 @@ namespace iofwd
                 net::Net * net_;
                 net::ConstCommunicatorHandle comm_;
                 net::AddressPtr addr_;
-                const size_t comm_size_;
+                size_t comm_size_;
+                bool master_mode_;
         };
     }
 }

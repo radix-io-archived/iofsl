@@ -20,7 +20,7 @@ namespace iofwd
                         static_cast<AtomicAppendCreateOffsetWorkUnit *>(aawu);
                         
                     /* invoke the rpc */
-                    wu->rpc_->createOffset(*(wu->handle), *(wu->offset), wu->retcode);
+                    //wu->rpc_->createOffset(*(wu->handle), *(wu->offset), wu->retcode);
                         
                     /* invoke the callback */
                     wu->cb_(iofwdevent::CBException(e));
@@ -35,7 +35,7 @@ namespace iofwd
                         static_cast<AtomicAppendDeleteOffsetWorkUnit *>(aawu);
                         
                     /* invoke the rpc */
-                    wu->rpc_->deleteOffset(*(wu->handle), wu->retcode);
+                    //wu->rpc_->deleteOffset(*(wu->handle), wu->retcode);
                         
                     /* invoke the callback */
                     wu->cb_(iofwdevent::CBException(e));
