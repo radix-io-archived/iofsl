@@ -91,10 +91,10 @@ test_report(){
       echo "$commit" >> autotest/tested_commits.txt
   fi
   comm=${commit:0:7}
-  echo | mutt -a test_report.txt -s "test report for commit $comm PASS" rjdamore@gmail.com
+  #echo | mutt -a test_report.txt -s "test report for commit $comm PASS" rjdamore@gmail.com
   #echo | mutt -c drieskimpe@gmail.com -a test_report.txt -s "test report for commit $comm PASS" rjdamore@gmail.com
   #echo | mutt -c drieskimpe@gmail.com -a test_report.txt -s "test report for commit $comm PASS" rjdamore@lanl.gov
-  #echo | mutt -c dkimpe@mcs.anl.gov drieskimpe@gamail.com rjdamore@gmail.com -a test_report.txt -s "test report for commit $comm PASS" io-fwd-discuss@lists.mcs.anl.gov 
+  echo | mutt -c $committer_email dkimpe@mcs.anl.gov drieskimpe@gamail.com rjdamore@gmail.com -a test_report.txt -s "test report for commit $comm PASS" io-fwd-discuss@lists.mcs.anl.gov 
   edit_files
 }
 
