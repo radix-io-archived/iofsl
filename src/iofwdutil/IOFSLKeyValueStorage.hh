@@ -1,6 +1,7 @@
 #ifndef IOFWDUTIL_IOFSLKEYVALUESTORAGE_HH
 #define IOFWDUTIL_IOFSLKEYVALUESTORAGE_HH
 
+#include <iostream>
 #include <map>
 #include <string>
 #include <boost/function.hpp>
@@ -95,13 +96,12 @@ class IOFSLKeyValueStorage : public Singleton< IOFSLKeyValueStorage >
         void rpcFetchAndInc(iofwdutil::IOFSLKey & key,
                 const T & nextValueInc,
                 T * curValue=NULL,
-                boost::function<T(A *)> init_func=&IOFSLKeyValueStorage::rpcFetchAndIncSentinel<T,void>,
+                boost::function<T(A *)> init_func=NULL,
                 A * init_args=NULL)
         {
             /* atomic fetch and inc of the value */
             {
                 boost::mutex::scoped_lock l(table_mutex_);
-
                 /* try to get the table lock... */
                 {
                     /* if the value is not in the table, create it */
@@ -113,6 +113,10 @@ class IOFSLKeyValueStorage : public Singleton< IOFSLKeyValueStorage >
                         {
                             //*curValue = 0; /* init to 0 */
                             *curValue = init_func(init_args); 
+                        }
+                        else
+                        {
+                            *curValue = rpcFetchAndIncSentinel<T,A>();
                         }
 
                         table_[key] = val;
