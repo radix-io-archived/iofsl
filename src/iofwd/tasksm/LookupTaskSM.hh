@@ -52,7 +52,8 @@ class LookupTaskSM : public sm::SimpleSM< LookupTaskSM >,
         void waitRunOp(iofwdevent::CBException e)
         {
             e.check ();
-            setNextMethod(&LookupTaskSM::postResetAtomicAppendOffset);
+            //setNextMethod(&LookupTaskSM::postResetAtomicAppendOffset);
+            setNextMethod(&LookupTaskSM::postReply);
         }
 
         void waitReply(iofwdevent::CBException e)
@@ -70,7 +71,7 @@ class LookupTaskSM : public sm::SimpleSM< LookupTaskSM >,
         virtual void postResetAtomicAppendOffset(iofwdevent::CBException e)
         {
             e.check ();
-
+#if 0
            /* atomic append hint vars */
             int aavallen = 0;
             int aaflag = 0;
@@ -110,6 +111,7 @@ class LookupTaskSM : public sm::SimpleSM< LookupTaskSM >,
                     &LookupTaskSM::waitResetAtomicAppendOffset);
             }
             else
+#endif
             {
                 setNextMethod(&LookupTaskSM::postReply);
             }
