@@ -12,7 +12,10 @@
 #include "iofwd/RPCClient.hh"
 
 #include <boost/shared_ptr.hpp>
-
+#include "iofwdclient/CBClient.hh"
+#include "iofwd/Net.hh"
+#include "net/Address.hh"
+#include "net/Net.hh"
 namespace iofwdclient
 {
    //========================================================================
@@ -24,11 +27,13 @@ namespace iofwdclient
    {
       public:
          // this is zoidfs_init
+         IOFWDClient (CommStream & net, net::AddressPtr addr, bool poll);
          IOFWDClient ();
 
          // this is zoidfs_finalize
          ~IOFWDClient ();
-         void RPCMode (boost::shared_ptr<iofwd::RPCClient> rpcclient);
+//         void RPCMode (boost::shared_ptr<iofwd::RPCClient> rpcclient,
+//                       net::AddressPtr addr);
 
          // -----------------------------------------------------------------
          // ------------- blocking ZoidFS functions -------------------------

@@ -2,7 +2,7 @@
 #define IOFWDCLIENT_SCOPEDREQUEST_HH
 
 #include "zoidfs-async.h"
-
+#include "iofwdclient/iofwdclientlib.hh"
 namespace iofwdclient
 {
    //========================================================================

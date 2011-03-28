@@ -28,7 +28,7 @@ void GetAttrClientSM::postRPCServerSM(iofwdevent::CBException e)
     e.check();
 
     server_sm_.reset(new RPCServerSM< GetAttrInStream, GetAttrOutStream >(smm_,
-            poll_, slots_[BASE_SLOT], ZOIDFS_GETATTR_RPC, in_, out_));
+            poll_, slots_[BASE_SLOT], ZOIDFS_GETATTR_RPC, in_, out_, addr_));
 
     slots_.wait(BASE_SLOT, &GetAttrClientSM::waitRPCServerSM);
 }

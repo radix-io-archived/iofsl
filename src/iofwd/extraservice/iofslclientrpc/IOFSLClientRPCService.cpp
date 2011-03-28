@@ -45,9 +45,9 @@ namespace iofwd
       IOFSLClientRPCService::IOFSLClientRPCService(service::ServiceManager & m)
          : ExtraService(m),
            log_service_(lookupService<Log>("log")),
-           rpcserver_(lookupService<RPCServer>("rpcserver")),
            log_(log_service_->getSource("iofslclientrpc"))
       {
+         rpcserver_ = (m.loadService<iofwd::RPCServer>("rpcserver"));
          rpcserver_->registerRPC("iofslclientrpc.commit",
                boost::bind(&IOFSLClientRPCService::commit, this, _1, _2, _3));
          rpcserver_->registerRPC("iofslclientrpc.create",

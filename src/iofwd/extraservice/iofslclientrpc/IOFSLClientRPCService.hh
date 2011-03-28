@@ -71,7 +71,7 @@ namespace iofwd
 
          protected:
             boost::shared_ptr<Log> log_service_;
-            boost::shared_ptr<RPCServer> rpcserver_;
+            boost::shared_ptr<iofwd::RPCServer> rpcserver_;
             iofwdutil::IOFWDLogSource & log_;
 
             boost::scoped_ptr<iofwd::tasksm::TaskSMFactory> sm_factory_;

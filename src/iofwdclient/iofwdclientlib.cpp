@@ -3,7 +3,8 @@
 
 #include "src/zoidfs/zoidfs.h"
 #include "src/zoidfs/zoidfs-async.h"
-
+#include "src/iofwdclient/iofwdclientlib.hh"
+#include <stdio.h>
 using namespace zoidfs;
 
 namespace iofwdclient
@@ -55,6 +56,18 @@ namespace iofwdclient
          ASSERT(client_);
          return client_->getattr (handle, attr, op_hint);
       }
+
+      int zoidfs_lookup(const zoidfs::zoidfs_handle_t *parent_handle,
+                       const char *component_name, 
+                       const char *full_path,
+                       zoidfs::zoidfs_handle_t *handle,
+                       zoidfs::zoidfs_op_hint_t * op_hint)
+      {
+//         ASSERT(client_);
+         printf("HERE");
+         return client_->lookup (parent_handle, component_name, full_path,
+                                 handle, op_hint);
+      }                              
 
       //---------------------------------------------------------------------
       //---- zoidfs-async.h functions ---------------------------------------

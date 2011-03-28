@@ -7,7 +7,9 @@
 #include "iofwdclient/ASClient.hh"
 
 #include "iofwdutil/IOFWDLog-fwd.hh"
+#include "iofwd/RPCClient.hh"
 
+#include <boost/shared_ptr.hpp>
 namespace iofwdclient
 {
    //========================================================================
