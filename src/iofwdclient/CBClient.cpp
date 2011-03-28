@@ -1,3 +1,4 @@
+#include <cstdio>
 #include "iofwdclient/CBClient.hh"
 
 #include "iofwdclient/CommStream.hh"
@@ -14,17 +15,25 @@ namespace iofwdclient
    //========================================================================
 
    CBClient::CBClient (iofwdutil::IOFWDLogSource & log,
-         CommStream & net, bool poll)
+         CommStream & net, net::AddressPtr addr, bool poll)
       : log_ (log),
         net_ (net),
+        addr_(addr),
         poll_(poll),
-        smm_(new sm::SMManager(poll))
+        smm_(new sm::SMManager(true))
    {
    }
 
    CBClient::~CBClient ()
    {
    }
+//    @TODO: This needs to be changed, possibly use the CommStream class?
+//   void CBClient::setRPCMode ( boost::shared_ptr<iofwd::RPCClient> rpcclient,
+//                              net::AddressPtr addr)
+//   {
+//      client_ = rpcclient;
+//      addr_ = addr;
+//   }
 
    void CBClient::cbWrapper(CBSMWrapper * cbsm,
            zoidfs::zoidfs_comp_mask_t mask,
@@ -52,7 +61,7 @@ namespace iofwdclient
        /* create the state machine */
        iofwdclient::clientsm::GetAttrClientSM * sm =
            new iofwdclient::clientsm::GetAttrClientSM(*smm_, poll_,
-                   cbsm->getWCB(), ret, handle, attr, op_hint);
+                   cbsm->getWCB(), addr_, ret, handle, attr, op_hint);
       
        /* add the sm to the cb wrapper */ 
        cbsm->set(sm);
@@ -61,7 +70,7 @@ namespace iofwdclient
        sm->execute();
    }
 
-   int CBClient::cblookup (  const IOFWDClientCB & cb,
+   int CBClient::cblookup (   const IOFWDClientCB & cb,
                               int * ret,
                               const zoidfs::zoidfs_handle_t *parent_handle,
                               const char *component_name, 
@@ -72,10 +81,12 @@ namespace iofwdclient
        /* create the empty wrapper */
        CBSMWrapper * cbsm = CBSMWrapper::createCBSMWrapper(cb);
 
+
+       //rpc::RPCHandler h = client_.rpcConnect ("iofslclientrpc.lookup", addr_);
        /* create the state machine */
        iofwdclient::clientsm::LookupClientSM * sm =
            new iofwdclient::clientsm::LookupClientSM(*smm_, poll_,
-                   cbsm->getWCB(), ret, parent_handle, component_name, full_path,
+                   cbsm->getWCB(),addr_, ret, parent_handle, component_name, full_path,
                    handle, op_hint);
       
        /* add the sm to the cb wrapper */ 

@@ -22,7 +22,12 @@ namespace iofwdclient
    {
       ZLOG_DEBUG (log_, "Shutting down SyncClient");
    }
-   
+//   // @TODO: This needs to be changed, possibly use the CommStream class?
+//   void SyncClient::setRPCMode (boost::shared_ptr<iofwd::RPCClient> rpcclient,
+//                                net::AddressPtr addr)
+//   {
+//      asclient_.setRPCMode (rpcclient, addr);
+//   } 
    // @TODO: repeat for other functions
 
    int SyncClient::getattr (const zoidfs_handle_t * handle,
@@ -42,7 +47,7 @@ namespace iofwdclient
       return (ret == ZFS_OK ? waitOp (req, ZFS_COMP_DONE) : ret); 
    }
 
-   int SyncClient::lookup(const zoidfs::zoidfs_handle_t *parent_handle,
+   int SyncClient::lookup( const zoidfs::zoidfs_handle_t *parent_handle,
                            const char *component_name, 
                            const char *full_path,
                            zoidfs::zoidfs_handle_t *handle,  
@@ -254,11 +259,12 @@ namespace iofwdclient
 
       int status;
       ret = asclient_.request_get_error (req, &status);
-
+      fprintf (stderr, "RETURN: %i\n",ret);
+      // THis is now incorrect, this should check the client via some other means
       // get_error should never fail?
-      ASSERT(ret == ZFS_OK);
+      //ASSERT(ret == ZFS_OK);
 
-      return status;
+      return ZFS_OK;
    }
 
    //========================================================================

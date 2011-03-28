@@ -43,4 +43,5 @@ src/zoidfs/util/zoidfs-ops.hh \
 src/zoidfs/util/zoidfs-ops.cpp \
 src/zoidfs/util/ZoidFSBlockAsync.hh \
 src/zoidfs/util/ZoidFSBlockAsync.cpp \
+src/zoidfs/util/ZoidFSBlockAsync.cpp \
 src/zoidfs/util/ZoidFSFileSpec.hh 

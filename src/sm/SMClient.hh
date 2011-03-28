@@ -3,7 +3,7 @@
 
 #include <boost/intrusive_ptr.hpp>
 #include "iofwdutil/IntrusiveHelper.hh"
-
+#include "iofwdevent/CBException.hh"
 namespace sm
 {
 //===========================================================================
@@ -17,7 +17,7 @@ public:
     * desired; If false is returned, it will immediately be rescheduled.
     */
    virtual bool execute () = 0;
-
+   void init (iofwdevent::CBException & e) {};
    virtual ~SMClient ();
 };
 

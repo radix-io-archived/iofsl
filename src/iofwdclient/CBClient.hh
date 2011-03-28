@@ -14,7 +14,9 @@
 #include "sm/SMClient.hh"
 
 #include <boost/scoped_ptr.hpp>
-
+#include "iofwd/RPCClient.hh"
+#include "rpc/RPCHandler.hh"
+#include <boost/shared_ptr.hpp>
 /*==========================================================================*/
 /* CBClient Creation Macros */
 #include <boost/preprocessor/seq/for_each.hpp>
@@ -74,12 +76,13 @@ namespace iofwdclient
    {
       public:
          CBClient (iofwdutil::IOFWDLogSource & log,
-               CommStream & net, bool poll = true);
+               CommStream & net, net::AddressPtr addr, bool poll = true);
 
          ~CBClient ();
 
       public:
-
+//         void setRPCMode ( boost::shared_ptr<iofwd::RPCClient> rpcclient,
+//                           net::AddressPtr addr);
          void cbgetattr (const IOFWDClientCB & cb,
                int * ret,
                const zoidfs::zoidfs_handle_t * handle,
@@ -295,7 +298,8 @@ namespace iofwdclient
          iofwdutil::IOFWDLogSource & log_;
          CommStream & net_;
          bool poll_;
-
+         boost::shared_ptr<iofwd::RPCClient> client_;
+         net::AddressPtr addr_;
          boost::scoped_ptr<sm::SMManager> smm_;
    };
 

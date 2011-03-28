@@ -1,5 +1,8 @@
-#ifndef IOFWDCLIENT_SM_GETATTRCLIENTSM
-#define IOFWDCLIENT_SM_GETATTRCLIENTSM
+#ifndef IOFWDCLIENT_SM_LookupClientSM
+#define IOFWDCLIENT_SM_LookupClientSM
+
+#include "iofwdclient/streamwrappers/ZoidFSStreamWrappers.hh"
+#include "iofwdclient/streamwrappers/LookupStreams.hh"
 
 #include "sm/SMManager.hh"
 #include "sm/SimpleSM.hh"
@@ -13,8 +16,6 @@
 
 #include "zoidfs/zoidfs.h"
 
-#include "iofwdclient/streamwrappers/ZoidFSStreamWrappers.hh"
-
 #include <cstdio>
 
 namespace iofwdclient
@@ -24,31 +25,34 @@ namespace iofwdclient
     namespace clientsm
     {
 
-class GetAttrClientSM :
-    public sm::SimpleSM< iofwdclient::clientsm::GetAttrClientSM >
+class LookupClientSM :
+    public sm::SimpleSM< iofwdclient::clientsm::LookupClientSM >
 {
     public:
-        GetAttrClientSM(sm::SMManager & smm,
+        LookupClientSM(sm::SMManager & smm,
                 bool poll,
                 const IOFWDClientCB & cb,
                 net::AddressPtr addr,
                 int * ret,
-                const zoidfs::zoidfs_handle_t * handle,
-                zoidfs::zoidfs_attr_t * attr,
+                const zoidfs::zoidfs_handle_t *parent_handle,
+                const char *component_name, 
+                const char *full_path,
+                zoidfs::zoidfs_handle_t *handle,  
                 zoidfs::zoidfs_op_hint_t * op_hint) :
-            sm::SimpleSM< iofwdclient::clientsm::GetAttrClientSM >(smm, poll),
+            sm::SimpleSM< iofwdclient::clientsm::LookupClientSM >(smm, poll),
             slots_(*this),
             cb_(cb),
             ret_(ret),
-            in_(GetAttrInStream(handle, op_hint)),
-            out_(attr, op_hint),
+            in_(LookupInStream(parent_handle, component_name, full_path, op_hint)),
+            out_(handle, op_hint),
             server_sm_(NULL)
         {
-            fprintf(stderr, "%s:%i\n", __func__, __LINE__);
             addr_ = addr;
+            fprintf(stderr, "%s:%i\n", __func__, __LINE__);
         }
 
-        ~GetAttrClientSM();
+        ~LookupClientSM();
+
         void init(iofwdevent::CBException e);
 
         void postRPCServerSM(iofwdevent::CBException e);
@@ -59,15 +63,15 @@ class GetAttrClientSM :
     protected:
         enum {BASE_SLOT = 0, NUM_BASE_SLOTS};
         sm::SimpleSlots<NUM_BASE_SLOTS,
-            iofwdclient::clientsm::GetAttrClientSM> slots_;
+            iofwdclient::clientsm::LookupClientSM> slots_;
 
         const IOFWDClientCB & cb_;
         int * ret_;
 
-        GetAttrInStream in_;
-        GetAttrOutStream out_;
+        streamwrappers::LookupInStream in_;
+        streamwrappers::LookupOutStream out_;
         net::AddressPtr addr_;
-        sm::SMClientSharedPtr server_sm_;
+        sm::SMClient * server_sm_;
 };
 
     }

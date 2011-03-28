@@ -5,7 +5,9 @@
 
 #include "iofwdutil/IOFWDLog.hh"
 #include "iofwdutil/assert.hh"
+#include "iofwd/RPCClient.hh"
 
+#include <boost/shared_ptr.hpp>
 using namespace zoidfs;
 
 namespace iofwdclient
@@ -24,7 +26,13 @@ namespace iofwdclient
    ASClient::~ASClient ()
    {
    }
-   
+   // @TODO: This needs to be changed, possibly use the CommStream class?
+//   void ASClient::setRPCMode (boost::shared_ptr<iofwd::RPCClient> rpcclient,
+//                              net::AddressPtr addr)
+//   {
+//      cbclient_.setRPCMode (rpcclient, addr);
+//   }   
+
    IOFWDRequest * ASClient::getRequest (zoidfs::zoidfs_request_t req) const
    {
       return static_cast<IOFWDRequest*> (req);
@@ -116,7 +124,7 @@ namespace iofwdclient
    }
 
 
-   int ASClient::ilookup(zoidfs::zoidfs_request_t * request,
+   int ASClient::ilookup(   zoidfs::zoidfs_request_t * request,
                             const zoidfs::zoidfs_handle_t *parent_handle,
                             const char *component_name, 
                             const char *full_path,
@@ -125,9 +133,9 @@ namespace iofwdclient
    {
             // validate arguments
       // Can op_hint be 0?
-      if (*request || !parent_handle || !component_name || !full_path ||
-          !handle)
-         return ZFSERR_INVAL;
+//      if (*request || !parent_handle || !component_name || !full_path ||
+//          !handle)
+//         return ZFSERR_INVAL;
 
       // Create request
       //   newRequest automatically increments the refcount to compensate for

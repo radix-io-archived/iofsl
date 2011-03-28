@@ -15,7 +15,7 @@
 
 #include "iofwd/RPCClient.hh"
 #include "iofwd/service/ServiceManager.hh"
-
+#include "iofwdevent/SingleCompletion.hh"
 #include "iofwdevent/ZeroCopyInputStream.hh"
 #include "iofwdevent/ZeroCopyOutputStream.hh"
 
@@ -23,6 +23,10 @@
 #include "zoidfs/zoidfs-rpc.h"
 
 #include "rpc/RPCEncoder.hh"
+#include "iofwd/Net.hh"
+
+#include "net/Address.hh"
+#include "net/Net.hh"
 
 #include <cstdio>
 
@@ -46,15 +50,22 @@ class RPCServerSM :
                 const iofwdevent::CBType & cb,
                 std::string rpc_func,
                 const InStream & in,
-                OutStream & out) :
+                OutStream & out,
+                net::AddressPtr addr) :
             sm::SimpleSM< iofwdclient::clientsm::RPCServerSM <InStream,OutStream> >(smm, poll),
             slots_(*this),
             cb_(cb),
             rpc_func_(rpc_func),
-            rpc_client_(iofwd::service::ServiceManager::instance().loadService<iofwd::RPCClient>("rpcclient")),
             e_(in),
-            d_(out)
+            d_(out),
+            rpc_client_(iofwd::service::ServiceManager::instance().loadService<iofwd::RPCClient>("rpcclient")),
+            addr_(addr)
         {
+//            iofwd::service::ServiceManager & man = iofwd::service::ServiceManager::instance ();
+//            man.registerService ("rpcclient", iofwd::RPCClient);
+//            rpc_client_ = man.loadService<iofwd::RPCClient>("rpcclient");
+//            rpc_client_(iofwd::service::ServiceManager::instance().loadService<iofwd::RPCClient>("rpcclient")),
+            fprintf(stderr, "RPCServerSM:%s:%s\n",in.full_path_, in.component_name_);
             fprintf(stderr, "%s:%i\n", __func__, __LINE__);
         }
 
@@ -64,39 +75,46 @@ class RPCServerSM :
 
         void init(iofwdevent::CBException e)
         {
+            fprintf(stderr, "RPCServerSM:%s:%i\n", __func__, __LINE__);
             e.check();
             setNextMethod(&RPCServerSM<InStream,OutStream>::postSetupConnection);
         }
 
         void postSetupConnection(iofwdevent::CBException e)
         {
+            fprintf(stderr, "RPCServerSM:%s:%i\n", __func__, __LINE__);
             e.check();
 
             /* get the max size */
             e_.net_data_size_ = rpc::getRPCEncodedSize(InStream()).getMaxSize();
 
             /* TODO how the heck do we get / set the address? */
-
             /* get a handle for this RPC */
+
+
             rpc_handle_ = rpc_client_->rpcConnect(rpc_func_.c_str(), addr_);
             e_.zero_copy_stream_.reset((rpc_handle_->getOut()));
 
-            /* setup the write stream */
-            e_.zero_copy_stream_->write(&e_.data_ptr_, &e_.data_size_, slots_[BASE_SLOT],
-                    e_.net_data_size_);
 
-            slots_.wait(BASE_SLOT,
-                    &RPCServerSM<InStream,OutStream>::waitSetupConnection);
+            iofwdevent::SingleCompletion block;
+            /* setup the write stream */
+            block.reset();
+            e_.zero_copy_stream_->write(&e_.data_ptr_, &e_.data_size_, block,
+                    e_.net_data_size_);
+            block.wait();
+            setNextMethod (&RPCServerSM<InStream,OutStream>::waitSetupConnection);
         }
 
         void waitSetupConnection(iofwdevent::CBException e)
         {
+            fprintf(stderr, "RPCServerSM:%s:%i\n", __func__, __LINE__);
             e.check();
             setNextMethod(&RPCServerSM<InStream,OutStream>::postEncodeData);
         }
 
         void postEncodeData(iofwdevent::CBException e)
         {
+            fprintf(stderr, "RPCServerSM:%s:%i\n", __func__, __LINE__);
             e.check();
 
             /* create the encoder */
@@ -104,64 +122,80 @@ class RPCServerSM :
 
             process(e_.coder_, e_.data_);
 
-            e_.zero_copy_stream_->rewindOutput(e_.net_data_size_ - e_.coder_.getPos(), slots_[BASE_SLOT]);
-
-            slots_.wait(BASE_SLOT,
-                    &RPCServerSM<InStream,OutStream>::waitEncodeData);
+            iofwdevent::SingleCompletion block;
+            block.reset();
+            e_.zero_copy_stream_->rewindOutput(e_.net_data_size_ - e_.coder_.getPos(), block);
+            block.wait();
+            
+            setNextMethod(&RPCServerSM<InStream,OutStream>::waitEncodeData);
+//            slots_.wait(BASE_SLOT,
+//                    &RPCServerSM<InStream,OutStream>::waitEncodeData);
         }
 
         void waitEncodeData(iofwdevent::CBException e)
         {
+            fprintf(stderr, "RPCServerSM:%s:%i\n", __func__, __LINE__);
             e.check();
             setNextMethod(&RPCServerSM<InStream,OutStream>::postFlush);
         }
 
         void postFlush(iofwdevent::CBException e)
         {
+            fprintf(stderr, "RPCServerSM:%s:%i\n", __func__, __LINE__);
             e.check();
 
-            /* flush the connection */
-            e_.zero_copy_stream_->flush(slots_[BASE_SLOT]);
-
-            slots_.wait(BASE_SLOT,
-                    &RPCServerSM<InStream,OutStream>::waitFlush);
+            // Before we can access the output channel we need to wait until the RPC
+            // code did its thing
+            iofwdevent::SingleCompletion block;
+            block.reset();
+            e_.zero_copy_stream_->flush(block);
+            block.wait();
+            setNextMethod ( &RPCServerSM<InStream,OutStream>::waitFlush);
+//            slots_.wait(BASE_SLOT,
+//                    &RPCServerSM<InStream,OutStream>::waitFlush);
         }
 
         void waitFlush(iofwdevent::CBException e)
         {
+            fprintf(stderr, "RPCServerSM:%s:%i\n", __func__, __LINE__);
             e.check();
             setNextMethod(&RPCServerSM<InStream,OutStream>::postDecodeData);
         }
 
         void postDecodeData(iofwdevent::CBException e)
         {
-            e.check();
-
+            fprintf(stderr, "RPCServerSM:%s:%i\n", __func__, __LINE__);
+            e.check();      
             d_.zero_copy_stream_.reset((rpc_handle_->getIn()));
-
             /* get the max size */
             d_.net_data_size_ = rpc::getRPCEncodedSize(OutStream()).getMaxSize();
-
+   
+            iofwdevent::SingleCompletion block;
+            block.reset();
             d_.zero_copy_stream_->read(const_cast<const void **>(&d_.data_ptr_),
-                    &d_.data_size_, slots_[BASE_SLOT], d_.net_data_size_);
+                    &d_.data_size_, block, d_.net_data_size_);
+            block.wait();
+            setNextMethod (&RPCServerSM<InStream,OutStream>::waitDecodeData);
+//            slots_.wait(BASE_SLOT,
+//                    &RPCServerSM<InStream,OutStream>::waitDecodeData);
 
-            slots_.wait(BASE_SLOT,
-                    &RPCServerSM<InStream,OutStream>::waitDecodeData);
         }
 
         void waitDecodeData(iofwdevent::CBException e)
         {
+            fprintf(stderr, "RPCServerSM:%s:%i\n", __func__, __LINE__);
             e.check();
 
             d_.coder_ = rpc::RPCDecoder(d_.data_ptr_, d_.data_size_);
 
             process(d_.coder_, d_.data_);
-
+            fprintf(stderr, "SIZE: %i, POS: %i\n", d_.coder_.getPos(), d_.data_size_);
             if(d_.coder_.getPos() != d_.data_size_)
             {
                 fprintf(stderr, "%s:%i ERROR undecoded data...\n", __func__,
                         __LINE__);
             }
+            cb_ ( * (new iofwdevent::CBException()));
         }
 
     protected:

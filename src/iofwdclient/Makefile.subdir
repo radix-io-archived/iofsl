@@ -14,7 +14,6 @@ CPPCLIENTLIB += \
     src/iofwdclient/ASClient.hh \
     src/iofwdclient/ASClient.cpp \
     src/iofwdclient/ScopedRequest.hh \
-    src/iofwdclient/iofwdclientlib.cpp \
     src/iofwdclient/CommStream.hh \
     src/iofwdclient/CommStream.cpp \
     src/iofwdclient/PollQueue.hh \
@@ -31,7 +30,20 @@ CPPCLIENTLIB += \
     src/iofwdclient/clientsm/CreateClientSM.cpp \
     src/iofwdclient/clientsm/LookupClientSM.hh \
     src/iofwdclient/clientsm/LookupClientSM.cpp \
-    src/iofslclient/streamwrappers/LookupStreams.hh 
+    src/iofwdclient/streamwrappers/LookupStreams.hh \
+    src/iofwdclient/streamwrappers/GetAttrInStream.hh \
+    src/iofwdclient/streamwrappers/GetAttrOutStream.hh \
+    src/iofwdclient/iofwdclientlib.hh \
+    src/iofwdclient/LinkHelper.hh \
+    src/iofwdclient/LinkHelper.cpp 
+#    src/iofwdclient/iofwdclientlib.hh 
+#    
+#    src/iofwdclient/directclient/LookupStream.hh \
+#    src/iofwdclient/directclient/LookupStream.cpp \
+#    src/iofwdclient/directclient/IOFWDClient.hh \
+#    src/iofwdclient/directclient/IOFWDClient.cpp \
+#    src/iofwdclient/directclient/RPCCommClass.cpp \
+#    src/iofwdclient/directclient/RPCCommClass.hh 
 
 #    src/iofwdclient/streamwrappers/GetAttrInStream.hh \
 #    src/iofwdclient/streamwrappers/GetAttrOutStream.hh 
