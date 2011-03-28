@@ -35,6 +35,16 @@
 
 #include "c-util/configfile.h"
 
+/*
+ * Lustre group locks. Copied from lustre_user.h
+ *
+ * Needs lustre_group_locks = true in config file.
+ *
+ */
+#include <sys/ioctl.h>
+#define LL_IOC_GROUP_LOCK               _IOW ('f', 158, long)
+#define LL_IOC_GROUP_UNLOCK             _IOW ('f', 159, long)
+
 #ifndef NDEBUG
 static int do_debug = 0;
 #define zoidfs_debug(format, ...) if (do_debug) fprintf (stderr, "zoidfs_posix: debug: " format, ##__VA_ARGS__)
@@ -50,6 +60,8 @@ static int posix_initialized                = 0;
 
 static fcache_handle fcache;
 static dcache_handle dcache;
+
+static int opt_lustre_group_locks           = 0;
 
 /* ======================================================================== */
 
@@ -668,6 +680,20 @@ static int getfd_handle (const zoidfs_handle_t * handle, Descriptor * desc, int 
 
       /* we got here, have obtained locked (in cache) file descriptor */
 
+      /* lustre group locks: set group lock bit on file descriptor
+       * Note: we don't release lock, will be done when file descriptor is
+       * closed. */
+      if (opt_lustre_group_locks)
+      {
+         long gid = 7;
+         int ret = ioctl(fd, LL_IOC_GROUP_LOCK, gid);
+         if (ret == -1)
+         {
+            // ioctl failed
+            zoidfs_debug ("LL_IOC_GROUP_LOCK failed: %i", ret);
+         }
+      }
+
    } while (0);
 
    return 1;
@@ -1277,9 +1303,27 @@ static int zoidfs_posix_resolve_path (const char * local_path,
    return ZFS_OK;
 }
 
-static int zoidfs_posix_set_options(ConfigHandle UNUSED(c), SectionHandle UNUSED(s))
+static int zoidfs_posix_set_options(ConfigHandle c, SectionHandle s)
 {
-    return ZFS_OK;
+   char buf[255];
+   int len = cf_getKey (c, s, "lustre_group_locks", &buf[0], sizeof(buf));
+   if (len > 0)
+   {
+      buf[sizeof(buf)-1] = 0;
+      if (strcmp (buf, "0") == 0)
+      {
+         opt_lustre_group_locks = 0;
+      }
+      else if (strcmp (buf, "1") == 0)
+      {
+         opt_lustre_group_locks = 1;
+      }
+      else
+      {
+          zoidfs_debug("lustre_group_locks needs to be set to 0 or 1!");
+      }
+   }
+   return ZFS_OK;
 }
 
 zint_handler_t posix_handler = {
