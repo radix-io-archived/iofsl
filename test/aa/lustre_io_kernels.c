@@ -20,6 +20,7 @@
 #define HOSTNAMELEN 128
 char FILENAME[8192]; // "/scratch/copej/data/satest.data"
 
+static int enable_grouplocks = 0;
 static int enable_trace = 0;
 static int enable_verbose = 0;
 static int enable_mode = 0;
@@ -36,10 +37,13 @@ void lustre_lock(int fd)
     int ret = 0;
     int gid = 7;
 
-    ret = ioctl(fd, LL_IOC_GROUP_LOCK, gid);
-    if(ret != 0)
+    if(enable_grouplocks)
     {
-        fprintf(stderr, "%s:%i ERROR: could not acquire lustre group lock (gid = %i)\n", __func__, __LINE__, gid);
+        ret = ioctl(fd, LL_IOC_GROUP_LOCK, gid);
+        if(ret != 0)
+        {
+            fprintf(stderr, "%s:%i ERROR: could not acquire lustre group lock (gid = %i)\n", __func__, __LINE__, gid);
+        }
     }
 
     /* wait for everyone to lock */
@@ -54,10 +58,13 @@ void lustre_unlock(int fd)
     /* wait for everyone to unlock */
     MPI_Barrier(MPI_COMM_WORLD);
 
-    ret = ioctl(fd, LL_IOC_GROUP_UNLOCK, gid);
-    if(ret != 0)
+    if(enable_grouplocks)
     {
-        fprintf(stderr, "%s:%i ERROR: could not release lustre group lock (gid = %i)\n", __func__, __LINE__, gid);
+        ret = ioctl(fd, LL_IOC_GROUP_UNLOCK, gid);
+        if(ret != 0)
+        {
+            fprintf(stderr, "%s:%i ERROR: could not release lustre group lock (gid = %i)\n", __func__, __LINE__, gid);
+        }
     }
 }
 
@@ -632,6 +639,7 @@ int parse_options(int argc, char ** argv)
             {"verbose", 0, 0, 'v'},
             {"file", 1, 0, 'f'},
             {"mode", 1, 0, 'm'},
+            {"grouplocks", 0, 0, 'g'},
             {"cpn", 1, 0, 'c'},
             {"buffersize", 1, 0, 'b'},
             {"numreps", 1, 0, 'n'},
@@ -639,7 +647,7 @@ int parse_options(int argc, char ** argv)
             {0, 0, 0, 0}
         };
 
-        c = getopt_long(argc, argv, "tvf:m:c:b:n:h", long_options, &option_index);
+        c = getopt_long(argc, argv, "gtvf:m:c:b:n:h", long_options, &option_index);
 
         if(c == -1)
         {
@@ -651,6 +659,11 @@ int parse_options(int argc, char ** argv)
             case 't':
             {
                 enable_trace = 1;
+                break;
+            }
+            case 'g':
+            {
+                enable_grouplocks = 1;
                 break;
             }
             case 'v':
