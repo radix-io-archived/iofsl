@@ -21,6 +21,7 @@
 
 #include "iofwdutil/IOFSLKey.hh"
 #include "iofwdutil/IOFSLKeyValueStorage.hh"
+#include "iofwdutil/ThreadPool.hh"
 
 SERVICE_REGISTER(iofwd::extraservice::AtomicAppendServerRPC, aarpc);
 
@@ -37,19 +38,35 @@ namespace iofwd
          /**
           * Conveniently create a thread to handle the RPC call
           */
+#ifndef USE_CRAY_TP
          static void threadRPC(const rpc::RPCHandler & h,
                ZeroCopyInputStream * in, ZeroCopyOutputStream * out,
                const rpc::RPCInfo & info)
          {
-            boost::thread(boost::bind(h, in, out, info));
+             /* create a new thread */
+             boost::thread(boost::bind(h, in, out, info));
          }
+#else
+         static void threadpoolRPC(const rpc::RPCHandler & h,
+               ZeroCopyInputStream * in, ZeroCopyOutputStream * out,
+               const rpc::RPCInfo & info)
+         {
+             boost::function<void(void)> f = boost::bind(h, in, out, info);
+
+             /* submit to the threadpool */
+             iofwdutil::ThreadPool::instance().submitWorkUnit(f,
+                     iofwdutil::ThreadPool::HIGH);
+         }
+#endif
 
          rpc::RPCHandler rpcExec(const rpc::RPCHandler & orig)
          {
+#ifndef USE_CRAY_TP 
             return boost::bind(&threadRPC, orig, _1, _2, _3);
+#else
+            return boost::bind(&threadpoolRPC, orig, _1, _2, _3);
+#endif
          }
-
-
       }
 
       std::string AtomicAppendServerRPC::aarpc_master_addr_ = std::string("");
