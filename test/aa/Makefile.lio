@@ -1,0 +1,15 @@
+CC=/opt/openmpi-1.4.3/bin/mpicc
+#CC=mpicc
+CFLAGS=-D_LARGEFILE64_SOURCE -D_FILE_OFFSET_BITS=64
+
+all: lustre_io_kernels
+
+lustre_io_kernels: lustre_io_kernels.o
+	$(CC) -o lustre_io_kernels lustre_io_kernels.o
+
+lustre_io_kernels.o: lustre_io_kernels.c
+	$(CC) $(CFLAGS) -o lustre_io_kernels.o -c lustre_io_kernels.c
+
+.PHONY : clean
+clean:
+	rm -rf *.o lustre_io_kernels

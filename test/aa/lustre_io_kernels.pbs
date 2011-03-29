@@ -1,0 +1,87 @@
+#!/bin/bash
+#PBS -N lio_kernels 
+#PBS -j oe
+#PBS -l walltime=08:00:00,nodes=30
+#PBS -l prologue=/home/copej/iofsl/scripts/prologue_script.sh
+#PBS -l epilogue=/home/copej/iofsl/scripts/epilogue_script.sh 
+
+# change to the dir where the job was submitted
+cd $PBS_O_WORKDIR
+
+# set the max stack size to 1MB
+ulimit -s 1024
+
+# dump the ulimit params
+ulimit -a
+
+# how many iterations are we going to run this experiment for
+ITRLIMIT=1
+for SEQC in `seq 1 $ITRLIMIT`
+do
+
+        for SSIZE in "4m"
+        do
+	    #
+	    # size for variables for this experiment
+	    #
+	    CORES_PER_NODE=12
+	    CLIENTS_PER_NODE=12
+            PBS_NNODES=`cat $PBS_NODEFILE | sort | uniq | wc -l`
+            NUMHOST=$PBS_NNODES
+            PBS_NNODES=`expr $PBS_NNODES \* $CORES_PER_NODE`
+	    LUSTRE_STRIPE_LENGTH="$SSIZE"
+            IOR_TSIZE="$SSIZE"
+
+            echo "Nodes: $NUMHOST Cores: $PBS_NNODES"
+
+            rm ./client.nodes
+            rm ./client.nodes.invert
+            rm ./client.nodes.tmp
+            cat $PBS_NODEFILE | sort > ./client.nodes.tmp
+            for NI in `seq 1 $CORES_PER_NODE`
+            do
+                for NODE in `cat ./client.nodes.tmp`
+                do
+                    echo $NODE >> ./client.nodes
+                done
+            done
+
+            for NODE in `cat ./client.nodes.tmp`
+            do
+                for NI in `seq 1 $CORES_PER_NODE`
+                do
+                    echo $NODE >> ./client.nodes.invert
+                done
+            done
+
+            for B in "4194304"
+            do
+                # setup the data paths
+                APP_DATA_DIR="/scratch/copej/data"
+
+                lfs setstripe $APP_DATA_DIR -s $B -i -1 -c $NUMHOST 
+                lfs getstripe $APP_DATA_DIR 
+
+	        # get the node names
+                CLIENT_APP="/home/copej/iofsl/satest/lustre_io_kernels"
+
+                rm out.txt
+                #for N in "16" "64" "256" "1024"
+                for N in "128" "256" "512"
+                do
+	            for I in `seq 1 3`
+	            do
+                        echo "NP = $PBS_NNODES N = $N I = $I B = $B" >> ./$PBS_JOBNAME.out.$PBS_JOBID 2>&1
+                        CLIENT_ARGS="-c $CORES_PER_NODE -b $B -n $N -f /scratch/copej/data/lio.test.data"
+		        /opt/openmpi-1.4.3/bin/mpiexec --hostfile ./client.nodes -np $PBS_NNODES $CLIENT_APP -m 0 $CLIENT_ARGS >> ./$PBS_JOBNAME.out.$PBS_JOBID 2>&1
+		        /opt/openmpi-1.4.3/bin/mpiexec --hostfile ./client.nodes -np $PBS_NNODES $CLIENT_APP -m 1 $CLIENT_ARGS >> ./$PBS_JOBNAME.out.$PBS_JOBID 2>&1
+		        /opt/openmpi-1.4.3/bin/mpiexec --hostfile ./client.nodes -np $PBS_NNODES $CLIENT_APP -m 2 $CLIENT_ARGS >> ./$PBS_JOBNAME.out.$PBS_JOBID 2>&1
+		        /opt/openmpi-1.4.3/bin/mpiexec --hostfile ./client.nodes.invert -np $PBS_NNODES $CLIENT_APP -m 3 $CLIENT_ARGS >> ./$PBS_JOBNAME.out.$PBS_JOBID 2>&1
+		        /opt/openmpi-1.4.3/bin/mpiexec --hostfile ./client.nodes.invert -np $PBS_NNODES $CLIENT_APP -m 4 $CLIENT_ARGS >> ./$PBS_JOBNAME.out.$PBS_JOBID 2>&1
+	            done
+                done
+            done
+        done
+done
+
+echo "script done..."
