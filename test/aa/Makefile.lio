@@ -1,14 +1,20 @@
-CC=/opt/openmpi-1.4.3/bin/mpicc
-#CC=mpicc
+#CC=/opt/openmpi-1.4.3/bin/mpicc
+CC=mpicc
+CXX=mpic++
+
 CFLAGS=-D_LARGEFILE64_SOURCE -D_FILE_OFFSET_BITS=64
 
-all: lustre_io_kernels
+-include Makefile.$(system hostname)
+
+all: lustre_io_kernels mpi-io-test
 
 lustre_io_kernels: lustre_io_kernels.o
 	$(CC) -o lustre_io_kernels lustre_io_kernels.o
 
 lustre_io_kernels.o: lustre_io_kernels.c
 	$(CC) $(CFLAGS) -o lustre_io_kernels.o -c lustre_io_kernels.c
+
+mpi-io-test: mpi-io-test.cpp
 
 .PHONY : clean
 clean:
