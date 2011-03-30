@@ -3,7 +3,7 @@
 
 #include "zoidfs/zoidfs-async.h"
 #include "zoidfs/zoidfs-rpc.h"
-
+#include "iofwdevent/CBType.hh"
 #include <cstdio>
 
 namespace iofwdclient
@@ -24,23 +24,19 @@ void LookupClientSM::init(iofwdevent::CBException e)
 
 void LookupClientSM::postRPCServerSM(iofwdevent::CBException e)
 {
-    fprintf(stderr, "%s:%i\n", __func__, __LINE__);
+    fprintf(stderr, "LookupClientSM:%s:%i\n", __func__, __LINE__);
     e.check();
-    fprintf(stderr, "%s:%i\n", __func__, __LINE__);    
-    RPCServerSM< LookupInStream, LookupOutStream > * tmp = new RPCServerSM< LookupInStream, LookupOutStream >(smm_,
-            poll_, slots_[BASE_SLOT], ZOIDFS_LOOKUP_RPC, in_, out_, addr_);
-    fprintf(stderr, "%s:%i\n", __func__, __LINE__);
-    server_sm_ = tmp;
-    fprintf(stderr, "%s:%i\n", __func__, __LINE__);
-    smm_.schedule(server_sm_);
-    fprintf(stderr, "%s:%i\n", __func__, __LINE__);
+
+    /* Runs the RPC Client State Machine */
+    comm_->connect(in_, out_, slots_[BASE_SLOT]);
+
+    /* Set up slot wait for completion */
     slots_.wait(BASE_SLOT, &LookupClientSM::waitRPCServerSM);
-    fprintf(stderr, "%s:%i\n", __func__, __LINE__);
 }
 
 void LookupClientSM::waitRPCServerSM(iofwdevent::CBException e)
 {
-    fprintf(stderr, "%s:%i\n", __func__, __LINE__);
+    fprintf(stderr, "LookupClientSM:%s:%i\n", __func__, __LINE__);
     e.check();
     cb_(zoidfs::ZFS_COMP_DONE, e);
 }

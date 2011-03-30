@@ -6,7 +6,7 @@
 #include "zoidfs/zoidfs-async.h"   // for ZFS_COMP_xxxx
 
 #include <boost/date_time/posix_time/posix_time_types.hpp>
-
+#include <cstdio>
 using namespace zoidfs;
 
 namespace iofwdclient
@@ -36,11 +36,13 @@ namespace iofwdclient
    {
       if (millisec == ZOIDFS_TIMEOUT_NOWAIT)
       {
+             fprintf(stderr, "%s:%i\n", __func__, __LINE__);
          cond.wait (l);
          return true;
       }
       else
       {
+    fprintf(stderr, "%s:%i\n", __func__, __LINE__);
          return cond.timed_wait (l, duration (millisec));
       }
    }
@@ -58,18 +60,21 @@ namespace iofwdclient
 
       // Wait until mask matches or until the request goes to error state
       mask = zoidfs_comp_mask_t (mask | ZFS_COMP_ERROR);
-
+      fprintf(stderr, "%s:%x\n", __func__,ptr->getCompletionStatus ());
       while (! (ptr->getCompletionStatus () & mask))
       {
+         fprintf(stderr, "%s:%i\n", __func__, __LINE__);
          if (!smartWait (status_list_cond_, l, millisec))
             return false;
       }
+      fprintf(stderr, "%s:%i\n", __func__, __LINE__);
       return true;
    }
 
    void RequestTracker::updateStatus (const IOFWDRequestPtr & req,
          zoidfs_comp_mask_t mask, const iofwdevent::CBException & e)
    {
+      fprintf(stderr, "%s:%i\n", __func__, __LINE__);
       if (e.hasException ())
       {
          // @TODO: convert exception to error code
@@ -79,9 +84,10 @@ namespace iofwdclient
       }
       else
       {
+      fprintf(stderr, "%s:%i\n", __func__, __LINE__);
          req->setCompletionStatus (mask);
       }
-
+      fprintf(stderr, "%s:%i\n", __func__, __LINE__);
       requestStatusChanged (req);
    }
 
@@ -98,6 +104,7 @@ namespace iofwdclient
       RequestTracker * t = req->getTracker ();
       ALWAYS_ASSERT(t);
       t->updateStatus (req, mask, e);
+      fprintf(stderr, "%s:%x\n", __func__,req->getCompletionStatus ());
    }
 
    IOFWDClientCB RequestTracker::getCB (const IOFWDRequestPtr & ptr)

@@ -11,6 +11,7 @@
 #include "iofwd/RPCClient.hh"
 
 #include <boost/shared_ptr.hpp>
+#include "iofwdclient/IOFWDRequest.hh"
 namespace iofwdclient
 {
    //========================================================================
@@ -177,6 +178,7 @@ namespace iofwdclient
          iofwdutil::IOFWDLogSource & log_;
          CBClient & cbclient_;
          boost::scoped_ptr<RequestTracker> tracker_;
+         IOFWDRequestPtr tmp;
    };
 
    //========================================================================

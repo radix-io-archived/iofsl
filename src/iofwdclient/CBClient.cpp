@@ -8,19 +8,23 @@
 
 #include "iofwdclient/clientsm/GetAttrClientSM.hh"
 #include "iofwdclient/clientsm/LookupClientSM.hh"
+#include "iofwdclient/streamwrappers/LookupStreams.hh"
+#include "iofwdclient/clientsm/RPCCommClientSM.hh"
 using namespace zoidfs;
 
 namespace iofwdclient
 {
-   //========================================================================
+   typedef iofwdclient::clientsm::RPCCommClientSM<LookupInStream, LookupOutStream> RPCCommClientSMLookup;
 
+   //========================================================================
    CBClient::CBClient (iofwdutil::IOFWDLogSource & log,
          CommStream & net, net::AddressPtr addr, bool poll)
       : log_ (log),
         net_ (net),
         addr_(addr),
         poll_(poll),
-        smm_(new sm::SMManager(true))
+        client_(iofwd::service::ServiceManager::instance().loadService<iofwd::RPCClient>("rpcclient")),
+        smm_(new sm::SMManager(poll))
    {
    }
 
@@ -79,14 +83,21 @@ namespace iofwdclient
                               zoidfs::zoidfs_op_hint_t * op_hint)
    {
        /* create the empty wrapper */
+//       cb(zoidfs::ZFS_COMP_DONE, *(new iofwdevent::CBException()));
        CBSMWrapper * cbsm = CBSMWrapper::createCBSMWrapper(cb);
 
+       /* Sets up the handler for the RPC State Machine */
+       /* Should be changed to RPC KEY */
+       rpc::RPCClientHandle rpc_handle; //= client_->rpcConnect(ZOIDFS_LOOKUP_RPC.c_str(), addr_);
+       boost::shared_ptr<RPCCommClientSMLookup> comm;
+       comm.reset(new RPCCommClientSMLookup (smm_, rpc_handle, poll_));
+       
 
        //rpc::RPCHandler h = client_.rpcConnect ("iofslclientrpc.lookup", addr_);
        /* create the state machine */
        iofwdclient::clientsm::LookupClientSM * sm =
-           new iofwdclient::clientsm::LookupClientSM(*smm_, poll_,
-                   cbsm->getWCB(),addr_, ret, parent_handle, component_name, full_path,
+           new iofwdclient::clientsm::LookupClientSM(*smm_, poll_, comm, 
+                   cbsm->getWCB(), ret, parent_handle, component_name, full_path,
                    handle, op_hint);
       
        /* add the sm to the cb wrapper */ 

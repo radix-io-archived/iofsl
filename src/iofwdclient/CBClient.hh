@@ -17,6 +17,9 @@
 #include "iofwd/RPCClient.hh"
 #include "rpc/RPCHandler.hh"
 #include <boost/shared_ptr.hpp>
+
+#include <boost/intrusive_ptr.hpp>
+#include <cstdio>
 /*==========================================================================*/
 /* CBClient Creation Macros */
 #include <boost/preprocessor/seq/for_each.hpp>
@@ -232,12 +235,13 @@ namespace iofwdclient
 
                 void set(sm::SMClient * sm)
                 {
-                    sm_ = sm::SMClientSharedPtr(sm);
+                    sm_ = sm;
                 }
 
                 void call(zoidfs::zoidfs_comp_mask_t mask, const
                         iofwdevent::CBException & cbexception)
                 {
+                    fprintf(stderr, "CBSMWrapper:%s:%i\n", __func__, __LINE__);
                     cb_(mask, cbexception);
                 }
 
@@ -250,10 +254,10 @@ namespace iofwdclient
                 /* prevent stack allocation and copying of CBWrapper objects */
                 CBSMWrapper(const IOFWDClientCB & cb,
                         sm::SMClient * sm = NULL) :
-                    cb_(cb),
                     sm_(sm),
                     wcb_(boost::bind(&CBClient::cbWrapper, this, _1, _2))
                 {
+                   cb_ = cb;
                 }
 
                 CBSMWrapper() : 
@@ -285,8 +289,8 @@ namespace iofwdclient
                 /* access to CBClient::cbWrapper */
                 friend class CBClient;
 
-                const IOFWDClientCB & cb_;
-                sm::SMClientSharedPtr sm_;
+                IOFWDClientCB cb_;
+                sm::SMClient * sm_;
                 const IOFWDClientCB wcb_;
          };
         
@@ -300,7 +304,7 @@ namespace iofwdclient
          bool poll_;
          boost::shared_ptr<iofwd::RPCClient> client_;
          net::AddressPtr addr_;
-         boost::scoped_ptr<sm::SMManager> smm_;
+         boost::shared_ptr<sm::SMManager> smm_;
    };
 
    //========================================================================

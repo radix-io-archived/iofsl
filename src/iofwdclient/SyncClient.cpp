@@ -254,6 +254,7 @@ namespace iofwdclient
       ScopedRequest req (r);
 
       int ret = asclient_.request_test (req, ZOIDFS_TIMEOUT_INF, mask);
+      ASSERT (ret == ZFS_OK);
       if (ret != ZFS_OK)
          return ret;
 

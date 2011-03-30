@@ -3,9 +3,9 @@
 #include "iofwd/service/ServiceManager.hh"
 
 #include "rpc/RPCServer.hh"
-// #include "rpc/bmi/BMIConnector.hh"
+#include "net/bmi/BMIConnector.hh"
 
-#include "rpc/RPCClientWrapper.hh"
+//#include "rpc/RPCClientWrapper.hh"
 #include "rpc/RPCClient.hh"
 
 #include "iofwdevent/SingleCompletion.hh" // temp
@@ -17,6 +17,8 @@
 #include "BMIRPCHelper.hh"
 
 SERVICE_REGISTER(iofwd::BMIRPCClient, bmirpcclient);
+
+
 
 namespace iofwd
 {
@@ -48,11 +50,11 @@ namespace iofwd
       return bmi_service_->getServerCount ();
    }
 
-   rpc::CommChannel BMIRPCClient::operator () (const rpc::RPCKey & key,
+   rpc::bmi::BMIConnector BMIRPCClient::operator () (const rpc::RPCKey & key,
          unsigned int rank)
    {
-      // BMI_addr_t addr  = bmi_service_->getServer (rank);
-      // return connector_ (addr);
+      BMI_addr_t addr  = bmi_service_->getServer (rank);
+      return connector_ (addr);
    }
 
   /* void BMIRPCClient::barrier ()
