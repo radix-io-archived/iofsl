@@ -36,7 +36,7 @@ namespace iofwd
 
          unsigned int size () const;
 
-         rpc::CommChannel operator () (const rpc::RPCKey & key,
+        rpc::bmi::BMIConnector operator () (const rpc::RPCKey & key,
                                        unsigned int rank);
 
       protected:

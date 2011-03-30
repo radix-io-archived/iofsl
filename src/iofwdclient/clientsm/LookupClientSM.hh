@@ -13,7 +13,7 @@
 
 #include "iofwdclient/IOFWDClientCB.hh"
 #include "iofwdclient/clientsm/RPCServerSM.hh"
-
+#include "iofwdclient/clientsm/RPCCommClientSM.hh"
 #include "zoidfs/zoidfs.h"
 
 #include <cstdio>
@@ -24,15 +24,15 @@ namespace iofwdclient
 
     namespace clientsm
     {
-
+typedef boost::shared_ptr< iofwdclient::clientsm::RPCCommClientSM<LookupInStream,LookupOutStream> > RPCCommClientSMPtr;
 class LookupClientSM :
     public sm::SimpleSM< iofwdclient::clientsm::LookupClientSM >
 {
     public:
         LookupClientSM(sm::SMManager & smm,
                 bool poll,
+                RPCCommClientSMPtr comm, 
                 const IOFWDClientCB & cb,
-                net::AddressPtr addr,
                 int * ret,
                 const zoidfs::zoidfs_handle_t *parent_handle,
                 const char *component_name, 
@@ -43,11 +43,10 @@ class LookupClientSM :
             slots_(*this),
             cb_(cb),
             ret_(ret),
+            comm_(comm),
             in_(LookupInStream(parent_handle, component_name, full_path, op_hint)),
-            out_(handle, op_hint),
-            server_sm_(NULL)
+            out_(handle, op_hint)
         {
-            addr_ = addr;
             fprintf(stderr, "%s:%i\n", __func__, __LINE__);
         }
 
@@ -70,8 +69,7 @@ class LookupClientSM :
 
         streamwrappers::LookupInStream in_;
         streamwrappers::LookupOutStream out_;
-        net::AddressPtr addr_;
-        sm::SMClient * server_sm_;
+        RPCCommClientSMPtr comm_;
 };
 
     }

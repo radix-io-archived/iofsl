@@ -88,6 +88,7 @@ namespace iofwd
 
       IOFSLClientRPCService::~IOFSLClientRPCService()
       {
+        /* change to scope rpc for auto deletion */
          rpcserver_->unregisterRPC("iofslclientrpc.commit");
          rpcserver_->unregisterRPC("iofslclientrpc.create");
          rpcserver_->unregisterRPC("iofslclientrpc.getattr");
@@ -107,7 +108,8 @@ namespace iofwd
          rpcserver_->unregisterRPC("iofslclientrpc.symlink");
          rpcserver_->unregisterRPC("iofslclientrpc.write");
       }
-
+  
+/* Needs request handler */
 #define RPC_GENCLIENTCODE(CLASSNAME, RPCNAME)                                    \
       void IOFSLClientRPCService::RPCNAME (iofwdevent::ZeroCopyInputStream * in, \
             iofwdevent::ZeroCopyOutputStream * out, const rpc::RPCInfo & )       \

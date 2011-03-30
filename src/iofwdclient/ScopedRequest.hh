@@ -28,7 +28,8 @@ namespace iofwdclient
 
          ~ScopedRequest ()
          {
-            zoidfs::zoidfs_request_free (&req_);
+            /* Free'd elsewhere (SyncClient/ASClient) */
+            //zoidfs::zoidfs_request_free (&req_);
          }
 
       protected:

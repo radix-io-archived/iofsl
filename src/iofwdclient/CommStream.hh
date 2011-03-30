@@ -14,18 +14,20 @@ namespace iofwdclient
     */
    class CommStream
    {
+
       public:
-         CommStream (const char * forwarder);
+         CommStream ();
+         //CommStream (const char * forwarder);
 
-         rpc::RPCClientHandle connect (rpc::RPCKey k);
-
-      protected:
-         void setDestination (const char * s);
+         //rpc::RPCClientHandle connect (rpc::RPCKey k);
 
       protected:
-         boost::scoped_ptr<iofwdevent::BMIResource> bmiresource_;
-         boost::scoped_ptr<net::Net> net_;
-         net::AddressPtr dest_;
+         //void setDestination (const char * s);
+
+      protected:
+         //boost::scoped_ptr<iofwdevent::BMIResource> bmiresource_;
+         //boost::scoped_ptr<net::Net> net_;
+         //net::AddressPtr dest_;
    };
 
    //========================================================================
