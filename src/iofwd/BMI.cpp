@@ -112,20 +112,23 @@ namespace iofwd
 
 
       ConfigFile bmiconfig (config_.openSection ("bmi"));
-
+      std::string clientmode = bmiconfig.getKeyDefault ("clientmode", "");
       std::string ion;
-      if (bmiconfig.hasMultiKey ("serverlist"))
+      if (!clientmode.empty())
       {
-         ion = multiServerMode (bmiconfig);
-      }
-      else
-      {
-         ion = singleServerMode (bmiconfig);
-      }
+         if (bmiconfig.hasMultiKey ("serverlist"))
+         {
+            ion = multiServerMode (bmiconfig);
+         }
+         else
+         {
+            ion = singleServerMode (bmiconfig);
+         }
 
-      // IOFW uses bmi, so we need to supply init params here
-      ZLOG_INFO (log_, format("Server listening on %s") % ion);
-      iofwdutil::bmi::BMI::setInitServer (ion.c_str());
+         // IOFW uses bmi, so we need to supply init params here
+         ZLOG_INFO (log_, format("Server listening on %s") % ion);
+         iofwdutil::bmi::BMI::setInitServer (ion.c_str());
+      }
 
       // Force instantiation
       iofwdutil::bmi::BMI::instance ();
