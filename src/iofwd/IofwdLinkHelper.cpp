@@ -30,6 +30,7 @@ void registerIofwdFactoryClients ()
             (iofwdserver) \
             (timer) \
             (bmifrontend) \
+            (requesthandler) \
       );
 
 #ifdef HAVE_FTB

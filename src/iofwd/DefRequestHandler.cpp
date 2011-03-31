@@ -1,7 +1,9 @@
-#include <boost/lambda/bind.hpp>
-#include <boost/lambda/lambda.hpp>
-#include <boost/lambda/construct.hpp>
 #include "DefRequestHandler.hh"
+
+#include "Config.hh"
+#include "Log.hh"
+#include "service/ServiceManager.hh"
+
 #include "Request.hh"
 #include "Task.hh"
 #include "iofwdutil/workqueue/SynchronousWorkQueue.hh"
@@ -13,19 +15,36 @@
 #include "iofwdutil/FactoryException.hh"
 #include "iofwdutil/ZException.hh"
 
+
+#include <boost/lambda/bind.hpp>
+#include <boost/lambda/lambda.hpp>
+#include <boost/lambda/construct.hpp>
+
+
+
 using namespace iofwdutil;
 using namespace iofwdutil::workqueue;
 using namespace boost::lambda;
 
 // @TODO: get separate requesthandler for state machines / threads
 
+SERVICE_REGISTER(iofwd::DefRequestHandler,requesthandler);
+
 namespace iofwd
 {
 //===========================================================================
 
-DefRequestHandler::DefRequestHandler (const iofwdutil::ConfigFile & cf)
-   : log_ (IOFWDLog::getSource ("defreqhandler")), config_(cf), event_mode_(EVMODE_SM), tp_(iofwdutil::ThreadPool::instance())
+DefRequestHandler::DefRequestHandler (service::ServiceManager & man)
+    : service::Service (man),
+      log_service_ (lookupService<Log>("log")),
+      config_service_ (lookupService<Config>("config")),
+      log_ (log_service_->getSource ("defreqhandler")),
+      event_mode_(EVMODE_SM),
+      tp_(iofwdutil::ThreadPool::instance())
 {
+   const iofwdutil::ConfigFile config_ =
+      config_service_->getConfig().openSection("requesthandler");
+
    //
    // Get async API
    //
