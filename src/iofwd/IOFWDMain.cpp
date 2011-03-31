@@ -24,6 +24,7 @@ namespace iofwd
 
 IOFWDMain::IOFWDMain (service::ServiceManager & man)
    : service::Service (man),
+     requesthandler_ (lookupService<RequestHandler>("requesthandler")),
      log_service_ (lookupService<Log>("log")),
      config_service_ (lookupService<Config>("config")),
      frontend_ (lookupService<frontend::Frontend>("bmifrontend")),
@@ -89,7 +90,8 @@ void IOFWDMain::boot ()
 
     /* Make into service */
     /* load service */
-   requesthandler_.reset (new DefRequestHandler(config_.openSectionDefault("requesthandler"))); 
+   // requesthandler_.reset (new DefRequestHandler(config_.openSectionDefault("requesthandler"))); 
+
     /* stays */
    frontend_->setHandler (requesthandler_.get());
 
