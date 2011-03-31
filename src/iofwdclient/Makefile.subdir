@@ -36,7 +36,12 @@ CPPCLIENTLIB += \
     src/iofwdclient/streamwrappers/GetAttrOutStream.hh \
     src/iofwdclient/iofwdclientlib.hh \
     src/iofwdclient/LinkHelper.hh \
-    src/iofwdclient/LinkHelper.cpp 
+    src/iofwdclient/LinkHelper.cpp \
+    src/iofwdclient/IOFWDClient.cpp \
+    src/iofwdclient/IOFWDClient.hh \
+    src/iofwdclient/CommStream.hh \
+    src/iofwdclient/CommStream.cpp
+
 #    src/iofwdclient/iofwdclientlib.hh 
 #    
 #    src/iofwdclient/directclient/LookupStream.hh \
