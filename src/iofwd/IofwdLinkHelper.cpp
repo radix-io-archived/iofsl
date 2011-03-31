@@ -36,6 +36,7 @@ void registerIofwdFactoryClients ()
             (requesthandler) \
             (rpctest) \
             (iofslclientrpc) \
+            (requesthandler) \
       );
 
 #ifdef HAVE_FTB
