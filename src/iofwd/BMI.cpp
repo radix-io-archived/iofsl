@@ -6,7 +6,7 @@
 #include "iofwdevent/BMIResource.hh"
 #include "iofwd/ConfigException.hh"
 #include "iofwdutil/bmi/BMI.hh"
-
+#include <cstdio>
 #include <boost/foreach.hpp>
 
 SERVICE_REGISTER(iofwd::BMI,bmi);
@@ -114,8 +114,9 @@ namespace iofwd
       ConfigFile bmiconfig (config_.openSection ("bmi"));
       std::string clientmode = bmiconfig.getKeyDefault ("clientmode", "");
       std::string ion;
-      if (!clientmode.empty())
+      if (clientmode.empty())
       {
+         fprintf(stderr, "%s:%i\n", __func__, __LINE__);
          if (bmiconfig.hasMultiKey ("serverlist"))
          {
             ion = multiServerMode (bmiconfig);
