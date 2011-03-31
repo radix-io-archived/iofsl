@@ -17,7 +17,6 @@ public:
     * desired; If false is returned, it will immediately be rescheduled.
     */
    virtual bool execute () = 0;
-   void init (iofwdevent::CBException & e) {};
    virtual ~SMClient ();
 };
 
