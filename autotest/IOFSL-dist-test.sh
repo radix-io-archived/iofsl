@@ -98,4 +98,3 @@ email(){
 
 
 get_user_email
-

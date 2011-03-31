@@ -1,4 +1,5 @@
-#!/bin/bash# This script gathers relevant information from the IOFSL-dist-test.sh script test results and mails them to the desired parties.  The mutt mail commands can be edited for the desired paties to be mailed to.  
+#!/bin/bash
+# This script gathers relevant information from the IOFSL-dist-test.sh script test results and mails them to the desired parties.  The mutt mail commands can be edited for the desired paties to be mailed to.  
 
 
 error_report(){
@@ -23,6 +24,32 @@ error_report(){
   then :
   else
       echo "$commit" >> autotest/tested_commits.txt
+  fi
+  failure_report
+}
+
+
+failure_report(){
+  rm -f failure_report.txt
+  touch failure_report.txt
+  if
+    egrep 'FAIL|non-zero' runtest_results.txt
+  then
+    echo "test results for commit $commit" >> failure_report.txt
+    echo "this commit was finished testing at $(date)" >> failure_report.txt
+    echo >> failure_report.txt
+    awk 'NR<=5' runtest_results.txt >> failure_report.txt ; awk '/FAIL/{c=5}c&&c--' runtest_results.txt >> failure_report.txt ; awk '/non-zero/{c=3}c&&c--' runtest_results.txt >> failure_report.txt; tail -5 runtest_results.txt >> failure_report.txt
+    echo "==========================================================" >> failure_report.txt
+  comm=${commit:0:7}
+  i#echo | mutt -c $committer_email dkimpe@mcs.anl.gov drieskimpe@gmail.com rjdamore@gmail.com -a failure_report.txt -s "failure report for commit $comm FAIL" io-fwd-discuss@lists.mcs.anl.gov 
+  else :
+  fi
+  cat failure_report.txt >> failure_report-pile.txt
+  if
+    grep $commit autotest/tested_commits.txt
+  then :
+  else
+    echo "$commit" >> autotest/tested_commits.txt
   fi
   server_report
 }
