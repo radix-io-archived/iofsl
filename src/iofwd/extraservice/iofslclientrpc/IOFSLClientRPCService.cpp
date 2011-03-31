@@ -45,6 +45,7 @@ namespace iofwd
       IOFSLClientRPCService::IOFSLClientRPCService(service::ServiceManager & m)
          : ExtraService(m),
            log_service_(lookupService<Log>("log")),
+           requesthandler_ (lookupService<RequestHandler>("requesthandler")),
            log_(log_service_->getSource("iofslclientrpc"))
       {
          rpcserver_ = (m.loadService<iofwd::RPCServer>("rpcserver"));
@@ -117,9 +118,9 @@ namespace iofwd
           /* TODO get the correct op code */                                     \
           int opid = 0;                                                          \
                                                                                  \
-          /* submit the request to the SM factory */                             \
-          (*sm_factory_)(new iofwd::rpcfrontend::CLASSNAME(opid,                 \
-                      in, out));                                                 \
+          iofwd::Request * tmp = new iofwd::rpcfrontend::CLASSNAME(opid,         \
+                                                            in, out);            \
+          requesthandler_->handleRequest ( 1, &tmp);                             \
       }                                   
 
       RPC_GENCLIENTCODE (IOFSLRPCCommitRequest, commit)

@@ -13,7 +13,8 @@
 
 #include "iofwd/ExtraService.hh"
 #include "iofwd/tasksm/TaskSMFactory.hh"
-
+#include "iofwd/RequestHandler.hh"
+#include "iofwd/Request.hh"
 #include <boost/shared_ptr.hpp>
 
 #define RPC_GENCLIENTHEADERS(CLASSNAME, RPCNAME)                             \
@@ -74,7 +75,8 @@ namespace iofwd
             boost::shared_ptr<iofwd::RPCServer> rpcserver_;
             iofwdutil::IOFWDLogSource & log_;
 
-            boost::scoped_ptr<iofwd::tasksm::TaskSMFactory> sm_factory_;
+            
+            boost::shared_ptr<iofwd::RequestHandler> requesthandler_;
       };
    }
 }
