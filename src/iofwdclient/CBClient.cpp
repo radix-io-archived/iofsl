@@ -88,7 +88,7 @@ namespace iofwdclient
 
        /* Sets up the handler for the RPC State Machine */
        /* Should be changed to RPC KEY */
-       rpc::RPCClientHandle rpc_handle; //= client_->rpcConnect(ZOIDFS_LOOKUP_RPC.c_str(), addr_);
+       rpc::RPCClientHandle rpc_handle = client_->rpcConnect(ZOIDFS_LOOKUP_RPC.c_str(), addr_);
        boost::shared_ptr<RPCCommClientSMLookup> comm;
        comm.reset(new RPCCommClientSMLookup (smm_, rpc_handle, poll_));
        
