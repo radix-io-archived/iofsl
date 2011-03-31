@@ -2,7 +2,7 @@
 #define IOFWDCLIENT_SCOPEDREQUEST_HH
 
 #include "zoidfs-async.h"
-
+#include "iofwdclient/iofwdclientlib.hh"
 namespace iofwdclient
 {
    //========================================================================
@@ -28,7 +28,8 @@ namespace iofwdclient
 
          ~ScopedRequest ()
          {
-            zoidfs::zoidfs_request_free (&req_);
+            /* Free'd elsewhere (SyncClient/ASClient) */
+            //zoidfs::zoidfs_request_free (&req_);
          }
 
       protected:

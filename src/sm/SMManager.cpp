@@ -10,6 +10,7 @@
 #include <boost/date_time/posix_time/posix_time.hpp>
 #include <boost/thread/thread_time.hpp>
 
+#include <cstdio>
 using boost::format;
 
 namespace sm
@@ -29,6 +30,7 @@ void SMManager::runNow (SMClient * client)
 
 void SMManager::schedule (SMClient * client)
 {
+fprintf(stderr, "%s:%i\n", __func__, __LINE__);
    ZLOG_DEBUG_MORE(log_,format("Scheduling client %p") % (void*) client);
 
    /* use submitWorkUnit method to avoid the tp queues */

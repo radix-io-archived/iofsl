@@ -14,6 +14,59 @@
 #include "sm/SMClient.hh"
 
 #include <boost/scoped_ptr.hpp>
+#include "iofwd/RPCClient.hh"
+#include "rpc/RPCHandler.hh"
+#include <boost/shared_ptr.hpp>
+
+#include <boost/intrusive_ptr.hpp>
+#include <cstdio>
+/*==========================================================================*/
+/* CBClient Creation Macros */
+#include <boost/preprocessor/seq/for_each.hpp>
+#include <boost/preprocessor/seq/elem.hpp>
+#include <boost/preprocessor/seq/fold_left.hpp>
+#include <boost/preprocessor/seq/cat.hpp>
+#include <boost/preprocessor/cat.hpp>
+#include <boost/preprocessor/seq/pop_back.hpp>
+
+/* creates list of input params (aka zoidfs_handle_t * handle,....) */
+#define CLIENT_CBCLIENT_PARAMS(r,data,elem) CLIENT_CBCLIENT_PARAMS_S1(elem)
+#define CLIENT_CBCLIENT_PARAMS_S1(elem) CLIENT_CBCLIENT_PARAMS_S2(elem),
+#define CLIENT_CBCLIENT_PARAMS_S2(elem) BOOST_PP_SEQ_FOLD_LEFT(CLIENT_CBCLIENT_DOFOLD, \
+                                        BOOST_PP_SEQ_HEAD(elem),             \
+                                        BOOST_PP_SEQ_TAIL(elem))
+#define CLIENT_CBCLIENT_DOFOLD(r,data,elem) data elem
+
+/* creates parameter list from PARAMETERS */
+#define CLIENT_CBCLIENT_PLIST(r,data,elem) CLIENT_CBCLIENT_PLIST_S1(elem)
+#define CLIENT_CBCLIENT_PLIST_S1(elem) CLIENT_CBCLIENT_PLIST_S2(elem),
+#define CLIENT_CBCLIENT_PLIST_S2(elem) BOOST_PP_SEQ_CAT(BOOST_PP_SEQ_TAIL(elem))
+
+/* defines the function for the class, takes 3 parameter'. 
+   FUNCNAME = the name of the function to be written. 
+   SMNAME = Name of the state machine class to use. 
+   PARAMETERS = BOOST list of parameters for the function ex: 
+      ((zoidfs_handle_t)(handle))((zoidfs_cache_hint_t)(cache)). op_hint is
+      to be excluded from this list (it is included by default)
+*/
+   
+#define CLIENT_CBCLIENT_MACRO(FUNCNAME, SMNAME, PARAMETERS)                  \
+   void CBClient::FUNCNAME(const IOFWDClientCB & cb,                         \
+         int * ret,                                                          \
+         BOOST_PP_SEQ_FOR_EACH(CLIENT_CBCLIENT_PARAMS, , PARAMETERS)         \
+         zoidfs_op_hint_t * op_hint)                                         \
+   {                                                                         \
+      CBSMWrapper * cbsm =  CBSMWrapper::createCBSMWrapper(cb);              \
+      iofwdclient::clientsm::SMNAME(*smm_, poll_, cbsm->getWCB(), ret,       \
+         BOOST_PP_SEQ_FOR_EACH(CLIENT_CBCLIENT_PLIST, , PARAMETERS)          \
+         op_hint);                                                           \
+      cbsm->set(sm);                                                         \
+      sm->execute();                                                         \
+   }
+/*==========================================================================*/
+
+
+
 
 namespace iofwdclient
 {
@@ -26,12 +79,13 @@ namespace iofwdclient
    {
       public:
          CBClient (iofwdutil::IOFWDLogSource & log,
-               CommStream & net, bool poll = true);
+               CommStream & net, net::AddressPtr addr, bool poll = true);
 
          ~CBClient ();
 
       public:
-
+//         void setRPCMode ( boost::shared_ptr<iofwd::RPCClient> rpcclient,
+//                           net::AddressPtr addr);
          void cbgetattr (const IOFWDClientCB & cb,
                int * ret,
                const zoidfs::zoidfs_handle_t * handle,
@@ -43,7 +97,7 @@ namespace iofwdclient
                       const zoidfs::zoidfs_handle_t *handle,
                       const zoidfs::zoidfs_sattr_t *sattr,
                       zoidfs::zoidfs_attr_t *attr, 
-                      zoidfs::zoidfs_op_hint_t * op_hint);
+                      zoidfs::zoidfs_op_hint_t * op_hint) {}
 
          int cblookup(const IOFWDClientCB & cb,
                      int * ret,
@@ -58,12 +112,12 @@ namespace iofwdclient
                        const zoidfs::zoidfs_handle_t *handle,  
                        char *buffer,
                        size_t buffer_length,
-                       zoidfs::zoidfs_op_hint_t * op_hint);
+                       zoidfs::zoidfs_op_hint_t * op_hint) {}
                        
          int cbcommit(const IOFWDClientCB & cb,
                      int * ret,
                      const zoidfs::zoidfs_handle_t *handle,
-                     zoidfs::zoidfs_op_hint_t * op_hint);
+                     zoidfs::zoidfs_op_hint_t * op_hint) {}
                      
          int cbcreate(const IOFWDClientCB & cb,
                      int * ret,
@@ -73,14 +127,14 @@ namespace iofwdclient
                      const zoidfs::zoidfs_sattr_t *sattr, 
                      zoidfs::zoidfs_handle_t *handle,
                      int *created,
-                     zoidfs::zoidfs_op_hint_t * op_hint);
+                     zoidfs::zoidfs_op_hint_t * op_hint) {}
                     
          int cbremove(const IOFWDClientCB & cb,
                      int * ret,
                      const zoidfs::zoidfs_handle_t *parent_handle,
                      const char *component_name, const char *full_path,
                      zoidfs::zoidfs_cache_hint_t *parent_hint,
-                     zoidfs::zoidfs_op_hint_t * op_hint);
+                     zoidfs::zoidfs_op_hint_t * op_hint) {}
                      
          int cbrename(const IOFWDClientCB & cb,
                      int * ret,
@@ -92,7 +146,7 @@ namespace iofwdclient
                      const char *to_full_path,
                      zoidfs::zoidfs_cache_hint_t *from_parent_hint,
                      zoidfs::zoidfs_cache_hint_t *to_parent_hint,
-                     zoidfs::zoidfs_op_hint_t * op_hint);
+                     zoidfs::zoidfs_op_hint_t * op_hint) {}
                      
          int cblink(const IOFWDClientCB & cb,
                    int * ret,
@@ -104,7 +158,7 @@ namespace iofwdclient
                    const char *to_full_path,
                    zoidfs::zoidfs_cache_hint_t *from_parent_hint,
                    zoidfs::zoidfs_cache_hint_t *to_parent_hint,
-                   zoidfs::zoidfs_op_hint_t * op_hint);
+                   zoidfs::zoidfs_op_hint_t * op_hint) {}
                    
          int cbsymlink(const IOFWDClientCB & cb,
                       int * ret,
@@ -117,7 +171,7 @@ namespace iofwdclient
                       const zoidfs::zoidfs_sattr_t *sattr,
                       zoidfs::zoidfs_cache_hint_t *from_parent_hint,
                       zoidfs::zoidfs_cache_hint_t *to_parent_hint,
-                      zoidfs::zoidfs_op_hint_t * op_hint);
+                      zoidfs::zoidfs_op_hint_t * op_hint) {}
                       
          int cbmkdir(const IOFWDClientCB & cb,
                     int * ret,
@@ -125,7 +179,7 @@ namespace iofwdclient
                     const char *component_name, const char *full_path,
                     const zoidfs::zoidfs_sattr_t *sattr,
                     zoidfs::zoidfs_cache_hint_t *parent_hint,
-                    zoidfs::zoidfs_op_hint_t * op_hint);
+                    zoidfs::zoidfs_op_hint_t * op_hint) {}
                             
          int cbreaddir(const IOFWDClientCB & cb,
                       int * ret,
@@ -133,13 +187,13 @@ namespace iofwdclient
                       zoidfs::zoidfs_dirent_cookie_t cookie, size_t *entry_count_,
                       zoidfs::zoidfs_dirent_t *entries, uint32_t flags,
                       zoidfs::zoidfs_cache_hint_t *parent_hint,
-                      zoidfs::zoidfs_op_hint_t * op_hint);
+                      zoidfs::zoidfs_op_hint_t * op_hint) {}
 
          int cbresize(const IOFWDClientCB & cb,
                      int * ret,
                      const zoidfs::zoidfs_handle_t *handle, 
                      zoidfs::zoidfs_file_size_t size,
-                     zoidfs::zoidfs_op_hint_t * op_hint);
+                     zoidfs::zoidfs_op_hint_t * op_hint) {}
                      
                    
          int cbread(const IOFWDClientCB & cb,
@@ -148,7 +202,7 @@ namespace iofwdclient
                    void *mem_starts[], const size_t mem_sizes[],
                    size_t file_count, const zoidfs::zoidfs_file_ofs_t file_starts[],
                    zoidfs::zoidfs_file_size_t file_sizes[],
-                   zoidfs::zoidfs_op_hint_t * op_hint);
+                   zoidfs::zoidfs_op_hint_t * op_hint) {}
                     
          int cbwrite(const IOFWDClientCB & cb,
                     int * ret,
@@ -156,18 +210,18 @@ namespace iofwdclient
                     const void *mem_starts[], const size_t mem_sizes[],
                     size_t file_count, const zoidfs::zoidfs_file_ofs_t file_starts[],
                     zoidfs::zoidfs_file_ofs_t file_sizes[],
-                    zoidfs::zoidfs_op_hint_t * op_hint);
+                    zoidfs::zoidfs_op_hint_t * op_hint) {}
 
 
          int cbinit(const IOFWDClientCB & cb, int * ret, 
-                    zoidfs::zoidfs_op_hint_t * op_hint);
+                    zoidfs::zoidfs_op_hint_t * op_hint) {}
 
 
          int cbfinalize(const IOFWDClientCB & cb, int * ret, 
-                    zoidfs::zoidfs_op_hint_t * op_hint);
+                    zoidfs::zoidfs_op_hint_t * op_hint) {}
 
          int cbnull(const IOFWDClientCB & cb, int * ret, 
-                    zoidfs::zoidfs_op_hint_t * op_hint);
+                    zoidfs::zoidfs_op_hint_t * op_hint) {}
       protected:
 
         class CBSMWrapper
@@ -181,12 +235,13 @@ namespace iofwdclient
 
                 void set(sm::SMClient * sm)
                 {
-                    sm_ = sm::SMClientSharedPtr(sm);
+                    sm_ = sm;
                 }
 
                 void call(zoidfs::zoidfs_comp_mask_t mask, const
                         iofwdevent::CBException & cbexception)
                 {
+                    fprintf(stderr, "CBSMWrapper:%s:%i\n", __func__, __LINE__);
                     cb_(mask, cbexception);
                 }
 
@@ -199,10 +254,10 @@ namespace iofwdclient
                 /* prevent stack allocation and copying of CBWrapper objects */
                 CBSMWrapper(const IOFWDClientCB & cb,
                         sm::SMClient * sm = NULL) :
-                    cb_(cb),
                     sm_(sm),
                     wcb_(boost::bind(&CBClient::cbWrapper, this, _1, _2))
                 {
+                   cb_ = cb;
                 }
 
                 CBSMWrapper() : 
@@ -234,8 +289,8 @@ namespace iofwdclient
                 /* access to CBClient::cbWrapper */
                 friend class CBClient;
 
-                const IOFWDClientCB & cb_;
-                sm::SMClientSharedPtr sm_;
+                IOFWDClientCB cb_;
+                sm::SMClient * sm_;
                 const IOFWDClientCB wcb_;
          };
         
@@ -247,8 +302,9 @@ namespace iofwdclient
          iofwdutil::IOFWDLogSource & log_;
          CommStream & net_;
          bool poll_;
-
-         boost::scoped_ptr<sm::SMManager> smm_;
+         boost::shared_ptr<iofwd::RPCClient> client_;
+         net::AddressPtr addr_;
+         boost::shared_ptr<sm::SMManager> smm_;
    };
 
    //========================================================================

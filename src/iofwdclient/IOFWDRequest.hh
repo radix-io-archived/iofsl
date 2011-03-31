@@ -28,7 +28,7 @@ namespace iofwdclient
 
          int getReturnCode () const
          { return returncode_; }
-
+   
          zoidfs::zoidfs_comp_mask_t getCompletionStatus () const
          { return completionstatus_; }
 
@@ -39,8 +39,6 @@ namespace iofwdclient
          int * getReturnPointer ()
          { return &returncode_; }
 
-      protected:
-
          void setCompletionStatus (zoidfs::zoidfs_comp_mask_t comp)
          {
             // @TODO: assert only one of the completion state flags is set
@@ -48,6 +46,8 @@ namespace iofwdclient
             // flags)
             completionstatus_ = comp;
          }
+
+      protected:
 
          void setReturnCode (int ret)
          { returncode_ = ret; }

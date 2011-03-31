@@ -1,5 +1,5 @@
 #include "iofwdclient/clientsm/GetAttrClientSM.hh"
-#include "iofwdclient/FakeBlocker.hh"
+//#include "iofwdclient/FakeBlocker.hh"
 
 #include "zoidfs/zoidfs-async.h"
 #include "zoidfs/zoidfs-rpc.h"
@@ -27,8 +27,8 @@ void GetAttrClientSM::postRPCServerSM(iofwdevent::CBException e)
     fprintf(stderr, "%s:%i\n", __func__, __LINE__);
     e.check();
 
-    server_sm_.reset(new RPCServerSM< GetAttrInStream, GetAttrOutStream >(smm_,
-            poll_, slots_[BASE_SLOT], ZOIDFS_GETATTR_RPC, in_, out_));
+//    server_sm_.reset(new RPCServerSM< GetAttrInStream, GetAttrOutStream >(smm_,
+//            poll_, slots_[BASE_SLOT], ZOIDFS_GETATTR_RPC, in_, out_, addr_));
 
     slots_.wait(BASE_SLOT, &GetAttrClientSM::waitRPCServerSM);
 }

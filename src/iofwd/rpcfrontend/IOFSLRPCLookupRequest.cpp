@@ -1,6 +1,6 @@
 #include "iofwd/rpcfrontend/IOFSLRPCLookupRequest.hh"
 #include "iofwdutil/tools.hh"
-
+#include <cstdio>
 namespace iofwd
 {
    namespace rpcfrontend
@@ -8,6 +8,7 @@ namespace iofwd
 
 void IOFSLRPCLookupRequest::decode()
 {
+    fprintf(stderr, "IOFSLRPCLookupRequest:%s:%i\n", __func__, __LINE__);
     decodeFileSpec(info_);
     zoidfs::hints::zoidfs_hint_create(&op_hint_);
     decodeOpHint(&op_hint_);
@@ -17,7 +18,7 @@ const IOFSLRPCLookupRequest::ReqParam & IOFSLRPCLookupRequest::decodeParam()
 {
     /* decode the rpc input params */
     decodeRPCInput();
-
+    fprintf(stderr, "IOFSLRPCLookupRequest:%s:%i\n", __func__, __LINE__);
    if(info_.full_path[0])
    {
       param_.full_path = info_.full_path;
@@ -38,6 +39,7 @@ const IOFSLRPCLookupRequest::ReqParam & IOFSLRPCLookupRequest::decodeParam()
 
 void IOFSLRPCLookupRequest::encode()
 {
+    fprintf(stderr, "IOFSLRPCLookupRequest:%s:%i\n", __func__, __LINE__);
     /* process the output */
     process(enc_, getReturnCode());
     process(enc_, const_cast<const zoidfs::zoidfs_handle_t &>(*handle_enc_));
@@ -46,6 +48,7 @@ void IOFSLRPCLookupRequest::encode()
 void IOFSLRPCLookupRequest::reply(const CBType & UNUSED(cb), const
         zoidfs::zoidfs_handle_t * handle)
 {
+    fprintf(stderr, "IOFSLRPCLookupRequest:%s:%i\n", __func__, __LINE__);
     /* verify the args are OK */
     ASSERT(getReturnCode() != zoidfs::ZFS_OK || handle);
 
@@ -61,16 +64,19 @@ void IOFSLRPCLookupRequest::reply(const CBType & UNUSED(cb), const
 
 IOFSLRPCLookupRequest::~IOFSLRPCLookupRequest()
 {
+    fprintf(stderr, "IOFSLRPCLookupRequest:%s:%i\n", __func__, __LINE__);
    zoidfs::hints::zoidfs_hint_free(&op_hint_);
 }
 
 size_t IOFSLRPCLookupRequest::rpcEncodedInputDataSize()
 {
+    fprintf(stderr, "IOFSLRPCLookupRequest:%s:%i\n", __func__, __LINE__);
     return 0;
 }
 
 size_t IOFSLRPCLookupRequest::rpcEncodedOutputDataSize()
 {
+    fprintf(stderr, "IOFSLRPCLookupRequest:%s:%i\n", __func__, __LINE__);
     return 0;
 }
 

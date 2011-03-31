@@ -5,5 +5,4 @@
  * This function makes sure all objects register to the factory.
  */
 void registerIofwdFactoryClients ();
-
 #endif

@@ -5,7 +5,9 @@
 
 #include "iofwdutil/IOFWDLog.hh"
 #include "iofwdutil/assert.hh"
-
+#include "iofwd/RPCClient.hh"
+#include <cstdio>
+#include <boost/shared_ptr.hpp>
 using namespace zoidfs;
 
 namespace iofwdclient
@@ -24,7 +26,13 @@ namespace iofwdclient
    ASClient::~ASClient ()
    {
    }
-   
+   // @TODO: This needs to be changed, possibly use the CommStream class?
+//   void ASClient::setRPCMode (boost::shared_ptr<iofwd::RPCClient> rpcclient,
+//                              net::AddressPtr addr)
+//   {
+//      cbclient_.setRPCMode (rpcclient, addr);
+//   }   
+
    IOFWDRequest * ASClient::getRequest (zoidfs::zoidfs_request_t req) const
    {
       return static_cast<IOFWDRequest*> (req);
@@ -35,6 +43,7 @@ namespace iofwdclient
          zoidfs_comp_mask_t mask)
    {
       IOFWDRequest * ptr = getRequest (request);
+      fprintf(stderr, "%s:%p\n", __func__,ptr);
       if (!tracker_->wait (ptr, mask, timeout))
          return ZFSERR_TIMEOUT;
       return ZFS_OK;
@@ -109,34 +118,28 @@ namespace iofwdclient
       //   newRequest automatically increments the refcount to compensate for
       //   the lack of automatic refcounting in the C API
       IOFWDRequestPtr r (tracker_->newRequest ());
-
       cbclient_.cbsetattr(tracker_->getCB (r),
-                 r->getReturnPointer (),handle,sattr, attr, op_hint);
+                 r->getReturnPointer (),handle,sattr, attr, op_hint);   
+      
       return ZFS_OK;
    }
 
 
-   int ASClient::ilookup(zoidfs::zoidfs_request_t * request,
+   int ASClient::ilookup(   zoidfs::zoidfs_request_t * request,
                             const zoidfs::zoidfs_handle_t *parent_handle,
                             const char *component_name, 
                             const char *full_path,
                             zoidfs::zoidfs_handle_t *handle,
                             zoidfs::zoidfs_op_hint_t * op_hint)
-   {
-            // validate arguments
-      // Can op_hint be 0?
-      if (*request || !parent_handle || !component_name || !full_path ||
-          !handle)
-         return ZFSERR_INVAL;
-
-      // Create request
-      //   newRequest automatically increments the refcount to compensate for
-      //   the lack of automatic refcounting in the C API
-      IOFWDRequestPtr r (tracker_->newRequest ());
-
+   {  
+      IOFWDRequest * r = tracker_->newRequest ();
+      r->setCompletionStatus(zoidfs::ZFS_COMP_NONE);
+      fprintf(stderr, "%s:%p\n", __func__,r);
       cbclient_.cblookup(tracker_->getCB (r), r->getReturnPointer (), 
                          parent_handle, component_name, full_path, handle, 
                          op_hint);
+      //tmp = r;
+      (*request) = (void *) r;
       return ZFS_OK;
    }
                

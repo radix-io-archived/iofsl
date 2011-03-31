@@ -6,7 +6,7 @@
 #include "iofwdevent/BMIResource.hh"
 #include "iofwd/ConfigException.hh"
 #include "iofwdutil/bmi/BMI.hh"
-
+#include <cstdio>
 #include <boost/foreach.hpp>
 
 SERVICE_REGISTER(iofwd::BMI,bmi);
@@ -112,20 +112,24 @@ namespace iofwd
 
 
       ConfigFile bmiconfig (config_.openSection ("bmi"));
-
+      std::string clientmode = bmiconfig.getKeyDefault ("clientmode", "");
       std::string ion;
-      if (bmiconfig.hasMultiKey ("serverlist"))
+      if (clientmode.empty())
       {
-         ion = multiServerMode (bmiconfig);
-      }
-      else
-      {
-         ion = singleServerMode (bmiconfig);
-      }
+         fprintf(stderr, "%s:%i\n", __func__, __LINE__);
+         if (bmiconfig.hasMultiKey ("serverlist"))
+         {
+            ion = multiServerMode (bmiconfig);
+         }
+         else
+         {
+            ion = singleServerMode (bmiconfig);
+         }
 
-      // IOFW uses bmi, so we need to supply init params here
-      ZLOG_INFO (log_, format("Server listening on %s") % ion);
-      iofwdutil::bmi::BMI::setInitServer (ion.c_str());
+         // IOFW uses bmi, so we need to supply init params here
+         ZLOG_INFO (log_, format("Server listening on %s") % ion);
+         iofwdutil::bmi::BMI::setInitServer (ion.c_str());
+      }
 
       // Force instantiation
       iofwdutil::bmi::BMI::instance ();

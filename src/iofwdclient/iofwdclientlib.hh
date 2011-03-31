@@ -1,3 +1,5 @@
+#ifndef IOFWDCLIENT_IOFWDCLIENTLIB
+#define IOFWDCLIENT_IOFWDCLIENTLIB
 #include "iofwdclient/IOFWDClient.hh"
 #include "iofwdutil/assert.hh"
 
@@ -27,11 +29,18 @@ namespace iofwdclient
       //---- zoidfs.h functions ---------------------------------------------
       //---------------------------------------------------------------------
 
+      int zoidfs_init_comm (CommStream & net, bool poll)
+      {
+//         if (!client_ref_)
+//            client_ = new IOFWDClient (net, poll);
+//         ++client_ref_;
+         return zoidfs::ZFS_OK;           
+      }
       int zoidfs_init (void)
       {
-         if (!client_ref_)
-            client_ = new IOFWDClient ();
-         ++client_ref_;
+//         if (!client_ref_)
+//            client_ = new IOFWDClient ();
+//         ++client_ref_;
          return zoidfs::ZFS_OK;
       }
 
@@ -112,3 +121,4 @@ namespace iofwdclient
    }
    //========================================================================
 }
+#endif

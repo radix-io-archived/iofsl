@@ -35,6 +35,7 @@ void registerIofwdFactoryClients ()
             (bmifrontend) \
             (rpctest) \
             (iofslclientrpc) \
+            (requesthandler) \
       );
 
 #ifdef HAVE_FTB
@@ -44,4 +45,10 @@ void registerIofwdFactoryClients ()
 #endif
 
 }
+
+/*
+ * List the modules that need to be registered below...
+ * No particular order required
+ */
+
 

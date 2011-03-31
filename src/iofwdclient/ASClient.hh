@@ -8,7 +8,10 @@
 #include "zoidfs/zoidfs-async.h"
 
 #include <boost/scoped_ptr.hpp>
+#include "iofwd/RPCClient.hh"
 
+#include <boost/shared_ptr.hpp>
+#include "iofwdclient/IOFWDRequest.hh"
 namespace iofwdclient
 {
    //========================================================================
@@ -29,6 +32,9 @@ namespace iofwdclient
          ~ASClient ();
 
          // -------------- zoidfs async methods ------------------
+
+//         void setRPCMode (boost::shared_ptr<iofwd::RPCClient> rpcclient,
+//                          net::AddressPtr addr);
 
          int igetattr(zoidfs::zoidfs_request_t * request,
                    const zoidfs::zoidfs_handle_t * handle,
@@ -158,7 +164,7 @@ namespace iofwdclient
                    zoidfs::zoidfs_timeout_t timeout,
                    zoidfs::zoidfs_comp_mask_t mask);
 
-         int request_get_error (zoidfs::zoidfs_request_t request, int * error);
+         int request_get_error (zoidfs::zoidfs_request_t request, int * error) { return zoidfs::ZFS_OK;};
 
          int request_get_comp_state (zoidfs::zoidfs_request_t,
                zoidfs::zoidfs_comp_mask_t *);
@@ -172,6 +178,7 @@ namespace iofwdclient
          iofwdutil::IOFWDLogSource & log_;
          CBClient & cbclient_;
          boost::scoped_ptr<RequestTracker> tracker_;
+         IOFWDRequestPtr tmp;
    };
 
    //========================================================================

@@ -27,7 +27,8 @@ class GetAttrInStream
             op_helper_(op_hint)
         {
         }
-
+        char * full_path_;
+        char * component_name_;
         const zoidfs::zoidfs_handle_t * handle_;
         const encoder::OpHintHelper op_helper_;
 };

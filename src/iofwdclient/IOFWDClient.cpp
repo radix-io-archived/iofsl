@@ -4,26 +4,44 @@
 #include "iofwdclient/ASClient.hh"
 #include "iofwdclient/SyncClient.hh"
 
+#include "iofwd/RPCClient.hh"
+
+#include <boost/shared_ptr.hpp>
+
 #include "iofwdutil/IOFWDLog.hh"
+#include <stdio.h>
 
 using namespace zoidfs;
 
 namespace iofwdclient
 {
    //========================================================================
-
    IOFWDClient::IOFWDClient ()
       : log_ (iofwdutil::IOFWDLog::getSource ())
    {
+
+   }
+   IOFWDClient::IOFWDClient (CommStream & net, net::AddressPtr addr, bool poll)
+      : log_ (iofwdutil::IOFWDLog::getSource ())
+   {
       ZLOG_DEBUG (log_, "Initializing IOFWDClient");
+//      cbclient_ = new CBClient(net, poll);
+      asclient_.reset(new ASClient (log_, *(new CBClient(log_, net, addr, poll))) );
+      sclient_.reset( new SyncClient (log_, *asclient_));
    }
 
    IOFWDClient::~IOFWDClient ()
    {
       ZLOG_DEBUG (log_, "Shutting down IOFWDClient");
    }
-   
-   // @TODO: repeat for other functions
+
+   // @TODO: This needs to be changed, possibly use the CommStream class?
+//   void IOFWDClient::RPCMode (boost::shared_ptr<iofwd::RPCClient> rpcclient,
+//                              net::AddressPtr addr)
+//   {
+//      asclient_->setRPCMode (rpcclient, addr);
+//      sclient_->setRPCMode (rpcclient, addr);
+//   }
 
    // -----------------------------------------------------------------
    // ------------- blocking ZoidFS functions -------------------------

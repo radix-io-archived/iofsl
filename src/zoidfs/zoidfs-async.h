@@ -20,6 +20,7 @@ typedef unsigned int zoidfs_timeout_t;
 
 enum zoidfs_comp_mask_t
 {
+    ZFS_COMP_NONE    = 0x0000,
     ZFS_COMP_LOCAL   = 0x0001, /* buffers are usable at client */
     ZFS_COMP_REMOTE  = 0x0002, /* remote operation completed */
     ZFS_COMP_ERROR   = 0x1000, /* --- private: do not use ---- */

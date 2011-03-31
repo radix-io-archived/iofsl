@@ -9,7 +9,6 @@
 #include "SMClient.hh"
 #include "iofwdevent/ThreadedResource.hh"
 #include "iofwdutil/ThreadPool.hh"
-
 #include <boost/thread.hpp>
 #include <boost/thread/thread_time.hpp>
 

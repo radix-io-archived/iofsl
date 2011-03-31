@@ -31,6 +31,7 @@ class GetAttrClientSM :
         GetAttrClientSM(sm::SMManager & smm,
                 bool poll,
                 const IOFWDClientCB & cb,
+                net::AddressPtr addr,
                 int * ret,
                 const zoidfs::zoidfs_handle_t * handle,
                 zoidfs::zoidfs_attr_t * attr,
@@ -44,10 +45,10 @@ class GetAttrClientSM :
             server_sm_(NULL)
         {
             fprintf(stderr, "%s:%i\n", __func__, __LINE__);
+            addr_ = addr;
         }
 
         ~GetAttrClientSM();
-
         void init(iofwdevent::CBException e);
 
         void postRPCServerSM(iofwdevent::CBException e);
@@ -65,7 +66,7 @@ class GetAttrClientSM :
 
         GetAttrInStream in_;
         GetAttrOutStream out_;
-
+        net::AddressPtr addr_;
         sm::SMClientSharedPtr server_sm_;
 };
 
