@@ -69,6 +69,12 @@ class RPCServerSM :
         {
             fprintf(stderr, "RPCServerSM:%s:%i\n", __func__, __LINE__);
             e.check();
+
+            /* Get the maximum possible send size */
+            e_.net_data_size_ = rpc::getRPCEncodedSize(INTYPE()).getMaxSize();
+            /* Set the output stream */
+            e_.zero_copy_stream_.reset((rpc_handle_->getOut()));
+
             setNextMethod(&RPCServerSM<INTYPE,OUTTYPE>::postSetupConnection);
         }
 
@@ -76,17 +82,6 @@ class RPCServerSM :
         {
             fprintf(stderr, "RPCServerSM:%s:%i\n", __func__, __LINE__);
             e.check();
-
-            /* get the max size */
-            e_.net_data_size_ = rpc::getRPCEncodedSize(INTYPE()).getMaxSize();
-
-            /* TODO how the heck do we get / set the address? */
-            /* get a handle for this RPC */
-
-
-            //rpc_handle_ = rpc_client_->rpcConnect(rpc_func_.c_str(), addr_);
-            e_.zero_copy_stream_.reset((rpc_handle_->getOut()));
-
 
             /* setup the write stream */
             e_.zero_copy_stream_->write(&e_.data_ptr_, &e_.data_size_, slots_[BASE_SLOT],
@@ -97,6 +92,8 @@ class RPCServerSM :
             /* Temporarily Added to check state machine progression */
             //setNextMethod(&RPCServerSM<INTYPE,OUTTYPE>::waitSetupConnection);
         }
+
+        
 
         void waitSetupConnection(iofwdevent::CBException e)
         {
@@ -114,8 +111,9 @@ class RPCServerSM :
             e_.coder_ = rpc::RPCEncoder(e_.data_ptr_, e_.data_size_);
 
             process(e_.coder_, e_.data_);
-
-            e_.zero_copy_stream_->rewindOutput(e_.net_data_size_ - e_.coder_.getPos(), slots_[BASE_SLOT]);
+            fprintf(stderr, "SIZE: %i, POS: %i\n", e_.net_data_size_, e_.data_size_);
+            e_.zero_copy_stream_->rewindOutput(e_.data_size_ - e_.net_data_size_, slots_[BASE_SLOT]);
+            fprintf(stderr, "SIZE2: %i\n",e_.data_size_ - e_.net_data_size_);
 
             slots_.wait(BASE_SLOT,
                     &RPCServerSM<INTYPE,OUTTYPE>::waitEncodeData);
@@ -208,6 +206,8 @@ class RPCServerSM :
         /* decoder */
         RPCServerHelper<rpc::RPCDecoder, iofwdevent::ZeroCopyInputStream,
             OUTTYPE> d_;
+
+                
 };
 
     }
