@@ -47,7 +47,7 @@ namespace iofwdclient
                   op_helper_(op_hint)
               {
               }
-
+              int returnCode;
               zoidfs::zoidfs_handle_t * handle_;
               encoder::OpHintHelper op_helper_;
       };
@@ -62,6 +62,9 @@ inline Enc & process (Enc & e,
         typename process_filter<Wrapper, LookupInStream>::type * UNUSED(d) = NULL,
          typename only_size_processor<Enc>::type * = 0)
 {
+   zoidfs::zoidfs_null_param_t haveFullPath;
+   haveFullPath = 0;
+   process (e, haveFullPath);
    process(e,*(w.parent_handle_));
    process(e, EncOpaque(NULL, ZOIDFS_NAME_MAX, ZOIDFS_NAME_MAX));
    process(e, EncOpaque(NULL, ZOIDFS_PATH_MAX, ZOIDFS_PATH_MAX));
@@ -76,16 +79,19 @@ inline Enc & process (Enc & e,
 {
     fprintf(stderr, "LOOKUPSTERAMS:%s:%i\n", __func__, __LINE__);
     fprintf(stderr, "LOOKUPSTERAMS:%s:%s\n",w.full_path_, w.component_name_);
-    if (w.parent_handle_)
+    zoidfs::zoidfs_null_param_t haveFullPath;
+    haveFullPath = (w.full_path_ != NULL) ? 1 : 0;
+    process (e, haveFullPath);
+    if (haveFullPath)
+    {
+       process(e, EncOpaque (w.full_path_, strlen(w.full_path_), ZOIDFS_PATH_MAX));
+    }
+    else
+    {
        process(e, *(w.parent_handle_));
 
-    if (w.component_name_)
-      process(e, EncOpaque (w.component_name_, strlen(w.component_name_), ZOIDFS_NAME_MAX));
-
-
-    if (w.full_path_)
-       process(e, EncOpaque (w.full_path_, strlen(w.full_path_), ZOIDFS_PATH_MAX));
-
+       process(e, EncOpaque (w.component_name_, strlen(w.component_name_), ZOIDFS_NAME_MAX));
+    }
 //    process(e, w.op_helper_);
 
     return e;
@@ -97,7 +103,7 @@ inline Enc & process (Enc & e,
         typename only_decoder_processor<Enc>::type * = NULL)
 {
     fprintf(stderr, "LOOKUPSTERAMS:%s:%i\n", __func__, __LINE__);
-    
+    process(e, w.returnCode);
     process(e, *(w.handle_));
 //    process(e, w.op_helper_);
     fprintf(stderr, "LOOKUPSTERAMS:%i\n", *(w.handle_));
@@ -110,6 +116,7 @@ inline Enc & process (Enc & e,
         typename process_filter<Wrapper, LookupOutStream>::type * UNUSED(d) = NULL,
         typename only_size_processor<Enc>::type * = 0)
 {
+    process(e, w.returnCode);
     process(e, *(w.handle_));
 //    process(e, w.op_helper_);
     return e;
