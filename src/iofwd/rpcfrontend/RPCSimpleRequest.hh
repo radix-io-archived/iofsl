@@ -36,8 +36,8 @@ namespace iofwd
         public:
           void decode()
           {
-            encoder::xdr::XDRSizeProcessor * size_ = new 
-                                            encoder::xdr::XDRSizeProcessor();
+//            encoder::xdr::XDRSizeProcessor * size_ = new 
+//                                            encoder::xdr::XDRSizeProcessor();
 
             iofwdevent::SingleCompletion block;
 
@@ -64,8 +64,8 @@ namespace iofwd
     
           void encode()
           {
-            encoder::xdr::XDRSizeProcessor * size_ = new 
-                                            encoder::xdr::XDRSizeProcessor();
+//            encoder::xdr::XDRSizeProcessor * size_ = new 
+//                                            encoder::xdr::XDRSizeProcessor();
 
             iofwdevent::SingleCompletion block;
           
