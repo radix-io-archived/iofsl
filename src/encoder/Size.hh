@@ -13,6 +13,10 @@ namespace encoder
    /**
     * This class indicates how the 'Size' encoders look like.
     * All size calculators must derive from this class.
+    *
+    * @TODO: Maximum and actual are really two different things.
+    *   Make a pure Size processor which returns only one size
+    *   and then implement a MaxSizeProcessor and a ActualSizeProcessor.
     */
    struct Size : public Processor
    {
