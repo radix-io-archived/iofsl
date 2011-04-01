@@ -6,31 +6,38 @@
 
 #include "iofwd/LookupRequest.hh"
 #include "iofwd/rpcfrontend/IOFSLRPCRequest.hh"
+#include "RPCSimpleRequest.hh"
+#include "zoidfs/util/FileSpecHelper.hh"
 
 namespace iofwd
 {
    namespace rpcfrontend
    {
+/* Input encoder struct */
+typedef encoder::FileSpecHelper FileSpecHelper;
+typedef zoidfs::zoidfs_op_hint_t zoidfs_op_hint_t;
+ENCODERSTRUCT(RPCLookupIn,  ((FileSpecHelper)(info)))
+
+/* Output Encoder Struct */
+typedef zoidfs::zoidfs_handle_t zoidfs_handle_t;
+ENCODERSTRUCT(RPCLookupOut, ((int)(returnCode))
+                            ((zoidfs_handle_t)(handle)))
+
 
 class IOFSLRPCLookupRequest :
-    public IOFSLRPCRequest,
+    public RPCSimpleRequest<RPCLookupIn, RPCLookupOut>,
     public LookupRequest
 {
     public:
         IOFSLRPCLookupRequest(int opid,
                 iofwdevent::ZeroCopyInputStream * in,
                 iofwdevent::ZeroCopyOutputStream * out) :
-            IOFSLRPCRequest(in, out),
-            LookupRequest(opid),
-            handle_enc_(NULL)
+            RPCSimpleRequest<RPCLookupIn, RPCLookupOut>(in, out),
+            LookupRequest(opid)
         {
         }
       
         virtual ~IOFSLRPCLookupRequest();
-
-        /* encode and decode helpers for RPC data */
-        virtual void decode();
-        virtual void encode();
 
         /* request processing */
         virtual const ReqParam & decodeParam();
@@ -38,14 +45,7 @@ class IOFSLRPCLookupRequest :
                 const zoidfs::zoidfs_handle_t * handle);
     
     protected:
-        /* data size helpers for this request */ 
-        virtual size_t rpcEncodedInputDataSize(); 
-        virtual size_t rpcEncodedOutputDataSize();
-
         ReqParam param_;
-        FileInfo info_;
-        zoidfs::zoidfs_handle_t * handle_enc_;
-        zoidfs::zoidfs_op_hint_t op_hint_;
 };
 
    }

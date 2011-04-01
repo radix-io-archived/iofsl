@@ -32,8 +32,23 @@ namespace iofwd
         protected:
           IN inStruct;
           OUT outStruct;
+          /* pointers and sizes of mem stream data */
+          const char * read_ptr_;
+          size_t read_size_;
+          char * write_ptr_;
+          size_t write_size_;
+          size_t insize_;
+          size_t outsize_;
 
+          /* RPC encoder / decoder */
+          rpc::RPCDecoder dec_;
+          rpc::RPCEncoder enc_;
         public:
+          RPCSimpleRequest (iofwdevent::ZeroCopyInputStream * in,
+                            iofwdevent::ZeroCopyOutputStream * out) :
+               IOFSLRPCRequest (in,out)
+          {
+          }
           void decode()
           {
 //            encoder::xdr::XDRSizeProcessor * size_ = new 
@@ -105,3 +120,4 @@ namespace iofwd
 
    }
 }
+#endif
