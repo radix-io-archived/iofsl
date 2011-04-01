@@ -22,6 +22,16 @@ namespace zoidfs
 #define ZOIDFS_PIPELINE_SIZE (char*)"ZOIDFS_PIPELINE_SIZE"
 
 
+/* Maximum number of characters in a zoidfs_hint_t key 
+ * (without terminating 0) */
+#define ZOIDFS_HINT_KEY_MAX       64
+
+/* Maximum number of keys in a zoidfs_hint_t */
+#define ZOIDFS_HINT_NKEY_MAX      32
+
+/* Maximum length of a key value */
+#define ZOIDFS_HINT_KEY_VALUE_MAX 256
+
 /* new hint API */
 
 /* zoidfs hints are modeled on the MPI info interface */
