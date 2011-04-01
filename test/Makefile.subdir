@@ -70,7 +70,6 @@ cppldadd = \
 	${top_builddir}/src/rpc/librpc.a \
 	${top_builddir}/src/net/libnet.a \
 	${top_builddir}/src/zoidfs/libzoidfs-util.a \
-	${top_builddir}/src/zoidfs/libzoidfsprofile.a \
 	${top_builddir}/src/zoidfs/libzoidfs.a \
 	${top_builddir}/src/sm/libsm.a \
 	${top_builddir}/src/iofwdutil/libiofwdutil.a \
@@ -78,6 +77,7 @@ cppldadd = \
 	${top_builddir}/src/zoidfs/libzoidfshints.a \
 	${top_builddir}/src/iofwdevent/libiofwdevent.a \
 	${top_builddir}/src/encoder/libencoder.a \
+   ${top_builddir}/src/iofwdclient/libiofwdclient.a \
 	@BOOST_PROGRAM_OPTIONS_LIB@ \
 	@BOOST_DATE_TIME_LIB@ \
 	@BOOST_THREAD_LIB@ \
@@ -91,6 +91,11 @@ noinst_PROGRAMS += test/rpcservice
 test_rpcservice_SOURCES = test/rpcservice.cpp $(SERVERSOURCES)
 test_rpcservice_LDFLAGS = ${cppldflags}
 test_rpcservice_LDADD = ${cppldadd}
+
+noinst_PROGRAMS += test/rpcclienttest
+test_rpcclienttest_SOURCES = test/rpcclienttest.cpp $(SERVERSOURCES)
+test_rpcclienttest_LDFLAGS = ${cppldflags}
+test_rpcclienttest_LDADD = ${cppldadd}
 
 noinst_PROGRAMS += test/servercomm
 test_servercomm_SOURCES = test/servercomm.cpp $(SERVERSOURCES)
