@@ -73,6 +73,13 @@ class RPCServerSM :
             /* Get the maximum possible send size */
             e_.net_data_size_ = rpc::getRPCEncodedSize(INTYPE()).getMaxSize();
             /* Set the output stream */
+            rpc_handle_->waitOutReady (slots_[BASE_SLOT]);
+            slots_.wait (BASE_SLOT, 
+                       &RPCServerSM<INTYPE,OUTTYPE>::outputReady);
+        }
+
+        void outputReady (iofwdevent::CBException e)
+        {
             e_.zero_copy_stream_.reset((rpc_handle_->getOut()));
 
             setNextMethod(&RPCServerSM<INTYPE,OUTTYPE>::postSetupConnection);
@@ -148,17 +155,18 @@ class RPCServerSM :
         {
             fprintf(stderr, "RPCServerSM:%s:%i\n", __func__, __LINE__);
             e.check();
-            setNextMethod(&RPCServerSM<INTYPE,OUTTYPE>::postDecodeData);
+            rpc_handle_->waitInReady (slots_[BASE_SLOT]);
+            slots_.wait(BASE_SLOT,&RPCServerSM<INTYPE,OUTTYPE>::postDecodeData);
         }
 
+        
         void postDecodeData(iofwdevent::CBException e)
         {
             fprintf(stderr, "RPCServerSM:%s:%i\n", __func__, __LINE__);
             e.check();      
-            d_.zero_copy_stream_.reset((rpc_handle_->getIn()));
             /* get the max size */
             d_.net_data_size_ = rpc::getRPCEncodedSize(OUTTYPE()).getMaxSize();
-   
+            d_.zero_copy_stream_.reset((rpc_handle_->getIn()));
             d_.zero_copy_stream_->read(const_cast<const void **>(&d_.data_ptr_),
                     &d_.data_size_, slots_[BASE_SLOT], d_.net_data_size_);
 
@@ -206,7 +214,6 @@ class RPCServerSM :
         /* decoder */
         RPCServerHelper<rpc::RPCDecoder, iofwdevent::ZeroCopyInputStream,
             OUTTYPE> d_;
-
                 
 };
 

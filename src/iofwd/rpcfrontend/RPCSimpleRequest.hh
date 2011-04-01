@@ -83,7 +83,7 @@ namespace iofwd
 //                                            encoder::xdr::XDRSizeProcessor();
 
             iofwdevent::SingleCompletion block;
-          
+           
             /* sanity */ 
             block.reset();
 
