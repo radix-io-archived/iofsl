@@ -19,6 +19,7 @@ namespace zoidfs
 
    struct ZoidFSFileSpec
    {
+       
        ZoidFSPathName full_path;
        ZoidFSComponentName component;
        zoidfs_handle_t handle;
@@ -30,6 +31,8 @@ namespace zoidfs
    static void process (ENC e, ZoidFSFileSpec & p,
          typename only_size_processor<ENC>::type * )
    {
+      uint32_t flag;
+      process ( e, flag);
       /* Varibles used to calculate size */
       process ( e, p.full_path);
       process ( e, p.component);
