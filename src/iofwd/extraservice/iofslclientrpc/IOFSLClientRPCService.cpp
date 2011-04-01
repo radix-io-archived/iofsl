@@ -116,7 +116,7 @@ namespace iofwd
             iofwdevent::ZeroCopyOutputStream * out, const rpc::RPCInfo & )       \
       {                                                                          \
           /* TODO get the correct op code */                                     \
-          int opid = 0;                                                          \
+          int opid = 3;                                                          \
                                                                                  \
           iofwd::Request * tmp = new iofwd::rpcfrontend::CLASSNAME(opid,         \
                                                             in, out);            \

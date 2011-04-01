@@ -11,17 +11,17 @@ const IOFSLRPCLookupRequest::ReqParam & IOFSLRPCLookupRequest::decodeParam()
     /* decode the rpc input params */
     decode();
     fprintf(stderr, "IOFSLRPCLookupRequest:%s:%i\n", __func__, __LINE__);
-   if(inStruct.info.full_[0])
+   if(inStruct.info.full_path.value.c_str()[0])
    {
-      param_.full_path = inStruct.info.full_;
+      param_.full_path = (char *)inStruct.info.full_path.value.c_str();
       param_.component_name = 0;
       param_.parent_handle = 0;
    }
    else
    {
       param_.full_path = 0;
-      param_.parent_handle = inStruct.info.handle_ ;
-      param_.component_name = inStruct.info.component_;
+      param_.parent_handle = &inStruct.info.handle;
+      param_.component_name = (char *)inStruct.info.component.value.c_str();
    }
    param_.op_hint = NULL;
 //   param_.op_hint = inStruct.hint;

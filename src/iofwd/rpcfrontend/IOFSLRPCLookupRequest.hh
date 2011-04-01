@@ -7,16 +7,16 @@
 #include "iofwd/LookupRequest.hh"
 #include "iofwd/rpcfrontend/IOFSLRPCRequest.hh"
 #include "RPCSimpleRequest.hh"
-#include "zoidfs/util/FileSpecHelper.hh"
+#include "zoidfs/util/ZoidFSFileSpec.hh"
 
 namespace iofwd
 {
    namespace rpcfrontend
    {
 /* Input encoder struct */
-typedef encoder::FileSpecHelper FileSpecHelper;
+typedef zoidfs::ZoidFSFileSpec ZoidFSFileSpec;
 typedef zoidfs::zoidfs_op_hint_t zoidfs_op_hint_t;
-ENCODERSTRUCT(RPCLookupIn,  ((FileSpecHelper)(info)))
+ENCODERSTRUCT(RPCLookupIn,  ((ZoidFSFileSpec)(info)))
 
 /* Output Encoder Struct */
 typedef zoidfs::zoidfs_handle_t zoidfs_handle_t;

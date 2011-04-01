@@ -7,7 +7,6 @@
 #include "encoder/EncoderWrappers.hh"
 #include "encoder/Util.hh"
 #include <boost/utility/enable_if.hpp>
-
 namespace encoder
 {
 //===========================================================================
@@ -37,7 +36,7 @@ namespace encoder
       {
       }
 
-      FileSpecHelper ()
+      FileSpecHelper () : allow_write_(true)
       { }
 
    public:
@@ -108,9 +107,13 @@ namespace encoder
 
       process (p, haveFullPath);
       if (haveFullPath)
-      {
-         BOOST_ASSERT (f.handle_);
+      {  
+         /* Why is this assert here? */
+         //BOOST_ASSERT (f.handle_);
+         //EncString(f.full_, ZOIDFS_PATH_MAX);
+
          process (p, EncString (f.full_, ZOIDFS_PATH_MAX));
+         //f.full_ = tmp.ptr_;
       }
       else
       {
