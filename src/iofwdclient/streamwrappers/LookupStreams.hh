@@ -65,7 +65,7 @@ inline Enc & process (Enc & e,
    process(e,*(w.parent_handle_));
    process(e, EncOpaque(NULL, ZOIDFS_NAME_MAX, ZOIDFS_NAME_MAX));
    process(e, EncOpaque(NULL, ZOIDFS_PATH_MAX, ZOIDFS_PATH_MAX));
-   process(e,w.op_helper_);
+//   process(e,w.op_helper_);
 }
 
 template <typename Enc, typename Wrapper>
@@ -86,7 +86,7 @@ inline Enc & process (Enc & e,
     if (w.full_path_)
        process(e, EncOpaque (w.full_path_, strlen(w.full_path_), ZOIDFS_PATH_MAX));
 
-    process(e, w.op_helper_);
+//    process(e, w.op_helper_);
 
     return e;
 }
@@ -99,7 +99,7 @@ inline Enc & process (Enc & e,
     fprintf(stderr, "LOOKUPSTERAMS:%s:%i\n", __func__, __LINE__);
     
     process(e, *(w.handle_));
-    process(e, w.op_helper_);
+//    process(e, w.op_helper_);
     fprintf(stderr, "LOOKUPSTERAMS:%i\n", *(w.handle_));
     return e;
 }
@@ -111,7 +111,7 @@ inline Enc & process (Enc & e,
         typename only_size_processor<Enc>::type * = 0)
 {
     process(e, *(w.handle_));
-    process(e, w.op_helper_);
+//    process(e, w.op_helper_);
     return e;
 }
     }

@@ -37,6 +37,8 @@ namespace encoder
       {
       }
 
+      FileSpecHelper ()
+      { }
 
    public:
       zoidfs::zoidfs_handle_t * handle_;
