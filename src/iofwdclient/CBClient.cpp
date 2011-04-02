@@ -14,13 +14,14 @@
 #include "iofwdclient/streamwrappers/WriteStreams.hh"
 
 #include "iofwdclient/clientsm/RPCCommClientSM.hh"
+#include "iofwdclient/clientsm/RPCCommWriteSM.hh"
 
 using namespace zoidfs;
 
 namespace iofwdclient
 {
    typedef iofwdclient::clientsm::RPCCommClientSM<LookupInStream, LookupOutStream> RPCCommClientSMLookup;
-   typedef iofwdclient::clientsm::RPCCommClientSM<WriteInStream, WriteOutStream> RPCCommClientSMWrite;
+   typedef iofwdclient::clientsm::RPCCommWriteSM<WriteInStream, WriteOutStream> RPCCommClientSMWrite;
    //========================================================================
    CBClient::CBClient (iofwdutil::IOFWDLogSource & log,
          CommStream & net, net::AddressPtr addr, bool poll)

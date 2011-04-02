@@ -10,6 +10,8 @@
 #include "zoidfs/util/zoidfs-wrapped.hh"
 #include "zoidfs/util/FileSpecHelper.hh"
 #include <cstdio>
+
+#include <memory.h>
 using namespace encoder;
 using namespace encoder::xdr;
 
@@ -38,9 +40,13 @@ namespace iofwdclient
                      file_count_(file_count),
                      file_starts_(file_starts),
                      file_sizes_(file_sizes),
-                     op_helper_(op_hint)
+                     op_helper_(op_hint),
+                     buf(0),
+                     pos(0)
                  {
                  }
+               int buf;
+               size_t pos;
                const zoidfs::zoidfs_handle_t *handle_;
                size_t mem_count_;
                const void ** mem_starts_;
@@ -121,6 +127,58 @@ inline Enc & process (Enc & e,
     process(e, w.returnCode);
     return e;
 }
+
+/* Write data to the stream */
+inline int getWriteData (void ** buffer, size_t * size, WriteInStream  w)
+{
+   /* Which input buffer are we on */
+   int buf = w.buf;
+   /* position in that buffer */
+   size_t pos = w.pos;
+   /* Current size copied */
+   size_t curSize = 0;
+   /* output buffer offset */
+   int buffer_offset = 0;
+   /* return flag */
+   int ret = 0;
+   for (size_t i = buf; i < w.mem_count_; i++)
+   {
+      /* if there is additional data to be read */
+      if (pos < w.mem_sizes_[i])
+      {
+         /* if the entire buffer can be copied */
+         if (curSize + (w.mem_sizes_[i] - pos) < *size)
+         {
+            memcpy (&( *((char**)buffer) [buffer_offset]), 
+                    &(((char **)(w.mem_starts_))[i][pos]), 
+                    w.mem_sizes_[i] - pos);
+            pos = 0;
+            curSize = curSize + w.mem_sizes_[i] - pos;
+            buffer_offset = buffer_offset + w.mem_sizes_[i] - pos; 
+         }
+         /* if there is not enough room for the buffer to be copied */
+         else
+         {
+            memcpy (&( *((char**)buffer) [buffer_offset]), 
+                    &(((char **)(w.mem_starts_))[i][pos]), 
+                    curSize - *size);
+            pos = pos + curSize - *size;
+            curSize =  *size;
+            buffer_offset = *size;
+            ret = 1;
+            buf = i;
+            break; 
+         }
+      }
+   }
+   *size = curSize;
+   w.pos = pos; 
+   w.buf = buf;
+   return ret;
+}
+
+
+
     }
 }
 

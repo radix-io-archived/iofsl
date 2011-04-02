@@ -43,7 +43,10 @@ CPPCLIENTLIB += \
     src/iofwdclient/IOFWDClient.cpp \
     src/iofwdclient/IOFWDClient.hh \
     src/iofwdclient/CommStream.hh \
-    src/iofwdclient/CommStream.cpp
+    src/iofwdclient/CommStream.cpp \
+    src/iofwdclient/clientsm/RPCClientWrite.hh \
+    src/iofwdclient/clientsm/RPCCommWriteSM.hh
+
 
 #    src/iofwdclient/iofwdclientlib.hh 
 #    
