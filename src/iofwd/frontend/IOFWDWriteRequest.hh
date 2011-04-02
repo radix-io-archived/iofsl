@@ -5,8 +5,6 @@
 #include "iofwd/WriteRequest.hh"
 #include "iofwdutil/bmi/BMI.hh"
 #include "iofwdutil/bmi/BMIBuffer.hh"
-#include "iofwdutil/HybridAllocator.hh"
-#include "iofwdutil/InjectPool.hh"
 
 namespace iofwd
 {
@@ -16,8 +14,7 @@ namespace iofwd
 
 class IOFWDWriteRequest
    : public IOFWDRequest,
-     public WriteRequest,
-     public iofwdutil::InjectPool<IOFWDWriteRequest>
+     public WriteRequest
 {
 public:
    IOFWDWriteRequest (int opid, const BMI_unexpected_info & info,
@@ -45,7 +42,6 @@ public:
 private:
    ReqParam param_;
 
-   iofwdutil::HybridAllocator<4096> h;
    zoidfs::zoidfs_handle_t handle_;
    zoidfs::zoidfs_op_hint_t op_hint_;
    bmi_size_t mem_expected_size;

@@ -4,7 +4,6 @@
 #include "zoidfs/util/zoidfs-wrapped.hh"
 #include "IOFWDRequest.hh"
 #include "iofwd/LookupRequest.hh"
-#include "iofwdutil/InjectPool.hh"
 
 namespace iofwd
 {
@@ -14,8 +13,7 @@ namespace iofwd
 
 class IOFWDLookupRequest
    : public IOFWDRequest,
-     public LookupRequest,
-     public iofwdutil::InjectPool<IOFWDLookupRequest>
+     public LookupRequest
 {
 public:
    IOFWDLookupRequest (int opid, const BMI_unexpected_info & info,
