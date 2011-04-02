@@ -117,21 +117,46 @@ class RPCClientWrite :
             e_.zero_copy_stream_->rewindOutput(e_.data_size_ - e_.net_data_size_, slots_[BASE_SLOT]);
 
             slots_.wait(BASE_SLOT,
-                    &RPCClientWrite<INTYPE,OUTTYPE>::waitEncodeData);
+                    &RPCClientWrite<INTYPE,OUTTYPE>::getWriteBuffer);
 
         }
 
+        /* Get the write buffer for writing data */
+        void getWriteBuffer (iofwdevent::CBException e)
+        {
+            /* setup the write stream */
+            e_.zero_copy_stream_->write(&e_.data_ptr_, &e_.data_size_, slots_[BASE_SLOT],
+                    e_.net_data_size_);
+
+            slots_.wait(BASE_SLOT,&RPCClientWrite<INTYPE,OUTTYPE>::writeData);
+        }
+      
+        /* Write data to output stream */
+        void writeData (iofwdevent::CBException e)
+        {
+            size_t outSize = e_.data_size_;
+            int ret = getWriteData (&e_.data_ptr_, &outSize, e_.data_);
+            /* write finished */
+            if (ret == 0)
+            {
+               /* rewind then continue to flush */
+               e_.zero_copy_stream_->rewindOutput(e_.data_size_ - outSize, slots_[BASE_SLOT]);
+               slots_.wait(BASE_SLOT,
+                           &RPCClientWrite<INTYPE,OUTTYPE>::waitEncodeData); 
+            }
+            /* More data to be written (out of write buffer) */
+            else 
+            {
+               setNextMethod(&RPCClientWrite<INTYPE,OUTTYPE>::getWriteBuffer);               
+            }
+        }
+
+        /* Flush state */
         void waitEncodeData(iofwdevent::CBException e)
         {
             fprintf(stderr, "RPCClientWrite:%s:%i\n", __func__, __LINE__);
             e.check();
             setNextMethod(&RPCClientWrite<INTYPE,OUTTYPE>::postFlush);
-        }
-
-        void writeBuffer (iofwdevent::CBException e)
-        {
-
-
         }
 
         void postFlush(iofwdevent::CBException e)

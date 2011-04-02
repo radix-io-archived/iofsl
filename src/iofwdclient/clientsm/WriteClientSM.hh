@@ -14,6 +14,7 @@
 #include "iofwdclient/IOFWDClientCB.hh"
 #include "iofwdclient/clientsm/RPCServerSM.hh"
 #include "iofwdclient/clientsm/RPCCommClientSM.hh"
+#include "iofwdclient/clientsm/RPCCommWriteSM.hh"
 #include "zoidfs/zoidfs.h"
 
 #include <cstdio>
@@ -24,7 +25,7 @@ namespace iofwdclient
 
     namespace clientsm
     {
-typedef boost::shared_ptr< iofwdclient::clientsm::RPCCommClientSM<WriteInStream,WriteOutStream> > RPCCommClientSMWrite;
+typedef boost::shared_ptr< iofwdclient::clientsm::RPCCommWriteSM<WriteInStream, WriteOutStream> > RPCCommClientSMWrite;
 class WriteClientSM :
     public sm::SimpleSM< iofwdclient::clientsm::WriteClientSM >
 {
