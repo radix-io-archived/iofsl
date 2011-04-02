@@ -30,10 +30,13 @@ CPPCLIENTLIB += \
     src/iofwdclient/clientsm/CreateClientSM.cpp \
     src/iofwdclient/clientsm/LookupClientSM.hh \
     src/iofwdclient/clientsm/LookupClientSM.cpp \
+    src/iofwdclient/clientsm/WriteClientSM.hh \
+    src/iofwdclient/clientsm/WriteClientSM.cpp \
     src/iofwdclient/clientsm/RPCCommClientSM.hh \
     src/iofwdclient/streamwrappers/LookupStreams.hh \
     src/iofwdclient/streamwrappers/GetAttrInStream.hh \
     src/iofwdclient/streamwrappers/GetAttrOutStream.hh \
+    src/iofwdclient/streamwrappers/WriteStreams.hh \
     src/iofwdclient/iofwdclientlib.hh \
     src/iofwdclient/LinkHelper.hh \
     src/iofwdclient/LinkHelper.cpp \

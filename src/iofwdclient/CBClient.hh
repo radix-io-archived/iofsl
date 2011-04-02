@@ -210,7 +210,7 @@ namespace iofwdclient
                     const void *mem_starts[], const size_t mem_sizes[],
                     size_t file_count, const zoidfs::zoidfs_file_ofs_t file_starts[],
                     zoidfs::zoidfs_file_ofs_t file_sizes[],
-                    zoidfs::zoidfs_op_hint_t * op_hint) {}
+                    zoidfs::zoidfs_op_hint_t * op_hint);
 
 
          int cbinit(const IOFWDClientCB & cb, int * ret, 
