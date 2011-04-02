@@ -67,7 +67,6 @@ class WriteTaskSM : public sm::SimpleSM< WriteTaskSM >, public
         void decodeInputParams(iofwdevent::CBException e)
         {
            e.check ();
-            decodeInput();
 
             /* compute the total size of the pipeline transfers */
             for (size_t i = 0; i < p.mem_count; i++)
@@ -305,7 +304,6 @@ class WriteTaskSM : public sm::SimpleSM< WriteTaskSM >, public
     protected:
 
         /* normal mode operations */
-        void decodeInput();
         void recvBuffers();
         void writeNormal();
         void reply();
@@ -322,9 +320,9 @@ class WriteTaskSM : public sm::SimpleSM< WriteTaskSM >, public
         void computePipelineFileSegments();
 
         enum {WRITE_SLOT = 0, NUM_WRITE_SLOTS = 1};
-        WriteRequest::ReqParam p;
         zoidfs::util::ZoidFSAsync * api_;
         WriteRequest & request_;
+        WriteRequest::ReqParam & p;
         sm::SimpleSlots<NUM_WRITE_SLOTS, iofwd::tasksm::WriteTaskSM> slots_;
 
         /* pipeline variables */

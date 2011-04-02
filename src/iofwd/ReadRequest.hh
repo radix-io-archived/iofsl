@@ -8,6 +8,9 @@
 #include "iofwdevent/CBType.hh"
 #include "iofwd/RetrievedBuffer.hh"
 
+#include <boost/scoped_ptr.hpp>
+#include <boost/scoped_array.hpp>
+
 namespace iofwd
 {
 class ReadRequest : public Request
@@ -15,28 +18,37 @@ class ReadRequest : public Request
 public:
    typedef struct ReqParam_
    {
-      zoidfs::zoidfs_handle_t * handle;
-      size_t mem_count;
-      void ** mem_starts;
-      size_t * mem_sizes;
-      size_t file_count;
-      zoidfs::zoidfs_file_ofs_t * file_starts;
-      zoidfs::zoidfs_file_ofs_t * file_sizes;
-      size_t pipeline_size;
-      zoidfs::zoidfs_op_hint_t * op_hint;
+       zoidfs::zoidfs_handle_t * handle;
 
-      /* decoded hint values */
-     bool op_hint_pipeline_enabled;
+       size_t mem_count;
+       boost::scoped_array<void *> mem_starts;
+       boost::scoped_array<size_t> mem_sizes;
 
-     size_t max_buffer_size;
+       size_t file_count;
+       boost::scoped_array<zoidfs::zoidfs_file_ofs_t> file_starts;
+       boost::scoped_array<zoidfs::zoidfs_file_ofs_t> file_sizes;
 
-     ReqParam_()
-        : handle(NULL), mem_count(0), mem_starts(NULL), mem_sizes(NULL),
-          file_count(0), file_starts(NULL), file_sizes(NULL),
-          pipeline_size(0), op_hint(NULL), op_hint_pipeline_enabled(true),
-          max_buffer_size(0)
-     {
-     }
+       size_t pipeline_size;
+       bool op_hint_pipeline_enabled;
+       
+       zoidfs::zoidfs_op_hint_t * op_hint;
+
+       size_t max_buffer_size;
+
+       ReqParam_() :
+           handle(NULL),
+           mem_count(0),
+           file_count(0),
+           pipeline_size(0),
+           op_hint_pipeline_enabled(true),
+           op_hint(NULL),
+           max_buffer_size(0)
+       {
+       }
+
+       ~ReqParam_()
+       {
+       }
    } ReqParam;
 
    ReadRequest (int opid)

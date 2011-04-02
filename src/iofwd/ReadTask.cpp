@@ -24,8 +24,8 @@ void ReadTask::runNormalMode(ReadRequest::ReqParam & p)
 
    // issue the read request
    block_.reset();
-   api_->read(block_, &ret, p.handle, p.mem_count, p.mem_starts,
-         p.mem_sizes, p.file_count, p.file_starts, p.file_sizes, p.op_hint);
+   api_->read(block_, &ret, p.handle, p.mem_count, p.mem_starts.get(),
+         p.mem_sizes.get(), p.file_count, p.file_starts.get(), p.file_sizes.get(), p.op_hint);
    block_.wait();
 
    request_.setReturnCode(ret);
@@ -46,8 +46,8 @@ void ReadTask::runNormalMode(ReadRequest::ReqParam & p)
 
 void ReadTask::computePipelineFileSegments(const ReadRequest::ReqParam & p)
 {
-    const zoidfs::zoidfs_file_ofs_t * file_starts = p.file_starts;
-    const zoidfs::zoidfs_file_size_t * file_sizes = p.file_sizes;
+    const zoidfs::zoidfs_file_ofs_t * file_starts = p.file_starts.get();
+    const zoidfs::zoidfs_file_size_t * file_sizes = p.file_sizes.get();
 
     size_t cur_pipe_ofs = 0;
     int cur_file_index = 0;
