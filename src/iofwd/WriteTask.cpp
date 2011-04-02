@@ -36,8 +36,9 @@ void WriteTask::runNormalMode(WriteRequest::ReqParam & p)
    int ret;
    block_.reset();
    api_->write((block_), &ret,  p.handle, p.mem_count, 
-         const_cast<const void**>(reinterpret_cast<void**>(p.mem_starts)), p.mem_sizes,
-         p.file_count, p.file_starts, p.file_sizes, p.op_hint); 
+         const_cast<const void**>(reinterpret_cast<void**>(p.mem_starts.get())),
+         p.mem_sizes.get(),
+         p.file_count, p.file_starts.get(), p.file_sizes.get(), p.op_hint); 
    block_.wait();
 
    /* deallocate the buffer */
@@ -54,8 +55,8 @@ void WriteTask::runNormalMode(WriteRequest::ReqParam & p)
 
 void WriteTask::computePipelineFileSegments(const WriteRequest::ReqParam & p)
 {
-    const zoidfs::zoidfs_file_ofs_t * file_starts = p.file_starts;
-    const zoidfs::zoidfs_file_size_t * file_sizes = p.file_sizes;
+    const zoidfs::zoidfs_file_ofs_t * file_starts = p.file_starts.get();
+    const zoidfs::zoidfs_file_size_t * file_sizes = p.file_sizes.get();
 
     size_t cur_pipe_ofs = 0;
     int cur_file_index = 0;
