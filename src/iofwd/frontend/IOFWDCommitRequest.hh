@@ -3,7 +3,6 @@
 
 #include "IOFWDRequest.hh"
 #include "iofwd/CommitRequest.hh"
-#include "iofwdutil/InjectPool.hh"
 
 namespace iofwd
 {
@@ -14,8 +13,7 @@ namespace iofwd
 
 class IOFWDCommitRequest
   : public CommitRequest,
-    public IOFWDRequest,
-    public iofwdutil::InjectPool<IOFWDCommitRequest>
+    public IOFWDRequest
 {
 public:
    IOFWDCommitRequest (int opid, const BMI_unexpected_info & info,

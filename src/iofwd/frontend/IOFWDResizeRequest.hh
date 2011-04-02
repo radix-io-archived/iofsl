@@ -3,7 +3,6 @@
 
 #include "IOFWDRequest.hh"
 #include "iofwd/ResizeRequest.hh"
-#include "iofwdutil/InjectPool.hh"
 
 namespace iofwd
 {
@@ -13,8 +12,7 @@ namespace iofwd
 
 class IOFWDResizeRequest
   : public ResizeRequest,
-    public IOFWDRequest,
-    public iofwdutil::InjectPool<IOFWDResizeRequest>
+    public IOFWDRequest
 {
 public:
    IOFWDResizeRequest (int opid, const BMI_unexpected_info & info,

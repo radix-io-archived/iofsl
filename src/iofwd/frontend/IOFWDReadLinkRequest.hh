@@ -4,7 +4,6 @@
 #include "zoidfs/util/zoidfs-wrapped.hh"
 #include "IOFWDRequest.hh"
 #include "iofwd/ReadLinkRequest.hh"
-#include "iofwdutil/InjectPool.hh"
 
 namespace iofwd
 {
@@ -14,8 +13,7 @@ namespace iofwd
 
 class IOFWDReadLinkRequest
    : public IOFWDRequest,
-     public ReadLinkRequest,
-     public iofwdutil::InjectPool<IOFWDReadLinkRequest>
+     public ReadLinkRequest
 {
 public:
    IOFWDReadLinkRequest (int opid, const BMI_unexpected_info & info,
