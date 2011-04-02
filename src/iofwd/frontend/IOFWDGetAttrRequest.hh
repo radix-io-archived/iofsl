@@ -4,7 +4,6 @@
 #include "zoidfs/util/zoidfs-wrapped.hh"
 #include "IOFWDRequest.hh"
 #include "iofwd/GetAttrRequest.hh"
-#include "iofwdutil/InjectPool.hh"
 
 namespace iofwd
 {
@@ -14,8 +13,7 @@ namespace iofwd
 
 class IOFWDGetAttrRequest
    : public IOFWDRequest,
-     public GetAttrRequest,
-     public iofwdutil::InjectPool<IOFWDGetAttrRequest>
+     public GetAttrRequest
 {
 public:
    IOFWDGetAttrRequest (int opid, const BMI_unexpected_info & info,

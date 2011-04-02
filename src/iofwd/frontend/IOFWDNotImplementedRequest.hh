@@ -3,7 +3,6 @@
 
 #include "IOFWDRequest.hh"
 #include "iofwd/NotImplementedRequest.hh"
-#include "iofwdutil/InjectPool.hh"
 
 namespace iofwd
 {
@@ -11,8 +10,7 @@ namespace iofwd
    {
 
 class IOFWDNotImplementedRequest : public NotImplementedRequest,
-                                   public IOFWDRequest,
-                                   public iofwdutil::InjectPool<IOFWDNotImplementedRequest>
+                                   public IOFWDRequest
 {
 public:
    IOFWDNotImplementedRequest (int opid, const BMI_unexpected_info & info,
