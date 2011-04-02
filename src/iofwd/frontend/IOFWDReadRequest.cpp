@@ -20,8 +20,6 @@ IOFWDReadRequest::~IOFWDReadRequest ()
       delete[] param_.file_starts;
    if (param_.file_sizes)
       delete[] param_.file_sizes;
-   if (bmi_mem_sizes)
-      delete[] bmi_mem_sizes;
    zoidfs::hints::zoidfs_hint_free(param_.op_hint);
 }
 
@@ -115,9 +113,9 @@ void IOFWDReadRequest::initRequestParams(ReqParam & p, void * bufferMem)
         param_.mem_starts = new void*[param_.file_count];
 
 #if SIZEOF_SIZE_T != SIZEOF_INT64_T
-        bmi_mem_sizes = new bmi_size_t[param_.file_count];
+        bmi_mem_sizes.reset(new bmi_size_t[param_.file_count]);
 #else
-        bmi_mem_sizes = NULL;
+        bmi_mem_sizes.reset();
 #endif
 
         // setup the mem offset and start buffers

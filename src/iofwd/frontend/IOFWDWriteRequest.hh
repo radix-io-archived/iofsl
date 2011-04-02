@@ -6,6 +6,9 @@
 #include "iofwdutil/bmi/BMI.hh"
 #include "iofwdutil/bmi/BMIBuffer.hh"
 
+#include <boost/scoped_ptr.hpp>
+#include <boost/scoped_array.hpp>
+
 namespace iofwd
 {
    namespace frontend
@@ -45,7 +48,7 @@ private:
    zoidfs::zoidfs_handle_t handle_;
    zoidfs::zoidfs_op_hint_t op_hint_;
    bmi_size_t mem_expected_size;
-   bmi_size_t * bmi_mem_sizes;
+   boost::scoped_array<bmi_size_t> bmi_mem_sizes;
 };
 
 //===========================================================================
