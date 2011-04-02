@@ -41,7 +41,6 @@ class ReadTaskSM : public sm::SimpleSM< ReadTaskSM >, public iofwdutil::InjectPo
         void decodeInputParams(iofwdevent::CBException e)
         {
            e.check ();
-            decodeInput();
 
             /* compute the total size of the pipeline transfers */
             for (size_t i = 0; i < p.mem_count; i++)
@@ -216,7 +215,6 @@ class ReadTaskSM : public sm::SimpleSM< ReadTaskSM >, public iofwdutil::InjectPo
     protected:
 
         /* normal mode operations */
-        void decodeInput();
         void sendBuffers();
         void readNormal();
         void reply();
@@ -231,9 +229,9 @@ class ReadTaskSM : public sm::SimpleSM< ReadTaskSM >, public iofwdutil::InjectPo
 
         /* @TODO currently set the concurrent pipeline op count to 128... this should be dynamic or tunable */
         enum {READ_SLOT = 0, READ_PIPEOP_START, NUM_READ_SLOTS = 129};
-        ReadRequest::ReqParam p;
         zoidfs::util::ZoidFSAsync * api_;
         ReadRequest & request_;
+        ReadRequest::ReqParam & p;
         sm::SimpleSlots<NUM_READ_SLOTS, iofwd::tasksm::ReadTaskSM> slots_;
 
         /* pipeline variables */

@@ -8,10 +8,23 @@ namespace iofwd
 //===========================================================================
 
     WriteTaskSM::WriteTaskSM(sm::SMManager & smm, zoidfs::util::ZoidFSAsync * api, Request * p)
-        : sm::SimpleSM<WriteTaskSM>(smm), api_(api), request_((static_cast<WriteRequest&>(*p))), slots_(*this),
-          total_bytes_(0), cur_recv_bytes_(0), p_siz_(0), total_pipeline_ops_(0), total_buffers_(0),
-          io_ops_done_(0), cw_post_index_(0), rbuffer_(NULL), mode_(WRITESM_PARA_IO_PIPELINE),
-          ret_(zoidfs::ZFS_OK), pipeline_size_(0)
+        : 
+            sm::SimpleSM<WriteTaskSM>(smm),
+            api_(api),
+            request_((static_cast<WriteRequest&>(*p))),
+            p(request_.decodeParam()),
+            slots_(*this),
+            total_bytes_(0),
+            cur_recv_bytes_(0),
+            p_siz_(0),
+            total_pipeline_ops_(0),
+            total_buffers_(0),
+            io_ops_done_(0),
+            cw_post_index_(0),
+            rbuffer_(NULL),
+            mode_(WRITESM_PARA_IO_PIPELINE),
+            ret_(zoidfs::ZFS_OK),
+            pipeline_size_(0),
     {
     }
 
@@ -32,11 +45,6 @@ namespace iofwd
         delete &request_;
     }
 
-    void WriteTaskSM::decodeInput()
-    {
-        p = request_.decodeParam();
-    }
-
     /* recv the input data to write to the disk */
     void WriteTaskSM::recvBuffers()
     {
@@ -52,8 +60,9 @@ namespace iofwd
     {
 #if SIZEOF_SIZE_T == SIZEOF_INT64_T
         api_->write(slots_[WRITE_SLOT], &ret_, p.handle, p.mem_count,
-              (const void**)p.mem_starts, p.mem_sizes, p.file_count, p.file_starts,
-              p.file_sizes, const_cast<zoidfs::zoidfs_op_hint_t *>(p.op_hint));
+              const_cast<const void**>(reinterpret_cast<void**>(p.mem_starts.get())), p.mem_sizes.get(),
+              p.file_count, p.file_starts.get(), p.file_sizes.get(),
+              const_cast<zoidfs::zoidfs_op_hint_t *>(p.op_hint));
 #else
         api_->write(slots_[WRITE_SLOT], &ret_, p.handle, p.mem_count, (const
                  void**)p.mem_starts, p.mem_sizes, p.file_count, p.file_starts,
@@ -79,8 +88,8 @@ namespace iofwd
 
     void WriteTaskSM::computePipelineFileSegments()
     {
-        const zoidfs_file_ofs_t * file_starts = p.file_starts;
-        const zoidfs_file_size_t * file_sizes = p.file_sizes;
+        const zoidfs_file_ofs_t * file_starts = p.file_starts.get();
+        const zoidfs_file_size_t * file_sizes = p.file_sizes.get();
         
         size_t cur_pipe_ofs = 0;
         int cur_file_index = 0;
