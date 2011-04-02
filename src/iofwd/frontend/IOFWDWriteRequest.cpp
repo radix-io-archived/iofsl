@@ -24,8 +24,6 @@ IOFWDWriteRequest::~IOFWDWriteRequest ()
       delete[] param_.file_starts;
    if (param_.file_sizes)
       delete[] param_.file_sizes;
-   if (bmi_mem_sizes)
-      delete[] bmi_mem_sizes;
 
    zoidfs::hints::zoidfs_hint_free(param_.op_hint);
 }
@@ -121,9 +119,9 @@ void IOFWDWriteRequest::initRequestParams(ReqParam & p, void * bufferMem)
 
         // if this is a 32bit system, allocate a mem_size buffer using bmi_size_t
 #if SIZEOF_SIZE_T != SIZEOF_INT64_T
-        bmi_mem_sizes = new bmi_size_t[param_.file_count];
+        bmi_mem_sizes.reset(new bmi_size_t[param_.file_count]);
 #else
-        bmi_mem_sizes = NULL;
+        bmi_mem_sizes.reset();
 #endif
         // setup the mem offset buffer
         size_t cur = 0;
