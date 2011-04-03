@@ -81,11 +81,11 @@ inline Enc & process (Enc & e,
    process (e, *(w.handle_));
    process (e, w.mem_count_);
    /* THIS NEEDS TO BE CHECKED */
-   process (e, encoder::EncVarArray( (const char * const)(*w.mem_starts_), w.mem_count_));
+//   process (e, encoder::EncVarArray( (const char * const)(*w.mem_starts_), w.mem_count_));
    process (e, encoder::EncVarArrayHelper<const size_t, const size_t>(w.mem_sizes_, w.mem_count_));
    process (e, w.file_count_);
-   process (e, encoder::EncVarArray( (const char * const)(w.file_starts_), w.file_count_));
-   process (e, encoder::EncVarArrayHelper<const size_t, const size_t>((size_t *)(w.file_sizes_), w.file_count_));
+   process (e, encoder::EncVarArray( w.file_starts_, w.file_count_));
+   process (e, encoder::EncVarArrayHelper<const zoidfs::zoidfs_file_ofs_t, const size_t>(w.file_sizes_, w.file_count_));
    return e;
 }
 
@@ -99,11 +99,11 @@ inline Enc & process (Enc & e,
    process (e, *(w.handle_));
    process (e, w.mem_count_);
    /* THIS NEEDS TO BE CHECKED */
-   process (e, encoder::EncVarArray( (const char * const)(*w.mem_starts_), w.mem_count_));
+//   process (e, encoder::EncVarArray( (const char * const)(*w.mem_starts_), w.mem_count_));
    process (e, encoder::EncVarArrayHelper<const size_t, const size_t>(w.mem_sizes_, w.mem_count_));
    process (e, w.file_count_);
-   process (e, encoder::EncVarArray( (const char * const)(w.file_starts_), w.file_count_));
-   process (e, encoder::EncVarArrayHelper<const size_t, const size_t>((size_t *)(w.file_sizes_), w.file_count_));
+   process (e, encoder::EncVarArray( w.file_starts_, w.file_count_));
+   process (e, encoder::EncVarArrayHelper<const zoidfs::zoidfs_file_ofs_t, const size_t>(w.file_sizes_, w.file_count_));
    return e;
 }
 template <typename Enc, typename Wrapper>
