@@ -33,7 +33,7 @@
 //#include "iofwd/rpcfrontend/IOFSLRPCResizeRequest.hh"
 //#include "iofwd/rpcfrontend/IOFSLRPCSetAttrRequest.hh"
 //#include "iofwd/rpcfrontend/IOFSLRPCSymLinkRequest.hh"
-//#include "iofwd/rpcfrontend/IOFSLRPCWriteRequest.hh"
+#include "iofwd/rpcfrontend/IOFSLRPCWriteRequest.hh"
 
 
 SERVICE_REGISTER(iofwd::extraservice::IOFSLClientRPCService, iofslclientrpc);
@@ -83,8 +83,8 @@ namespace iofwd
 //               boost::bind(&IOFSLClientRPCService::setattr, this, _1, _2, _3));
 //         rpcserver_->registerRPC("iofslclientrpc.symlink",
 //               boost::bind(&IOFSLClientRPCService::symlink, this, _1, _2, _3));
-//         rpcserver_->registerRPC("iofslclientrpc.write",
-//               boost::bind(&IOFSLClientRPCService::write, this, _1, _2, _3));
+         rpcserver_->registerRPC("iofslclientrpc.write",
+               boost::bind(&IOFSLClientRPCService::write, this, _1, _2, _3));
       }
 
       IOFSLClientRPCService::~IOFSLClientRPCService()
@@ -107,16 +107,16 @@ namespace iofwd
 //         rpcserver_->unregisterRPC("iofslclientrpc.resize");
 //         rpcserver_->unregisterRPC("iofslclientrpc.setattr");
 //         rpcserver_->unregisterRPC("iofslclientrpc.symlink");
-//         rpcserver_->unregisterRPC("iofslclientrpc.write");
+         rpcserver_->unregisterRPC("iofslclientrpc.write");
       }
   
 /* Needs request handler */
-#define RPC_GENCLIENTCODE(CLASSNAME, RPCNAME)                                    \
+#define RPC_GENCLIENTCODE(CLASSNAME, RPCNAME, OPID)                              \
       void IOFSLClientRPCService::RPCNAME (iofwdevent::ZeroCopyInputStream * in, \
             iofwdevent::ZeroCopyOutputStream * out, const rpc::RPCInfo & )       \
       {                                                                          \
           /* TODO get the correct op code */                                     \
-          int opid = 3;                                                          \
+          int opid = OPID;                                                       \
                                                                                  \
           iofwd::Request * tmp = new iofwd::rpcfrontend::CLASSNAME(opid,         \
                                                             in, out);            \
@@ -127,7 +127,7 @@ namespace iofwd
 //      RPC_GENCLIENTCODE (IOFSLRPCCreateRequest, create)
 //      RPC_GENCLIENTCODE (IOFSLRPCGetAttrRequest, getattr)
 //      RPC_GENCLIENTCODE (IOFSLRPCLinkRequest, link)
-      RPC_GENCLIENTCODE (IOFSLRPCLookupRequest, lookup)
+      RPC_GENCLIENTCODE (IOFSLRPCLookupRequest, lookup, zoidfs::ZOIDFS_PROTO_LOOKUP)
 //      RPC_GENCLIENTCODE (IOFSLRPCMkdirRequest, mkdir)
 //      RPC_GENCLIENTCODE (IOFSLRPCNotImplementedRequest, notimplemented)
 //      RPC_GENCLIENTCODE (IOFSLRPCNullRequest, null)
@@ -139,7 +139,7 @@ namespace iofwd
 //      RPC_GENCLIENTCODE (IOFSLRPCResizeRequest, resize)
 //      RPC_GENCLIENTCODE (IOFSLRPCSetAttrRequest, setattr)
 //      RPC_GENCLIENTCODE (IOFSLRPCSymLinkRequest, symlink)
-//      RPC_GENCLIENTCODE (IOFSLRPCWriteRequest, write)
+      RPC_GENCLIENTCODE (IOFSLRPCWriteRequest, write, zoidfs::ZOIDFS_PROTO_WRITE)
 
 //      void IOFSLClientRPCService::getattr(iofwdevent::ZeroCopyInputStream * in,
 //            iofwdevent::ZeroCopyOutputStream * out,
