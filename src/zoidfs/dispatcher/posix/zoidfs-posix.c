@@ -45,6 +45,8 @@
 #define LL_IOC_GROUP_LOCK               _IOW ('f', 158, long)
 #define LL_IOC_GROUP_UNLOCK             _IOW ('f', 159, long)
 
+static pthread_mutex_t posix_create_mutex = PTHREAD_MUTEX_INITIALIZER;
+
 #ifndef NDEBUG
 static int do_debug = 0;
 #define zoidfs_debug(format, ...) if (do_debug) fprintf (stderr, "zoidfs_posix: debug: " format, ##__VA_ARGS__)
@@ -787,10 +789,16 @@ static int zoidfs_posix_create(const zoidfs_handle_t *parent_handle,
    int file;
    struct stat s;
    int newmode;
+   int ret = ZFS_OK;
+
+   pthread_mutex_lock(&posix_create_mutex);
 
    if (!zoidfs_simplify_path_mem (parent_handle, component_name,
          full_path,newpath,sizeof(newpath)))
-      return ZFSERR_STALE;
+   {
+      ret = ZFSERR_STALE;
+      goto out;
+   }
 
    *created = 0;
 
@@ -810,18 +818,26 @@ static int zoidfs_posix_create(const zoidfs_handle_t *parent_handle,
    {
       /* if the error is not that the file already exists, bail out */
       if (errno != EEXIST)
-         return errno2zfs (errno);
+      {
+         ret = errno2zfs (errno);
+         goto out;
+      }
    }
 
    /* file exists, and we should be able to stat it */
    if (lstat (newpath, &s) < 0)
-      return errno2zfs (errno);
+   {
+      ret = errno2zfs (errno);
+      goto out;
+   }
 
    filename2handle (&s, newpath, handle);
 
    /* add name to cache */
    filename_add (fcache, handle, newpath);
 
+out:
+   pthread_mutex_unlock(&posix_create_mutex);
    return ZFS_OK;
 }
 
