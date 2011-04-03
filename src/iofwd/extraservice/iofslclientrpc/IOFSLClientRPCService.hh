@@ -4,7 +4,7 @@
 #include "rpc/RPCHandler.hh"
 
 #include "zoidfs/zoidfs.h"
-
+#include "zoidfs/zoidfs-proto.h"
 #include "iofwdevent/ZeroCopyInputStream.hh"
 #include "iofwdevent/ZeroCopyOutputStream.hh"
 
@@ -47,7 +47,7 @@ namespace iofwd
 //            RPC_GENCLIENTHEADERS (IOFSLRPCCreateRequest, create)
 //            RPC_GENCLIENTHEADERS (IOFSLRPCGetAttrRequest, getattr)
 //            RPC_GENCLIENTHEADERS (IOFSLRPCLinkRequest, link)
-            RPC_GENCLIENTHEADERS (IOFSLRPCLookupRequest, lookup)
+            RPC_GENCLIENTHEADERS (IOFSLRPCLookupRequest, lookup )
 //            RPC_GENCLIENTHEADERS (IOFSLRPCMkdirRequest, mkdir)
 //            RPC_GENCLIENTHEADERS (IOFSLRPCNotImplementedRequest, notimplemented)
 //            RPC_GENCLIENTHEADERS (IOFSLRPCNullRequest, null)
@@ -59,7 +59,7 @@ namespace iofwd
 //            RPC_GENCLIENTHEADERS (IOFSLRPCResizeRequest, resize)
 //            RPC_GENCLIENTHEADERS (IOFSLRPCSetAttrRequest, setattr)
 //            RPC_GENCLIENTHEADERS (IOFSLRPCSymLinkRequest, symlink)
-//            RPC_GENCLIENTHEADERS (IOFSLRPCWriteRequest, write)
+            RPC_GENCLIENTHEADERS (IOFSLRPCWriteRequest, write)
 
 
 //            void getattr(iofwdevent::ZeroCopyInputStream * in,

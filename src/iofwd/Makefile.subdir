@@ -194,7 +194,10 @@ src/iofwd/frontend/IOFWDWriteRequest.hh \
 src/iofwd/rpcfrontend/IOFSLRPCLookupRequest.hh \
 src/iofwd/rpcfrontend/IOFSLRPCLookupRequest.cpp \
 src/iofwd/rpcfrontend/IOFSLRPCRequest.hh \
-src/iofwd/rpcfrontend/IOFSLRPCRequest.cpp 
+src/iofwd/rpcfrontend/IOFSLRPCRequest.cpp \
+src/iofwd/rpcfrontend/IOFSLRPCWriteRequest.hh \
+src/iofwd/rpcfrontend/IOFSLRPCWriteRequest.cpp 
+
 #src/iofwd/rpcfrontend/IOFSLRPCGetAttrRequest.hh \
 #src/iofwd/rpcfrontend/IOFSLRPCGetAttrRequest.cpp \
 #src/iofwd/rpcfrontend/IOFSLRPCCreateRequest.hh \
