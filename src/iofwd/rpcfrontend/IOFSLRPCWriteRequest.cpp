@@ -26,15 +26,19 @@ namespace iofwd
          /* Start RPCDecoder */            
          dec_ = rpc::RPCDecoder(read_ptr_, read_size_);
 
-         /* Calculate the size */
          process (dec_, dec_struct.handle_);
          process (dec_, dec_struct.mem_count_);
-         /* THIS NEEDS TO BE CHECKED */
-         process (dec_, encoder::EncVarArray( (char *)(*dec_struct.mem_starts_), dec_struct.mem_count_));
-         process (dec_, encoder::EncVarArrayHelper< size_t,  size_t>(dec_struct.mem_sizes_, dec_struct.mem_count_));
-         process (dec_, dec_struct.file_count_);
-         process (dec_, encoder::EncVarArray( ( char * )(dec_struct.file_starts_), dec_struct.file_count_));
-         process (dec_, encoder::EncVarArrayHelper< size_t,  size_t>((size_t *)(dec_struct.file_sizes_), dec_struct.file_count_));
+
+         dec_struct.mem_starts_ = (void **) new char * [dec_struct.mem_count_];
+         dec_struct.mem_sizes_ = new size_t[dec_struct.mem_count_];
+         process (dec_, encoder::EncVarArray(dec_struct.mem_sizes_, dec_struct.mem_count_));
+
+         process (dec_, dec_struct.file_count_);         
+         dec_struct.file_starts_  = new zoidfs::zoidfs_file_ofs_t[dec_struct.file_count_];
+         dec_struct.file_sizes_   = new zoidfs::zoidfs_file_ofs_t[dec_struct.file_count_];
+
+         process (dec_, encoder::EncVarArray( dec_struct.file_starts_, dec_struct.file_count_));
+         process (dec_, encoder::EncVarArray( dec_struct.file_sizes_, dec_struct.file_count_));
          
          /* Hint decoding disabled currently */
 //         zoidfs::hints::zoidfs_hint_create(&op_hint_);  
@@ -56,8 +60,8 @@ namespace iofwd
           param_.mem_sizes = dec_struct.mem_sizes_;
           param_.mem_count = dec_struct.mem_count_;
           param_.file_count = dec_struct.file_count_;
-          param_.file_sizes = &dec_struct.file_sizes_;
-          param_.file_starts = &dec_struct.file_starts_;
+          param_.file_sizes = dec_struct.file_sizes_;
+          param_.file_starts = dec_struct.file_starts_;
 
           /* Pipelining no longer matter */
           param_.pipeline_size = 0;
