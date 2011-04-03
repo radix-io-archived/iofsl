@@ -431,9 +431,9 @@ namespace iofwdclient
    {
             // validate arguments
       // Can op_hint be 0?
-      if (*request || !handle || !mem_count || !mem_starts || !mem_sizes ||
-          !file_count || !file_sizes)
-         return ZFSERR_INVAL;
+//      if (*request || !handle || !mem_count || !mem_starts || !mem_sizes ||
+//          !file_count || !file_sizes)
+//         return ZFSERR_INVAL;
 
       IOFWDRequest * r = tracker_->newRequest ();
       r->setCompletionStatus(zoidfs::ZFS_COMP_NONE);
