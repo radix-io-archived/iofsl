@@ -27,7 +27,7 @@ namespace iofwdclient
              public:
                  ReadInStream( const zoidfs::zoidfs_handle_t *handle = NULL,
                                 size_t mem_count = NULL,
-                                const void *mem_starts[] = NULL,
+                                void *mem_starts[] = NULL,
                                 const size_t mem_sizes[] = NULL,
                                 size_t file_count = NULL, 
                                 const zoidfs::zoidfs_file_ofs_t file_starts[] = NULL,
@@ -49,7 +49,7 @@ namespace iofwdclient
                size_t pos;
                const zoidfs::zoidfs_handle_t *handle_;
                size_t mem_count_;
-               const void ** mem_starts_;
+               void ** mem_starts_;
                const size_t * mem_sizes_;
                size_t file_count_;
                const zoidfs::zoidfs_file_ofs_t * file_starts_;
@@ -61,19 +61,22 @@ namespace iofwdclient
       {
           public:
               ReadOutStream(zoidfs::zoidfs_op_hint_t * op_hint = NULL,
+                             size_t mem_count = NULL,
                              void *mem_starts[] = NULL,
                              const size_t mem_sizes[] = NULL) :
                  mem_starts_(mem_starts),
                  mem_sizes_(mem_sizes),
+                 mem_count_(mem_count),
                  buf(0),
                  pos(0)
               {
               }
+              size_t mem_count_;
               int returnCode;
               zoidfs::zoidfs_handle_t * handle_;
               int buf;
               size_t pos;
-              const void ** mem_starts_;
+              void ** mem_starts_;
               const size_t * mem_sizes_;
       };
 
@@ -172,10 +175,10 @@ inline int getReadData (void * buffer, size_t size, ReadOutStream  w)
          {
             memcpy (&(((char **)(w.mem_starts_))[i][pos]), 
                     &(((char*)buffer) [buffer_offset]), 
-                    curSize - *size);
-            pos = pos + curSize - *size;
-            curSize =  *size;
-            buffer_offset = *size;
+                    curSize - size);
+            pos = pos + curSize - size;
+            curSize =  size;
+            buffer_offset = size;
             ret = 1;
             buf = i;
             break; 

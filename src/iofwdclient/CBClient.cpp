@@ -12,16 +12,19 @@
 #include "iofwdclient/streamwrappers/LookupStreams.hh"
 #include "iofwdclient/clientsm/WriteClientSM.hh"
 #include "iofwdclient/streamwrappers/WriteStreams.hh"
+#include "iofwdclient/clientsm/ReadClientSM.hh"
+#include "iofwdclient/streamwrappers/ReadStreams.hh"
 
 #include "iofwdclient/clientsm/RPCCommClientSM.hh"
 #include "iofwdclient/clientsm/RPCCommWriteSM.hh"
-
+#include "iofwdclient/clientsm/RPCCommReadSM.hh"
 using namespace zoidfs;
 
 namespace iofwdclient
 {
    typedef iofwdclient::clientsm::RPCCommClientSM<LookupInStream, LookupOutStream> RPCCommClientSMLookup;
    typedef iofwdclient::clientsm::RPCCommWriteSM<WriteInStream, WriteOutStream> RPCCommClientSMWrite;
+   typedef iofwdclient::clientsm::RPCCommReadSM<ReadInStream, ReadOutStream> RPCCommClientSMRead;
    //========================================================================
    CBClient::CBClient (iofwdutil::IOFWDLogSource & log,
          CommStream & net, net::AddressPtr addr, bool poll)
@@ -140,6 +143,36 @@ namespace iofwdclient
        sm->execute();           
    }
    
+   int CBClient::cbread(const IOFWDClientCB & cb,
+                        int * ret,
+                        const zoidfs::zoidfs_handle_t *handle, size_t mem_count,
+                        void *mem_starts[], const size_t mem_sizes[],
+                        size_t file_count, 
+                        const zoidfs::zoidfs_file_ofs_t file_starts[],
+                        zoidfs::zoidfs_file_ofs_t file_sizes[],
+                        zoidfs::zoidfs_op_hint_t * op_hint)
+   {
+       /* create the empty wrapper */
+       CBSMWrapper * cbsm = CBSMWrapper::createCBSMWrapper(cb);
+
+       /* Sets up the handler for the RPC State Machine */
+       /* Should be changed to RPC KEY */
+       rpc::RPCClientHandle rpc_handle = client_->rpcConnect(ZOIDFS_READ_RPC.c_str(), addr_);
+       boost::shared_ptr<RPCCommClientSMRead> comm;
+       comm.reset(new RPCCommClientSMRead (smm_, rpc_handle, poll_));
+       
+       /* create the state machine */
+       iofwdclient::clientsm::ReadClientSM * sm =
+           new iofwdclient::clientsm::ReadClientSM(*smm_, poll_, comm, 
+                   cbsm->getWCB(), ret, handle, mem_count, mem_starts, mem_sizes,
+                   file_count, file_starts, file_sizes, op_hint);
+      
+       /* add the sm to the cb wrapper */ 
+       cbsm->set(sm);
+
+       /* execute the sm */
+       sm->execute();           
+   }
 
    //========================================================================
 }
