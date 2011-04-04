@@ -4,6 +4,8 @@
 
 #include "iofwd/extraservice/aarpc/AtomicAppendManager.hh"
 
+#include "zoidfs/zoidfs.h"
+
 namespace iofwd
 {
     namespace tasksm
@@ -75,8 +77,21 @@ namespace iofwd
               p.file_sizes, p.op_hint);
 #endif
 
-        /* set the callback */
-        slots_.wait(WRITE_SLOT, &WriteTaskSM::waitEnqueueWrite);
+        /* if this is noblocking io, the cb will not be triggered */
+        if(ret_ == ZFSERR_EINPROGRESS)
+        {
+            ret_ = ZFS_OK;
+
+            /* transition to enqueue write w/out waiting */
+            slots_.reset(WRITE_SLOT);
+            setNextMethod(&WriteTaskSM::waitEnqueueWrite);
+        }
+        /* blocking io will wait for the callback */
+        else
+        {
+            /* set the callback */
+            slots_.wait(WRITE_SLOT, &WriteTaskSM::waitEnqueueWrite);
+        }
     }
 
     /* issue the reply */
@@ -199,8 +214,9 @@ namespace iofwd
                 p_file_count, file_starts, file_sizes, const_cast<zoidfs::zoidfs_op_hint_t *>(p.op_hint));
 
             /* if this was an async IO, go to next state */
-            if(*ret == EINPROGRESS)
+            if(*ret == ZFSERR_EINPROGRESS)
             {
+                slots_.reset(WRITE_SLOT);
                 setNextMethod(&WriteTaskSM::waitPipelineEnqueueWrite);
             }
             /* else, wait for the callback */
@@ -244,7 +260,7 @@ namespace iofwd
                 }
 
                 /* if this was an async IO, consider op done */
-                if(*ret == EINPROGRESS)
+                if(*ret == ZFSERR_EINPROGRESS)
                 {
                     /* consider the op done... do not include in the barrier */
                     num_async_io_ops_++;

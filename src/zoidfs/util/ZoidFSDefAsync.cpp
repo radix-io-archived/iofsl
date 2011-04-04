@@ -964,7 +964,7 @@ namespace zoidfs
                     e = boost::current_exception();
                 }
                 /* DO NOT invoke the callback... instead return "in progress" */
-                *ret = EINPROGRESS;
+                *ret = ZFSERR_EINPROGRESS;
             }
             /* we could not allocate the buffer space for the nbio...
                switch to blocking io and ignore hint */

@@ -67,6 +67,11 @@ namespace sm
           */
          void wait (size_t pos, typename T::next_method_t next);
 
+         void reset(size_t pos)
+         {
+             slots_[pos].status_ = FREE;
+         }
+
        protected:
 
          void callback (int pos, const iofwdevent::CBException e);
