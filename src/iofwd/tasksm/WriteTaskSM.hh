@@ -316,6 +316,7 @@ class WriteTaskSM : public sm::SimpleSM< WriteTaskSM >, public
         void execPipelineIO();
         void waitWriteBarrier(iofwdevent::CBException e);
         void writeDoneCB(iofwdevent::CBException status, int my_slot);
+        void writeDoneCBUnprotected(int my_slot);
 
         void computePipelineFileSegments();
 
@@ -353,6 +354,7 @@ class WriteTaskSM : public sm::SimpleSM< WriteTaskSM >, public
 
         bool atomic_append_mode_;
         zoidfs_file_ofs_t atomic_append_base_offset_;
+        int num_async_io_ops_;
 };
     }
 }

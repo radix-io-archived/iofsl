@@ -9,6 +9,9 @@
 #include "src/zoidfs/util/zoidfs-ops.hh"
 #include "iofwdutil/mm/NBIOMemoryManager.hh"
 
+#include <boost/shared_ptr.hpp>
+#include <boost/shared_array.hpp>
+
 namespace zoidfs
 {
     namespace util
@@ -87,6 +90,49 @@ namespace zoidfs
                             zoidfs::ZOIDFS_PROTO_NULL, tp)
                 {
                 }
+        };
+
+        class ZoidFSDefAsyncNBWriteWorkUnit : public ZoidFSDefAsyncWorkUnit
+        {
+            public:
+                ZoidFSDefAsyncNBWriteWorkUnit(const iofwdevent::CBType & cb,
+                        int * ret, ZoidFSAPI * api,
+                        iofwdutil::ThreadPool & tp,
+                        const zoidfs_handle_t * handle,
+                        size_t mem_count,
+                        const void * mem_starts[],
+                        const size_t mem_sizes[],
+                        size_t file_count,
+                        const zoidfs_file_ofs_t file_starts[],
+                        const zoidfs_file_size_t file_sizes[],
+                        zoidfs_op_hint_t * hint,
+                        zoidfs_async_write_op_key * op_key = NULL,
+                        iofwdutil::mm::NBIOMemoryAlloc * alloc = NULL) :
+
+                    ZoidFSDefAsyncWorkUnit(cb, ret, api,
+                            zoidfs::ZOIDFS_PROTO_WRITE, tp),
+                    handle_(handle), mem_count_(mem_count),
+                    mem_starts_(mem_starts),
+                    mem_sizes_(mem_sizes),
+                    file_count_(file_count),
+                    file_starts_(file_starts),
+                    file_sizes_(file_sizes),
+                    hint_(hint),
+                    op_key_(op_key),
+                    alloc_(alloc)
+                {
+                }
+
+                boost::shared_ptr<const zoidfs_handle_t> handle_;
+                size_t mem_count_;
+                boost::shared_array<const void *> mem_starts_;
+                boost::shared_array<const size_t> mem_sizes_;
+                size_t file_count_;
+                boost::shared_array<const zoidfs_file_ofs_t> file_starts_;
+                boost::shared_array<const zoidfs_file_size_t> file_sizes_;
+                zoidfs_op_hint_t * hint_;
+                zoidfs_async_write_op_key * op_key_;
+                iofwdutil::mm::NBIOMemoryAlloc * alloc_;
         };
 
         class ZoidFSDefAsyncWriteWorkUnit : public ZoidFSDefAsyncWorkUnit

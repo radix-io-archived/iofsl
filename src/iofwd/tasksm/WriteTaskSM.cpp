@@ -29,7 +29,8 @@ namespace iofwd
             ret_(zoidfs::ZFS_OK),
             pipeline_size_(0),
             atomic_append_mode_(false),
-            atomic_append_base_offset_(0)
+            atomic_append_base_offset_(0),
+            num_async_io_ops_(0)
     {
     }
 
@@ -197,8 +198,17 @@ namespace iofwd
                 slots_[WRITE_SLOT], ret, p.handle, p_file_count, (const void**)mem_starts, mem_sizes,
                 p_file_count, file_starts, file_sizes, const_cast<zoidfs::zoidfs_op_hint_t *>(p.op_hint));
 
-            /* issue the serial wait */
-            slots_.wait(WRITE_SLOT, &WriteTaskSM::waitPipelineEnqueueWrite);
+            /* if this was an async IO, go to next state */
+            if(*ret == EINPROGRESS)
+            {
+                setNextMethod(&WriteTaskSM::waitPipelineEnqueueWrite);
+            }
+            /* else, wait for the callback */
+            else
+            {
+                /* issue the serial wait */
+                slots_.wait(WRITE_SLOT, &WriteTaskSM::waitPipelineEnqueueWrite);
+            }
         }
         else
         {
@@ -232,13 +242,42 @@ namespace iofwd
                 {
                     setNextMethod(&WriteTaskSM::waitPipelineEnqueueWrite);
                 }
+
+                /* if this was an async IO, consider op done */
+                if(*ret == EINPROGRESS)
+                {
+                    /* consider the op done... do not include in the barrier */
+                    num_async_io_ops_++;
+                    *ret = ZFS_OK;
+                    writeDoneCBUnprotected(my_slot);
+                }
+
             }
         }
     }
 
+void WriteTaskSM::writeDoneCBUnprotected(int my_slot)
+{
+    iofwdevent::CBException status;
+    int count = 0;
+    {
+        // update the op count
+        io_ops_done_++;
+        count = io_ops_done_;
+
+        /* free the buffer */
+        request_.releaseBuffer(rbuffer_[my_slot]);
+    }
+
+    if(count == total_pipeline_ops_)
+    {
+        s_(status);
+    }
+}
+
 void WriteTaskSM::writeDoneCB(iofwdevent::CBException status, int my_slot)
 {
-   status.check ();
+    status.check ();
     int count = 0;
     {
         boost::mutex::scoped_lock l(slot_mutex_);

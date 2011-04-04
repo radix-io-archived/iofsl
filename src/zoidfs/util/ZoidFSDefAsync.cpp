@@ -845,7 +845,6 @@ namespace zoidfs
             zoidfs_file_ofs_t * iofsl_file_starts = NULL;
             zoidfs_file_size_t * iofsl_file_sizes = NULL;
             zoidfs_handle_t * iofsl_h = NULL;
-            zoidfs_op_hint_t * iofsl_hint = NULL;
             zoidfs_async_write_op_key * op_key = NULL;
             size_t total_size = 0;
 
@@ -871,9 +870,11 @@ namespace zoidfs
                     /* duplicate the hint */
                     if(hint)
                     {
+#if 0
                         iofsl_hint = new zoidfs_op_hint_t;
                         zoidfs::hints::zoidfs_hint_create(iofsl_hint);
                         zoidfs::hints::zoidfs_hint_dup(*hint, iofsl_hint);
+#endif
                     }
 
                     /* copy the mem params */
@@ -940,7 +941,7 @@ namespace zoidfs
                                 iofsl_h, mem_count, const_cast<const void
                                 **>(iofsl_mem_starts), iofsl_mem_sizes,
                                 file_count, iofsl_file_starts,
-                                iofsl_file_sizes, iofsl_hint, op_key,
+                                iofsl_file_sizes, ZOIDFS_NO_OP_HINT, op_key,
                                 nbio_buffer);
 
                     /* submit the work unit to the TP */
@@ -962,8 +963,8 @@ namespace zoidfs
                 {
                     e = boost::current_exception();
                 }
-                /* invoke the callback now */
-                cb(e);
+                /* DO NOT invoke the callback... instead return "in progress" */
+                *ret = EINPROGRESS;
             }
             /* we could not allocate the buffer space for the nbio...
                switch to blocking io and ignore hint */
