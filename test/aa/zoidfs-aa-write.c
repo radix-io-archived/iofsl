@@ -11,14 +11,14 @@
 #include "zoidfs/hints/zoidfs-hints.h"
 
 /* how many buffers will each rank write */
-#define BUFS_PER_RANK 16 
+#define BUFS_PER_RANK 4 
 
 /* enable or disable AA mode */
 #if 1
 #define ENABLE_AA_MODE
 #endif
 
-//#define ENABLE_NB_SERVER_MODE
+#define ENABLE_NB_SERVER_MODE
 
 /*
 * simple test program for atomic append mode
@@ -206,6 +206,21 @@ int main(int argc, char **argv)
         zoidfs_hint_delete_all(op_hint);
 #endif
     }
+
+#ifdef ENABLE_NB_SERVER_MODE
+    {
+        zoidfs_hint_set(op_hint, ZOIDFS_NONBLOCK_SERVER_IO,
+                ZOIDFS_HINT_ENABLED, 0);
+
+        ret = zoidfs_commit(&handle, &op_hint);
+        if(ret != ZFS_OK)
+        {
+            fprintf(stderr, "%s:%i zoidfs_commit detected errors realted to NBIO requests\n", __func__, __LINE__);
+        }
+
+        zoidfs_hint_delete_all(op_hint);
+    }
+#endif
  
     /* free the hint */
     zoidfs_hint_free(&op_hint);
