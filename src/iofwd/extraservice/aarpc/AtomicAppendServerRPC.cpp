@@ -38,7 +38,6 @@ namespace iofwd
          /**
           * Conveniently create a thread to handle the RPC call
           */
-#ifndef USE_CRAY_TP
          static void threadRPC(const rpc::RPCHandler & h,
                ZeroCopyInputStream * in, ZeroCopyOutputStream * out,
                const rpc::RPCInfo & info)
@@ -46,7 +45,6 @@ namespace iofwd
              /* create a new thread */
              boost::thread(boost::bind(h, in, out, info));
          }
-#else
          static void threadpoolRPC(const rpc::RPCHandler & h,
                ZeroCopyInputStream * in, ZeroCopyOutputStream * out,
                const rpc::RPCInfo & info)
@@ -57,14 +55,14 @@ namespace iofwd
              iofwdutil::ThreadPool::instance().submitWorkUnit(f,
                      iofwdutil::ThreadPool::HIGH);
          }
-#endif
 
          rpc::RPCHandler rpcExec(const rpc::RPCHandler & orig)
          {
-#ifndef USE_CRAY_TP 
-            return boost::bind(&threadRPC, orig, _1, _2, _3);
-#else
+//#ifdef USE_CRAY_TP 
+#if 0 
             return boost::bind(&threadpoolRPC, orig, _1, _2, _3);
+#else
+            return boost::bind(&threadRPC, orig, _1, _2, _3);
 #endif
          }
       }
