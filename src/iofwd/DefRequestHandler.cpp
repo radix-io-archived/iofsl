@@ -106,6 +106,8 @@ DefRequestHandler::~DefRequestHandler ()
    /* if this is the task mode, clear out the work queues before shutdown */
    else if(event_mode_ == EVMODE_TASK)
    {
+       /* does not build with icc */
+#if 0
         std::vector<WorkItem *> items;
         ZLOG_INFO (log_, "Waiting for normal workqueue to complete all work...");
         workqueue_normal_->waitAll (items);
@@ -115,6 +117,7 @@ DefRequestHandler::~DefRequestHandler ()
         ZLOG_INFO (log_, "Waiting for fast workqueue to complete all work...");
         workqueue_fast_->waitAll (items);
         for_each (items.begin(), items.end(), boost::lambda::bind(delete_ptr(), boost::lambda::_1));
+#endif
    }
 
    api_->finalize();
