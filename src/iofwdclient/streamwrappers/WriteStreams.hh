@@ -40,13 +40,15 @@ namespace iofwdclient
                      file_count_(file_count),
                      file_starts_(file_starts),
                      file_sizes_(file_sizes),
-                     op_helper_(op_hint),
-                     buf(0),
-                     pos(0)
+                     op_helper_(op_hint)
                  {
+                  buf =  new int;
+                  pos = new size_t;
+                  *buf = 0;
+                  *pos = 0;
                  }
-               int buf;
-               size_t pos;
+               int * buf;
+               size_t * pos;
                const zoidfs::zoidfs_handle_t *handle_;
                size_t mem_count_;
                const void ** mem_starts_;
@@ -128,13 +130,24 @@ inline Enc & process (Enc & e,
     return e;
 }
 
+inline size_t RemainingWrite (WriteInStream w)
+{
+   int buf = *(w.buf);
+   size_t size = 0;
+   for (size_t i = buf; i < w.mem_count_; i++)
+   {
+      size += w.mem_sizes_[i];
+   }
+   return size;    
+}
+
 /* Write data to the stream */
 inline int getWriteData (void ** buffer, size_t * size, WriteInStream  w)
 {
    /* Which input buffer are we on */
-   int buf = w.buf;
+   int buf = *(w.buf);
    /* position in that buffer */
-   size_t pos = w.pos;
+   size_t pos = *(w.pos);
    /* Current size copied */
    size_t curSize = 0;
    /* output buffer offset */
@@ -149,7 +162,7 @@ inline int getWriteData (void ** buffer, size_t * size, WriteInStream  w)
          /* if the entire buffer can be copied */
          if (curSize + (w.mem_sizes_[i] - pos) < *size)
          {
-            memcpy (&( *((char**)buffer) [buffer_offset]), 
+            memcpy ( &((char*)(*buffer))[buffer_offset], 
                     &(((char **)(w.mem_starts_))[i][pos]), 
                     w.mem_sizes_[i] - pos);
             pos = 0;
@@ -159,10 +172,10 @@ inline int getWriteData (void ** buffer, size_t * size, WriteInStream  w)
          /* if there is not enough room for the buffer to be copied */
          else
          {
-            memcpy (&( *((char**)buffer) [buffer_offset]), 
-                    &(((char **)(w.mem_starts_))[i][pos]), 
-                    curSize - *size);
-            pos = pos + curSize - *size;
+            memcpy ( &((char*)(*buffer))[buffer_offset], 
+                    &(((char **)w.mem_starts_)[i])[pos], 
+                    *size - curSize);
+            pos = pos + *size - curSize;
             curSize =  *size;
             buffer_offset = *size;
             ret = 1;
@@ -172,8 +185,8 @@ inline int getWriteData (void ** buffer, size_t * size, WriteInStream  w)
       }
    }
    *size = curSize;
-   w.pos = pos; 
-   w.buf = buf;
+   *(w.pos) = pos; 
+   *(w.buf) = buf;
    return ret;
 }
 

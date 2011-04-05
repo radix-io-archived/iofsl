@@ -71,7 +71,7 @@ class RPCClientWrite :
             e.check();
 
             /* Get the maximum possible send size */
-            e_.net_data_size_ = rpc::getRPCEncodedSize(INTYPE()).getMaxSize();
+            e_.net_data_size_ = rpc::getRPCEncodedSize(e_.data_).getMaxSize();
             /* Set the output stream */
             rpc_handle_->waitOutReady (slots_[BASE_SLOT]);
             slots_.wait (BASE_SLOT, 
@@ -126,10 +126,17 @@ class RPCClientWrite :
         {
             /* setup the write stream */
             e_.zero_copy_stream_->write(&e_.data_ptr_, &e_.data_size_, slots_[BASE_SLOT],
-                    e_.net_data_size_);
+                    RemainingWrite(e_.data_));
 
             slots_.wait(BASE_SLOT,&RPCClientWrite<INTYPE,OUTTYPE>::writeData);
         }
+
+        void flushWriteBuffer (iofwdevent::CBException e)
+        {
+            e_.zero_copy_stream_->flush(slots_[BASE_SLOT]);
+            slots_.wait(BASE_SLOT,
+                    &RPCClientWrite<INTYPE,OUTTYPE>::getWriteBuffer);  
+        }          
       
         /* Write data to output stream */
         void writeData (iofwdevent::CBException e)
@@ -147,7 +154,7 @@ class RPCClientWrite :
             /* More data to be written (out of write buffer) */
             else 
             {
-               setNextMethod(&RPCClientWrite<INTYPE,OUTTYPE>::getWriteBuffer);               
+               setNextMethod(&RPCClientWrite<INTYPE,OUTTYPE>::flushWriteBuffer);               
             }
         }
 

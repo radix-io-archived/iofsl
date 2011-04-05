@@ -76,7 +76,6 @@ int main (int argc, char ** args)
       iofwd::extraservice::IOFSLClientRPCService * rpcserver;
       if (opt_server)
       {
-
          fprintf(stderr, "rpcserver:%s:%i\n", __func__, __LINE__);
           rpcserver = new iofwd::extraservice::IOFSLClientRPCService ( man); 
       }
@@ -100,10 +99,31 @@ int main (int argc, char ** args)
          size_t ret = 0;
          printf("HANDLE: %i\n", handle);
          printf("MY RETRURN: %i\n",ret);
-         ret = x->lookup (NULL, NULL, "/repo/test.txt", &handle, &op_hint);                          
-         printf("HANDLE: %i\n", handle);
-         printf("MY RETRURN: %i\n",ret);
-
+         ret = x->lookup (NULL, NULL, "/repo/test.txt", &handle, &op_hint);    
+                      
+          int  _N = 1;
+          size_t _BSIZE = 50000;
+          size_t mem_sizes[_N]; 
+          size_t _foff = 0; 
+          size_t mem_count, file_count; 
+          uint64_t file_sizes[_N], file_starts[_N]; 
+          void *mem_starts_write[_N]; 
+          size_t _i = 0; 
+          mem_count = _N; 
+          file_count = _N; 
+          for(_i = 0 ; _i < mem_count ; _i++) 
+          { 
+              mem_starts_write[_i] = malloc(_BSIZE); 
+              memset(mem_starts_write[_i], 'a', _BSIZE); 
+              file_sizes[_i] = mem_sizes[_i] = _BSIZE; 
+              file_starts[_i] = _foff; 
+              _foff += _BSIZE; 
+          } 
+          ret = x->write (&handle, mem_count, (const void **)mem_starts_write, mem_sizes, file_count, file_starts, file_sizes, ZOIDFS_NO_OP_HINT); 
+          for(_i = 0 ; _i < mem_count ; _i++) 
+          { 
+              free(mem_starts_write[_i]); 
+          } 
       }
 
       if (opt_server)
@@ -115,7 +135,7 @@ int main (int argc, char ** args)
    }
    catch (std::exception & e)
    {
-      cerr << boost::diagnostic_information (e);
+      //cerr << boost::diagnosticinformation (e);
    }
 }
 
