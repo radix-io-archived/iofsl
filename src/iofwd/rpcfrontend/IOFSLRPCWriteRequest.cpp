@@ -174,8 +174,6 @@ namespace iofwd
          in_->read((const void **)&tmpBuffer, &outSize, block, sizdec_);
          block.wait();
 
-//         assert (outSize < sizdec_);
-
          if (outSize < sizdec_)
          {
             std::memcpy ( *buff, tmpBuffer, outSize);
@@ -192,8 +190,12 @@ namespace iofwd
         return ret;
       }
 
-
       void IOFSLRPCWriteRequest::recvBuffers(const CBType & cb, RetrievedBuffer * rb)
+      {
+         new boost::thread(boost::bind(&IOFSLRPCWriteRequest::recvBuffersBlock, this, cb, rb));  
+      }
+
+      void IOFSLRPCWriteRequest::recvBuffersBlock(const CBType & cb, RetrievedBuffer * rb)
       {
           int i = 0;
           size_t outSize = 0;
@@ -215,24 +217,26 @@ namespace iofwd
 
       void IOFSLRPCWriteRequest::recvPipelineBufferCB(iofwdevent::CBType cb, RetrievedBuffer * rb, size_t size)
       {
-         size_t ret_size = 0;
-         size_t total_size = 0;
-         int pos = 0;
-         void * mem = (rb->buffer_)->getMemory();
-         do 
-         {
-            ret_size = readBuffer (&mem, size, TRUE);
-            total_size += ret_size;
-            mem = &(((char*)((rb->buffer_)->getMemory()))[total_size]);
-         } while (ret_size != 0 || total_size != size);
-         cb(*(new iofwdevent::CBException()));
+
+         ASSERT ( "THIS SHOULD NOT BE USED" == 0);
+//         size_t ret_size = 0;
+//         size_t total_size = 0;
+//         int pos = 0;
+//         void * mem = (rb->buffer_)->getMemory();
+//         do 
+//         {
+//            ret_size = readBuffer (&mem, size, TRUE);
+//            total_size += ret_size;
+//            mem = &(((char*)((rb->buffer_)->getMemory()))[total_size]);
+//         } while (ret_size != 0 || total_size != size);
+//         cb(*(new iofwdevent::CBException()));
       }
 
       void IOFSLRPCWriteRequest::reply(const CBType & UNUSED(cb))
       {
           /* verify the args are OK */
-//          ASSERT(getReturnCode() != zoidfs::ZFS_OK);
-         encode();
+          ASSERT(getReturnCode() == zoidfs::ZFS_OK);
+          encode();
           /* encode */
 //          encodeRPCOutput();
 
