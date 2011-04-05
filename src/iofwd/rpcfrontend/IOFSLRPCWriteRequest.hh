@@ -58,7 +58,7 @@ namespace iofwd
 
               // for normal mode
               void recvBuffers(const CBType & cb, RetrievedBuffer * rb);
-
+              void recvBuffersBlock(const CBType & cb, RetrievedBuffer * rb);
               // for pipeline mode
               void recvPipelineBufferCB(iofwdevent::CBType cb, 
                                                 RetrievedBuffer * rb, 
@@ -71,7 +71,7 @@ namespace iofwd
               void releaseBuffer(RetrievedBuffer * rb);
 
               size_t readBuffer (void ** buff, size_t size, bool forceSize);
-
+      
 
           protected:
               /* data size helpers for this request */ 
