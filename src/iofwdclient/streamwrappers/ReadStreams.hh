@@ -143,6 +143,17 @@ inline Enc & process (Enc & e,
     return e;
 }
 
+inline size_t RemainingRead (ReadOutStream w)
+{
+   int buf = *(w.buf);
+   size_t size = 0;
+   for (size_t i = buf; i < w.mem_count_; i++)
+   {
+      size += w.mem_sizes_[i];
+   }
+   return size;    
+}
+
 /* Write data to the stream */
 inline int getReadData (void * buffer, size_t size, ReadOutStream  w)
 {

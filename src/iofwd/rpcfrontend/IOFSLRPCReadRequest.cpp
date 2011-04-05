@@ -97,7 +97,7 @@ namespace iofwd
           /* Pipelining no longer matter */
           param_.pipeline_size = 0;
 
-          param_.op_hint = &op_hint_; 
+//          param_.op_hint = &op_hint_; 
           return param_; 
       }
 
@@ -135,10 +135,10 @@ namespace iofwd
           {
             char * mem = NULL;
             // compute the total size of the io op
-//            for(size_t i = 0 ; i < param_.mem_count ; i++)
-//            {
-//                mem_total_size += param_.mem_sizes[i];
-//            }
+////            for(size_t i = 0 ; i < param_.mem_count ; i++)
+////            {
+////                mem_total_size += param_.mem_sizes[i];
+////            }
 
             // create the bmi buffer
             mem = static_cast<char *>(bufferMem);
@@ -221,11 +221,13 @@ namespace iofwd
           int i = 0;
           size_t outSize = 0;
           size_t readSize = 0;  
+          void * loc;
           encode();
           do
           {
+            loc = (void*)&(((char**)param_.mem_starts)[i][outSize]);
             // @TODO Possible read bug here
-            outSize += writeBuffer((void*)&(((char**)param_.mem_starts)[i][outSize]), param_.mem_sizes[i] - outSize, TRUE);
+            outSize += writeBuffer(loc, param_.mem_sizes[i] - outSize, TRUE);
             if (outSize == param_.mem_sizes[i])
             {
                i++;
