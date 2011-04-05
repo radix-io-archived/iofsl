@@ -114,7 +114,7 @@ class RPCClientWrite :
 
             process(e_.coder_, e_.data_);
 
-            e_.zero_copy_stream_->rewindOutput(e_.data_size_ - e_.net_data_size_, slots_[BASE_SLOT]);
+            e_.zero_copy_stream_->rewindOutput(e_.data_size_ - e_.coder_.getPos(), slots_[BASE_SLOT]);
 
             slots_.wait(BASE_SLOT,
                     &RPCClientWrite<INTYPE,OUTTYPE>::getWriteBuffer);
