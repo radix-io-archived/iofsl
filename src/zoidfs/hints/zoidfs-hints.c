@@ -410,7 +410,7 @@ int zoidfs_hint_get_nthkeylen(zoidfs_op_hint_t hint, int n, int * keylen)
         if(n == index)
         {
             /* get the key length */
-            *keylen = strlen(item->key);
+            *keylen = strlen(item->key) + 1;
 
             /* all done */
             break;
