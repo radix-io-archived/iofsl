@@ -191,7 +191,7 @@ class RPCClientRead :
         {
             /* setup the write stream */
             d_.zero_copy_stream_->read(const_cast<const void **>(&d_.data_ptr_),
-                    &d_.data_size_, slots_[BASE_SLOT], d_.net_data_size_);
+                    &d_.data_size_, slots_[BASE_SLOT], RemainingRead(d_.data_));
 
             slots_.wait(BASE_SLOT,&RPCClientRead<INTYPE,OUTTYPE>::readData);
         }
