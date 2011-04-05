@@ -36,6 +36,19 @@ namespace zoidfs
         ZoidFSHandleTracker ZoidFSDefAsync::handle_tracker_;
         uint64_t ZoidFSDefAsync::handle_tracker_id_ = 0;
 
+   ZoidFSDefAsync::~ZoidFSDefAsync()
+   {
+        ZoidFSHandleTracker::iterator it;
+        boost::mutex::scoped_lock lock(handle_tracker_mutex_);
+
+        for(it = handle_tracker_.begin() ; it != handle_tracker_.end() ; it++)
+        {
+            delete it->second;
+        }
+
+        handle_tracker_.clear();
+    }
+
    void ZoidFSDefAsync::runWorkUnit(ZoidFSDefAsyncWorkUnit * bwu)
    {
        switch(bwu->type_)
@@ -499,7 +512,10 @@ namespace zoidfs
                         delete [] wu->file_starts_; 
                         delete [] wu->file_sizes_;
 
+                        /* cleanup mem alloc */
                         iofwdutil::mm::NBIOMemoryManager::instance().dealloc(wu->alloc_); 
+                        delete wu->alloc_;
+
                         if(wu->hint_)
                         {
                             zoidfs::hints::zoidfs_hint_free(wu->hint_);

@@ -128,6 +128,8 @@ namespace zoidfs
       {
       }
 
+      ~ZoidFSDefAsync();
+
       void configure (const iofwdutil::ConfigFile & config);
 
       virtual int init(void) ;
