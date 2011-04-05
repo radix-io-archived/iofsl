@@ -60,7 +60,6 @@ namespace iofwd
             /* sanity */ 
             block.reset();
 
-
             // @TODO: Not using actual size until size function is fixed          
             /* Get size of encode */ 
             //process (size_, outStruct);
@@ -199,11 +198,12 @@ namespace iofwd
       {
           int i = 0;
           size_t outSize = 0;
-          size_t readSize = 0;
-//          CBType nullcb = boost::bind(&iofwd::rpcfrontend::IOFSLRPCWriteRequest::NullCB, this,_1);  
+          size_t readSize = 0;  
+          void * loc;
           do
           {
-            outSize += readBuffer((void**)&param_.mem_starts[i], param_.mem_sizes[i] - outSize, TRUE);
+            loc = (void*)&(param_.mem_starts[i][outSize]);
+            outSize += readBuffer((void**)&loc, param_.mem_sizes[i] - outSize, TRUE);
             fprintf(stderr, "OUTSIZE: %i\n", outSize);
             if (outSize == param_.mem_sizes[i])
             {
