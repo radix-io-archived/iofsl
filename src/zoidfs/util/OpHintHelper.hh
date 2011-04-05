@@ -41,6 +41,7 @@ namespace encoder
 
       ~OpHintHelper()
       {
+          zoidfs::hints::zoidfs_hint_free(&op_hint_);
       }
 
 
@@ -137,7 +138,11 @@ namespace encoder
             process (p, EncString(value, value_len));
 
             /* add the hint */
-            zoidfs::hints::zoidfs_hint_set(h.op_hint_, key, value, value_len);        
+            zoidfs::hints::zoidfs_hint_set(h.op_hint_, key, value, value_len);
+
+            /* cleanup local mem allocs */
+            free(key);
+            free(value);
          }
       }
       /* else, set the hint list to NULL */
@@ -190,6 +195,10 @@ namespace encoder
             process (p, EncString(key, key_len));
             process (p, value_len);
             process (p, EncString(value, value_len));
+
+            /* cleanup */
+            free(key);
+            free(value);
          }
       }
    }
