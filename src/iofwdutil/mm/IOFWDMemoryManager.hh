@@ -45,6 +45,86 @@ class IOFWDMemoryAlloc
         virtual void dealloc() = 0;
 };
 
+class GenericMemoryManager : 
+   public IOFWDMemoryAlloc
+{
+   public:
+      GenericMemoryManager ()
+      {
+         bufferSize_ =  4 * 1024 * 1024;
+      }
+      void alloc (int numTokens)
+      {
+          allocated_ = true;
+          numTokens_ = numTokens;
+          /* create the memory buffer */
+          memory_ = (void *) new char[numTokens];     
+      }
+      /*
+       * This is the public buffer allocation method
+       */
+      void alloc(int numTokens, size_t bufferSize)
+      {
+          /* set the memory params */
+          allocated_ = true;
+          numTokens_ = numTokens;
+          bufferSize_ = bufferSize;
+
+          /* create the memory buffer */
+          memory_ = (void *) new char[bufferSize_];          
+      }
+
+      void dealloc() 
+      {
+         if (allocated_)
+            delete[] (char*)memory_;
+      }
+      ~GenericMemoryManager()
+      {
+          /* if we allocated a buffer, dealloc it */
+          if(allocated_)
+              dealloc();
+      }
+
+      bool allocated() const
+      {
+          return allocated_;
+      }
+
+      void * getMemory() const
+      {
+          return memory_;
+      }
+
+      size_t getMemorySize() const
+      {
+          return bufferSize_;
+      }
+
+      size_t getReqMemorySize() const
+      {
+          return bufferSize_;
+      }
+
+      size_t getNumTokens() const
+      {
+          return numTokens_;
+      }
+
+   protected:
+      /* allocation valid flag */
+      bool allocated_;
+
+      /* number of tokens owned by this alloc */
+      size_t numTokens_;
+      size_t bufferSize_;
+
+      /* the memory buffer */
+      void * memory_;
+
+};
+
+
 /* allocation manager for IOFWD buffers */
 class IOFWDMemoryManager
 {

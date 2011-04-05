@@ -70,7 +70,7 @@ namespace iofwd
 
               void releaseBuffer(RetrievedBuffer * rb);
 
-              size_t readBuffer (void * buff, size_t size, bool forceSize);
+              size_t readBuffer (void ** buff, size_t size, bool forceSize);
 
 
           protected:
@@ -84,7 +84,7 @@ namespace iofwd
               IOFSLRPCWriteDec dec_struct;
               // @TODO: This should not be specified here. however its required
               //        to use the memory manager (BMIMemoryManager)
-              iofwdutil::bmi::BMIAddr * addr_;
+              iofwdutil::bmi::BMIAddr *  addr_;
               zoidfs::zoidfs_op_hint_t op_hint_;
 
              /* pointers and sizes of mem stream data */
