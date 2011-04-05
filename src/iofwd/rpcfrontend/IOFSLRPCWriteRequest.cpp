@@ -42,7 +42,6 @@ namespace iofwd
          process (dec_, encoder::EncVarArray( dec_struct.file_starts_, dec_struct.file_count_));
          process (dec_, encoder::EncVarArray( dec_struct.file_sizes_, dec_struct.file_count_));
 
-
          block.reset();
          in_->rewindInput (read_size_ - dec_.getPos(), block);
          block.wait();
@@ -167,7 +166,7 @@ namespace iofwd
       {
          size_t ret = 0;
          size_t outSize = 0;
-         void ** tmpBuffer = (void **)new char *[1];
+         void * tmpBuffer = (void *)new char[1];
          iofwdevent::SingleCompletion block;
          block.reset();
          in_->read((const void **)&tmpBuffer, &outSize, block, sizdec_);
