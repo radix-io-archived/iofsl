@@ -53,7 +53,7 @@ namespace iofwd
 //            RPC_GENCLIENTHEADERS (IOFSLRPCNullRequest, null)
 //            RPC_GENCLIENTHEADERS (IOFSLRPCReadDirRequest, readdir)
 //            RPC_GENCLIENTHEADERS (IOFSLRPCReadLinkRequest, readlink)
-//            RPC_GENCLIENTHEADERS (IOFSLRPCReadRequest, read)
+            RPC_GENCLIENTHEADERS (IOFSLRPCReadRequest, read)
 //            RPC_GENCLIENTHEADERS (IOFSLRPCRemoveRequest, remove)
 //            RPC_GENCLIENTHEADERS (IOFSLRPCRenameRequest, rename)
 //            RPC_GENCLIENTHEADERS (IOFSLRPCResizeRequest, resize)
