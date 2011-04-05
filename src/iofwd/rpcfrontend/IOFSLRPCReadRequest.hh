@@ -18,18 +18,18 @@ namespace iofwd
       typedef zoidfs::zoidfs_dirent_cookie_t zoidfs_dirent_cookie_t;
       typedef zoidfs::zoidfs_file_ofs_t zoidfs_file_ofs_t;
 
-      ENCODERSTRUCT (IOFSLRPCReadDec, ((zoidfs_handle_t)(handle)) 
-                                        ((size_t)(mem_count))
-                                        ((void**)(mem_starts))              
-                                        ((size_t*)(mem_sizes))
-                                        ((size_t)(file_count))
-                                        ((zoidfs_file_ofs_t)(file_starts))
-                                        ((zoidfs_file_ofs_t)(file_sizes))
-                                        ((size_t)(pipeline_size)))
+      ENCODERSTRUCT (IOFSLRPCReadDec, ((zoidfs_handle_t)(handle_)) 
+                                        ((size_t)(mem_count_))
+                                        ((void**)(mem_starts_))              
+                                        ((size_t*)(mem_sizes_))
+                                        ((size_t)(file_count_))
+                                        ((zoidfs_file_ofs_t*)(file_starts_))
+                                        ((zoidfs_file_ofs_t*)(file_sizes_))
+                                        ((size_t)(pipeline_size_)))
 
       ENCODERSTRUCT (IOFSLRPCReadEnc, ((int)(returnCode))
-                                      ((zoidfs_file_ofs_t)(file_starts))
-                                      ((zoidfs_file_ofs_t)(file_sizes)))
+                                      ((zoidfs_file_ofs_t*)(file_starts))
+                                      ((zoidfs_file_ofs_t*)(file_sizes)))
 
       class IOFSLRPCReadRequest :
           public IOFSLRPCRequest,
@@ -66,7 +66,8 @@ namespace iofwd
 
               void allocateBuffer(iofwdevent::CBType cb, RetrievedBuffer * rb);
               void releaseBuffer(RetrievedBuffer * rb);
-              void writeBuffer(void * buff, size_t size, bool flush);
+              size_t writeBuffer(void * buff, size_t size, bool flush);
+              void sendBuffersBlock(const iofwdevent::CBType & cb, RetrievedBuffer * rb);
           protected:
               /* data size helpers for this request */ 
               virtual size_t rpcEncodedInputDataSize(); 
@@ -81,6 +82,18 @@ namespace iofwd
               iofwdutil::bmi::BMIAddr * addr_;
               IOFSLRPCReadEnc enc_struct;
               IOFSLRPCReadDec dec_struct;
+
+             /* pointers and sizes of mem stream data */
+             const char * read_ptr_;
+             size_t read_size_;
+             char * write_ptr_;
+             size_t write_size_;
+             size_t insize_;
+             size_t outsize_;
+
+             /* RPC encoder / decoder */
+             rpc::RPCDecoder dec_;
+             rpc::RPCEncoder enc_;
       };
 
    }
