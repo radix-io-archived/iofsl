@@ -8,6 +8,7 @@
 #include "iofwd/TaskHelper.hh"
 #include "iofwdutil/InjectPool.hh"
 #include "iofwd/WriteRequest.hh"
+#include "iofwdutil/InjectPool.hh"
 
 #include "zoidfs/zoidfs.h"
 
