@@ -6,7 +6,6 @@
 #include "sm/SimpleSlots.hh"
 #include "iofwdutil/tools.hh"
 #include "iofwd/TaskHelper.hh"
-#include "iofwdutil/InjectPool.hh"
 #include "iofwd/WriteRequest.hh"
 
 #include "zoidfs/zoidfs.h"
@@ -27,13 +26,14 @@ namespace iofwd
     namespace tasksm
     {
 
-class WriteTaskSM : public sm::SimpleSM< WriteTaskSM >, public
-                    iofwdutil::InjectPool< WriteTaskSM >
+class WriteTaskSM : public sm::SimpleSM< WriteTaskSM >,
+    public iofwdutil::InjectPool< WriteTaskSM >
 {
     public:
         WriteTaskSM(sm::SMManager & smm, zoidfs::util::ZoidFSAsync * api,
               Request * r);
-        ~WriteTaskSM();
+
+        virtual ~WriteTaskSM();
 
         void init(iofwdevent::CBException e)
         {

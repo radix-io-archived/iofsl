@@ -43,11 +43,7 @@ namespace iofwd
         {
             delete rbuffer_[i];
         }
-
-        if(rbuffer_)
-        {
-            delete [] rbuffer_;
-        }
+        delete [] rbuffer_;
 
         /* delete the request last */
         delete &request_;
