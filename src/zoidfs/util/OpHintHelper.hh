@@ -8,6 +8,8 @@
 #include "encoder/Util.hh"
 #include "iofwdutil/assert.hh"
 
+#include <boost/shared_ptr.hpp>
+
 namespace encoder
 {
 //===========================================================================
@@ -77,25 +79,23 @@ namespace encoder
          for(i = 0 ; i < size ; i++)
          {
             int key_len = 0;
-            char * key = NULL;
+            boost::shared_ptr<char> key;
             int value_len = 0;
-            char * value = NULL;
+            boost::shared_ptr<char> value;
             int flag = 0;
 
             zoidfs::hints::zoidfs_hint_get_nthkeylen(h.op_hint_, i, &key_len);
-            key = (char *)malloc(key_len);
-            zoidfs::hints::zoidfs_hint_get_nthkey(h.op_hint_, i, key);
-            zoidfs::hints::zoidfs_hint_get_valuelen(h.op_hint_, key, &value_len, &flag);
-            value = (char *)malloc(value_len);
-            zoidfs::hints::zoidfs_hint_get(h.op_hint_, key, value_len, value, &flag);
+            key.reset(new char[key_len]);
+            zoidfs::hints::zoidfs_hint_get_nthkey(h.op_hint_, i, key.get());
+            zoidfs::hints::zoidfs_hint_get_valuelen(h.op_hint_, key.get(), &value_len, &flag);
+            value.reset(new char[value_len]);
+            zoidfs::hints::zoidfs_hint_get(h.op_hint_, key.get(), value_len,
+                    value.get(), &flag);
 
             process (p, key_len);
-            process (p, EncString(key, key_len));
+            process (p, EncString(key.get(), key_len));
             process (p, value_len);
-            process (p, EncString(value, value_len));
-
-            free(key);
-            free(value);
+            process (p, EncString(value.get(), value_len));
          }
       }
    }
@@ -125,24 +125,21 @@ namespace encoder
          for(i = 0 ; i < size ; i++)
          {
             int key_len = 0;
-            char * key = NULL;
+            boost::shared_ptr<char> key;
             int value_len = 0;
-            char * value = NULL;
+            boost::shared_ptr<char> value;
 
             /* decode the hint data from the xdr stream */
             process (p, key_len);
-            key = (char *)malloc((sizeof(char) * key_len) + 1);
-            process (p, EncString(key, key_len));
+            key.reset(new char[key_len + 1]);
+            process (p, EncString(key.get(), key_len));
             process (p, value_len);
-            value = (char *)malloc((sizeof(char) * value_len) + 1);
-            process (p, EncString(value, value_len));
+            value.reset(new char[value_len + 1]);
+            process (p, EncString(value.get(), value_len));
 
             /* add the hint */
-            zoidfs::hints::zoidfs_hint_set(h.op_hint_, key, value, value_len);
-
-            /* cleanup local mem allocs */
-            free(key);
-            free(value);
+            zoidfs::hints::zoidfs_hint_set(h.op_hint_, key.get(), value.get(),
+                    value_len);
          }
       }
       /* else, set the hint list to NULL */
