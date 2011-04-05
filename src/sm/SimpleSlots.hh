@@ -70,6 +70,7 @@ namespace sm
          void reset(size_t pos)
          {
              slots_[pos].status_ = FREE;
+             intrusive_ptr_release(&client_);
          }
 
        protected:
