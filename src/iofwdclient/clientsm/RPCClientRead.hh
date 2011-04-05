@@ -71,7 +71,7 @@ class RPCClientRead :
             e.check();
 
             /* Get the maximum possible send size */
-            e_.net_data_size_ = rpc::getRPCEncodedSize(INTYPE()).getMaxSize();
+            e_.net_data_size_ = rpc::getRPCEncodedSize(e_.data_).getMaxSize();
             /* Set the output stream */
             rpc_handle_->waitOutReady (slots_[BASE_SLOT]);
             slots_.wait (BASE_SLOT, 
@@ -114,7 +114,7 @@ class RPCClientRead :
 
             process(e_.coder_, e_.data_);
 
-            e_.zero_copy_stream_->rewindOutput(e_.data_size_ - e_.net_data_size_, slots_[BASE_SLOT]);
+            e_.zero_copy_stream_->rewindOutput(e_.data_size_ - e_.coder_.getPos(), slots_[BASE_SLOT]);
 
             slots_.wait(BASE_SLOT,
                     &RPCClientRead<INTYPE,OUTTYPE>::waitEncodeData);
@@ -154,7 +154,7 @@ class RPCClientRead :
             fprintf(stderr, "RPCClientRead:%s:%i\n", __func__, __LINE__);
             e.check();      
             /* get the max size */
-            d_.net_data_size_ = rpc::getRPCEncodedSize(OUTTYPE()).getMaxSize();
+            d_.net_data_size_ = rpc::getRPCEncodedSize(d_.data_).getMaxSize();
             d_.zero_copy_stream_.reset((rpc_handle_->getIn()));
             d_.zero_copy_stream_->read(const_cast<const void **>(&d_.data_ptr_),
                     &d_.data_size_, slots_[BASE_SLOT], d_.net_data_size_);
@@ -180,7 +180,7 @@ class RPCClientRead :
         /* Rewind the read after the header has been decoded */
         void rewindRead (iofwdevent::CBException e)
         {
-            d_.zero_copy_stream_->rewindInput(d_.data_size_ - d_.net_data_size_,
+            d_.zero_copy_stream_->rewindInput(d_.data_size_ - d_.coder_.getPos(),
                                               slots_[BASE_SLOT]);
             slots_.wait(BASE_SLOT,
                     &RPCClientRead<INTYPE,OUTTYPE>::getReadBuffer);            
@@ -204,6 +204,7 @@ class RPCClientRead :
             /* read finished */
             if (ret == 0)
             {
+               fprintf(stderr, "ZOOKES:%s:%i\n", __func__, __LINE__);
                cb_(e);      
             }
             /* read more data */

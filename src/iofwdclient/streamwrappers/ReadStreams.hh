@@ -66,16 +66,18 @@ namespace iofwdclient
                              const size_t mem_sizes[] = NULL) :
                  mem_starts_(mem_starts),
                  mem_sizes_(mem_sizes),
-                 mem_count_(mem_count),
-                 buf(0),
-                 pos(0)
+                 mem_count_(mem_count)
               {
+                   buf =  new int;
+                  pos = new size_t;
+                  *buf = 0;
+                  *pos = 0;
               }
               size_t mem_count_;
               int returnCode;
               zoidfs::zoidfs_handle_t * handle_;
-              int buf;
-              size_t pos;
+              int * buf;
+              size_t * pos;
               void ** mem_starts_;
               const size_t * mem_sizes_;
       };
@@ -94,11 +96,11 @@ inline Enc & process (Enc & e,
    process (e, *(w.handle_));
    process (e, w.mem_count_);
    /* THIS NEEDS TO BE CHECKED */
-   process (e, encoder::EncVarArray( (const char * const)(*w.mem_starts_), w.mem_count_));
+//   process (e, encoder::EncVarArray( (const char * const)(*w.mem_starts_), w.mem_count_));
    process (e, encoder::EncVarArrayHelper<const size_t, const size_t>(w.mem_sizes_, w.mem_count_));
    process (e, w.file_count_);
-   process (e, encoder::EncVarArray( (const char * const)(w.file_starts_), w.file_count_));
-   process (e, encoder::EncVarArrayHelper<const size_t, const size_t>((size_t *)(w.file_sizes_), w.file_count_));
+   process (e, encoder::EncVarArray( w.file_starts_, w.file_count_));
+   process (e, encoder::EncVarArrayHelper<const zoidfs::zoidfs_file_ofs_t, const size_t>(w.file_sizes_, w.file_count_));
    return e;
 }
 
@@ -112,11 +114,11 @@ inline Enc & process (Enc & e,
    process (e, *(w.handle_));
    process (e, w.mem_count_);
    /* THIS NEEDS TO BE CHECKED */
-   process (e, encoder::EncVarArray( (const char * const)(*w.mem_starts_), w.mem_count_));
+//   process (e, encoder::EncVarArray( (const char * const)(*w.mem_starts_), w.mem_count_));
    process (e, encoder::EncVarArrayHelper<const size_t, const size_t>(w.mem_sizes_, w.mem_count_));
    process (e, w.file_count_);
-   process (e, encoder::EncVarArray( (const char * const)(w.file_starts_), w.file_count_));
-   process (e, encoder::EncVarArrayHelper<const size_t, const size_t>((size_t *)(w.file_sizes_), w.file_count_));
+   process (e, encoder::EncVarArray( w.file_starts_, w.file_count_));
+   process (e, encoder::EncVarArrayHelper<const zoidfs::zoidfs_file_ofs_t, const size_t>(w.file_sizes_, w.file_count_));
    return e;
 }
 template <typename Enc, typename Wrapper>
@@ -145,9 +147,9 @@ inline Enc & process (Enc & e,
 inline int getReadData (void * buffer, size_t size, ReadOutStream  w)
 {
    /* Which input buffer are we on */
-   int buf = w.buf;
+   int buf = *(w.buf);
    /* position in that buffer */
-   size_t pos = w.pos;
+   size_t pos = *(w.pos);
    /* Current size copied */
    size_t curSize = 0;
    /* output buffer offset */
@@ -161,7 +163,7 @@ inline int getReadData (void * buffer, size_t size, ReadOutStream  w)
       if (pos < w.mem_sizes_[i])
       {
          /* if the entire buffer can be copied */
-         if (curSize + (w.mem_sizes_[i] - pos) < size)
+         if (curSize + (w.mem_sizes_[i] - pos) <= size)
          {
             memcpy (&(((char **)(w.mem_starts_))[i][pos]), 
                     &(((char*)buffer) [buffer_offset]),
@@ -175,8 +177,8 @@ inline int getReadData (void * buffer, size_t size, ReadOutStream  w)
          {
             memcpy (&(((char **)(w.mem_starts_))[i][pos]), 
                     &(((char*)buffer) [buffer_offset]), 
-                    curSize - size);
-            pos = pos + curSize - size;
+                    size - curSize);
+            pos = pos + size - curSize;
             curSize =  size;
             buffer_offset = size;
             ret = 1;
@@ -185,8 +187,8 @@ inline int getReadData (void * buffer, size_t size, ReadOutStream  w)
          }
       }
    }
-   w.pos = pos; 
-   w.buf = buf;
+   *(w.pos) = pos; 
+   *(w.buf) = buf;
    return ret;
 }
 

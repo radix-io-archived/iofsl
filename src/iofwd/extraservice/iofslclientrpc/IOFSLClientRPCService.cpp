@@ -27,7 +27,7 @@
 //#include "iofwd/rpcfrontend/IOFSLRPCNullRequest.hh"
 //#include "iofwd/rpcfrontend/IOFSLRPCReadDirRequest.hh"
 //#include "iofwd/rpcfrontend/IOFSLRPCReadLinkRequest.hh"
-//#include "iofwd/rpcfrontend/IOFSLRPCReadRequest.hh"
+#include "iofwd/rpcfrontend/IOFSLRPCReadRequest.hh"
 //#include "iofwd/rpcfrontend/IOFSLRPCRemoveRequest.hh"
 //#include "iofwd/rpcfrontend/IOFSLRPCRenameRequest.hh"
 //#include "iofwd/rpcfrontend/IOFSLRPCResizeRequest.hh"
@@ -71,8 +71,8 @@ namespace iofwd
 //               boost::bind(&IOFSLClientRPCService::readdir, this, _1, _2, _3));
 //         rpcserver_->registerRPC("iofslclientrpc.readlink",
 //               boost::bind(&IOFSLClientRPCService::readlink, this, _1, _2, _3));
-//         rpcserver_->registerRPC("iofslclientrpc.read",
-//               boost::bind(&IOFSLClientRPCService::read, this, _1, _2, _3));
+         rpcserver_->registerRPC("iofslclientrpc.read",
+               boost::bind(&IOFSLClientRPCService::read, this, _1, _2, _3));
 //         rpcserver_->registerRPC("iofslclientrpc.remove",
 //               boost::bind(&IOFSLClientRPCService::remove, this, _1, _2, _3));
 //         rpcserver_->registerRPC("iofslclientrpc.rename",
@@ -101,7 +101,7 @@ namespace iofwd
 //         rpcserver_->unregisterRPC("iofslclientrpc.null");
 //         rpcserver_->unregisterRPC("iofslclientrpc.readdir");
 //         rpcserver_->unregisterRPC("iofslclientrpc.readlink");
-//         rpcserver_->unregisterRPC("iofslclientrpc.read");
+         rpcserver_->unregisterRPC("iofslclientrpc.read");
 //         rpcserver_->unregisterRPC("iofslclientrpc.remove");
 //         rpcserver_->unregisterRPC("iofslclientrpc.rename");
 //         rpcserver_->unregisterRPC("iofslclientrpc.resize");
@@ -133,7 +133,7 @@ namespace iofwd
 //      RPC_GENCLIENTCODE (IOFSLRPCNullRequest, null)
 //      RPC_GENCLIENTCODE (IOFSLRPCReadDirRequest, readdir)
 //      RPC_GENCLIENTCODE (IOFSLRPCReadLinkRequest, readlink)
-//      RPC_GENCLIENTCODE (IOFSLRPCReadRequest, read)
+      RPC_GENCLIENTCODE (IOFSLRPCReadRequest, read, zoidfs::ZOIDFS_PROTO_READ)
 //      RPC_GENCLIENTCODE (IOFSLRPCRemoveRequest, remove)
 //      RPC_GENCLIENTCODE (IOFSLRPCRenameRequest, rename)
 //      RPC_GENCLIENTCODE (IOFSLRPCResizeRequest, resize)

@@ -66,9 +66,9 @@ namespace iofwd
             /* Build encoder struct */
             enc_ = rpc::RPCEncoder(write_ptr_, write_size_);
       
-             /* Only returning the return code for now */
-             int returnCode = getReturnCode();
-             process (enc_, returnCode);
+            /* Only returning the return code for now */
+            int returnCode = getReturnCode();
+            process (enc_, returnCode);
 
             /* sanity */
             block.reset();
@@ -107,7 +107,7 @@ namespace iofwd
           ASSERT(getReturnCode() == zoidfs::ZFS_OK);
 
           /* encode */
-          encode();
+          //encode();
 
           /* invoke the callback */
           //cb();
@@ -189,6 +189,9 @@ namespace iofwd
             ret = outsize;
           }
          block.reset();
+         out_->rewindOutput(outsize - ret, block);
+         block.wait();
+         block.reset();
          out_->flush(block);
          block.wait();   
          delete[] (char **)writePtr;
@@ -218,6 +221,7 @@ namespace iofwd
           int i = 0;
           size_t outSize = 0;
           size_t readSize = 0;  
+          encode();
           do
           {
             // @TODO Possible read bug here

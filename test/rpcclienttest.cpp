@@ -124,6 +124,17 @@ int main (int argc, char ** args)
           { 
               free(mem_starts_write[_i]); 
           } 
+          
+          for(_i = 0 ; _i < mem_count ; _i++) 
+          { 
+              mem_starts_write[_i] = malloc(_BSIZE); 
+              file_sizes[_i] = mem_sizes[_i] = _BSIZE; 
+              file_starts[_i] = _foff; 
+              _foff += _BSIZE; 
+          } 
+
+          ret = x->read (&handle, mem_count, (void **)mem_starts_write, mem_sizes, file_count, file_starts, file_sizes, ZOIDFS_NO_OP_HINT);
+          cout << ret;
       }
 
       if (opt_server)

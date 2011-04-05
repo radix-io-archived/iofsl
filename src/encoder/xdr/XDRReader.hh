@@ -108,12 +108,13 @@ inline void process (XDRReader & f, const EncVarArrayHelper<T,C> & a)
    // send/receive array count
    uint32_t count = static_cast<uint32_t>(a.count_);
    process (f, count);
-   a.count_ = count;
+   //Whats the reason for this?
+   //a.count_ = count;
 
-   ALWAYS_ASSERT (a.count_ <= a.maxcount_);
+   //ALWAYS_ASSERT (a.count_ <= a.maxcount_);
 
    // send/receive array elements
-   for (unsigned int i=0; i<a.count_; ++i)
+   for (unsigned int i=0; i<count; ++i)
       process (f, a.ptr_[i]);
 }
 
