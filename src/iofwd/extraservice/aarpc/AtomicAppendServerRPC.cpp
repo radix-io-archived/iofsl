@@ -110,18 +110,36 @@ namespace iofwd
               AARPCCreateOffsetOut & out)
       {
           out.retcode = createOffsetInStorage(in.handle, out.offset);
+          
+          /* reschedule the thread with more work from the tp */
+//#ifndef USE_CRAY_TP
+#if 0
+          boost::this_thread::at_thread_exit(iofwdutil::ThreadPoolKick(bwu->tp_));
+#endif
       }
 
       void AtomicAppendServerRPC::deleteOffset(const AARPCDeleteOffsetIn & in,
               AARPCDeleteOffsetOut & out)
       {
           out.retcode = deleteOffsetInStorage(in.handle);
+          
+          /* reschedule the thread with more work from the tp */
+//#ifndef USE_CRAY_TP
+#if 0
+          boost::this_thread::at_thread_exit(iofwdutil::ThreadPoolKick(bwu->tp_));
+#endif
       }
 
       void AtomicAppendServerRPC::getNextOffset(const AARPCGetNextOffsetIn & in,
               AARPCGetNextOffsetOut & out)
       {
           out.retcode = getNextOffsetFromStorage(in.inc, in.handle, out.offset);
+          
+          /* reschedule the thread with more work from the tp */
+//#ifndef USE_CRAY_TP
+#if 0
+          boost::this_thread::at_thread_exit(iofwdutil::ThreadPoolKick(bwu->tp_));
+#endif
       }
 
       uint64_t AtomicAppendServerRPC::createOffsetInStorage(const zoidfs::zoidfs_handle_t & handle,
