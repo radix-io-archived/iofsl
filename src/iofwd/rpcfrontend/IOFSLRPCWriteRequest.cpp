@@ -228,8 +228,6 @@ namespace iofwd
 
       void IOFSLRPCWriteRequest::recvPipelineBufferCBBlock(iofwdevent::CBType cb, iofwd::RetrievedBuffer* rb, size_t size)
       {
-
-          int i = 0;
           size_t outSize = 0;
           size_t readSize = 0;  
           void * loc;
@@ -237,13 +235,7 @@ namespace iofwd
           {
             loc = (void*)&(((char*)rb->buffer_->getMemory())[outSize]);
             outSize += readBuffer((void**)&loc, size - outSize, TRUE);
-            if (outSize  == size)
-            {
-              break;
-            }
-            
-          } while (total_read + outSize < param_.mem_total_size);
-          total_read += outSize;
+          } while (outSize != size);
 
           cb(iofwdevent::CBException());
       }
