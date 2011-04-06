@@ -42,7 +42,8 @@ namespace iofwd
                       iofwdevent::ZeroCopyInputStream * in,
                       iofwdevent::ZeroCopyOutputStream * out) :
                   IOFSLRPCRequest(in, out),
-                  WriteRequest(opid)
+                  WriteRequest(opid),
+                  total_read(0)
               {
               }
             
@@ -60,9 +61,9 @@ namespace iofwd
               void recvBuffers(const CBType & cb, RetrievedBuffer * rb);
               void recvBuffersBlock(const CBType & cb, RetrievedBuffer * rb);
               // for pipeline mode
-              void recvPipelineBufferCB(iofwdevent::CBType cb, 
-                                                RetrievedBuffer * rb, 
-                                                size_t size);
+              void recvPipelineBufferCB(iofwdevent::CBType, iofwd::RetrievedBuffer*, size_t);
+
+              void recvPipelineBufferCBBlock(iofwdevent::CBType, iofwd::RetrievedBuffer*, size_t);
 
               void initRequestParams(ReqParam & p, void * bufferMem);
 
@@ -98,6 +99,7 @@ namespace iofwd
              /* RPC encoder / decoder */
              rpc::RPCDecoder dec_;
              rpc::RPCEncoder enc_;
+             size_t total_read;
       };
 
    }
