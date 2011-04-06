@@ -39,9 +39,13 @@ namespace iofwdevent {
         static const int SUPPLY_INBUF = iofwdutil::transform::SUPPLY_INBUF;
         static const int TRANSFORM_DONE = iofwdutil::transform::TRANSFORM_DONE;
         static const int CONSUME_OUTBUF = iofwdutil::transform::CONSUME_OUTBUF;
+        bool dataWritten;
+        void * intMemPtr;
+        size_t intMemSize;
+        bool flushFlag;
       public:
         ZeroCopyTransformOutput(ZeroCopyOutputStream * ,
-                                GenericTransform * , size_t s = 0);
+                                GenericTransform * , size_t len = 4194304);
         Handle write ( void ** , size_t * , const CBType & , size_t );
         Handle getWriteLoc (void **, size_t *, const CBType & , size_t );
         void transformState (CBException ,void ** ,size_t * ,const CBType & ,
@@ -51,7 +55,7 @@ namespace iofwdevent {
         void flushTransform (const CBType &, void **, size_t *);
         Handle rewindOutput (size_t , const CBType & );
         void cancel (Handle x) { x = (Handle) 0; }; 
-   
+        ~ZeroCopyTransformOutput();
         void nullCB (CBException e) { e.check();};
     };
     //void blockingWriteCB(CBException );

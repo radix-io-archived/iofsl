@@ -21,22 +21,6 @@
 using namespace iofwdutil;
 using namespace boost;
 namespace iofwdevent {
-
-  class ZeroCopyInputWU 
-  {
-    public:
-      ZeroCopyInputWU ( const void ** ptr_, size_t * size_, CBType cb_, 
-                        size_t suggested_) :
-        ptr(ptr_), size(size_), cb(cb_), suggested(suggested_)
-      {
-      };
-      const void ** ptr;
-      size_t * size;
-      CBType cb;
-      size_t suggested;
-      void * streamData;
-      size_t streamLen;
-  };
   /**
    * Creates an input zero copy stream from a memory region 
    *
@@ -49,11 +33,14 @@ namespace iofwdevent {
   class ZeroCopyTransformInput : public ZeroCopyInputStream {
     typedef iofwdutil::transform::GenericTransform GenericTransform;
     protected:
-      ZeroCopyMemoryOutput * transformStorage;
       ZeroCopyMemoryInput * streamStorage;
-      ZeroCopyMemoryInput * tempInputStream;
       ZeroCopyInputStream * stream; /*< Stores input stream from which to transform */
       GenericTransform * transform; /*< Stores transform information */
+      void * inStreamData; /*< Memory pointer to internal stream read (stream) */
+      size_t inStreamSize; /*< Input size */
+      void * buff;         /*< used by stream storeage as its internal buffer */
+      size_t buffSize;     /*< the internal buffer size (maximum) */
+      bool flushFlag;
       static const int SUPPLY_INBUF = iofwdutil::transform::SUPPLY_INBUF;
       static const int TRANSFORM_DONE = iofwdutil::transform::TRANSFORM_DONE;
       static const int CONSUME_OUTBUF = iofwdutil::transform::CONSUME_OUTBUF;
@@ -63,8 +50,8 @@ namespace iofwdevent {
        * @param[in] in        Transformed input stream which needs to be 
        *                      transformed back into its original stream.
        */
-      ZeroCopyTransformInput  (ZeroCopyInputStream *, GenericTransform *,
-                               size_t s = 0);
+      ZeroCopyTransformInput  (ZeroCopyInputStream * in, GenericTransform * transform,
+                               size_t bufSize = 4194304);
 
       /**
        * Cancel the transformation operation specified by Handle x.
@@ -72,6 +59,7 @@ namespace iofwdevent {
        */
       void cancel (Handle x) { x = (Handle) 0; }; 
 
+      ~ZeroCopyTransformInput ();
       /**
        * Read from the input stream and preform the transform from 
        * transformed input -> output.
@@ -93,9 +81,6 @@ namespace iofwdevent {
        */
       Handle rewindInput (size_t , const CBType & );
 
-      /* Callback when transformStorage read is complete */ 
-      void transformStorageCB(CBException, CBType);
-
       /* Read the transform storage stream */
       void readTransformStorage (const void **, size_t *, const CBType &, 
                                  size_t);
@@ -104,10 +89,6 @@ namespace iofwdevent {
       void doTransform (const void **, size_t *, const CBType &, 
                         size_t);
 
-      /* Convert between a memory input and a memory output class (rework 
-         this to be more of a swap) */
-      ZeroCopyMemoryInput * convertToMemoryInput(ZeroCopyMemoryOutput * );
-  
       
       Handle readStream (const void **, size_t *, const CBType &,  size_t);
       void nullCB (CBException e);

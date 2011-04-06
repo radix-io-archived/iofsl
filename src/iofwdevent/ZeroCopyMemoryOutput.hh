@@ -1,71 +1,74 @@
-/**
- * @class ZeroCopyMemoryOutput
- * 
- * @brief Zero copy output stream implementation for creating a stream from a
- *        region in memory.
- *
- * This class allows for a ZeroCopyOutputStream to be created using a region
- * of memory. This allows for this region of memory to be accessed using
- * the ZeroCopyOutputStream interfacing style.
- *
- */
-#ifndef SRC_IOFWDEVENT_ZEROCOPYMEMORYOUTPUT
-#define SRC_IOFWDEVENT_ZEROCOPYMEMORYOUTPUT
+#ifndef IOFWDEVENT_ZEROCOPYMEMORYOUTPUT
+#define IOFWDEVENT_ZEROCOPYMEMORYOUTPUT
+
 #include "ZeroCopyOutputStream.hh"
-#include "CBType.hh"
-#include "Handle.hh"
-#include "CBException.hh"
-#include <boost/smart_ptr.hpp>
 
-using namespace boost;
-namespace iofwdevent {
-  class ZeroCopyMemoryInput;
-  class ZeroCopyMemoryOutput: public ZeroCopyOutputStream {
-    protected:
-      void * mem; /*< Stores memory location data */
-      size_t memSize;       /*< Stores the size of the memory location */
-      size_t pos;           /*< Stores current pointer position inside mem */
-      size_t offset;        /*< Minimum possible memory position for M */
-    public:
-      /* Constructor for InputMemoryZeroCopy. */
-      ZeroCopyMemoryOutput  (void * ,size_t );
+namespace iofwdevent
+{
+   //========================================================================
 
-      /* Cancel operation (not used since this class does not block) */
-      void cancel (Handle x) { x = (Handle) 0; }; 
+   /**
+    * @class ZeroCopyMemoryOutput
+    *
+    * @brief Zero copy output stream implementation for creating a stream from
+    *              a region in memory.
+    *
+    * This class allows for a ZeroCopyOutputStream to be created using a region
+    * of memory. This allows for this region of memory to be accessed using
+    * the ZeroCopyOutputStream interfacing style.
+    *
+    */
+   class ZeroCopyMemoryOutput : public ZeroCopyOutputStream
+   {
+      public:
 
-      /* Returns pointer to memory area where a write can take place */
-      Handle write (void **, size_t *, const CBType & , size_t);
+         ZeroCopyMemoryOutput ();
 
-      /* Rewinds the write stream */
-      Handle rewindOutput (size_t, const CBType &);
+         /* Constructor for InputMemoryZeroCopy. */
+         ZeroCopyMemoryOutput  (void * buf, size_t bufsize);
 
-      /* Flush internal buffers, if any */
-      Handle flush (const CBType & );
+         /* Cancel operation (not used since this class does not block) */
+         void cancel (Handle h);
 
-      /* Amount of space remaining in this->mem */
-      size_t spaceRemaining (void);
-  
-      /* Return the initial starting pointer for memory (used in conversion 
-         between ZeroCopyMemoryOutput -> ZeroCopyMemoryInput ) */
-      void * getMemPtr(void);
+         /* Returns pointer to memory area where a write can take place */
+         Handle write (void ** ptr, size_t * memsize, const CBType & cb, 
+               size_t suggested);
 
-      /* Gets the total length of the memory location mem */
-      size_t getTotalLen(void);
+         /* Rewinds the write stream */
+         Handle rewindOutput (size_t amount, const CBType & cb);
 
-      /* reset the stream */
-      void reset(void);
+         /* Flush internal buffers, if any */
+         Handle flush (const CBType & cb);
 
-      /* Get current offset value */
-      size_t getOffset(void);
-      
-      /* Set the streams offset */
-      void setOffset(size_t);
-      
-      /* Convert an ZeroCopyMemoryInput stream to a ZeroCopyMemoryOutput 
-         stream */
-      void convertToOutput (ZeroCopyMemoryInput * );
+         // --- extra methods ---
 
-  };
+         /* Amount of space remaining in this->mem */
+         size_t spaceRemaining () const;
+
+         /* Return the initial starting pointer for memory (used in conversion 
+            between ZeroCopyMemoryOutput -> ZeroCopyMemoryInput ) */
+         void * getMemPtr ();
+
+         /* Gets the total length of the memory location mem */
+         size_t getBufferSize () const;
+
+         /// Return the number of bytes used
+         size_t getBufferUsed () const;
+
+         /* reset the stream position back to 0 */
+         void reset ();
+
+         /* Reset the stream position to zero and to a new buffer and size
+          */
+         void reset (void * buf, size_t size);
+
+      protected:
+         char * mem_;         /*< Stores memory location data */
+         size_t memSize_;     /*< Stores the size of the memory location */
+         size_t pos_;         /*< Stores current pointer position inside mem */
+   };
+
+   //========================================================================
 }
 #endif
 
