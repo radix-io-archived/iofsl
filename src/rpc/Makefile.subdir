@@ -14,5 +14,7 @@ src_rpc_librpc_a_SOURCES = \
 	src/rpc/RPCHeader.hh \
 	src/rpc/RPCInfo.hh \
 	src/rpc/RPC-fwd.hh \
-	src/rpc/RPCEncoder.hh
+	src/rpc/RPCEncoder.hh \
+	src/rpc/RPCTransform.hh \
+	src/rpc/RPCTransform.cpp
 

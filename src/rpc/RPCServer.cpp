@@ -1,16 +1,18 @@
 #include "RPCServer.hh"
 
-#include <boost/scoped_ptr.hpp>
-
-#include "iofwdutil/IOFWDLog.hh"
 #include "RPCRegistry.hh"
 #include "RPCEncoder.hh"
 #include "RPCHeader.hh"
 #include "RPCException.hh"
 #include "RPCInfo.hh"
+#include "RPCTransform.hh"
 
+#include "iofwdutil/IOFWDLog.hh"
+#include "iofwdutil/transform/GenericTransform.hh"
 #include "iofwdutil/tools.hh"
 #include "iofwdutil/assert.hh"
+
+#include <boost/scoped_ptr.hpp>
 
 namespace rpc
 {
@@ -74,7 +76,11 @@ namespace rpc
                {
                   try
                   {
+                     // This will throw if the RPC is not registered
                      handler_ = server_.lookupHandler (header_.key);
+
+                     // Now check the connection flags
+                     //  flags are relative to the side making the connection
                      response_.status = RPCResponse::RPC_OK;
                   }
                   catch (UnknownRPCKeyException & e)
@@ -100,10 +106,15 @@ namespace rpc
                }
             case WRITE_REWIND_READY:
                {
-                  // Execute
-                  // make copy of streams so we can delete this
-                  iofwdevent::ZeroCopyInputStream * in = info_.in;
-                  iofwdevent::ZeroCopyOutputStream * out = info_.out;
+                  // Do the transform filter for the streams if needed
+                  //   flags are relative to the client, so their out is our
+                  //   in
+
+                  iofwdevent::ZeroCopyInputStream * in =
+                     getInputTransform (info_.in, header_.flags_out);
+                  iofwdevent::ZeroCopyOutputStream * out =
+                     getOutputTransform (info_.out, header_.flags_in);
+
                   RPCInfo info;
                   RPCHandler handler;
                   handler.swap (handler_);
