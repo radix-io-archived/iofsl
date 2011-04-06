@@ -165,9 +165,9 @@ inline int getWriteData (void ** buffer, size_t * size, WriteInStream  w)
             memcpy ( &((char*)(*buffer))[buffer_offset], 
                     &(((char **)(w.mem_starts_))[i][pos]), 
                     w.mem_sizes_[i] - pos);
-            pos = 0;
             curSize = curSize + w.mem_sizes_[i] - pos;
             buffer_offset = buffer_offset + w.mem_sizes_[i] - pos; 
+            pos = 0;
          }
          /* if there is not enough room for the buffer to be copied */
          else
