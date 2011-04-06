@@ -158,7 +158,7 @@ namespace iofwd
 
       uint64_t AtomicAppendServerRPC::deleteOffsetInStorage(const zoidfs::zoidfs_handle_t & handle)
       {
-          iofwdutil::IOFSLKey::IOFSLKey key = iofwdutil::IOFSLKey();
+          iofwdutil::IOFSLKey key = iofwdutil::IOFSLKey();
        
           /* build the key */ 
           key.setFileHandle(&handle);
@@ -176,7 +176,7 @@ namespace iofwd
       {
           AARPCOffsetInfo offset_init_args(&handle);
 
-          iofwdutil::IOFSLKey::IOFSLKey key = iofwdutil::IOFSLKey();
+          iofwdutil::IOFSLKey key = iofwdutil::IOFSLKey();
         
           /* build the key */ 
           key.setFileHandle(&handle);
