@@ -22,6 +22,12 @@ using namespace iofwdutil;
 using namespace boost;
 namespace iofwdevent {
 
+   /**
+    * @TODO:
+    *   - Document semantics (owns transform/stream?)
+    *   - Use public / protected
+    *   - Use NOPCompletion instead of NullCB?
+    */
     class ZeroCopyTransformOutput : public ZeroCopyOutputStream {
       typedef iofwdutil::transform::GenericTransform GenericTransform;
 
@@ -35,7 +41,7 @@ namespace iofwdevent {
         static const int CONSUME_OUTBUF = iofwdutil::transform::CONSUME_OUTBUF;
       public:
         ZeroCopyTransformOutput(ZeroCopyOutputStream * ,
-                                GenericTransform * , size_t );
+                                GenericTransform * , size_t s = 0);
         Handle write ( void ** , size_t * , const CBType & , size_t );
         Handle getWriteLoc (void **, size_t *, const CBType & , size_t );
         void transformState (CBException ,void ** ,size_t * ,const CBType & ,

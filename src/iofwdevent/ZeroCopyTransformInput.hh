@@ -39,6 +39,12 @@ namespace iofwdevent {
   };
   /**
    * Creates an input zero copy stream from a memory region 
+   *
+   * @TODO: Need to define semantics: does this class own the transform and
+   * the input stream? If so, should be using scoped_ptr to avoid memory
+   * leaks.
+   *
+   * If not: should be documented
    */
   class ZeroCopyTransformInput : public ZeroCopyInputStream {
     typedef iofwdutil::transform::GenericTransform GenericTransform;
@@ -58,7 +64,7 @@ namespace iofwdevent {
        *                      transformed back into its original stream.
        */
       ZeroCopyTransformInput  (ZeroCopyInputStream *, GenericTransform *,
-                               size_t );
+                               size_t s = 0);
 
       /**
        * Cancel the transformation operation specified by Handle x.
