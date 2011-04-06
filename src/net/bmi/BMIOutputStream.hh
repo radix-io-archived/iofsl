@@ -45,7 +45,7 @@ namespace net
                   const iofwdevent::CBType & cb);
 
             iofwdevent::Handle flush (const iofwdevent::CBType & cb);
-
+            void close (const iofwdevent::CBType & cb) {}
          protected:
             BMIOutput output_;
             void * curbuf_;

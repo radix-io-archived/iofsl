@@ -11,6 +11,7 @@ namespace iofwdevent {
                                                  GenericTransform * transform,
                                                  size_t len)
   {
+    type = 'T';
     char * internalMemBuf;
     if (len > 0)
     {
@@ -149,7 +150,7 @@ namespace iofwdevent {
                                               size_t * writeSize,
                                               bool flushFlag)
   {
-
+    SingleCompletion block;
     Handle ret;
     size_t transOut = 0;
     int outState = 0;
@@ -162,8 +163,8 @@ namespace iofwdevent {
     }
 
     /* Create a null callback for reading of transformStorage (non blocking) */
-    CBType nullCB = boost::bind(&ZeroCopyTransformOutput::nullCB,
-                                boost::ref(*this), _1);
+//    CBType nullCB = boost::bind(&ZeroCopyTransformOutput::nullCB,
+//                                boost::ref(*this), _1);
 
     /* preform the transform */
     transform->transform ((const void *const) intMemPtr, intMemSize,
@@ -171,8 +172,12 @@ namespace iofwdevent {
                           &outState, flushFlag);
 
     /* return unused output stream space */
-    ret = outStream->rewindOutput(*writeSize - transOut, nullCB);
-    
+    if (transOut <= *writeSize)
+    {   
+       block.reset();
+       ret = outStream->rewindOutput(*writeSize - transOut, block);
+       block.wait();
+    }
     delete[] writeLoc;
     delete[] writeSize;
 
@@ -217,32 +222,47 @@ namespace iofwdevent {
   {
     int outState = 0;
     
-    /* Preform the transform */
-    if (internalBuf->getBufferUsed() == 0 || internalBuf->getBufferUsed() < internalBuf->getBufferSize() )
-    {
-      flushFlag = true;
-    }
-    else
-    {
-      flushFlag = false;
-    }
+//    /* Preform the transform */
+//    if (internalBuf->getBufferUsed() == 0 || internalBuf->getBufferUsed() < internalBuf->getBufferSize() )
+//    {
+//      flushFlag = true;
+//    }
+//    else
+//    {
+//      flushFlag = false;
+//    }
 
     if (dataWritten == true)
        outState = doTransform ( writeLoc, writeSize, flushFlag);
     else
        outState = TRANSFORM_DONE;
 
-    /* If there is output that has not been consumed, preform another flush */
-    if (outState == CONSUME_OUTBUF)
-    {
-      flush(cb);
-    }
-    /* Else flush the output stream and call the users callback */
-    else
-    {
+    if (outState == CONSUME_OUTBUF || outState == TRANSFORM_DONE)
       outStream->flush(cb);
-    }
+    else if (flushFlag == true)
+      flush(cb);
+    else
+      cb(CBException());
+
+//    /* If there is output that has not been consumed, preform another flush */
+//    if (outState == SUPPLY_INBUF)
+//    {
+//      flush(cb);
+//    }
+//    /* Else flush the output stream and call the users callback */
+//    else if (outState == CONSUME_OUTBUF || flushFlag == true)
+//    {
+//      outStream->flush(cb);
+//    }
   }
+
+  /* Close out the stream */
+  void ZeroCopyTransformOutput::close(const CBType & cb)
+  {
+    flushFlag = true;
+    flush(cb);
+  }
+
   /**
    * Rewinds the write stream 
    *

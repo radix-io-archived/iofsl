@@ -13,6 +13,7 @@ namespace net
            max_blocksize_ (max_blocksize),
            thisblock_ptr_(0), thisblock_size_(0), thisblock_used_(0)
       {
+         this->type = 'L';
       }
 
       LoopbackOutput::~LoopbackOutput ()

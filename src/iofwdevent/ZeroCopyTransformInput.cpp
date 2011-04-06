@@ -50,7 +50,7 @@ namespace iofwdevent {
   {
     /* Check to see if any non-read transformed data is availible, if so 
        return it */
-    if (streamStorage->getBufferSize() > 0)
+    if (streamStorage->spaceRemaining() > 0)
     {
       readTransformStorage(out, len, cb, suggested);
       return (Handle) 0;
@@ -88,7 +88,7 @@ namespace iofwdevent {
     /* Create a new callback for when the stream read is compleated */
 
     /* If there is any transformed input not read return unread transformed input */  
-    if (streamStorage->getBufferSize() > 0)
+    if (streamStorage->spaceRemaining() > 0)
     {
       ret = streamStorage->read( out, len, cb, suggested);
     }

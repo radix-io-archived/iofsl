@@ -113,7 +113,10 @@ namespace iofwd
 
             /* flush the reponse */
             block.reset();
-            out_->flush(block);
+            if (out_->type == 'T')
+               out_->close(block);
+            else
+               out_->flush(block);
             block.wait();
           }
       };

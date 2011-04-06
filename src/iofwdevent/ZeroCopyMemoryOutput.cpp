@@ -15,6 +15,7 @@ namespace iofwdevent
         memSize_ (0),
         pos_ (0)
    {
+      type = 'M';
    }
 
    /**

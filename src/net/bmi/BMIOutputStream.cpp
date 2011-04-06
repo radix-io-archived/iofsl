@@ -22,6 +22,7 @@ namespace net
            curbuf_size_ (0),
            curbuf_used_ (0)
       {
+         this->type = 'A';
       }
 
 

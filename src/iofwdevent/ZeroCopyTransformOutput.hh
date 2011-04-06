@@ -15,6 +15,7 @@
 #include "CBType.hh"
 #include "Handle.hh"
 #include "CBException.hh"
+#include "iofwdevent/SingleCompletion.hh"
 #include <deque>
 #include <boost/smart_ptr.hpp>
 
@@ -57,6 +58,7 @@ namespace iofwdevent {
         void cancel (Handle x) { x = (Handle) 0; }; 
         ~ZeroCopyTransformOutput();
         void nullCB (CBException e) { e.check();};
+        void close(const CBType & cb);
     };
     //void blockingWriteCB(CBException );
 }
