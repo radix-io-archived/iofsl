@@ -79,7 +79,7 @@ namespace iofwd
                     else
                     {
                         AARPCOffsetLocalInfo offset_init_args(&handle);
-                        iofwdutil::IOFSLKey::IOFSLKey key = iofwdutil::IOFSLKey();
+                        iofwdutil::IOFSLKey key = iofwdutil::IOFSLKey();
 
                         /* build the key */
                         key.setFileHandle(&handle);
@@ -123,7 +123,7 @@ namespace iofwd
                     }
                     else
                     {
-                        iofwdutil::IOFSLKey::IOFSLKey key = iofwdutil::IOFSLKey();
+                        iofwdutil::IOFSLKey key = iofwdutil::IOFSLKey();
 
                         /* build the key */
                         key.setFileHandle(&handle);
@@ -166,7 +166,7 @@ namespace iofwd
                     }
                     else
                     {
-                        iofwdutil::IOFSLKey::IOFSLKey key = iofwdutil::IOFSLKey();
+                        iofwdutil::IOFSLKey key = iofwdutil::IOFSLKey();
 
                         /* build the key */
                         key.setFileHandle(&handle);
