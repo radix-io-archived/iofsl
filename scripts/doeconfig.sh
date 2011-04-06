@@ -17,5 +17,5 @@ if test -r "${CONFIG}" ; then
 fi
 
 ${IOFWD_SRCDIR}/configure ${CONFIGURE_OPTIONS} \
-       CFLAGS="$CFLAGS" CXXFLAGS="$CXXFLAGS" LDFLAGS="$LDFLAGS" $*
+       CFLAGS="$CFLAGS -g" CXXFLAGS="$CXXFLAGS -g" LDFLAGS="$LDFLAGS -g" $*
 

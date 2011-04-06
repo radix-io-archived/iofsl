@@ -104,8 +104,10 @@ namespace iofwd
           param_.file_starts = dec_struct.file_starts_;
 
           /* Pipelining no longer matter */
-          param_.pipeline_size = 0;
+          param_.pipeline_size = 4194304;
 
+          param_.max_buffer_size = 4194304;
+          param_.op_hint_pipeline_enabled = true;
           param_.op_hint = &op_hint_; 
           return param_; 
       }
@@ -217,21 +219,33 @@ namespace iofwd
           cb(*(new iofwdevent::CBException()));
       }
 
-      void IOFSLRPCWriteRequest::recvPipelineBufferCB(iofwdevent::CBType cb, RetrievedBuffer * rb, size_t size)
+
+      void IOFSLRPCWriteRequest::recvPipelineBufferCB(iofwdevent::CBType cb, iofwd::RetrievedBuffer* rb, size_t size)
+      {
+         new boost::thread(boost::bind(&IOFSLRPCWriteRequest::recvPipelineBufferCBBlock, this, cb, rb, size));  
+      }
+
+
+      void IOFSLRPCWriteRequest::recvPipelineBufferCBBlock(iofwdevent::CBType cb, iofwd::RetrievedBuffer* rb, size_t size)
       {
 
-         ASSERT ( "THIS SHOULD NOT BE USED" == 0);
-//         size_t ret_size = 0;
-//         size_t total_size = 0;
-//         int pos = 0;
-//         void * mem = (rb->buffer_)->getMemory();
-//         do 
-//         {
-//            ret_size = readBuffer (&mem, size, TRUE);
-//            total_size += ret_size;
-//            mem = &(((char*)((rb->buffer_)->getMemory()))[total_size]);
-//         } while (ret_size != 0 || total_size != size);
-//         cb(*(new iofwdevent::CBException()));
+          int i = 0;
+          size_t outSize = 0;
+          size_t readSize = 0;  
+          void * loc;
+          do
+          {
+            loc = (void*)&(((char*)rb->buffer_->getMemory())[outSize]);
+            outSize += readBuffer((void**)&loc, size - outSize, TRUE);
+            if (outSize  == size)
+            {
+              break;
+            }
+            
+          } while (total_read + outSize < param_.mem_total_size);
+          total_read += outSize;
+
+          cb(iofwdevent::CBException());
       }
 
       void IOFSLRPCWriteRequest::reply(const CBType & UNUSED(cb))
