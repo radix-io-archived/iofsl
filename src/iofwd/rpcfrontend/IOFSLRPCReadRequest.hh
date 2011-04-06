@@ -61,7 +61,9 @@ namespace iofwd
               // for pipeline mode
               void sendPipelineBufferCB(const iofwdevent::CBType cb, 
                                         RetrievedBuffer * rb, size_t size);
-
+              void sendPipelineBufferCBBlock (const iofwdevent::CBType cb, 
+                                              RetrievedBuffer * rb, 
+                                              size_t size);
               void initRequestParams(ReqParam & p, void * bufferMem);
 
               void allocateBuffer(iofwdevent::CBType cb, RetrievedBuffer * rb);
@@ -94,6 +96,7 @@ namespace iofwd
              /* RPC encoder / decoder */
              rpc::RPCDecoder dec_;
              rpc::RPCEncoder enc_;
+             size_t total_write;
       };
 
    }

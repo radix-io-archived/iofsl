@@ -95,8 +95,11 @@ namespace iofwd
           param_.file_starts = dec_struct.file_starts_;
 
           /* Pipelining no longer matter */
-          param_.pipeline_size = 0;
+          param_.pipeline_size = 4194304;
 
+          param_.max_buffer_size = 4194304;
+          param_.op_hint_pipeline_enabled = true;
+          total_write = 0;
 //          param_.op_hint = &op_hint_; 
           return param_; 
       }
@@ -135,10 +138,10 @@ namespace iofwd
           {
             char * mem = NULL;
             // compute the total size of the io op
-////            for(size_t i = 0 ; i < param_.mem_count ; i++)
-////            {
-////                mem_total_size += param_.mem_sizes[i];
-////            }
+//            for(size_t i = 0 ; i < param_.mem_count ; i++)
+//            {
+//                mem_total_size += param_.mem_sizes[i];
+//            }
 
             // create the bmi buffer
             mem = static_cast<char *>(bufferMem);
@@ -244,14 +247,48 @@ namespace iofwd
             out_->close(block);
             block.wait();   
           }
-          cb(*(new iofwdevent::CBException()));
+          cb(iofwdevent::CBException());
       }
 
       void IOFSLRPCReadRequest::sendPipelineBufferCB (const iofwdevent::CBType cb, 
                                                       RetrievedBuffer * rb, 
                                                       size_t size) 
       {
-         ASSERT("THIS SHOULD NOT BE USED" == 0);
+         new boost::thread(boost::bind(&IOFSLRPCReadRequest::sendPipelineBufferCBBlock, 
+                           this, cb, rb, size));  
+      }
+
+      void IOFSLRPCReadRequest::sendPipelineBufferCBBlock (const iofwdevent::CBType cb, 
+                                                           RetrievedBuffer * rb, 
+                                                           size_t size) 
+      {
+          int i = 0;
+          size_t outSize = 0;
+          size_t readSize = 0;  
+          size_t readLoc = 0;
+          iofwdevent::SingleCompletion block;
+          void * loc;
+          if (total_write == 0)
+          {
+            encode();
+          }
+          do
+          {
+            loc = &((char*)rb->buffer_->getMemory())[readLoc];
+            // @TODO Possible read bug here
+            readSize = writeBuffer(loc, size- outSize, TRUE);
+            outSize += readSize;
+            readLoc += readSize;
+          } while (outSize != size);
+        
+          if (size < param_.max_buffer_size)
+          {
+            block.reset();
+            out_->close(block);
+            block.wait();   
+          }
+//          ASSERT (total_write <= param_.mem_total_size);
+          cb(iofwdevent::CBException());
       }
    }
 }
