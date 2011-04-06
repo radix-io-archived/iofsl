@@ -242,8 +242,12 @@ namespace iofwdevent {
     else if (flushFlag == true)
       flush(cb);
     else
+    {
+      intMemSize = 0;
+      intMemPtr = NULL;
+      internalBuf->reset();
       cb(CBException());
-
+    }
 //    /* If there is output that has not been consumed, preform another flush */
 //    if (outState == SUPPLY_INBUF)
 //    {
