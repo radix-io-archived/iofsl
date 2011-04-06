@@ -27,6 +27,9 @@
 #include "iofwd/extraservice/aarpc/AtomicAppendServerRPC.hh"
 #include "iofwd/extraservice/aarpc/AtomicAppendUtil.hh"
 
+#include "iofwdutil/IOFSLKey.hh"
+#include "iofwdutil/IOFSLKeyValueStorage.hh"
+
 namespace iofwd
 {
     namespace extraservice
@@ -61,17 +64,32 @@ namespace iofwd
                                 rpcclient_->rpcConnect("aarpc.getnextoffset",
                                     addr_),
                                 in, out);
+                        offset = out.offset;
+                        retcode = out.retcode;
                     }
-                    else
+                    else if(distributed_mode_)
                     {
                         aarpcClientHelper(
                                 rpcclient_->rpcConnect("aarpc.getnextoffset",
                                     (*comm_)[server_rank]),
                                 in, out);
+                        offset = out.offset;
+                        retcode = out.retcode;
                     }
+                    else
+                    {
+                        AARPCOffsetLocalInfo offset_init_args(&handle);
+                        iofwdutil::IOFSLKey::IOFSLKey key = iofwdutil::IOFSLKey();
 
-                    offset = out.offset;
-                    retcode = out.retcode;
+                        /* build the key */
+                        key.setFileHandle(&handle);
+                        key.setDataKey(std::string("NEXTAPPENDOFFSET"));
+
+                        /* fetch and inc the offset for the key */
+                        iofwdutil::IOFSLKeyValueStorage::instance().rpcFetchAndInc(key, 
+                            incsize, &offset, offset_init_func_, &offset_init_args);
+                        retcode = 0;
+                    }
                 }
 
                 void createOffset(zoidfs::zoidfs_handle_t & handle,
@@ -91,17 +109,33 @@ namespace iofwd
                                 rpcclient_->rpcConnect("aarpc.getnextoffset",
                                     addr_),
                                 in, out);
+                        retcode = out.retcode;
+                        offset = out.offset;
                     }
-                    else
+                    else if(distributed_mode_)
                     {
                         aarpcClientHelper(
                                 rpcclient_->rpcConnect("aarpc.createoffset",
                                     (*comm_)[server_rank]),
                                 in, out);
+                        retcode = out.retcode;
+                        offset = out.offset;
+                    }
+                    else
+                    {
+                        iofwdutil::IOFSLKey::IOFSLKey key = iofwdutil::IOFSLKey();
+
+                        /* build the key */
+                        key.setFileHandle(&handle);
+                        key.setDataKey(std::string("NEXTAPPENDOFFSET"));
+
+                        /* create the key / value pair */
+                        iofwdutil::IOFSLKeyValueStorage::instance().rpcInitKeyValue<
+                            zoidfs::zoidfs_file_size_t >(key, offset);
+                        
+                        retcode = 0;
                     }
 
-                    retcode = out.retcode;
-                    offset = out.offset;
                 }
 
                 void deleteOffset(zoidfs::zoidfs_handle_t & handle,
@@ -120,16 +154,30 @@ namespace iofwd
                                 rpcclient_->rpcConnect("aarpc.getnextoffset",
                                     addr_),
                                 in, out);
+                        retcode = out.retcode;
                     }
-                    else
+                    else if(distributed_mode_)
                     {
                         aarpcClientHelper(
                                 rpcclient_->rpcConnect("aarpc.deleteoffset",
                                     (*comm_)[server_rank]),
                                 in, out);
+                        retcode = out.retcode;
+                    }
+                    else
+                    {
+                        iofwdutil::IOFSLKey::IOFSLKey key = iofwdutil::IOFSLKey();
+
+                        /* build the key */
+                        key.setFileHandle(&handle);
+                        key.setDataKey(std::string("NEXTAPPENDOFFSET"));
+
+                        /* delete the key / value pair */
+                        iofwdutil::IOFSLKeyValueStorage::instance().rpcFetchAndDrop< 
+                            zoidfs::zoidfs_file_size_t >(key);
+                        retcode = 0;
                     }
 
-                    retcode = out.retcode;
                 }
 
             protected:
@@ -199,6 +247,39 @@ namespace iofwd
                 }
             }
 
+            class AARPCOffsetLocalInfo
+            {
+                public:
+                    AARPCOffsetLocalInfo(const zoidfs::zoidfs_handle_t * h) :
+                        handle(h)
+                    {
+                    }
+
+                    const zoidfs::zoidfs_handle_t * handle;
+            };
+
+            static zoidfs::zoidfs_file_size_t aarpcOffsetLocalInitializer(
+                    AARPCOffsetLocalInfo * args)
+            {
+                int ret = 0;
+                zoidfs::zoidfs_file_size_t size = 0;
+                zoidfs::zoidfs_attr_t attr;
+
+                attr.mask = ZOIDFS_ATTR_SIZE;
+                ret = zoidfs::zoidfs_getattr(args->handle, &attr, NULL);
+
+                if(ret == zoidfs::ZFS_OK && attr.mask == ZOIDFS_ATTR_SIZE)
+                {
+                    size = attr.size;
+                }
+                else
+                {
+                    size = 0;
+                }
+
+                return size;
+            }
+
                 iofwd::service::ServiceManager & man_;
                 boost::shared_ptr<iofwd::Net> netservice_;
                 boost::shared_ptr<iofwd::RPCClient> rpcclient_;
@@ -207,6 +288,10 @@ namespace iofwd
                 net::AddressPtr addr_;
                 size_t comm_size_;
                 bool master_mode_;
+                bool distributed_mode_;
+            
+                boost::function< zoidfs::zoidfs_file_size_t(AARPCOffsetLocalInfo *) >
+                    offset_init_func_;
         };
     }
 }
