@@ -73,11 +73,11 @@ void NBIOMemoryAlloc::dealloc()
     {
         delete [] static_cast<char *>(memory_);
         memory_ = NULL;
-
-        /* reset the memory params */
-        allocated_ = false;
-        numTokens_ = 0;
     }
+
+    /* reset the memory params */
+    allocated_ = false;
+    numTokens_ = 0;
 }
 
 void NBIOMemoryManager::runBufferAllocCB1(iofwdevent::CBException status,
