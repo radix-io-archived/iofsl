@@ -143,6 +143,7 @@ namespace encoder
       /* else, set the hint list to NULL */
       else
       {
+         // Is this correct??
         zoidfs::hints::zoidfs_hint_free(const_cast<zoidfs::zoidfs_op_hint_t *>(&(h.op_hint_)));
       }
    }
