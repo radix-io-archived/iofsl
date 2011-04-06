@@ -14,14 +14,20 @@
 #include "iofwdclient/streamwrappers/WriteStreams.hh"
 #include "iofwdclient/clientsm/ReadClientSM.hh"
 #include "iofwdclient/streamwrappers/ReadStreams.hh"
+#include "iofwdclient/clientsm/CreateClientSM.hh"
+#include "iofwdclient/streamwrappers/CreateStreams.hh"
+
+
 
 #include "iofwdclient/clientsm/RPCCommClientSM.hh"
 #include "iofwdclient/clientsm/RPCCommWriteSM.hh"
 #include "iofwdclient/clientsm/RPCCommReadSM.hh"
+
 using namespace zoidfs;
 
 namespace iofwdclient
 {
+   typedef iofwdclient::clientsm::RPCCommClientSM<CreateInStream, CreateOutStream> RPCCommClientSMCreate;
    typedef iofwdclient::clientsm::RPCCommClientSM<LookupInStream, LookupOutStream> RPCCommClientSMLookup;
    typedef iofwdclient::clientsm::RPCCommWriteSM<WriteInStream, WriteOutStream> RPCCommClientSMWrite;
    typedef iofwdclient::clientsm::RPCCommReadSM<ReadInStream, ReadOutStream> RPCCommClientSMRead;
@@ -83,13 +89,45 @@ namespace iofwdclient
        sm->execute();
    }
 
-   int CBClient::cblookup (   const IOFWDClientCB & cb,
-                              int * ret,
-                              const zoidfs::zoidfs_handle_t *parent_handle,
-                              const char *component_name, 
-                              const char *full_path,
-                              zoidfs::zoidfs_handle_t *handle,  
-                              zoidfs::zoidfs_op_hint_t * op_hint)
+   int CBClient::cbcreate(const IOFWDClientCB & cb,
+                          int * ret,
+                          const zoidfs::zoidfs_handle_t *parent_handle,
+                          const char *component_name, 
+                          const char *full_path,
+                          const zoidfs::zoidfs_sattr_t *sattr, 
+                          zoidfs::zoidfs_handle_t *handle,
+                          int *created,
+                          zoidfs::zoidfs_op_hint_t * op_hint)
+   {
+       /* create the empty wrapper */
+       CBSMWrapper * cbsm = CBSMWrapper::createCBSMWrapper(cb);
+
+       /* Sets up the handler for the RPC State Machine */
+       /* Should be changed to RPC KEY */
+       rpc::RPCClientHandle rpc_handle = client_->rpcConnect(ZOIDFS_CREATE_RPC.c_str(), addr_);
+       boost::shared_ptr<RPCCommClientSMCreate> comm;
+       comm.reset(new RPCCommClientSMCreate (smm_, rpc_handle, poll_));
+       
+       /* create the state machine */
+       iofwdclient::clientsm::CreateClientSM * sm =
+           new iofwdclient::clientsm::CreateClientSM(*smm_, poll_, comm, 
+                   cbsm->getWCB(), ret, parent_handle, component_name, full_path,
+                   sattr, handle, created, op_hint);
+      
+       /* add the sm to the cb wrapper */ 
+       cbsm->set(sm);
+
+       /* execute the sm */
+       sm->execute();      
+   }
+
+   int CBClient::cblookup(const IOFWDClientCB & cb,
+                          int * ret,
+                          const zoidfs::zoidfs_handle_t *parent_handle,
+                          const char *component_name, 
+                          const char *full_path,
+                          zoidfs::zoidfs_handle_t *handle,
+                          zoidfs::zoidfs_op_hint_t * op_hint)
    {
        /* create the empty wrapper */
        CBSMWrapper * cbsm = CBSMWrapper::createCBSMWrapper(cb);

@@ -193,18 +193,22 @@ namespace iofwdclient
    {
             // validate arguments
       // Can op_hint be 0?
-      if (*request || !handle || !parent_handle || !component_name || 
-          !full_path || !sattr || !created)
-         return ZFSERR_INVAL;
+//      if (*request || !handle || !parent_handle || !component_name || 
+//          !full_path || !sattr || !created)
+//         return ZFSERR_INVAL;
 
       // Create request
       //   newRequest automatically increments the refcount to compensate for
       //   the lack of automatic refcounting in the C API
-      IOFWDRequestPtr r (tracker_->newRequest ());
+//      IOFWDRequestPtr r (tracker_->newRequest ());
+
+      IOFWDRequest * r = tracker_->newRequest ();
+      r->setCompletionStatus(zoidfs::ZFS_COMP_NONE);
 
       cbclient_.cbcreate (tracker_->getCB (r), r->getReturnPointer (), 
                           parent_handle, component_name, full_path, sattr, 
                           handle, created, op_hint);
+      (*request) = (void *) r;
       return ZFS_OK;
    }
               

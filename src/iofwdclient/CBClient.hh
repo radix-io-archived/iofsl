@@ -127,7 +127,7 @@ namespace iofwdclient
                      const zoidfs::zoidfs_sattr_t *sattr, 
                      zoidfs::zoidfs_handle_t *handle,
                      int *created,
-                     zoidfs::zoidfs_op_hint_t * op_hint) {}
+                     zoidfs::zoidfs_op_hint_t * op_hint);
                     
          int cbremove(const IOFWDClientCB & cb,
                      int * ret,
