@@ -17,6 +17,9 @@
 #include <cassert>
 
 #include "iofwdutil/mm/NBIOMemoryManager.hh"
+
+#include <boost/thread/thread_time.hpp>
+
 using boost::format;
 
 GENERIC_FACTORY_CLIENT(std::string,
@@ -180,7 +183,7 @@ namespace zoidfs
 
               boost::exception_ptr e;
 
-            boost::mutex::scoped_lock mlock(commit_mutex_);
+            boost::mutex::scoped_try_lock mlock(commit_mutex_);
             try
             {
                 int nbio_flag = 0;
@@ -216,6 +219,8 @@ namespace zoidfs
                     {
                         uint64_t ref_count = 0;
                         uint64_t ref_count_orig = 0;
+                        boost::posix_time::time_duration duration =
+                            boost::posix_time::milliseconds(10);
 
                         {
                             boost::mutex::scoped_lock lock(data->mutex_);
@@ -226,8 +231,10 @@ namespace zoidfs
 
                             while(ref_count > 0)
                             {
-                                data->condition_.wait(lock);
-                                ref_count--;
+                                data->condition_.timed_wait(lock,
+                                        boost::get_system_time() + duration);
+                                //ref_count--;
+                                ref_count = data->ref_count_;
                             }
                         }
 
