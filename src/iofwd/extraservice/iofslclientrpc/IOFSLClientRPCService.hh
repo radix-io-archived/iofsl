@@ -44,7 +44,7 @@ namespace iofwd
             /* rpc handlers */
 
 //            RPC_GENCLIENTHEADERS (IOFSLRPCCommitRequest, commit)
-//            RPC_GENCLIENTHEADERS (IOFSLRPCCreateRequest, create)
+            RPC_GENCLIENTHEADERS (IOFSLRPCCreateRequest, create)
 //            RPC_GENCLIENTHEADERS (IOFSLRPCGetAttrRequest, getattr)
 //            RPC_GENCLIENTHEADERS (IOFSLRPCLinkRequest, link)
             RPC_GENCLIENTHEADERS (IOFSLRPCLookupRequest, lookup )

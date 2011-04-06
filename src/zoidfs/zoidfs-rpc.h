@@ -10,6 +10,7 @@ namespace zoidfs
 #define ZOIDFS_LOOKUP_RPC std::string("iofslclientrpc.lookup")
 #define ZOIDFS_WRITE_RPC std::string("iofslclientrpc.write")
 #define ZOIDFS_READ_RPC std::string("iofslclientrpc.read")
+#define ZOIDFS_CREATE_RPC std::string("iofslclientrpc.create")
 }
 
 #endif

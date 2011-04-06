@@ -6,8 +6,10 @@
 #include "encoder/EncoderStruct.hh"
 #include "encoder/EncoderString.hh"
 #include "iofwd/CreateRequest.hh"
+#include "iofwd/rpcfrontend/RPCSimpleRequest.hh"
 #include "iofwd/rpcfrontend/IOFSLRPCRequest.hh"
 #include "encoder/EncoderWrappers.hh"
+#include "zoidfs/util/ZoidFSFileSpec.hh"
 using namespace encoder;
 
 namespace iofwd
@@ -16,37 +18,28 @@ namespace iofwd
    {
       typedef zoidfs::zoidfs_handle_t zoidfs_handle_t;
       typedef zoidfs::zoidfs_sattr_t zoidfs_sattr_t;
-      typedef zoidfs::zoidfs_op_hint_t zoidfs_op_hint_t;
-      typedef encoder::EncoderString<0, ZOIDFS_PATH_MAX> EncoderString;
-      ENCODERSTRUCT (IOFSLRPCCreateDec, ((zoidfs_handle_t)(handle)) 
-                                        ((EncoderString)(full_path))
-                                        ((EncoderString)(component_name))              
-                                        ((zoidfs_sattr_t)(attr)))
+      typedef zoidfs::ZoidFSFileSpec ZoidFSFileSpec;
+      ENCODERSTRUCT (RPCCreateIn, ((ZoidFSFileSpec)(info))            
+                                  ((zoidfs_sattr_t)(attr)))
 
-      ENCODERSTRUCT (IOFSLRPCCreateEnc, ((int)(returnCode))
-                                        ((zoidfs_handle_t)(handle))
-                                        ((int)(created)))
+      ENCODERSTRUCT (RPCCreateOut, ((int)(returnCode))
+                                   ((zoidfs_handle_t)(handle))
+                                   ((int)(created)))
       
       class IOFSLRPCCreateRequest :
-          public IOFSLRPCRequest,
+          public RPCSimpleRequest<RPCCreateIn, RPCCreateOut>,
           public CreateRequest
       {
           public:
               IOFSLRPCCreateRequest(int opid,
                       iofwdevent::ZeroCopyInputStream * in,
                       iofwdevent::ZeroCopyOutputStream * out) :
-                  IOFSLRPCRequest(in, out),
-                  CreateRequest(opid),
-                  created(0),
-                  handle(NULL)
+                  RPCSimpleRequest<RPCCreateIn, RPCCreateOut>(in, out),
+                  CreateRequest(opid)
               {
               }
             
               virtual ~IOFSLRPCCreateRequest();
-
-              /* encode and decode helpers for RPC data */
-              virtual void decode();
-              virtual void encode();
 
               /* request processing */
               virtual const ReqParam & decodeParam();
@@ -55,17 +48,7 @@ namespace iofwd
                                  int created_);
           
           protected:
-              /* data size helpers for this request */ 
-              virtual size_t rpcEncodedInputDataSize(); 
-              virtual size_t rpcEncodedOutputDataSize();
-
               ReqParam param_;
-              zoidfs::zoidfs_op_hint_t op_hint_;
-
-              IOFSLRPCCreateDec dec_struct;
-              IOFSLRPCCreateEnc enc_struct;
-              zoidfs_handle_t * handle;
-              int created;
       };
 
    }

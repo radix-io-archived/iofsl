@@ -8,6 +8,7 @@
 #include "zoidfs/util/zoidfs-xdr.hh"
 
 #include "encoder/EncoderStruct.hh"
+#include "iofwd/rpcfrontend/IOFSLRPCRequest.hh"
 
 #include "rpc/RPCInfo.hh"
 #include "rpc/RPCEncoder.hh"
