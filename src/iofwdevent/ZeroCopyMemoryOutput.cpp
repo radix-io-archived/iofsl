@@ -1,139 +1,144 @@
 #include "ZeroCopyMemoryOutput.hh"
-#include "ZeroCopyMemoryInput.hh"
-using namespace boost;
-namespace iofwdevent {
 
-/**
- * Constructor for ZeroCopyMemoryOutput.
- * @param[in] in        Memory region to serve as the output location for the
- *                      stream (this memory must be allocated externally!)
- * @param[in] len       Length of the memory region void * out.
- */
-ZeroCopyMemoryOutput::ZeroCopyMemoryOutput (void * output, size_t len)
+#include "iofwdutil/assert.hh"
+
+namespace iofwdevent
 {
-  this->mem = output;
-  this->pos = 0;
-  this->memSize = len;
-  this->offset = 0;
-}
+   //========================================================================
 
-void ZeroCopyMemoryOutput::reset()
-{
-  this->pos = 0;
-  this->offset = 0;
-}
+   void ZeroCopyMemoryOutput::cancel (Handle )
+   {
+   }
 
-void ZeroCopyMemoryOutput::setOffset(size_t s)
-{
-  this->offset = s;
-}
+   ZeroCopyMemoryOutput::ZeroCopyMemoryOutput ()
+      : mem_ (0),
+        memSize_ (0),
+        pos_ (0)
+   {
+   }
 
-void * ZeroCopyMemoryOutput::getMemPtr()
-{ 
-  return this->mem;
-}
+   /**
+    * Constructor for ZeroCopyMemoryOutput.
+    * @param[in] in        Memory region to serve as the output location for the
+    *                      stream (this memory must be allocated externally!)
+    * @param[in] len       Length of the memory region void * out.
+    */
+   ZeroCopyMemoryOutput::ZeroCopyMemoryOutput (void * output, size_t len)
+      : mem_ (static_cast<char*>(output)),
+        memSize_ (len),
+        pos_ (0)
+   {
+   }
 
-size_t ZeroCopyMemoryOutput::getOffset()
-{
-  return this->offset;
-}
+   void ZeroCopyMemoryOutput::reset (void * ptr, size_t size)
+   {
+      mem_ = static_cast<char*>(ptr);
+      memSize_ = size;
+      reset ();
+   }
 
-size_t ZeroCopyMemoryOutput::getTotalLen()
-{
-  return this->memSize;
-}
-/**
- * Converts a ZeroCopyMemoryInput stream to a ZeroCopyOutputStream. Consider
- * the input stream (ZeroCopyInputStream * in) to be invalid after this 
- * conversion takes place.
- * @param[in] in Memory Input stream to convert. Reset will be called on this 
- *               Stream at the end of this function call.
- */
-void ZeroCopyMemoryOutput::convertToOutput ( ZeroCopyMemoryInput * in)
-{
-  mem = in->getMemPtr();
-  offset = in->getOffset();
-  memSize = in->getTotalLen();
-}
+   void ZeroCopyMemoryOutput::reset()
+   {
+      pos_ = 0;
+   }
 
-/**
- * Write to the stream returning a pointer to the region of memory where 
- * the data can be written to. 
- * @param[out] ptr      Location where a pointer containing a region of memory
- *                      can be written to is stored. This pointer is where you
- *                      can safely write data. 
- * @param[out] size     Number of bytes that can be written to ptr.
- * @param[in]  cb       Callback function to be used when operation is completed
- * @param[in] suggested Client specified suggested write size. This write size 
- *                      is best effort and the actual write size may be more or
- *                      less then the number specified by this parameter 
- * @return              Returns a handle relating to this particular write. 
- *                      (not used with ZeroCopyMemoryOutput due to no blocking
- *                      in this class)
- */
-Handle ZeroCopyMemoryOutput::write (void ** ptr, size_t * size, 
-                                    const CBType & cb, size_t suggested)
-{
-  if (suggested > this->memSize - this->pos)
-  {
-    (*ptr) = (char *)this->mem + (this->pos);
-    (*size) = this->memSize - this->pos;
-    this->pos = this->memSize;
-  }
-  else 
-  {
-    (*ptr) = (char *)this->mem + (this->pos);
-    (*size) = suggested;
-    this->pos = this->pos + suggested;
-  }
-  /* Call the callback */
-  cb(*(new CBException()));
-  /* Do not return a handle with this call (non-blocking) */
-  return (void *)0;  
-}
+   void * ZeroCopyMemoryOutput::getMemPtr()
+   {
+      return mem_;
+   }
 
-/**
- * Allows for the stream to be "rewinded" and unused portions of a write to be
- * returned to ZeroCopyMemoryOutput. 
- * @param[in] size      How much to rewind.
- * @param[in] cb        Callback to use when the operation is completed (called 
- *                      immedietly).
- * @return              Returns a handle relating to this particular rewind. 
- *                      (not used with ZeroCopyMemoryOutput due to no blocking
- *                      in this class)
- */
-Handle ZeroCopyMemoryOutput::rewindOutput (size_t size, const CBType & cb)
-{
-  if (size - this->pos >= this->offset)
-    this->pos = this->pos - size;
+   size_t ZeroCopyMemoryOutput::getBufferSize () const
+   {
+      return memSize_;
+   }
 
-  cb(*(new CBException()));
-  return (void *)0; 
-}
+   size_t ZeroCopyMemoryOutput::getBufferUsed () const
+   {
+      return getBufferSize () - spaceRemaining ();
+   }
 
-/**
- * Returns the amount of buffer remaining for the write
- * @return              Value containing remaining space left in buffer 
- *                      (this->mem)
- */
-size_t ZeroCopyMemoryOutput::spaceRemaining (void)
-{
-  return this->memSize - this->pos;
-}
+   /**
+    * Write to the stream returning a pointer to the region of memory where 
+    * the data can be written to. 
+    * @param[out] ptr      Location where a pointer containing a region of memory
+    *                      can be written to is stored. This pointer is where you
+    *                      can safely write data. 
+    * @param[out] size     Number of bytes that can be written to ptr.
+    * @param[in]  cb       Callback function to be used when operation is completed
+    * @param[in] suggested Client specified suggested write size. This write size 
+    *                      is best effort and the actual write size may be more or
+    *                      less then the number specified by this parameter 
+    * @return              Returns a handle relating to this particular write. 
+    *                      (not used with ZeroCopyMemoryOutput due to no blocking
+    *                      in this class)
+    */
+   Handle ZeroCopyMemoryOutput::write (void ** ptr, size_t * size,
+         const CBType & cb, size_t suggested)
+   {
+      ALWAYS_ASSERT(mem_);
 
-/**
- * Flush the internal buffer (permanently advance the pointer).
- * @param[in] cb        Callback to use when the operation is completed (called 
- *                      immedietly).
- * @return              Returns a handle relating to this particular flush. 
- *                      (not used with ZeroCopyMemoryOutput due to no 
- *                      blocking in this class)
- */
-Handle ZeroCopyMemoryOutput::flush (const CBType & cb)
-{
-  this->offset = this->pos;
-  cb(*(new CBException()));
-  return (void *)0; 
-}
+      // When suggested is 0, take the whole buffer
+      const size_t have = std::min (spaceRemaining (), suggested);
 
+      *size = have;
+      *ptr = mem_ + pos_;
+      pos_ += have;
+
+      /* Call the callback */
+      if (cb)
+         cb (CBException());
+
+      /* Do not return a handle with this call (non-blocking) */
+      return Handle ();
+   }
+
+   /**
+    * Allows for the stream to be "rewinded" and unused portions of a write to be
+    * returned to ZeroCopyMemoryOutput. 
+    * @param[in] size      How much to rewind.
+    * @param[in] cb        Callback to use when the operation is completed (called 
+    *                      immedietly).
+    * @return              Returns a handle relating to this particular rewind. 
+    *                      (not used with ZeroCopyMemoryOutput due to no blocking
+    *                      in this class)
+    */
+   Handle ZeroCopyMemoryOutput::rewindOutput (size_t size, const CBType & cb)
+   {
+      ALWAYS_ASSERT (pos_ >= size);
+      pos_ -= size;
+
+      cb (CBException ());
+
+      return Handle ();
+   }
+
+   /**
+    * Returns the amount of buffer remaining for the write
+    * @return              Value containing remaining space left in buffer 
+    *                      (this->mem)
+    */
+   size_t ZeroCopyMemoryOutput::spaceRemaining () const
+   {
+      ASSERT (memSize_ >= pos_);
+      return memSize_ - pos_;
+   }
+
+   /**
+    * Flush the internal buffer;
+    *
+    * Nothing needs to be done here.
+    *
+    * @param[in] cb        Callback to use when the operation is completed (called 
+    *                      immedietly).
+    * @return              Returns a handle relating to this particular flush. 
+    *                      (not used with ZeroCopyMemoryOutput due to no 
+    *                      blocking in this class)
+    */
+   Handle ZeroCopyMemoryOutput::flush (const CBType & cb)
+   {
+      cb (CBException ());
+      return Handle ();
+   }
+
+   //========================================================================
 }
