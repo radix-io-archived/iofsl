@@ -10,6 +10,8 @@ namespace iofwdevent
 
    /**
     * Stream based interface enabling zero copy in most situations.
+    *
+    * @TODO: define end of stream scenario
     */
    struct ZeroCopyInputStream
    {
