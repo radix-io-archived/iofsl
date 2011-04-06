@@ -130,7 +130,8 @@ int main (int argc, char ** args)
           { 
               free(mem_starts_write[_i]); 
           } 
-          
+        
+          _foff = 0;  
           for(_i = 0 ; _i < mem_count ; _i++) 
           { 
               mem_starts_write[_i] = malloc(_BSIZE); 

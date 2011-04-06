@@ -221,13 +221,16 @@ namespace iofwd
           int i = 0;
           size_t outSize = 0;
           size_t readSize = 0;  
+          size_t readLoc = 0;
           void * loc;
           encode();
           do
           {
-            loc = (void*)&(((char**)param_.mem_starts)[i][outSize]);
+            loc = &((char*)rb->buffer_->getMemory())[readLoc];
             // @TODO Possible read bug here
-            outSize += writeBuffer(loc, param_.mem_sizes[i] - outSize, TRUE);
+            readSize = writeBuffer(loc, param_.mem_sizes[i] - outSize, TRUE);
+            outSize += readSize;
+            readLoc += readSize;
             if (outSize == param_.mem_sizes[i])
             {
                i++;
