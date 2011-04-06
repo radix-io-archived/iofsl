@@ -38,6 +38,7 @@ namespace iofwd
          /**
           * Conveniently create a thread to handle the RPC call
           */
+#ifndef USE_CRAY_TP 
          static void threadRPC(const rpc::RPCHandler & h,
                ZeroCopyInputStream * in, ZeroCopyOutputStream * out,
                const rpc::RPCInfo & info)
@@ -45,6 +46,7 @@ namespace iofwd
              /* create a new thread */
              boost::thread(boost::bind(h, in, out, info));
          }
+#else
          static void threadpoolRPC(const rpc::RPCHandler & h,
                ZeroCopyInputStream * in, ZeroCopyOutputStream * out,
                const rpc::RPCInfo & info)
@@ -55,11 +57,11 @@ namespace iofwd
              iofwdutil::ThreadPool::instance().submitWorkUnit(f,
                      iofwdutil::ThreadPool::HIGH);
          }
+#endif
 
          rpc::RPCHandler rpcExec(const rpc::RPCHandler & orig)
          {
-//#ifdef USE_CRAY_TP 
-#if 0 
+#ifdef USE_CRAY_TP 
             return boost::bind(&threadpoolRPC, orig, _1, _2, _3);
 #else
             return boost::bind(&threadRPC, orig, _1, _2, _3);
@@ -112,9 +114,8 @@ namespace iofwd
           out.retcode = createOffsetInStorage(in.handle, out.offset);
           
           /* reschedule the thread with more work from the tp */
-//#ifndef USE_CRAY_TP
-#if 0
-          boost::this_thread::at_thread_exit(iofwdutil::ThreadPoolKick(bwu->tp_));
+#ifndef USE_CRAY_TP
+          boost::this_thread::at_thread_exit(iofwdutil::ThreadPoolKick(iofwdutil::ThreadPool::instance()));
 #endif
       }
 
@@ -124,9 +125,8 @@ namespace iofwd
           out.retcode = deleteOffsetInStorage(in.handle);
           
           /* reschedule the thread with more work from the tp */
-//#ifndef USE_CRAY_TP
-#if 0
-          boost::this_thread::at_thread_exit(iofwdutil::ThreadPoolKick(bwu->tp_));
+#ifndef USE_CRAY_TP
+          boost::this_thread::at_thread_exit(iofwdutil::ThreadPoolKick(iofwdutil::ThreadPool::instance()));
 #endif
       }
 
@@ -136,9 +136,8 @@ namespace iofwd
           out.retcode = getNextOffsetFromStorage(in.inc, in.handle, out.offset);
           
           /* reschedule the thread with more work from the tp */
-//#ifndef USE_CRAY_TP
-#if 0
-          boost::this_thread::at_thread_exit(iofwdutil::ThreadPoolKick(bwu->tp_));
+#ifndef USE_CRAY_TP
+          boost::this_thread::at_thread_exit(iofwdutil::ThreadPoolKick(iofwdutil::ThreadPool::instance()));
 #endif
       }
 
