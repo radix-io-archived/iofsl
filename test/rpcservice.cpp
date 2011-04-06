@@ -9,6 +9,7 @@
 #include "net/Net.hh"
 
 #include "iofwdutil/IOFWDLog.hh"
+#include "iofwdutil/IofwdutilLinkHelper.hh"
 
 #include "rpc/RPCInfo.hh"
 #include "rpc/RPCEncoder.hh"
@@ -269,6 +270,8 @@ static void testManual (RPCClientHandle h)
 
 int main (int argc, char ** args)
 {
+   registerIofwdutilFactoryClients ();
+
    try
    {
       std::string opt_config;

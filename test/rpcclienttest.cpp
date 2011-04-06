@@ -25,6 +25,8 @@
 #include "iofwdclient/IOFWDClient.hh"
 #include "zoidfs/util/ZoidFSHints.hh"
 #include "iofwd/extraservice/iofslclientrpc/IOFSLClientRPCService.hh"
+#include "iofwdutil/IofwdutilLinkHelper.hh"
+
 using namespace iofwd;
 using namespace iofwdevent;
 using namespace boost;
@@ -34,10 +36,14 @@ using namespace std;
 using namespace iofwdevent;
 using namespace rpc;
 using namespace boost::program_options;
+
 iofwdutil::IOFWDLogSource & log_ = iofwdutil::IOFWDLog::getSource ();
 
 int main (int argc, char ** args)
 {
+   // for transforms
+   registerIofwdutilFactoryClients ();
+
    try
    {
       std::string opt_config;

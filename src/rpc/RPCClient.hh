@@ -6,6 +6,7 @@
 #include "RPCKey.hh"
 
 #include "iofwdutil/IntrusiveHelper.hh"
+#include "iofwdutil/transform/GenericTransform.hh"
 
 #include <boost/intrusive_ptr.hpp>
 #include <boost/thread.hpp>
@@ -27,7 +28,7 @@ namespace rpc
       protected:
 
          RPCClient (const RPCKey & k,
-               const net::Connection & con);
+               const net::Connection & con, const char * options);
 
       public:
 
@@ -39,9 +40,10 @@ namespace rpc
           * Ownership of Con transfers to RPCClient
           *
           * @TODO: add cancel
+          * @TODO: reuse ZoidFS hints for Net framework?
           */
          static RPCClientHandle rpcConnect (const RPCKey & key,
-                 const net::Connection & con);
+                 const net::Connection & con, const char * options = 0);
 
          /**
           * Calls callback when the output stream becomes available for the
@@ -56,16 +58,26 @@ namespace rpc
           */
          void waitInReady (const iofwdevent::CBType & cb);
 
+         /**
+          * Return the output stream. Can only be called after waitOutReady
+          * completes.
+          */
          iofwdevent::ZeroCopyOutputStream * getOut ()
-         { return con_.out; }
+         { return transout_ ? transout_ : con_.out; }
 
+         /**
+          * Return the input stream. Can only be called after waitInReady
+          * _and_ waitOutReady completes.
+          */
          iofwdevent::ZeroCopyInputStream * getIn ()
-         { return con_.in; }
+         { return transin_ ? transin_ : con_.in; }
 
       protected:
          void startWrite ();
 
          void writeReady (const iofwdevent::CBException & e);
+
+         void flushHeader (const iofwdevent::CBException & e);
 
          void rewindReady (const iofwdevent::CBException & e);
 
@@ -74,7 +86,7 @@ namespace rpc
          void handleError (uint32_t code);
 
          void readRewindReady (const iofwdevent::CBException & e);
-
+         void processOption (const std::string & s);
 
       protected:
 
@@ -93,6 +105,12 @@ namespace rpc
 
          bool out_ready_;
          iofwdevent::CBType out_ready_cb_;
+
+         uint32_t flags_out_;
+         uint32_t flags_in_;
+
+         iofwdevent::ZeroCopyOutputStream * transout_;
+         iofwdevent::ZeroCopyInputStream * transin_;
    };
 
    INTRUSIVE_PTR_HELPER(RPCClient);
