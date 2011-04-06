@@ -144,7 +144,7 @@ namespace iofwd
       uint64_t AtomicAppendServerRPC::createOffsetInStorage(const zoidfs::zoidfs_handle_t & handle,
               zoidfs::zoidfs_file_size_t & offset)
       {
-          iofwdutil::IOFSLKey::IOFSLKey key = iofwdutil::IOFSLKey();
+          iofwdutil::IOFSLKey key = iofwdutil::IOFSLKey();
         
           /* build the key */ 
           key.setFileHandle(&handle);
