@@ -31,6 +31,7 @@ namespace net
             iofwdevent::Handle flush (const iofwdevent::CBType & cb);
 
             virtual ~LoopbackOutput ();
+            void close (const iofwdevent::CBType & cb) {}
 
          protected:
             void internal_flush ();

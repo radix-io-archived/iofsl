@@ -222,6 +222,7 @@ namespace iofwd
           size_t outSize = 0;
           size_t readSize = 0;  
           size_t readLoc = 0;
+          iofwdevent::SingleCompletion block;
           void * loc;
           encode();
           do
@@ -237,6 +238,12 @@ namespace iofwd
                outSize = 0;
             }
           } while ( i < param_.mem_count);
+          if (out_->type == 'T')
+          {
+            block.reset();
+            out_->close(block);
+            block.wait();   
+          }
           cb(*(new iofwdevent::CBException()));
       }
 

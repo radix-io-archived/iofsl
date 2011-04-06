@@ -143,7 +143,10 @@ class RPCServerSM :
 
             // Before we can access the output channel we need to wait until the RPC
             // code did its thing
-            e_.zero_copy_stream_->flush(slots_[BASE_SLOT]);
+            if (e_.zero_copy_stream_->type == 'T')     
+               e_.zero_copy_stream_->close(slots_[BASE_SLOT]);     
+            else       
+               e_.zero_copy_stream_->flush(slots_[BASE_SLOT]);
             slots_.wait(BASE_SLOT,
                     &RPCServerSM<INTYPE,OUTTYPE>::waitFlush);
 

@@ -13,6 +13,7 @@ namespace iofwdevent
     */
    struct ZeroCopyOutputStream
    {
+      char type;
       /**
        * Return pointer to a region of size size where output data can be
        * stored.
@@ -40,6 +41,8 @@ namespace iofwdevent
        * destructed.
        */
       virtual ~ZeroCopyOutputStream ();
+
+      virtual void close (const CBType & cb) = 0;
    };
 
    //========================================================================
