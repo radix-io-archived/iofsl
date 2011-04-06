@@ -33,6 +33,9 @@ namespace iofwdevent
 
       /**
        * Flush internal buffers, if any
+       *
+       * @TODO: add rewind functionality in here
+       *    size = 0 -> flush everything size != 0, flush size bytes
        */
       virtual Handle flush (const CBType & cb) = 0;
 
@@ -42,6 +45,9 @@ namespace iofwdevent
        */
       virtual ~ZeroCopyOutputStream ();
 
+      /**
+       * TODO: fold this into flush.
+       */
       virtual void close (const CBType & cb) = 0;
    };
 
