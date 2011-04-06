@@ -69,6 +69,9 @@ namespace iofwdutil
     struct GTEncode {};
     struct GTDecode {};
 
+    // @TODO: We should hide that this is using a factory underneath.
+    //        SHould not throw NoSuchFactoryKey exception or anything like
+    //        that.
     typedef iofwdutil::Factory<std::string,GenericTransform,GTEncode>
        GenericTransformEncodeFactory;
     
