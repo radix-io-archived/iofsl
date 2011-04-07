@@ -141,5 +141,10 @@ namespace iofwdevent
       return Handle ();
    }
 
+   void ZeroCopyMemoryOutput::close (const CBType & cb)
+   {
+      cb (CBException ());
+   }
+
    //========================================================================
 }
