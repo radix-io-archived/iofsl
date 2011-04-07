@@ -39,6 +39,8 @@ using namespace boost::program_options;
 
 iofwdutil::IOFWDLogSource & log_ = iofwdutil::IOFWDLog::getSource ();
 
+std::string opt_file =  "/repo/test.txt";
+
 int main (int argc, char ** args)
 {
    // for transforms
@@ -58,6 +60,7 @@ int main (int argc, char ** args)
           "Config file to use")
          ("remote", value<std::string>(&opt_remote), "Remote server to connect to")
          ("server", "Be an RPC server")
+         ("file", value<std::string>(&opt_file), "File to write to")
          ;
 
       variables_map vm;
@@ -107,7 +110,7 @@ int main (int argc, char ** args)
             size_t ret = 0;
             printf("HANDLE: %i\n", handle);
             printf("MY RETRURN: %i\n",ret);
-            ret = x->lookup (NULL, NULL, "/repo/test.txt", &handle, &op_hint);    
+            ret = x->lookup (NULL, NULL, opt_file.c_str(), &handle, &op_hint);    
                          
              int  _N = 1;
              size_t _BSIZE = 500000000;
