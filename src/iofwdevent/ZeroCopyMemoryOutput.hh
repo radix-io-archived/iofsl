@@ -61,7 +61,9 @@ namespace iofwdevent
          /* Reset the stream position to zero and to a new buffer and size
           */
          void reset (void * buf, size_t size);
-         void close (const iofwdevent::CBType & cb) {}
+
+         void close (const iofwdevent::CBType & cb);
+
       protected:
          char * mem_;         /*< Stores memory location data */
          size_t memSize_;     /*< Stores the size of the memory location */
