@@ -104,7 +104,7 @@ namespace iofwd
           return param_; 
       }
 
-      void IOFSLRPCReadRequest::reply(const CBType & UNUSED(cb))
+      void IOFSLRPCReadRequest::reply(const CBType & cb)
       {
           /* verify the args are OK */
           ASSERT(getReturnCode() == zoidfs::ZFS_OK);
@@ -114,6 +114,11 @@ namespace iofwd
 
           /* invoke the callback */
           //cb();
+          zoidfs::hints::zoidfs_hint_create(&op_hint_);  
+          /* @TODO: Remove this later */
+          param_.op_hint = &op_hint_;
+          cb(iofwdevent::CBException());
+
       }
 
       IOFSLRPCReadRequest::~IOFSLRPCReadRequest()
@@ -137,11 +142,6 @@ namespace iofwd
           if (param_.pipeline_size == 0)
           {
             char * mem = NULL;
-            // compute the total size of the io op
-//            for(size_t i = 0 ; i < param_.mem_count ; i++)
-//            {
-//                mem_total_size += param_.mem_sizes[i];
-//            }
 
             // create the bmi buffer
             mem = static_cast<char *>(bufferMem);
@@ -217,7 +217,7 @@ namespace iofwd
 
       void IOFSLRPCReadRequest::sendBuffers(const iofwdevent::CBType & cb, RetrievedBuffer * rb)
       {
-         new boost::thread(boost::bind(&IOFSLRPCReadRequest::sendBuffersBlock, this, cb, rb));  
+         boost::thread(boost::bind(&IOFSLRPCReadRequest::sendBuffersBlock, this, cb, rb));  
       }
       void IOFSLRPCReadRequest::sendBuffersBlock(const iofwdevent::CBType & cb, RetrievedBuffer * rb)
       {
@@ -254,7 +254,7 @@ namespace iofwd
                                                       RetrievedBuffer * rb, 
                                                       size_t size) 
       {
-         new boost::thread(boost::bind(&IOFSLRPCReadRequest::sendPipelineBufferCBBlock, 
+         boost::thread(boost::bind(&IOFSLRPCReadRequest::sendPipelineBufferCBBlock, 
                            this, cb, rb, size));  
       }
 
