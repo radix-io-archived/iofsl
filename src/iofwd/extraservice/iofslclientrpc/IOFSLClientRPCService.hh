@@ -72,11 +72,11 @@ namespace iofwd
 
          protected:
             boost::shared_ptr<Log> log_service_;
+            boost::shared_ptr<iofwd::RequestHandler> requesthandler_;
             boost::shared_ptr<iofwd::RPCServer> rpcserver_;
             iofwdutil::IOFWDLogSource & log_;
 
-            
-            boost::shared_ptr<iofwd::RequestHandler> requesthandler_;
+           
       };
    }
 }

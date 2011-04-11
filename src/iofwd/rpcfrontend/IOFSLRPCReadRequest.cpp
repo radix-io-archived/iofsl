@@ -221,7 +221,7 @@ namespace iofwd
       }
       void IOFSLRPCReadRequest::sendBuffersBlock(const iofwdevent::CBType & cb, RetrievedBuffer * rb)
       {
-          int i = 0;
+          size_t i = 0;
           size_t outSize = 0;
           size_t readSize = 0;  
           size_t readLoc = 0;
@@ -262,7 +262,6 @@ namespace iofwd
                                                            RetrievedBuffer * rb, 
                                                            size_t size) 
       {
-          int i = 0;
           size_t outSize = 0;
           size_t readSize = 0;  
           size_t readLoc = 0;

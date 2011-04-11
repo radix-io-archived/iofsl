@@ -89,7 +89,7 @@ namespace iofwdclient
        sm->execute();
    }
 
-   int CBClient::cbcreate(const IOFWDClientCB & cb,
+   void CBClient::cbcreate(const IOFWDClientCB & cb,
                           int * ret,
                           const zoidfs::zoidfs_handle_t *parent_handle,
                           const char *component_name, 
@@ -121,7 +121,7 @@ namespace iofwdclient
        sm->execute();      
    }
 
-   int CBClient::cblookup(const IOFWDClientCB & cb,
+   void CBClient::cblookup(const IOFWDClientCB & cb,
                           int * ret,
                           const zoidfs::zoidfs_handle_t *parent_handle,
                           const char *component_name, 
@@ -151,7 +151,7 @@ namespace iofwdclient
        sm->execute();      
    }
 
-   int CBClient::cbwrite(const IOFWDClientCB & cb,
+   void CBClient::cbwrite(const IOFWDClientCB & cb,
               int * ret,
               const zoidfs::zoidfs_handle_t *handle, size_t mem_count,
               const void *mem_starts[], const size_t mem_sizes[],
@@ -181,7 +181,7 @@ namespace iofwdclient
        sm->execute();           
    }
    
-   int CBClient::cbread(const IOFWDClientCB & cb,
+   void CBClient::cbread(const IOFWDClientCB & cb,
                         int * ret,
                         const zoidfs::zoidfs_handle_t *handle, size_t mem_count,
                         void *mem_starts[], const size_t mem_sizes[],

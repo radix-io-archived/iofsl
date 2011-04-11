@@ -200,9 +200,8 @@ namespace iofwd
 
       void IOFSLRPCWriteRequest::recvBuffersBlock(const CBType & cb, RetrievedBuffer * rb)
       {
-          int i = 0;
+          size_t i = 0;
           size_t outSize = 0;
-          size_t readSize = 0;  
           void * loc;
           do
           {
@@ -229,7 +228,6 @@ namespace iofwd
       void IOFSLRPCWriteRequest::recvPipelineBufferCBBlock(iofwdevent::CBType cb, iofwd::RetrievedBuffer* rb, size_t size)
       {
           size_t outSize = 0;
-          size_t readSize = 0;  
           void * loc;
           do
           {

@@ -68,10 +68,9 @@ class ReadClientSM :
 
         const IOFWDClientCB & cb_;
         int * ret_;
-
+        RPCCommClientSMRead comm_;
         streamwrappers::ReadInStream in_;
         streamwrappers::ReadOutStream out_;
-        RPCCommClientSMRead comm_;
 };
 
     }

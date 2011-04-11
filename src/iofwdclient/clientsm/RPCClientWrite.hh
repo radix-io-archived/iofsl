@@ -236,7 +236,6 @@ class RPCClientWrite :
         /* RPC */
         const std::string rpc_func_;
         boost::shared_ptr<iofwd::RPCClient> rpc_client_;
-        rpc::RPCClientHandle rpc_handle_;
 
         /* encoder */
         RPCServerHelper<rpc::RPCEncoder, iofwdevent::ZeroCopyOutputStream,
@@ -245,6 +244,8 @@ class RPCClientWrite :
         /* decoder */
         RPCServerHelper<rpc::RPCDecoder, iofwdevent::ZeroCopyInputStream,
             OUTTYPE> d_;
+
+        rpc::RPCClientHandle rpc_handle_;
                 
 };
 

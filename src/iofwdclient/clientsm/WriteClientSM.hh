@@ -68,10 +68,9 @@ class WriteClientSM :
 
         const IOFWDClientCB & cb_;
         int * ret_;
-
+        RPCCommClientSMWrite comm_;
         streamwrappers::WriteInStream in_;
         streamwrappers::WriteOutStream out_;
-        RPCCommClientSMWrite comm_;
 };
 
     }

@@ -108,7 +108,6 @@ int main (int argc, char ** args)
          for (int z = 0; z < 20; z++)
          {
             size_t ret = 0;
-            printf("HANDLE: %i\n", handle);
             printf("MY RETRURN: %i\n",ret);
             ret = x->lookup (NULL, NULL, opt_file.c_str(), &handle, &op_hint);    
                          

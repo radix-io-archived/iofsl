@@ -66,10 +66,9 @@ class LookupClientSM :
 
         const IOFWDClientCB & cb_;
         int * ret_;
-
+        RPCCommClientSMPtr comm_;
         streamwrappers::LookupInStream in_;
         streamwrappers::LookupOutStream out_;
-        RPCCommClientSMPtr comm_;
 };
 
     }
