@@ -158,7 +158,7 @@ namespace iofwd
           /* allocate the buffer wrapper */
           rb->buffer_ = new iofwdutil::mm::GenericMemoryManager();
           rb->buffer_->alloc (rb->getsize());
-          cb( *(new iofwdevent::CBException()));
+          cb( iofwdevent::CBException());
       }
 
       void IOFSLRPCWriteRequest::releaseBuffer(RetrievedBuffer * rb)
@@ -195,7 +195,7 @@ namespace iofwd
 
       void IOFSLRPCWriteRequest::recvBuffers(const CBType & cb, RetrievedBuffer * rb)
       {
-         new boost::thread(boost::bind(&IOFSLRPCWriteRequest::recvBuffersBlock, this, cb, rb));  
+         boost::thread(boost::bind(&IOFSLRPCWriteRequest::recvBuffersBlock, this, cb, rb));  
       }
 
       void IOFSLRPCWriteRequest::recvBuffersBlock(const CBType & cb, RetrievedBuffer * rb)
@@ -215,13 +215,13 @@ namespace iofwd
             }
             
           } while ( i < param_.mem_count);
-          cb(*(new iofwdevent::CBException()));
+          cb(iofwdevent::CBException());
       }
 
 
       void IOFSLRPCWriteRequest::recvPipelineBufferCB(iofwdevent::CBType cb, iofwd::RetrievedBuffer* rb, size_t size)
       {
-         new boost::thread(boost::bind(&IOFSLRPCWriteRequest::recvPipelineBufferCBBlock, this, cb, rb, size));  
+         boost::thread(boost::bind(&IOFSLRPCWriteRequest::recvPipelineBufferCBBlock, this, cb, rb, size));  
       }
 
 
@@ -238,7 +238,7 @@ namespace iofwd
           cb(iofwdevent::CBException());
       }
 
-      void IOFSLRPCWriteRequest::reply(const CBType & UNUSED(cb))
+      void IOFSLRPCWriteRequest::reply(const CBType & cb)
       {
           /* verify the args are OK */
           ASSERT(getReturnCode() == zoidfs::ZFS_OK);
@@ -248,6 +248,11 @@ namespace iofwd
 
           /* invoke the callback */
           //cb();
+          zoidfs::hints::zoidfs_hint_create(&op_hint_);  
+          /* @TODO: Remove this later */
+          param_.op_hint = &op_hint_;
+          cb(iofwdevent::CBException());
+
       }
 
       IOFSLRPCWriteRequest::~IOFSLRPCWriteRequest()

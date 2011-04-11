@@ -10,7 +10,6 @@ const IOFSLRPCLookupRequest::ReqParam & IOFSLRPCLookupRequest::decodeParam()
 {
     /* decode the rpc input params */
     decode();
-    fprintf(stderr, "IOFSLRPCLookupRequest:%s:%i\n", __func__, __LINE__);
    if(inStruct.info.full_path.value.c_str()[0])
    {
       param_.full_path = (char *)inStruct.info.full_path.value.c_str();
@@ -29,10 +28,9 @@ const IOFSLRPCLookupRequest::ReqParam & IOFSLRPCLookupRequest::decodeParam()
    return param_;
 }
 
-void IOFSLRPCLookupRequest::reply(const CBType & UNUSED(cb), const
+void IOFSLRPCLookupRequest::reply(const CBType & cb, const
         zoidfs::zoidfs_handle_t * handle)
 {
-    fprintf(stderr, "IOFSLRPCLookupRequest:%s:%i\n", __func__, __LINE__);
     /* verify the args are OK */
     ASSERT(getReturnCode() != zoidfs::ZFS_OK || handle);
 
@@ -43,13 +41,17 @@ void IOFSLRPCLookupRequest::reply(const CBType & UNUSED(cb), const
     /* encode */
     encode();
 
+    zoidfs::zoidfs_op_hint_t op_hint_;
+    zoidfs::hints::zoidfs_hint_create(&op_hint_);  
+    /* @TODO: Remove this later */
+    param_.op_hint = &op_hint_;
+    cb(iofwdevent::CBException());
     /* invoke the callback */
     //cb();
 }
 
 IOFSLRPCLookupRequest::~IOFSLRPCLookupRequest()
 {
-    fprintf(stderr, "IOFSLRPCLookupRequest:%s:%i\n", __func__, __LINE__);
 }
 
    }
