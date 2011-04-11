@@ -68,10 +68,9 @@ class CreateClientSM :
 
         const IOFWDClientCB & cb_;
         int * ret_;
-
+        RPCCommClientCreate comm_;
         streamwrappers::CreateInStream in_;
         streamwrappers::CreateOutStream out_;
-        RPCCommClientCreate comm_;
 };
 
     }

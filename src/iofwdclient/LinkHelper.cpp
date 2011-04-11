@@ -27,11 +27,12 @@ void registerIofwdClients ()
             (rpcclient) \
             (net) \
       );
-
-//#ifdef HAVE_FTB
-//      SERVICE_LINKHELPER( \
-//            (ftb) \
-//         );
-//#endif
+/*
+  #ifdef HAVE_FTB
+       SERVICE_LINKHELPER( \
+              (ftb) \
+           );
+  #endif
+*/
 
 }

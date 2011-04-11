@@ -45,8 +45,6 @@ namespace iofwdclient
                      pos(0)
                  {
                  }
-               int buf;
-               size_t pos;
                const zoidfs::zoidfs_handle_t *handle_;
                size_t mem_count_;
                void ** mem_starts_;
@@ -55,6 +53,8 @@ namespace iofwdclient
                const zoidfs::zoidfs_file_ofs_t * file_starts_;
                zoidfs::zoidfs_file_ofs_t * file_sizes_;
                encoder::OpHintHelper op_helper_;
+               int buf;
+               size_t pos;
          };
 
       class ReadOutStream
@@ -64,22 +64,24 @@ namespace iofwdclient
                              size_t mem_count = NULL,
                              void *mem_starts[] = NULL,
                              const size_t mem_sizes[] = NULL) :
+                 op_helper_(op_hint),
+                 mem_count_(mem_count),
                  mem_starts_(mem_starts),
-                 mem_sizes_(mem_sizes),
-                 mem_count_(mem_count)
+                 mem_sizes_(mem_sizes)
               {
                    buf =  new int;
                   pos = new size_t;
                   *buf = 0;
                   *pos = 0;
               }
+              encoder::OpHintHelper op_helper_;
               size_t mem_count_;
-              int returnCode;
-              zoidfs::zoidfs_handle_t * handle_;
-              int * buf;
-              size_t * pos;
               void ** mem_starts_;
               const size_t * mem_sizes_;
+              int * buf;
+              size_t * pos;
+              int returnCode;
+              zoidfs::zoidfs_handle_t * handle_;
       };
 
 /*
