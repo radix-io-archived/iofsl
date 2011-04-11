@@ -42,7 +42,7 @@ int main()
         char tmps[1024];
 
         memset(tmps, '\0', 1024);
-        sprintf(tmps, "this is a test %lu", i);
+        sprintf(tmps, "this is a test %u", i);
 
         mem[i] = strdup(tmps);
         memsizes[i] = strlen(mem[i]) + 1;
