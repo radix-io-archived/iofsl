@@ -57,7 +57,7 @@ int bmi_comm_send(BMI_addr_t peer_addr, const void *buffer, bmi_size_t buflen,
 
         if (actual_size != buflen) {
             fprintf(stderr, "bmi_comm_send: Expected %ld but received %lu\n",
-                    buflen, actual_size);
+                    (long int)buflen, (long unsigned int) actual_size);
             return ZFSERR_OTHER;
         }
     }
@@ -104,7 +104,7 @@ int bmi_comm_isend_wait(bmi_op_id_t op_id, bmi_size_t buflen, bmi_context_id con
 
     if (actual_size != buflen)
     {
-        fprintf(stderr, "bmi_comm_wait: Expected %ld but received %lu\n", buflen, actual_size);
+        fprintf(stderr, "bmi_comm_wait: Expected %ld but received %lu\n", (long int)buflen, (long unsigned int) actual_size);
         exit(1);
     }
     return 0;
@@ -215,7 +215,7 @@ int bmi_comm_sendu(BMI_addr_t peer_addr, const void *buffer, bmi_size_t buflen,
 
         if (actual_size != buflen) {
             fprintf(stderr, "bmi_comm_sendu: Expected %ld but received %lu\n",
-                    buflen, actual_size);
+                   (long int)buflen, (long unsigned int) actual_size);
             return ZFSERR_OTHER;
         }
     }
@@ -256,7 +256,7 @@ int bmi_comm_isendu_wait(bmi_size_t buflen, bmi_context_id context, bmi_op_id_t 
 
     if (actual_size != buflen)
     {
-        fprintf(stderr, "bmi_comm_isendu_wait: Expected %ld but received %lu\n", buflen, actual_size);
+        fprintf(stderr, "bmi_comm_isendu_wait: Expected %ld but received %lu\n", (long int)buflen, (long unsigned int) actual_size);
         exit(1);
     }
     return 0;
@@ -337,7 +337,7 @@ int bmi_comm_send_list(BMI_addr_t peer_addr, size_t list_count,
 
         if (actual_size != total_size) {
             fprintf(stderr, "bmi_comm_send_list: Expected %ld but received %lu\n",
-                    total_size, actual_size);
+                (long int)total_size, (long unsigned int)actual_size);
             return ZFSERR_OTHER;
         }
     }
@@ -380,7 +380,7 @@ int bmi_comm_isend_list_wait(bmi_op_id_t op_id, bmi_context_id context, bmi_size
 
     if (actual_size != total_size) {
         fprintf(stderr, "bmi_comm_send_list: Expected %ld but received %lu\n",
-                total_size, actual_size);
+                (long int)total_size, (long unsigned int)actual_size);
         exit(1);
     }
 

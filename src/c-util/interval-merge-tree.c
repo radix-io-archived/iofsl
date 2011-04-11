@@ -1007,7 +1007,7 @@ int interval_merge_tree_print(interval_merge_tree_node_t * node, int level, char
     }
 
     /* print the node value */
-    fprintf(stderr, "level=%i, node=internal, color=%c, dir=%c, key=%lu, size=%i, max=%i, start=%lu, end=%lu\n",
+    fprintf(stderr, "level=%i, node=internal, color=%c, dir=%c, key=%u, size=%i, max=%i, start=%u, end=%u\n",
         level, node->color, dir, *(size_t *)node->key.key, node->size, node->max, node->interval.start, node->interval.end);
 
     /* descend the right nodes */
