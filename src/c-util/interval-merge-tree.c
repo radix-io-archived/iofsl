@@ -1005,11 +1005,15 @@ int interval_merge_tree_print(interval_merge_tree_node_t * node, int level, char
     {
         return 0;
     }
-
+#if SIZEOF_SIZE_T != SIZEOF_INT64_T
+    /* print the node value */
+    fprintf(stderr, "level=%i, node=internal, color=%c, dir=%c, key=%lu, size=%i, max=%i, start=%lu, end=%lu\n",
+        level, node->color, dir, *(size_t *)node->key.key, node->size, node->max, node->interval.start, node->interval.end);
+#else
     /* print the node value */
     fprintf(stderr, "level=%i, node=internal, color=%c, dir=%c, key=%u, size=%i, max=%i, start=%u, end=%u\n",
         level, node->color, dir, *(size_t *)node->key.key, node->size, node->max, node->interval.start, node->interval.end);
-
+#endif    
     /* descend the right nodes */
     interval_merge_tree_print(node->right, level + 1, 'R');
 
