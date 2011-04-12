@@ -102,6 +102,13 @@ test_servercomm_SOURCES = test/servercomm.cpp $(SERVERSOURCES)
 test_servercomm_LDFLAGS = ${cppldflags}
 test_servercomm_LDADD = ${cppldadd}
 
+noinst_PROGRAMS += test/benchmark/BenchmarkMain
+test_benchmark_BenchmarkMain_SOURCES = test/benchmark/BenchmarkMain.cpp \
+                                       test/benchmark/BenchmarkMain.hh \
+                                       test/benchmark/Test.cpp \
+                                       test/benchmark/Test.hh $(SERVERSOURCES)
+test_benchmark_BenchmarkMain_LDFLAGS = ${cppldflags}
+test_benchmark_BenchmarkMain_LDADD = ${cppldadd}
 
 noinst_PROGRAMS += test/net
 test_net_SOURCES = test/net.cpp test/TrackLive.cpp test/TrackLive.hh \
