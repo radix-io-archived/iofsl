@@ -133,7 +133,7 @@ class IOFSLKeyValueStorage : public Singleton< IOFSLKeyValueStorage >
                             }
                             else
                             {
-                                *curValue = NULL;
+                                *curValue = 0;
                             }
                         }
                         if(tval)
