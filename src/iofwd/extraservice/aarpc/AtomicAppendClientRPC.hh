@@ -54,11 +54,13 @@ namespace iofwd
                     AARPCGetNextOffsetOut out;
                     size_t server_rank = AtomicAppendFileHandleHash(&handle) %
                         comm_size_;
+                    int local_rpc = server_rank == netservice_->getServerRank() ? 1 :
+                        0;
 
                     in.handle = handle;
                     in.inc = incsize;
 
-                    if(master_mode_)
+                    if(master_mode_ && !local_rpc)
                     {
                         aarpcClientHelper(
                                 rpcclient_->rpcConnect("aarpc.getnextoffset",
@@ -67,7 +69,7 @@ namespace iofwd
                         offset = out.offset;
                         retcode = out.retcode;
                     }
-                    else if(distributed_mode_)
+                    else if(distributed_mode_ && !local_rpc)
                     {
                         aarpcClientHelper(
                                 rpcclient_->rpcConnect("aarpc.getnextoffset",
@@ -100,10 +102,12 @@ namespace iofwd
                     AARPCCreateOffsetOut out;
                     size_t server_rank = AtomicAppendFileHandleHash(&handle) %
                         comm_size_;
+                    int local_rpc = server_rank == netservice_->getServerRank() ? 1 :
+                        0;
 
                     in.handle = handle;
 
-                    if(master_mode_)
+                    if(master_mode_ && !local_rpc)
                     {
                         aarpcClientHelper(
                                 rpcclient_->rpcConnect("aarpc.getnextoffset",
@@ -112,7 +116,7 @@ namespace iofwd
                         retcode = out.retcode;
                         offset = out.offset;
                     }
-                    else if(distributed_mode_)
+                    else if(distributed_mode_ && !local_rpc)
                     {
                         aarpcClientHelper(
                                 rpcclient_->rpcConnect("aarpc.createoffset",
@@ -145,10 +149,12 @@ namespace iofwd
                     AARPCDeleteOffsetOut out;
                     size_t server_rank = AtomicAppendFileHandleHash(&handle) %
                         comm_size_;
+                    int local_rpc = server_rank == netservice_->getServerRank() ? 1 :
+                        0;
 
                     in.handle = handle;
 
-                    if(master_mode_)
+                    if(master_mode_ && !local_rpc)
                     {
                         aarpcClientHelper(
                                 rpcclient_->rpcConnect("aarpc.getnextoffset",
@@ -156,7 +162,7 @@ namespace iofwd
                                 in, out);
                         retcode = out.retcode;
                     }
-                    else if(distributed_mode_)
+                    else if(distributed_mode_ && !local_rpc)
                     {
                         aarpcClientHelper(
                                 rpcclient_->rpcConnect("aarpc.deleteoffset",
@@ -189,6 +195,7 @@ namespace iofwd
                     OUT & rpc_arg_out)
             {
                 iofwdevent::SingleCompletion block;
+                boost::mutex::scoped_lock l(chmutex_);
 
                 {
                     // wait until outgoing RPC ready
@@ -280,6 +287,7 @@ namespace iofwd
                 return size;
             }
 
+                boost::mutex chmutex_;
                 iofwd::service::ServiceManager & man_;
                 boost::shared_ptr<iofwd::Net> netservice_;
                 boost::shared_ptr<iofwd::RPCClient> rpcclient_;

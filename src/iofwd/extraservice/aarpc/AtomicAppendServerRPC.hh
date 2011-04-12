@@ -88,6 +88,8 @@ namespace iofwd
                         iofwdevent::ZeroCopyOutputStream * out,
                         const rpc::RPCInfo & )
                 {
+                    boost::mutex::scoped_lock l(shmutex_);
+
                     /* streams */
                     boost::scoped_ptr<iofwdevent::ZeroCopyInputStream> instream(in);
                     boost::scoped_ptr<iofwdevent::ZeroCopyOutputStream> outstream(out);
@@ -116,7 +118,7 @@ namespace iofwd
                     in->read(reinterpret_cast<const void **>(&read_ptr),
                             &read_size, block, insize);
                     block.wait();
-          
+
                     /* decode the XDR in the RPC request */
                     rpc::RPCDecoder dec(read_ptr, read_size);
                     process(dec, rpc_func_arg_in);
@@ -178,6 +180,7 @@ namespace iofwd
                 return size;
             }
 
+            boost::mutex shmutex_;
             boost::shared_ptr<Log> log_service_;
             boost::shared_ptr<RPCServer> rpcserver_;
             iofwdutil::IOFWDLogSource & log_;

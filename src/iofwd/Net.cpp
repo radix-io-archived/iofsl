@@ -28,9 +28,9 @@ namespace iofwd
       // Lookup net type
       iofwdutil::ConfigFile config =
          config_service_->getConfig().openSection ("net");
-      std::string type = config.getKeyDefault ("type", "local");
+      type_ = config.getKeyDefault ("type", "local");
 
-      if (type == "bmi")
+      if (type_ == "bmi")
       {
          bmi_service_ = lookupService<BMI>("bmi");
          net_.reset (new net::bmi::BMIConnector (bmi_service_->get (),
@@ -41,7 +41,7 @@ namespace iofwd
             s.push_back (bmi_service_->getServer (i));
          createServerComm (s, bmi_service_->getServerRank ());
       }
-      else if (type == "local")
+      else if (type_ == "local")
       {
          net_.reset (new net::loopback::LoopbackConnector ());
 
@@ -54,6 +54,15 @@ namespace iofwd
          ZTHROW (ConfigException () << ce_key ("type") <<
                ce_environment ("net"));
       }
+   }
+
+   int Net::getServerRank()
+   {
+       if(type_ == "bmi")
+       {
+           return bmi_service_->getServerRank();
+       }
+       return -1;
    }
 
    void Net::createServerComm (const std::vector<std::string> & l,

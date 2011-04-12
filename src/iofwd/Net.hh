@@ -30,6 +30,8 @@ namespace iofwd
 
          net::ConstCommunicatorHandle getServerComm () const;
 
+         int getServerRank();
+
          virtual ~Net ();
 
       protected:
@@ -44,6 +46,8 @@ namespace iofwd
          boost::scoped_ptr<net::Net> net_;
 
          net::ConstCommunicatorHandle servercomm_;
+
+         std::string type_;
    };
 
    //========================================================================
