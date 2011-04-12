@@ -8,7 +8,7 @@
 #include <assert.h>
 #include <sys/time.h>
 #include <sys/types.h>
-
+#include "iofwd_config.h"
 #include "zoidfs/zoidfs.h"
 
 int main()
@@ -43,9 +43,9 @@ int main()
 
         memset(tmps, '\0', 1024);
 #if SIZEOF_SIZE_T != SIZEOF_INT64_T
-        sprintf(tmps, "this is a test %lu", i);
-#else
         sprintf(tmps, "this is a test %u", i);
+#else
+        sprintf(tmps, "this is a test %lu", i);
 #endif        
         mem[i] = strdup(tmps);
         memsizes[i] = strlen(mem[i]) + 1;

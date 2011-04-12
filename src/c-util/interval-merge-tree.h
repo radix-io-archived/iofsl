@@ -7,7 +7,7 @@ extern "C" {
 
 #include <stdlib.h>
 #include <stdint.h>
-
+#include "iofwd_config.h"
 /* defines */
 
 /* colors: red, black, and 0 (for undefined) */
