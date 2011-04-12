@@ -58,7 +58,6 @@ class RPCClientWrite :
             rpc_handle_(rpc_handle)
         {
             cb_ = (iofwdevent::CBType)cb;
-            fprintf(stderr, "RPCClientWrite:%s:%i\n", __func__, __LINE__);
         }
 
         ~RPCClientWrite()
@@ -67,7 +66,6 @@ class RPCClientWrite :
 
         void init(iofwdevent::CBException e)
         {
-            fprintf(stderr, "RPCClientWrite:%s:%i\n", __func__, __LINE__);
             e.check();
 
             /* Get the maximum possible send size */
@@ -87,7 +85,6 @@ class RPCClientWrite :
 
         void postSetupConnection(iofwdevent::CBException e)
         {
-            fprintf(stderr, "RPCClientWrite:%s:%i\n", __func__, __LINE__);
             e.check();
 
             /* setup the write stream */
@@ -100,7 +97,6 @@ class RPCClientWrite :
 
         void waitSetupConnection(iofwdevent::CBException e)
         {
-            fprintf(stderr, "RPCClientWrite:%s:%i\n", __func__, __LINE__);
             e.check();
             setNextMethod(&RPCClientWrite<INTYPE,OUTTYPE>::postEncodeData);
         }
@@ -161,14 +157,12 @@ class RPCClientWrite :
         /* Flush state */
         void waitEncodeData(iofwdevent::CBException e)
         {
-            fprintf(stderr, "RPCClientWrite:%s:%i\n", __func__, __LINE__);
             e.check();
             setNextMethod(&RPCClientWrite<INTYPE,OUTTYPE>::postFlush);
         }
 
         void postFlush(iofwdevent::CBException e)
         {
-            fprintf(stderr, "RPCClientWrite:%s:%i\n", __func__, __LINE__);
             e.check();
 
             // Before we can access the output channel we need to wait until the RPC
@@ -184,7 +178,6 @@ class RPCClientWrite :
 
         void waitFlush(iofwdevent::CBException e)
         {
-            fprintf(stderr, "RPCClientWrite:%s:%i\n", __func__, __LINE__);
             e.check();
             rpc_handle_->waitInReady (slots_[BASE_SLOT]);
             slots_.wait(BASE_SLOT,&RPCClientWrite<INTYPE,OUTTYPE>::postDecodeData);
@@ -193,7 +186,6 @@ class RPCClientWrite :
         
         void postDecodeData(iofwdevent::CBException e)
         {
-            fprintf(stderr, "RPCClientWrite:%s:%i\n", __func__, __LINE__);
             e.check();      
             /* get the max size */
             d_.net_data_size_ = rpc::getRPCEncodedSize(OUTTYPE()).getMaxSize();
@@ -209,13 +201,11 @@ class RPCClientWrite :
 
         void waitDecodeData(iofwdevent::CBException e)
         {
-            fprintf(stderr, "RPCClientWrite:%s:%i\n", __func__, __LINE__);
             e.check();
 
             d_.coder_ = rpc::RPCDecoder(d_.data_ptr_, d_.data_size_);
 
             process(d_.coder_, d_.data_);
-            fprintf(stderr, "SIZE: %i, POS: %i\n", d_.coder_.getPos(), d_.data_size_);
             if(d_.coder_.getPos() != d_.data_size_)
             {
                 fprintf(stderr, "%s:%i ERROR undecoded data...\n", __func__,

@@ -58,7 +58,6 @@ class RPCClientRead :
             rpc_handle_(rpc_handle)
         {
             cb_ = (iofwdevent::CBType)cb;
-            fprintf(stderr, "RPCClientRead:%s:%i\n", __func__, __LINE__);
         }
 
         ~RPCClientRead()
@@ -67,7 +66,6 @@ class RPCClientRead :
 
         void init(iofwdevent::CBException e)
         {
-            fprintf(stderr, "RPCClientRead:%s:%i\n", __func__, __LINE__);
             e.check();
 
             /* Get the maximum possible send size */
@@ -87,7 +85,6 @@ class RPCClientRead :
 
         void postSetupConnection(iofwdevent::CBException e)
         {
-            fprintf(stderr, "RPCClientRead:%s:%i\n", __func__, __LINE__);
             e.check();
 
             /* setup the write stream */
@@ -100,7 +97,6 @@ class RPCClientRead :
 
         void waitSetupConnection(iofwdevent::CBException e)
         {
-            fprintf(stderr, "RPCClientRead:%s:%i\n", __func__, __LINE__);
             e.check();
             setNextMethod(&RPCClientRead<INTYPE,OUTTYPE>::postEncodeData);
         }
@@ -123,14 +119,12 @@ class RPCClientRead :
         /* Flush state */
         void waitEncodeData(iofwdevent::CBException e)
         {
-            fprintf(stderr, "RPCClientRead:%s:%i\n", __func__, __LINE__);
             e.check();
             setNextMethod(&RPCClientRead<INTYPE,OUTTYPE>::postFlush);
         }
 
         void postFlush(iofwdevent::CBException e)
         {
-            fprintf(stderr, "RPCClientRead:%s:%i\n", __func__, __LINE__);
             e.check();
 
             // Before we can access the output channel we need to wait until the RPC
@@ -145,7 +139,6 @@ class RPCClientRead :
 
         void waitFlush(iofwdevent::CBException e)
         {
-            fprintf(stderr, "RPCClientRead:%s:%i\n", __func__, __LINE__);
             e.check();
             rpc_handle_->waitInReady (slots_[BASE_SLOT]);
             slots_.wait(BASE_SLOT,&RPCClientRead<INTYPE,OUTTYPE>::postDecodeData);
@@ -154,7 +147,6 @@ class RPCClientRead :
         
         void postDecodeData(iofwdevent::CBException e)
         {
-            fprintf(stderr, "RPCClientRead:%s:%i\n", __func__, __LINE__);
             e.check();      
             /* get the max size */
             d_.net_data_size_ = rpc::getRPCEncodedSize(d_.data_).getMaxSize();
@@ -170,7 +162,6 @@ class RPCClientRead :
 
         void waitDecodeData(iofwdevent::CBException e)
         {
-            fprintf(stderr, "RPCClientRead:%s:%i\n", __func__, __LINE__);
             e.check();
 
             d_.coder_ = rpc::RPCDecoder(d_.data_ptr_, d_.data_size_);
@@ -207,7 +198,6 @@ class RPCClientRead :
             /* read finished */
             if (ret == 0)
             {
-               fprintf(stderr, "ZOOKES:%s:%i\n", __func__, __LINE__);
                cb_(e);      
             }
             /* read more data */

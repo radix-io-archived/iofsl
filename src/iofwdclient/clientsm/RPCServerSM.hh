@@ -58,7 +58,6 @@ class RPCServerSM :
             rpc_handle_(rpc_handle)
         {
             cb_ = (iofwdevent::CBType)cb;
-            fprintf(stderr, "RPCServerSM:%s:%i\n", __func__, __LINE__);
         }
 
         ~RPCServerSM()
@@ -67,7 +66,6 @@ class RPCServerSM :
 
         void init(iofwdevent::CBException e)
         {
-            fprintf(stderr, "RPCServerSM:%s:%i\n", __func__, __LINE__);
             e.check();
 
             /* Get the maximum possible send size */
@@ -87,7 +85,6 @@ class RPCServerSM :
 
         void postSetupConnection(iofwdevent::CBException e)
         {
-            fprintf(stderr, "RPCServerSM:%s:%i\n", __func__, __LINE__);
             e.check();
 
             /* setup the write stream */
@@ -104,23 +101,19 @@ class RPCServerSM :
 
         void waitSetupConnection(iofwdevent::CBException e)
         {
-            fprintf(stderr, "RPCServerSM:%s:%i\n", __func__, __LINE__);
             e.check();
             setNextMethod(&RPCServerSM<INTYPE,OUTTYPE>::postEncodeData);
         }
 
         void postEncodeData(iofwdevent::CBException e)
         {
-            fprintf(stderr, "RPCServerSM:%s:%i\n", __func__, __LINE__);
             e.check();
 
             /* create the encoder */
             e_.coder_ = rpc::RPCEncoder(e_.data_ptr_, e_.data_size_);
 
             process(e_.coder_, e_.data_);
-            fprintf(stderr, "SIZE: %i, POS: %i\n", e_.net_data_size_, e_.data_size_);
             e_.zero_copy_stream_->rewindOutput(e_.data_size_ - e_.net_data_size_, slots_[BASE_SLOT]);
-            fprintf(stderr, "SIZE2: %i\n",e_.data_size_ - e_.net_data_size_);
 
             slots_.wait(BASE_SLOT,
                     &RPCServerSM<INTYPE,OUTTYPE>::waitEncodeData);
@@ -131,14 +124,12 @@ class RPCServerSM :
 
         void waitEncodeData(iofwdevent::CBException e)
         {
-            fprintf(stderr, "RPCServerSM:%s:%i\n", __func__, __LINE__);
             e.check();
             setNextMethod(&RPCServerSM<INTYPE,OUTTYPE>::postFlush);
         }
 
         void postFlush(iofwdevent::CBException e)
         {
-            fprintf(stderr, "RPCServerSM:%s:%i\n", __func__, __LINE__);
             e.check();
 
             // Before we can access the output channel we need to wait until the RPC
@@ -156,7 +147,6 @@ class RPCServerSM :
 
         void waitFlush(iofwdevent::CBException e)
         {
-            fprintf(stderr, "RPCServerSM:%s:%i\n", __func__, __LINE__);
             e.check();
             rpc_handle_->waitInReady (slots_[BASE_SLOT]);
             slots_.wait(BASE_SLOT,&RPCServerSM<INTYPE,OUTTYPE>::postDecodeData);
@@ -165,7 +155,6 @@ class RPCServerSM :
         
         void postDecodeData(iofwdevent::CBException e)
         {
-            fprintf(stderr, "RPCServerSM:%s:%i\n", __func__, __LINE__);
             e.check();      
             /* get the max size */
             d_.net_data_size_ = rpc::getRPCEncodedSize(OUTTYPE()).getMaxSize();
@@ -181,13 +170,11 @@ class RPCServerSM :
 
         void waitDecodeData(iofwdevent::CBException e)
         {
-            fprintf(stderr, "RPCServerSM:%s:%i\n", __func__, __LINE__);
             e.check();
 
             d_.coder_ = rpc::RPCDecoder(d_.data_ptr_, d_.data_size_);
 
             process(d_.coder_, d_.data_);
-            fprintf(stderr, "SIZE: %i, POS: %i\n", d_.coder_.getPos(), d_.data_size_);
             if(d_.coder_.getPos() != d_.data_size_)
             {
                 fprintf(stderr, "%s:%i ERROR undecoded data...\n", __func__,
