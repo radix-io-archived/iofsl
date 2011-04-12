@@ -207,7 +207,6 @@ namespace iofwd
           {
             loc = (void*)&(param_.mem_starts[i][outSize]);
             outSize += readBuffer((void**)&loc, param_.mem_sizes[i] - outSize, TRUE);
-            fprintf(stderr, "OUTSIZE: %i\n", outSize);
             if (outSize == param_.mem_sizes[i])
             {
                i++;
