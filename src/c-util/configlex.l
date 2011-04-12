@@ -189,8 +189,13 @@ BACKSLASH     "\\"
                 if (strlen (yytext) >= sizeof(yylval->string_buf))
                 {
                      char buf[512];
+#if SIZEOF_SIZE_T != SIZEOF_INT64_T
+                     snprintf (buf, sizeof(buf), "ID too long: Maximum ID"
+                        " length is %lu bytes!", sizeof(yylval->string_buf));
+#else
                      snprintf (buf, sizeof(buf), "ID too long: Maximum ID"
                         " length is %u bytes!", sizeof(yylval->string_buf));
+#endif
                      return cfgp_lex_error (yyextra, 
                        yylloc->last_line, yylloc->last_column, buf);
                 }

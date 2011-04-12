@@ -42,8 +42,11 @@ int main()
         char tmps[1024];
 
         memset(tmps, '\0', 1024);
+#if SIZEOF_SIZE_T != SIZEOF_INT64_T
+        sprintf(tmps, "this is a test %lu", i);
+#else
         sprintf(tmps, "this is a test %u", i);
-
+#endif        
         mem[i] = strdup(tmps);
         memsizes[i] = strlen(mem[i]) + 1;
         memcp[i] = (char *)malloc(sizeof(char) * memsizes[i]);
