@@ -43,7 +43,7 @@ namespace iofwdclient
          zoidfs_comp_mask_t mask)
    {
       IOFWDRequest * ptr = getRequest (request);
-      fprintf(stderr, "%s:%p\n", __func__,ptr);
+
       if (!tracker_->wait (ptr, mask, timeout))
          return ZFSERR_TIMEOUT;
       return ZFS_OK;
