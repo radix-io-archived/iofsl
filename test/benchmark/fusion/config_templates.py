@@ -253,7 +253,7 @@ net
 extra_services {
    // List extra services that need to be started
    // services = ( "ftb" );
-   services = ("bmi", "net");
+   services = ( "rpctest");
 
 
    ftb {
