@@ -10,7 +10,7 @@ using namespace rpc;
 iofwdclient::IOFWDClient * iofslSetup( char * address, std::string opt_config)
 {
    // Needed to autoregister services
-//   registerIofwdFactoryClients ();
+   registerIofwdFactoryClients ();
    ServiceManager & man = ServiceManager::instance ();
    man.setParam ("config.configfile", opt_config);
    shared_ptr<iofwd::Net> netservice (man.loadService<iofwd::Net>("net"));
