@@ -88,9 +88,6 @@ for x in nodes:
 
 f.close()
 
-# Copy testfiles to test directory 
-shutil.copytree (test_files, os.path.join(tmp_dir,"test_files"))
-
 for root, dirs, files in os.walk(os.path.join(tmp_dir,"test_files")):
   for name in files:
     file_name =  os.path.join ( root, name )
@@ -105,7 +102,8 @@ for root, dirs, files in os.walk(os.path.join(tmp_dir,"test_files")):
 
     #Execute Client 
     nodefile = os.path.join(tmp_dir, "nodelist")
-    client = Popen(["mpiexec", "-n", str(cores), "-f", nodefile,
+    #"-f", nodefile,
+    client = Popen(["mpiexec", "-n", str(cores), 
                     client_exe, "tcp://" + ServerNode + ":9001", 
                     os.path.join(tmp_dir,"clientconf.conf"), file_name, 
                     "/dev/null",  str(os.path.getsize(file_name)), result_file])
@@ -116,6 +114,6 @@ for root, dirs, files in os.walk(os.path.join(tmp_dir,"test_files")):
                   "\n\t\t\t/dev/null " +  str(os.path.getsize(file_name)) + " " + result_file)
 
     client.wait()
-    server.terminate()
+    server.kill()
 
 
