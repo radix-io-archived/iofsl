@@ -30,6 +30,7 @@ test_files = config.get ( "Benchmark", "TestDirectory")
 compression = config.get ("Benchmark", "Compression")
 tmp_dir = config.get ("Benchmark", "TempDirectory")
 result_file = config.get ("Benchmark", "ResultFile")
+config_dir = config.get ("Benchmark", "ConfigurationDirectory")
 logging.info ("Configuration Settings")
 logging.info ("\tConfiguration File: " + str(config_file))
 logging.info ("\tNumber of Cores: " + str(cores))
@@ -39,7 +40,7 @@ logging.info ("\tTest File Directory: " + str(test_files))
 logging.info ("\tOutput Result File: " + str(result_file))
 logging.info ("\tCompression: " + str(compression))
 logging.info ("\tTemp Directory: " + str(tmp_dir))
-
+logging.info ("\tConfiguration Dir: " + str(config_dir))
 # Get PBS_NODES availible for use
 pbs_nodefile = os.environ["PBS_NODEFILE"]
 f = open(pbs_nodefile, "r")
@@ -65,12 +66,12 @@ ServerProcCount = nodes[ServerNode]
 del nodes[ServerNode]
 
 server_conf = server_template % str("tcp://" + ServerNode + ":9001")
-f = open ( os.path.join(tmp_dir,"serverconf.conf"), "w")
+f = open ( os.path.join(config_dir,"serverconf.conf"), "w")
 f.write(server_conf)
 f.close()
 
 client_conf = client_template
-f = open ( os.path.join(tmp_dir,"clientconf.conf"), "w")
+f = open ( os.path.join(config_dir,"clientconf.conf"), "w")
 f.write(client_conf)
 f.close()
 
@@ -94,9 +95,9 @@ for root, dirs, files in os.walk(os.path.join(tmp_dir,"test_files")):
 
     # Execute Server 
     os.putenv("ZOIDFS_SERVER_RANK","0")
-    server = Popen([server_exe,"--config",os.path.join(tmp_dir,"serverconf.conf")])
+    server = Popen([server_exe,"--config",os.path.join(config_dir,"serverconf.conf")])
     logging.info("\tServer Started")
-    logging.info("\t\t" + server_exe + " --config " + os.path.join(tmp_dir,"serverconf.conf"))
+    logging.info("\t\t" + server_exe + " --config " + os.path.join(config_dir,"serverconf.conf"))
   
 
     #Execute Client 
@@ -104,12 +105,12 @@ for root, dirs, files in os.walk(os.path.join(tmp_dir,"test_files")):
     #"-f", nodefile,
     client = Popen(["mpiexec", "-n", str(cores), 
                     client_exe, "tcp://" + ServerNode + ":9001", 
-                    os.path.join(tmp_dir,"clientconf.conf"), file_name, 
+                    os.path.join(config_dir,"clientconf.conf"), file_name, 
                     "/dev/null",  str(os.path.getsize(file_name)), result_file])
     logging.info ("\tClient Started")
     logging.info ("\t\t" + "mpiexec" + " -n " + str(cores) + " -f \n\t\t\t" + nodefile +
                   " " + client_exe + " tcp://" + ServerNode + ":9001\n\t\t\t" +
-                  os.path.join(tmp_dir,"clientconf.conf") + " " + file_name +  
+                  os.path.join(config_dir,"clientconf.conf") + " " + file_name +  
                   "\n\t\t\t/dev/null " +  str(os.path.getsize(file_name)) + " " + result_file)
 
     client.wait()
