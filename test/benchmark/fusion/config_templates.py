@@ -1,0 +1,436 @@
+server_template = '''
+
+log {
+  // By default, 2 sinks (stdout and stderr) are available
+  // as is the default filter ('default')
+  // Without additional config, all output goes to stderr
+  // with a default loglevel of INFO.
+  // Note that the default loglevel can be changed by using
+  // the IOFWD_LOGLEVEL variable
+
+  loglevel = "INFO";
+
+  sinks = ( "tmpfile" );
+  filters = ( );
+
+  tmpfile {
+     sinktype = "file";
+  }
+
+}
+
+bmi
+{
+  //listen = "tcp://127.0.0.1:10101";
+  serverlist = ( "%s", "tcp://127.0.0.1:9002" );
+}
+
+net
+{
+//   type = "local";
+     type = "bmi";
+}
+
+extra_services {
+   // List extra services that need to be started
+   // services = ( "ftb" );
+   services = ( "iofslclientrpc");
+
+
+   ftb {
+      period = "60";
+   }
+}
+
+
+
+frontend {
+
+  //
+  // bmi buffer pool options
+  //
+  bmimemorymanager {
+    //
+    // the max number of bmi buffers that are used at any
+    //  point in time
+    //  default: 0
+    //
+    maxnumbuffers = "100";
+  }
+
+}
+
+//
+// options used by the IOFWD request handler
+//  and subcomponents
+//
+requesthandler {
+  //
+  // zoidfs api options
+  //
+  zoidfsapi {
+
+    name = "requestscheduler";
+    //name = "defasync";
+
+    requestscheduler {
+        //
+        // request scheduler modes
+        //  fifo - schedule requests as they arrive
+        //  merge - attempt to merge requests
+        //
+        schedalgo = "merge";
+
+        //
+        // list io batch size
+        //  upper limit on the number of non contig ops
+        //  the scheduler will issue in a single zoidfs read or write
+        //
+        batchsize = "16";
+
+        api = "defasync";
+
+        rangesched {
+            //
+            // request mereger type
+            //  hierarchical: list of ranges merged 
+            //  intervaltree: red-black interval tree
+            //  default: hierarchical
+            //
+            merger = "hierarchical";
+
+            hierarchical {
+                // no special config options
+            }
+            
+            //
+            // hbrr quantum 
+            //
+            defquantum = "8";
+        }
+
+    defasync {
+      //blocking_api = "zoidfs";
+      blocking_api = "log";
+
+      // should we use the threadpool for the zoidfs driver 
+      use_thread_pool = "TrUe";
+
+      // which zoidfs op are high prio... READ,WRITE,LOOKUP,CREATE,REMOVE,SET_ATTR,GET_ATTR,SYMLINK,READLINK,READDIR,LINK,NULL
+      highprioops = "READ,WRITE,LOOKUP,CREATE,REMOVE";
+
+    log {
+      blocking_api = "zoidfs";
+
+      zoidfs {
+    //
+    // the handlers to be loaded at runtime
+    //  if a specified handler is not available,
+    //  it is ignored
+    //  default: LOCAL
+    //
+    handlers = ("POSIX","SYSIO","PVFS2","NOFS","LOCAL");
+
+    //
+    // options for the nofs handler
+    //
+    nofs {
+    }
+
+    //
+    // options for the posix handler
+    //
+    posix {
+    }
+
+    //
+    // options for the pvfs2 handler
+    //
+    pvfs2 {
+    }
+
+    //
+    // options for the sysio handler
+    //
+    sysio {
+        driver = "native";
+        mountpoint = "/";
+        filesystem = "/dev/shm/sysio";
+    }
+
+    gridftp {
+        username = "copej";
+        userpass = "";
+        subject = "";
+        enableconnectioncache = "1";
+        parallelstreams = "4";
+    }
+
+    //
+    // options for the local handler
+    //
+    local {
+    }
+
+      }
+    }
+    }
+    }
+
+
+  }
+
+  //
+  // threadpool config
+  //
+  threadpool {
+      // what are the limits on the number of active threads (high and normal prio)
+      maxnumnormthreads = "16";
+      maxnumhighthreads = "16";
+
+      minnumnormthreads = "4";
+      minnumhighthreads = "4";
+  }
+
+  //
+  // event handler options
+  //  TASK - IOFWD tasks
+  //  SM - IOFWD state machines
+  //
+  events {
+      mode = "SM";
+
+      // SM specific options
+      sm
+      {
+        // should the SMManager schedule code on the high prio TP ?
+        highprio = "TRUE";
+      }
+  }
+
+  //workqueue {
+  //  minthreadnum = "0";
+  //  maxthreadnum = "100";
+  //}
+
+}
+'''
+
+client_template = '''
+
+log {
+  // By default, 2 sinks (stdout and stderr) are available
+  // as is the default filter ('default')
+  // Without additional config, all output goes to stderr
+  // with a default loglevel of INFO.
+  // Note that the default loglevel can be changed by using
+  // the IOFWD_LOGLEVEL variable
+
+  loglevel = "INFO";
+
+  sinks = ( "tmpfile" );
+  filters = ( );
+
+  tmpfile {
+     sinktype = "file";
+  }
+
+}
+
+bmi
+{
+  //listen = "tcp://f134:9001";
+  clientmode = "YES";
+  // serverlist = ( "tcp://127.0.0.1:1234", "tcp://127.0.0.1:1235" );
+}
+
+net
+{
+//   type = "local";
+     type = "bmi";
+}
+
+extra_services {
+   // List extra services that need to be started
+   // services = ( "ftb" );
+   services = ( "rpctest");
+
+
+   ftb {
+      period = "60";
+   }
+}
+
+
+
+frontend {
+
+  //
+  // bmi buffer pool options
+  //
+  bmimemorymanager {
+    //
+    // the max number of bmi buffers that are used at any
+    //  point in time
+    //  default: 0
+    //
+    maxnumbuffers = "100";
+  }
+
+}
+
+//
+// options used by the IOFWD request handler
+//  and subcomponents
+//
+requesthandler {
+  //
+  // zoidfs api options
+  //
+  zoidfsapi {
+
+    name = "requestscheduler";
+    //name = "defasync";
+
+    requestscheduler {
+        //
+        // request scheduler modes
+        //  fifo - schedule requests as they arrive
+        //  merge - attempt to merge requests
+        //
+        schedalgo = "merge";
+
+        //
+        // list io batch size
+        //  upper limit on the number of non contig ops
+        //  the scheduler will issue in a single zoidfs read or write
+        //
+        batchsize = "16";
+
+        api = "defasync";
+
+        rangesched {
+            //
+            // request mereger type
+            //  hierarchical: list of ranges merged 
+            //  intervaltree: red-black interval tree
+            //  default: hierarchical
+            //
+            merger = "hierarchical";
+
+            hierarchical {
+                // no special config options
+            }
+            
+            //
+            // hbrr quantum 
+            //
+            defquantum = "8";
+        }
+
+    defasync {
+      //blocking_api = "zoidfs";
+      blocking_api = "log";
+
+      // should we use the threadpool for the zoidfs driver 
+      use_thread_pool = "TrUe";
+
+      // which zoidfs op are high prio... READ,WRITE,LOOKUP,CREATE,REMOVE,SET_ATTR,GET_ATTR,SYMLINK,READLINK,READDIR,LINK,NULL
+      highprioops = "READ,WRITE,LOOKUP,CREATE,REMOVE";
+
+    log {
+      blocking_api = "zoidfs";
+
+      zoidfs {
+    //
+    // the handlers to be loaded at runtime
+    //  if a specified handler is not available,
+    //  it is ignored
+    //  default: LOCAL
+    //
+    handlers = ("POSIX","SYSIO","PVFS2","NOFS","LOCAL");
+
+    //
+    // options for the nofs handler
+    //
+    nofs {
+    }
+
+    //
+    // options for the posix handler
+    //
+    posix {
+    }
+
+    //
+    // options for the pvfs2 handler
+    //
+    pvfs2 {
+    }
+
+    //
+    // options for the sysio handler
+    //
+    sysio {
+        driver = "native";
+        mountpoint = "/";
+        filesystem = "/dev/shm/sysio";
+    }
+
+    gridftp {
+        username = "copej";
+        userpass = "";
+        subject = "";
+        enableconnectioncache = "1";
+        parallelstreams = "4";
+    }
+
+    //
+    // options for the local handler
+    //
+    local {
+    }
+
+      }
+    }
+    }
+    }
+
+
+  }
+
+  //
+  // threadpool config
+  //
+  threadpool {
+      // what are the limits on the number of active threads (high and normal prio)
+      maxnumnormthreads = "16";
+      maxnumhighthreads = "16";
+
+      minnumnormthreads = "4";
+      minnumhighthreads = "4";
+  }
+
+  //
+  // event handler options
+  //  TASK - IOFWD tasks
+  //  SM - IOFWD state machines
+  //
+  events {
+      mode = "SM";
+
+      // SM specific options
+      sm
+      {
+        // should the SMManager schedule code on the high prio TP ?
+        highprio = "TRUE";
+      }
+  }
+
+  //workqueue {
+  //  minthreadnum = "0";
+  //  maxthreadnum = "100";
+  //}
+
+}
+'''
