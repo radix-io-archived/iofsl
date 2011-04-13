@@ -95,9 +95,9 @@ for root, dirs, files in os.walk(os.path.join(tmp_dir,"test_files")):
 
     # Execute Server 
     os.putenv("ZOIDFS_SERVER_RANK","0")
-    server = Popen([server_exe,"--config",os.path.join(tmp_dir,"serverconf.conf")])
+    server = Popen([server_exe,"--config",os.path.join(config_dir,"serverconf.conf")])
     logging.info("\tServer Started")
-    logging.info("\t\t" + server_exe + " --config " + os.path.join(tmp_dir,"serverconf.conf"))
+    logging.info("\t\t" + server_exe + " --config " + os.path.join(config_dir,"serverconf.conf"))
   
 
     #Execute Client 
@@ -105,12 +105,12 @@ for root, dirs, files in os.walk(os.path.join(tmp_dir,"test_files")):
     #"-f", nodefile,
     client = Popen(["mpiexec", "-n", str(cores), 
                     client_exe, "tcp://" + ServerNode + ":9001", 
-                    os.path.join(tmp_dir,"clientconf.conf"), file_name, 
+                    os.path.join(config_dir,"clientconf.conf"), file_name, 
                     "/dev/null",  str(os.path.getsize(file_name)), result_file])
     logging.info ("\tClient Started")
     logging.info ("\t\t" + "mpiexec" + " -n " + str(cores) + " -f \n\t\t\t" + nodefile +
                   " " + client_exe + " tcp://" + ServerNode + ":9001\n\t\t\t" +
-                  os.path.join(tmp_dir,"clientconf.conf") + " " + file_name +  
+                  os.path.join(config_dir,"clientconf.conf") + " " + file_name +  
                   "\n\t\t\t/dev/null " +  str(os.path.getsize(file_name)) + " " + result_file)
 
     client.wait()
