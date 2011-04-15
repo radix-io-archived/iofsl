@@ -87,12 +87,12 @@ namespace iofwd
       { 
           decode(); 
           param_.handle = &dec_struct.handle_;
-          param_.mem_starts = dec_struct.mem_starts_;
-          param_.mem_sizes = dec_struct.mem_sizes_;
+          param_.mem_starts.reset(dec_struct.mem_starts_);
+          param_.mem_sizes.reset(dec_struct.mem_sizes_);
           param_.mem_count = dec_struct.mem_count_;
           param_.file_count = dec_struct.file_count_;
-          param_.file_sizes = dec_struct.file_sizes_;
-          param_.file_starts = dec_struct.file_starts_;
+          param_.file_sizes.reset(dec_struct.file_sizes_);
+          param_.file_starts.reset(dec_struct.file_starts_);
 
           /* Pipelining no longer matter */
           param_.pipeline_size = 4194304;
@@ -139,7 +139,7 @@ namespace iofwd
       void IOFSLRPCReadRequest::initRequestParams(ReqParam & p, void * bufferMem)
       {
           // allocate buffer for normal mode
-          if (param_.pipeline_size == 0)
+          if (p.pipeline_size == 0)
           {
             char * mem = NULL;
 
@@ -151,24 +151,22 @@ namespace iofwd
             // extra memory copying.
 
             // only going to reallocate if file and mem counts are diff
-            if(param_.mem_count != param_.file_count)
+            if(p.mem_count != p.file_count)
             {
-                param_.mem_count = param_.file_count;
-                delete[] param_.mem_sizes;
-                param_.mem_sizes = new size_t[param_.file_count];
+                p.mem_count = p.file_count;
+                p.mem_sizes.reset(new size_t[p.file_count]);
             }
 
-            param_.mem_starts = new void*[param_.file_count];
+            p.mem_starts.reset(new void*[p.file_count]);
 
             // setup the mem offset and start buffers
             size_t cur = 0;
-            for (size_t i = 0; i < param_.file_count; i++)
+            for (size_t i = 0; i < p.file_count; i++)
             {
-                param_.mem_starts[i] = mem + cur;
-                param_.mem_sizes[i] = param_.file_sizes[i];
-                cur += param_.file_sizes[i];
+                p.mem_starts[i] = mem + cur;
+                p.mem_sizes[i] = p.file_sizes[i];
+                cur += p.file_sizes[i];
             }
-            p = param_;
          }
       }
 
