@@ -96,12 +96,12 @@ namespace iofwd
       { 
           decode(); 
           param_.handle = &dec_struct.handle_;
-          param_.mem_starts = (char **)dec_struct.mem_starts_;
-          param_.mem_sizes = dec_struct.mem_sizes_;
+          param_.mem_starts.reset((char **)dec_struct.mem_starts_);
+          param_.mem_sizes.reset(dec_struct.mem_sizes_);
           param_.mem_count = dec_struct.mem_count_;
           param_.file_count = dec_struct.file_count_;
-          param_.file_sizes = dec_struct.file_sizes_;
-          param_.file_starts = dec_struct.file_starts_;
+          param_.file_sizes.reset(dec_struct.file_sizes_);
+          param_.file_starts.reset(dec_struct.file_starts_);
 
           /* Pipelining no longer matter */
           param_.pipeline_size = 4194304;
@@ -116,12 +116,12 @@ namespace iofwd
           /* Is this even called anymore? */
 
           // allocate buffer for normal mode
-          if (param_.pipeline_size == 0)
+          if (p.pipeline_size == 0)
           {
               char * mem = NULL;
-              for(size_t i = 0 ; i < param_.mem_count ; i++)
+              for(size_t i = 0 ; i < p.mem_count ; i++)
               {
-                  param_.mem_total_size += p.mem_sizes[i];
+                  p.mem_total_size += p.mem_sizes[i];
               }
 
               // setup the BMI buffer to the user requested size
@@ -132,24 +132,22 @@ namespace iofwd
               // extra memory copying.
 
               // only going to reallocate mem_sizes_ if the mem and file counts are different
-              if(param_.mem_count != param_.file_count)
+              if(p.mem_count != p.file_count)
               {
-                  param_.mem_count = param_.file_count;
-                  delete[] param_.mem_sizes;
-                  param_.mem_sizes = new size_t[param_.file_count];
+                  p.mem_count = p.file_count;
+                  p.mem_sizes.reset(new size_t[p.file_count]);
               }
 
-              param_.mem_starts = new char*[param_.file_count];
+              p.mem_starts.reset(new char*[p.file_count]);
 
               // setup the mem offset buffer
               size_t cur = 0;
-              for(size_t i = 0; i < param_.file_count ; i++)
+              for(size_t i = 0; i < p.file_count ; i++)
               {
-                  param_.mem_starts[i] = mem + cur;
-                  param_.mem_sizes[i] = param_.file_sizes[i];
-                  cur += param_.file_sizes[i];
+                  p.mem_starts[i] = mem + cur;
+                  p.mem_sizes[i] = p.file_sizes[i];
+                  cur += p.file_sizes[i];
               }
-              p = param_;
           }
       }
 
