@@ -24,7 +24,7 @@ namespace iofwd
             rbuffer_(NULL),
             mode_(WRITESM_PARA_IO_PIPELINE),
             ret_(zoidfs::ZFS_OK),
-            pipeline_size_(0),
+            pipeline_size_(0)
     {
     }
 
