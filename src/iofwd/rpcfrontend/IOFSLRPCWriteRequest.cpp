@@ -194,14 +194,19 @@ namespace iofwd
 
       void IOFSLRPCWriteRequest::recvBuffers(const CBType & cb, RetrievedBuffer * rb)
       {
-         tp_(boost::bind(&IOFSLRPCWriteRequest::recvBuffersBlock, 
-                                        this, cb, rb));
+          tp_->submitWorkUnit(boost::bind(&IOFSLRPCWriteRequest::recvBuffersBlock, this, cb, rb),
+                               iofwdutil::ThreadPool::HIGH);
+
+
+//         tp_(boost::bind(&IOFSLRPCWriteRequest::recvBuffersBlock, 
+//                                        this, cb, rb));
          //boost::thread(boost::bind(&IOFSLRPCWriteRequest::recvBuffersBlock, this, cb, rb));  
       }
 
       void IOFSLRPCWriteRequest::recvBuffersBlock(const CBType & cb, RetrievedBuffer * rb)
       {
           size_t i = 0;
+          boost::this_thread::at_thread_exit(iofwdutil::ThreadPoolKick(*tp_)); 
           size_t outSize = 0;
           void * loc;
           do
@@ -221,8 +226,10 @@ namespace iofwd
 
       void IOFSLRPCWriteRequest::recvPipelineBufferCB(iofwdevent::CBType cb, iofwd::RetrievedBuffer* rb, size_t size)
       {
-         tp_(boost::bind(&IOFSLRPCWriteRequest::recvPipelineBufferCBBlock, 
-                                        this, cb, rb, size));
+          tp_->submitWorkUnit (boost::bind(&IOFSLRPCWriteRequest::recvPipelineBufferCBBlock, 
+                                           this, cb, rb, size), iofwdutil::ThreadPool::HIGH);
+//         tp_(boost::bind(&IOFSLRPCWriteRequest::recvPipelineBufferCBBlock, 
+//                                        this, cb, rb, size));
          //boost::bind(&IOFSLRPCWriteRequest::recvPipelineBufferCBBlock, this, cb, rb, size));  
       }
 
@@ -230,13 +237,13 @@ namespace iofwd
       void IOFSLRPCWriteRequest::recvPipelineBufferCBBlock(iofwdevent::CBType cb, iofwd::RetrievedBuffer* rb, size_t size)
       {
           size_t outSize = 0;
+          boost::this_thread::at_thread_exit(iofwdutil::ThreadPoolKick(*tp_)); 
           void * loc;
           do
           {
             loc = (void*)&(((char*)rb->buffer_->getMemory())[outSize]);
             outSize += readBuffer((void**)&loc, size - outSize, TRUE);
           } while (outSize != size);
-
           cb(iofwdevent::CBException());
       }
 

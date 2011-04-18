@@ -139,7 +139,7 @@ namespace iofwd
           /* TODO get the correct op code */                                     
           int opid = zoidfs::ZOIDFS_PROTO_READ;                                  
                                                                                  
-          iofwd::Request * tmp = new iofwd::rpcfrontend::IOFSLRPCWriteRequest(boost::bind (&IOFSLClientRPCService::runThread, this, _1),
+          iofwd::Request * tmp = new iofwd::rpcfrontend::IOFSLRPCWriteRequest(&tp_,
                                                                               opid,         
                                                                               in, out);
           requesthandler_->handleRequest ( 1, &tmp);  
