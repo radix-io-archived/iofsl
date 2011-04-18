@@ -91,10 +91,6 @@ namespace iofwd
                boost::bind(&IOFSLClientRPCService::write, this, _1, _2, _3));
       }
 
-      void IOFSLClientRPCService::runThread ( boost::function<void ()> f)
-      {
-        tp_.submitWorkUnit (f , iofwdutil::ThreadPool::HIGH);
-      }
       IOFSLClientRPCService::~IOFSLClientRPCService()
       {
         /* change to scope rpc for auto deletion */

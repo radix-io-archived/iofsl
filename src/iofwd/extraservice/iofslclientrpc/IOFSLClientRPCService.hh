@@ -40,14 +40,12 @@ namespace iofwd
             }
 
             virtual ~IOFSLClientRPCService();
-              void runThread ( boost::function<void ()> f);
          protected:
 
             /* rpc handlers */
-            void write (
-                                         iofwdevent::ZeroCopyInputStream * in, 
-                                         iofwdevent::ZeroCopyOutputStream * out, 
-                                         const rpc::RPCInfo & );
+            void write (iofwdevent::ZeroCopyInputStream * in, 
+                        iofwdevent::ZeroCopyOutputStream * out, 
+                        const rpc::RPCInfo & );
 //            RPC_GENCLIENTHEADERS (IOFSLRPCCommitRequest, commit)
             RPC_GENCLIENTHEADERS (IOFSLRPCCreateRequest, create)
 //            RPC_GENCLIENTHEADERS (IOFSLRPCGetAttrRequest, getattr)
