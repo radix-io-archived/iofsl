@@ -32,6 +32,7 @@ namespace iofwd
 
          process (dec_, dec_struct.handle_);
          process (dec_, dec_struct.mem_count_);
+         dec_struct.mem_starts_ = new void * [dec_struct.mem_count_];
          dec_struct.mem_sizes_ = new size_t[dec_struct.mem_count_];
          process (dec_, encoder::EncVarArray(dec_struct.mem_sizes_, dec_struct.mem_count_));
 
@@ -254,7 +255,7 @@ namespace iofwd
 
       IOFSLRPCWriteRequest::~IOFSLRPCWriteRequest()
       {
-         zoidfs::hints::zoidfs_hint_free(&op_hint_);
+//         zoidfs::hints::zoidfs_hint_free(&op_hint_);
       }
 
       size_t IOFSLRPCWriteRequest::rpcEncodedInputDataSize()
