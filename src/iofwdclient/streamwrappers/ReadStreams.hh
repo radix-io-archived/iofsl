@@ -32,7 +32,7 @@ namespace iofwdclient
                                 size_t file_count = NULL, 
                                 const zoidfs::zoidfs_file_ofs_t file_starts[] = NULL,
                                 zoidfs::zoidfs_file_ofs_t file_sizes[] = NULL,
-                                zoidfs::zoidfs_op_hint_t * op_hint = NULL) :
+                                zoidfs::zoidfs_op_hint_t * UNUSED( op_hint) = NULL) :
                      handle_(handle),
                      mem_count_(mem_count),
                      mem_starts_(mem_starts),
@@ -40,7 +40,7 @@ namespace iofwdclient
                      file_count_(file_count),
                      file_starts_(file_starts),
                      file_sizes_(file_sizes),
-                     op_helper_(op_hint),
+//                     op_helper_(op_hint),
                      buf(0),
                      pos(0)
                  {
@@ -52,7 +52,7 @@ namespace iofwdclient
                size_t file_count_;
                const zoidfs::zoidfs_file_ofs_t * file_starts_;
                zoidfs::zoidfs_file_ofs_t * file_sizes_;
-               encoder::OpHintHelper op_helper_;
+//               encoder::OpHintHelper op_helper_;
                int buf;
                size_t pos;
          };
@@ -60,11 +60,11 @@ namespace iofwdclient
       class ReadOutStream
       {
           public:
-              ReadOutStream(zoidfs::zoidfs_op_hint_t * op_hint = NULL,
+              ReadOutStream(zoidfs::zoidfs_op_hint_t * UNUSED( op_hint) = NULL,
                              size_t mem_count = NULL,
                              void *mem_starts[] = NULL,
                              const size_t mem_sizes[] = NULL) :
-                 op_helper_(op_hint),
+//                 op_helper_(op_hint),
                  mem_count_(mem_count),
                  mem_starts_(mem_starts),
                  mem_sizes_(mem_sizes)
@@ -74,7 +74,7 @@ namespace iofwdclient
                   *buf = 0;
                   *pos = 0;
               }
-              encoder::OpHintHelper op_helper_;
+//              encoder::OpHintHelper op_helper_;
               size_t mem_count_;
               void ** mem_starts_;
               const size_t * mem_sizes_;

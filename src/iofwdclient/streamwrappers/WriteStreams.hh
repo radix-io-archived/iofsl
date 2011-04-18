@@ -32,15 +32,15 @@ namespace iofwdclient
                                 size_t file_count = NULL, 
                                 const zoidfs::zoidfs_file_ofs_t file_starts[] = NULL,
                                 zoidfs::zoidfs_file_ofs_t file_sizes[] = NULL,
-                                zoidfs::zoidfs_op_hint_t * op_hint = NULL) :
+                                zoidfs::zoidfs_op_hint_t * UNUSED(op_hint) = NULL) :
                      handle_(handle),
                      mem_count_(mem_count),
                      mem_starts_(mem_starts),
                      mem_sizes_(mem_sizes),
                      file_count_(file_count),
                      file_starts_(file_starts),
-                     file_sizes_(file_sizes),
-                     op_helper_(op_hint)
+                     file_sizes_(file_sizes)
+//                     op_helper_(op_hint)
                  {
                   buf =  new int;
                   pos = new size_t;
@@ -56,13 +56,13 @@ namespace iofwdclient
                size_t file_count_;
                const zoidfs::zoidfs_file_ofs_t * file_starts_;
                zoidfs::zoidfs_file_ofs_t * file_sizes_;
-               encoder::OpHintHelper op_helper_;
+//               encoder::OpHintHelper op_helper_;
          };
 
       class WriteOutStream
       {
           public:
-              WriteOutStream(zoidfs::zoidfs_op_hint_t * op_hint = NULL) 
+              WriteOutStream(zoidfs::zoidfs_op_hint_t * UNUSED(op_hint) = NULL) 
               {
               }
               int returnCode;
@@ -97,6 +97,17 @@ inline Enc & process (Enc & e,
         typename process_filter<Wrapper, WriteInStream>::type * UNUSED(d) = NULL,
         typename only_encoder_processor<Enc>::type * = NULL)
 {
+   fprintf (stderr, "Write Diagnostics:\n");
+   fprintf (stderr, "\tHandle: %p\n\tMem Count: %u\n", w.handle_, w.mem_count_);
+   fprintf (stderr, "\tMem Sizes:\n");
+   for (size_t x = 0; x < w.mem_count_; x++)
+    fprintf (stderr, "\t\tLocation %u Size: %u\n",x, (w.mem_sizes_)[x]);
+   fprintf (stderr, "\tFile Count: %u\n", w.file_count_);
+   fprintf (stderr, "\tFile Offsets:\n");
+   for (size_t x = 0; x < w.file_count_; x++)
+   {
+    fprintf (stderr, "\t\tFile offsets %u pos: %u size: %u\n",x, (w.file_starts_)[x], (w.file_sizes_)[x]);
+   }
    /* Encode */
    process (e, *(w.handle_));
    process (e, w.mem_count_);
