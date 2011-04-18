@@ -49,7 +49,6 @@ class WriteClientSM :
                                file_count, file_starts, file_sizes, op_hint)),
             out_(op_hint)
         {
-            fprintf(stderr, "%s:%i\n", __func__, __LINE__);
         }
 
         ~WriteClientSM();

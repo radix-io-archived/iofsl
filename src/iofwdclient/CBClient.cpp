@@ -58,10 +58,8 @@ namespace iofwdclient
            zoidfs::zoidfs_comp_mask_t mask,
            const iofwdevent::CBException & cbexception)
    {
-       fprintf(stderr, "%s:%i callback wrapper invoked, mask = %i\n",
-               __func__, __LINE__, mask);
-
        /* call the original cb */
+       fprintf(stderr, "%s:%i\n", __func__, __LINE__);
        cbsm->call(mask, cbexception);
 
        /* delete the wrapper... trigger ref count dec on SM */

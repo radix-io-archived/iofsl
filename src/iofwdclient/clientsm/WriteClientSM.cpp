@@ -17,14 +17,12 @@ WriteClientSM::~WriteClientSM()
 
 void WriteClientSM::init(iofwdevent::CBException e)
 {
-    fprintf(stderr, "%s:%i\n", __func__, __LINE__);
     e.check();
     setNextMethod(&WriteClientSM::postRPCServerSM);
 }
 
 void WriteClientSM::postRPCServerSM(iofwdevent::CBException e)
 {
-    fprintf(stderr, "WriteClientSM:%s:%i\n", __func__, __LINE__);
     e.check();
 
     /* Runs the RPC Client State Machine */
@@ -36,7 +34,7 @@ void WriteClientSM::postRPCServerSM(iofwdevent::CBException e)
 
 void WriteClientSM::waitRPCServerSM(iofwdevent::CBException e)
 {
-    fprintf(stderr, "WriteClientSM:%s:%i\n", __func__, __LINE__);
+    fprintf(stderr, "%s:%i\n", __func__, __LINE__);
     e.check();
     cb_(zoidfs::ZFS_COMP_DONE, e);
 }

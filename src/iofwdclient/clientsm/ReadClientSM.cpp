@@ -17,14 +17,12 @@ ReadClientSM::~ReadClientSM()
 
 void ReadClientSM::init(iofwdevent::CBException e)
 {
-    fprintf(stderr, "%s:%i\n", __func__, __LINE__);
     e.check();
     setNextMethod(&ReadClientSM::postRPCServerSM);
 }
 
 void ReadClientSM::postRPCServerSM(iofwdevent::CBException e)
 {
-    fprintf(stderr, "ReadClientSM:%s:%i\n", __func__, __LINE__);
     e.check();
 
     /* Runs the RPC Client State Machine */
@@ -36,14 +34,12 @@ void ReadClientSM::postRPCServerSM(iofwdevent::CBException e)
 
 void ReadClientSM::waitRPCServerSM(iofwdevent::CBException e)
 {
-    fprintf(stderr, "ReadClientSM:%s:%i\n", __func__, __LINE__);
     e.check();
     cb_(zoidfs::ZFS_COMP_DONE, e);
 }
 
 void ReadClientSM::postSMErrorState(iofwdevent::CBException e)
 {
-    fprintf(stderr, "%s:%i\n", __func__, __LINE__);
     e.check();
     cb_(zoidfs::ZFS_COMP_ERROR, e);
 }
