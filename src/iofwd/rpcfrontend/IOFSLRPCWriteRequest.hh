@@ -40,7 +40,7 @@ namespace iofwd
           public WriteRequest
       {
           public:
-              IOFSLRPCWriteRequest(boost::function<void(boost::function<void()>)> tp,
+              IOFSLRPCWriteRequest(iofwdutil::ThreadPool * tp,
                       int opid,
                       iofwdevent::ZeroCopyInputStream * in,
                       iofwdevent::ZeroCopyOutputStream * out) :
@@ -104,7 +104,7 @@ namespace iofwd
              rpc::RPCDecoder dec_;
              rpc::RPCEncoder enc_;
              size_t total_read;
-             boost::function<void(boost::function<void()>)> tp_;
+            iofwdutil::ThreadPool * tp_;
       };
 
    }
