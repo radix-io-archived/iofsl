@@ -17,14 +17,14 @@ CreateClientSM::~CreateClientSM()
 
 void CreateClientSM::init(iofwdevent::CBException e)
 {
-    fprintf(stderr, "%s:%i\n", __func__, __LINE__);
+//    fprintf(stderr, "%s:%i\n", __func__, __LINE__);
     e.check();
     setNextMethod(&CreateClientSM::postRPCServerSM);
 }
 
 void CreateClientSM::postRPCServerSM(iofwdevent::CBException e)
 {
-    fprintf(stderr, "CreateClientSM:%s:%i\n", __func__, __LINE__);
+//    fprintf(stderr, "CreateClientSM:%s:%i\n", __func__, __LINE__);
     e.check();
 
     /* Runs the RPC Client State Machine */
@@ -36,14 +36,14 @@ void CreateClientSM::postRPCServerSM(iofwdevent::CBException e)
 
 void CreateClientSM::waitRPCServerSM(iofwdevent::CBException e)
 {
-    fprintf(stderr, "CreateClientSM:%s:%i\n", __func__, __LINE__);
+//    fprintf(stderr, "CreateClientSM:%s:%i\n", __func__, __LINE__);
     e.check();
     cb_(zoidfs::ZFS_COMP_DONE, e);
 }
 
 void CreateClientSM::postSMErrorState(iofwdevent::CBException e)
 {
-    fprintf(stderr, "%s:%i\n", __func__, __LINE__);
+//    fprintf(stderr, "%s:%i\n", __func__, __LINE__);
     e.check();
     cb_(zoidfs::ZFS_COMP_ERROR, e);
 }

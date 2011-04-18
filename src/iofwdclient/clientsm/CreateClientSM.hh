@@ -49,7 +49,7 @@ class CreateClientSM :
             in_(CreateInStream(parent_handle, component_name, full_path, sattr, op_hint)),
             out_(handle, created, op_hint)
         {
-            fprintf(stderr, "%s:%i\n", __func__, __LINE__);
+//            fprintf(stderr, "%s:%i\n", __func__, __LINE__);
         }
 
         ~CreateClientSM();

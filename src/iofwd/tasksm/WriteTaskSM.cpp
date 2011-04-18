@@ -65,9 +65,8 @@ namespace iofwd
               const_cast<zoidfs::zoidfs_op_hint_t *>(p.op_hint));
 #else
         api_->write(slots_[WRITE_SLOT], &ret_, p.handle, p.mem_count,
-              const_cast<const void**>(reinterpret_cast<void**>(p.mem_starts.get())), p.mem_sizes.get(),
-              p.file_count, p.file_starts.get(), p.file_sizes.get(),
-              const_cast<zoidfs::zoidfs_op_hint_t *>(p.op_hint));
+              const_cast<const void**>(reinterpret_cast<void**>(p.mem_starts.get())), p.mem_sizes.get(), p.file_count, p.file_starts.get(),
+              p.file_sizes.get(), const_cast<zoidfs::zoidfs_op_hint_t *>(p.op_hint));
 #endif
 
         /* set the callback */

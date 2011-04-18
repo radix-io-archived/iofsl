@@ -29,20 +29,20 @@ namespace iofwdclient
       //---- zoidfs.h functions ---------------------------------------------
       //---------------------------------------------------------------------
 
-      int zoidfs_init_comm (CommStream & net, bool poll)
-      {
-//         if (!client_ref_)
-//            client_ = new IOFWDClient (net, poll);
-//         ++client_ref_;
-         return zoidfs::ZFS_OK;           
-      }
-      int zoidfs_init (void)
-      {
-//         if (!client_ref_)
-//            client_ = new IOFWDClient ();
-//         ++client_ref_;
-         return zoidfs::ZFS_OK;
-      }
+//      int zoidfs_init_comm (CommStream & net, bool poll)
+//      {
+////         if (!client_ref_)
+////            client_ = new IOFWDClient (net, poll);
+////         ++client_ref_;
+//         return zoidfs::ZFS_OK;           
+//      }
+//      int zoidfs_init (void)
+//      {
+////         if (!client_ref_)
+////            client_ = new IOFWDClient ();
+////         ++client_ref_;
+//         return zoidfs::ZFS_OK;
+//      }
 
       int zoidfs_finalize (void)
       {
@@ -66,17 +66,17 @@ namespace iofwdclient
          return client_->getattr (handle, attr, op_hint);
       }
 
-      int zoidfs_lookup(const zoidfs::zoidfs_handle_t *parent_handle,
-                       const char *component_name, 
-                       const char *full_path,
-                       zoidfs::zoidfs_handle_t *handle,
-                       zoidfs::zoidfs_op_hint_t * op_hint)
-      {
-//         ASSERT(client_);
-         printf("HERE");
-         return client_->lookup (parent_handle, component_name, full_path,
-                                 handle, op_hint);
-      }                              
+//      int zoidfs_lookup2(const zoidfs::zoidfs_handle_t *parent_handle,
+//                       const char *component_name, 
+//                       const char *full_path,
+//                       zoidfs::zoidfs_handle_t *handle,
+//                       zoidfs::zoidfs_op_hint_t * op_hint)
+//      {
+////         ASSERT(client_);
+//         printf("HERE");
+//         return client_->lookup (parent_handle, component_name, full_path,
+//                                 handle, op_hint);
+//      }                              
 
       //---------------------------------------------------------------------
       //---- zoidfs-async.h functions ---------------------------------------

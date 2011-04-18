@@ -49,7 +49,6 @@ class ReadClientSM :
                              file_count, file_starts, file_sizes, op_hint)),
             out_(op_hint, mem_count, mem_starts, mem_sizes)
         {
-            fprintf(stderr, "%s:%i\n", __func__, __LINE__);
         }
 
         ~ReadClientSM();
