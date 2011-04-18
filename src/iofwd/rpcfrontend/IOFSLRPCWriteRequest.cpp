@@ -194,7 +194,9 @@ namespace iofwd
 
       void IOFSLRPCWriteRequest::recvBuffers(const CBType & cb, RetrievedBuffer * rb)
       {
-         boost::thread(boost::bind(&IOFSLRPCWriteRequest::recvBuffersBlock, this, cb, rb));  
+         tp_(boost::bind(&IOFSLRPCWriteRequest::recvBuffersBlock, 
+                                        this, cb, rb));
+         //boost::thread(boost::bind(&IOFSLRPCWriteRequest::recvBuffersBlock, this, cb, rb));  
       }
 
       void IOFSLRPCWriteRequest::recvBuffersBlock(const CBType & cb, RetrievedBuffer * rb)
@@ -219,7 +221,9 @@ namespace iofwd
 
       void IOFSLRPCWriteRequest::recvPipelineBufferCB(iofwdevent::CBType cb, iofwd::RetrievedBuffer* rb, size_t size)
       {
-         boost::thread(boost::bind(&IOFSLRPCWriteRequest::recvPipelineBufferCBBlock, this, cb, rb, size));  
+         tp_(boost::bind(&IOFSLRPCWriteRequest::recvPipelineBufferCBBlock, 
+                                        this, cb, rb, size));
+         //boost::bind(&IOFSLRPCWriteRequest::recvPipelineBufferCBBlock, this, cb, rb, size));  
       }
 
 

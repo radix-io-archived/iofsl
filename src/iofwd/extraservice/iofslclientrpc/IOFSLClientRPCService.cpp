@@ -15,7 +15,10 @@
 #include "rpc/RPCEncoder.hh"
 
 #include <boost/scoped_ptr.hpp>
+#include <boost/bind.hpp>
 #include <boost/format.hpp>
+#include <boost/function.hpp>
+#include <boost/bind/protect.hpp>
 #include "iofwd/rpcfrontend/IOFSLRPCLookupRequest.hh"
 //#include "iofwd/rpcfrontend/IOFSLRPCCommitRequest.hh"
 #include "iofwd/rpcfrontend/IOFSLRPCCreateRequest.hh"
@@ -46,7 +49,8 @@ namespace iofwd
          : ExtraService(m),
            log_service_(lookupService<Log>("log")),
            requesthandler_ (lookupService<RequestHandler>("requesthandler")),
-           log_(log_service_->getSource("iofslclientrpc"))
+           log_(log_service_->getSource("iofslclientrpc")),
+           tp_(iofwdutil::ThreadPool::instance())
       {
          rpcserver_ = (m.loadService<iofwd::RPCServer>("rpcserver"));
          rpcserver_->registerRPC("iofslclientrpc.lookup",
@@ -72,7 +76,7 @@ namespace iofwd
 //         rpcserver_->registerRPC("iofslclientrpc.readlink",
 //               boost::bind(&IOFSLClientRPCService::readlink, this, _1, _2, _3));
          rpcserver_->registerRPC("iofslclientrpc.read",
-               boost::bind(&IOFSLClientRPCService::read, this, _1, _2, _3));
+               boost::bind(&IOFSLClientRPCService::read, this,_1, _2, _3));
 //         rpcserver_->registerRPC("iofslclientrpc.remove",
 //               boost::bind(&IOFSLClientRPCService::remove, this, _1, _2, _3));
 //         rpcserver_->registerRPC("iofslclientrpc.rename",
@@ -87,6 +91,10 @@ namespace iofwd
                boost::bind(&IOFSLClientRPCService::write, this, _1, _2, _3));
       }
 
+      void IOFSLClientRPCService::runThread ( boost::function<void ()> f)
+      {
+        tp_.submitWorkUnit (f , iofwdutil::ThreadPool::HIGH);
+      }
       IOFSLClientRPCService::~IOFSLClientRPCService()
       {
         /* change to scope rpc for auto deletion */
@@ -123,6 +131,19 @@ namespace iofwd
           requesthandler_->handleRequest ( 1, &tmp);                             \
       }                                   
 
+      void IOFSLClientRPCService::write (
+                                         iofwdevent::ZeroCopyInputStream * in, 
+                                         iofwdevent::ZeroCopyOutputStream * out, 
+                                         const rpc::RPCInfo & )
+      {
+          /* TODO get the correct op code */                                     
+          int opid = zoidfs::ZOIDFS_PROTO_READ;                                  
+                                                                                 
+          iofwd::Request * tmp = new iofwd::rpcfrontend::IOFSLRPCWriteRequest(boost::bind (&IOFSLClientRPCService::runThread, this, _1),
+                                                                              opid,         
+                                                                              in, out);
+          requesthandler_->handleRequest ( 1, &tmp);  
+      }
 //      RPC_GENCLIENTCODE (IOFSLRPCCommitRequest, commit)
       RPC_GENCLIENTCODE (IOFSLRPCCreateRequest, create, zoidfs::ZOIDFS_PROTO_CREATE)
 //      RPC_GENCLIENTCODE (IOFSLRPCGetAttrRequest, getattr)
@@ -139,7 +160,7 @@ namespace iofwd
 //      RPC_GENCLIENTCODE (IOFSLRPCResizeRequest, resize)
 //      RPC_GENCLIENTCODE (IOFSLRPCSetAttrRequest, setattr)
 //      RPC_GENCLIENTCODE (IOFSLRPCSymLinkRequest, symlink)
-      RPC_GENCLIENTCODE (IOFSLRPCWriteRequest, write, zoidfs::ZOIDFS_PROTO_WRITE)
+//      RPC_GENCLIENTCODE (IOFSLRPCWriteRequest, write, zoidfs::ZOIDFS_PROTO_WRITE)
 
 //      void IOFSLClientRPCService::getattr(iofwdevent::ZeroCopyInputStream * in,
 //            iofwdevent::ZeroCopyOutputStream * out,
