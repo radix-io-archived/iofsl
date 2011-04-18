@@ -196,17 +196,12 @@ namespace iofwd
       {
           tp_->submitWorkUnit(boost::bind(&IOFSLRPCWriteRequest::recvBuffersBlock, this, cb, rb),
                                iofwdutil::ThreadPool::HIGH);
-
-
-//         tp_(boost::bind(&IOFSLRPCWriteRequest::recvBuffersBlock, 
-//                                        this, cb, rb));
-         //boost::thread(boost::bind(&IOFSLRPCWriteRequest::recvBuffersBlock, this, cb, rb));  
       }
 
       void IOFSLRPCWriteRequest::recvBuffersBlock(const CBType & cb, RetrievedBuffer * rb)
       {
-          size_t i = 0;
           boost::this_thread::at_thread_exit(iofwdutil::ThreadPoolKick(*tp_)); 
+          size_t i = 0;
           size_t outSize = 0;
           void * loc;
           do
@@ -228,16 +223,14 @@ namespace iofwd
       {
           tp_->submitWorkUnit (boost::bind(&IOFSLRPCWriteRequest::recvPipelineBufferCBBlock, 
                                            this, cb, rb, size), iofwdutil::ThreadPool::HIGH);
-//         tp_(boost::bind(&IOFSLRPCWriteRequest::recvPipelineBufferCBBlock, 
-//                                        this, cb, rb, size));
-         //boost::bind(&IOFSLRPCWriteRequest::recvPipelineBufferCBBlock, this, cb, rb, size));  
       }
 
 
       void IOFSLRPCWriteRequest::recvPipelineBufferCBBlock(iofwdevent::CBType cb, iofwd::RetrievedBuffer* rb, size_t size)
       {
+          boost::this_thread::at_thread_exit(iofwdutil::ThreadPoolKick(*tp_));           
           size_t outSize = 0;
-          boost::this_thread::at_thread_exit(iofwdutil::ThreadPoolKick(*tp_)); 
+          
           void * loc;
           do
           {
@@ -252,11 +245,7 @@ namespace iofwd
           /* verify the args are OK */
           ASSERT(getReturnCode() == zoidfs::ZFS_OK);
           encode();
-          /* encode */
-//          encodeRPCOutput();
 
-          /* invoke the callback */
-          //cb();
           zoidfs::hints::zoidfs_hint_create(&op_hint_);  
           /* @TODO: Remove this later */
           param_.op_hint = &op_hint_;

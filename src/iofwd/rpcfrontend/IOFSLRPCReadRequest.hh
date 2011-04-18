@@ -4,6 +4,8 @@
 #include "zoidfs/util/zoidfs-wrapped.hh"
 #include "zoidfs/zoidfs.h"
 
+#include "iofwdutil/ThreadPool.hh"
+
 #include "iofwd/ReadRequest.hh"
 #include "iofwd/rpcfrontend/IOFSLRPCRequest.hh"
 #include "iofwdutil/mm/BMIMemoryManager.hh"
@@ -36,12 +38,14 @@ namespace iofwd
           public ReadRequest
       {
           public:
-              IOFSLRPCReadRequest(int opid,
+              IOFSLRPCReadRequest(iofwdutil::ThreadPool * tp,
+                      int opid,
                       iofwdevent::ZeroCopyInputStream * in,
                       iofwdevent::ZeroCopyOutputStream * out) :
                   IOFSLRPCRequest(in, out),
                   ReadRequest(opid)
               {
+                tp_ = tp;
               }
             
               virtual ~IOFSLRPCReadRequest();
@@ -97,6 +101,7 @@ namespace iofwd
              rpc::RPCDecoder dec_;
              rpc::RPCEncoder enc_;
              size_t total_write;
+             iofwdutil::ThreadPool * tp_;
       };
 
    }
