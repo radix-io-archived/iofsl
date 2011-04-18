@@ -217,10 +217,12 @@ namespace iofwd
 
       void IOFSLRPCReadRequest::sendBuffers(const iofwdevent::CBType & cb, RetrievedBuffer * rb)
       {
-         boost::thread(boost::bind(&IOFSLRPCReadRequest::sendBuffersBlock, this, cb, rb));  
+         tp_->submitWorkUnit(boost::bind(&IOFSLRPCReadRequest::sendBuffersBlock, this, cb, rb),
+                             iofwdutil::ThreadPool::HIGH);  
       }
       void IOFSLRPCReadRequest::sendBuffersBlock(const iofwdevent::CBType & cb, RetrievedBuffer * rb)
       {
+          boost::this_thread::at_thread_exit(iofwdutil::ThreadPoolKick(*tp_)); 
           size_t i = 0;
           size_t outSize = 0;
           size_t readSize = 0;  
@@ -254,14 +256,15 @@ namespace iofwd
                                                       RetrievedBuffer * rb, 
                                                       size_t size) 
       {
-         boost::thread(boost::bind(&IOFSLRPCReadRequest::sendPipelineBufferCBBlock, 
-                           this, cb, rb, size));  
+         tp_->submitWorkUnit(boost::bind(&IOFSLRPCReadRequest::sendPipelineBufferCBBlock, 
+                           this, cb, rb, size),iofwdutil::ThreadPool::HIGH);  
       }
 
       void IOFSLRPCReadRequest::sendPipelineBufferCBBlock (const iofwdevent::CBType cb, 
                                                            RetrievedBuffer * rb, 
                                                            size_t size) 
       {
+          boost::this_thread::at_thread_exit(iofwdutil::ThreadPoolKick(*tp_)); 
           size_t outSize = 0;
           size_t readSize = 0;  
           size_t readLoc = 0;

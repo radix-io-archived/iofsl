@@ -127,19 +127,33 @@ namespace iofwd
           requesthandler_->handleRequest ( 1, &tmp);                             \
       }                                   
 
-      void IOFSLClientRPCService::write (
-                                         iofwdevent::ZeroCopyInputStream * in, 
+      void IOFSLClientRPCService::write (iofwdevent::ZeroCopyInputStream * in, 
                                          iofwdevent::ZeroCopyOutputStream * out, 
                                          const rpc::RPCInfo & )
       {
           /* TODO get the correct op code */                                     
-          int opid = zoidfs::ZOIDFS_PROTO_READ;                                  
+          int opid = zoidfs::ZOIDFS_PROTO_WRITE;                                  
                                                                                  
           iofwd::Request * tmp = new iofwd::rpcfrontend::IOFSLRPCWriteRequest(&tp_,
                                                                               opid,         
                                                                               in, out);
           requesthandler_->handleRequest ( 1, &tmp);  
       }
+
+
+      void IOFSLClientRPCService::read ( iofwdevent::ZeroCopyInputStream * in, 
+                                         iofwdevent::ZeroCopyOutputStream * out, 
+                                         const rpc::RPCInfo & )
+      {
+          /* TODO get the correct op code */                                     
+          int opid = zoidfs::ZOIDFS_PROTO_READ;                                  
+                                                                                 
+          iofwd::Request * tmp = new iofwd::rpcfrontend::IOFSLRPCReadRequest(&tp_,
+                                                                              opid,         
+                                                                              in, out);
+          requesthandler_->handleRequest ( 1, &tmp);  
+      }
+
 //      RPC_GENCLIENTCODE (IOFSLRPCCommitRequest, commit)
       RPC_GENCLIENTCODE (IOFSLRPCCreateRequest, create, zoidfs::ZOIDFS_PROTO_CREATE)
 //      RPC_GENCLIENTCODE (IOFSLRPCGetAttrRequest, getattr)
@@ -150,7 +164,7 @@ namespace iofwd
 //      RPC_GENCLIENTCODE (IOFSLRPCNullRequest, null)
 //      RPC_GENCLIENTCODE (IOFSLRPCReadDirRequest, readdir)
 //      RPC_GENCLIENTCODE (IOFSLRPCReadLinkRequest, readlink)
-      RPC_GENCLIENTCODE (IOFSLRPCReadRequest, read, zoidfs::ZOIDFS_PROTO_READ)
+//      RPC_GENCLIENTCODE (IOFSLRPCReadRequest, read, zoidfs::ZOIDFS_PROTO_READ)
 //      RPC_GENCLIENTCODE (IOFSLRPCRemoveRequest, remove)
 //      RPC_GENCLIENTCODE (IOFSLRPCRenameRequest, rename)
 //      RPC_GENCLIENTCODE (IOFSLRPCResizeRequest, resize)

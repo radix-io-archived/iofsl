@@ -104,7 +104,7 @@ namespace iofwd
              rpc::RPCDecoder dec_;
              rpc::RPCEncoder enc_;
              size_t total_read;
-            iofwdutil::ThreadPool * tp_;
+             iofwdutil::ThreadPool * tp_;
       };
 
    }
