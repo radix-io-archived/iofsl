@@ -4,6 +4,8 @@
 #include "zoidfs/util/zoidfs-wrapped.hh"
 #include "zoidfs/zoidfs.h"
 
+#include "iofwdutil/ThreadPool.hh"
+
 #include "iofwd/WriteRequest.hh"
 #include "iofwd/rpcfrontend/IOFSLRPCRequest.hh"
 #include "iofwdutil/mm/BMIMemoryManager.hh"
@@ -38,13 +40,16 @@ namespace iofwd
           public WriteRequest
       {
           public:
-              IOFSLRPCWriteRequest(int opid,
+              IOFSLRPCWriteRequest(boost::function<void(boost::function<void()>)> tp,
+                      int opid,
                       iofwdevent::ZeroCopyInputStream * in,
                       iofwdevent::ZeroCopyOutputStream * out) :
                   IOFSLRPCRequest(in, out),
                   WriteRequest(opid),
                   total_read(0)
+                  
               {
+                tp_ = tp;
               }
             
               ~IOFSLRPCWriteRequest();
@@ -73,7 +78,6 @@ namespace iofwd
 
               size_t readBuffer (void ** buff, size_t size, bool forceSize);
       
-
           protected:
               /* data size helpers for this request */ 
                size_t rpcEncodedInputDataSize(); 
@@ -100,6 +104,7 @@ namespace iofwd
              rpc::RPCDecoder dec_;
              rpc::RPCEncoder enc_;
              size_t total_read;
+             boost::function<void(boost::function<void()>)> tp_;
       };
 
    }

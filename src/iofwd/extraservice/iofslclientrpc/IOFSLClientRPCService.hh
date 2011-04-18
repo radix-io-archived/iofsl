@@ -8,6 +8,7 @@
 #include "iofwdevent/ZeroCopyInputStream.hh"
 #include "iofwdevent/ZeroCopyOutputStream.hh"
 
+#include "iofwdutil/ThreadPool.hh"
 #include "iofwdutil/IOFWDLog-fwd.hh"
 #include "iofwdutil/tools.hh"
 
@@ -15,6 +16,7 @@
 #include "iofwd/tasksm/TaskSMFactory.hh"
 #include "iofwd/RequestHandler.hh"
 #include "iofwd/Request.hh"
+
 #include <boost/shared_ptr.hpp>
 
 #define RPC_GENCLIENTHEADERS(CLASSNAME, RPCNAME)                             \
@@ -38,11 +40,14 @@ namespace iofwd
             }
 
             virtual ~IOFSLClientRPCService();
-
+              void runThread ( boost::function<void ()> f);
          protected:
 
             /* rpc handlers */
-
+            void write (
+                                         iofwdevent::ZeroCopyInputStream * in, 
+                                         iofwdevent::ZeroCopyOutputStream * out, 
+                                         const rpc::RPCInfo & );
 //            RPC_GENCLIENTHEADERS (IOFSLRPCCommitRequest, commit)
             RPC_GENCLIENTHEADERS (IOFSLRPCCreateRequest, create)
 //            RPC_GENCLIENTHEADERS (IOFSLRPCGetAttrRequest, getattr)
@@ -59,7 +64,7 @@ namespace iofwd
 //            RPC_GENCLIENTHEADERS (IOFSLRPCResizeRequest, resize)
 //            RPC_GENCLIENTHEADERS (IOFSLRPCSetAttrRequest, setattr)
 //            RPC_GENCLIENTHEADERS (IOFSLRPCSymLinkRequest, symlink)
-            RPC_GENCLIENTHEADERS (IOFSLRPCWriteRequest, write)
+//            RPC_GENCLIENTHEADERS (IOFSLRPCWriteRequest, write)
 
 
 //            void getattr(iofwdevent::ZeroCopyInputStream * in,
@@ -75,7 +80,7 @@ namespace iofwd
             boost::shared_ptr<iofwd::RequestHandler> requesthandler_;
             boost::shared_ptr<iofwd::RPCServer> rpcserver_;
             iofwdutil::IOFWDLogSource & log_;
-
+            iofwdutil::ThreadPool & tp_;
            
       };
    }
