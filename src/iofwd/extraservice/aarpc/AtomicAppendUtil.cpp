@@ -3,6 +3,8 @@
 #include <cstring>
 #include <cstdlib>
 
+#include "zoidfs/util/zoidfs-util.hh"
+
 namespace iofwd
 {
     namespace extraservice
@@ -12,29 +14,22 @@ namespace iofwd
     /* derived from the posix driver fcache */
     uint64_t AtomicAppendFileHandleHash(zoidfs::zoidfs_handle_t * h)
     {
-        const unsigned char * ptr = (unsigned char *)&h->data;
-        unsigned char init[sizeof(uint64_t)];
+        const uint64_t * ptr = (uint64_t *)&h->data;
         unsigned int  i;
-        unsigned int pos = 0;
-       
-        /* clear the hash */ 
-        memset(&init, 0, sizeof(init));
+        uint64_t hval = 0;
        
         /* for each byte in the handle */ 
-        for(i = 0; i < sizeof(h->data) ; i++)
+        for(i = 0 ; i < sizeof(h->data) / sizeof(uint64_t) ; i++)
         {
             /* XOR the handle byte with the hash */
-            init[pos++] ^= *ptr++;
-
-            /* wrap around */
-            if(pos == sizeof(uint64_t))
-            {
-                pos = 0;
-            }
+            hval ^= *ptr++;
         }
 
+        fprintf(stderr, "%s:%i handle = %s, hash = %lu\n", __func__, __LINE__,
+                handle2string(h).c_str(), hval);
+
         /* return the hash */ 
-        return *(uint64_t *)&init[0];
+        return hval;
     }
 
     }
