@@ -70,6 +70,9 @@ int zoidfs_text_to_handle (const char * buf, zoidfs_handle_t * handle)
 
 const char * zoidfs_handle_string (const zoidfs_handle_t * handle)
 {
+   if(handle == NULL)
+       return NULL;
+
    static char buf[(sizeof(zoidfs_handle_t)*2)+1]; 
    zoidfs_handle_to_text (handle, buf, sizeof(buf));
    return buf; 
