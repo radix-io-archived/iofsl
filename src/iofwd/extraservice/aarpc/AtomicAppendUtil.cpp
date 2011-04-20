@@ -25,9 +25,6 @@ namespace iofwd
             hval ^= *ptr++;
         }
 
-        fprintf(stderr, "%s:%i handle = %s, hash = %lu\n", __func__, __LINE__,
-                handle2string(h).c_str(), hval);
-
         /* return the hash */ 
         return hval;
     }
