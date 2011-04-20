@@ -11,8 +11,7 @@ const IOFWDLinkRequest::ReqParam & IOFWDLinkRequest::decodeParam ()
 {
    decodeFileSpec (from_info_);
    decodeFileSpec (to_info_);
-   zoidfs::hints::zoidfs_hint_create(&op_hint_);
-   decodeOpHint (&op_hint_);
+   decodeOpHint (op_hint_());
 
    // from
    if (from_info_.full_path[0])
@@ -60,7 +59,6 @@ void IOFWDLinkRequest::reply (const CBType & cb,
 
 IOFWDLinkRequest::~IOFWDLinkRequest ()
 {
-   zoidfs::hints::zoidfs_hint_free(&op_hint_);
 }
 
 //===========================================================================

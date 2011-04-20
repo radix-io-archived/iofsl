@@ -30,7 +30,7 @@ public:
        int ret;
 
        api_->readdir (block_, &ret, p.handle, p.cookie, &entry_count,
-                                p.entries, p.flags, &parent_hint, p.op_hint);
+                                p.entries, p.flags, &parent_hint, (*p.op_hint)());
        block_.wait ();
 
        request_.setReturnCode (ret);

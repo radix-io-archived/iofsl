@@ -11,7 +11,7 @@ const IOFWDRenameRequest::ReqParam & IOFWDRenameRequest::decodeParam ()
 {
    decodeFileSpec (from_info_);
    decodeFileSpec (to_info_);
-   decodeOpHint (&op_hint_);
+   decodeOpHint (op_hint_());
 
    // from
    if (from_info_.full_path[0])
@@ -40,7 +40,6 @@ const IOFWDRenameRequest::ReqParam & IOFWDRenameRequest::decodeParam ()
       param_.to_parent_handle = &to_info_.parent_handle ;
       param_.to_component_name = to_info_.component_name;
    }
-   zoidfs::hints::zoidfs_hint_create(&op_hint_);
    param_.op_hint = &op_hint_;
    return param_;
 }
@@ -58,7 +57,7 @@ void IOFWDRenameRequest::reply (const CBType & cb,
 
 IOFWDRenameRequest::~IOFWDRenameRequest ()
 {
-   zoidfs::hints::zoidfs_hint_free(&op_hint_);
+   zoidfs::hints::zoidfs_hint_free(op_hint_());
 }
 
 

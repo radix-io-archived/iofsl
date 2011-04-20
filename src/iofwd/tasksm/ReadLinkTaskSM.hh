@@ -51,7 +51,8 @@ class ReadLinkTaskSM : public BaseTaskSM,
             /* @TODO: use BMI buffer pool here or reuse an existing buffer? */
             buffer_ = new char[bufferlen_];
 
-            api_->readlink(slots_[BASE_SLOT], &ret_, p_.handle, buffer_, bufferlen_, p_.op_hint);
+            api_->readlink(slots_[BASE_SLOT], &ret_, p_.handle, buffer_,
+                    bufferlen_, (*p_.op_hint)());
             slots_.wait(BASE_SLOT, &ReadLinkTaskSM::waitRunOp);
         }
 

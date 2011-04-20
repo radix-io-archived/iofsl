@@ -27,7 +27,7 @@ public:
        const GetAttrRequest::ReqParam & p = request_.decodeParam ();
        int ret;
 
-       api_->getattr ((block_), &ret, p.handle, p.attr, p.op_hint);
+       api_->getattr ((block_), &ret, p.handle, p.attr, (*p.op_hint)());
        block_.wait ();
 
        request_.setReturnCode (ret);

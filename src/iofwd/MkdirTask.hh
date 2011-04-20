@@ -29,7 +29,7 @@ public:
        int ret;
 
        api_->mkdir (block_, &ret, p.parent_handle, p.component_name,
-                              p.full_path, p.sattr, &hint, p.op_hint);
+                              p.full_path, p.sattr, &hint, (*p.op_hint)());
        block_.wait ();
 
        request_.setReturnCode (ret);

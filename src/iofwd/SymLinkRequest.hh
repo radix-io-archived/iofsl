@@ -23,7 +23,7 @@ public:
       char * to_component_name;
 
       zoidfs::zoidfs_sattr_t * sattr;
-      zoidfs::zoidfs_op_hint_t * op_hint;
+      zoidfs::util::ZoidFSOpHint * op_hint;
    } ReqParam;
 
    SymLinkRequest (int opid) :

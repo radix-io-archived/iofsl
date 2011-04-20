@@ -38,7 +38,7 @@ void WriteTask::runNormalMode(WriteRequest::ReqParam & p)
    api_->write((block_), &ret,  p.handle, p.mem_count, 
          const_cast<const void**>(reinterpret_cast<void**>(p.mem_starts.get())),
          p.mem_sizes.get(),
-         p.file_count, p.file_starts.get(), p.file_sizes.get(), p.op_hint); 
+         p.file_count, p.file_starts.get(), p.file_sizes.get(), (*p.op_hint)()); 
    block_.wait();
 
    /* deallocate the buffer */
@@ -288,7 +288,7 @@ void WriteTask::postWrite(const WriteRequest::ReqParam & p, int index)
     api_->write (
         bmmCB, ret, p.handle, p_file_count, (const void**)mem_starts, mem_sizes,
         p_file_count, file_starts, file_sizes,
-        const_cast<zoidfs::zoidfs_op_hint_t *>(p.op_hint));
+        const_cast<zoidfs::zoidfs_op_hint_t *>((*p.op_hint)()));
 }
 
 void WriteTask::runPipelineMode(const WriteRequest::ReqParam & p)

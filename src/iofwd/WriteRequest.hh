@@ -1,12 +1,16 @@
 #ifndef IOFWD_WRITEREQUEST_HH
 #define IOFWD_WRITEREQUEST_HH
 
-#include "Request.hh"
+
 #include "zoidfs/zoidfs.h"
+#include "zoidfs/util/ZoidFSOpHint.hh"
+
+#include "iofwd/Request.hh"
 #include "iofwd/RetrievedBuffer.hh"
 
 #include <boost/scoped_ptr.hpp>
 #include <boost/scoped_array.hpp>
+
 
 namespace iofwd
 {
@@ -29,7 +33,7 @@ public:
       size_t pipeline_size;
       bool op_hint_pipeline_enabled;
       
-      zoidfs::zoidfs_op_hint_t * op_hint;
+      zoidfs::util::ZoidFSOpHint * op_hint;
 
       size_t max_buffer_size;
       

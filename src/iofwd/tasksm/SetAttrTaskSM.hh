@@ -37,7 +37,8 @@ class SetAttrTaskSM : public BaseTaskSM,
         virtual void postRunOp(iofwdevent::CBException e)
         {
            e.check ();
-            api_->setattr(slots_[BASE_SLOT], &ret_, p_.handle, p_.sattr, p_.attr, p_.op_hint);
+            api_->setattr(slots_[BASE_SLOT], &ret_, p_.handle, p_.sattr,
+                    p_.attr, (*p_.op_hint)());
             slots_.wait(BASE_SLOT, &SetAttrTaskSM::waitRunOp);
         }
 

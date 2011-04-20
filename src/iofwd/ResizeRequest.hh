@@ -15,7 +15,7 @@ public:
    {
       zoidfs::zoidfs_handle_t * handle;
       uint64_t size;
-      zoidfs::zoidfs_op_hint_t * op_hint;
+      zoidfs::util::ZoidFSOpHint * op_hint;
    } ReqParam;
 
    ResizeRequest (int opid) : Request (opid)

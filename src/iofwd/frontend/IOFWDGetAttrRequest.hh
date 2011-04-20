@@ -31,7 +31,7 @@ protected:
 
    zoidfs::zoidfs_handle_t handle_;
    zoidfs::zoidfs_attr_t attr_;
-   zoidfs::zoidfs_op_hint_t op_hint_;
+   zoidfs::util::ZoidFSOpHint op_hint_;
 };
 
 //===========================================================================

@@ -11,8 +11,7 @@ const IOFWDMkdirRequest::ReqParam & IOFWDMkdirRequest::decodeParam ()
 {
    decodeFileSpec (info_);
    process (req_reader_, sattr_);
-   zoidfs::hints::zoidfs_hint_create(&op_hint_);
-   decodeOpHint (&op_hint_);
+   decodeOpHint (op_hint_());
    if (info_.full_path[0])
    {
       param_.full_path = info_.full_path; 
@@ -41,7 +40,6 @@ void IOFWDMkdirRequest::reply (const CBType & cb,
 
 IOFWDMkdirRequest::~IOFWDMkdirRequest ()
 {
-   zoidfs::hints::zoidfs_hint_free(&op_hint_);
 }
 
 

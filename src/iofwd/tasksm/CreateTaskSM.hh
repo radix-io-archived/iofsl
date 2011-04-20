@@ -75,7 +75,8 @@ class CreateTaskSM : public sm::SimpleSM< CreateTaskSM >,
         {
             e.check ();
             api_->create(slots_[BASE_SLOT], &ret_, p_.parent_handle, p_.component_name,
-                               p_.full_path, p_.attr, &handle_, &created_, p_.op_hint);
+                               p_.full_path, p_.attr, &handle_, &created_,
+                               (*p_.op_hint)());
             slots_.wait(BASE_SLOT, &CreateTaskSM::waitRunOp);
         }
 

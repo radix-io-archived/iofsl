@@ -21,7 +21,7 @@ public:
       const char * to_full_path;
       zoidfs::zoidfs_handle_t * to_parent_handle;
       const char * to_component_name;
-      zoidfs::zoidfs_op_hint_t * op_hint;
+      zoidfs::util::ZoidFSOpHint * op_hint;
    } ReqParam;
 
    RenameRequest (int opid) :

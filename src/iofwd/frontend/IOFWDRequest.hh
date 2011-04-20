@@ -21,6 +21,8 @@
 #include "iofwdutil/IOFWDLog.hh"
 #include "IOFWDResources.hh"
 
+#include "zoidfs/util/ZoidFSOpHint.hh"
+
 #include "iofwdutil/mm/BMIMemoryManager.hh"
 
 namespace iofwd

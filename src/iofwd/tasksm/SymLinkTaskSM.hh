@@ -39,7 +39,8 @@ class SymLinkTaskSM : public BaseTaskSM,
            e.check ();
             api_->symlink(slots_[BASE_SLOT], &ret_, p_.from_parent_handle, p_.from_component_name, p_.from_full_path,
                                 p_.to_parent_handle, p_.to_component_name, p_.to_full_path,
-                                p_.sattr, &from_parent_hint_, &to_parent_hint_, p_.op_hint);
+                                p_.sattr, &from_parent_hint_, &to_parent_hint_,
+                                (*p_.op_hint)());
             slots_.wait(BASE_SLOT, &SymLinkTaskSM::waitRunOp);
         }
 

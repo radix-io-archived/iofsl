@@ -11,8 +11,7 @@ const IOFWDReadLinkRequest::ReqParam & IOFWDReadLinkRequest::decodeParam ()
 {
    process (req_reader_, handle_);
    process (req_reader_, buffer_length_);
-   zoidfs::hints::zoidfs_hint_create(&op_hint_);
-   decodeOpHint (&op_hint_);
+   decodeOpHint (op_hint_());
 
    /*
     * Init param_ with the decoded XDR data
@@ -35,7 +34,6 @@ void IOFWDReadLinkRequest::reply (const CBType & cb, const char * buffer, size_t
 
 IOFWDReadLinkRequest::~IOFWDReadLinkRequest ()
 {
-   zoidfs::hints::zoidfs_hint_free(&op_hint_);
 }
 
 

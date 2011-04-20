@@ -32,7 +32,7 @@ public:
 protected:
    ReqParam param_;
    FileInfo info_;
-   zoidfs::zoidfs_op_hint_t op_hint_;
+   zoidfs::util::ZoidFSOpHint op_hint_;
 };
 
 //===========================================================================

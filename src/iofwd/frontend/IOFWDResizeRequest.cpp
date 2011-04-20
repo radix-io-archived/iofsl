@@ -8,15 +8,13 @@ namespace iofwd
 
 IOFWDResizeRequest::~IOFWDResizeRequest ()
 {
-   zoidfs::hints::zoidfs_hint_free(&op_hint_);
 }
 
 const IOFWDResizeRequest::ReqParam & IOFWDResizeRequest::decodeParam ()
 {
    process (req_reader_, handle_);
    process (req_reader_, size_);
-   zoidfs::hints::zoidfs_hint_create(&op_hint_);
-   decodeOpHint (&op_hint_);
+   decodeOpHint (op_hint_());
    param_.handle = &handle_;
    param_.size = size_;
    param_.op_hint = &op_hint_;

@@ -12,7 +12,6 @@ namespace iofwd
 
 IOFWDReadRequest::~IOFWDReadRequest ()
 {
-   zoidfs::hints::zoidfs_hint_free(param_.op_hint);
 }
 
 //
@@ -39,14 +38,13 @@ IOFWDReadRequest::ReqParam & IOFWDReadRequest::decodeParam ()
 
    // get the pipeline size
    process (req_reader_, param_.pipeline_size);
-   zoidfs::hints::zoidfs_hint_create(&op_hint_);
    param_.op_hint = &op_hint_;
-   decodeOpHint(param_.op_hint);
+   decodeOpHint((*param_.op_hint)());
 
    // check for hints here
    int hint_found = 0; 
    char enable_pipeline[32];
-   zoidfs::hints::zoidfs_hint_get(*(param_.op_hint), ZOIDFS_ENABLE_PIPELINE, 32, enable_pipeline, &hint_found);
+   zoidfs::hints::zoidfs_hint_get(*((*param_.op_hint)()), ZOIDFS_ENABLE_PIPELINE, 32, enable_pipeline, &hint_found);
    if(hint_found)
    {
         if(strcmp(enable_pipeline, ZOIDFS_HINT_ENABLED) == 0)

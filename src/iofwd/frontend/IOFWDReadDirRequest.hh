@@ -38,7 +38,7 @@ protected:
    uint32_t entry_count_;
    zoidfs::zoidfs_dirent_t * entries_;
    uint32_t flags_;
-   zoidfs::zoidfs_op_hint_t op_hint_;
+   zoidfs::util::ZoidFSOpHint op_hint_;
 };
 
 //===========================================================================

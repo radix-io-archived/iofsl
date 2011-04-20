@@ -31,7 +31,7 @@ public:
        size_t pipeline_size;
        bool op_hint_pipeline_enabled;
        
-       zoidfs::zoidfs_op_hint_t * op_hint;
+       zoidfs::util::ZoidFSOpHint * op_hint;
 
        size_t max_buffer_size;
 

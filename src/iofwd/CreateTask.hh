@@ -30,7 +30,8 @@ public:
        int ret;
 
        api_->create (block_, &ret, p.parent_handle, p.component_name,
-                               p.full_path, p.attr, &handle, &created, p.op_hint);
+                               p.full_path, p.attr, &handle, &created,
+                               (*p.op_hint)());
        block_.wait ();
 
        request_.setReturnCode (ret);

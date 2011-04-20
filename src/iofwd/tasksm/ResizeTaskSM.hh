@@ -96,7 +96,8 @@ class ResizeTaskSM : public sm::SimpleSM< ResizeTaskSM >,
         virtual void postRunOp(iofwdevent::CBException e)
         {
            e.check ();
-            api_->resize(slots_[BASE_SLOT], &ret_, p_.handle, p_.size, p_.op_hint);
+            api_->resize(slots_[BASE_SLOT], &ret_, p_.handle, p_.size,
+                    (*p_.op_hint)());
             slots_.wait(BASE_SLOT, &ResizeTaskSM::waitRunOp);
         }
 

@@ -37,7 +37,8 @@ class GetAttrTaskSM : public BaseTaskSM,
         virtual void postRunOp(iofwdevent::CBException e)
         {
            e.check ();
-            api_->getattr(slots_[BASE_SLOT], &ret_, p_.handle, p_.attr, p_.op_hint);
+            api_->getattr(slots_[BASE_SLOT], &ret_, p_.handle, p_.attr,
+                    (*p_.op_hint)());
             slots_.wait(BASE_SLOT, &GetAttrTaskSM::waitRunOp);
         }
 

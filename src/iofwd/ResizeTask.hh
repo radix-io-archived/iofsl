@@ -27,7 +27,7 @@ public:
       const ResizeRequest::ReqParam & p = request_.decodeParam ();
       int ret;
 
-      api_->resize (block_, &ret, p.handle, p.size, p.op_hint);
+      api_->resize (block_, &ret, p.handle, p.size, (*p.op_hint)());
       block_.wait ();
 
       request_.setReturnCode (ret);

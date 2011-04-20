@@ -3,6 +3,8 @@
 
 #include "iofwdevent/CBType.hh"
 
+#include "zoidfs/util/ZoidFSOpHint.hh"
+
 namespace iofwd
 {
 //===========================================================================

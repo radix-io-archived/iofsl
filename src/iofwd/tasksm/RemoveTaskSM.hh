@@ -106,7 +106,7 @@ class RemoveTaskSM : public sm::SimpleSM< RemoveTaskSM >,
         {
             e.check ();
             api_->remove(slots_[BASE_SLOT], &ret_, p_.parent_handle, p_.component_name,
-                               p_.full_path, &hint_, p_.op_hint);
+                               p_.full_path, &hint_, (*p_.op_hint)());
             slots_.wait(BASE_SLOT, &RemoveTaskSM::waitRunOp);
         }
 

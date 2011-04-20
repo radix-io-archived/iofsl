@@ -31,7 +31,7 @@ protected:
    ReqParam param_;
    zoidfs::zoidfs_handle_t handle_;
    uint64_t size_;
-   zoidfs::zoidfs_op_hint_t op_hint_;
+   zoidfs::util::ZoidFSOpHint op_hint_;
 };
 
 //===========================================================================

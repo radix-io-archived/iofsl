@@ -39,7 +39,8 @@ class ReadDirTaskSM : public BaseTaskSM,
            e.check ();
             entry_count_ = p_.entry_count;
             api_->readdir(slots_[BASE_SLOT], &ret_, p_.handle, p_.cookie, &entry_count_,
-                                p_.entries, p_.flags, &parent_hint_, p_.op_hint);
+                                p_.entries, p_.flags, &parent_hint_,
+                                (*p_.op_hint)());
             slots_.wait(BASE_SLOT, &ReadDirTaskSM::waitRunOp);
         }
 

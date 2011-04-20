@@ -41,7 +41,7 @@ public:
        char buffer[bufferlen];
        int ret;
 
-       api_->readlink (block_, &ret, p.handle, buffer, bufferlen, p.op_hint);
+       api_->readlink (block_, &ret, p.handle, buffer, bufferlen, (*p.op_hint)());
        block_.wait ();
 
        request_.setReturnCode (ret);

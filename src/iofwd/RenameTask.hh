@@ -32,7 +32,7 @@ public:
        block_.reset ();
        api_->rename (block_, &ret, p.from_parent_handle, p.from_component_name, p.from_full_path,
                                p.to_parent_handle, p.to_component_name, p.to_full_path,
-                               &from_parent_hint, &to_parent_hint, p.op_hint);
+                               &from_parent_hint, &to_parent_hint, (*p.op_hint)());
        block_.wait ();
 
        request_.setReturnCode (ret);

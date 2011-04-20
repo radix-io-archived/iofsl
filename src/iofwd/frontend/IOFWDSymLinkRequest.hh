@@ -35,7 +35,7 @@ protected:
    FileInfo from_info_;
    FileInfo to_info_;
    zoidfs::zoidfs_sattr_t sattr_;
-   zoidfs::zoidfs_op_hint_t op_hint_;
+   zoidfs::util::ZoidFSOpHint op_hint_;
 };
 
 //===========================================================================

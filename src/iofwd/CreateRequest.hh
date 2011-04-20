@@ -18,7 +18,7 @@ public:
       zoidfs::zoidfs_handle_t *   parent_handle; 
       char *              component_name;
       zoidfs::zoidfs_sattr_t * attr;
-      zoidfs::zoidfs_op_hint_t * op_hint;
+      zoidfs::util::ZoidFSOpHint * op_hint;
    } ReqParam; 
 
    CreateRequest (int opid) : 

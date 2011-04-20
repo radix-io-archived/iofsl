@@ -11,8 +11,7 @@ const IOFWDCreateRequest::ReqParam & IOFWDCreateRequest::decodeParam ()
 {
    decodeFileSpec (info_);
    process (req_reader_, attr_);
-   zoidfs::hints::zoidfs_hint_create(&op_hint_);
-   decodeOpHint (&op_hint_);
+   decodeOpHint(op_hint_());
 
    if (info_.full_path[0])
    {
@@ -42,7 +41,6 @@ void IOFWDCreateRequest::reply (const CBType & cb,
 
 IOFWDCreateRequest::~IOFWDCreateRequest ()
 {
-   zoidfs::hints::zoidfs_hint_free(&op_hint_);
 }
 
 

@@ -16,7 +16,7 @@ public:
    {
       zoidfs::zoidfs_handle_t * handle;
       size_t buffer_length;
-      zoidfs::zoidfs_op_hint_t * op_hint;
+      zoidfs::util::ZoidFSOpHint * op_hint;
    } ReqParam;
 
    ReadLinkRequest (int opid) :

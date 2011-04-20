@@ -49,7 +49,7 @@ class WriteTaskSM : public sm::SimpleSM< WriteTaskSM >,
                 int aaflag = 0;
 
                 /* check if the atomic append hint was set */
-                zoidfs::hints::zoidfs_hint_get_valuelen(*(p.op_hint), ZOIDFS_ATOMIC_APPEND, &aavallen, &aaflag);
+                p.op_hint->getHintValueLen(ZOIDFS_ATOMIC_APPEND, &aavallen, &aaflag);
 
                 /* if the atomic append flag was set, got to the atomic append SM branch */
                 if(aaflag)
@@ -121,12 +121,12 @@ class WriteTaskSM : public sm::SimpleSM< WriteTaskSM >,
             e.check();
 
             /* update the offsets */
-            zoidfs::hints::zoidfs_hint_delete(*(p.op_hint), ZOIDFS_ATOMIC_APPEND);
+            p.op_hint->deleteHint(ZOIDFS_ATOMIC_APPEND);
 
             /* set the offset in the hint to send back to the client */
             char offset_str[ZOIDFS_ATOMIC_APPEND_OFFSET_MAX_BYTES];
             sprintf(offset_str, "%020lu", atomic_append_base_offset_);
-            zoidfs::hints::zoidfs_hint_set(*(p.op_hint), ZOIDFS_ATOMIC_APPEND_OFFSET, offset_str, 0);
+            p.op_hint->setHint(ZOIDFS_ATOMIC_APPEND_OFFSET, offset_str, 0);
 
             zoidfs_file_ofs_t cur_ofs = atomic_append_base_offset_;
 

@@ -25,7 +25,8 @@ void ReadTask::runNormalMode(ReadRequest::ReqParam & p)
    // issue the read request
    block_.reset();
    api_->read(block_, &ret, p.handle, p.mem_count, p.mem_starts.get(),
-         p.mem_sizes.get(), p.file_count, p.file_starts.get(), p.file_sizes.get(), p.op_hint);
+         p.mem_sizes.get(), p.file_count, p.file_starts.get(),
+         p.file_sizes.get(), (*p.op_hint)());
    block_.wait();
 
    request_.setReturnCode(ret);
@@ -332,7 +333,7 @@ void ReadTask::postRead(const ReadRequest::ReqParam & p, int index)
     api_->read (
         bmmCB, ret, p.handle, p_file_count,
         reinterpret_cast<void**>(mem_starts), mem_sizes, p_file_count, file_starts,
-        file_sizes, const_cast<zoidfs::zoidfs_op_hint_t *>(p.op_hint));
+        file_sizes, const_cast<zoidfs::zoidfs_op_hint_t *>((*p.op_hint)()));
 }
 
 void ReadTask::runPipelineMode(const ReadRequest::ReqParam & p)

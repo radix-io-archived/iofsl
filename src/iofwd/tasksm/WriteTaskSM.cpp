@@ -66,7 +66,7 @@ namespace iofwd
         api_->write(slots_[WRITE_SLOT], &ret_, p.handle, p.mem_count,
               const_cast<const void**>(reinterpret_cast<void**>(p.mem_starts.get())), p.mem_sizes.get(),
               p.file_count, p.file_starts.get(), p.file_sizes.get(),
-              const_cast<zoidfs::zoidfs_op_hint_t *>(p.op_hint));
+              const_cast<zoidfs::zoidfs_op_hint_t *>((*p.op_hint)()));
 #else
         api_->write(slots_[WRITE_SLOT], &ret_, p.handle, p.mem_count, (const
                  void**)p.mem_starts, p.mem_sizes, p.file_count, p.file_starts,
@@ -207,7 +207,8 @@ namespace iofwd
             /* enqueue the write */
             api_->write (
                 slots_[WRITE_SLOT], ret, p.handle, p_file_count, (const void**)mem_starts, mem_sizes,
-                p_file_count, file_starts, file_sizes, const_cast<zoidfs::zoidfs_op_hint_t *>(p.op_hint));
+                p_file_count, file_starts, file_sizes,
+                const_cast<zoidfs::zoidfs_op_hint_t *>((*p.op_hint)()));
 
             /* if this was an async IO, go to next state */
             if(*ret == ZFSERR_EINPROGRESS)
@@ -243,7 +244,7 @@ namespace iofwd
                     barrierCB, ret, p.handle, p_file_count, (const
                        void**)mem_starts, mem_sizes, p_file_count,
                     file_starts, file_sizes,
-                    const_cast<zoidfs::zoidfs_op_hint_t *>(p.op_hint));
+                    const_cast<zoidfs::zoidfs_op_hint_t *>((*p.op_hint)()));
 
                 if(cur_recv_bytes_ == total_bytes_)
                 {

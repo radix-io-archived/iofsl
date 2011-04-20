@@ -29,7 +29,7 @@ public:
        int ret;
 
        api_->remove (block_, &ret, p.parent_handle, p.component_name,
-                               p.full_path, &hint, p.op_hint);
+                               p.full_path, &hint, (*p.op_hint)());
        block_.wait ();
 
        request_.setReturnCode (ret);

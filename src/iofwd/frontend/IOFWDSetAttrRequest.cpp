@@ -12,8 +12,7 @@ const IOFWDSetAttrRequest::ReqParam & IOFWDSetAttrRequest::decodeParam ()
    process (req_reader_, handle_);
    process (req_reader_, sattr_);
    process (req_reader_, attr_);
-   zoidfs::hints::zoidfs_hint_create(&op_hint_);
-   decodeOpHint (&op_hint_);
+   decodeOpHint (op_hint_());
    param_.handle = &handle_;
    param_.sattr = &sattr_;
    param_.attr = &attr_;
@@ -31,7 +30,6 @@ void IOFWDSetAttrRequest::reply (const CBType & cb, const zoidfs::zoidfs_attr_t 
 
 IOFWDSetAttrRequest::~IOFWDSetAttrRequest ()
 {
-   zoidfs::hints::zoidfs_hint_free(&op_hint_);
 }
 
 //===========================================================================

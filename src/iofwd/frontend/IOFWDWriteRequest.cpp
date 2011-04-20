@@ -13,7 +13,6 @@ namespace iofwd
 
 IOFWDWriteRequest::~IOFWDWriteRequest ()
 {
-   zoidfs::hints::zoidfs_hint_free(param_.op_hint);
 }
 
 IOFWDWriteRequest::ReqParam & IOFWDWriteRequest::decodeParam ()
@@ -38,14 +37,13 @@ IOFWDWriteRequest::ReqParam & IOFWDWriteRequest::decodeParam ()
    process (req_reader_, param_.pipeline_size);
 
    // get the hint
-   zoidfs::hints::zoidfs_hint_create(&op_hint_);
    param_.op_hint = &op_hint_;
-   decodeOpHint (param_.op_hint);
+   decodeOpHint((*param_.op_hint)());
 
    // check for hints here
    int hint_found = 0;
    char enable_pipeline[32];
-   zoidfs::hints::zoidfs_hint_get(*(param_.op_hint), ZOIDFS_ENABLE_PIPELINE, 32, enable_pipeline, &hint_found);
+   op_hint_.getHint(ZOIDFS_ENABLE_PIPELINE, 32, enable_pipeline, &hint_found);
    if(hint_found)
    {
         if(strcmp(enable_pipeline, ZOIDFS_HINT_ENABLED) == 0)
@@ -177,7 +175,7 @@ void IOFWDWriteRequest::reply(const CBType & cb)
 {
    simpleOptReply(cb, getReturnCode(), TSSTART <<
            encoder::EncVarArray(param_.file_sizes.get(), param_.file_count)
-           << *(param_.op_hint));
+           << *((*param_.op_hint)()));
 }
 
 //===========================================================================

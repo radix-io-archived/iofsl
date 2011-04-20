@@ -37,7 +37,7 @@ class CommitTaskSM : public BaseTaskSM,
         virtual void postRunOp(iofwdevent::CBException e)
         {
            e.check ();
-            api_->commit (slots_[BASE_SLOT], &ret_, p_.handle, p_.op_hint);
+            api_->commit (slots_[BASE_SLOT], &ret_, p_.handle, (*p_.op_hint)());
             slots_.wait(BASE_SLOT, &CommitTaskSM::waitRunOp);
         }
 
