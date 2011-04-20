@@ -52,7 +52,7 @@ namespace iofwd
                 {
                     AARPCGetNextOffsetIn in;
                     AARPCGetNextOffsetOut out;
-                    size_t server_rank = AtomicAppendFileHandleHash(&handle) %
+                    int64_t server_rank = AtomicAppendFileHandleHash(&handle) %
                         comm_size_;
                     int local_rpc = server_rank == netservice_->getServerRank() ? 1 :
                         0;
@@ -100,7 +100,7 @@ namespace iofwd
                 {
                     AARPCCreateOffsetIn in;
                     AARPCCreateOffsetOut out;
-                    size_t server_rank = AtomicAppendFileHandleHash(&handle) %
+                    int64_t server_rank = AtomicAppendFileHandleHash(&handle) %
                         comm_size_;
                     int local_rpc = server_rank == netservice_->getServerRank() ? 1 :
                         0;
@@ -147,7 +147,7 @@ namespace iofwd
                 {
                     AARPCDeleteOffsetIn in;
                     AARPCDeleteOffsetOut out;
-                    size_t server_rank = AtomicAppendFileHandleHash(&handle) %
+                    int64_t server_rank = AtomicAppendFileHandleHash(&handle) %
                         comm_size_;
                     int local_rpc = server_rank == netservice_->getServerRank() ? 1 :
                         0;

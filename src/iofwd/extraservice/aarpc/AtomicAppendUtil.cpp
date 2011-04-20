@@ -12,7 +12,7 @@ namespace iofwd
 
     /* compute the hash of the zoidfs file handle */
     /* derived from the posix driver fcache */
-    uint64_t AtomicAppendFileHandleHash(zoidfs::zoidfs_handle_t * h)
+    int64_t AtomicAppendFileHandleHash(zoidfs::zoidfs_handle_t * h)
     {
         const uint64_t * ptr = (uint64_t *)&h->data;
         unsigned int  i;
