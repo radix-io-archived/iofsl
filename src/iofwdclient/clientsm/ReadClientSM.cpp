@@ -18,7 +18,7 @@ ReadClientSM::~ReadClientSM()
 void ReadClientSM::init(iofwdevent::CBException e)
 {
     e.check();
-    setNextMethod(&ReadClientSM::postRPCServerSM);
+    setNextMethod(&ReadClientSM::postRPCServerSM);         
 }
 
 void ReadClientSM::postRPCServerSM(iofwdevent::CBException e)
@@ -31,6 +31,7 @@ void ReadClientSM::postRPCServerSM(iofwdevent::CBException e)
     /* Set up slot wait for completion */
     slots_.wait(BASE_SLOT, &ReadClientSM::waitRPCServerSM);
 }
+
 
 void ReadClientSM::waitRPCServerSM(iofwdevent::CBException e)
 {

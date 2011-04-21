@@ -59,7 +59,6 @@ class ReadClientSM :
         void waitRPCServerSM(iofwdevent::CBException e);
 
         void postSMErrorState(iofwdevent::CBException e);
-
     protected:
         enum {BASE_SLOT = 0, NUM_BASE_SLOTS};
         sm::SimpleSlots<NUM_BASE_SLOTS,
