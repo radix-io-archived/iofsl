@@ -34,14 +34,12 @@ void WriteClientSM::postRPCServerSM(iofwdevent::CBException e)
 
 void WriteClientSM::waitRPCServerSM(iofwdevent::CBException e)
 {
-    fprintf(stderr, "%s:%i\n", __func__, __LINE__);
     e.check();
     cb_(zoidfs::ZFS_COMP_DONE, e);
 }
 
 void WriteClientSM::postSMErrorState(iofwdevent::CBException e)
 {
-    fprintf(stderr, "%s:%i\n", __func__, __LINE__);
     e.check();
     cb_(zoidfs::ZFS_COMP_ERROR, e);
 }
