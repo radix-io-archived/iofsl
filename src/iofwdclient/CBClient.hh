@@ -241,7 +241,7 @@ namespace iofwdclient
                 void call(zoidfs::zoidfs_comp_mask_t mask, const
                         iofwdevent::CBException & cbexception)
                 {
-                    fprintf(stderr, "CBSMWrapper:%s:%i\n", __func__, __LINE__);
+//                    fprintf(stderr, "CBSMWrapper:%s:%i\n", __func__, __LINE__);
                     cb_(mask, cbexception);
                 }
 
