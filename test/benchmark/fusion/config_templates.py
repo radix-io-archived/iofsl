@@ -1,5 +1,4 @@
 server_template = '''
-
 log {
   // By default, 2 sinks (stdout and stderr) are available
   // as is the default filter ('default')
@@ -22,7 +21,7 @@ log {
 bmi
 {
   //listen = "tcp://127.0.0.1:10101";
-  serverlist = ( "%s", "tcp://127.0.0.1:9002" );
+  serverlist = ( "tcp://welton-Studio-1569:9001", "tcp://127.0.0.1:9002" );
 }
 
 net
@@ -70,44 +69,8 @@ requesthandler {
   //
   zoidfsapi {
 
-    name = "requestscheduler";
-    //name = "defasync";
-
-    requestscheduler {
-        //
-        // request scheduler modes
-        //  fifo - schedule requests as they arrive
-        //  merge - attempt to merge requests
-        //
-        schedalgo = "merge";
-
-        //
-        // list io batch size
-        //  upper limit on the number of non contig ops
-        //  the scheduler will issue in a single zoidfs read or write
-        //
-        batchsize = "16";
-
-        api = "defasync";
-
-        rangesched {
-            //
-            // request mereger type
-            //  hierarchical: list of ranges merged 
-            //  intervaltree: red-black interval tree
-            //  default: hierarchical
-            //
-            merger = "hierarchical";
-
-            hierarchical {
-                // no special config options
-            }
-            
-            //
-            // hbrr quantum 
-            //
-            defquantum = "8";
-        }
+    //name = "requestscheduler";
+    name = "defasync";
 
     defasync {
       //blocking_api = "zoidfs";
@@ -171,11 +134,11 @@ requesthandler {
     //
     local {
     }
-
+    
       }
     }
     }
-    }
+    
 
 
   }
