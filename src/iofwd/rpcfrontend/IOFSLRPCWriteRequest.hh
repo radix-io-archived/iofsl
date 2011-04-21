@@ -9,6 +9,11 @@
 #include "iofwd/WriteRequest.hh"
 #include "iofwd/rpcfrontend/IOFSLRPCRequest.hh"
 #include "iofwdutil/mm/BMIMemoryManager.hh"
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <time.h>
+
 namespace iofwd
 {
    namespace rpcfrontend
@@ -19,7 +24,6 @@ namespace iofwd
       typedef zoidfs::zoidfs_handle_t zoidfs_handle_t;
       typedef zoidfs::zoidfs_dirent_cookie_t zoidfs_dirent_cookie_t;
       typedef zoidfs::zoidfs_file_ofs_t zoidfs_file_ofs_t;
-
       ENCODERSTRUCT (IOFSLRPCWriteDec, ((zoidfs_handle_t)(handle_)) 
                                         ((size_t)(mem_count_))
                                         ((void**)(mem_starts_))              
@@ -49,13 +53,14 @@ namespace iofwd
                   total_read(0)
                   
               {
-                tp_ = tp;
+                tp_ = tp;   
               }
             
               ~IOFSLRPCWriteRequest();
 
               /* encode and decode helpers for RPC data */
               void decode();
+              void encodeCB(const CBType & cb);
               void encode();
 
               ReqParam & decodeParam ();
