@@ -74,6 +74,7 @@ namespace iofwdclient
                   *buf = 0;
                   *pos = 0;
               }
+              ~ReadOutStream ( ) { delete buf; delete pos; }
 //              encoder::OpHintHelper op_helper_;
               size_t mem_count_;
               void ** mem_starts_;
@@ -145,24 +146,24 @@ inline Enc & process (Enc & e,
     return e;
 }
 
-inline size_t RemainingRead (ReadOutStream w)
+inline size_t RemainingRead (ReadOutStream * w)
 {
-   int buf = *(w.buf);
+   int buf = *(w->buf);
    size_t size = 0;
-   for (size_t i = buf; i < w.mem_count_; i++)
+   for (size_t i = buf; i < w->mem_count_; i++)
    {
-      size += w.mem_sizes_[i];
+      size += w->mem_sizes_[i];
    }
    return size;    
 }
 
 /* Write data to the stream */
-inline int getReadData (void * buffer, size_t size, ReadOutStream  w)
+inline int getReadData (void * buffer, size_t size, ReadOutStream * w)
 {
    /* Which input buffer are we on */
-   int buf = *(w.buf);
+   int buf = *(w->buf);
    /* position in that buffer */
-   size_t pos = *(w.pos);
+   size_t pos = *(w->pos);
    /* Current size copied */
    size_t curSize = 0;
    /* output buffer offset */
@@ -170,25 +171,25 @@ inline int getReadData (void * buffer, size_t size, ReadOutStream  w)
    /* return flag */
    int ret = 0;
 
-   for (size_t i = buf; i < w.mem_count_; i++)
+   for (size_t i = buf; i < w->mem_count_; i++)
    {
       /* if there is additional data to be read */
-      if (pos < w.mem_sizes_[i])
+      if (pos < w->mem_sizes_[i])
       {
          /* if the entire buffer can be copied */
-         if (curSize + (w.mem_sizes_[i] - pos) <= size)
+         if (curSize + (w->mem_sizes_[i] - pos) <= size)
          {
-            memcpy (&(((char **)(w.mem_starts_))[i][pos]), 
+            memcpy (&(((char **)(w->mem_starts_))[i][pos]), 
                     &(((char*)buffer) [buffer_offset]),
-                    w.mem_sizes_[i] - pos);
+                    w->mem_sizes_[i] - pos);
             pos = 0;
-            curSize = curSize + w.mem_sizes_[i] - pos;
-            buffer_offset = buffer_offset + w.mem_sizes_[i] - pos; 
+            curSize = curSize + w->mem_sizes_[i] - pos;
+            buffer_offset = buffer_offset + w->mem_sizes_[i] - pos; 
          }
          /* if there is not enough room for the buffer to be copied */
          else
          {
-            memcpy (&(((char **)(w.mem_starts_))[i][pos]), 
+            memcpy (&(((char **)(w->mem_starts_))[i][pos]), 
                     &(((char*)buffer) [buffer_offset]), 
                     size - curSize);
             pos = pos + size - curSize;
@@ -200,8 +201,8 @@ inline int getReadData (void * buffer, size_t size, ReadOutStream  w)
          }
       }
    }
-   *(w.pos) = pos; 
-   *(w.buf) = buf;
+   *(w->pos) = pos; 
+   *(w->buf) = buf;
    return ret;
 }
 
