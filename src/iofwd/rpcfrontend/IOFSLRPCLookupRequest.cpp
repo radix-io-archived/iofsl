@@ -40,8 +40,6 @@ void IOFSLRPCLookupRequest::reply(const CBType & cb, const
 
     /* encode */
     encode();
-
-    zoidfs::zoidfs_op_hint_t op_hint_;
     zoidfs::hints::zoidfs_hint_create(&op_hint_);  
     /* @TODO: Remove this later */
     param_.op_hint = &op_hint_;
@@ -52,6 +50,7 @@ void IOFSLRPCLookupRequest::reply(const CBType & cb, const
 
 IOFSLRPCLookupRequest::~IOFSLRPCLookupRequest()
 {
+    zoidfs::hints::zoidfs_hint_free(&op_hint_);
 }
 
    }
