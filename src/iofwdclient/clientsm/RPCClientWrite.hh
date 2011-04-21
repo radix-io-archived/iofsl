@@ -57,6 +57,14 @@ class RPCClientWrite :
             d_(out),
             rpc_handle_(rpc_handle)
         {
+            inStream_.reset( new INTYPE(static_cast<const zoidfs::zoidfs_handle_t*>(in.handle_),
+                                        static_cast<size_t>(in.mem_count_), 
+                                        static_cast<const void **>(in.mem_starts_),
+                                        static_cast<const size_t *>(in.mem_sizes_),
+                                        static_cast<size_t>(in.file_count_), 
+                                        static_cast<const zoidfs::zoidfs_file_ofs_t*>(in.file_starts_),
+                                        static_cast<zoidfs::zoidfs_file_ofs_t*>(in.file_sizes_), 
+                                        (zoidfs::zoidfs_op_hint_t*) NULL));
             cb_ = (iofwdevent::CBType)cb;
         }
 
@@ -67,7 +75,7 @@ class RPCClientWrite :
         void init(iofwdevent::CBException e)
         {
             e.check();
-
+            /* this is an error, causes e_.data_ to be freed early */
             /* Get the maximum possible send size */
             e_.net_data_size_ = rpc::getRPCEncodedSize(e_.data_).getMaxSize();
             /* Set the output stream */
@@ -78,6 +86,7 @@ class RPCClientWrite :
 
         void outputReady (iofwdevent::CBException e)
         {
+         
             e_.zero_copy_stream_.reset((rpc_handle_->getOut()));
 
             setNextMethod(&RPCClientWrite<INTYPE,OUTTYPE>::postSetupConnection);
@@ -85,6 +94,7 @@ class RPCClientWrite :
 
         void postSetupConnection(iofwdevent::CBException e)
         {
+         
             e.check();
 
             /* setup the write stream */
@@ -97,12 +107,14 @@ class RPCClientWrite :
 
         void waitSetupConnection(iofwdevent::CBException e)
         {
+         
             e.check();
             setNextMethod(&RPCClientWrite<INTYPE,OUTTYPE>::postEncodeData);
         }
 
         void postEncodeData(iofwdevent::CBException e)
         {
+         
             e.check();
 
             /* create the encoder */
@@ -120,15 +132,17 @@ class RPCClientWrite :
         /* Get the write buffer for writing data */
         void getWriteBuffer (iofwdevent::CBException e)
         {
+         
             /* setup the write stream */
             e_.zero_copy_stream_->write(&e_.data_ptr_, &e_.data_size_, slots_[BASE_SLOT],
-                    RemainingWrite(e_.data_));
+                    RemainingWrite(inStream_.get()));
 
             slots_.wait(BASE_SLOT,&RPCClientWrite<INTYPE,OUTTYPE>::writeData);
         }
 
         void flushWriteBuffer (iofwdevent::CBException e)
         {
+         
             e_.zero_copy_stream_->flush(slots_[BASE_SLOT]);
             slots_.wait(BASE_SLOT,
                     &RPCClientWrite<INTYPE,OUTTYPE>::getWriteBuffer);  
@@ -137,11 +151,13 @@ class RPCClientWrite :
         /* Write data to output stream */
         void writeData (iofwdevent::CBException e)
         {
+         
             size_t outSize = e_.data_size_;
-            int ret = getWriteData (&e_.data_ptr_, &outSize, e_.data_);
+            int ret = getWriteData (&e_.data_ptr_, &outSize, inStream_.get());
             /* write finished */
             if (ret == 0)
             {
+         
                /* rewind then continue to flush */
                e_.zero_copy_stream_->rewindOutput(e_.data_size_ - outSize, slots_[BASE_SLOT]);
                slots_.wait(BASE_SLOT,
@@ -150,6 +166,7 @@ class RPCClientWrite :
             /* More data to be written (out of write buffer) */
             else 
             {
+         
                setNextMethod(&RPCClientWrite<INTYPE,OUTTYPE>::flushWriteBuffer);               
             }
         }
@@ -163,6 +180,7 @@ class RPCClientWrite :
 
         void postFlush(iofwdevent::CBException e)
         {
+         
             e.check();
 
             // Before we can access the output channel we need to wait until the RPC
@@ -178,6 +196,7 @@ class RPCClientWrite :
 
         void waitFlush(iofwdevent::CBException e)
         {
+         
             e.check();
             rpc_handle_->waitInReady (slots_[BASE_SLOT]);
             slots_.wait(BASE_SLOT,&RPCClientWrite<INTYPE,OUTTYPE>::postDecodeData);
@@ -186,6 +205,7 @@ class RPCClientWrite :
         
         void postDecodeData(iofwdevent::CBException e)
         {
+         
             e.check();      
             /* get the max size */
             d_.net_data_size_ = rpc::getRPCEncodedSize(OUTTYPE()).getMaxSize();
@@ -195,12 +215,11 @@ class RPCClientWrite :
 
             slots_.wait(BASE_SLOT,
                     &RPCClientWrite<INTYPE,OUTTYPE>::waitDecodeData);
-            /* Temporarily Added to check state machine progression */
-//            setNextMethod (&RPCClientWrite<INTYPE,OUTTYPE>::waitDecodeData);
         }
 
         void waitDecodeData(iofwdevent::CBException e)
         {
+         
             e.check();
 
             d_.coder_ = rpc::RPCDecoder(d_.data_ptr_, d_.data_size_);
@@ -211,7 +230,6 @@ class RPCClientWrite :
                 fprintf(stderr, "%s:%i ERROR undecoded data...\n", __func__,
                         __LINE__);
             }
-            //fprintf(stderr, "RPCClientWrite:%s:%p\n", __func__,cb_);
             
             cb_ (e);
         }
@@ -236,7 +254,8 @@ class RPCClientWrite :
             OUTTYPE> d_;
 
         rpc::RPCClientHandle rpc_handle_;
-                
+        
+        boost::shared_ptr<INTYPE> inStream_;
 };
 
     }
