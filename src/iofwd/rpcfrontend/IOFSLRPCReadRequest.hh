@@ -9,6 +9,11 @@
 #include "iofwd/ReadRequest.hh"
 #include "iofwd/rpcfrontend/IOFSLRPCRequest.hh"
 #include "iofwdutil/mm/BMIMemoryManager.hh"
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <time.h>
+
 namespace iofwd
 {
    namespace rpcfrontend
@@ -70,7 +75,7 @@ namespace iofwd
                                               size_t size);
               void initRequestParams(ReqParam & p, void * bufferMem);
 
-              void allocateBuffer(iofwdevent::CBType cb, RetrievedBuffer * rb);
+              void allocateBuffer(const iofwdevent::CBType cb, RetrievedBuffer * rb);
               void releaseBuffer(RetrievedBuffer * rb);
               size_t writeBuffer(void * buff, size_t size, bool flush);
               void sendBuffersBlock(const iofwdevent::CBType & cb, RetrievedBuffer * rb);
@@ -79,15 +84,14 @@ namespace iofwd
               virtual size_t rpcEncodedInputDataSize(); 
               virtual size_t rpcEncodedOutputDataSize();
 
-              ReqParam param_;
+             ReqParam param_;
 
-              zoidfs::zoidfs_op_hint_t op_hint_;
+             zoidfs::zoidfs_op_hint_t op_hint_;
 
-              // @TODO: This should not be specified here. however its required
-              //        to use the memory manager (BMIMemoryManager)
-              iofwdutil::bmi::BMIAddr * addr_;
-              IOFSLRPCReadEnc enc_struct;
-              IOFSLRPCReadDec dec_struct;
+             // @TODO: This should not be specified here. however its required
+             //        to use the memory manager (BMIMemoryManager)
+             IOFSLRPCReadEnc enc_struct;
+             IOFSLRPCReadDec dec_struct;
 
              /* pointers and sizes of mem stream data */
              const char * read_ptr_;
