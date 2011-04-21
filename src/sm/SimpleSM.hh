@@ -56,26 +56,25 @@ namespace sm
       void resumeSM (next_method_t n, iofwdevent::CBException status =
             iofwdevent::CBException ())
       {
-         {
-           boost::mutex::scoped_lock l(state_lock_);
+         boost::mutex::scoped_lock l(state_lock_);
 
-           // assert needs to be inside lock to prevent store/load race.
-           ALWAYS_ASSERT(!next_);
+         // assert needs to be inside lock to prevent store/load race.
+         ALWAYS_ASSERT(!next_);
 
-           setNextMethod (n, status);
+         setNextMethod (n, status);
 
-         }
-         
-         /* if we are in poll mode, execute the next state now ! */
-         if(poll_)
+         if (!running_)
          {
-            execute();
-            //unprotected_execute();
-         }
-         /* other wise, submit to the SMManager */
-         else
-         {
-            smm_.schedule(this);
+             /* if we are in poll mode, execute the next state now ! */
+             if(poll_)
+             {
+                unprotected_execute();
+             }
+             /* other wise, submit to the SMManager */
+             else
+             {
+                smm_.schedule(this);
+             }
          }
       }
 
@@ -148,7 +147,6 @@ bool SimpleSM<T>::execute ()
 
       // This shouldn't execute if there isn't a next state to go to.
       ALWAYS_ASSERT(next_);
-      ASSERT (running_ != true);
       running_ = true;
    }
 
@@ -187,7 +185,6 @@ bool SimpleSM<T>::execute ()
    return yield_;
 }
 
-/* BROKEN: Race Condition with running state machine. Should be removed */
 template <typename T>
 bool SimpleSM<T>::unprotected_execute()
 {
