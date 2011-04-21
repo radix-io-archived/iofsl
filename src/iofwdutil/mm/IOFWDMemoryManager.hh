@@ -51,33 +51,40 @@ class GenericMemoryManager :
    public:
       GenericMemoryManager ()
       {
+         allocated_ = false;
          bufferSize_ =  4 * 1024 * 1024;
       }
       void alloc (int numTokens)
       {
-          allocated_ = true;
-          numTokens_ = numTokens;
-          /* create the memory buffer */
-          memory_ = (void *) new char[numTokens];     
+          if (!allocated_)
+          {
+            allocated_ = true;
+            numTokens_ = numTokens;
+            /* create the memory buffer */
+            memory_ = new char[numTokens];     
+          }
       }
       /*
        * This is the public buffer allocation method
        */
       void alloc(int numTokens, size_t bufferSize)
       {
-          /* set the memory params */
-          allocated_ = true;
-          numTokens_ = numTokens;
-          bufferSize_ = bufferSize;
+          if (!allocated_)  
+          {
+            /* set the memory params */
+            allocated_ = true;
+            numTokens_ = numTokens;
+            bufferSize_ = bufferSize;
 
-          /* create the memory buffer */
-          memory_ = (void *) new char[bufferSize_];          
+            /* create the memory buffer */
+            memory_ = new char[bufferSize_];          
+          }
       }
 
       void dealloc() 
       {
          if (allocated_)
-            delete[] (char*)memory_;
+            delete[] memory_;
       }
       ~GenericMemoryManager()
       {
@@ -93,7 +100,7 @@ class GenericMemoryManager :
 
       void * getMemory() const
       {
-          return memory_;
+          return (void *)memory_;
       }
 
       size_t getMemorySize() const
@@ -120,7 +127,7 @@ class GenericMemoryManager :
       size_t bufferSize_;
 
       /* the memory buffer */
-      void * memory_;
+      char * memory_;
 
 };
 
