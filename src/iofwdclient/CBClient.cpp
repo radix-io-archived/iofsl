@@ -59,7 +59,7 @@ namespace iofwdclient
            const iofwdevent::CBException & cbexception)
    {
        /* call the original cb */
-       fprintf(stderr, "%s:%i\n", __func__, __LINE__);
+       
        cbsm->call(mask, cbexception);
 
        /* delete the wrapper... trigger ref count dec on SM */
