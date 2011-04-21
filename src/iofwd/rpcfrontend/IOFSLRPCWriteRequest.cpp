@@ -50,7 +50,21 @@ namespace iofwd
          /* Hint decoding disabled currently */
 //         zoidfs::hints::zoidfs_hint_create(&op_hint_);  
 //         decodeOpHint(&op_hint_); 
+
       }
+
+
+      void IOFSLRPCWriteRequest::encodeCB(const CBType & cb)
+      {
+
+          boost::this_thread::at_thread_exit(iofwdutil::ThreadPoolKick(*tp_));       
+          encode();
+          zoidfs::hints::zoidfs_hint_create(&op_hint_);  
+          /* @TODO: Remove this later */
+          param_.op_hint = &op_hint_;
+
+          cb(iofwdevent::CBException());
+      }      
 
       void IOFSLRPCWriteRequest::encode()
       {
@@ -91,10 +105,12 @@ namespace iofwd
             else
                out_->flush(block);
             block.wait();
+
       }
 
       IOFSLRPCWriteRequest::ReqParam & IOFSLRPCWriteRequest::decodeParam() 
       { 
+
           decode(); 
           param_.handle = &dec_struct.handle_;
           param_.mem_starts.reset((char **)dec_struct.mem_starts_);
@@ -109,11 +125,13 @@ namespace iofwd
 
           param_.max_buffer_size = 4194304;
           param_.op_hint_pipeline_enabled = true;
-          param_.op_hint = &op_hint_; 
+          param_.op_hint = &op_hint_;
+ 
           return param_; 
       }
       void IOFSLRPCWriteRequest::initRequestParams(ReqParam & p, void * bufferMem)
       {
+
           /* Is this even called anymore? */
 
           // allocate buffer for normal mode
@@ -150,56 +168,67 @@ namespace iofwd
                   cur += p.file_sizes[i];
               }
           }
+
       }
 
       void IOFSLRPCWriteRequest::allocateBuffer(iofwdevent::CBType cb, RetrievedBuffer * rb)
       {
+
           /* allocate the buffer wrapper */
           rb->buffer_ = new iofwdutil::mm::GenericMemoryManager();
           rb->buffer_->alloc (rb->getsize());
+
           cb( iofwdevent::CBException());
       }
 
       void IOFSLRPCWriteRequest::releaseBuffer(RetrievedBuffer * rb)
       {
+
           delete rb->buffer_;
           rb->buffer_ = NULL;
+
       }
 
       size_t IOFSLRPCWriteRequest::readBuffer (void ** buff, size_t sizdec_, bool forceSize)
       {
+
          size_t ret = 0;
          size_t outSize = 0;
-         void * tmpBuffer = (void *)new char[1];
+         void ** tmpBuffer = (void **)new char * [1];
          iofwdevent::SingleCompletion block;
          block.reset();
-         in_->read((const void **)&tmpBuffer, &outSize, block, sizdec_);
+         in_->read((const void **)tmpBuffer, &outSize, block, sizdec_);
          block.wait();
 
          if (outSize < sizdec_)
          {
-            std::memcpy ( *buff, tmpBuffer, outSize);
+            std::memcpy ( *buff, *tmpBuffer, outSize);
             ret = outSize;
          }
          else
          {
-            std::memcpy ( *buff, tmpBuffer, sizdec_);
+            std::memcpy ( *buff, *tmpBuffer, sizdec_);
             block.reset();
             in_->rewindInput (outSize - sizdec_, block);
             block.wait();
             ret = sizdec_;
          }
+        delete[] tmpBuffer;
+
         return ret;
       }
 
       void IOFSLRPCWriteRequest::recvBuffers(const CBType & cb, RetrievedBuffer * rb)
       {
+
           tp_->submitWorkUnit(boost::bind(&IOFSLRPCWriteRequest::recvBuffersBlock, this, cb, rb),
                                iofwdutil::ThreadPool::HIGH);
+
       }
 
       void IOFSLRPCWriteRequest::recvBuffersBlock(const CBType & cb, RetrievedBuffer * rb)
       {
+
           boost::this_thread::at_thread_exit(iofwdutil::ThreadPoolKick(*tp_)); 
           size_t i = 0;
           size_t outSize = 0;
@@ -215,19 +244,23 @@ namespace iofwd
             }
             
           } while ( i < param_.mem_count);
+
           cb(iofwdevent::CBException());
       }
 
 
       void IOFSLRPCWriteRequest::recvPipelineBufferCB(iofwdevent::CBType cb, iofwd::RetrievedBuffer* rb, size_t size)
       {
-          tp_->submitWorkUnit (boost::bind(&IOFSLRPCWriteRequest::recvPipelineBufferCBBlock, 
+       
+           tp_->submitWorkUnit (boost::bind(&IOFSLRPCWriteRequest::recvPipelineBufferCBBlock, 
                                            this, cb, rb, size), iofwdutil::ThreadPool::HIGH);
+
       }
 
 
       void IOFSLRPCWriteRequest::recvPipelineBufferCBBlock(iofwdevent::CBType cb, iofwd::RetrievedBuffer* rb, size_t size)
       {
+
           boost::this_thread::at_thread_exit(iofwdutil::ThreadPoolKick(*tp_));           
           size_t outSize = 0;
           
@@ -240,22 +273,20 @@ namespace iofwd
           cb(iofwdevent::CBException());
       }
 
+
       void IOFSLRPCWriteRequest::reply(const CBType & cb)
       {
-          /* verify the args are OK */
+       
+         /* verify the args are OK */
           ASSERT(getReturnCode() == zoidfs::ZFS_OK);
-          encode();
-
-          zoidfs::hints::zoidfs_hint_create(&op_hint_);  
-          /* @TODO: Remove this later */
-          param_.op_hint = &op_hint_;
-          cb(iofwdevent::CBException());
+          tp_->submitWorkUnit ( boost::bind (&IOFSLRPCWriteRequest::encodeCB, this, cb),
+                                  iofwdutil::ThreadPool::HIGH);
 
       }
 
       IOFSLRPCWriteRequest::~IOFSLRPCWriteRequest()
       {
-//         zoidfs::hints::zoidfs_hint_free(&op_hint_);
+         zoidfs::hints::zoidfs_hint_free(&op_hint_);
       }
 
       size_t IOFSLRPCWriteRequest::rpcEncodedInputDataSize()
