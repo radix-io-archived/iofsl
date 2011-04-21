@@ -47,7 +47,7 @@ class LookupClientSM :
             in_(LookupInStream(parent_handle, component_name, full_path, op_hint)),
             out_(handle, op_hint)
         {
-            fprintf(stderr, "%s:%i\n", __func__, __LINE__);
+//            fprintf(stderr, "%s:%i\n", __func__, __LINE__);
         }
 
         ~LookupClientSM();

@@ -13,18 +13,17 @@ namespace iofwdclient
 
 LookupClientSM::~LookupClientSM()
 {
+cb_(zoidfs::ZFS_COMP_DONE, iofwdevent::CBException());
 }
 
 void LookupClientSM::init(iofwdevent::CBException e)
 {
-    fprintf(stderr, "%s:%i\n", __func__, __LINE__);
     e.check();
     setNextMethod(&LookupClientSM::postRPCServerSM);
 }
 
 void LookupClientSM::postRPCServerSM(iofwdevent::CBException e)
 {
-    fprintf(stderr, "LookupClientSM:%s:%i\n", __func__, __LINE__);
     e.check();
 
     /* Runs the RPC Client State Machine */
@@ -36,14 +35,11 @@ void LookupClientSM::postRPCServerSM(iofwdevent::CBException e)
 
 void LookupClientSM::waitRPCServerSM(iofwdevent::CBException e)
 {
-    fprintf(stderr, "LookupClientSM:%s:%i\n", __func__, __LINE__);
     e.check();
-    cb_(zoidfs::ZFS_COMP_DONE, e);
 }
 
 void LookupClientSM::postSMErrorState(iofwdevent::CBException e)
 {
-    fprintf(stderr, "%s:%i\n", __func__, __LINE__);
     e.check();
     cb_(zoidfs::ZFS_COMP_ERROR, e);
 }
