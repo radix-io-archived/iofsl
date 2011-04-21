@@ -28,14 +28,14 @@ namespace iofwdclient
                          zoidfs::zoidfs_op_hint_t * op_hint = NULL) :
                      parent_handle_(parent_handle),
                      component_name_(component_name),
-                     full_path_(full_path),
-                     op_helper_(op_hint)
+                     full_path_(full_path)
+//                     op_helper_(op_hint)
                  {
                  }
                  const zoidfs::zoidfs_handle_t *parent_handle_;
                  const char *component_name_;
                  const char *full_path_; 
-                 const encoder::OpHintHelper op_helper_;
+                // const encoder::OpHintHelper op_helper_;
          };
 
       class LookupOutStream
@@ -43,13 +43,13 @@ namespace iofwdclient
           public:
               LookupOutStream(zoidfs::zoidfs_handle_t *handle = NULL,
                       zoidfs::zoidfs_op_hint_t * op_hint = NULL) :
-                  handle_(handle),
-                  op_helper_(op_hint)
+                  handle_(handle)
+                  //op_helper_(op_hint)
               {
               }
               int returnCode;
               zoidfs::zoidfs_handle_t * handle_;
-              encoder::OpHintHelper op_helper_;
+              //encoder::OpHintHelper op_helper_;
       };
 
 /*
