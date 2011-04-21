@@ -1,5 +1,6 @@
 #ifndef IOFWD_RPCFRONTEND_RPCSIMPLEREQUEST_HH
 #define IOFWD_RPCFRONTEND_RPCSIMPLEREQUEST_HH
+#include <cstdio>
 
 #include "zoidfs/util/FileSpecHelper.hh"
 #include "zoidfs/util/OpHintHelper.hh"
@@ -44,6 +45,7 @@ namespace iofwd
           /* RPC encoder / decoder */
           rpc::RPCDecoder dec_;
           rpc::RPCEncoder enc_;
+          zoidfs::zoidfs_op_hint_t op_hint_;
         public:
           RPCSimpleRequest (iofwdevent::ZeroCopyInputStream * in,
                             iofwdevent::ZeroCopyOutputStream * out) :
@@ -111,7 +113,6 @@ namespace iofwd
             /* rewind */
             out_->rewindOutput(write_size_ - enc_.getPos(), block);
             block.wait();
-
             /* flush the reponse */
             block.reset();
             if (out_->type == 'T')
@@ -119,6 +120,7 @@ namespace iofwd
             else
                out_->flush(block);
             block.wait();
+//            delete[] testptr;
           }
       };
 
