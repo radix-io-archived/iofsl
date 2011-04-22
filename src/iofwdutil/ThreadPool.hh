@@ -163,10 +163,6 @@ class ThreadPool : public Singleton< ThreadPool >
             }
         }
 
-        void workUnitDone()
-        {
-        }
-
         void startWorkUnit()
         {
             if(prio_queue_.size() > 0)
@@ -313,6 +309,10 @@ class IOFWDThread
         {
             return prio_;
         }
+
+        void noop()
+        {
+        }
     
     protected:
         /* the thread work function */
@@ -359,10 +359,6 @@ class IOFWDThread
                 }
                 morework = tp_->addThread(this);
             }
-        }
-
-        void noop()
-        {
         }
 
         boost::thread t_;
@@ -431,22 +427,6 @@ class IOFWDThread
         boost::mutex tp_start_mutex_;
         bool started_;
         int tp_start_ref_count_;
-};
-
-class ThreadPoolKick
-{
-    public:
-        ThreadPoolKick(iofwdutil::ThreadPool & tp) : tp_(tp)
-        {
-        }
-
-        void operator()() const
-        {
-        }
-
-
-    protected:
-        iofwdutil::ThreadPool & tp_;
 };
 
 } /* namespace iofwdutil */
