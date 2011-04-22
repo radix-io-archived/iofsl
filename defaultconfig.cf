@@ -52,6 +52,27 @@ extra_services {
        //  BMI address of the master
        //
        master = "tcp://127.0.0.1:12345";
+
+       //
+       // AARPC coalescing / batching
+       //
+       batch
+       {
+           //
+           // enable or disable batch mode
+           //
+           enable = "false";
+
+           //
+           // batch time interval (in ms)
+           //
+           period = "10";
+
+           //
+           // limit number of RPCs to coalesce
+           //
+           reqlimit = "64";
+       }
    }
 
 

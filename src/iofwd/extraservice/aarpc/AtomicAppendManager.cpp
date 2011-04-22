@@ -146,8 +146,9 @@ namespace iofwd
                     if(it == batch_handles_.end())
                     {
                         /* make a new one */
-                        batch_data = new AtomicAppendBatchData(handle, 10, 0,
-                                10, 0, aarpc_tp_, rpc_, this);
+                        batch_data = new AtomicAppendBatchData(handle,
+                                batch_limit_, batch_period_, aarpc_tp_,
+                                rpc_, this);
                         batch_handles_[*handle] = batch_data; 
                     }
                     /* else grab the item from the map */

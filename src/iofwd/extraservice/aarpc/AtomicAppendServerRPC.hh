@@ -28,6 +28,8 @@ namespace iofwd
 
    namespace extraservice
    {
+      class AtomicAppendManager;
+
       class AtomicAppendServerRPC : public ExtraService
       {
          public:
@@ -49,12 +51,27 @@ namespace iofwd
                 {
                     /* do nothing */
                 }
+
+                const iofwdutil::ConfigFile batch_section
+                    (f.openSectionDefault ("batch"));
+
+                batch_mode_ =
+                    batch_section.getKeyAsDefault<bool>("enable", false);
+
+                if(batch_mode_)
+                {
+                    batch_period_ = batch_section.getKeyAsDefault<int>("period", 0);
+                    batch_limit_ = batch_section.getKeyAsDefault<int>("reqlimit", 0);
+                }
             }
 
             virtual ~AtomicAppendServerRPC();
 
             static std::string aarpc_master_addr_;
             static std::string aarpc_mode_;
+            static bool batch_mode_;
+            static bool batch_period_;
+            static bool batch_limit_;
 
          protected:
 
