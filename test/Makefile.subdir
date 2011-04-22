@@ -31,7 +31,7 @@ test_zoidfs_gridftp_test_LDADD = src/zoidfs/libzoidfsclient.a ${test_unit_tests_
 test_zoidfs_gridftp_test_LDFLAGS = $(AM_LDFLAGS) ${test_unit_tests_ldflags}
 
 noinst_PROGRAMS += test/unit-tests/zoidfs-md-cunit test/unit-tests/zoidfs-md-cunit-local test/unit-tests/zoidfs-io-cunit \
-test/unit-tests/zoidfs-io-cunit-local
+test/unit-tests/zoidfs-io-cunit-local test/oldclientbench/BenchmarkMain
 
 test_unit_tests_zoidfs_md_cunit_SOURCES = test/unit-tests/zoidfs-md-cunit.c
 test_unit_tests_zoidfs_md_cunit_LDADD = src/zoidfs/libzoidfsclient.a ${test_unit_tests_ldadd}
@@ -44,7 +44,14 @@ test_unit_tests_zoidfs_md_cunit_local_LDFLAGS = ${test_unit_tests_ldflags}
 test_unit_tests_zoidfs_io_cunit_SOURCES = test/unit-tests/zoidfs-io-cunit.c
 test_unit_tests_zoidfs_io_cunit_LDADD =  src/zoidfs/libzoidfsclient.a ${test_unit_tests_ldadd}
 test_unit_tests_zoidfs_io_cunit_LDFLAGS = ${test_unit_tests_ldflags}
- 
+
+test_oldclientbench_BenchmarkMain_SOURCES = test/oldclientbench/BenchmarkMain.c \
+                                       test/oldclientbench/BenchmarkMain.h \
+                                       test/oldclientbench/Test.c \
+                                       test/oldclientbench/Test.h
+test_oldclientbench_BenchmarkMain_LDADD =  src/zoidfs/libzoidfsclient.a ${test_unit_tests_ldadd}
+test_oldclientbench_BenchmarkMain_LDFLAGS = ${test_unit_tests_ldflags}
+
 test_unit_tests_zoidfs_io_cunit_local_SOURCES = test/unit-tests/zoidfs-io-cunit.c
 test_unit_tests_zoidfs_io_cunit_local_LDADD = src/zoidfs/libzoidfs.a ${test_unit_tests_ldadd}
 test_unit_tests_zoidfs_io_cunit_local_LDFLAGS = ${test_unit_tests_ldflags}
