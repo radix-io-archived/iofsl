@@ -136,46 +136,68 @@ namespace iofwd
                 /* we're in batching mode */
                 else
                 {
-                    boost::mutex::scoped_lock l(batch_mutex_);
+                    boost::mutex::scoped_lock l(batch_handle_mutex_);
+                    std::map< zoidfs::zoidfs_handle_t, AtomicAppendBatchData *,
+                                            HandleCompare >::iterator it =
+                                                batch_handles_.find(*handle);
+                    AtomicAppendBatchData * batch_data = NULL;
+
+                    /* if we could not find the batch data item */
+                    if(it == batch_handles_.end())
+                    {
+                        /* make a new one */
+                        batch_data = new AtomicAppendBatchData(handle, 10, 0,
+                                10, 0, aarpc_tp_, rpc_, this);
+                        batch_handles_[*handle] = batch_data; 
+                    }
+                    /* else grab the item from the map */
+                    else
+                    {
+                        batch_data = (*it).second;
+                    }
+
+                    /* lock the batch data */
+                    boost::mutex::scoped_lock bdl(batch_data->batch_mutex_);
                         
                     /* update the batch params */
-                    batch_size_++;
-                    batch_chunk_ += incsize;
-                    batch_wu_items_.push_back(wu);
+                    batch_data->batch_size_++;
+                    batch_data->batch_chunk_ += incsize;
+                    batch_data->batch_wu_items_.push_back(wu);
 
                     /* if this is the first item, reset the batch timer */
-                    if(batch_size_ == 1 && batch_limit_ != 1)
+                    if(batch_data->batch_size_ == 1 && batch_data->batch_limit_ != 1)
                     {
-                        timer_handle_ = timer_.createTimer(timer_cb_,
-                                batch_period_);
-                        timer_running_ = true;
+                        batch_data->timer_handle_ =
+                            timer_.createTimer(batch_data->timer_cb_,
+                                batch_data->batch_period_);
+                        batch_data->timer_running_ = true;
                     }
                     /* if this request will exceed the threshold */
-                    else if(batch_size_ >= batch_limit_ - 1)
+                    else if(batch_data->batch_size_ >= batch_data->batch_limit_ - 1)
                     {
                         /* create a batch request */
                         AtomicAppendBatchGetNextOffsetWorkUnit * batch_wu = new
                             AtomicAppendBatchGetNextOffsetWorkUnit(
-                                    aarpc_tp_, rpc_, handle, batch_chunk_);
+                                    aarpc_tp_, rpc_, handle, batch_data->batch_chunk_);
 
                         /* add the CBs for the batch of requests to the bulk
                          * request */
-                        batch_wu->loadwunits(batch_wu_items_);
-                        batch_wu_items_.clear();
+                        batch_wu->loadwunits(batch_data->batch_wu_items_);
+                        batch_data->batch_wu_items_.clear();
 
                         /* submit the bulk request */ 
                         submitWorkUnit(boost::bind(&AtomicAppendManager::runAARPCWorkUnit,
                                     batch_wu), iofwdutil::ThreadPool::HIGH);
 
                         /* reset the batch params */
-                        batch_chunk_ = 0;
-                        batch_size_ = 0;
+                        batch_data->batch_chunk_ = 0;
+                        batch_data->batch_size_ = 0;
 
                         /* cancel the timer */
-                        if(timer_running_)
+                        if(batch_data->timer_running_)
                         {
-                            timer_running_ = false;
-                            timer_.cancel(timer_handle_);
+                            batch_data->timer_running_ = false;
+                            timer_.cancel(batch_data->timer_handle_);
                         }
                     }
                 }
@@ -183,4 +205,3 @@ namespace iofwd
         }
     }
 }
-

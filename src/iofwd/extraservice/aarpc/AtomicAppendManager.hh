@@ -19,23 +19,18 @@ namespace iofwd
         class AtomicAppendManager : public iofwdutil::Singleton<
                                     AtomicAppendManager >
         {
+            protected:
+                class AtomicAppendBatchData;
+                friend class AtomicAppendBatchData;
+
             public:
                 AtomicAppendManager() :
                     aarpc_tp_(iofwdutil::ThreadPool::instance()),
                     rpc_(iofwd::service::ServiceManager::instance().loadService<
                             iofwd::extraservice::AtomicAppendClientRPC>("aarpcclient")),
                     batch_mode_(1),
-                    batch_limit_(2),
-                    batch_size_(0),
-                    batch_period_(10),
-                    batch_chunk_(0),
-                    timer_(iofwdevent::TimerResource::instance()),
-                    timer_running_(false)
+                    timer_(iofwdevent::TimerResource::instance())
                 {
-                    /* setup the timer cb for this object */
-                    timer_cb_ =
-                        boost::function<void(iofwdevent::CBException)>
-                        (boost::bind(&AtomicAppendManager::batchTimerCB, this, _1));
                 }
 
                 ~AtomicAppendManager()
@@ -253,51 +248,109 @@ namespace iofwd
 
             protected:
 
-                /* callback assumes that timer is running */
-                void batchTimerCB(iofwdevent::CBException e)
+                struct HandleCompare
                 {
-                    boost::mutex::scoped_lock l(batch_mutex_);
-                    zoidfs::zoidfs_handle_t * handle = NULL;
+                    bool operator() (const zoidfs::zoidfs_handle_t & a,
+                        const zoidfs::zoidfs_handle_t &b)
+                    {
+                        return memcmp(&a, &b, sizeof(zoidfs::zoidfs_handle_t));
+                    }
+                };
 
-                    /* check the exception */
-                    e.check();
-                    
-                    /* create a batch request */
-                    AtomicAppendBatchGetNextOffsetWorkUnit * batch_wu = new
-                            AtomicAppendBatchGetNextOffsetWorkUnit(
-                            aarpc_tp_, rpc_, handle, batch_chunk_);
-
-                    /* add the CBs for the batch of requests to the bulk
-                     * request */
-                    batch_wu->loadwunits(batch_wu_items_);
-                    batch_wu_items_.clear();
-
-                    /* submit the bulk request */ 
-                    submitWorkUnit(boost::bind(&AtomicAppendManager::runAARPCWorkUnit,
-                        batch_wu), iofwdutil::ThreadPool::HIGH);
-
-                    /* reset the batch params */
-                    batch_chunk_ = 0;
-                    batch_size_ = 0;
-
-                    /* turn the timer off */
-                    timer_running_ = false;
-                }
-
-                /* batch params and data */
-                boost::mutex batch_mutex_;
                 const int batch_mode_;
-                const int batch_limit_;
-                int batch_size_;
-                zoidfs::zoidfs_file_size_t curchunk_;
-                const int batch_period_;
-                int last_batch_time_;
-                int batch_chunk_;
-                std::vector<AtomicAppendGetNextOffsetWorkUnit *> batch_wu_items_;
+                boost::mutex batch_handle_mutex_;
+                std::map< zoidfs::zoidfs_handle_t, AtomicAppendBatchData *,
+                    HandleCompare > batch_handles_;
                 iofwdevent::TimerResource & timer_;
-                iofwdevent::TimerResource::Handle timer_handle_;
-                iofwdevent::CBType timer_cb_;
-                bool timer_running_;
+
+            protected:
+                class AtomicAppendBatchData
+                {
+                    protected:
+                    public:
+                        AtomicAppendBatchData(zoidfs::zoidfs_handle_t * h,
+                                int bl,
+                                int bs,
+                                int bp,
+                                int bc,
+                                iofwdutil::ThreadPool & tp,
+                                boost::shared_ptr<iofwd::extraservice::AtomicAppendClientRPC> & rpc,
+                                AtomicAppendManager * aa_manager) :
+                            handle_(*h),
+                            batch_limit_(bl),
+                            batch_size_(bs),
+                            batch_period_(bp),
+                            batch_chunk_(bc),
+                            timer_running_(false),
+                            aarpc_tp_(tp),
+                            rpc_(rpc),
+                            aa_manager_(aa_manager)
+                        {
+                            /* setup the timer cb for this handle */
+                            timer_cb_ =
+                                boost::function<void(iofwdevent::CBException)>
+                                (boost::bind(&AtomicAppendBatchData::batchTimerCB, this,
+                                    _1));
+                        }
+
+                        /* callback assumes that timer is running */
+                        void batchTimerCB(iofwdevent::CBException e)
+                        {
+                            boost::mutex::scoped_lock l(batch_mutex_);
+                            zoidfs::zoidfs_handle_t * handle = NULL;
+
+                            /* check the exception */
+                            e.check();
+
+                            /* create a batch request */
+                            AtomicAppendBatchGetNextOffsetWorkUnit * batch_wu = new
+                                    AtomicAppendBatchGetNextOffsetWorkUnit(
+                                    aarpc_tp_, rpc_, handle, batch_chunk_);
+
+                            /* add the CBs for the batch of requests to the bulk
+                             * request */
+                            batch_wu->loadwunits(batch_wu_items_);
+                            batch_wu_items_.clear();
+
+                            /* submit the bulk request */
+                            aa_manager_->submitWorkUnit(boost::bind(&AtomicAppendManager::runAARPCWorkUnit,
+                                        batch_wu), iofwdutil::ThreadPool::HIGH);
+
+                            /* reset the batch params */
+                            batch_chunk_ = 0;
+                            batch_size_ = 0;
+
+                            /* turn the timer off */
+                            timer_running_ = false;
+                        }
+
+                        /* batch lock */
+                        boost::mutex batch_mutex_;
+
+                        /* file target */
+                        zoidfs::zoidfs_handle_t handle_;
+
+                        /* batch items */
+                        std::vector< AtomicAppendGetNextOffsetWorkUnit * >
+                            batch_wu_items_;
+
+                        /* batch params */
+                        int batch_limit_;
+                        int batch_size_;
+                        int batch_period_; /* in ms */
+                        int batch_chunk_; /* in bytes */
+                       
+                        /* timer params */ 
+                        iofwdevent::CBType timer_cb_;
+                        bool timer_running_;
+                        iofwdevent::TimerResource::Handle timer_handle_;
+
+                        iofwdutil::ThreadPool & aarpc_tp_;
+                        boost::shared_ptr<iofwd::extraservice::AtomicAppendClientRPC>
+                            & rpc_;
+
+                        AtomicAppendManager * aa_manager_;
+                };
         };
     }
 }
