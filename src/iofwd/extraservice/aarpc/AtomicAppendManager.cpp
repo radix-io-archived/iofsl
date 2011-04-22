@@ -137,22 +137,22 @@ namespace iofwd
                 else
                 {
                     boost::mutex::scoped_lock l(batch_mutex_);
-                    /* we have not reached the batch size limit */
-                    if(batch_size_ < batch_limit_ - 1)
+                        
+                    /* update the batch params */
+                    batch_size_++;
+                    batch_chunk_ += incsize;
+                    batch_wu_items_.push_back(wu);
+
+                    /* if this is the first item, reset the batch timer */
+                    if(batch_size_ == 1 && batch_limit_ != 1)
                     {
-                        /* update the batch params */
-                        batch_size_++;
-                        batch_chunk_ += incsize;
-                        batch_wu_items_.push_back(wu);
+                        timer_handle_ = timer_.createTimer(timer_cb_,
+                                batch_period_);
+                        timer_running_ = true;
                     }
                     /* if this request will exceed the threshold */
-                    else
+                    else if(batch_size_ >= batch_limit_ - 1)
                     {
-                        /* update the batch params */
-                        batch_size_++;
-                        batch_chunk_ += incsize;
-                        batch_wu_items_.push_back(wu);
-
                         /* create a batch request */
                         AtomicAppendBatchGetNextOffsetWorkUnit * batch_wu = new
                             AtomicAppendBatchGetNextOffsetWorkUnit(
@@ -170,6 +170,13 @@ namespace iofwd
                         /* reset the batch params */
                         batch_chunk_ = 0;
                         batch_size_ = 0;
+
+                        /* cancel the timer */
+                        if(timer_running_)
+                        {
+                            timer_running_ = false;
+                            timer_.cancel(timer_handle_);
+                        }
                     }
                 }
             }

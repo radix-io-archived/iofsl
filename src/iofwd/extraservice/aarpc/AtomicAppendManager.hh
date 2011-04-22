@@ -10,6 +10,8 @@
 
 #include <boost/thread.hpp>
 
+#include "iofwdevent/TimerResource.hh"
+
 namespace iofwd
 {
     namespace extraservice
@@ -25,9 +27,15 @@ namespace iofwd
                     batch_mode_(1),
                     batch_limit_(2),
                     batch_size_(0),
-                    batch_period_(1),
-                    batch_chunk_(0)
+                    batch_period_(10),
+                    batch_chunk_(0),
+                    timer_(iofwdevent::TimerResource::instance()),
+                    timer_running_(false)
                 {
+                    /* setup the timer cb for this object */
+                    timer_cb_ =
+                        boost::function<void(iofwdevent::CBException)>
+                        (boost::bind(&AtomicAppendManager::batchTimerCB, this, _1));
                 }
 
                 ~AtomicAppendManager()
@@ -245,6 +253,37 @@ namespace iofwd
 
             protected:
 
+                /* callback assumes that timer is running */
+                void batchTimerCB(iofwdevent::CBException e)
+                {
+                    boost::mutex::scoped_lock l(batch_mutex_);
+                    zoidfs::zoidfs_handle_t * handle = NULL;
+
+                    /* check the exception */
+                    e.check();
+                    
+                    /* create a batch request */
+                    AtomicAppendBatchGetNextOffsetWorkUnit * batch_wu = new
+                            AtomicAppendBatchGetNextOffsetWorkUnit(
+                            aarpc_tp_, rpc_, handle, batch_chunk_);
+
+                    /* add the CBs for the batch of requests to the bulk
+                     * request */
+                    batch_wu->loadwunits(batch_wu_items_);
+                    batch_wu_items_.clear();
+
+                    /* submit the bulk request */ 
+                    submitWorkUnit(boost::bind(&AtomicAppendManager::runAARPCWorkUnit,
+                        batch_wu), iofwdutil::ThreadPool::HIGH);
+
+                    /* reset the batch params */
+                    batch_chunk_ = 0;
+                    batch_size_ = 0;
+
+                    /* turn the timer off */
+                    timer_running_ = false;
+                }
+
                 /* batch params and data */
                 boost::mutex batch_mutex_;
                 const int batch_mode_;
@@ -255,6 +294,10 @@ namespace iofwd
                 int last_batch_time_;
                 int batch_chunk_;
                 std::vector<AtomicAppendGetNextOffsetWorkUnit *> batch_wu_items_;
+                iofwdevent::TimerResource & timer_;
+                iofwdevent::TimerResource::Handle timer_handle_;
+                iofwdevent::CBType timer_cb_;
+                bool timer_running_;
         };
     }
 }
