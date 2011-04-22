@@ -103,11 +103,6 @@ protected:
                     delete w->client_;
                 }
 
-                /* reschedule the thread with more work from the tp */
-#ifndef USE_CRAY_TP
-                boost::this_thread::at_thread_exit(iofwdutil::ThreadPoolKick(w->tp_));
-#endif
-
                 /* cleanup the wrapper alloc */
                 delete w;
 

@@ -38,15 +38,6 @@ namespace iofwd
          /**
           * Conveniently create a thread to handle the RPC call
           */
-#ifndef USE_CRAY_TP 
-         static void threadRPC(const rpc::RPCHandler & h,
-               ZeroCopyInputStream * in, ZeroCopyOutputStream * out,
-               const rpc::RPCInfo & info)
-         {
-             /* create a new thread */
-             boost::thread(boost::bind(h, in, out, info));
-         }
-#else
          static void threadpoolRPC(const rpc::RPCHandler & h,
                ZeroCopyInputStream * in, ZeroCopyOutputStream * out,
                const rpc::RPCInfo & info)
@@ -57,15 +48,10 @@ namespace iofwd
              iofwdutil::ThreadPool::instance().submitWorkUnit(f,
                      iofwdutil::ThreadPool::HIGH);
          }
-#endif
 
          rpc::RPCHandler rpcExec(const rpc::RPCHandler & orig)
          {
-#ifdef USE_CRAY_TP 
             return boost::bind(&threadpoolRPC, orig, _1, _2, _3);
-#else
-            return boost::bind(&threadRPC, orig, _1, _2, _3);
-#endif
          }
       }
 
@@ -115,33 +101,18 @@ namespace iofwd
               AARPCCreateOffsetOut & out)
       {
           out.retcode = createOffsetInStorage(in.handle, out.offset);
-          
-          /* reschedule the thread with more work from the tp */
-#ifndef USE_CRAY_TP
-          boost::this_thread::at_thread_exit(iofwdutil::ThreadPoolKick(iofwdutil::ThreadPool::instance()));
-#endif
       }
 
       void AtomicAppendServerRPC::deleteOffset(const AARPCDeleteOffsetIn & in,
               AARPCDeleteOffsetOut & out)
       {
           out.retcode = deleteOffsetInStorage(in.handle);
-          
-          /* reschedule the thread with more work from the tp */
-#ifndef USE_CRAY_TP
-          boost::this_thread::at_thread_exit(iofwdutil::ThreadPoolKick(iofwdutil::ThreadPool::instance()));
-#endif
       }
 
       void AtomicAppendServerRPC::getNextOffset(const AARPCGetNextOffsetIn & in,
               AARPCGetNextOffsetOut & out)
       {
           out.retcode = getNextOffsetFromStorage(in.inc, in.handle, out.offset);
-          
-          /* reschedule the thread with more work from the tp */
-#ifndef USE_CRAY_TP
-          boost::this_thread::at_thread_exit(iofwdutil::ThreadPoolKick(iofwdutil::ThreadPool::instance()));
-#endif
       }
 
       uint64_t AtomicAppendServerRPC::createOffsetInStorage(const zoidfs::zoidfs_handle_t & handle,

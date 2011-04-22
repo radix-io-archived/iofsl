@@ -131,101 +131,57 @@ class ThreadPool : public Singleton< ThreadPool >
             boost::mutex::scoped_lock lock(queue_mutex_);
             if(prio == HIGH)
             {
-#ifndef USE_CRAY_TP
-                if(active_threads_ >= max_high_thread_count_)
-#else
                 if(high_active_threads_ >= max_high_thread_count_)
-#endif
                 {
                     prio_queue_.push(func);
                 }
                 else
                 {
-#ifndef USE_CRAY_TP
-                    active_threads_++;
-                    lock.unlock();
-                    boost::thread t (func);
-#else
                     high_active_threads_++;
                     IOFWDThread * wt = tpgroup_.top();
                     tpgroup_.pop();
                     lock.unlock();
                     wt->setPrio(prio);
                     wt->setWork(func);
-#endif
                 }
             }
             else
             {
-#ifndef USE_CRAY_TP
-                if(active_threads_ >= max_norm_thread_count_)
-#else
                 if(norm_active_threads_ >= max_norm_thread_count_)
-#endif
                 {
                     norm_queue_.push(func);
                 }
                 else
                 {
-#ifndef USE_CRAY_TP
-                    active_threads_++;
-                    lock.unlock();
-                    boost::thread t (func);
-#else
                     norm_active_threads_++;
                     IOFWDThread * wt = tpgroup_.top();
                     tpgroup_.pop();
                     lock.unlock();
                     wt->setPrio(prio);
                     wt->setWork(func);
-#endif
                 }
             }
         }
 
         void workUnitDone()
         {
-#ifndef USE_CRAY_TP
-            boost::mutex::scoped_lock lock(queue_mutex_);
-            active_threads_--;
-#endif
         }
 
         void startWorkUnit()
         {
-#ifndef USE_CRAY_TP
-            boost::mutex::scoped_lock lock(queue_mutex_);
-#endif
-
             if(prio_queue_.size() > 0)
             {
-#ifndef USE_CRAY_TP
-                boost::function<void ()> func = prio_queue_.front();
-                prio_queue_.pop(); 
-                active_threads_++;
-                lock.unlock();
-                boost::thread t (func);
-#else
                 boost::function<void ()> func = prio_queue_.front();
                 IOFWDThread * wt = tpgroup_.top();
                 tpgroup_.pop();
                 wt->setWork(func);
-#endif
             }
             else if(norm_queue_.size() > 0)
             {
-#ifndef USE_CRAY_TP
-                boost::function<void ()> func = norm_queue_.front();
-                norm_queue_.pop(); 
-                active_threads_++;
-                lock.unlock();
-                boost::thread t (func);
-#else
                 boost::function<void ()> func = norm_queue_.front();
                 IOFWDThread * wt = tpgroup_.top();
                 tpgroup_.pop();
                 wt->setWork(func);
-#endif
             }
         }
 
@@ -486,10 +442,6 @@ class ThreadPoolKick
 
         void operator()() const
         {
-#ifndef USE_CRAY_TP
-           tp_.workUnitDone();
-           tp_.startWorkUnit();
-#endif
         }
 
 

@@ -82,10 +82,6 @@ namespace iofwd
                 }
             };
 
-#ifndef USE_CRAY_TP
-            /* reschedule the thread with more work from the tp */
-            boost::this_thread::at_thread_exit(iofwdutil::ThreadPoolKick(aawu->tp_));
-#endif
             /* cleanup the wu */
             delete aawu;
         }
