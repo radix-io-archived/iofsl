@@ -228,12 +228,12 @@ namespace iofwdclient
         {
             public:
                 static CBSMWrapper * createCBSMWrapper(const IOFWDClientCB & cb,
-                        sm::SMClient * sm = NULL)
+                        sm::SMClientSharedPtr sm = NULL)
                 {
                     return new CBSMWrapper(cb, sm);
                 }
 
-                void set(sm::SMClient * sm)
+                void set(sm::SMClientSharedPtr sm)
                 {
                     sm_ = sm;
                 }
@@ -252,7 +252,7 @@ namespace iofwdclient
             protected:
                 /* prevent stack allocation and copying of CBWrapper objects */
                 CBSMWrapper(const IOFWDClientCB & cb,
-                        sm::SMClient * sm = NULL) :
+                        sm::SMClientSharedPtr sm = NULL) :
                     sm_(sm),
                     wcb_(boost::bind(&CBClient::cbWrapper, this, _1, _2))
                 {
@@ -273,11 +273,6 @@ namespace iofwdclient
                 {
                 }
 
-                CBSMWrapper & operator=(const CBSMWrapper & UNUSED(rhs))
-                {
-                    return *this;
-                }
-
                 /* empty callback... should never be invoked */
                 void cbsentinel(zoidfs::zoidfs_comp_mask_t UNUSED(mask),
                         const iofwdevent::CBException & UNUSED(cbexception))
@@ -289,7 +284,7 @@ namespace iofwdclient
                 friend class CBClient;
 
                 IOFWDClientCB cb_;
-                sm::SMClient * sm_;
+                sm::SMClientSharedPtr sm_;
                 const IOFWDClientCB wcb_;
          };
         

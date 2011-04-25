@@ -46,13 +46,7 @@ namespace iofwdclient
    CBClient::~CBClient ()
    {
    }
-//    @TODO: This needs to be changed, possibly use the CommStream class?
-//   void CBClient::setRPCMode ( boost::shared_ptr<iofwd::RPCClient> rpcclient,
-//                              net::AddressPtr addr)
-//   {
-//      client_ = rpcclient;
-//      addr_ = addr;
-//   }
+
 
    void CBClient::cbWrapper(CBSMWrapper * cbsm,
            zoidfs::zoidfs_comp_mask_t mask,
@@ -76,9 +70,8 @@ namespace iofwdclient
        CBSMWrapper * cbsm = CBSMWrapper::createCBSMWrapper(cb);
 
        /* create the state machine */
-       iofwdclient::clientsm::GetAttrClientSM * sm =
-           new iofwdclient::clientsm::GetAttrClientSM(*smm_, poll_,
-                   cbsm->getWCB(), addr_, ret, handle, attr, op_hint);
+       sm::SMClientSharedPtr sm(new iofwdclient::clientsm::GetAttrClientSM(*smm_, poll_,
+                                cbsm->getWCB(), addr_, ret, handle, attr, op_hint));
       
        /* add the sm to the cb wrapper */ 
        cbsm->set(sm);
@@ -107,10 +100,9 @@ namespace iofwdclient
        comm.reset(new RPCCommClientSMCreate (smm_, rpc_handle, poll_));
        
        /* create the state machine */
-       iofwdclient::clientsm::CreateClientSM * sm =
-           new iofwdclient::clientsm::CreateClientSM(*smm_, poll_, comm, 
-                   cbsm->getWCB(), ret, parent_handle, component_name, full_path,
-                   sattr, handle, created, op_hint);
+       sm::SMClientSharedPtr sm(new iofwdclient::clientsm::CreateClientSM(*smm_, poll_, comm, 
+                                cbsm->getWCB(), ret, parent_handle, component_name, full_path,
+                                sattr, handle, created, op_hint));
       
        /* add the sm to the cb wrapper */ 
        cbsm->set(sm);
@@ -137,10 +129,9 @@ namespace iofwdclient
        comm.reset(new RPCCommClientSMLookup (smm_, rpc_handle, poll_));
        
        /* create the state machine */
-       iofwdclient::clientsm::LookupClientSM * sm =
-           new iofwdclient::clientsm::LookupClientSM(*smm_, poll_, comm, 
-                   cbsm->getWCB(), ret, parent_handle, component_name, full_path,
-                   handle, op_hint);
+       sm::SMClientSharedPtr sm(new iofwdclient::clientsm::LookupClientSM(*smm_, poll_, comm, 
+                                cbsm->getWCB(), ret, parent_handle, component_name, full_path,
+                                handle, op_hint));
       
        /* add the sm to the cb wrapper */ 
        cbsm->set(sm);
@@ -167,10 +158,9 @@ namespace iofwdclient
        comm.reset(new RPCCommClientSMWrite (smm_, rpc_handle, poll_));
        
        /* create the state machine */
-       iofwdclient::clientsm::WriteClientSM * sm =
-           new iofwdclient::clientsm::WriteClientSM(*smm_, poll_, comm, 
-                   cbsm->getWCB(), ret, handle, mem_count, mem_starts, mem_sizes,
-                   file_count, file_starts, file_sizes, op_hint);
+       sm::SMClientSharedPtr sm(new iofwdclient::clientsm::WriteClientSM(*smm_, poll_, comm, 
+                                cbsm->getWCB(), ret, handle, mem_count, mem_starts, mem_sizes,
+                                file_count, file_starts, file_sizes, op_hint));
       
        /* add the sm to the cb wrapper */ 
        cbsm->set(sm);
@@ -198,10 +188,9 @@ namespace iofwdclient
        comm.reset(new RPCCommClientSMRead (smm_, rpc_handle, poll_));
        
        /* create the state machine */
-       iofwdclient::clientsm::ReadClientSM * sm =
-           new iofwdclient::clientsm::ReadClientSM(*smm_, poll_, comm, 
-                   cbsm->getWCB(), ret, handle, mem_count, mem_starts, mem_sizes,
-                   file_count, file_starts, file_sizes, op_hint);
+       sm::SMClientSharedPtr sm(new iofwdclient::clientsm::ReadClientSM(*smm_, poll_, comm, 
+                                cbsm->getWCB(), ret, handle, mem_count, mem_starts, mem_sizes,
+                                file_count, file_starts, file_sizes, op_hint));
       
        /* add the sm to the cb wrapper */ 
        cbsm->set(sm);

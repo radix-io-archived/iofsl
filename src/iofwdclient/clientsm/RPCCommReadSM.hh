@@ -8,8 +8,7 @@
 #include "rpc/RPCKey.hh"
 #include "sm/SMManager.hh"
 #include "iofwdclient/IOFWDClientCB.hh"
-#include <cstdio>
-
+#include "sm/SMClient.hh"
 namespace iofwdclient
 {
     using namespace streamwrappers;
@@ -33,16 +32,16 @@ namespace clientsm
          void connect(const INTYPE & in_, OUTTYPE & out_, 
                       const iofwdevent::CBType & cb_)
          {
-            server_sm_ = new RPCClientRead<INTYPE,OUTTYPE>(*smm_, poll_, cb_,
+            server_sm_ .reset(new RPCClientRead<INTYPE,OUTTYPE>(*smm_, poll_, cb_,
                                                             rpc_handle_, in_, 
-                                                            out_);
-            smm_->schedule(server_sm_);
+                                                            out_));
+	          server_sm_->execute();
          }
 
       protected:
          bool poll_;
          boost::shared_ptr<sm::SMManager> smm_;
-         sm::SMClient * server_sm_;
+         sm::SMClientSharedPtr server_sm_;
          rpc::RPCClientHandle rpc_handle_;
    };
 }
