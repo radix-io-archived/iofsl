@@ -9,7 +9,7 @@ namespace iofwd
 const IOFSLRPCLookupRequest::ReqParam & IOFSLRPCLookupRequest::decodeParam()
 {
     /* decode the rpc input params */
-    decode();
+   // decode();
    if(inStruct.info.full_path.value.c_str()[0])
    {
       param_.full_path = (char *)inStruct.info.full_path.value.c_str();

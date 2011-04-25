@@ -56,7 +56,8 @@ namespace iofwd
               virtual ~IOFSLRPCReadRequest();
 
               /* encode and decode helpers for RPC data */
-              void decode();
+              void decode(const CBType & cb);
+              void processDecode(const CBType & cb);
               void encode();
 
               ReqParam & decodeParam ();
