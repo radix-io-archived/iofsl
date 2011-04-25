@@ -6,6 +6,7 @@
 #include "SMManager.hh"
 #include "SMClient.hh"
 #include "iofwdevent/CBType.hh"
+#include "iofwdutil/IntrusiveHelper.hh"
 
 namespace sm
 {
@@ -67,15 +68,15 @@ namespace sm
          if (!running_)
          {
              /* if we are in poll mode, execute the next state now ! */
-             //if(poll_)
-             //{
-             //   execute();
-             //}
+             if(poll_)
+             {
+                execute();
+             }
              ///* other wise, submit to the SMManager */
-             //else
-             //{
+             else
+             {
                 smm_.schedule(this);
-             //}
+             }
          }
       }
 
@@ -141,7 +142,6 @@ SimpleSM<T>::~SimpleSM ()
 template <typename T>
 bool SimpleSM<T>::execute ()
 {
-   boost::intrusive_ptr<sm::SimpleSM<T> > self (this);
    {
       boost::mutex::scoped_lock l2(state_lock_);
 
@@ -166,7 +166,6 @@ bool SimpleSM<T>::execute ()
          next_ = 0;
          next_status_.clear ();
       }
-
       (dynamic_cast<T*>(this)->*next)(next_status);
 
       {
