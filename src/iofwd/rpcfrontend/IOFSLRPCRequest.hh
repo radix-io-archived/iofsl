@@ -34,7 +34,7 @@ namespace iofwd
                ~IOFSLRPCRequest();
            protected:
               
-               virtual void decode() = 0;
+               virtual void decode(const iofwdevent::CBType & cb) = 0;
                virtual void encode() = 0;
 
                /* data members */

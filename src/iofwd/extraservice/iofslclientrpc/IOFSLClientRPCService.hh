@@ -43,9 +43,10 @@ namespace iofwd
          protected:
 
             /* rpc handlers */
-            void write (iofwdevent::ZeroCopyInputStream * in, 
-                        iofwdevent::ZeroCopyOutputStream * out, 
-                        const rpc::RPCInfo & );
+            void submitRequest ( iofwd::Request * r);
+//            void write (iofwdevent::ZeroCopyInputStream * in, 
+//                        iofwdevent::ZeroCopyOutputStream * out, 
+//                        const rpc::RPCInfo & );
 //            RPC_GENCLIENTHEADERS (IOFSLRPCCommitRequest, commit)
             RPC_GENCLIENTHEADERS (IOFSLRPCCreateRequest, create)
 //            RPC_GENCLIENTHEADERS (IOFSLRPCGetAttrRequest, getattr)
@@ -62,7 +63,7 @@ namespace iofwd
 //            RPC_GENCLIENTHEADERS (IOFSLRPCResizeRequest, resize)
 //            RPC_GENCLIENTHEADERS (IOFSLRPCSetAttrRequest, setattr)
 //            RPC_GENCLIENTHEADERS (IOFSLRPCSymLinkRequest, symlink)
-//            RPC_GENCLIENTHEADERS (IOFSLRPCWriteRequest, write)
+            RPC_GENCLIENTHEADERS (IOFSLRPCWriteRequest, write)
 
 
 //            void getattr(iofwdevent::ZeroCopyInputStream * in,
@@ -79,6 +80,7 @@ namespace iofwd
             boost::shared_ptr<iofwd::RPCServer> rpcserver_;
             iofwdutil::IOFWDLogSource & log_;
             iofwdutil::ThreadPool & tp_;
+            iofwdevent::CBType submitReq;
            
       };
    }

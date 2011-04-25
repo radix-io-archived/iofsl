@@ -11,22 +11,18 @@ namespace iofwd
    namespace rpcfrontend
    {
 
-      void IOFSLRPCWriteRequest::decode()
+      void IOFSLRPCWriteRequest::decode(const CBType & cb)
       {
-
-         iofwdevent::SingleCompletion block;
-
-         /* sanity */
-         block.reset();      
-
-         /* prepare to read from the in stream */
+         CBType decodeComplete = boost::bind(&IOFSLRPCWriteRequest::processDecode, this, cb);
          insize_ = 15000;
 
          /* Read Stream */
          in_->read(reinterpret_cast<const void **>(&read_ptr_),
-                 &read_size_, block, insize_);
-         block.wait();
-   
+                 &read_size_, decodeComplete, insize_);
+      }
+
+      void IOFSLRPCWriteRequest::processDecode(const CBType & cb)
+      {
          /* Start RPCDecoder */            
          dec_ = rpc::RPCDecoder(read_ptr_, read_size_);
 
@@ -43,16 +39,12 @@ namespace iofwd
          process (dec_, encoder::EncVarArray( dec_struct.file_starts_, dec_struct.file_count_));
          process (dec_, encoder::EncVarArray( dec_struct.file_sizes_, dec_struct.file_count_));
 
-         block.reset();
-         in_->rewindInput (read_size_ - dec_.getPos(), block);
-         block.wait();
-  
          /* Hint decoding disabled currently */
 //         zoidfs::hints::zoidfs_hint_create(&op_hint_);  
 //         decodeOpHint(&op_hint_); 
 
+         in_->rewindInput (read_size_ - dec_.getPos(), cb);
       }
-
 
       void IOFSLRPCWriteRequest::encodeCB(const CBType & cb)
       {
@@ -107,11 +99,11 @@ namespace iofwd
             block.wait();
 
       }
-
+      
       IOFSLRPCWriteRequest::ReqParam & IOFSLRPCWriteRequest::decodeParam() 
       { 
-
-          decode(); 
+          /* Values should already be decoded by now */
+//          decode(); 
           param_.handle = &dec_struct.handle_;
           param_.mem_starts.reset((char **)dec_struct.mem_starts_);
           param_.mem_sizes.reset(dec_struct.mem_sizes_);

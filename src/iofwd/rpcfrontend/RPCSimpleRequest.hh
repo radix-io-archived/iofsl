@@ -52,16 +52,10 @@ namespace iofwd
                IOFSLRPCRequest (in,out)
           {
           }
-          void decode()
+
+          void decode(const iofwdevent::CBType & cb)
           {
-//            encoder::xdr::XDRSizeProcessor * size_ = new 
-//                                            encoder::xdr::XDRSizeProcessor();
-
-            iofwdevent::SingleCompletion block;
-
-            /* sanity */
-            block.reset();      
-
+            iofwdevent::CBType decodeComplete = boost::bind(&RPCSimpleRequest<IN,OUT>::processDecode, this, cb);
             /* prepare to read from the in stream */
   
             // @TODO: Not using actual size until size function is fixed 
@@ -70,16 +64,19 @@ namespace iofwd
             
             /* Read Stream */
             in_->read(reinterpret_cast<const void **>(&read_ptr_),
-                    &read_size_, block, insize_);
-            block.wait();
-      
+                    &read_size_, decodeComplete, insize_);
+          }
+
+          void processDecode (const iofwdevent::CBType & cb)
+          {
             /* Start RPCDecoder */            
             dec_ = rpc::RPCDecoder(read_ptr_, read_size_);
 
             /* Process the struct */
-            process (dec_, inStruct);
+            process (dec_, inStruct);            
+            cb(iofwdevent::CBException());
           }
-    
+
           void encode()
           {
 //            encoder::xdr::XDRSizeProcessor * size_ = new 

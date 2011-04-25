@@ -59,7 +59,8 @@ namespace iofwd
               ~IOFSLRPCWriteRequest();
 
               /* encode and decode helpers for RPC data */
-              void decode();
+              void decode(const CBType & cb);
+              void processDecode(const CBType & cb);
               void encodeCB(const CBType & cb);
               void encode();
 
@@ -82,7 +83,8 @@ namespace iofwd
               void releaseBuffer(RetrievedBuffer * rb);
 
               size_t readBuffer (void ** buff, size_t size, bool forceSize);
-      
+
+              void preformDecode(const CBType & cb);
           protected:
               /* data size helpers for this request */ 
                size_t rpcEncodedInputDataSize(); 
