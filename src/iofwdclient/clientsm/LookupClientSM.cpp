@@ -13,7 +13,6 @@ namespace iofwdclient
 
 LookupClientSM::~LookupClientSM()
 {
-cb_(zoidfs::ZFS_COMP_DONE, iofwdevent::CBException());
 }
 
 void LookupClientSM::init(iofwdevent::CBException e)
@@ -36,6 +35,7 @@ void LookupClientSM::postRPCServerSM(iofwdevent::CBException e)
 void LookupClientSM::waitRPCServerSM(iofwdevent::CBException e)
 {
     e.check();
+    cb_(zoidfs::ZFS_COMP_DONE, e);
 }
 
 void LookupClientSM::postSMErrorState(iofwdevent::CBException e)
