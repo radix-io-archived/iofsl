@@ -69,7 +69,7 @@ class RPCServerSM :
             e.check();
 
             /* Get the maximum possible send size */
-            e_.net_data_size_ = rpc::getRPCEncodedSize(INTYPE()).getMaxSize();
+            e_.net_data_size_ = rpc::getRPCEncodedSize(e_.data_).getMaxSize();
             /* Set the output stream */
             rpc_handle_->waitOutReady (slots_[BASE_SLOT]);
             slots_.wait (BASE_SLOT, 
@@ -93,8 +93,6 @@ class RPCServerSM :
             slots_.wait (BASE_SLOT, 
                        &RPCServerSM<INTYPE,OUTTYPE>::waitSetupConnection);
 
-            /* Temporarily Added to check state machine progression */
-            //setNextMethod(&RPCServerSM<INTYPE,OUTTYPE>::waitSetupConnection);
         }
 
         
@@ -108,18 +106,16 @@ class RPCServerSM :
         void postEncodeData(iofwdevent::CBException e)
         {
             e.check();
-
             /* create the encoder */
+
             e_.coder_ = rpc::RPCEncoder(e_.data_ptr_, e_.data_size_);
 
             process(e_.coder_, e_.data_);
-            e_.zero_copy_stream_->rewindOutput(e_.data_size_ - e_.net_data_size_, slots_[BASE_SLOT]);
+            e_.zero_copy_stream_->rewindOutput(e_.data_size_ - e_.coder_.getPos(), slots_[BASE_SLOT]);
 
             slots_.wait(BASE_SLOT,
                     &RPCServerSM<INTYPE,OUTTYPE>::waitEncodeData);
 
-            /* Temporarily Added to check state machine progression */
-//            setNextMethod(&RPCServerSM<INTYPE,OUTTYPE>::waitEncodeData);
         }
 
         void waitEncodeData(iofwdevent::CBException e)
@@ -141,8 +137,6 @@ class RPCServerSM :
             slots_.wait(BASE_SLOT,
                     &RPCServerSM<INTYPE,OUTTYPE>::waitFlush);
 
-            /* Temporarily Added to check state machine progression */
-//            setNextMethod ( &RPCServerSM<INTYPE,OUTTYPE>::waitFlush);
         }
 
         void waitFlush(iofwdevent::CBException e)
@@ -164,14 +158,11 @@ class RPCServerSM :
 
             slots_.wait(BASE_SLOT,
                     &RPCServerSM<INTYPE,OUTTYPE>::waitDecodeData);
-            /* Temporarily Added to check state machine progression */
-//            setNextMethod (&RPCServerSM<INTYPE,OUTTYPE>::waitDecodeData);
         }
 
         void waitDecodeData(iofwdevent::CBException e)
         {
             e.check();
-
             d_.coder_ = rpc::RPCDecoder(d_.data_ptr_, d_.data_size_);
 
             process(d_.coder_, d_.data_);
@@ -180,7 +171,6 @@ class RPCServerSM :
                 fprintf(stderr, "%s:%i ERROR undecoded data...\n", __func__,
                         __LINE__);
             }
-            //fprintf(stderr, "RPCServerSM:%s:%p\n", __func__,cb_);
             
             cb_ (e);
         }
