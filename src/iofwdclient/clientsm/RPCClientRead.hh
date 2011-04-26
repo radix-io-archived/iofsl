@@ -80,6 +80,7 @@ class RPCClientRead :
 
         void outputReady (iofwdevent::CBException e)
         {
+            e.check();
             e_.zero_copy_stream_.reset((rpc_handle_->getOut()));
 
             setNextMethod(&RPCClientRead<INTYPE,OUTTYPE>::postSetupConnection);
@@ -182,6 +183,7 @@ class RPCClientRead :
         /* Rewind the read after the header has been decoded */
         void rewindRead (iofwdevent::CBException e)
         {
+            e.check();
             outStream_.reset(new OUTTYPE(static_cast<zoidfs::zoidfs_op_hint_t *>(NULL),
                                          static_cast<size_t>(d_.data_.mem_count_),
                                          static_cast<void **>(d_.data_.mem_starts_),
@@ -196,6 +198,7 @@ class RPCClientRead :
         /* Get the read buffer for reading data */
         void getReadBuffer (iofwdevent::CBException e)
         {
+            e.check();
             /* setup the write stream */
             d_.zero_copy_stream_->read(const_cast<const void **>(&d_.data_ptr_),
                     &d_.data_size_, slots_[BASE_SLOT], RemainingRead(outStream_.get()));
@@ -207,7 +210,7 @@ class RPCClientRead :
         /* read data from output stream */
         void readData (iofwdevent::CBException e)
         {
-         
+            e.check();
             size_t outSize = d_.data_size_;
             int ret = getReadData (d_.data_ptr_, outSize, outStream_.get());
             /* read finished */

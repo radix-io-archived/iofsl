@@ -3,7 +3,7 @@
 
 #include "iofwdevent/ZeroCopyOutputStream.hh"
 #include "MessageQueue.hh"
-
+#include "iofwdevent/CBException.hh"
 namespace net
 {
    namespace loopback
@@ -31,7 +31,7 @@ namespace net
             iofwdevent::Handle flush (const iofwdevent::CBType & cb);
 
             virtual ~LoopbackOutput ();
-            void close (const iofwdevent::CBType & cb) {}
+            void close (const iofwdevent::CBType & cb) { cb(iofwdevent::CBException());}
 
          protected:
             void internal_flush ();

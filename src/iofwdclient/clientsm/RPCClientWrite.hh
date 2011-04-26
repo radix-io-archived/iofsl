@@ -86,6 +86,7 @@ class RPCClientWrite :
 
         void outputReady (iofwdevent::CBException e)
         {
+            e.check();
          
             e_.zero_copy_stream_.reset((rpc_handle_->getOut()));
 
@@ -132,7 +133,8 @@ class RPCClientWrite :
         /* Get the write buffer for writing data */
         void getWriteBuffer (iofwdevent::CBException e)
         {
-         
+            e.check();         
+
             /* setup the write stream */
             e_.zero_copy_stream_->write(&e_.data_ptr_, &e_.data_size_, slots_[BASE_SLOT],
                     RemainingWrite(inStream_.get()));
@@ -142,7 +144,8 @@ class RPCClientWrite :
 
         void flushWriteBuffer (iofwdevent::CBException e)
         {
-         
+            e.check();
+
             e_.zero_copy_stream_->flush(slots_[BASE_SLOT]);
             slots_.wait(BASE_SLOT,
                     &RPCClientWrite<INTYPE,OUTTYPE>::getWriteBuffer);  
@@ -151,6 +154,7 @@ class RPCClientWrite :
         /* Write data to output stream */
         void writeData (iofwdevent::CBException e)
         {
+            e.check();
          
             size_t outSize = e_.data_size_;
             int ret = getWriteData (&e_.data_ptr_, &outSize, inStream_.get());

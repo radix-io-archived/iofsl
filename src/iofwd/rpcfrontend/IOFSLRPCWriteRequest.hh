@@ -82,7 +82,7 @@ namespace iofwd
 
               void releaseBuffer(RetrievedBuffer * rb);
 
-              size_t readBuffer (void ** buff, size_t size, bool forceSize);
+              size_t readBuffer (void ** buff, size_t size, bool UNUSED(forceSize));
 
               void preformDecode(const CBType & cb);
           protected:

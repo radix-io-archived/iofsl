@@ -174,7 +174,7 @@ namespace iofwd
          
       }
 
-      size_t IOFSLRPCReadRequest::writeBuffer(void * buff, size_t size, bool flush)
+      size_t IOFSLRPCReadRequest::writeBuffer(void * buff, size_t size, bool UNUSED(flush))
       {
          
           size_t outsize = 0;

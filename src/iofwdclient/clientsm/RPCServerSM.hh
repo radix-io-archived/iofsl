@@ -78,6 +78,8 @@ class RPCServerSM :
 
         void outputReady (iofwdevent::CBException e)
         {
+            e.check();
+
             e_.zero_copy_stream_.reset((rpc_handle_->getOut()));
 
             setNextMethod(&RPCServerSM<INTYPE,OUTTYPE>::postSetupConnection);

@@ -258,8 +258,8 @@ namespace iofwdclient
       if (ret != ZFS_OK)
          return ret;
 
-      int status;
-      ret = asclient_.request_get_error (req, &status);
+//      int status;
+//      ret = asclient_.request_get_error (req, &status);
 //      fprintf (stderr, "RETURN: %i\n",ret);
       // THis is now incorrect, this should check the client via some other means
       // get_error should never fail?

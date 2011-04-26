@@ -13,8 +13,8 @@ void LogResult ( ofstream * f, char * s, double runTime, size_t outLen,
   delete[] outStr;
 }
 
-void control (char * address, char * config, char * inDataset, 
-              char * outDataset, int readSize, int  runs, char* csvOutput)
+void control (char * UNUSED(address), char * UNUSED(config), char * inDataset, 
+              char * UNUSED(outDataset), int UNUSED(readSize), int  runs, char* csvOutput)
 {
   ofstream logfile;
   double start, end;
@@ -45,7 +45,7 @@ int main(int argc, char *argv[])
     if (argc < 4)
       return -1;
 
-    int n, rank, size, i; 
+    int rank, size; 
     MPI::Init(argc, argv);           
     size = MPI::COMM_WORLD.Get_size(); 
     rank = MPI::COMM_WORLD.Get_rank(); 
