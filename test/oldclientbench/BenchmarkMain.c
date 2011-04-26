@@ -11,8 +11,8 @@ void LogResult ( FILE * f, char * s, double runTime, size_t outLen,
   free (outStr);
 }
 
-void control (char * address, char * config, char * inDataset, 
-              char * outDataset, int readSize, int  runs, char* csvOutput)
+void control (char * UNUSED(address), char * UNUSED(config), char * inDataset, 
+              char * UNUSED(outDataset), int UNUSED(readSize), int  runs, char* csvOutput)
 {
   FILE * logfile;
   double start, end;
@@ -51,7 +51,7 @@ int main(int argc, char *argv[])
     int readSize = atoi(argv[5]);
     char * csvOutput = argv[6];    
     MPI_Init(0, NULL);           
-    int n, rank, size, i; 
+    int rank, size; 
     MPI_Comm_size(MPI_COMM_WORLD, &size); 
     MPI_Comm_rank(MPI_COMM_WORLD, &rank); 
     setenv("ZOIDFS_ION_NAME",address,1);
@@ -61,5 +61,6 @@ int main(int argc, char *argv[])
       test (address, config, inDataset, outDataset, readSize, runs);
     
     MPI_Finalize(); 
+    return 0;
 }
 

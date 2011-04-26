@@ -12,6 +12,9 @@
 
 #include <boost/shared_ptr.hpp>
 #include "iofwdclient/IOFWDRequest.hh"
+
+#include "iofwdutil/tools.hh"
+
 namespace iofwdclient
 {
    //========================================================================
@@ -164,7 +167,10 @@ namespace iofwdclient
                    zoidfs::zoidfs_timeout_t timeout,
                    zoidfs::zoidfs_comp_mask_t mask);
 
-         int request_get_error (zoidfs::zoidfs_request_t request, int * error) { return zoidfs::ZFS_OK;};
+         int request_get_error (zoidfs::zoidfs_request_t UNUSED(request), int * UNUSED(error))
+         { 
+            return zoidfs::ZFS_OK;
+         };
 
          int request_get_comp_state (zoidfs::zoidfs_request_t,
                zoidfs::zoidfs_comp_mask_t *);

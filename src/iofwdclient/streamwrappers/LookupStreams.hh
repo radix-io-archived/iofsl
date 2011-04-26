@@ -25,7 +25,7 @@ namespace iofwdclient
                  LookupInStream( const zoidfs::zoidfs_handle_t *parent_handle = NULL,
                          const char *component_name = NULL,
                          const char *full_path = NULL,
-                         zoidfs::zoidfs_op_hint_t * op_hint = NULL) :
+                         zoidfs::zoidfs_op_hint_t * UNUSED(op_hint) = NULL) :
                      parent_handle_(parent_handle),
                      component_name_(component_name),
                      full_path_(full_path)
@@ -42,7 +42,7 @@ namespace iofwdclient
       {
           public:
               LookupOutStream(zoidfs::zoidfs_handle_t *handle = NULL,
-                      zoidfs::zoidfs_op_hint_t * op_hint = NULL) :
+                      zoidfs::zoidfs_op_hint_t * UNUSED(op_hint) = NULL) :
                   handle_(handle)
                   //op_helper_(op_hint)
               {

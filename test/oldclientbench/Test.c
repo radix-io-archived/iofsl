@@ -7,7 +7,7 @@ void lookupInput (zoidfs_handle_t * outHandle, char * filename)
    fprintf (stderr, "LOOKUP\n");       
 }
 
-void test (char * address, char * config, char * inDataset, char * outDataset, 
+void test (char * UNUSED(address), char * UNUSED(config), char * inDataset, char * outDataset, 
            int readSize, int runs)
 {
   int ret;

@@ -181,7 +181,7 @@ namespace iofwd
 
       }
 
-      size_t IOFSLRPCWriteRequest::readBuffer (void ** buff, size_t sizdec_, bool forceSize)
+      size_t IOFSLRPCWriteRequest::readBuffer (void ** buff, size_t sizdec_, bool UNUSED(forceSize))
       {
 
          size_t ret = 0;
@@ -227,7 +227,7 @@ namespace iofwd
           void * loc;
           do
           {
-            loc = (void*)&(param_.mem_starts[i][outSize]);
+            loc = (void*)&(((char*)rb->buffer_->getMemory())[outSize]);
             outSize += readBuffer((void**)&loc, param_.mem_sizes[i] - outSize, TRUE);
             if (outSize == param_.mem_sizes[i])
             {
