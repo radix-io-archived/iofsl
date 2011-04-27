@@ -197,12 +197,13 @@ namespace iofwdutil
 
                      // If the user indicates a flush and we don't have any
                      // more input data, we're done.
-                     if (flushflag && iostate_read_.empty ())
+                     if (iostate_read_.empty ())
                      {
-                        curstate_ = TRANSFORM_DONE;
+                        curstate_ = CONSUME_OUTBUF;
                         *written = iostate_write_.getWritten ();
                         *outstate = curstate_;
-                        internal_state_ = FLUSHED;
+                        update_out_ = true;
+                        //internal_state_ = READING_HEADER;
                         return;
                      }
 
