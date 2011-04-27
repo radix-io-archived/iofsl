@@ -24,6 +24,10 @@ namespace iofwd
 
       void IOFSLRPCReadRequest::processDecode(const CBType & cb)
       {
+         /* For transforms, if there is nothing to read (aka a full block has 
+            not been decoded) return to decode to read some more */
+         if (read_size_ == 0)
+            decode(cb);
          /* Start RPCDecoder */            
          dec_ = rpc::RPCDecoder(read_ptr_, read_size_);
 
@@ -258,12 +262,11 @@ namespace iofwd
           } while ( i < param_.mem_count);
           if (out_->type == 'T')
           {
-            block.reset();
-            out_->close(block);
-            block.wait();   
+            //block.reset();
+            out_->close(cb);
+            //block.wait();   
           }
-
-         
+          else
           cb(iofwdevent::CBException());
       }
 
@@ -308,6 +311,7 @@ namespace iofwd
             out_->close(block);
             block.wait();   
           }
+        
 //          ASSERT (total_write <= param_.mem_total_size);
           
          cb(iofwdevent::CBException());

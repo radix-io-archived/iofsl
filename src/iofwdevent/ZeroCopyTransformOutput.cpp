@@ -131,13 +131,23 @@ namespace iofwdevent {
     else if (outState == CONSUME_OUTBUF)
     /* If we are out of output buffer, repeat this run */
     {
-      getWriteLoc(ptr, size, cb, suggested);
+      SingleCompletion block;
+      block.reset();
+      outStream->flush(block);
+      block.wait();
+     getWriteLoc(ptr, size, cb, suggested);
     }
     
     /* We should never get here, transformation should not be signaled as done
        at this location */
     assert (outState != 0);
   }
+
+
+//  int ZeroCopyTransformOutput::flushStream ()
+//  {
+//    CBType transCB = boost::bind(&ZeroCopyTransformOutput::flushTransform,
+//                                 boost::ref(*this), cb, writeLoc, writeSize);
 
   /**
    * Preform the transform on input data to output data 
@@ -163,8 +173,6 @@ namespace iofwdevent {
     }
 
     /* Create a null callback for reading of transformStorage (non blocking) */
-//    CBType nullCB = boost::bind(&ZeroCopyTransformOutput::nullCB,
-//                                boost::ref(*this), _1);
 
     /* preform the transform */
     transform->transform ((const void *const) intMemPtr, intMemSize,
@@ -221,16 +229,6 @@ namespace iofwdevent {
                                                 size_t * writeSize)
   {
     int outState = 0;
-    
-//    /* Preform the transform */
-//    if (internalBuf->getBufferUsed() == 0 || internalBuf->getBufferUsed() < internalBuf->getBufferSize() )
-//    {
-//      flushFlag = true;
-//    }
-//    else
-//    {
-//      flushFlag = false;
-//    }
 
     if (dataWritten == true)
        outState = doTransform ( writeLoc, writeSize, flushFlag);
@@ -248,16 +246,6 @@ namespace iofwdevent {
       internalBuf->reset();
       cb(CBException());
     }
-//    /* If there is output that has not been consumed, preform another flush */
-//    if (outState == SUPPLY_INBUF)
-//    {
-//      flush(cb);
-//    }
-//    /* Else flush the output stream and call the users callback */
-//    else if (outState == CONSUME_OUTBUF || flushFlag == true)
-//    {
-//      outStream->flush(cb);
-//    }
   }
 
   /* Close out the stream */

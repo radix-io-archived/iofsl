@@ -23,6 +23,10 @@ namespace iofwd
 
       void IOFSLRPCWriteRequest::processDecode(const CBType & cb)
       {
+         /* For transforms, if there is nothing to read (aka a full block has 
+            not been decoded) return to decode to read some more */
+         if (read_size_ == 0)
+            decode(cb);
          /* Start RPCDecoder */            
          dec_ = rpc::RPCDecoder(read_ptr_, read_size_);
 

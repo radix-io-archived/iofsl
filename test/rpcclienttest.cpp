@@ -77,6 +77,7 @@ int main (int argc, char ** args)
       opt_server = vm.count ("server");
       // Needed to autoregister services
       registerIofwdFactoryClients ();
+      registerIofwdutilFactoryClients ();      
       ServiceManager & man = ServiceManager::instance ();
       man.setParam ("config.configfile", opt_config);
 
