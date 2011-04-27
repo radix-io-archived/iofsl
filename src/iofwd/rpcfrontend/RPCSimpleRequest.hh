@@ -69,6 +69,8 @@ namespace iofwd
 
           void processDecode (const iofwdevent::CBType & cb)
           {
+            if (read_size_ == 0)
+              decode(cb);
             /* Start RPCDecoder */            
             dec_ = rpc::RPCDecoder(read_ptr_, read_size_);
 

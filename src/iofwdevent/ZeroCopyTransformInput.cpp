@@ -21,7 +21,7 @@ namespace iofwdevent
         transform_ (transform),
         buffSize_ (bufSize ? bufSize : 4*1024*1024),
         buff_ (new char[buffSize_]),
-        streamStorage_ (buff_.get(), buffSize_),
+        streamStorage_ (buff_.get(), 0),
         inStreamData_ (0),
         inStreamSize_ (0),
         flushFlag_ (false)
@@ -45,7 +45,7 @@ namespace iofwdevent
    {
       /* Check to see if any non-read transformed data is availible, if so 
          return it */
-      if (streamStorage_.spaceRemaining() > 0)
+      if ( streamStorage_.spaceRemaining() > 0)
       {
          readTransformStorage(out, len, cb, suggested);
          return Handle();
@@ -88,9 +88,10 @@ namespace iofwdevent
       }
       else
       {
+         read (out, len, cb, suggested);
          // Shouldn't this be assertion?
-         *len = 0;
-         cb(CBException());
+//         *len = 0;
+//         cb(CBException());
       }
    }
 
