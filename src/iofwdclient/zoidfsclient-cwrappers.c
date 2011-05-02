@@ -51,6 +51,16 @@ int IOFWDClient_cwrapper_getattr(struct IOFWDClient *,
 int IOFWDClient_cwrapper_null(struct IOFWDClient *,
         zoidfs_op_hint_t *);
 
+int IOFWDClient_cwrapper_write(struct IOFWDClient * iofwdclient_ptr,
+        const zoidfs_handle_t * handle,
+        size_t mem_count,
+        const void * mem_starts[],
+        const size_t mem_sizes[],
+        size_t file_count,
+        const zoidfs_file_ofs_t file_starts[],
+        zoidfs_file_size_t file_sizes[],
+        zoidfs_op_hint_t * op_hint );
+
 int IOFWDClient_cwrapper_read(struct IOFWDClient * iofwdclient_ptr,
         const zoidfs_handle_t * handle,
         size_t mem_count,
@@ -214,6 +224,19 @@ int zoidfs_readlink(const zoidfs_handle_t * handle,
 {
     return IOFWDClient_cwrapper_readlink(iofwdclient_ptr, handle, buffer,
             buffer_length, op_hint);
+}
+
+int zoidfs_write(const zoidfs_handle_t * handle,
+                size_t mem_count,
+                const void * mem_starts[],
+                const size_t mem_sizes[],
+                size_t file_count,
+                const zoidfs_file_ofs_t file_starts[],
+                zoidfs_file_size_t file_sizes[],
+                zoidfs_op_hint_t * op_hint )
+{
+    return IOFWDClient_cwrapper_write(iofwdclient_ptr, handle, mem_count,
+            mem_starts, mem_sizes, file_count, file_starts, file_sizes, op_hint);
 }
 
 int zoidfs_read(const zoidfs_handle_t * handle,
