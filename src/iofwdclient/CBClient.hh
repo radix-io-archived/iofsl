@@ -4,6 +4,8 @@
 #include "iofwdclient/iofwdclient-fwd.hh"
 #include "iofwdclient/IOFWDClientCB.hh"
 
+#include "iofwdclient/CommStream.hh"
+
 #include "zoidfs/zoidfs-async.h"
 
 #include "iofwdutil/IOFWDLog-fwd.hh"

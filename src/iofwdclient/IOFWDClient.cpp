@@ -457,6 +457,93 @@ namespace iofwdclient
       return asclient_->request_free (request);
    }
 
+   extern "C" void * IOFWDClient_cwrapper_allocate(char * address,
+           char * configfile)
+   {
+       iofwdevent::SingleCompletion block;
+       net::Net * net = NULL;
+       net::AddressPtr addr;
+       registerIofwdFactoryClients();
+       iofwd::service::ServiceManager & man =
+           iofwd::service::ServiceManager::instance();
+
+       man.setParam("config.configfile", std::string(configfile));
+
+       boost::shared_ptr<iofwd::Net>
+           netservice(man.loadService<iofwd::Net>("net"));
+       net = netservice->getNet();
+       net->lookup(address, &addr, block);
+       block.wait();
+
+       return new iofwdclient::IOFWDClient(*(new iofwdclient::CommStream()),
+               addr, true);
+   }
+
+   extern "C" void IOFWDClient_cwrapper_free(IOFWDClient * c)
+   {
+       delete c;
+   }
+
+   extern "C" int IOFWDClient_cwrapper_write(IOFWDClient * c,
+           const zoidfs::zoidfs_handle_t * handle,
+           size_t mem_count,
+           const void *mem_starts[],
+           const size_t mem_sizes[],
+           size_t file_count, 
+           const zoidfs::zoidfs_file_ofs_t file_starts[],
+           zoidfs::zoidfs_file_ofs_t file_sizes[],
+           zoidfs::zoidfs_op_hint_t * op_hint)
+   {
+       return c->write(handle, mem_count,
+               mem_starts, mem_sizes, file_count, file_starts, file_sizes,
+               op_hint);
+   }
+
+   extern "C" int IOFWDClient_cwrapper_init(IOFWDClient * c,
+           zoidfs::zoidfs_op_hint_t * op_hint)
+   {
+       return c->init(op_hint);
+   }
+   
+   extern "C" int IOFWDClient_cwrapper_finalize(IOFWDClient * c,
+           zoidfs::zoidfs_op_hint_t * op_hint)
+   {
+       return c->finalize(op_hint);
+   }
+
+   extern "C" int IOFWDClient_cwrapper_create(IOFWDClient * c,
+                    const zoidfs::zoidfs_handle_t * parent_handle,
+                    const char * component_name,
+                    const char * full_path,
+                    const zoidfs::zoidfs_sattr_t * sattr,
+                    zoidfs::zoidfs_handle_t * handle,
+                    int * created,
+                    zoidfs::zoidfs_op_hint_t * op_hint)
+   {
+       return c->create(parent_handle,
+               component_name, full_path, sattr, handle, created, op_hint);
+   }
+
+   extern "C" int IOFWDClient_cwrapper_lookup(IOFWDClient * c,
+                    const zoidfs::zoidfs_handle_t * parent_handle,
+                    const char * component_name,
+                    const char * full_path,
+                    zoidfs::zoidfs_handle_t * handle,
+                    zoidfs::zoidfs_op_hint_t * op_hint)
+   {
+       return c->lookup(parent_handle,
+               component_name, full_path, handle, op_hint);
+   }
+
+   extern "C" int IOFWDClient_cwrapper_remove(IOFWDClient * c,
+           const zoidfs::zoidfs_handle_t *parent_handle,
+           const char *component_name, const char *full_path,
+           zoidfs::zoidfs_cache_hint_t *parent_hint,
+           zoidfs::zoidfs_op_hint_t * op_hint)
+   {
+       return c->remove(parent_handle,
+               component_name, full_path, parent_hint, op_hint);
+   }
 
    //========================================================================
 }

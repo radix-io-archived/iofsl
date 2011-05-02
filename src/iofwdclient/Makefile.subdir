@@ -48,7 +48,9 @@ CPPCLIENTLIB += \
     src/iofwdclient/clientsm/RPCCommReadSM.hh \
     src/iofwdclient/streamwrappers/ReadStreams.hh \
     src/iofwdclient/clientsm/ReadClientSM.hh \
-    src/iofwdclient/clientsm/ReadClientSM.cpp     
+    src/iofwdclient/clientsm/ReadClientSM.cpp \
+    \
+    src/iofwdclient/zoidfsclient-cwrappers.c
 
 
 #    src/iofwdclient/iofwdclientlib.hh 
