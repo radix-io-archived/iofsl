@@ -457,6 +457,8 @@ namespace iofwdclient
       return asclient_->request_free (request);
    }
 
+   /* IOFWDClient wrappers */
+
    extern "C" void * IOFWDClient_cwrapper_allocate(char * address,
            char * configfile)
    {
@@ -543,6 +545,138 @@ namespace iofwdclient
    {
        return c->remove(parent_handle,
                component_name, full_path, parent_hint, op_hint);
+   }
+
+   extern "C" int IOFWDClient_cwrapper_setattr(IOFWDClient * c, const zoidfs::zoidfs_handle_t * handle,
+        const zoidfs::zoidfs_sattr_t * sattr, zoidfs::zoidfs_attr_t * attr,
+        zoidfs::zoidfs_op_hint_t * op_hint)
+   {
+        return c->setattr(handle, sattr, attr, op_hint); 
+   }
+
+   extern "C" int IOFWDClient_cwrapper_getattr(IOFWDClient * c, const
+        zoidfs::zoidfs_handle_t * handle, zoidfs::zoidfs_attr_t * attr,
+        zoidfs::zoidfs_op_hint_t * op_hint)
+   {
+        return c->getattr(handle, attr, op_hint); 
+   }
+
+   extern "C" int IOFWDClient_cwrapper_null(IOFWDClient * c,
+           zoidfs::zoidfs_op_hint_t * op_hint)
+   {
+        return c->null(op_hint); 
+   }
+   
+   extern "C" int IOFWDClient_cwrapper_read(IOFWDClient * c,
+                const zoidfs::zoidfs_handle_t * handle,
+                size_t mem_count,
+                void * mem_starts[],
+                const size_t mem_sizes[],
+                size_t file_count,
+                const zoidfs::zoidfs_file_ofs_t file_starts[],
+                zoidfs::zoidfs_file_size_t file_sizes[],
+                zoidfs::zoidfs_op_hint_t * op_hint )
+    {
+        return c->read(handle, mem_count, mem_starts, mem_sizes, file_count,
+            file_starts, file_sizes, op_hint);
+    }
+
+    extern "C" int IOFWDClient_cwrapper_commit(IOFWDClient * c,
+                  const zoidfs::zoidfs_handle_t * handle,
+                  zoidfs::zoidfs_op_hint_t * op_hint )
+    {
+        return c->commit(handle, op_hint);
+    }
+
+    extern "C" int IOFWDClient_cwrapper_rename(IOFWDClient * c,
+                  const zoidfs::zoidfs_handle_t * from_parent_handle,
+                  const char * from_component_name,
+                  const char * from_full_path,
+                  const zoidfs::zoidfs_handle_t * to_parent_handle,
+                  const char * to_component_name,
+                  const char * to_full_path,
+                  zoidfs::zoidfs_cache_hint_t * from_parent_hint,
+                  zoidfs::zoidfs_cache_hint_t * to_parent_hint,
+                  zoidfs::zoidfs_op_hint_t * op_hint )
+    {
+        return c->rename(from_parent_handle, from_component_name,
+            from_full_path, to_parent_handle, to_component_name, to_full_path,
+            from_parent_hint, to_parent_hint, op_hint);
+    }
+
+    extern "C" int IOFWDClient_cwrapper_link(IOFWDClient * c,
+                const zoidfs::zoidfs_handle_t * from_parent_handle,
+                const char * from_component_name,
+                const char * from_full_path,
+                const zoidfs::zoidfs_handle_t * to_parent_handle,
+                const char * to_component_name,
+                const char * to_full_path,
+                zoidfs::zoidfs_cache_hint_t * from_parent_hint,
+                zoidfs::zoidfs_cache_hint_t * to_parent_hint,
+                zoidfs::zoidfs_op_hint_t * op_hint )
+    {
+        return c->link(from_parent_handle, from_component_name, from_full_path,
+            to_parent_handle, to_component_name, to_full_path, from_parent_hint,
+            to_parent_hint, op_hint);
+    }
+
+    extern "C" int IOFWDClient_cwrapper_symlink(IOFWDClient * c,
+                   const zoidfs::zoidfs_handle_t * from_parent_handle,
+                   const char * from_component_name,
+                   const char * from_full_path,
+                   const zoidfs::zoidfs_handle_t * to_parent_handle,
+                   const char * to_component_name,
+                   const char * to_full_path,
+                   const zoidfs::zoidfs_sattr_t * attr,
+                   zoidfs::zoidfs_cache_hint_t * from_parent_hint,
+                   zoidfs::zoidfs_cache_hint_t * to_parent_hint,
+                   zoidfs::zoidfs_op_hint_t * op_hint )
+    {
+        return c->symlink(from_parent_handle, from_component_name,
+            from_full_path, to_parent_handle, to_component_name, to_full_path, attr,
+            from_parent_hint, to_parent_hint, op_hint);
+    }
+
+    extern "C" int IOFWDClient_cwrapper_mkdir(IOFWDClient * c,
+                 const zoidfs::zoidfs_handle_t * parent_handle,
+                 const char * component_name,
+                 const char * full_path,
+                 const zoidfs::zoidfs_sattr_t * attr,
+                 zoidfs::zoidfs_cache_hint_t * parent_hint,
+                 zoidfs::zoidfs_op_hint_t * op_hint )
+    {
+        return c->mkdir(parent_handle, component_name, full_path, attr,
+            parent_hint, op_hint);
+    }
+
+    extern "C" int IOFWDClient_cwrapper_readdir(IOFWDClient * c,
+                   const zoidfs_handle_t * parent_handle,
+                   zoidfs::zoidfs_dirent_cookie_t cookie,
+                   size_t * entry_count,
+                   zoidfs::zoidfs_dirent_t * entries,
+                   uint32_t flags,
+                   zoidfs::zoidfs_cache_hint_t * parent_hint,
+                   zoidfs::zoidfs_op_hint_t * op_hint )
+    {
+        return c->readdir(parent_handle, cookie, entry_count, entries, flags,
+            parent_hint, op_hint);
+    }
+
+    extern "C" int IOFWDClient_cwrapper_resize(IOFWDClient * c,
+                  const zoidfs::zoidfs_handle_t * handle,
+                  uint64_t size,
+                  zoidfs::zoidfs_op_hint_t * op_hint )
+    {
+        return c->resize(handle, size, op_hint);
+    }
+
+   extern "C" int IOFWDClient_cwrapper_readlink(IOFWDClient * c,
+           const zoidfs::zoidfs_handle_t * handle,
+           char * buffer,
+           size_t buffer_length,
+           zoidfs::zoidfs_op_hint_t * op_hint)
+   {
+        return c->readlink(handle, buffer, buffer_length, op_hint);
    }
 
    //========================================================================
