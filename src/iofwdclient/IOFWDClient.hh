@@ -436,6 +436,7 @@ namespace iofwdclient
            char * buffer,
            size_t buffer_length,
            zoidfs::zoidfs_op_hint_t * op_hint);
+
    //========================================================================
 }
 
