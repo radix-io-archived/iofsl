@@ -1,9 +1,6 @@
 #!/bin/bash
 # This script installs the IOFSL software, and executes distcheck on the IOFSL software.  
 # dependencies are located through ../scripts/configoption.${HOSTNAME}. 
-#!/bin/bash
-# This script installs the IOFSL software, and executes distcheck on the IOFSL software.  
-# dependencies are located through ../scripts/configoption.${HOSTNAME}. 
 # After installation and construction the script runs a "distcheck" on the build.  
 # test reports are mailed to io-fwd-discuss@lists.mcs.anl.gov
 # This script has two options -n and -b.  -n followed by an integer identifies the number of 
@@ -38,7 +35,8 @@ done
 
 get_user_email(){
   echo "Locating git user email."
-  export user_email=$(git config -l | grep user.email=* | sed 's/user.email=//g')  if [[ $user_email == *@* ]]
+  export user_email=$(git config -l | grep user.email=* | sed 's/user.email=//g')
+  if [[ $user_email == *@* ]]
   then
     echo "User email found ----> "   $user_email
   else
