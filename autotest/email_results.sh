@@ -11,16 +11,15 @@ error_report(){
     echo "test results for commit $commit" >> make_error_report.txt
     echo "this commit was finished testing at $(date)" >> make_error_report.txt
     echo >> make_error_report.txt
-    awk 'NR<=3' runtest_results.txt >> make_error_report.txt; awk '/Error/{c=5}c&&c--' runtest_results.txt >> make_error_report.txt; tail -5 runtest_results.txt >> make_error_report.txt
-    awk 'NR<=3' runtest_results.txt >> make_error_report.txt; awk '/***/{c=5}c&&c--' runtest_results.txt >> make_error_report.txt; tail -5 runtest_results.txt >> make_error_report.txt
+    sed -i 's/checking*//g' runtest_results.txt
+    awk '/error/{c=5}c&&c--' runtest_results.txt >> make_error_report.txt; tail -5 runtest_results.txt >> make_error_report.txt
 
 
     echo "=========================================================" >> make_error_report.txt
   comm=${commit:0:7}
-  echo | mutt -c $committer_email -c dkimpe@mcs.anl.gov -c drieskimpe@gmail.com -c rjdamore@gmail.com -c maxadam@mcs.anl.gov -c max@trefonides.com -a make_error_report.txt -s "make error: Make FAIL for commit $comm" io-fwd-discuss@lists.mcs.anl.gov
+  echo | mutt -c $committer_email -c dkimpe@mcs.anl.gov -c drieskimpe@gmail.com -c rjdamore@gmail.com -c maxadam@mcs.anl.gov -c max@trefonides.com -a make_error_report.txt -s "clientrpc make error: for commit $comm" io-fwd-discuss@lists.mcs.anl.gov
 
-  #echo | mutt -a make_error_report.txt -s "make error: Make FAIL for commit $comm" rjdamore@gmail.com
-  #echo | mutt -c  $committer_email dkimpe@mcs.anl.gov drieskimpe@gmail.com rjdamore@gmail.com -a make_error_report.txt -s "make error: Make FAIL for commit $comm" io-fwd-discuss@lists.mcs.anl.gov
+  #echo | mutt -a make_error_report.txt -s "clientrpc make error: for commit $comm" rjdamore@gmail.com
   edit_files
   else test_report
   fi
@@ -30,32 +29,6 @@ error_report(){
   then :
   else
       echo "$commit" >> autotest/tested_commits.txt
-  fi
-  failure_report
-}
-
-
-failure_report(){
-  rm -f failure_report.txt
-  touch failure_report.txt
-  if
-    egrep 'FAIL|non-zero' runtest_results.txt
-  then
-    echo "test results for commit $commit" >> failure_report.txt
-    echo "this commit was finished testing at $(date)" >> failure_report.txt
-    echo >> failure_report.txt
-    awk 'NR<=5' runtest_results.txt >> failure_report.txt ; awk '/FAIL/{c=5}c&&c--' runtest_results.txt >> failure_report.txt ; awk '/non-zero/{c=3}c&&c--' runtest_results.txt >> failure_report.txt; tail -5 runtest_results.txt >> failure_report.txt
-    echo "==========================================================" >> failure_report.txt
-  comm=${commit:0:7}
-  i#echo | mutt -c $committer_email dkimpe@mcs.anl.gov drieskimpe@gmail.com rjdamore@gmail.com -a failure_report.txt -s "failure report for commit $comm FAIL" io-fwd-discuss@lists.mcs.anl.gov 
-  else :
-  fi
-  cat failure_report.txt >> failure_report-pile.txt
-  if
-    grep $commit autotest/tested_commits.txt
-  then :
-  else
-    echo "$commit" >> autotest/tested_commits.txt
   fi
   server_report
 }
@@ -97,12 +70,9 @@ test_report(){
       echo "$commit" >> autotest/tested_commits.txt
   fi
   comm=${commit:0:7}
-  echo | mutt -a test_report.txt -s "test report for commit $comm PASS" rjdamore@gmail.com
-  echo | mutt -c $committer_email -c dkimpe@mcs.anl.gov -c drieskimpe@gmail.com -c rjdamore@gmail.com -c maxadam@mcs.anl.gov -c max@trefonides.com -a make_error_report.txt -s "make error: Make FAIL for commit $comm" io-fwd-discuss@lists.mcs.anl.gov  
+  #echo | mutt -a test_report.txt -s "test report for commit $comm PASS" rjdamore@gmail.com
+  echo | mutt -c $committer_email -c dkimpe@mcs.anl.gov -c drieskimpe@gmail.com -c rjdamore@gmail.com -c maxadam@mcs.anl.gov -c max@trefonides.com -a test_report.txt -s "clientrpc test PASS for commit $comm" io-fwd-discuss@lists.mcs.anl.gov  
 
-#echo | mutt -c drieskimpe@gmail.com -a test_report.txt -s "test report for commit $comm PASS" rjdamore@gmail.com
-  #echo | mutt -c drieskimpe@gmail.com -a test_report.txt -s "test report for commit $comm PASS" rjdamore@lanl.gov
-  #echo | mutt -c dkimpe@mcs.anl.gov drieskimpe@gamail.com rjdamore@gmail.com -a test_report.txt -s "test report for commit $comm PASS" io-fwd-discuss@lists.mcs.anl.gov 
   edit_files
 }
 
