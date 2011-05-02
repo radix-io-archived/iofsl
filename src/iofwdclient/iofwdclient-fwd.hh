@@ -9,7 +9,7 @@ namespace iofwdclient
 
    class RequestTracker;
 
-   class CommStream;
+   //class CommStream;
 
    class ASClient;
 

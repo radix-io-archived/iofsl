@@ -16,6 +16,12 @@
 #include "iofwd/Net.hh"
 #include "net/Address.hh"
 #include "net/Net.hh"
+
+#include "iofwdevent/SingleCompletion.hh"
+#include "iofwd/IofwdLinkHelper.hh"
+
+#include "iofwdclient/CommStream.hh"
+
 namespace iofwdclient
 {
    //========================================================================
@@ -295,6 +301,49 @@ namespace iofwdclient
          boost::scoped_ptr<ASClient>    asclient_;
          boost::scoped_ptr<SyncClient>  sclient_;
    };
+
+   extern "C" void * IOFWDClient_cwrapper_allocate(char * address,
+           char * configfile);
+
+   extern "C" void IOFWDClient_cwrapper_free(IOFWDClient * c);
+
+   extern "C" int IOFWDClient_cwrapper_write(IOFWDClient * c,
+           const zoidfs::zoidfs_handle_t * handle,
+           size_t mem_count,
+           const void *mem_starts[],
+           const size_t mem_sizes[],
+           size_t file_count, 
+           const zoidfs::zoidfs_file_ofs_t file_starts[],
+           zoidfs::zoidfs_file_ofs_t file_sizes[],
+           zoidfs::zoidfs_op_hint_t * op_hint);
+
+   extern "C" int IOFWDClient_cwrapper_init(IOFWDClient * c,
+           zoidfs::zoidfs_op_hint_t * op_hint);
+
+   extern "C" int IOFWDClient_cwrapper_finalize(IOFWDClient * c,
+           zoidfs::zoidfs_op_hint_t * op_hint);
+
+   extern "C" int IOFWDClient_cwrapper_create(IOFWDClient * c,
+                    const zoidfs::zoidfs_handle_t * parent_handle,
+                    const char * component_name,
+                    const char * full_path,
+                    const zoidfs::zoidfs_sattr_t * sattr,
+                    zoidfs::zoidfs_handle_t * handle,
+                    int * created,
+                    zoidfs::zoidfs_op_hint_t * op_hint);
+   
+   extern "C" int IOFWDClient_cwrapper_lookup(IOFWDClient * c,
+                    const zoidfs::zoidfs_handle_t * parent_handle,
+                    const char * component_name,
+                    const char * full_path,
+                    zoidfs::zoidfs_handle_t * handle,
+                    zoidfs::zoidfs_op_hint_t * op_hint);
+
+   extern "C" int IOFWDClient_cwrapper_remove(IOFWDClient * c,
+           const zoidfs::zoidfs_handle_t *parent_handle,
+           const char *component_name, const char *full_path,
+           zoidfs::zoidfs_cache_hint_t *parent_hint,
+           zoidfs::zoidfs_op_hint_t * op_hint);
 
    //========================================================================
 }
