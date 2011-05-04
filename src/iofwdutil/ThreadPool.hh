@@ -14,6 +14,8 @@
 
 #include "iofwdutil/Singleton.hh"
 
+#include <iostream>
+
 #define CRAY_TP_CORE_MAX 12
 
 /*
@@ -131,6 +133,12 @@ class ThreadPool : public Singleton< ThreadPool >
             boost::mutex::scoped_lock lock(queue_mutex_);
             if(prio == HIGH)
             {
+                if(high_thread_warn_ >= (max_high_thread_count_ -
+                            high_active_threads_ + 1) && high_thread_warn_ != 0)
+                {
+                    std::cout << "ThreadPool WARN: low number of high prio threads: avail == " << (max_high_thread_count_ - high_active_threads_ + 1) << std::endl;
+                }
+
                 if(high_active_threads_ >= max_high_thread_count_)
                 {
                     prio_queue_.push(func);
@@ -147,6 +155,12 @@ class ThreadPool : public Singleton< ThreadPool >
             }
             else
             {
+                if(norm_thread_warn_ >= (max_norm_thread_count_ -
+                            norm_active_threads_ + 1) && norm_thread_warn_ != 0)
+                {
+                    std::cout << "ThreadPool WARN: low number of norm prio threads: avail == " << (max_norm_thread_count_ - norm_active_threads_ + 1) << std::endl;
+                }
+
                 if(norm_active_threads_ >= max_norm_thread_count_)
                 {
                     norm_queue_.push(func);
@@ -268,6 +282,8 @@ class ThreadPool : public Singleton< ThreadPool >
         static int getMinNormThreadCount();
         static void setMaxNormThreadCount(int c);
         static int getMaxNormThreadCount();
+        static void setNormThreadWarn(int c);
+        static void setHighThreadWarn(int c);
 
         void reset();
     protected:
@@ -411,8 +427,10 @@ class IOFWDThread
         static boost::mutex tp_setup_mutex_;
         static int max_high_thread_count_;
         static int min_high_thread_count_;
+        static int high_thread_warn_;
         static int max_norm_thread_count_;
         static int min_norm_thread_count_;
+        static int norm_thread_warn_;
         bool shutdown_threads_;
         bool thread_pool_running_;
         boost::condition threadcond_;

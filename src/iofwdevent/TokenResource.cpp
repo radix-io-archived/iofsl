@@ -4,13 +4,19 @@
 
 #include <boost/utility.hpp>
 
+#include <iostream>
 
 namespace iofwdevent
 {
    //===========================================================================
 
-   TokenResource::TokenResource (size_t tokens)
-      : tokens_available_ (tokens), started_ (false)
+   TokenResource::TokenResource (size_t tokens, size_t tokens_warn, std::string
+           id)
+      :
+          tokens_available_ (tokens),
+          tokens_available_warn_thresh_(tokens_warn),
+          started_ (false),
+          id_(id)
    {
    }
 
@@ -166,6 +172,12 @@ namespace iofwdevent
 
    bool TokenResource::try_request_unlocked (size_t tokencount)
    {
+      if(tokens_available_ <= tokens_available_warn_thresh_ &&
+              tokens_available_warn_thresh_ != 0)
+          std::cout << id_ << "WARN: " << tokens_available_ << " tokens avail"
+              << " thresh == " << tokens_available_warn_thresh_
+              << std::endl;
+
       if (!tokencount)
          return true;
 

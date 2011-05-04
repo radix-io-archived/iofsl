@@ -138,16 +138,20 @@ void IOFWDFrontend::init ()
    ZLOG_INFO (log_, "Starting BMI memory manager...");
    iofwdutil::ConfigFile lc = config_.openSectionDefault("bmimemorymanager");
    iofwdutil::mm::BMIMemoryManager::instance().setMaxNumBuffers(lc.getKeyAsDefault("maxnumbuffers", 0));
+   iofwdutil::mm::BMIMemoryManager::instance().setWarnNumBuffers(lc.getKeyAsDefault("warnnumbuffers", 0));
    /* set the max amount of BMI memory allocs by total bytes (def is 256 MB) */
    iofwdutil::mm::BMIMemoryManager::instance().setMaxMemAmount(lc.getKeyAsDefault("maxmem", 256UL * 1024UL * 1024UL));
+   iofwdutil::mm::BMIMemoryManager::instance().setMemWarnAmount(lc.getKeyAsDefault("warnmem", 4UL * 1024UL * 1024UL));
    iofwdutil::mm::BMIMemoryManager::instance().start();
 
    /* start the NBIO memory manager */
    ZLOG_INFO (log_, "Starting NBIO memory manager...");
    lc = config_.openSectionDefault("nbiomemorymanager");
    iofwdutil::mm::NBIOMemoryManager::instance().setMaxNumBuffers(lc.getKeyAsDefault("maxnumbuffers", 0));
+   iofwdutil::mm::NBIOMemoryManager::instance().setWarnNumBuffers(lc.getKeyAsDefault("warnnumbuffers", 0));
    /* set the max amount of NBIO memory allocs by total bytes (def is 256 MB) */
    iofwdutil::mm::NBIOMemoryManager::instance().setMaxMemAmount(lc.getKeyAsDefault("maxmem", 256UL * 1024UL * 1024UL));
+   iofwdutil::mm::NBIOMemoryManager::instance().setMemWarnAmount(lc.getKeyAsDefault("warnmem", 4UL * 1024UL * 1024UL));
    iofwdutil::mm::NBIOMemoryManager::instance().start();
 }
 

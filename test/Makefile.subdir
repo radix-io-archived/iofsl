@@ -144,7 +144,8 @@ test/zoidfs-microbenchmarks/zoidfs-tile-io-local test/aa/zoidfs-aa-write \
 test/aa/zoidfs-aa-mf-write test/aa/zoidfs-aa-write-mf \
 test/aa/zoidfs-aa-resize-write \
 test/aa/zoidfs-aa-seek-write \
-test/aa/zoidfs-aa-nbio-write
+test/aa/zoidfs-aa-nbio-write \
+test/aa/nbio-perf
 
 test_zoidfs_microbenchmarks_zoidfs_tile_io_SOURCES = test/zoidfs-microbenchmarks/zoidfs-tile-io.c
 test_zoidfs_microbenchmarks_zoidfs_tile_io_LDADD = src/zoidfs/libzoidfsclient.a ${test_microbenchmarks_ldadd}
@@ -155,6 +156,10 @@ test_zoidfs_microbenchmarks_zoidfs_tile_io_local_SOURCES = test/zoidfs-microbenc
 test_zoidfs_microbenchmarks_zoidfs_tile_io_local_LDADD = src/zoidfs/libzoidfs.a ${test_microbenchmarks_ldadd}
 test_zoidfs_microbenchmarks_zoidfs_tile_io_local_LDFLAGS = ${test_microbenchmarks_ldflags}
 test_zoidfs_microbenchmarks_zoidfs_tile_io_local_CFLAGS = -DHAVE_GETOPT_LONG 
+ 
+test_aa_nbio_perf_SOURCES = test/aa/nbio-perf.c
+test_aa_nbio_perf_LDADD = src/zoidfs/libzoidfsclient.a ${test_microbenchmarks_ldadd}
+test_aa_nbio_perf_LDFLAGS = ${test_microbenchmarks_ldflags}
  
 test_aa_zoidfs_aa_write_SOURCES = test/aa/zoidfs-aa-write.c
 test_aa_zoidfs_aa_write_LDADD = src/zoidfs/libzoidfsclient.a ${test_microbenchmarks_ldadd}

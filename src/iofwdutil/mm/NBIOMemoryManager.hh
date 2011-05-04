@@ -95,7 +95,9 @@ class NBIOMemoryManager :
 
         /* memory manager setup */
         static void setMaxNumBuffers(int numBuffers);
+        static void setWarnNumBuffers(int numBuffers);
         static void setMaxMemAmount(size_t mem);
+        static void setMemWarnAmount(size_t mem);
 
     protected:
         void runBufferAllocCB1(iofwdevent::CBException status,
@@ -116,7 +118,9 @@ class NBIOMemoryManager :
         iofwdevent::TokenResource * mem_;
 
         static int numTokens_;
+        static int warnNumTokens_;
         static size_t memAmount_;
+        static size_t memWarnAmount_;
         static boost::mutex nbiomm_setup_mutex_;
 };
     }

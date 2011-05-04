@@ -124,8 +124,22 @@ BMIMemoryManager::BMIMemoryManager()
 
 /* static variables for the mem manager */
 int iofwdutil::mm::BMIMemoryManager::numTokens_ = 0;
+int iofwdutil::mm::BMIMemoryManager::warnNumTokens_ = 0;
 size_t iofwdutil::mm::BMIMemoryManager::memAmount_ = 0;
+size_t iofwdutil::mm::BMIMemoryManager::memWarnAmount_ = 0;
 boost::mutex iofwdutil::mm::BMIMemoryManager::bmm_setup_mutex_;
+
+void BMIMemoryManager::setWarnNumBuffers(int numTokens)
+{
+    boost::mutex::scoped_lock lock(bmm_setup_mutex_);
+    warnNumTokens_ = numTokens;
+}
+
+void BMIMemoryManager::setMemWarnAmount(size_t mem)
+{
+    boost::mutex::scoped_lock lock(bmm_setup_mutex_);
+    memWarnAmount_ = mem;
+}
 
 void BMIMemoryManager::setMaxNumBuffers(int numTokens)
 {
@@ -142,8 +156,10 @@ void BMIMemoryManager::setMaxMemAmount(size_t mem)
 void BMIMemoryManager::start()
 {
     /* create the token resource */
-    tokens_ = new iofwdevent::TokenResource(numTokens_); 
-    mem_ = new iofwdevent::TokenResource(memAmount_); 
+    tokens_ = new iofwdevent::TokenResource(numTokens_, warnNumTokens_,
+            std::string("BMI Buffer Tokens: ")); 
+    mem_ = new iofwdevent::TokenResource(memAmount_, memWarnAmount_,
+            std::string("BMI Mem Alloc Tokens: ")); 
 
     /* start the token resource */
     tokens_->start();

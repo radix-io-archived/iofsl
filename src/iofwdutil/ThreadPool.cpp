@@ -6,8 +6,22 @@ namespace iofwdutil
         int iofwdutil::ThreadPool::max_high_thread_count_ = 1;
         int iofwdutil::ThreadPool::min_norm_thread_count_ = 1;
         int iofwdutil::ThreadPool::max_norm_thread_count_ = 1;
+        int iofwdutil::ThreadPool::norm_thread_warn_ = 0;
+        int iofwdutil::ThreadPool::high_thread_warn_ = 0;
 
         boost::mutex iofwdutil::ThreadPool::tp_setup_mutex_;
+        
+        void ThreadPool::setNormThreadWarn(int c)
+        {
+            boost::mutex::scoped_lock lock(tp_setup_mutex_);
+            norm_thread_warn_ = c;
+        }
+
+        void ThreadPool::setHighThreadWarn(int c)
+        {
+            boost::mutex::scoped_lock lock(tp_setup_mutex_);
+            high_thread_warn_ = c;
+        }
 
         void ThreadPool::setMaxHighThreadCount(int c)
         {

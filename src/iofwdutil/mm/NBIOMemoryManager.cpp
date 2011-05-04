@@ -113,7 +113,9 @@ NBIOMemoryManager::NBIOMemoryManager()
 
 /* static variables for the mem manager */
 int iofwdutil::mm::NBIOMemoryManager::numTokens_ = 0;
+int iofwdutil::mm::NBIOMemoryManager::warnNumTokens_ = 0;
 size_t iofwdutil::mm::NBIOMemoryManager::memAmount_ = 0;
+size_t iofwdutil::mm::NBIOMemoryManager::memWarnAmount_ = 0;
 boost::mutex iofwdutil::mm::NBIOMemoryManager::nbiomm_setup_mutex_;
 
 void NBIOMemoryManager::setMaxNumBuffers(int numTokens)
@@ -122,17 +124,31 @@ void NBIOMemoryManager::setMaxNumBuffers(int numTokens)
     numTokens_ = numTokens;
 }
 
+void NBIOMemoryManager::setWarnNumBuffers(int numTokens)
+{
+    boost::mutex::scoped_lock lock(nbiomm_setup_mutex_);
+    warnNumTokens_ = numTokens;
+}
+
 void NBIOMemoryManager::setMaxMemAmount(size_t mem)
 {
     boost::mutex::scoped_lock lock(nbiomm_setup_mutex_);
     memAmount_ = mem;
 }
 
+void NBIOMemoryManager::setMemWarnAmount(size_t mem)
+{
+    boost::mutex::scoped_lock lock(nbiomm_setup_mutex_);
+    memWarnAmount_ = mem;
+}
+
 void NBIOMemoryManager::start()
 {
     /* create the token resource */
-    tokens_ = new iofwdevent::TokenResource(numTokens_); 
-    mem_ = new iofwdevent::TokenResource(memAmount_); 
+    tokens_ = new iofwdevent::TokenResource(numTokens_, warnNumTokens_,
+            std::string("NBIO Buffer Tokens: ")); 
+    mem_ = new iofwdevent::TokenResource(memAmount_, memWarnAmount_,
+            std::string("NBIO Mem Alloc Tokens: ")); 
 
     /* start the token resource */
     tokens_->start();
@@ -202,7 +218,9 @@ bool NBIOMemoryManager::try_alloc(IOFWDMemoryAlloc * memAlloc)
     /* if we got the buffer token, try to get the mem token*/
     if(req)
     {
-        req = mem_->try_request(dynamic_cast<NBIOMemoryAlloc *>(memAlloc)->getReqMemorySize());
+        req = mem_->try_request(dynamic_cast<NBIOMemoryAlloc
+                *>(memAlloc)->getReqMemorySize());
+
         /* we got the buffer space, so return */
         if(req)
         {

@@ -30,7 +30,8 @@ namespace iofwdevent
 class TokenResource : public Resource
 {
 public:
-   TokenResource (size_t tokens = 0);
+   TokenResource (size_t tokens = 0, size_t tokens_warn = 0, std::string
+           id=std::string(""));
 
    ~TokenResource ();
 
@@ -132,10 +133,13 @@ protected:
    mutable boost::mutex lock_;
 
    size_t tokens_available_;
+   size_t tokens_available_warn_thresh_;
 
    RequestList waitlist_;
 
    bool started_;
+
+   std::string id_;
 };
 
 //===========================================================================

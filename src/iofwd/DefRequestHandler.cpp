@@ -57,8 +57,10 @@ DefRequestHandler::DefRequestHandler (const iofwdutil::ConfigFile & cf)
    iofwdutil::ConfigFile lc = config_.openSectionDefault ("threadpool");
    tp_.setMinHighThreadCount(lc.getKeyAsDefault("minnumhighthreads", 0));
    tp_.setMaxHighThreadCount(lc.getKeyAsDefault("maxnumhighthreads", 0));
+   tp_.setHighThreadWarn(lc.getKeyAsDefault("warnnumhighthreads", 0));
    tp_.setMinNormThreadCount(lc.getKeyAsDefault("minnumnormthreads", 0));
    tp_.setMaxNormThreadCount(lc.getKeyAsDefault("maxnumnormthreads", 0));
+   tp_.setNormThreadWarn(lc.getKeyAsDefault("warnnumnormthreads", 0));
    tp_.start();
 
    /* get the event mode */

@@ -146,7 +146,9 @@ class BMIMemoryManager : public IOFWDMemoryManager, public iofwdutil::Singleton 
 
         /* memory manager setup */
         static void setMaxNumBuffers(int numBuffers);
+        static void setWarnNumBuffers(int numTokens);
         static void setMaxMemAmount(size_t mem);
+        static void setMemWarnAmount(size_t mem);
 
     protected:
         void runBufferAllocCB1(iofwdevent::CBException status,
@@ -168,6 +170,8 @@ class BMIMemoryManager : public IOFWDMemoryManager, public iofwdutil::Singleton 
 
         static int numTokens_;
         static size_t memAmount_;
+        static int warnNumTokens_;
+        static size_t memWarnAmount_;
         static boost::mutex bmm_setup_mutex_;
 };
     }
