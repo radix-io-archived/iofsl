@@ -803,6 +803,7 @@ static int zoidfs_posix_create(const zoidfs_handle_t *parent_handle,
 
    struct timespec start;
    struct timespec stop;
+   double elapsed = 0;
 
    zoidfs_posix_dispatcher_get_time(&start);
 
@@ -853,7 +854,7 @@ static int zoidfs_posix_create(const zoidfs_handle_t *parent_handle,
 
 out:
    zoidfs_posix_dispatcher_get_time(&stop);
-   zoidfs_posix_dispatcher_elapsed_time(&start, &stop);
+   elapsed = zoidfs_posix_dispatcher_elapsed_time(&start, &stop);
 
    //pthread_mutex_unlock(&posix_create_mutex);
    return ZFS_OK;
@@ -1150,12 +1151,13 @@ static inline int safewrite (int fd, const void * buf, size_t count,
    int ret = 0;
    struct timespec start;
    struct timespec stop;
+   double elapsed = 0;
 
    zoidfs_posix_dispatcher_get_time(&start);
    ret = pwrite (fd, buf, count, filepos);
    zoidfs_posix_dispatcher_get_time(&stop);
 
-   zoidfs_posix_dispatcher_elapsed_time(&start, &stop);
+   elapsed = zoidfs_posix_dispatcher_elapsed_time(&start, &stop);
 
    return ret;
 }
