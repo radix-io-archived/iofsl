@@ -45,7 +45,19 @@
 #define LL_IOC_GROUP_LOCK               _IOW ('f', 158, long)
 #define LL_IOC_GROUP_UNLOCK             _IOW ('f', 159, long)
 
-static pthread_mutex_t posix_create_mutex = PTHREAD_MUTEX_INITIALIZER;
+int zoidfs_posix_dispatcher_get_time(struct timespec * timeval)
+{
+    clock_gettime( CLOCK_REALTIME, timeval );
+    return 0;
+}
+
+double zoidfs_posix_dispatcher_elapsed_time(struct timespec * t1, struct timespec * t2)
+{
+    return ((double) (t2->tv_sec - t1->tv_sec) +
+        1.0e-9 * (double) (t2->tv_nsec - t1->tv_nsec) );
+}
+
+//static pthread_mutex_t posix_create_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 #ifndef NDEBUG
 static int do_debug = 0;
@@ -115,8 +127,6 @@ static inline mode_t zoidfsattrtype_to_posixmode (zoidfs_attr_type_t t)
          return 0;
    }
 }
-
-
 
 /* add two path components in a clean way
  * store in buf, at most bufsize
@@ -791,7 +801,12 @@ static int zoidfs_posix_create(const zoidfs_handle_t *parent_handle,
    int newmode;
    int ret = ZFS_OK;
 
-   pthread_mutex_lock(&posix_create_mutex);
+   struct timespec start;
+   struct timespec stop;
+
+   zoidfs_posix_dispatcher_get_time(&start);
+
+   //pthread_mutex_lock(&posix_create_mutex);
 
    if (!zoidfs_simplify_path_mem (parent_handle, component_name,
          full_path,newpath,sizeof(newpath)))
@@ -837,7 +852,10 @@ static int zoidfs_posix_create(const zoidfs_handle_t *parent_handle,
    filename_add (fcache, handle, newpath);
 
 out:
-   pthread_mutex_unlock(&posix_create_mutex);
+   zoidfs_posix_dispatcher_get_time(&stop);
+   zoidfs_posix_dispatcher_elapsed_time(&start, &stop);
+
+   //pthread_mutex_unlock(&posix_create_mutex);
    return ZFS_OK;
 }
 
@@ -1129,7 +1147,17 @@ static inline int saferead (int fd, void * buf, size_t count, uint64_t filepos)
 static inline int safewrite (int fd, const void * buf, size_t count,
       uint64_t filepos)
 {
-   return pwrite (fd, buf, count, filepos);
+   int ret = 0;
+   struct timespec start;
+   struct timespec stop;
+
+   zoidfs_posix_dispatcher_get_time(&start);
+   ret = pwrite (fd, buf, count, filepos);
+   zoidfs_posix_dispatcher_get_time(&stop);
+
+   zoidfs_posix_dispatcher_elapsed_time(&start, &stop);
+
+   return ret;
 }
 
 static inline int zoidfs_generic_access (const zoidfs_handle_t *handle, int mem_count,
