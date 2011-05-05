@@ -8,7 +8,8 @@
 #include "zoidfs/zoidfs.h"
 #include "zoidfs/hints/zoidfs-hints.h"
 
-#define ENABLE_NB_SERVER_MODE 0
+#define ENABLE_NB_SERVER_MODE
+#define ENABLE_NB_COMMIT
 
 void run(char * file_path, int rank, int size, unsigned int sleep_time, size_t buffer_size, int num_itr)
 {
@@ -77,6 +78,17 @@ void run(char * file_path, int rank, int size, unsigned int sleep_time, size_t b
         zoidfs_hint_delete_all(op_hint);
 #endif
     }
+
+#ifdef ENABLE_NB_SERVER_MODE
+    if(rank == 0)
+    {
+#ifdef ENABLE_NB_COMMIT
+        zoidfs_hint_set(op_hint, ZOIDFS_NONBLOCK_SERVER_IO,
+                ZOIDFS_HINT_ENABLED, 0);
+        zoidfs_commit(&handle, &op_hint);
+#endif
+    }
+#endif
 
     stop = MPI_Wtime();
     elapsed = stop - start;
