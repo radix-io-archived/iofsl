@@ -61,7 +61,7 @@ void run(char * file_path, int rank, int size, unsigned int sleep_time, size_t b
         int filecount = 1;
         size_t filesize = buffer_size;
         size_t filestart = (rank * buffer_size * num_itr) +
-            (buffer_size * num_itr);
+            (buffer_size * i);
 
 #ifdef ENABLE_NB_SERVER_MODE
         zoidfs_hint_set(op_hint, ZOIDFS_NONBLOCK_SERVER_IO,
