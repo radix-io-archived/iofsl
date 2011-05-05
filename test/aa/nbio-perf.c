@@ -26,27 +26,27 @@ void run(char * file_path, int rank, int size, unsigned int sleep_time, size_t b
     double t_max = 0;
     double t_min = 0;
     double t_sum = 0;
+    int ret = 0;
 
     zoidfs_init();
 
-    /* rank 0 creates the file */
-    if(rank == 0)
-    {
-        /* Set the attributes */
-        sattr.mask = ZOIDFS_ATTR_SETABLE;
-        sattr.mode = 0644;
-        sattr.uid = getuid();
-        sattr.gid = getgid();
+    /* Set the attributes */
+    sattr.mask = ZOIDFS_ATTR_SETABLE;
+    sattr.mode = 0644;
+    sattr.uid = getuid();
+    sattr.gid = getgid();
 
-        gettimeofday(&now, NULL);
-        sattr.atime.seconds = now.tv_sec;
-        sattr.atime.nseconds = now.tv_usec;
-        sattr.mtime.seconds = now.tv_sec;
-        sattr.mtime.nseconds = now.tv_usec;
+    gettimeofday(&now, NULL);
+    sattr.atime.seconds = now.tv_sec;
+    sattr.atime.nseconds = now.tv_usec;
+    sattr.mtime.seconds = now.tv_sec;
+    sattr.mtime.nseconds = now.tv_usec;
 
-        /* create the file */
-        zoidfs_create(NULL, NULL, file_path, &sattr, &handle, &created, NULL);
-    }
+    /* create or lookup the file */
+    ret = zoidfs_create(NULL, NULL, file_path, &sattr, &handle, &created, NULL);
+    if(ret != ZFS_OK)
+        MPI_Abort(MPI_COMM_WORLD, 1);
+
     zoidfs_hint_create(&op_hint);
     MPI_Barrier(MPI_COMM_WORLD);
 
@@ -71,8 +71,10 @@ void run(char * file_path, int rank, int size, unsigned int sleep_time, size_t b
         usleep(sleep_time * 1000); /* in ms */
 
         /* write the data */
-        zoidfs_write(&handle, memcount, &memstart, &memsize, filecount,
+        ret = zoidfs_write(&handle, memcount, &memstart, &memsize, filecount,
                 &filestart, &filesize, &op_hint);
+        if(ret != ZFS_OK)
+            MPI_Abort(MPI_COMM_WORLD, 1);
 
 #ifdef ENABLE_NB_SERVER_MODE
         zoidfs_hint_delete_all(op_hint);
@@ -85,7 +87,9 @@ void run(char * file_path, int rank, int size, unsigned int sleep_time, size_t b
 #ifdef ENABLE_NB_COMMIT
         zoidfs_hint_set(op_hint, ZOIDFS_NONBLOCK_SERVER_IO,
                 ZOIDFS_HINT_ENABLED, 0);
-        zoidfs_commit(&handle, &op_hint);
+        ret = zoidfs_commit(&handle, &op_hint);
+        if(ret != ZFS_OK)
+            MPI_Abort(MPI_COMM_WORLD, 1);
 #endif
     }
 #endif
@@ -110,7 +114,9 @@ void run(char * file_path, int rank, int size, unsigned int sleep_time, size_t b
     if(rank == 0)
     {
         /* remove the file */
-        zoidfs_remove(NULL, NULL, file_path, NULL, NULL);
+        ret = zoidfs_remove(NULL, NULL, file_path, NULL, NULL);
+        if(ret != ZFS_OK)
+            MPI_Abort(MPI_COMM_WORLD, 1);
     }
     MPI_Barrier(MPI_COMM_WORLD);
     zoidfs_hint_free(&op_hint);
