@@ -28,6 +28,7 @@
 #include "c-util/env-parse.h"
 #include "c-util/tools.h"
 #include "c-util/sha1.h"
+#include "c-util/hash-table.h"
 
 #include "../zint-handler.h"
 #include "fcache.h"   /* zoidfs handle <-> filename cache */
@@ -76,6 +77,16 @@ static fcache_handle fcache;
 static dcache_handle dcache;
 
 static int opt_lustre_group_locks           = 0;
+
+struct open_entry_t
+{
+   zoidfs_handle_t       handle;
+   pthread_cond_t        cond;
+   unsigned int          waiters;
+};
+
+static pthread_mutex_t  throttle_open_lock;
+static HashTable *      throttle_open_list;
 
 /* ======================================================================== */
 
@@ -644,12 +655,111 @@ static int releasefd_handle (Descriptor * desc)
    return dcache_releasefd (dcache, desc);
 }
 
+static void throttle_free_key (void * UNUSED(user), HashTableKey val)
+{
+   free (val);
+}
+
+static unsigned long throttle_hash (void * UNUSED(user), HashTableKey value)
+{
+   unsigned long v = 0;
+   char * val = (char*) &v;
+   unsigned int i;
+   const char * h = (const char *) value;
+   unsigned int pos = 0;
+
+   for (i=0; i<sizeof (zoidfs_handle_t); ++i)
+   {
+      val[pos++] ^= *h++;
+      if (pos >= sizeof (v))
+         pos = 0;
+   }
+   return v;
+}
+
+static int throttle_compare (void * UNUSED(user), HashTableKey v1, HashTableKey v2)
+{
+   return (memcmp (v1, v2, sizeof (zoidfs_handle_t)) == 0);
+}
+
+static void throttle_remove_user (struct open_entry_t * o)
+{
+   if (--o->waiters)
+      return;
+
+   pthread_cond_destroy (&o->cond);
+   free (o);
+}
+
+static void throttle_add_user (struct open_entry_t * o)
+{
+   ++o->waiters;
+}
+
+static void * throttle_try_open (const zoidfs_handle_t * handle)
+{
+   HashTableValue val;
+
+   pthread_mutex_lock (&throttle_open_lock);
+   val = hash_table_lookup (throttle_open_list, (HashTableKey) handle);
+   if (!val)
+   {
+      zoidfs_handle_t * newh = malloc (sizeof (zoidfs_handle_t));
+      *newh = *handle;
+      struct open_entry_t * e = malloc (sizeof (struct open_entry_t));
+      e->handle = *handle;
+      e->waiters = 0;
+      pthread_cond_init (&e->cond, 0);
+      throttle_add_user (e);
+      hash_table_insert (throttle_open_list, newh, e);
+      pthread_mutex_unlock (&throttle_open_lock);
+      return e;
+   }
+   else
+   {
+      struct open_entry_t * e = val;
+      /* somebody is already opening this file 
+         wait on the condition variable
+       */
+      ++e->waiters;
+      zoidfs_debug ("Waiting for release of handle (%u)...\n", e->waiters);
+      pthread_cond_wait (&e->cond, &throttle_open_lock);
+      throttle_remove_user (e);
+      pthread_mutex_unlock (&throttle_open_lock);
+
+      return 0;
+   }
+
+}
+
+static int throttle_release_open (const zoidfs_handle_t * handle, void * entry)
+{
+   struct open_entry_t * o = (struct open_entry_t *) entry;
+   struct open_entry_t * e;
+
+   pthread_mutex_lock (&throttle_open_lock);
+   e = hash_table_lookup (throttle_open_list, (HashTableKey) handle);
+   assert (e == o);
+   hash_table_remove (throttle_open_list, (HashTableKey) handle);
+   pthread_cond_broadcast (&o->cond);
+   /* we know that nobody will be waiting on the condition variable here since
+    * all waiters were released, and nobody can try to wait on it again until
+    * we release the lock, so it is safe to destroy the condition variable
+    * here
+    */
+   throttle_remove_user (o);
+   pthread_mutex_unlock (&throttle_open_lock);
+   return 1;
+}
+
 /* Open a file descriptor for the specified zoidfs handle; File must exist
  * Return 1 on success, 0 on failure */
 static int getfd_handle (const zoidfs_handle_t * handle, Descriptor * desc, int * err)
 {
    int fd;
    char buf[ZOIDFS_PATH_MAX];
+   int ret;
+   void * entry;
 
    do
    {
@@ -668,29 +778,27 @@ static int getfd_handle (const zoidfs_handle_t * handle, Descriptor * desc, int 
          return 0;   /* ESTALE */
       }
 
+      /* Throttle_try_open returns true for the first caller, and will block
+       * all further calls for that handle until throttle_release_open is
+       * called, at which point all blocked calls will return NULL.
+       */
+      entry = throttle_try_open (handle);
+      if (!entry)
+         continue;
+
       /* we have the filename: open the file and add to the descriptor cache */
       fd = our_open (buf, err);
       if (fd < 0)
-         return 0;
-
-      /* Take an optimistic approach: if somebody else added the file at exactly
-       * the same instance, close our fd and use the first one instead */
-      if (!dcache_addfd (dcache, handle, fd, desc))
       {
-         /* couldn't add the handle: may already exist */
-         close (fd);
-         if (desc->fd > 0)
-         {
-            /* FD is valid, somebody else openened the file before we could */
-         }
-         else
-         {
-            /* some other error: try again */
-            continue;
-         }
+         // We failed to open, give somebody else a chance
+         throttle_release_open (handle, entry);
+         return 0;
       }
 
-      /* we got here, have obtained locked (in cache) file descriptor */
+      /* Since we're preventing others from trying to open this file at the
+       * same time, addfd should always succeed. */
+      ret = dcache_addfd (dcache, handle, fd, desc);
+      assert (ret);
 
       /* lustre group locks: set group lock bit on file descriptor
        * Note: we don't release lock, will be done when file descriptor is
@@ -705,10 +813,13 @@ static int getfd_handle (const zoidfs_handle_t * handle, Descriptor * desc, int 
             zoidfs_debug ("LL_IOC_GROUP_LOCK failed: %i", ret);
          }
       }
+      
+      throttle_release_open (handle, entry);
 
-   } while (0);
+      /* we got here, have obtained locked (in cache) file descriptor */
+      return 1;
 
-   return 1;
+   } while (1);
 }
 
 
@@ -1294,6 +1405,11 @@ static int zoidfs_posix_init(void)
          fcache = filename_create (namesize);
          dcache = dcache_create (fdsize);
 
+         /* create handle lock table */
+         pthread_mutex_init (&throttle_open_lock, 0);
+         throttle_open_list = hash_table_new (throttle_hash, &throttle_compare);
+         hash_table_register_free_functions (throttle_open_list, &throttle_free_key, 0);
+
          zoidfs_debug ("%s", "zoidfs_init called...\n");
          posix_initialized = 1;
 
@@ -1325,6 +1441,9 @@ static int zoidfs_posix_finalize(void)
 
       filename_destroy (fcache);
       dcache_destroy (dcache);
+
+      hash_table_free (throttle_open_list);
+      pthread_mutex_destroy (&throttle_open_lock);
 
       posix_initialized = 0;
 
