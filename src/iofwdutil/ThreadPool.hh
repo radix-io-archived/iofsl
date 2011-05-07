@@ -11,6 +11,7 @@
 #include <boost/thread/condition.hpp>
 #include <boost/thread/tss.hpp>
 #include <boost/thread/barrier.hpp>
+#include <boost/algorithm/string.hpp>
 
 #include "iofwdutil/Singleton.hh"
 
@@ -25,6 +26,8 @@
     distinct priorities (HIGH, MID, LOW). Thread safe.
 */
 
+#define TPStringify( name ) # name
+
 namespace iofwdutil
 {
 
@@ -33,10 +36,48 @@ class ThreadPool : public Singleton< ThreadPool >
     protected:
         class IOFWDThread;
 
+        typedef std::queue< boost::function< void() > > IOFWDThreadStorage;
+
     public:
 
         /* work item priority */
-        enum TPPrio {HIGH, MID, LOW};
+        enum TPPrio {HIGH=0, LOW, PRIO_LIMIT};
+
+        /* work item attribute */
+        enum TPAttr {FILEIO=0, SM, RPC, OTHER, ATTR_LIMIT};
+
+        static TPAttr getAttrType(std::string attrString)
+        {
+            if(boost::equals(attrString, std::string(TPStringify( FILEIO ))))
+            {
+                return FILEIO;
+            }
+            else if(boost::equals(attrString, std::string(TPStringify( SM ))))
+            {
+                return RPC;
+            }
+            else if(boost::equals(attrString, std::string(TPStringify( RPC ))))
+            {
+                return SM;
+            }
+            return OTHER;
+        }
+
+        static std::string getAttrString(TPAttr a)
+        {
+            switch(a)
+            {
+                case FILEIO:
+                    return std::string("FILEIO");
+                case SM:
+                    return std::string("SM");
+                case RPC:
+                    return std::string("RPC");
+                default:
+                    return std::string("OTHER");
+            };
+            return std::string("OTHER");
+        }
 
         ThreadPool();
         ~ThreadPool();
@@ -53,125 +94,41 @@ class ThreadPool : public Singleton< ThreadPool >
             delete workObj;
         }
 
-        /* add work to the thread pool from an object */
-        /* only accepts work that takes no args and has a void return type */
-        template <typename T>
-        void addWorkUnit(T * workObj, void (T::*workFunc)(void), TPPrio prio, bool cleanup)
-        {
-            /* if the thread pool is supposed to cleanup once the work is done */
-            if(cleanup)
-            {
-                if(prio == HIGH)
-                {
-                    boost::mutex::scoped_lock lock(high_prio_queue_mutex_);
-                    boost::function<void ()> work = boost::bind(workFunc, workObj);
-                    boost::function<void ()> f = boost::bind(&ThreadPool::cleanupWrapper<T>, this, work, workObj);
-                    high_prio_queue_queue_.push(f);
-
-                    boost::mutex::scoped_lock threadlock(thread_cond_mutex_);
-                    threadlock.unlock();
-                    threadcond_.notify_one();
-                }
-                else if(prio == MID)
-                {
-                    boost::mutex::scoped_lock lock(mid_prio_queue_mutex_);
-                    boost::function<void ()> work = boost::bind(workFunc, workObj);
-                    boost::function<void ()> f = boost::bind(&ThreadPool::cleanupWrapper<T>, this, work, workObj);
-                    mid_prio_queue_queue_.push(f);
-
-                    boost::mutex::scoped_lock threadlock(thread_cond_mutex_);
-                    threadlock.unlock();
-                    threadcond_.notify_one();
-                }
-                else if(prio == LOW)
-                {
-                    boost::mutex::scoped_lock lock(low_prio_queue_mutex_);
-                    boost::function<void ()> work = boost::bind(workFunc, workObj);
-                    boost::function<void ()> f = boost::bind(&ThreadPool::cleanupWrapper<T>, this, work, workObj);
-                    low_prio_queue_queue_.push(f);
-
-                    boost::mutex::scoped_lock threadlock(thread_cond_mutex_);
-                    threadlock.unlock();
-                    threadcond_.notify_one();
-                }
-            }
-            /* else, the work will not delete the work obj */
-            else
-            {
-                if(prio == HIGH)
-                {
-                    boost::mutex::scoped_lock lock(high_prio_queue_mutex_);
-                    high_prio_queue_queue_.push(boost::bind(workFunc, workObj));
-
-                    boost::mutex::scoped_lock threadlock(thread_cond_mutex_);
-                    threadlock.unlock();
-                    threadcond_.notify_one();
-                }
-                else if(prio == MID)
-                {
-                    boost::mutex::scoped_lock lock(mid_prio_queue_mutex_);
-                    mid_prio_queue_queue_.push(boost::bind(workFunc, workObj));
-
-                    boost::mutex::scoped_lock threadlock(thread_cond_mutex_);
-                    threadlock.unlock();
-                    threadcond_.notify_one();
-                }
-                else if(prio == LOW)
-                {
-                    boost::mutex::scoped_lock lock(low_prio_queue_mutex_);
-                    low_prio_queue_queue_.push(boost::bind(workFunc, workObj));
-
-                    boost::mutex::scoped_lock threadlock(thread_cond_mutex_);
-                    threadlock.unlock();
-                    threadcond_.notify_one();
-                }
-            }
-        }
-
-        void submitWorkUnit(boost::function<void (void)> func, TPPrio prio)
+        void submitWorkUnit(boost::function<void (void)> func, TPPrio prio,
+                TPAttr attr)
         {
             boost::mutex::scoped_lock lock(queue_mutex_);
             if(prio == HIGH)
             {
-                if(high_thread_warn_ >= (max_high_thread_count_ -
-                            high_active_threads_ + 1) && high_thread_warn_ != 0)
+                if(high_active_threads_[attr] >= max_high_thread_count_[attr])
                 {
-                    std::cout << "ThreadPool WARN: low number of high prio threads: avail == " << (max_high_thread_count_ - high_active_threads_ + 1) << std::endl;
-                }
-
-                if(high_active_threads_ >= max_high_thread_count_)
-                {
-                    prio_queue_.push(func);
+                    prio_queue_[attr].push(func);
                 }
                 else
                 {
-                    high_active_threads_++;
+                    high_active_threads_[attr]++;
                     IOFWDThread * wt = tpgroup_.top();
                     tpgroup_.pop();
                     lock.unlock();
                     wt->setPrio(prio);
+                    wt->setAttr(attr);
                     wt->setWork(func);
                 }
             }
             else
             {
-                if(norm_thread_warn_ >= (max_norm_thread_count_ -
-                            norm_active_threads_ + 1) && norm_thread_warn_ != 0)
+                if(norm_active_threads_[attr] >= max_norm_thread_count_[attr])
                 {
-                    std::cout << "ThreadPool WARN: low number of norm prio threads: avail == " << (max_norm_thread_count_ - norm_active_threads_ + 1) << std::endl;
-                }
-
-                if(norm_active_threads_ >= max_norm_thread_count_)
-                {
-                    norm_queue_.push(func);
+                    norm_queue_[attr].push(func);
                 }
                 else
                 {
-                    norm_active_threads_++;
+                    norm_active_threads_[attr]++;
                     IOFWDThread * wt = tpgroup_.top();
                     tpgroup_.pop();
                     lock.unlock();
                     wt->setPrio(prio);
+                    wt->setAttr(attr);
                     wt->setWork(func);
                 }
             }
@@ -179,19 +136,32 @@ class ThreadPool : public Singleton< ThreadPool >
 
         void startWorkUnit()
         {
-            if(prio_queue_.size() > 0)
+            /* check high prio */
+            for(int i = FILEIO ; i < ATTR_LIMIT ; i++)
             {
-                boost::function<void ()> func = prio_queue_.front();
-                IOFWDThread * wt = tpgroup_.top();
-                tpgroup_.pop();
-                wt->setWork(func);
+                if(prio_queue_[i].size() > 0)
+                {
+                    boost::function<void ()> func = prio_queue_[i].front();
+                    IOFWDThread * wt = tpgroup_.top();
+                    tpgroup_.pop();
+                    wt->setAttr(static_cast<TPAttr>(i));
+                    wt->setWork(func);
+
+                    break;
+                }
             }
-            else if(norm_queue_.size() > 0)
+            for(int i = FILEIO ; i < ATTR_LIMIT ; i++)
             {
-                boost::function<void ()> func = norm_queue_.front();
-                IOFWDThread * wt = tpgroup_.top();
-                tpgroup_.pop();
-                wt->setWork(func);
+                if(norm_queue_[i].size() > 0)
+                {
+                    boost::function<void ()> func = norm_queue_[i].front();
+                    IOFWDThread * wt = tpgroup_.top();
+                    tpgroup_.pop();
+                    wt->setAttr(static_cast<TPAttr>(i));
+                    wt->setWork(func);
+
+                    break;
+                }
             }
         }
 
@@ -199,91 +169,98 @@ class ThreadPool : public Singleton< ThreadPool >
         {
             bool morework = false;
             boost::mutex::scoped_lock lock(queue_mutex_);
+            int reusethread = 0;
 
-            if(prio_queue_.size() == 0 && norm_queue_.size() == 0)
+            //for(int i = 0 ; i < ATTR_LIMIT ; i++)
+            {
+                if(prio_queue_[t->getAttr()].size() != 0 ||
+                        norm_queue_[t->getAttr()].size() != 0)
+                {
+                    reusethread = 1;
+                }
+            }
+
+            if(!reusethread)
             {
                 if(t->getPrio() == HIGH)
                 {
-                    high_active_threads_--;
+                    high_active_threads_[t->getAttr()]--;
                 }
-                else
+                else if(t->getPrio() == LOW)
                 {
-                    norm_active_threads_--;
+                    norm_active_threads_[t->getAttr()]--;
                 } 
                 tpgroup_.push(t);
             }
             else
             {
-                if(prio_queue_.size() > 0)
                 {
-                    /* if this thread is going to switch priority */
-                    if(t->getPrio() != HIGH)
+                    if(prio_queue_[t->getAttr()].size() > 0)
                     {
-                        norm_active_threads_--;
+                        /* if this thread is going to switch priority */
+                        if(t->getPrio() != HIGH)
+                        {
+                            norm_active_threads_[t->getAttr()]--;
 
-                        /* make sure we aren't already limited */
-                        if(max_high_thread_count_ == high_active_threads_)
-                        {
-                            tpgroup_.push(t);
-                            return morework;
+                            /* make sure we aren't already limited */
+                            if(max_high_thread_count_[t->getAttr()] ==
+                                    high_active_threads_[t->getAttr()])
+                            {
+                                tpgroup_.push(t);
+                                return morework;
+                            }
+                            else
+                            {
+                                high_active_threads_[t->getAttr()]++;
+                            }
                         }
-                        else
-                        {
-                            high_active_threads_++;
-                        }
-                    }
                     
-                    morework = true;
-                    boost::function<void ()> func = prio_queue_.front();
-                    prio_queue_.pop();
-                    lock.unlock();
-                    t->setPrio(HIGH);
-                    t->setWorkNL(func);
-                }
-                else if(norm_queue_.size() > 0)
-                {
-                    /* if this thread is going to switch priority */
-                    if(t->getPrio() == HIGH)
+                        morework = true;
+                        boost::function<void ()> func = prio_queue_[t->getAttr()].front();
+                        prio_queue_[t->getAttr()].pop();
+                        lock.unlock();
+                        t->setPrio(HIGH);
+                        t->setWorkNL(func);
+                    }
+                    else if(norm_queue_[t->getAttr()].size() > 0)
                     {
-                        high_active_threads_--;
+                        /* if this thread is going to switch priority */
+                        if(t->getPrio() == HIGH)
+                        {
+                            high_active_threads_[t->getAttr()]--;
 
-                        /* make sure we aren't already limited */
-                        if(max_norm_thread_count_ == norm_active_threads_)
-                        {
-                            tpgroup_.push(t);
-                            return morework;
+                            /* make sure we aren't already limited */
+                            if(max_norm_thread_count_[t->getAttr()] ==
+                                    norm_active_threads_[t->getAttr()])
+                            {
+                                tpgroup_.push(t);
+                                return morework;
+                            }
+                            else
+                            {
+                                norm_active_threads_[t->getAttr()]++;
+                            }
                         }
-                        else
-                        {
-                            norm_active_threads_++;
-                        }
-                    }
                     
-                    morework = true;
-                    boost::function<void ()> func = norm_queue_.front();
-                    norm_queue_.pop();
-                    lock.unlock();
-                    t->setPrio(LOW);
-                    t->setWorkNL(func);
+                        morework = true;
+                        boost::function<void ()> func = norm_queue_[t->getAttr()].front();
+                        norm_queue_[t->getAttr()].pop();
+                        lock.unlock();
+                        t->setPrio(LOW);
+                        t->setWorkNL(func);
+                    }
                 }
             }
             return morework;
         }
 
-        /* add work to the thread pool from a free function */
-        /* only accepts work that takes no args and has a void return type */
-        void addWorkUnit(void (*workFunc)(void), TPPrio prio);
-
-        static void setMinHighThreadCount(int c);
-        static int getMinHighThreadCount();
-        static void setMaxHighThreadCount(int c);
-        static int getMaxHighThreadCount();
-        static void setMinNormThreadCount(int c);
-        static int getMinNormThreadCount();
-        static void setMaxNormThreadCount(int c);
-        static int getMaxNormThreadCount();
-        static void setNormThreadWarn(int c);
-        static void setHighThreadWarn(int c);
+        /* TP config */
+        static void setMaxHighThreadCount(TPAttr a, int c);
+        static int getMaxHighThreadCount(TPAttr a);
+        static void setMaxNormThreadCount(TPAttr a, int c);
+        static int getMaxNormThreadCount(TPAttr a);
+        static void setNormThreadWarn(TPAttr a, int c);
+        static void setHighThreadWarn(TPAttr a, int c);
 
         void reset();
     protected:
@@ -291,7 +268,12 @@ class ThreadPool : public Singleton< ThreadPool >
 class IOFWDThread
 {
     public:
-        IOFWDThread(ThreadPool * tp) : b_(2), shutdown_(false), tp_(tp), prio_(LOW)
+        IOFWDThread(ThreadPool * tp) :
+            b_(2),
+            shutdown_(false),
+            tp_(tp),
+            prio_(LOW),
+            attr_(OTHER)
         {
             noop_ = boost::function<void ()>(boost::bind(&IOFWDThread::noop, this));
             w_ = noop_;
@@ -320,10 +302,20 @@ class IOFWDThread
         {
             prio_ = p;
         }
+
+        void setAttr(TPAttr a)
+        {
+            attr_ = a;
+        }
     
         TPPrio getPrio()
         {
             return prio_;
+        }
+
+        TPAttr getAttr()
+        {
+            return attr_;
         }
 
         void noop()
@@ -385,66 +377,30 @@ class IOFWDThread
         boost::function<void ()> w_; 
         boost::function<void ()> noop_;
         TPPrio prio_;
+        TPAttr attr_;
 };
 
-        /* the thread function... polls queues for work and waits for work if non avail */
-        void run(int tid);
-
-        /* execute the the thread work */
-        void runThreadWork(int tid);
-
-        /* create a thread for the thread pool and detach it */
-        void createThread(int tid);
-
-        /* check the work queue for possible work items and move the work item if one was found */
-        bool checkPrioWorkQueue(std::queue< boost::function< void() > > & tp_work_queue, boost::mutex & tp_work_queue_mutex, int tid);
-
         /* work queues */
-        /* for now, we use predefined priroities seperated by queue... */
-        /* DO NOT EXECUTE WORK WITHIN THESE DATA STRUCTURES... ONLY ADD AND RM WORK UNITS TO MINIMIZE LOCK HOLD TIMES */
-        int active_threads_;
-        int high_active_threads_;
-        int norm_active_threads_;
-        std::queue< boost::function< void() > > prio_queue_;
-        std::queue< boost::function< void() > > norm_queue_;
+        std::map<int, int> high_active_threads_;
+        std::map<int, int> norm_active_threads_;
+        std::map<int, IOFWDThreadStorage> prio_queue_;
+        std::map<int, IOFWDThreadStorage> norm_queue_;
         boost::mutex queue_mutex_;
-        std::queue< boost::function< void() > > high_prio_queue_queue_;
-        boost::mutex high_prio_queue_mutex_;
-        std::queue< boost::function< void() > > mid_prio_queue_queue_;
-        boost::mutex mid_prio_queue_mutex_;
-        std::queue< boost::function< void() > > low_prio_queue_queue_;
-        boost::mutex low_prio_queue_mutex_;
 
         std::stack< IOFWDThread * > tpgroup_;
 
-        /* storage for the current thread work items */
-        /* NO LOCKS FOR THESE DATA STRUCTURES */
-        std::vector< boost::function< void() > > thread_work_items_;
-
         /* thread tracking / usage variables */
-        int thread_count_;
         boost::mutex shutdown_lock_;
         static boost::mutex tp_setup_mutex_;
-        static int max_high_thread_count_;
-        static int min_high_thread_count_;
-        static int high_thread_warn_;
-        static int max_norm_thread_count_;
-        static int min_norm_thread_count_;
-        static int norm_thread_warn_;
+        static std::map<int, int> max_high_thread_count_;
+        static std::map<int, int> high_thread_warn_;
+        static std::map<int, int> max_norm_thread_count_;
+        static std::map<int, int> norm_thread_warn_;
         bool shutdown_threads_;
         bool thread_pool_running_;
-        boost::condition threadcond_;
-        boost::mutex thread_cond_mutex_;
-        boost::condition shutdown_cond_;
-        boost::mutex shutdown_cond_mutex_;
-        boost::condition jobs_done_cond_;
-        boost::mutex jobs_done_cond_mutex_;
-
-        std::vector<boost::thread *> thread_vec_;
 
         boost::mutex tp_start_mutex_;
         bool started_;
-        int tp_start_ref_count_;
 };
 
 } /* namespace iofwdutil */

@@ -318,11 +318,12 @@ namespace zoidfs
       };
 
     void submitWorkUnit(const boost::function<void (void)> & wu_,
-          iofwdutil::ThreadPool::TPPrio prio)
+          iofwdutil::ThreadPool::TPPrio prio,
+          iofwdutil::ThreadPool::TPAttr attr)
     {
         if(wait_for_threads_)
         {
-            tp_.submitWorkUnit(wu_, prio);
+            tp_.submitWorkUnit(wu_, prio, attr);
         }
         else
         {

@@ -148,8 +148,10 @@ void RequestScheduler::write (const iofwdevent::CBType & cb, int * ret, const
     /* if the scheduler is not active, add the scheduler work to the ThreadPool */
     if(!schedActive_)
     {
-        tp_.submitWorkUnit(boost::bind(&RequestScheduler::submitWorkUnit, new ReqSchedHelper(this)), iofwdutil::ThreadPool::HIGH);
-        //tp_.addWorkUnit(new ReqSchedHelper(this), &ReqSchedHelper::run, iofwdutil::ThreadPool::HIGH, true);
+        tp_.submitWorkUnit(boost::bind(&RequestScheduler::submitWorkUnit,
+                    new ReqSchedHelper(this)),
+                iofwdutil::ThreadPool::HIGH,
+                iofwdutil::ThreadPool::SM);
         schedActive_ = true;
     }
   }
@@ -187,8 +189,10 @@ void RequestScheduler::read (const iofwdevent::CBType & cb, int * ret, const
     /* if the scheduler is not active, add the scheduler work to the ThreadPool */
     if(!schedActive_)
     {
-        tp_.submitWorkUnit(boost::bind(&RequestScheduler::submitWorkUnit, new ReqSchedHelper(this)), iofwdutil::ThreadPool::HIGH);
-        //tp_.addWorkUnit(new ReqSchedHelper(this), &ReqSchedHelper::run, iofwdutil::ThreadPool::HIGH, true);
+        tp_.submitWorkUnit(boost::bind(&RequestScheduler::submitWorkUnit,
+                    new ReqSchedHelper(this)),
+                iofwdutil::ThreadPool::HIGH,
+                iofwdutil::ThreadPool::SM);
         schedActive_ = true;
     }
   }

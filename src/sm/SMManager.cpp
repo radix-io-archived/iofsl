@@ -34,9 +34,11 @@ void SMManager::schedule (SMClient * client)
    client->addref();
 
    if(high_prio_tp_)
-    tp_.submitWorkUnit(boost::bind(&SMManager::submitWorkUnit, w), iofwdutil::ThreadPool::HIGH);
+    tp_.submitWorkUnit(boost::bind(&SMManager::submitWorkUnit, w),
+            iofwdutil::ThreadPool::HIGH, iofwdutil::ThreadPool::SM);
    else
-    tp_.submitWorkUnit(boost::bind(&SMManager::submitWorkUnit, w), iofwdutil::ThreadPool::LOW);
+    tp_.submitWorkUnit(boost::bind(&SMManager::submitWorkUnit, w),
+            iofwdutil::ThreadPool::LOW, iofwdutil::ThreadPool::SM);
 }
 
 void SMManager::startThreads()
@@ -46,7 +48,6 @@ void SMManager::startThreads()
 
 void SMManager::stopThreads()
 {
-    iofwdutil::ThreadPool::instance().reset();
 }
 
 void SMManager::workerMain ()

@@ -226,7 +226,8 @@ namespace iofwd
                     /* if use thread pool option, submit wu onto thread pool */
                     if(use_thread_pool)
                     {
-                        aarpc_tp_.submitWorkUnit(wu_, prio);
+                        aarpc_tp_.submitWorkUnit(wu_, prio,
+                                iofwdutil::ThreadPool::RPC);
                     }
                     /* else spawn and detach a thread */
                     else
@@ -318,8 +319,12 @@ namespace iofwd
                             batch_wu_items_.clear();
 
                             /* submit the bulk request */
-                            aa_manager_->submitWorkUnit(boost::bind(&AtomicAppendManager::runAARPCWorkUnit,
-                                        batch_wu), iofwdutil::ThreadPool::HIGH);
+                            aa_manager_->submitWorkUnit(
+                                    boost::bind(
+                                        &AtomicAppendManager::runAARPCWorkUnit,
+                                        batch_wu),
+                                    iofwdutil::ThreadPool::HIGH,
+                                    iofwdutil::ThreadPool::RPC);
 
                             /* reset the batch params */
                             batch_chunk_ = 0;

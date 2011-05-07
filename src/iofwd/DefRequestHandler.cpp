@@ -55,12 +55,60 @@ DefRequestHandler::DefRequestHandler (const iofwdutil::ConfigFile & cf)
 
    /* start thread pool */
    iofwdutil::ConfigFile lc = config_.openSectionDefault ("threadpool");
-   tp_.setMinHighThreadCount(lc.getKeyAsDefault("minnumhighthreads", 0));
-   tp_.setMaxHighThreadCount(lc.getKeyAsDefault("maxnumhighthreads", 0));
-   tp_.setHighThreadWarn(lc.getKeyAsDefault("warnnumhighthreads", 0));
-   tp_.setMinNormThreadCount(lc.getKeyAsDefault("minnumnormthreads", 0));
-   tp_.setMaxNormThreadCount(lc.getKeyAsDefault("maxnumnormthreads", 0));
-   tp_.setNormThreadWarn(lc.getKeyAsDefault("warnnumnormthreads", 0));
+
+   /* parse the norm prio thread section */
+   iofwdutil::ConfigFile ntc = lc.openSectionDefault ("normprio");
+   std::vector<std::string> norm_max_thread_params;
+   std::vector<std::string> norm_warn_thread_params;
+   std::string norm_max_limits = ntc.getKeyAsDefault<std::string>("maxlimits",
+           "FILEIO:8,SM:4,RPC:4,OTHER:0");
+   std::string norm_warn_limits = ntc.getKeyAsDefault<std::string>("warnlimits",
+           "FILEIO:1,SM:1,RPC:1,OTHER:0");
+
+   boost::split(norm_max_thread_params, norm_max_limits, boost::is_any_of(",:"));
+   boost::split(norm_warn_thread_params, norm_warn_limits, boost::is_any_of(",:"));
+
+   for(unsigned int i = 0 ; i < norm_max_thread_params.size() ; i+=2)
+   {
+        tp_.setMaxNormThreadCount(
+                iofwdutil::ThreadPool::getAttrType(norm_max_thread_params[i]),
+                boost::lexical_cast<int>(norm_max_thread_params[i + 1]));
+   }
+
+   for(unsigned int i = 0 ; i < norm_warn_thread_params.size() ; i+=2)
+   {
+        tp_.setNormThreadWarn(
+                iofwdutil::ThreadPool::getAttrType(norm_warn_thread_params[i]),
+                boost::lexical_cast<int>(norm_warn_thread_params[i + 1]));
+   }
+
+   /* parse the high prio thread section */
+   iofwdutil::ConfigFile htc = lc.openSectionDefault ("highprio");
+   std::vector<std::string> high_max_thread_params;
+   std::vector<std::string> high_warn_thread_params;
+   std::string high_max_limits = htc.getKeyAsDefault<std::string>("maxlimits",
+           "FILEIO:8,SM:4,RPC:4,OTHER:0");
+   std::string high_warn_limits = htc.getKeyAsDefault<std::string>("warnlimits",
+           "FILEIO:1,SM:1,RPC:1,OTHER:0");
+
+   boost::split(high_max_thread_params, high_max_limits, boost::is_any_of(",:"));
+   boost::split(high_warn_thread_params, high_warn_limits, boost::is_any_of(",:"));
+
+   for(unsigned int i = 0 ; i < high_max_thread_params.size() ; i+=2)
+   {
+        tp_.setMaxHighThreadCount(
+                iofwdutil::ThreadPool::getAttrType(high_max_thread_params[i]),
+                boost::lexical_cast<int>(high_max_thread_params[i + 1]));
+   }
+
+   for(unsigned int i = 0 ; i < high_warn_thread_params.size() ; i+=2)
+   {
+        tp_.setHighThreadWarn(
+                iofwdutil::ThreadPool::getAttrType(high_warn_thread_params[i]),
+                boost::lexical_cast<int>(high_warn_thread_params[i + 1]));
+   }
+
+   /* start the thread pool */
    tp_.start();
 
    /* get the event mode */

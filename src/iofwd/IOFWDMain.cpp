@@ -109,7 +109,6 @@ void IOFWDMain::shutdown ()
    requesthandler_.reset ();
 
    ZLOG_DEBUG (mainlog_, "Stopping thread pool...");
-   iofwdutil::ThreadPool::instance().reset(); 
 
    ZLOG_DEBUG (mainlog_, "Dumping counters...");
    iofwdutil::stats::CounterTable::instance().dumpCounters();

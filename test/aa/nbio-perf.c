@@ -9,7 +9,7 @@
 #include "zoidfs/hints/zoidfs-hints.h"
 
 #define ENABLE_NB_SERVER_MODE
-#define ENABLE_NB_COMMIT
+//#define ENABLE_NB_COMMIT_BEFORE_TIMER
 
 void run(char * file_path, int rank, int size, unsigned int sleep_time, size_t buffer_size, int num_itr)
 {
@@ -66,6 +66,10 @@ void run(char * file_path, int rank, int size, unsigned int sleep_time, size_t b
 #ifdef ENABLE_NB_SERVER_MODE
         zoidfs_hint_set(op_hint, ZOIDFS_NONBLOCK_SERVER_IO,
                 ZOIDFS_HINT_ENABLED, 0);
+#ifdef DROP_NBIO_REQUESTS
+        zoidfs_hint_set(op_hint, ZOIDFS_NONBLOCK_SERVER_DROP_IO,
+                ZOIDFS_HINT_ENABLED, 0);
+#endif
 #endif
         /* sleep */
         usleep(sleep_time * 1000); /* in ms */
@@ -73,6 +77,8 @@ void run(char * file_path, int rank, int size, unsigned int sleep_time, size_t b
         /* write the data */
         ret = zoidfs_write(&handle, memcount, &memstart, &memsize, filecount,
                 &filestart, &filesize, &op_hint);
+        fprintf(stderr, "%s:%i zoidfs_write done, filestart = %lu\n",
+                __func__, __LINE__, filestart);
         if(ret != ZFS_OK)
             MPI_Abort(MPI_COMM_WORLD, 1);
 
@@ -84,7 +90,7 @@ void run(char * file_path, int rank, int size, unsigned int sleep_time, size_t b
 #ifdef ENABLE_NB_SERVER_MODE
     if(rank == 0)
     {
-#ifdef ENABLE_NB_COMMIT
+#ifdef ENABLE_NB_COMMIT_BEFORE_TIMER
         zoidfs_hint_set(op_hint, ZOIDFS_NONBLOCK_SERVER_IO,
                 ZOIDFS_HINT_ENABLED, 0);
         ret = zoidfs_commit(&handle, &op_hint);
@@ -110,6 +116,21 @@ void run(char * file_path, int rank, int size, unsigned int sleep_time, size_t b
             num_itr, buffer_size, sleep_time, size, t_max, t_min, t_sum / (1.0 * size));
     }
 
+#ifdef ENABLE_NB_SERVER_MODE
+    if(rank == 0)
+    {
+#ifndef ENABLE_NB_COMMIT_BEFORE_TIMER
+        zoidfs_hint_set(op_hint, ZOIDFS_NONBLOCK_SERVER_IO,
+                ZOIDFS_HINT_ENABLED, 0);
+        ret = zoidfs_commit(&handle, &op_hint);
+        if(ret != ZFS_OK)
+            MPI_Abort(MPI_COMM_WORLD, 1);
+#endif
+    }
+#endif
+
+    stop = MPI_Wtime();
+    elapsed = stop - start;
     /* rank 0 removes the file */
     if(rank == 0)
     {

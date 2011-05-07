@@ -46,7 +46,7 @@ namespace iofwd
 
              /* submit to the threadpool */
              iofwdutil::ThreadPool::instance().submitWorkUnit(f,
-                     iofwdutil::ThreadPool::HIGH);
+                     iofwdutil::ThreadPool::HIGH, iofwdutil::ThreadPool::RPC);
          }
 
          rpc::RPCHandler rpcExec(const rpc::RPCHandler & orig)
