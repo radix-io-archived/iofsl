@@ -32,10 +32,17 @@ namespace iofwdutil
     *
     * For example, the typedef below enables adding a string to an exception
     * object by using   exception_instance << zexception_msg (str)
+    *
+    * Don't forget to provide a function for converting the tag value into a
+    * string if the base value is not default convertible to a string or
+    * if the converted value doesn't have a well defined meaning. (For example
+    * error codes)
+    *
+    * To do this: define a to_string (const A &) with A being for example
+    * zexception_msg
     */
    typedef boost::error_info<struct tag_zexception_msg,std::string>
       zexception_msg;
-
 
    std::string to_string (const zexception_msg & n);
 
