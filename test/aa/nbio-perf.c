@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <sys/time.h>
 #include <sys/types.h>
+#include <string.h>
 
 #include "zoidfs/zoidfs.h"
 #include "zoidfs/hints/zoidfs-hints.h"
@@ -134,10 +135,13 @@ void run(char * file_path, int rank, int size, unsigned int sleep_time, size_t b
     /* rank 0 removes the file */
     if(rank == 0)
     {
-        /* remove the file */
-        ret = zoidfs_remove(NULL, NULL, file_path, NULL, NULL);
-        if(ret != ZFS_OK)
-            MPI_Abort(MPI_COMM_WORLD, 1);
+        if(strcmp(file_path, "/dev/null") != 0)
+        {
+            /* remove the file */
+            ret = zoidfs_remove(NULL, NULL, file_path, NULL, NULL);
+            if(ret != ZFS_OK)
+                MPI_Abort(MPI_COMM_WORLD, 1);
+        }
     }
     MPI_Barrier(MPI_COMM_WORLD);
     zoidfs_hint_free(&op_hint);
