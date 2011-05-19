@@ -27,8 +27,7 @@ namespace iofwdevent {
     this->transform = transform;
     flushFlag = false;
     dataWritten = false;
-    intMemPtr = NULL;
-    intMemSize = 0;
+    curState = SUPPLY_INBUF;
   }
 
   ZeroCopyTransformOutput::~ZeroCopyTransformOutput ()
@@ -52,21 +51,15 @@ namespace iofwdevent {
     assert ( flushFlag != true );
 
     dataWritten = true;
-    /* Create a null callback for reading of transformStorage (non blocking) */
-    CBType nullCB = boost::bind(&ZeroCopyTransformOutput::nullCB,
-                                boost::ref(*this), _1);
 
     /* Check the Internal Memory Buffer. If there is any free space return 
        the free space in the buffer. */    
-    if (internalBuf->spaceRemaining() > 0 && intMemPtr == NULL)
+    if (internalBuf->spaceRemaining() > 0)
       return internalBuf->write(ptr, size, cb, suggested);
-    else if (intMemPtr != NULL)
-       /* If there is no space remaining, flush internal buffer and proceed 
-          to getting the memory location for the output stream (this->outStream) 
-       */
-       internalBuf->flush(nullCB);
 
-    return getWriteLoc (ptr, size, cb, suggested);
+    assert (internalBuf->spaceRemaining() == 0);
+
+    return getWriteLoc (ptr, size, cb, 4194304);
   }
 
   /** 
@@ -118,15 +111,14 @@ namespace iofwdevent {
     Handle x;
     /* Preform the transform */  
     outState = doTransform (writeLoc, writeSize, false);
-
+    curState = outState;
     /* If we are out of input buffer, reset internal buffer and return the 
        write pointer to the user */
     if (outState == SUPPLY_INBUF)
     {
-      intMemSize = 0;
-      intMemPtr = NULL;
       internalBuf->reset();
       x = internalBuf->write(ptr, size, cb, suggested);
+      return;
     } 
     else if (outState == CONSUME_OUTBUF)
     /* If we are out of output buffer, repeat this run */
@@ -135,11 +127,10 @@ namespace iofwdevent {
       block.reset();
       outStream->flush(block);
       block.wait();
-     getWriteLoc(ptr, size, cb, suggested);
+      curState = SUPPLY_INBUF;
+      getWriteLoc(ptr, size, cb, suggested);
+      return;   
     }
-    
-    /* We should never get here, transformation should not be signaled as done
-       at this location */
     assert (outState != 0);
   }
 
@@ -165,13 +156,8 @@ namespace iofwdevent {
     size_t transOut = 0;
     int outState = 0;
 
-    /* Get the memory locations for the internal buffer */
-    if (intMemPtr == NULL)
-    {
-      intMemSize = internalBuf->getBufferUsed();
-      intMemPtr  = internalBuf->getMemPtr();
-    }
-
+    intMemSize = internalBuf->getBufferUsed();
+    intMemPtr  = internalBuf->getMemPtr();
     /* Create a null callback for reading of transformStorage (non blocking) */
 
     /* preform the transform */
@@ -201,22 +187,16 @@ namespace iofwdevent {
   {
     void ** writeLoc = new void * [1];
     size_t * writeSize = new size_t[1];
-    if (intMemPtr == NULL)
-    {
-      /* Create a null callback for flushing the internal memory stream */
-      CBType nullCB = boost::bind(&ZeroCopyTransformOutput::nullCB,
-                                   boost::ref(*this), _1);
-
-       /* Flush the internal buffer */
-       internalBuf->flush(nullCB);
-    }
     size_t streamLen = internalBuf->getBufferUsed();
-    /* Set up callback for transformation state */
-    CBType transCB = boost::bind(&ZeroCopyTransformOutput::flushTransform,
-                                 boost::ref(*this), cb, writeLoc, writeSize);
-  
-    return outStream->write(writeLoc, writeSize, transCB, streamLen);
-
+    if (curState == CONSUME_OUTBUF || flushFlag == true)
+    {
+      /* Set up callback for transformation state */
+      CBType transCB = boost::bind(&ZeroCopyTransformOutput::flushTransform,
+                                   boost::ref(*this), cb, writeLoc, writeSize);  
+      return outStream->write(writeLoc, writeSize, transCB, streamLen);
+    }
+    cb(CBException());
+    return Handle();
   }
 
   /**
@@ -234,18 +214,30 @@ namespace iofwdevent {
        outState = doTransform ( writeLoc, writeSize, flushFlag);
     else
        outState = TRANSFORM_DONE;
-
+      
     if (outState == CONSUME_OUTBUF || outState == TRANSFORM_DONE)
-      outStream->flush(cb);
-    else if (flushFlag == true)
-      flush(cb);
-    else
     {
-      intMemSize = 0;
-      intMemPtr = NULL;
+      if (flushFlag == true && outState != TRANSFORM_DONE)
+      {
+        curState = CONSUME_OUTBUF;
+        CBType transCB = boost::bind(&ZeroCopyTransformOutput::flush,
+                                     boost::ref(*this), cb);         
+        outStream->flush(transCB); 
+      }
+      else
+      {
+        curState = SUPPLY_INBUF;
+        outStream->flush(cb);
+      }
+    }
+    else if (flushFlag == false)
+    {
+      curState = SUPPLY_INBUF;
       internalBuf->reset();
       cb(CBException());
     }
+    else if (flushFlag == true)
+      flush(cb);
   }
 
   /* Close out the stream */

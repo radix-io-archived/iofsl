@@ -2,6 +2,7 @@
 
 #include "iofwdevent/NOPCompletion.hh"
 
+#include <cstdio>
 namespace iofwdevent
 {
    //========================================================================
@@ -89,9 +90,6 @@ namespace iofwdevent
       else
       {
          read (out, len, cb, suggested);
-         // Shouldn't this be assertion?
-//         *len = 0;
-//         cb(CBException());
       }
    }
 
@@ -114,7 +112,7 @@ namespace iofwdevent
       /* Create a new callback for when the stream read is compleated */
       CBType newCB = boost::bind(&ZeroCopyTransformInput::transformationState,
             boost::ref(*this), _1, out, len, cb, suggested);
-
+//      fprintf(stderr, "Reading Stream\n");
       return stream_->read(&writeLoc_, &writeSize_, newCB, suggested);
    }
 
@@ -168,6 +166,7 @@ namespace iofwdevent
          const CBType & cb,
          size_t suggested)
    {
+//      fprintf (stderr, "Performing Transform\n");
       size_t data_size = 0;
       int outState = 0;
 
@@ -182,9 +181,6 @@ namespace iofwdevent
          inStreamData_ = NULL;
          inStreamSize_ = 0;
       }
-      //      else if (outState == CONSUME_OUTBUF)
-      //      {
-      //      }
 
       readTransformStorage(out, len, cb, suggested);
    }
