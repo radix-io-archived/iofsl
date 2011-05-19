@@ -26,8 +26,11 @@ namespace iofwd
       {
          /* For transforms, if there is nothing to read (aka a full block has 
             not been decoded) return to decode to read some more */
-         if (read_size_ == 0)
-            decode(cb);
+//	 fprintf(stderr, "Read Header: %i\n", read_size_);
+//         if (read_size_ == 0)
+//            decode(cb);
+//	    return;
+//	fprintf (stderr, "Decoded Size: %i %i\n", read_size_,);
          /* Start RPCDecoder */            
          dec_ = rpc::RPCDecoder(read_ptr_, read_size_);
 
@@ -43,13 +46,16 @@ namespace iofwd
 
          process (dec_, encoder::EncVarArray( dec_struct.file_starts_, dec_struct.file_count_));
          process (dec_, encoder::EncVarArray( dec_struct.file_sizes_, dec_struct.file_count_));
+//        fprintf (stderr, "Decoded Size: %i %i\n", read_size_, dec_.getPos());
 
          in_->rewindInput (read_size_ - dec_.getPos(), cb);
+//        fprintf (stderr, "Decoded Size: %i %i\n", read_size_,);
+
       }
 
       void IOFSLRPCReadRequest::encode()
       {
-         
+//	    fprintf (stderr,"Encoding Output\n");         
             iofwdevent::SingleCompletion block;
            
             /* sanity */ 
@@ -83,7 +89,7 @@ namespace iofwd
             block.reset();
             out_->flush(block);
             block.wait();
-         
+//            fprintf(stderr,"Encoding Done\n");
       }
 
       IOFSLRPCReadRequest::ReqParam & IOFSLRPCReadRequest::decodeParam() 
@@ -98,6 +104,12 @@ namespace iofwd
           param_.file_sizes.reset(dec_struct.file_sizes_);
           param_.file_starts.reset(dec_struct.file_starts_);
 
+          total_read_size = 0;
+          for(size_t i = 0 ; i < dec_struct.mem_count_ ; i++)
+          {
+               total_read_size += dec_struct.mem_sizes_[i];
+          }
+
           /* Pipelining no longer matter */
           param_.pipeline_size = 4194304;
 
@@ -105,7 +117,7 @@ namespace iofwd
           param_.op_hint_pipeline_enabled = true;
           total_write = 0;
 //          param_.op_hint = &op_hint_; 
-         
+//	 fprintf(stderr, "Decoding Server\n");         
           return param_; 
       }
 
@@ -144,7 +156,13 @@ namespace iofwd
 
       void IOFSLRPCReadRequest::initRequestParams(ReqParam & p, void * bufferMem)
       {
+//	  total_read_size = 0;
+//          for(size_t i = 0 ; i < p.mem_count ; i++)
+//          
+//               total_read_size += p.mem_sizes[i];
+//         }
          
+
           // allocate buffer for normal mode
           if (p.pipeline_size == 0)
           {
@@ -284,8 +302,8 @@ namespace iofwd
                                                            RetrievedBuffer * rb, 
                                                            size_t size) 
       {
-         
           boost::this_thread::at_thread_exit(iofwdutil::ThreadPoolKick(*tp_)); 
+//	  fprintf(stderr, "Server Read Request: %i\n",size);
           size_t outSize = 0;
           size_t readSize = 0;  
           size_t readLoc = 0;
@@ -301,12 +319,15 @@ namespace iofwd
             loc = &((char*)rb->buffer_->getMemory())[readLoc];
             // @TODO Possible read bug here
             readSize = writeBuffer(loc, size- outSize, TRUE);
+//	    fprintf(stderr, "read size: %i\n", readSize);
             outSize += readSize;
             readLoc += readSize;
+	    total_read_size -= readSize;
           } while (outSize != size);
-        
-          if (size < param_.max_buffer_size)
+//	  fprintf (stderr,"total_read_size: %i\n", total_read_size);
+          if (total_read_size == 0)
           {
+//	    fprintf(stderr,"Iv triggered\n");
             block.reset();
             out_->close(block);
             block.wait();   
