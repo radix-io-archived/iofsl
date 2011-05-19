@@ -6,6 +6,10 @@
 #include "iofwdutil/tools.hh"
 #include "encoder/Util.hh"
 
+#include <boost/uuid/uuid.hpp>
+#include <boost/uuid/uuid_io.hpp>
+#include <boost/uuid/uuid_generators.hpp>
+
 using namespace encoder;
 using namespace encoder::xdr;
 
@@ -15,14 +19,63 @@ namespace iofwd
     {
         /* AARPC data types */
 
-        class AARPCCreateOffsetIn
+        class AARPCCreateUUIDIn
         {
             public:
-                AARPCCreateOffsetIn()
+                AARPCCreateUUIDIn()
                 {
                 }
 
                 zoidfs::zoidfs_handle_t handle;
+        };
+
+        class AARPCCreateUUIDOut
+        {
+            public:
+                AARPCCreateUUIDOut() :
+                    retcode(0),
+                    huuid(boost::uuids::nil_uuid())
+                {
+                }
+
+                uint64_t retcode;
+                boost::uuids::uuid huuid;
+        };
+
+        class AARPCSeekOffsetIn
+        {
+            public:
+                AARPCSeekOffsetIn() :
+                    huuid(boost::uuids::nil_uuid())
+                {
+                }
+
+                zoidfs::zoidfs_handle_t handle;
+                boost::uuids::uuid huuid;
+                zoidfs::zoidfs_file_size_t offset;
+        };
+
+        class AARPCSeekOffsetOut
+        {
+            public:
+                AARPCSeekOffsetOut() :
+                    retcode(0)
+                {
+                }
+
+                uint64_t retcode;
+        };
+
+        class AARPCCreateOffsetIn
+        {
+            public:
+                AARPCCreateOffsetIn() :
+                    huuid(boost::uuids::nil_uuid())
+                {
+                }
+
+                zoidfs::zoidfs_handle_t handle;
+                boost::uuids::uuid huuid;
         };
 
         class AARPCCreateOffsetOut
@@ -41,11 +94,13 @@ namespace iofwd
         class AARPCDeleteOffsetIn
         {
             public:
-                AARPCDeleteOffsetIn()
+                AARPCDeleteOffsetIn() :
+                    huuid(boost::uuids::nil_uuid())
                 {
                 }
 
                 zoidfs::zoidfs_handle_t handle;
+                boost::uuids::uuid huuid;
 
         };
 
@@ -65,11 +120,13 @@ namespace iofwd
         {
             public:
                 AARPCGetNextOffsetIn() :
+                    huuid(boost::uuids::nil_uuid()),
                     inc(0)
                 {
                 }
 
                 zoidfs::zoidfs_handle_t handle;
+                boost::uuids::uuid huuid;
                 zoidfs::zoidfs_file_size_t inc; 
 
         };
@@ -91,10 +148,54 @@ namespace iofwd
 
         template <typename Enc, typename Wrapper>
         inline Enc & process (Enc & e, Wrapper & w, 
+                typename process_filter<Wrapper, AARPCCreateUUIDIn>::type *
+                UNUSED(d) = NULL)
+        {
+            process(e, w.handle);
+            
+            return e;
+        }
+        
+        template <typename Enc, typename Wrapper>
+        inline Enc & process (Enc & e, Wrapper & w,
+                typename process_filter<Wrapper, AARPCCreateUUIDOut>::type *
+                UNUSED(d) = NULL)
+        {
+            process(e, w.retcode);
+            process(e, EncString(to_string(w.huuid).c_str(), 64));
+            
+            return e;
+        }
+
+        template <typename Enc, typename Wrapper>
+        inline Enc & process (Enc & e, Wrapper & w, 
+                typename process_filter<Wrapper, AARPCSeekOffsetIn>::type *
+                UNUSED(d) = NULL)
+        {
+            process(e, w.handle);
+            process(e, EncString(to_string(w.huuid).c_str(), 64));
+            process(e, w.offset);
+            
+            return e;
+        }
+        
+        template <typename Enc, typename Wrapper>
+        inline Enc & process (Enc & e, Wrapper & w,
+                typename process_filter<Wrapper, AARPCSeekOffsetOut>::type *
+                UNUSED(d) = NULL)
+        {
+            process(e, w.retcode);
+            
+            return e;
+        }
+
+        template <typename Enc, typename Wrapper>
+        inline Enc & process (Enc & e, Wrapper & w, 
                 typename process_filter<Wrapper, AARPCGetNextOffsetIn>::type *
                 UNUSED(d) = NULL)
         {
             process(e, w.handle);
+            process(e, EncString(to_string(w.huuid).c_str(), 64));
             process(e, w.inc);
             
             return e;
@@ -117,6 +218,7 @@ namespace iofwd
                 UNUSED(d) = NULL)
         {
             process(e, w.handle);
+            process(e, EncString(to_string(w.huuid).c_str(), 64));
             
             return e;
         }
@@ -138,6 +240,7 @@ namespace iofwd
                 UNUSED(d) = NULL)
         {
             process(e, w.handle);
+            process(e, EncString(to_string(w.huuid).c_str(), 64));
             
             return e;
         }

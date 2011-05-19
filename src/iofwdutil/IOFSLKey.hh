@@ -45,7 +45,8 @@ namespace iofwdutil
                 f_handle_set_(false),
                 file_p_handle_set_(false),
                 file_c_name_(std::string("")), file_path_(std::string("")),
-                data_key_(std::string(""))
+                data_key_(std::string("")),
+                tag_(boost::uuids::nil_uuid())
             {
                 clearHandle(&f_handle_, f_handle_set_);
                 clearHandle(&file_p_handle_, file_p_handle_set_);
@@ -65,6 +66,7 @@ namespace iofwdutil
                 file_c_name_ = r.file_c_name_;
                 file_path_ = r.file_path_;
                 data_key_ = r.data_key_;
+                tag_ = r.tag_;
             }
 
             ~IOFSLKey();
@@ -102,6 +104,11 @@ namespace iofwdutil
                 data_key_ = dk;
             }
 
+            void setTag(boost::uuids::uuid u)
+            {
+                tag_ = u;
+            }
+
             zoidfs::zoidfs_handle_t getParentHandle() const
             {
                 return file_p_handle_; 
@@ -127,6 +134,11 @@ namespace iofwdutil
                 return data_key_;
             }
 
+            boost::uuids::uuid getTag() const
+            {
+                return tag_;
+            }
+
             bool operator== (const IOFSLKey & r) const
             {
                 bool ret = false;
@@ -138,6 +150,16 @@ namespace iofwdutil
                 else
                 {
                     ret = false;
+                }
+
+                /* update the conditional based on the flags */
+                if(tag_ == r.tag_)
+                {
+                    ret = ret && true;
+                }
+                else
+                {
+                    ret = ret && false;
                 }
 
                 /* check the full file handle */
@@ -188,6 +210,16 @@ namespace iofwdutil
                 else
                 {
                     ret = false;
+                }
+
+                /* update the conditional based on the flags */
+                if(tag_ == r.tag_)
+                {
+                    ret = ret && true;
+                }
+                else
+                {
+                    ret = ret && false;
                 }
 
                 /* check the full file handle */

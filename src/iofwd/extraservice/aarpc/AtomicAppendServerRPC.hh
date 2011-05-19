@@ -77,6 +77,12 @@ namespace iofwd
 
             /* rpc handlers */
 
+            void createUUID(const AARPCCreateUUIDIn & in,
+                    AARPCCreateUUIDOut & out);
+
+            void seekOffset(const AARPCSeekOffsetIn & in,
+                    AARPCSeekOffsetOut & out);
+            
             void createOffset(const AARPCCreateOffsetIn & in,
                     AARPCCreateOffsetOut & out);
             
@@ -88,14 +94,24 @@ namespace iofwd
 
             /* key value storage helpers */
 
+            uint64_t createUUIDForHandle(const zoidfs::zoidfs_handle_t & handle,
+                    boost::uuids::uuid & huuid);
+
             uint64_t getNextOffsetFromStorage(const zoidfs::zoidfs_file_size_t inc,
                     const zoidfs::zoidfs_handle_t & handle,
-                    zoidfs::zoidfs_file_size_t & atomic_append_base_offset);
+                    zoidfs::zoidfs_file_size_t & atomic_append_base_offset,
+                    const boost::uuids::uuid & huuid);
             
-            uint64_t createOffsetInStorage(const zoidfs::zoidfs_handle_t & handle,
-                    zoidfs::zoidfs_file_size_t & atomic_append_base_offset);
+            uint64_t seekOffsetInStorage(const zoidfs::zoidfs_handle_t & handle,
+                    const zoidfs::zoidfs_file_size_t & atomic_append_base_offset,
+                    const boost::uuids::uuid & huuid);
 
-            uint64_t deleteOffsetInStorage(const zoidfs::zoidfs_handle_t & handle);
+            uint64_t createOffsetInStorage(const zoidfs::zoidfs_handle_t & handle,
+                    zoidfs::zoidfs_file_size_t & atomic_append_base_offset,
+                    const boost::uuids::uuid & huuid);
+
+            uint64_t deleteOffsetInStorage(const zoidfs::zoidfs_handle_t &
+                    handle, const boost::uuids::uuid & huuid);
             
             template <typename IN, typename OUT>
                 void aarpcServerHelper(

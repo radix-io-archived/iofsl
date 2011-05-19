@@ -75,6 +75,13 @@ namespace iofwd
                          &AtomicAppendServerRPC::getNextOffset,
                          _1, _2, _3)));
 
+         rpcserver_->registerRPC("aarpc.seekoffset",
+                 rpcExec(boost::bind(
+                         &AtomicAppendServerRPC::aarpcServerHelper<AARPCSeekOffsetIn,
+                         AARPCSeekOffsetOut >, this,
+                         &AtomicAppendServerRPC::seekOffset,
+                         _1, _2, _3)));
+
          rpcserver_->registerRPC("aarpc.createoffset",
                  rpcExec(boost::bind(
                          &AtomicAppendServerRPC::aarpcServerHelper<AARPCCreateOffsetIn,
@@ -88,35 +95,78 @@ namespace iofwd
                          AARPCDeleteOffsetOut >, this,
                          &AtomicAppendServerRPC::deleteOffset,
                          _1, _2, _3)));
+
+         rpcserver_->registerRPC("aarpc.createuuid",
+                 rpcExec(boost::bind(
+                         &AtomicAppendServerRPC::aarpcServerHelper<AARPCCreateUUIDIn,
+                         AARPCCreateUUIDOut >, this,
+                         &AtomicAppendServerRPC::createUUID,
+                         _1, _2, _3)));
       }
 
       AtomicAppendServerRPC::~AtomicAppendServerRPC()
       {
+         rpcserver_->unregisterRPC("aarpc.createuuid");
          rpcserver_->unregisterRPC("aarpc.getnextoffset");
+         rpcserver_->unregisterRPC("aarpc.seekoffset");
          rpcserver_->unregisterRPC("aarpc.createoffset");
          rpcserver_->unregisterRPC("aarpc.deleteoffset");
+      }
+
+      void AtomicAppendServerRPC::createUUID(const AARPCCreateUUIDIn & in,
+              AARPCCreateUUIDOut & out)
+      {
+          out.retcode = createUUIDForHandle(in.handle, out.huuid);
       }
 
       void AtomicAppendServerRPC::createOffset(const AARPCCreateOffsetIn & in,
               AARPCCreateOffsetOut & out)
       {
-          out.retcode = createOffsetInStorage(in.handle, out.offset);
+          out.retcode = createOffsetInStorage(in.handle, out.offset, in.huuid);
+      }
+
+      void AtomicAppendServerRPC::seekOffset(const AARPCSeekOffsetIn & in,
+              AARPCSeekOffsetOut & out)
+      {
+          out.retcode = seekOffsetInStorage(in.handle, in.offset, in.huuid);
       }
 
       void AtomicAppendServerRPC::deleteOffset(const AARPCDeleteOffsetIn & in,
               AARPCDeleteOffsetOut & out)
       {
-          out.retcode = deleteOffsetInStorage(in.handle);
+          out.retcode = deleteOffsetInStorage(in.handle, in.huuid);
       }
 
       void AtomicAppendServerRPC::getNextOffset(const AARPCGetNextOffsetIn & in,
               AARPCGetNextOffsetOut & out)
       {
-          out.retcode = getNextOffsetFromStorage(in.inc, in.handle, out.offset);
+          out.retcode = getNextOffsetFromStorage(in.inc, in.handle, out.offset,
+                  in.huuid);
+      }
+
+      uint64_t AtomicAppendServerRPC::createUUIDForHandle(const zoidfs::zoidfs_handle_t & handle,
+                                  boost::uuids::uuid & huuid)
+      {
+          return 0;
+      }
+
+      uint64_t AtomicAppendServerRPC::seekOffsetInStorage(const zoidfs::zoidfs_handle_t & handle,
+              const zoidfs::zoidfs_file_size_t & offset, const boost::uuids::uuid & huuid)
+      {
+          iofwdutil::IOFSLKey key = iofwdutil::IOFSLKey();
+        
+          /* build the key */ 
+          key.setFileHandle(&handle);
+          key.setDataKey(std::string("NEXTAPPENDOFFSET"));
+
+          /* create the key / value pair */
+          //iofwdutil::IOFSLKeyValueStorage::instance().rpcUpdateKeyValue<zoidfs::zoidfs_file_size_t>(key, offset);
+
+          return 0;
       }
 
       uint64_t AtomicAppendServerRPC::createOffsetInStorage(const zoidfs::zoidfs_handle_t & handle,
-              zoidfs::zoidfs_file_size_t & offset)
+              zoidfs::zoidfs_file_size_t & offset, const boost::uuids::uuid & huuid)
       {
           iofwdutil::IOFSLKey key = iofwdutil::IOFSLKey();
         
@@ -130,7 +180,8 @@ namespace iofwd
           return 0;
       }
 
-      uint64_t AtomicAppendServerRPC::deleteOffsetInStorage(const zoidfs::zoidfs_handle_t & handle)
+      uint64_t AtomicAppendServerRPC::deleteOffsetInStorage(const
+              zoidfs::zoidfs_handle_t & handle, const boost::uuids::uuid & huuid)
       {
           iofwdutil::IOFSLKey key = iofwdutil::IOFSLKey();
        
@@ -146,7 +197,8 @@ namespace iofwd
 
       uint64_t AtomicAppendServerRPC::getNextOffsetFromStorage(const zoidfs::zoidfs_file_size_t inc,
               const zoidfs::zoidfs_handle_t & handle,
-              zoidfs::zoidfs_file_size_t & offset)
+              zoidfs::zoidfs_file_size_t & offset,
+              const boost::uuids::uuid & huuid)
       {
           AARPCOffsetInfo offset_init_args(&handle);
 

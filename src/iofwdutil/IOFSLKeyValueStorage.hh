@@ -27,6 +27,9 @@
 
 #include <cstdio>
 
+#include <boost/uuid/uuid.hpp>
+#include <boost/uuid/uuid_generators.hpp>
+
 namespace iofwdutil
 {
 
@@ -38,6 +41,74 @@ class IOFSLKeyValueStorage : public Singleton< IOFSLKeyValueStorage >
     public:
         IOFSLKeyValueStorage();
         ~IOFSLKeyValueStorage();
+
+        void rpcCreateKeyUUID(iofwdutil::IOFSLKey & key, boost::uuids::uuid & u)
+        {
+            /* atomic fetch and inc of the value */
+            {
+                boost::mutex::scoped_lock l(table_mutex_);
+                boost::uuids::random_generator gen;
+               
+                /* repeat if the key is in the table */
+                std::map<iofwdutil::IOFSLKey, void *>::iterator it;
+                do
+                { 
+                    /* generate a random UUID */
+                    u = gen();
+                    key.setTag(u);
+            
+                    /* find they key in the table */
+                    it = table_.find(key);
+                } while(it != table_.end());
+            }
+        }
+
+        template <typename T>
+        void rpcUpdateKeyValue(iofwdutil::IOFSLKey & key, T
+            & initialValue)
+        {
+            /* atomic fetch and inc of the value */
+            {
+                boost::mutex::scoped_lock l(table_mutex_);
+            
+                /* find they key in the table */
+                std::map<iofwdutil::IOFSLKey, void *>::iterator it = table_.find(key);
+
+                /* if the key is in the table */
+                if(it != table_.end())
+                {
+                    /* get the value */
+                    T * val = static_cast<T *>(table_[key]);
+
+                    /* erase the key / value from the map */
+                    table_.erase(it);
+
+                    /* assign new value */
+                    *val = initialValue;
+
+                    /* add key back to the table */
+                    table_[key] = val;
+                }
+                /* else, the key is not in the table... add it */
+                else
+                {
+                    T * val = new T();
+                    *val = initialValue;
+                    table_[key] = val;
+                }
+            } 
+        }
+
+        template <typename T>
+        void updateKeyValue(iofwdevent::CBType cb,
+                    iofwdutil::IOFSLKey & key,
+                    T & initialValue)
+        {
+            rpcUpdateKeyValue(key, initialValue);
+
+            /* invoke the callback */
+            cb(iofwdevent::CBException());
+        }
 
         template <typename T>
         void rpcInitKeyValue(iofwdutil::IOFSLKey & key, T
