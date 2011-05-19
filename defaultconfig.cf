@@ -226,12 +226,25 @@ requesthandler {
   // threadpool config
   //
   threadpool {
-      // what are the limits on the number of active threads (high and normal prio)
-      maxnumnormthreads = "16";
-      maxnumhighthreads = "16";
+      //
+      // Normal prio threads
+      //
+      normprio
+      {
+          maxlimits = "FILEIO:1,SM:1,RPC:1,OTHER:0";
+          warnlimits = "FILEIO:1,SM:1,RPC:1,OTHER:0";
+          //maxlimits = "FILEIO:0,SM:0,RPC:0,OTHER:0";
+          //warnlimits = "FILEIO:0,SM:0,RPC:0,OTHER:0";
+      }
 
-      minnumnormthreads = "4";
-      minnumhighthreads = "4";
+      //
+      // High prio threads
+      //
+      highprio
+      {
+          maxlimits = "FILEIO:2,SM:2,RPC:2,OTHER:0";
+          warnlimits = "FILEIO:1,SM:1,RPC:1,OTHER:0";
+      }
   }
 
   //
