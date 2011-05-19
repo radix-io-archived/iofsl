@@ -19,6 +19,7 @@
 #include "iofwdevent/SingleCompletion.hh"
 
 #include <boost/scoped_ptr.hpp>
+#include <boost/bind.hpp>
 
 #include "iofwd/Request.hh"
 #include "iofwdutil/typestorage.hh"
@@ -55,11 +56,9 @@ namespace iofwd
 
           void decode(const iofwdevent::CBType & cb)
           {
-            iofwdevent::CBType decodeComplete = boost::bind(&RPCSimpleRequest<IN,OUT>::processDecode, this, cb);
+            iofwdevent::CBType decodeComplete = boost::bind(&RPCSimpleRequest<IN,OUT>::processDecode, this, _1, cb);
             /* prepare to read from the in stream */
   
-            // @TODO: Not using actual size until size function is fixed 
-            /* process (size_, inStruct); */
             insize_ = 15000;
             
             /* Read Stream */
@@ -67,8 +66,10 @@ namespace iofwd
                     &read_size_, decodeComplete, insize_);
           }
 
-          void processDecode (const iofwdevent::CBType & cb)
+          void processDecode (iofwdevent::CBException e,
+                              const iofwdevent::CBType & cb)
           {
+            e.check();
             if (read_size_ == 0)
               decode(cb);
             /* Start RPCDecoder */            
@@ -78,27 +79,26 @@ namespace iofwd
             process (dec_, inStruct);            
             cb(iofwdevent::CBException());
           }
-
           void encode()
           {
-//            encoder::xdr::XDRSizeProcessor * size_ = new 
-//                                            encoder::xdr::XDRSizeProcessor();
+            ASSERT ("WILL BE REMOVED" == 0); 
+          }
 
-            iofwdevent::SingleCompletion block;
-           
-            /* sanity */ 
-            block.reset();
+          void encode(iofwdevent::CBType cb)
+          {
+            iofwdevent::CBType next = boost::bind (&RPCSimpleRequest<IN,OUT>::processEncode,
+                                                   this, _1, cb);
 
-
-            // @TODO: Not using actual size until size function is fixed          
-            /* Get size of encode */ 
-            //process (size_, outStruct);
-            outsize_ = 15000;  /* (e->size()).getMaxSize(); */
-            
+            outsize_ = 15000;  /* (e->size()).getMaxSize(); */            
             /* Get Write Location */
             out_->write(reinterpret_cast<void**>(&write_ptr_),
-                    &write_size_, block, outsize_);
-            block.wait();
+                    &write_size_, next, outsize_);
+          }
+          void processEncode(iofwdevent::CBException e, iofwdevent::CBType cb)
+          {
+            e.check();
+            iofwdevent::CBType next = boost::bind (&RPCSimpleRequest<IN,OUT>::flushEncode, this,
+                                                   _1, cb);
 
             /* Build encoder struct */
             enc_ = rpc::RPCEncoder(write_ptr_, write_size_);
@@ -106,20 +106,15 @@ namespace iofwd
             /* Process */
             process (enc_, outStruct);
 
-            /* sanity */
-            block.reset();
-
             /* rewind */
-            out_->rewindOutput(write_size_ - enc_.getPos(), block);
-            block.wait();
-            /* flush the reponse */
-            block.reset();
+            out_->rewindOutput(write_size_ - enc_.getPos(), next);
+          }
+          void flushEncode(iofwdevent::CBException e, iofwdevent::CBType cb)
+          {
             if (out_->type == 'T')
-               out_->close(block);
+               out_->close(cb);
             else
-               out_->flush(block);
-            block.wait();
-//            delete[] testptr;
+               out_->flush(cb);
           }
       };
 
