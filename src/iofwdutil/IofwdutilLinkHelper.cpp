@@ -4,6 +4,12 @@
 
 void registerIofwdutilFactoryClients ()
 {
+#ifdef HAVE_LZO
+        GENERIC_FACTORY_LINKHELPER(\
+              (lzoencode) \
+              (lzodecode) \
+              )
+#endif
 #ifdef HAVE_ZLIB
       GENERIC_FACTORY_LINKHELPER(\
       (zlibencode) \
