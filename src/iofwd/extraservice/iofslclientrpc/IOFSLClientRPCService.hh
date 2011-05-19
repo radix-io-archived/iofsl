@@ -47,7 +47,7 @@ namespace iofwd
 //            void write (iofwdevent::ZeroCopyInputStream * in, 
 //                        iofwdevent::ZeroCopyOutputStream * out, 
 //                        const rpc::RPCInfo & );
-//            RPC_GENCLIENTHEADERS (IOFSLRPCCommitRequest, commit)
+            RPC_GENCLIENTHEADERS (IOFSLRPCCommitRequest, commit)
             RPC_GENCLIENTHEADERS (IOFSLRPCCreateRequest, create)
 //            RPC_GENCLIENTHEADERS (IOFSLRPCGetAttrRequest, getattr)
 //            RPC_GENCLIENTHEADERS (IOFSLRPCLinkRequest, link)

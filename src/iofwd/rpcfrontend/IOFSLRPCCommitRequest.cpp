@@ -6,40 +6,29 @@ namespace iofwd
 {
    namespace rpcfrontend
    {
-      /* Generate Encode/Decode Functions */
-      RPC_GENPROCESS (IOFSLRPCCommitRequest, ((&)(handle)),
-                                             (()(returnCode)))
-
       const IOFSLRPCCommitRequest::ReqParam & IOFSLRPCCommitRequest::decodeParam ()
       {
-         param_.handle = &dec_struct.handle;
+         param_.handle = &inStruct.handle;
          param_.op_hint = &op_hint_;
          return param_;
       }
-      void IOFSLRPCCommitRequest::reply(const CBType & UNUSED(cb))
+
+      void IOFSLRPCCommitRequest::reply(const CBType & cb)
       {
           /* verify the args are OK */
           ASSERT(getReturnCode() != zoidfs::ZFS_OK);
+          /* Store handle/return code information for output */
+          outStruct.returnCode = getReturnCode();
 
-          /* encode */
-          encodeRPCOutput();
-
-          /* invoke the callback */
-          //cb();
+          zoidfs::hints::zoidfs_hint_create(&op_hint_);  
+          param_.op_hint = &op_hint_;
+          
+          encode(cb);
       }
+
       IOFSLRPCCommitRequest::~IOFSLRPCCommitRequest()
       {
          zoidfs::hints::zoidfs_hint_free(&op_hint_);
-      }
-
-      size_t IOFSLRPCCommitRequest::rpcEncodedInputDataSize()
-      {
-          return 0;
-      }
-
-      size_t IOFSLRPCCommitRequest::rpcEncodedOutputDataSize()
-      {
-          return 0;
       }
    }
 }
