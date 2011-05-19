@@ -75,7 +75,6 @@ namespace net
 
         TCPInput::~TCPInput()
         {  
-            std::cout << __func__ << std::endl; 
             delete[] (static_cast<const char*> (rewindptr_));
         }
     }

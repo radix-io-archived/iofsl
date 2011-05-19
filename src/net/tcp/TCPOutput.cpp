@@ -19,7 +19,6 @@ namespace net
         
         TCPOutput::~TCPOutput()
         {
-            std::cout << __func__ << std::endl;
             delete [] (static_cast<const char*> (thisblock_ptr_));
         }
         
