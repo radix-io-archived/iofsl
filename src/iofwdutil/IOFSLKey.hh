@@ -4,6 +4,9 @@
 #include <string>
 #include "zoidfs/util/zoidfs-c-util.h"
 
+#include <boost/uuid/uuid.hpp>
+#include <boost/uuid/uuid_generators.hpp>
+
 namespace iofwdutil
 {
     class IOFSLKey
@@ -16,7 +19,8 @@ namespace iofwdutil
                     file_p_handle_set_(false),
                     file_c_name_(std::string(fcn)),
                     file_path_(fp),
-                    data_key_(dk)
+                    data_key_(dk),
+                    tag_(boost::uuids::nil_uuid())
             {
                 if(ffh)
                 {
@@ -246,6 +250,8 @@ namespace iofwdutil
             std::string data_key_;
 
             static const std::string str_sentinel_;
+
+            boost::uuids::uuid tag_;
     };
 }
 
