@@ -49,7 +49,7 @@ namespace iofwd
 //                        const rpc::RPCInfo & );
             RPC_GENCLIENTHEADERS (IOFSLRPCCommitRequest, commit)
             RPC_GENCLIENTHEADERS (IOFSLRPCCreateRequest, create)
-//            RPC_GENCLIENTHEADERS (IOFSLRPCGetAttrRequest, getattr)
+            RPC_GENCLIENTHEADERS (IOFSLRPCGetAttrRequest, getattr)
 //            RPC_GENCLIENTHEADERS (IOFSLRPCLinkRequest, link)
             RPC_GENCLIENTHEADERS (IOFSLRPCLookupRequest, lookup )
 //            RPC_GENCLIENTHEADERS (IOFSLRPCMkdirRequest, mkdir)

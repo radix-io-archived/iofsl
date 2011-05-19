@@ -22,7 +22,7 @@
 #include "iofwd/rpcfrontend/IOFSLRPCLookupRequest.hh"
 #include "iofwd/rpcfrontend/IOFSLRPCCommitRequest.hh"
 #include "iofwd/rpcfrontend/IOFSLRPCCreateRequest.hh"
-//#include "iofwd/rpcfrontend/IOFSLRPCGetAttrRequest.hh"
+#include "iofwd/rpcfrontend/IOFSLRPCGetAttrRequest.hh"
 //#include "iofwd/rpcfrontend/IOFSLRPCLinkRequest.hh"
 //#include "iofwd/rpcfrontend/IOFSLRPCLookupRequest.hh"
 //#include "iofwd/rpcfrontend/IOFSLRPCMkdirRequest.hh"
@@ -60,8 +60,8 @@ namespace iofwd
                boost::bind(&IOFSLClientRPCService::commit, this, _1, _2, _3));
          rpcserver_->registerRPC("iofslclientrpc.create",
                boost::bind(&IOFSLClientRPCService::create, this, _1, _2, _3));
-//         rpcserver_->registerRPC("iofslclientrpc.getattr",
-//               boost::bind(&IOFSLClientRPCService::getattr, this, _1, _2, _3));
+         rpcserver_->registerRPC("iofslclientrpc.getattr",
+               boost::bind(&IOFSLClientRPCService::getattr, this, _1, _2, _3));
 //         rpcserver_->registerRPC("iofslclientrpc.link",
 //               boost::bind(&IOFSLClientRPCService::link, this, _1, _2, _3));
 //         rpcserver_->registerRPC("iofslclientrpc.mkdir",
@@ -97,7 +97,7 @@ namespace iofwd
         /* change to scope rpc for auto deletion */
          rpcserver_->unregisterRPC("iofslclientrpc.commit");
          rpcserver_->unregisterRPC("iofslclientrpc.create");
-//         rpcserver_->unregisterRPC("iofslclientrpc.getattr");
+         rpcserver_->unregisterRPC("iofslclientrpc.getattr");
 //         rpcserver_->unregisterRPC("iofslclientrpc.link");
          rpcserver_->unregisterRPC("iofslclientrpc.lookup");
 //         rpcserver_->unregisterRPC("iofslclientrpc.mkdir");
@@ -164,7 +164,7 @@ namespace iofwd
 
       RPC_GENCLIENTCODE (IOFSLRPCCommitRequest, commit, zoidfs::ZOIDFS_PROTO_COMMIT)
       RPC_GENCLIENTCODE (IOFSLRPCCreateRequest, create, zoidfs::ZOIDFS_PROTO_CREATE)
-//      RPC_GENCLIENTCODE (IOFSLRPCGetAttrRequest, getattr)
+      RPC_GENCLIENTCODE (IOFSLRPCGetAttrRequest, getattr, zoidfs::ZOIDFS_PROTO_GET_ATTR)
 //      RPC_GENCLIENTCODE (IOFSLRPCLinkRequest, link)
       RPC_GENCLIENTCODE (IOFSLRPCLookupRequest, lookup, zoidfs::ZOIDFS_PROTO_LOOKUP)
 //      RPC_GENCLIENTCODE (IOFSLRPCMkdirRequest, mkdir)
