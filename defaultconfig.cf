@@ -26,8 +26,14 @@ bmi
 
 net
 {
-//   type = "local";
+     //type = "local";
      type = "bmi";
+     //type = "tcp";
+
+     tcp
+     {
+        addrlist=("127.0.0.1:20920", "127.0.0.1:20921");
+     }
 }
 
 extra_services {
