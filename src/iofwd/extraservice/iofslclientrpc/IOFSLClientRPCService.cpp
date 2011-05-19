@@ -20,7 +20,7 @@
 #include <boost/function.hpp>
 #include <boost/bind/protect.hpp>
 #include "iofwd/rpcfrontend/IOFSLRPCLookupRequest.hh"
-//#include "iofwd/rpcfrontend/IOFSLRPCCommitRequest.hh"
+#include "iofwd/rpcfrontend/IOFSLRPCCommitRequest.hh"
 #include "iofwd/rpcfrontend/IOFSLRPCCreateRequest.hh"
 //#include "iofwd/rpcfrontend/IOFSLRPCGetAttrRequest.hh"
 //#include "iofwd/rpcfrontend/IOFSLRPCLinkRequest.hh"
@@ -56,8 +56,8 @@ namespace iofwd
          rpcserver_ = (m.loadService<iofwd::RPCServer>("rpcserver"));
          rpcserver_->registerRPC("iofslclientrpc.lookup",
                boost::bind(&IOFSLClientRPCService::lookup, this, _1, _2, _3));
-//         rpcserver_->registerRPC("iofslclientrpc.commit",
-//               boost::bind(&IOFSLClientRPCService::commit, this, _1, _2, _3));
+         rpcserver_->registerRPC("iofslclientrpc.commit",
+               boost::bind(&IOFSLClientRPCService::commit, this, _1, _2, _3));
          rpcserver_->registerRPC("iofslclientrpc.create",
                boost::bind(&IOFSLClientRPCService::create, this, _1, _2, _3));
 //         rpcserver_->registerRPC("iofslclientrpc.getattr",
@@ -95,7 +95,7 @@ namespace iofwd
       IOFSLClientRPCService::~IOFSLClientRPCService()
       {
         /* change to scope rpc for auto deletion */
-//         rpcserver_->unregisterRPC("iofslclientrpc.commit");
+         rpcserver_->unregisterRPC("iofslclientrpc.commit");
          rpcserver_->unregisterRPC("iofslclientrpc.create");
 //         rpcserver_->unregisterRPC("iofslclientrpc.getattr");
 //         rpcserver_->unregisterRPC("iofslclientrpc.link");
@@ -162,7 +162,7 @@ namespace iofwd
           static_cast<iofwd::rpcfrontend::CLASSNAME *>(tmp)->decode(submitReq);               \
       }   
 
-//      RPC_GENCLIENTCODE (IOFSLRPCCommitRequest, commit)
+      RPC_GENCLIENTCODE (IOFSLRPCCommitRequest, commit, zoidfs::ZOIDFS_PROTO_COMMIT)
       RPC_GENCLIENTCODE (IOFSLRPCCreateRequest, create, zoidfs::ZOIDFS_PROTO_CREATE)
 //      RPC_GENCLIENTCODE (IOFSLRPCGetAttrRequest, getattr)
 //      RPC_GENCLIENTCODE (IOFSLRPCLinkRequest, link)

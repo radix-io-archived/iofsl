@@ -6,7 +6,7 @@
 #include "encoder/EncoderStruct.hh"
 #include "encoder/EncoderString.hh"
 #include "iofwd/CommitRequest.hh"
-#include "iofwd/rpcfrontend/IOFSLRPCRequest.hh"
+#include "iofwd/rpcfrontend/RPCSimpleRequest.hh"
 #include "encoder/EncoderWrappers.hh"
 using namespace encoder;
 
@@ -23,35 +23,24 @@ namespace iofwd
       ENCODERSTRUCT (IOFSLRPCCommitEnc, ((int)(returnCode)))
 
       class IOFSLRPCCommitRequest :
-          public IOFSLRPCRequest,
+          public RPCSimpleRequest<IOFSLRPCCommitDec, IOFSLRPCCommitEnc>,
           public CommitRequest
       {
           public:
               IOFSLRPCCommitRequest(int opid,
                       iofwdevent::ZeroCopyInputStream * in,
                       iofwdevent::ZeroCopyOutputStream * out) :
-                  IOFSLRPCRequest(in, out),
+                  RPCSimpleRequest<IOFSLRPCCommitDec, IOFSLRPCCommitEnc>(in, out),
                   CommitRequest(opid)
               {
               }
-
-              /* encode and decode helpers for RPC data */
-              virtual void decode();
-              virtual void encode();
-
               /* request processing */
               virtual const ReqParam & decodeParam();
               virtual void reply(const CBType & cb);
               ~IOFSLRPCCommitRequest();
           protected:
               /* data size helpers for this request */ 
-              virtual size_t rpcEncodedInputDataSize(); 
-              virtual size_t rpcEncodedOutputDataSize();
-
               ReqParam param_;
-              IOFSLRPCCommitDec dec_struct;
-              IOFSLRPCCommitEnc enc_struct;
-
               zoidfs::zoidfs_op_hint_t op_hint_;
       };
    }
