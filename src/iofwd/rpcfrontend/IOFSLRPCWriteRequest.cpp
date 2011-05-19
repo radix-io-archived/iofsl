@@ -23,16 +23,6 @@ namespace iofwd
 
       void IOFSLRPCWriteRequest::processDecode(const CBType & cb)
       {
-         /* For transforms, if there is nothing to read (aka a full block has 
-            not been decoded) return to decode to read some more */
-	
-//	fprintf(stderr, "Decoding %i\n", read_size_);
-//         if (read_size_ == 0)
-//	 {
-//            decode(cb);
-//	    return;
-//         }
-         /* Start RPCDecoder */            
          dec_ = rpc::RPCDecoder(read_ptr_, read_size_);
 
          process (dec_, dec_struct.handle_);
@@ -55,64 +45,67 @@ namespace iofwd
          in_->rewindInput (read_size_ - dec_.getPos(), cb);
       }
 
-      void IOFSLRPCWriteRequest::encodeCB(const CBType & cb)
+      void IOFSLRPCWriteRequest::encode()
       {
+         ASSERT("THIS FUNCTION IS TO BE REMOVED!" == 0);        
+      }
 
-          boost::this_thread::at_thread_exit(iofwdutil::ThreadPoolKick(*tp_));       
-          encode();
+      void IOFSLRPCWriteRequest::reply(const CBType & cb)
+      {
+         /* verify the args are OK */
+          ASSERT(getReturnCode() == zoidfs::ZFS_OK);
           zoidfs::hints::zoidfs_hint_create(&op_hint_);  
           /* @TODO: Remove this later */
           param_.op_hint = &op_hint_;
+          encode(cb);
+      }
 
-          cb(iofwdevent::CBException());
-      }      
-
-      void IOFSLRPCWriteRequest::encode()
+      void IOFSLRPCWriteRequest::encode(const CBType & cb)
       {
-//	    fprintf(stderr,"Encode Started\n");
-            iofwdevent::SingleCompletion block;
-           
-            /* sanity */ 
-            block.reset();
+          /* next state to go to to */
+          CBType next = boost::bind(&IOFSLRPCWriteRequest::encodeWrite, this, _1, cb);
 
-            // @TODO: Not using actual size until size function is fixed          
-            /* Get size of encode */ 
-            //process (size_, outStruct);
-            outsize_ = 15000;  /* (e->size()).getMaxSize(); */
-            
-            /* Get Write Location */
-            out_->write(reinterpret_cast<void**>(&write_ptr_),
-                    &write_size_, block, outsize_);
-            block.wait();
+          outsize_ = 15000;  /* (e->size()).getMaxSize(); */
+          
+          /* Get Write Location */
+          out_->write(reinterpret_cast<void**>(&write_ptr_),
+                  &write_size_, next, outsize_);
+      }
 
-            /* Build encoder struct */
-            enc_ = rpc::RPCEncoder(write_ptr_, write_size_);
-      
-             /* Only returning the return code for now */
-             int returnCode = getReturnCode();
-             process (enc_, returnCode);
+      void IOFSLRPCWriteRequest::encodeWrite(iofwdevent::CBException e, const CBType & cb)
+      {
+          e.check();
+          /* next state to go to to */
+          CBType next = boost::bind(&IOFSLRPCWriteRequest::encodeFlush, this, _1, cb);
+          /* Build encoder struct */
+          enc_ = rpc::RPCEncoder(write_ptr_, write_size_);
 
-            /* sanity */
-            block.reset();
+           /* Only returning the return code for now */
+          int returnCode = getReturnCode();
+          process (enc_, returnCode);
 
-            /* rewind */
-            out_->rewindOutput(write_size_ - enc_.getPos(), block);
-            block.wait();
+          /* rewind */
+          out_->rewindOutput(write_size_ - enc_.getPos(), next);
+      }
 
-            /* flush the reponse */
-            block.reset();
-            if (out_->type == 'T')
-               out_->close(block);   
-            else
-               out_->flush(block);
-            block.wait();
-//	    fprintf(stderr,"Encode Compleated\n");
+      void IOFSLRPCWriteRequest::encodeFlush(iofwdevent::CBException e, const CBType & cb)
+      {
+          e.check();
+          if (out_->type == 'T')
+             out_->close(cb);   
+          else
+             out_->flush(cb);
       }
       
       IOFSLRPCWriteRequest::ReqParam & IOFSLRPCWriteRequest::decodeParam() 
       { 
+          /* Pipelining no longer matter */
+          param_.pipeline_size = 4194304;
+          param_.max_buffer_size = 4194304;
+          param_.op_hint_pipeline_enabled = true;
+          param_.op_hint = &op_hint_;
+
           /* Values should already be decoded by now */
-//          decode(); 
           param_.handle = &dec_struct.handle_;
           param_.mem_starts.reset((char **)dec_struct.mem_starts_);
           param_.mem_sizes.reset(dec_struct.mem_sizes_);
@@ -120,13 +113,6 @@ namespace iofwd
           param_.file_count = dec_struct.file_count_;
           param_.file_sizes.reset(dec_struct.file_sizes_);
           param_.file_starts.reset(dec_struct.file_starts_);
-
-          /* Pipelining no longer matter */
-          param_.pipeline_size = 4194304;
-
-          param_.max_buffer_size = 4194304;
-          param_.op_hint_pipeline_enabled = true;
-          param_.op_hint = &op_hint_;
  
           return param_; 
       }
@@ -174,7 +160,6 @@ namespace iofwd
 
       void IOFSLRPCWriteRequest::allocateBuffer(iofwdevent::CBType cb, RetrievedBuffer * rb)
       {
-
           /* allocate the buffer wrapper */
           rb->buffer_ = new iofwdutil::mm::GenericMemoryManager();
           rb->buffer_->alloc (rb->getsize());
@@ -184,110 +169,87 @@ namespace iofwd
 
       void IOFSLRPCWriteRequest::releaseBuffer(RetrievedBuffer * rb)
       {
-
           delete rb->buffer_;
           rb->buffer_ = NULL;
-
       }
 
-      size_t IOFSLRPCWriteRequest::readBuffer (void ** buff, size_t sizdec_, bool UNUSED(forceSize))
+      void IOFSLRPCWriteRequest::recvPipelineBufferCB(iofwdevent::CBType cb, iofwd::RetrievedBuffer* rb, size_t size)
       {
+          size_t * outSize = new size_t;
+          size_t * runSize = new size_t;
+          *outSize = 0;
+          *runSize = 0;
 
-         size_t ret = 0;
-         size_t outSize = 0;
+          recvRead(cb, rb, size, outSize, runSize);        
+      }
+
+      void IOFSLRPCWriteRequest::recvRead (iofwdevent::CBType cb, 
+                                           iofwd::RetrievedBuffer* rb, 
+                                           size_t size,
+                                           size_t * outSize,
+                                           size_t * runSize)
+      {
+        void * loc;
+        CBType next = boost::bind(&IOFSLRPCWriteRequest::recvCheck, this, _1, cb, rb,
+                                  size, outSize, runSize);
+        loc = (void*)&(((char*)rb->buffer_->getMemory())[*outSize]);
+        readBuffer( next, (void**)&loc, size - *outSize, outSize);
+      }
+
+      void IOFSLRPCWriteRequest::recvCheck (iofwdevent::CBException e,
+                                            iofwdevent::CBType cb,
+                                            iofwd::RetrievedBuffer* rb, 
+                                            size_t size,
+                                            size_t * outSize,
+                                            size_t * runSize)
+      {
+        e.check();
+        if (*outSize != size)
+          recvRead (cb, rb, size, outSize, runSize);
+        else
+        {
+          delete [] outSize;
+          delete [] runSize;
+          cb(iofwdevent::CBException());      
+        }
+      }
+  
+      void IOFSLRPCWriteRequest::readBuffer (CBType cb, void ** buff, size_t sizdec_, size_t * outSize)
+      {
          void ** tmpBuffer = (void **)new char * [1];
-         iofwdevent::SingleCompletion block;
-//	 fprintf(stderr,"Entering Read\n");
-         block.reset();
-         in_->read((const void **)tmpBuffer, &outSize, block, sizdec_);
-         block.wait();
-//	 fprintf(stderr,"Exiting Read: %i\n", outSize);
-         if (outSize < sizdec_)
+
+         CBType next = boost::bind(&IOFSLRPCWriteRequest::bufferRecv, this, _1, cb,
+                                   buff, sizdec_, outSize, tmpBuffer);
+
+         in_->read((const void **)tmpBuffer, outSize, next, sizdec_);
+      }
+
+
+      void IOFSLRPCWriteRequest::bufferRecv (iofwdevent::CBException e, CBType cb,
+                                               void ** buff, size_t sizdec_,
+                                               size_t * outSize, void ** tmpBuffer)     
+      {
+         e.check();
+         if (*outSize < sizdec_)
          {
-            std::memcpy ( *buff, *tmpBuffer, outSize);
-            ret = outSize;
+            std::memcpy ( *buff, *tmpBuffer, *outSize);
+            delete[] tmpBuffer;
+            cb(iofwdevent::CBException()); 
          }
          else
          {
             std::memcpy ( *buff, *tmpBuffer, sizdec_);
-            block.reset();
-            in_->rewindInput (outSize - sizdec_, block);
-            block.wait();
-            ret = sizdec_;
+            delete[] tmpBuffer;
+            in_->rewindInput (*outSize - sizdec_, cb);
          }
-        delete[] tmpBuffer;
-
-        return ret;
       }
 
-      void IOFSLRPCWriteRequest::recvBuffers(const CBType & cb, RetrievedBuffer * rb)
+
+      void IOFSLRPCWriteRequest::recvBuffers(const CBType & UNUSED(cb), RetrievedBuffer * UNUSED(rb))
       {
-
-          tp_->submitWorkUnit(boost::bind(&IOFSLRPCWriteRequest::recvBuffersBlock, this, cb, rb),
-                               iofwdutil::ThreadPool::HIGH);
-
+          ASSERT ("Non-Pipeline mode not availible with streams" == 0);
       }
 
-      void IOFSLRPCWriteRequest::recvBuffersBlock(const CBType & cb, RetrievedBuffer * rb)
-      {
-
-          boost::this_thread::at_thread_exit(iofwdutil::ThreadPoolKick(*tp_)); 
-//	  fprintf(stderr,"Entering Write Request\n");
-          size_t i = 0;
-          size_t outSize = 0;
-          void * loc;
-          do
-          {
-            loc = (void*)&(((char*)rb->buffer_->getMemory())[outSize]);
-            outSize += readBuffer((void**)&loc, param_.mem_sizes[i] - outSize, TRUE);
-            if (outSize == param_.mem_sizes[i])
-            {
-               i++;
-               outSize = 0;
-            }
-            
-          } while ( i < param_.mem_count);
-//	  fprintf(stderr,"Exiting Write Request\n");
-          cb(iofwdevent::CBException());
-      }
-
-
-      void IOFSLRPCWriteRequest::recvPipelineBufferCB(iofwdevent::CBType cb, iofwd::RetrievedBuffer* rb, size_t size)
-      {
-       
-           tp_->submitWorkUnit (boost::bind(&IOFSLRPCWriteRequest::recvPipelineBufferCBBlock, 
-                                           this, cb, rb, size), iofwdutil::ThreadPool::HIGH);
-
-      }
-
-
-      void IOFSLRPCWriteRequest::recvPipelineBufferCBBlock(iofwdevent::CBType cb, iofwd::RetrievedBuffer* rb, size_t size)
-      {
-
-          boost::this_thread::at_thread_exit(iofwdutil::ThreadPoolKick(*tp_));           
-          size_t outSize = 0;
-//	  fprintf(stderr, "entering write request");          
-          void * loc;
-          do
-          {
-            loc = (void*)&(((char*)rb->buffer_->getMemory())[outSize]);
-            outSize += readBuffer((void**)&loc, size - outSize, TRUE);
-	    //fprintf (stderr, "Outsize: %i, Expected: %i\n",outSize, size);
-          } while (outSize != size);
-//	  fprintf (stderr, "Iv Read: %i\n", outSize);
-          cb(iofwdevent::CBException());
-      }
-
-
-      void IOFSLRPCWriteRequest::reply(const CBType & cb)
-      {
-       
-         /* verify the args are OK */
-          ASSERT(getReturnCode() == zoidfs::ZFS_OK);
-          tp_->submitWorkUnit ( boost::bind (&IOFSLRPCWriteRequest::encodeCB, this, cb),
-                                  iofwdutil::ThreadPool::HIGH);
-
-      }
 
       IOFSLRPCWriteRequest::~IOFSLRPCWriteRequest()
       {

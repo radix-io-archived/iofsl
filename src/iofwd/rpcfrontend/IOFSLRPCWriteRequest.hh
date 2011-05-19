@@ -44,8 +44,7 @@ namespace iofwd
           public WriteRequest
       {
           public:
-              IOFSLRPCWriteRequest(iofwdutil::ThreadPool * tp,
-                      int opid,
+              IOFSLRPCWriteRequest(int opid,
                       iofwdevent::ZeroCopyInputStream * in,
                       iofwdevent::ZeroCopyOutputStream * out) :
                   IOFSLRPCRequest(in, out),
@@ -53,7 +52,6 @@ namespace iofwd
                   total_read(0)
                   
               {
-                tp_ = tp;   
               }
             
               ~IOFSLRPCWriteRequest();
@@ -61,28 +59,49 @@ namespace iofwd
               /* encode and decode helpers for RPC data */
               void decode(const CBType & cb);
               void processDecode(const CBType & cb);
-              void encodeCB(const CBType & cb);
-              void encode();
 
-              ReqParam & decodeParam ();
-
+              /* Encode Functions */
               void reply(const CBType & cb);
+              void encode(const CBType & cb);
+              void encodeWrite(iofwdevent::CBException e, const CBType & cb);
+              void encodeFlush(iofwdevent::CBException e, const CBType & cb);
+
+              /* Included until this can be removed from base class RPCRequest */
+              void encode();
+              
+              ReqParam & decodeParam ();
 
               // for normal mode
               void recvBuffers(const CBType & cb, RetrievedBuffer * rb);
-              void recvBuffersBlock(const CBType & cb, RetrievedBuffer * rb);
-              // for pipeline mode
-              void recvPipelineBufferCB(iofwdevent::CBType, iofwd::RetrievedBuffer*, size_t);
 
-              void recvPipelineBufferCBBlock(iofwdevent::CBType, iofwd::RetrievedBuffer*, size_t);
+              // for pipeline mode
+              void recvPipelineBufferCB(iofwdevent::CBType cb, 
+                                        iofwd::RetrievedBuffer* rb, 
+                                        size_t size);
+
+              void recvRead (iofwdevent::CBType cb, 
+                             iofwd::RetrievedBuffer* rb, size_t size,
+                             size_t * outSize, size_t * runSize);
+
+              void recvCheck (iofwdevent::CBException e,
+                              iofwdevent::CBType cb,
+                              iofwd::RetrievedBuffer* rb, 
+                              size_t size,
+                              size_t * outSize,
+                              size_t * runSize);
+
+              void readBuffer (CBType cb, void ** buff, size_t sizdec_, 
+                               size_t * outSize);
+
+              void bufferRecv (iofwdevent::CBException e, CBType cb,
+                               void ** buff, size_t sizdec_,
+                               size_t * outSize, void ** tmpBuffer);
 
               void initRequestParams(ReqParam & p, void * bufferMem);
 
               void allocateBuffer(iofwdevent::CBType cb, RetrievedBuffer * rb);
 
               void releaseBuffer(RetrievedBuffer * rb);
-
-              size_t readBuffer (void ** buff, size_t size, bool UNUSED(forceSize));
 
               void preformDecode(const CBType & cb);
           protected:
@@ -111,7 +130,6 @@ namespace iofwd
              rpc::RPCDecoder dec_;
              rpc::RPCEncoder enc_;
              size_t total_read;
-             iofwdutil::ThreadPool * tp_;
       };
 
    }
