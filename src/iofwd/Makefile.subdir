@@ -202,7 +202,9 @@ src/iofwd/rpcfrontend/IOFSLRPCReadRequest.cpp \
 src/iofwd/rpcfrontend/IOFSLRPCCreateRequest.hh \
 src/iofwd/rpcfrontend/IOFSLRPCCreateRequest.cpp \
 src/iofwd/rpcfrontend/IOFSLRPCCommitRequest.hh \
-src/iofwd/rpcfrontend/IOFSLRPCCommitRequest.cpp 
+src/iofwd/rpcfrontend/IOFSLRPCCommitRequest.cpp \
+src/iofwd/rpcfrontend/IOFSLRPCGetAttrRequest.hh \
+src/iofwd/rpcfrontend/IOFSLRPCGetAttrRequest.cpp 
 
 #src/iofwd/rpcfrontend/IOFSLRPCGetAttrRequest.hh \
 #src/iofwd/rpcfrontend/IOFSLRPCGetAttrRequest.cpp \
