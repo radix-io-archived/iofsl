@@ -111,6 +111,7 @@ namespace iofwd
           }
           void flushEncode(iofwdevent::CBException e, iofwdevent::CBType cb)
           {
+            e.check();
             if (out_->type == 'T')
                out_->close(cb);
             else
