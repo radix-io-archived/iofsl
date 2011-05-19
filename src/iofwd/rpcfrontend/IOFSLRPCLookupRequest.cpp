@@ -9,7 +9,6 @@ namespace iofwd
 const IOFSLRPCLookupRequest::ReqParam & IOFSLRPCLookupRequest::decodeParam()
 {
     /* decode the rpc input params */
-   // decode();
    if(inStruct.info.full_path.value.c_str()[0])
    {
       param_.full_path = (char *)inStruct.info.full_path.value.c_str();
@@ -23,7 +22,6 @@ const IOFSLRPCLookupRequest::ReqParam & IOFSLRPCLookupRequest::decodeParam()
       param_.component_name = (char *)inStruct.info.component.value.c_str();
    }
    param_.op_hint = NULL;
-//   param_.op_hint = inStruct.hint;
 
    return param_;
 }
