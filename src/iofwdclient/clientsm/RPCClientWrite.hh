@@ -70,6 +70,7 @@ class RPCClientWrite :
 
         ~RPCClientWrite()
         {
+//	   fprintf(stderr,"Im Being Destroyed\n");
         }
 
         void init(iofwdevent::CBException e)
@@ -115,7 +116,7 @@ class RPCClientWrite :
 
         void postEncodeData(iofwdevent::CBException e)
         {
-         
+//	    fprintf(stderr, "Posting Encode\n");         
             e.check();
 
             /* create the encoder */
@@ -126,13 +127,14 @@ class RPCClientWrite :
             e_.zero_copy_stream_->rewindOutput(e_.data_size_ - e_.coder_.getPos(), slots_[BASE_SLOT]);
 
             slots_.wait(BASE_SLOT,
-                    &RPCClientWrite<INTYPE,OUTTYPE>::getWriteBuffer);
+                    &RPCClientWrite<INTYPE,OUTTYPE>::flushWriteBuffer);
 
         }
 
         /* Get the write buffer for writing data */
         void getWriteBuffer (iofwdevent::CBException e)
         {
+//	    fprintf(stderr,"Got Write Buffer\n");
             e.check();         
 
             /* setup the write stream */
@@ -145,7 +147,7 @@ class RPCClientWrite :
         void flushWriteBuffer (iofwdevent::CBException e)
         {
             e.check();
-
+//	    fprintf(stderr, "Flushing Write Buffer\n");
             e_.zero_copy_stream_->flush(slots_[BASE_SLOT]);
             slots_.wait(BASE_SLOT,
                     &RPCClientWrite<INTYPE,OUTTYPE>::getWriteBuffer);  
@@ -155,13 +157,13 @@ class RPCClientWrite :
         void writeData (iofwdevent::CBException e)
         {
             e.check();
-         
+            
             size_t outSize = e_.data_size_;
+//	    fprintf(stderr, "Output Size: %i\n", outSize);
             int ret = getWriteData (&e_.data_ptr_, &outSize, inStream_.get());
             /* write finished */
             if (ret == 0)
             {
-         
                /* rewind then continue to flush */
                e_.zero_copy_stream_->rewindOutput(e_.data_size_ - outSize, slots_[BASE_SLOT]);
                slots_.wait(BASE_SLOT,
@@ -170,7 +172,7 @@ class RPCClientWrite :
             /* More data to be written (out of write buffer) */
             else 
             {
-         
+    //           fprintf(stderr,"Going to next write\n");
                setNextMethod(&RPCClientWrite<INTYPE,OUTTYPE>::flushWriteBuffer);               
             }
         }
@@ -184,7 +186,7 @@ class RPCClientWrite :
 
         void postFlush(iofwdevent::CBException e)
         {
-         
+  //          fprintf(stderr, "Posting Flush\n");         
             e.check();
 
             // Before we can access the output channel we need to wait until the RPC
