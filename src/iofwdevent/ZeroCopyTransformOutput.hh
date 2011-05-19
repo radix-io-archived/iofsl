@@ -44,6 +44,7 @@ namespace iofwdevent {
         void * intMemPtr;
         size_t intMemSize;
         bool flushFlag;
+        int curState;
       public:
         ZeroCopyTransformOutput(ZeroCopyOutputStream * ,
                                 GenericTransform * , size_t len = 4194304);
