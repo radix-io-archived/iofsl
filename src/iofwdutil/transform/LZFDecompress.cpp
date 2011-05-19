@@ -1,4 +1,4 @@
-#include "LZFCompress.hh"
+#include "LZFDecompress.hh"
 #include "iofwdutil/LinkHelper.hh"
 #include "iofwdutil/tools.hh"
 
@@ -8,10 +8,10 @@ extern "C" {
 
 GENERIC_FACTORY_CLIENT_TAG(std::string,
       iofwdutil::transform::GenericTransform,
-      iofwdutil::transform::GTEncode,
-      iofwdutil::transform::LZFCompress,
+      iofwdutil::transform::GTDecode,
+      iofwdutil::transform::LZFDecompress,
       "LZF",
-      lzfencode);
+      lzfdecode);
 
 namespace iofwdutil
 {
@@ -19,10 +19,10 @@ namespace iofwdutil
    {
       //=====================================================================
 
-      size_t LZFCompress::doCompress (const void * in, size_t insize,
+      size_t LZFDecompress::doDecompress (const void * in, size_t insize,
             void * out, size_t outsize)
       {
-         return lzf_compress (in, insize, out, outsize);
+          return lzf_decompress (in, insize, out, outsize);
       }
 
       //=====================================================================
