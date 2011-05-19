@@ -35,7 +35,7 @@ namespace encoder
       OpHintHelper(zoidfs::zoidfs_op_hint_t * op_hint)
          : readonly_(false)
       {
-            zoidfs::hints::zoidfs_hint_create(&op_hint_);
+            //zoidfs::hints::zoidfs_hint_create(&op_hint_);
 
             /* shallow copy the hint */
             zoidfs::hints::zoidfs_hint_copy(op_hint, &op_hint_);
