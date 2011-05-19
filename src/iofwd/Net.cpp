@@ -11,6 +11,7 @@
 #include "net/Communicator.hh"
 #include "net/bmi/BMIConnector.hh"
 #include "net/loopback/LoopbackConnector.hh"
+#include "net/tcp/TCPConnector.hh"
 
 #include <vector>
 
@@ -49,6 +50,35 @@ namespace iofwd
          s.push_back ("local");
          createServerComm (s, 0);
       }
+      else if(type_ == "tcp")
+      {
+         int rank = getServerRank(); 
+         std::vector<std::string> s;
+         iofwdutil::ConfigFile tconfig =
+                      config.openSection("tcp");
+         std::vector<std::string> hostlist =
+                      tconfig.getMultiKey("hostlist");
+         std::vector<std::string> portlist =
+                      tconfig.getMultiKey("portlist");
+
+         if(hostlist.size() == portlist.size())
+         {
+             for(unsigned int j = 0 ; j < hostlist.size() ; j++)
+             {
+                 s.push_back(hostlist[j] + std::string(":") + portlist[j]);
+             }
+         }
+         else
+         {
+            ZTHROW (ConfigException () << ce_key ("type") <<
+                ce_environment ("tcp"));
+         }
+
+         net_.reset(new net::tcp::TCPConnector(hostlist[rank],
+                     boost::lexical_cast<int>(portlist[rank])));
+
+         createServerComm(s, rank);
+      }
       else
       {
          ZTHROW (ConfigException () << ce_key ("type") <<
@@ -61,6 +91,16 @@ namespace iofwd
        if(type_ == "bmi")
        {
            return bmi_service_->getServerRank();
+       }
+       else if(type_ == "tcp")
+       {
+           const char * strrank = getenv("ZOIDFS_SERVER_RANK");
+           if(!strrank)
+           {
+               ZTHROW(ConfigException () << iofwdutil::zexception_msg ("No ZOIDFS_SERVER_RANK set!"));
+           }
+           return boost::lexical_cast<int>(strrank);
+
        }
        return -1;
    }

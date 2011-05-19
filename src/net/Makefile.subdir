@@ -13,7 +13,7 @@ my_net_sources = \
 
 
 include src/net/bmi/Makefile.subdir
+include src/net/tcp/Makefile.subdir
 include src/net/loopback/Makefile.subdir
-
 
 src_net_libnet_a_SOURCES = $(my_net_sources)

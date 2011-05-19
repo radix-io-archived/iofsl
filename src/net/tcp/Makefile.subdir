@@ -1,0 +1,12 @@
+my_net_sources += \
+	src/net/tcp/TCPConnector.hh  \
+	src/net/tcp/TCPConnector.cpp \
+	src/net/tcp/TCPInput.hh \
+	src/net/tcp/TCPInput.cpp \
+	src/net/tcp/TCPOutput.cpp \
+	src/net/tcp/TCPOutput.hh \
+	src/net/tcp/TCPAddress.hh \
+	src/net/tcp/TCPAddress.cpp \
+	src/net/tcp/TCPConnection.hh \
+	src/net/tcp/TCPConnection.cpp
+
