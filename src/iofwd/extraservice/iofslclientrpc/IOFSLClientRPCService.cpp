@@ -142,8 +142,7 @@ namespace iofwd
           /* TODO get the correct op code */                                     
           int opid = zoidfs::ZOIDFS_PROTO_READ;                                  
                                                                                  
-          iofwd::Request * tmp = new iofwd::rpcfrontend::IOFSLRPCReadRequest(&tp_,
-                                                                              opid,         
+          iofwd::Request * tmp = new iofwd::rpcfrontend::IOFSLRPCReadRequest( opid,         
                                                                               in, out);
           iofwdevent::CBType submitReq = boost::bind(&IOFSLClientRPCService::submitRequest, this, tmp);
           static_cast<iofwd::rpcfrontend::IOFSLRPCReadRequest *>(tmp)->decode(submitReq);

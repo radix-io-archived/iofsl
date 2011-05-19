@@ -24,7 +24,7 @@ namespace iofwd
       typedef zoidfs::zoidfs_handle_t zoidfs_handle_t;
       typedef zoidfs::zoidfs_dirent_cookie_t zoidfs_dirent_cookie_t;
       typedef zoidfs::zoidfs_file_ofs_t zoidfs_file_ofs_t;
-
+      typedef iofwdevent::CBType CBType;
       ENCODERSTRUCT (IOFSLRPCReadDec, ((zoidfs_handle_t)(handle_)) 
                                         ((size_t)(mem_count_))
                                         ((void**)(mem_starts_))              
@@ -43,14 +43,13 @@ namespace iofwd
           public ReadRequest
       {
           public:
-              IOFSLRPCReadRequest(iofwdutil::ThreadPool * tp,
-                      int opid,
+              IOFSLRPCReadRequest(int opid,
                       iofwdevent::ZeroCopyInputStream * in,
                       iofwdevent::ZeroCopyOutputStream * out) :
                   IOFSLRPCRequest(in, out),
-                  ReadRequest(opid)
+                  ReadRequest(opid),
+                  header_sent(false)
               {
-                tp_ = tp;
               }
             
               virtual ~IOFSLRPCReadRequest();
@@ -58,7 +57,13 @@ namespace iofwd
               /* encode and decode helpers for RPC data */
               void decode(const CBType & cb);
               void processDecode(const CBType & cb);
-              void encode();
+              void encode(CBType cb);
+              void writeEncode (iofwdevent::CBException e, CBType cb);
+              void encodeFlush (iofwdevent::CBException e, CBType cb);
+
+
+              void encode() {};
+              
 
               ReqParam & decodeParam ();
 
@@ -71,15 +76,39 @@ namespace iofwd
               // for pipeline mode
               void sendPipelineBufferCB(const iofwdevent::CBType cb, 
                                         RetrievedBuffer * rb, size_t size);
-              void sendPipelineBufferCBBlock (const iofwdevent::CBType cb, 
-                                              RetrievedBuffer * rb, 
-                                              size_t size);
+
+              void sendNext ( iofwdevent::CBException e,
+                              const iofwdevent::CBType cb, 
+                              RetrievedBuffer * rb, 
+                              size_t size,
+                              size_t * outSize,
+                              size_t * readSize,
+                              size_t * readLoc);
+
+              void sendCheck ( iofwdevent::CBException e,
+                               const iofwdevent::CBType cb, 
+                               RetrievedBuffer * rb, 
+                               size_t size,
+                               size_t * outSize,
+                               size_t * readSize,
+                               size_t * readLoc);
+
+              void writeGetBuffer(CBType cb, void * buff, 
+                                  size_t size, size_t * readSize);
+
+              void writeGotBuffer(iofwdevent::CBException e, 
+                                  CBType cb, void * buff, 
+                                  size_t size, size_t * readSize,
+                                  size_t * outsize, char ** writePtr);
+
+              void writeFlush (iofwdevent::CBException e, CBType cb, size_t * outsize, 
+                               char ** writePtr);
+
+
               void initRequestParams(ReqParam & p, void * bufferMem);
 
               void allocateBuffer(const iofwdevent::CBType cb, RetrievedBuffer * rb);
               void releaseBuffer(RetrievedBuffer * rb);
-              size_t writeBuffer(void * buff, size_t size, bool flush);
-              void sendBuffersBlock(const iofwdevent::CBType & cb, RetrievedBuffer * rb);
           protected:
               /* data size helpers for this request */ 
               virtual size_t rpcEncodedInputDataSize(); 
@@ -105,8 +134,7 @@ namespace iofwd
              /* RPC encoder / decoder */
              rpc::RPCDecoder dec_;
              rpc::RPCEncoder enc_;
-             size_t total_write;
-             iofwdutil::ThreadPool * tp_;
+             bool header_sent;
 	
 	     size_t total_read_size;
       };
