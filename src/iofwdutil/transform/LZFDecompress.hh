@@ -1,8 +1,7 @@
-#ifndef IOFWDUTIL_TRANSFORM_LZFCOMPRESS_HH
-#define IOFWDUTIL_TRANSFORM_LZFCOMPRESS_HH
+#ifndef IOFWDUTIL_TRANSFORM_LZFDECOMPRESS_HH
+#define IOFWDUTIL_TRANSFORM_LZFDECOMPRESS_HH
 
-#include "BlockingCompress.hh"
-
+#include "BlockingDecompress.hh"
 
 namespace iofwdutil
 {
@@ -10,16 +9,17 @@ namespace iofwdutil
    {
       //=====================================================================
 
-      class LZFCompress : public BlockingCompress
+      class LZFDecompress : public BlockingDecompress
       {
+
          protected:
 
-            virtual size_t doCompress (const void * in, size_t insize,
+            virtual size_t doDecompress (const void * in, size_t insize,
                   void * out, size_t outsize);
-
       };
 
       //=====================================================================
    }
 }
+
 #endif

@@ -161,9 +161,8 @@ src/iofwdutil/mm/BMIMemoryManager.cpp \
 src/iofwdutil/transform/GenericTransform.hh \
 src/iofwdutil/transform/GenericTransform.cpp \
 src/iofwdutil/transform/TransformException.hh \
-src/iofwdutil/transform/LZF.cpp \
-src/iofwdutil/transform/LZF.hh \
-src/iofwdutil/transform/LZFCommon.hh \
+src/iofwdutil/transform/LZFDecompress.cpp \
+src/iofwdutil/transform/LZFDecompress.hh \
 src/iofwdutil/transform/LZFCompress.hh \
 src/iofwdutil/transform/LZFCompress.cpp \
 src/iofwdutil/transform/CopyTransform.cpp \
@@ -172,6 +171,11 @@ src/iofwdutil/transform/IOReadBuffer.cpp \
 src/iofwdutil/transform/IOReadBuffer.hh \
 src/iofwdutil/transform/IOWriteBuffer.cpp \
 src/iofwdutil/transform/IOWriteBuffer.hh \
+src/iofwdutil/transform/BlockingCompress.hh \
+src/iofwdutil/transform/BlockingCompress.cpp \
+src/iofwdutil/transform/BlockingDecompress.hh \
+src/iofwdutil/transform/BlockingDecompress.cpp \
+src/iofwdutil/transform/BlockingCommon.hh \
 \
 src/iofwdutil/ExceptionBacktrace.hh \
 src/iofwdutil/ExceptionBacktrace.cpp \
@@ -211,3 +215,15 @@ src_iofwdutil_libiofwdutil_a_SOURCES += \
 	src/iofwdutil/hash/OpenSSLInit.cpp
 endif
 
+
+if HAVE_LZO
+src_iofwdutil_libiofwdutil_a_SOURCES += \
+	src/iofwdutil/transform/LZOCompress.hh \
+	src/iofwdutil/transform/LZODecompress.hh \
+	src/iofwdutil/transform/LZOCompress.cpp \
+	src/iofwdutil/transform/LZODecompress.cpp \
+	src/iofwdutil/transform/LZOCommon.hh \
+	src/iofwdutil/transform/LZOCommon.cpp \
+	src/iofwdutil/transform/LZOException.hh \
+	src/iofwdutil/transform/LZOException.cpp
+endif
