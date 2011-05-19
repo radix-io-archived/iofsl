@@ -104,6 +104,11 @@ test_rpcclienttest_SOURCES = test/rpcclienttest.cpp $(SERVERSOURCES)
 test_rpcclienttest_LDFLAGS = ${cppldflags}
 test_rpcclienttest_LDADD = ${cppldadd}
 
+noinst_PROGRAMS += test/transform
+test_transform_SOURCES = test/transform.cpp $(SERVERSOURCES)
+test_transform_LDFLAGS = ${cppldflags}
+test_transform_LDADD = ${cppldadd}
+
 noinst_PROGRAMS += test/servercomm
 test_servercomm_SOURCES = test/servercomm.cpp $(SERVERSOURCES)
 test_servercomm_LDFLAGS = ${cppldflags}
