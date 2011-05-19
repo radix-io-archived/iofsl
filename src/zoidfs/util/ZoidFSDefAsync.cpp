@@ -245,7 +245,6 @@ namespace zoidfs
                             {
                                 data->condition_.timed_wait(lock,
                                         boost::get_system_time() + duration);
-                                //ref_count--;
                                 ref_count = data->ref_count_;
                             }
                         }
@@ -549,7 +548,6 @@ namespace zoidfs
                         delete [] wu->mem_sizes_;
                         delete [] wu->file_starts_; 
                         delete [] wu->file_sizes_;
-                        delete [] wu->ret_;
 
                         /* cleanup mem alloc */
                         iofwdutil::mm::NBIOMemoryManager::instance().dealloc(wu->alloc_); 
@@ -602,6 +600,7 @@ namespace zoidfs
                                 {
                                     data->err_ = *(wu->ret_);
                                 }
+                                delete wu->ret_;
 
                                 if(data->flush_)
                                 {
