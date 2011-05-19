@@ -38,14 +38,12 @@ void IOFSLRPCLookupRequest::reply(const CBType & cb, const
     outStruct.handle = (*handle);
     outStruct.returnCode = getReturnCode();
 
-    /* encode */
-    encode();
     zoidfs::hints::zoidfs_hint_create(&op_hint_);  
     /* @TODO: Remove this later */
     param_.op_hint = &op_hint_;
-    cb(iofwdevent::CBException());
-    /* invoke the callback */
-    //cb();
+
+    /* encode */
+    encode(cb);
 }
 
 IOFSLRPCLookupRequest::~IOFSLRPCLookupRequest()
