@@ -815,6 +815,40 @@ AC_TRY_COMPILE(
 CPPLAGS="$CPPFLAGS_OLD"
 
 dnl =========================================================================
+dnl = CHeck for LZO compression                                             =
+dnl =========================================================================
+
+AC_ARG_WITH(lzo,[  --with-lzo=<location of lzo installation>
+                      ],LZO_DIR="$withval",LZO_DIR="")
+if test -n "$LZO_DIR" ;
+then
+   CPPFLAGS="$CPPFLAGS -I${LZO_DIR}/include"
+   LDFLAGS="$LDFLAGS -L${LZO_DIR}/lib"
+   IOFSL_CLIENT_CFLAGS_PKG="${IOFSL_CLIENT_CFLAGS_PKG} -I${LZO_DIR}/include"
+   IOFSL_CLIENT_LIBS_PKG="${IOFSL_CLIENT_LIBS_PKG} -L${LZO_DIR}/lib -llzo2"
+fi
+
+use_lzo=1
+
+AC_CHECK_HEADERS([lzo/lzo1x.h],[],
+                 [use_lzo=])
+
+if test -n $use_lzo; then
+AC_SEARCH_LIBS([lzo1x_decompress],[lzo2],[],
+               [use_lzo=])
+fi
+
+AM_CONDITIONAL([HAVE_LZO],[test "x${use_lzo}" == "x1"])
+
+AC_MSG_CHECKING([if LZO support can be enabled])
+if test "x${use_lzo}" == "x1" ; then
+      AC_DEFINE([HAVE_LZO], [1], [If LZO is available])
+      AC_MSG_RESULT([yes])
+else
+      AC_MSG_RESULT([no])
+fi
+
+dnl =========================================================================
 dnl ========= Check for ZLib support (for hash functions) ===================
 dnl =========================================================================
 
