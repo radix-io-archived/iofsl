@@ -25,8 +25,13 @@ namespace iofwd
       {
          /* For transforms, if there is nothing to read (aka a full block has 
             not been decoded) return to decode to read some more */
-         if (read_size_ == 0)
-            decode(cb);
+	
+//	fprintf(stderr, "Decoding %i\n", read_size_);
+//         if (read_size_ == 0)
+//	 {
+//            decode(cb);
+//	    return;
+//         }
          /* Start RPCDecoder */            
          dec_ = rpc::RPCDecoder(read_ptr_, read_size_);
 
@@ -64,7 +69,7 @@ namespace iofwd
 
       void IOFSLRPCWriteRequest::encode()
       {
-
+//	    fprintf(stderr,"Encode Started\n");
             iofwdevent::SingleCompletion block;
            
             /* sanity */ 
@@ -101,7 +106,7 @@ namespace iofwd
             else
                out_->flush(block);
             block.wait();
-
+//	    fprintf(stderr,"Encode Compleated\n");
       }
       
       IOFSLRPCWriteRequest::ReqParam & IOFSLRPCWriteRequest::decodeParam() 
@@ -192,10 +197,11 @@ namespace iofwd
          size_t outSize = 0;
          void ** tmpBuffer = (void **)new char * [1];
          iofwdevent::SingleCompletion block;
+//	 fprintf(stderr,"Entering Read\n");
          block.reset();
          in_->read((const void **)tmpBuffer, &outSize, block, sizdec_);
          block.wait();
-
+//	 fprintf(stderr,"Exiting Read: %i\n", outSize);
          if (outSize < sizdec_)
          {
             std::memcpy ( *buff, *tmpBuffer, outSize);
@@ -226,6 +232,7 @@ namespace iofwd
       {
 
           boost::this_thread::at_thread_exit(iofwdutil::ThreadPoolKick(*tp_)); 
+//	  fprintf(stderr,"Entering Write Request\n");
           size_t i = 0;
           size_t outSize = 0;
           void * loc;
@@ -240,7 +247,7 @@ namespace iofwd
             }
             
           } while ( i < param_.mem_count);
-
+//	  fprintf(stderr,"Exiting Write Request\n");
           cb(iofwdevent::CBException());
       }
 
@@ -259,13 +266,15 @@ namespace iofwd
 
           boost::this_thread::at_thread_exit(iofwdutil::ThreadPoolKick(*tp_));           
           size_t outSize = 0;
-          
+//	  fprintf(stderr, "entering write request");          
           void * loc;
           do
           {
             loc = (void*)&(((char*)rb->buffer_->getMemory())[outSize]);
             outSize += readBuffer((void**)&loc, size - outSize, TRUE);
+	    //fprintf (stderr, "Outsize: %i, Expected: %i\n",outSize, size);
           } while (outSize != size);
+//	  fprintf (stderr, "Iv Read: %i\n", outSize);
           cb(iofwdevent::CBException());
       }
 
