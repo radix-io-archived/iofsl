@@ -33,11 +33,15 @@ namespace net
             TCPConnector::io_service_.run();
         }
 
-        TCPConnector::TCPConnector(std::string host, int port) :
-            host_(host),
-            port_(port),
+        TCPConnector::TCPConnector(std::string a) :
             acceptor_(NULL)
         {
+            /* split the add into host and port */
+            std::vector<std::string> addrstrs;
+            boost::split(addrstrs, a, boost::is_any_of(":"));
+            host_ = addrstrs[0];
+            port_ = boost::lexical_cast<int>(addrstrs[1]);
+
             {
                 boost::mutex::scoped_lock l(TCPConnector::io_service_mutex_);
                 if(!TCPConnector::acceptor_set_)

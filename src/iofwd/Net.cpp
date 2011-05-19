@@ -56,27 +56,19 @@ namespace iofwd
          std::vector<std::string> s;
          iofwdutil::ConfigFile tconfig =
                       config.openSection("tcp");
-         std::vector<std::string> hostlist =
-                      tconfig.getMultiKey("hostlist");
-         std::vector<std::string> portlist =
-                      tconfig.getMultiKey("portlist");
+         std::vector<std::string> addrlist =
+                      tconfig.getMultiKey("addrlist");
 
-         if(hostlist.size() == portlist.size())
+         /* build the addr list from the config file */
+         for(unsigned int j = 0 ; j < addrlist.size() ; j++)
          {
-             for(unsigned int j = 0 ; j < hostlist.size() ; j++)
-             {
-                 s.push_back(hostlist[j] + std::string(":") + portlist[j]);
-             }
-         }
-         else
-         {
-            ZTHROW (ConfigException () << ce_key ("type") <<
-                ce_environment ("tcp"));
+            s.push_back(addrlist[j]);
          }
 
-         net_.reset(new net::tcp::TCPConnector(hostlist[rank],
-                     boost::lexical_cast<int>(portlist[rank])));
+         /* add the addr for this rank to the local TCP net */
+         net_.reset(new net::tcp::TCPConnector(addrlist[rank]));
 
+         /* create the comm */
          createServerComm(s, rank);
       }
       else

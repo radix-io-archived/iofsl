@@ -31,7 +31,7 @@ class TCPConnector : private boost::noncopyable, public Net
         };
 
     public:
-        TCPConnector(std::string host, int port);
+        TCPConnector(std::string a);
         ~TCPConnector();
 
 
