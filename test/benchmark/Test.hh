@@ -42,8 +42,10 @@
 #define ZOIDFS_ATTR_MTIME  (1 << 9)
 #define ZOIDFS_ATTR_CTIME  (1 << 10)
 iofwdclient::IOFWDClient * iofslSetup( char * address, std::string opt_config);
-void createOutput (iofwdclient::IOFWDClient * x, zoidfs::zoidfs_handle_t * outHandle, char * filename);
+//void createOutput (iofwdclient::IOFWDClient * x, zoidfs::zoidfs_handle_t * outHandle, char * filename);
 void lookupInput (iofwdclient::IOFWDClient * x, zoidfs::zoidfs_handle_t * outHandle, char * filename);
-void test (char * address, char * config, char * inDataset, char * outDataset, 
+//void test (char * address, char * config, zoidfs::zoidfs_handle_t inHandle, zoidfs::zoidfs_handle_t outHandle,
+//           int readSize, int runs);
+void test (char * address, char * config, char * inName, char * outName,
            int readSize, int runs);
 #endif

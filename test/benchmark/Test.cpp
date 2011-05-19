@@ -1,3 +1,4 @@
+#include "iofwdutil/IofwdutilLinkHelper.hh"
 #include "Test.hh"
 using namespace iofwd;
 using namespace iofwdevent;
@@ -11,6 +12,7 @@ iofwdclient::IOFWDClient * iofslSetup( char * address, std::string opt_config)
 {
    // Needed to autoregister services
    registerIofwdFactoryClients ();
+   registerIofwdutilFactoryClients (); 
    ServiceManager & man = ServiceManager::instance ();
    man.setParam ("config.configfile", opt_config);
    shared_ptr<iofwd::Net> netservice (man.loadService<iofwd::Net>("net"));
@@ -26,28 +28,28 @@ iofwdclient::IOFWDClient * iofslSetup( char * address, std::string opt_config)
 }
 
 
-void createOutput (iofwdclient::IOFWDClient * x, zoidfs::zoidfs_handle_t * outHandle, char * filename)
-{
-    registerIofwdFactoryClients (); 
-    size_t ret = 0;
-    int created;
-    struct timeval now; 
-    zoidfs::zoidfs_sattr_t sattr; 
-    zoidfs::zoidfs_op_hint_t op_hint;
-    zoidfs::hints::zoidfs_hint_create(&op_hint);
-//    sattr.mask = ZOIDFS_ATTR_MODE  | ZOIDFS_ATTR_UID | 
-//                 ZOIDFS_ATTR_GID   | ZOIDFS_ATTR_ATIME | 
-//                 ZOIDFS_ATTR_MTIME; 
-//    sattr.mode = 0777; 
-//    sattr.uid = getuid(); 
-//    sattr.gid = getgid(); 
-//    gettimeofday(&now, NULL); 
-//    sattr.atime.seconds = now.tv_sec; 
-//    sattr.atime.nseconds = now.tv_usec; 
-//    sattr.mtime.seconds = now.tv_sec; 
-//    sattr.mtime.nseconds = now.tv_usec; 
-    ret = x->create (NULL, NULL, filename, &sattr, outHandle, &created, &op_hint); 
-}
+//void createOutput (iofwdclient::IOFWDClient * x, zoidfs::zoidfs_handle_t * outHandle, char * filename)
+//{
+////    registerIofwdFactoryClients (); 
+//    size_t ret = 0;
+//    int created;
+//    struct timeval now; 
+//    zoidfs::zoidfs_sattr_t sattr; 
+//    zoidfs::zoidfs_op_hint_t op_hint;
+//    zoidfs::hints::zoidfs_hint_create(&op_hint);
+////    sattr.mask = ZOIDFS_ATTR_MODE  | ZOIDFS_ATTR_UID | 
+////                 ZOIDFS_ATTR_GID   | ZOIDFS_ATTR_ATIME | 
+////                 ZOIDFS_ATTR_MTIME; 
+////    sattr.mode = 0777; 
+////    sattr.uid = getuid(); 
+////    sattr.gid = getgid(); 
+////    gettimeofday(&now, NULL); 
+////    sattr.atime.seconds = now.tv_sec; 
+////    sattr.atime.nseconds = now.tv_usec; 
+////    sattr.mtime.seconds = now.tv_sec; 
+////    sattr.mtime.nseconds = now.tv_usec; 
+//    ret = x->lookup (NULL, NULL, filename, outHandle, &op_hint); 
+//}
 
 void lookupInput (iofwdclient::IOFWDClient * x, zoidfs::zoidfs_handle_t * outHandle, char * filename)
 {
@@ -57,18 +59,30 @@ void lookupInput (iofwdclient::IOFWDClient * x, zoidfs::zoidfs_handle_t * outHan
        
 }
 
-void test (char * address, char * config, char * inDataset, char * outDataset, 
+void test (char * address, char * config, char * inName, char * outName,
            int readSize, int runs)
 {
+  fprintf (stderr, "Welcome Home\n");
   int ret;
-  iofwdclient::IOFWDClient * x = iofslSetup (address, std::string(config));
   zoidfs::zoidfs_handle_t outHandle;
   zoidfs::zoidfs_handle_t inHandle;
-  createOutput ( x, &outHandle, outDataset);
-  lookupInput (x, &inHandle, inDataset);
+  iofwdclient::IOFWDClient * x = iofslSetup (address, std::string(config));
+  fprintf(stderr, "First Lookup\n");
+  lookupInput (x, &outHandle, outName);
+  fprintf(stderr, "Second Lookup\n");
+  lookupInput (x, &inHandle, inName);
   for (int i = 0; i < runs; i++)
   {    
+//	  fprintf(stderr, "First Lookup\n");
+//	  lookupInput (x, &outHandle, outName);
+//	  fprintf(stderr, "Second Lookup\n");
+//	  lookupInput (x, &inHandle, inName);
+//      MPI_Barrier(MPI_COMM_WORLD);
+//      MPI_Barrier(MPI_COMM_WORLD);
+//     MPI_Barrier(MPI_COMM_WORLD);
+//     MPI_Barrier(MPI_COMM_WORLD);
 
+      fprintf (stderr, "Run Number: %i\n",i);
       int  _N = 1;
       size_t _BSIZE = readSize;
       size_t mem_sizes[_N]; 
@@ -87,8 +101,9 @@ void test (char * address, char * config, char * inDataset, char * outDataset,
       _foff += _BSIZE; 
       } 
 
-      /* Test Start Barrier */ 
+      // Test Start Barrier 
       MPI_Barrier(MPI_COMM_WORLD);
+//      fprintf (stderr, "Starting Read\n");
       ret = x->read (&inHandle, mem_count, (void **)mem_starts_write, mem_sizes, 
                    file_count, file_starts, file_sizes, ZOIDFS_NO_OP_HINT);
       MPI_Barrier(MPI_COMM_WORLD);
@@ -111,7 +126,7 @@ void test (char * address, char * config, char * inDataset, char * outDataset,
        { 
            free(mem_starts_write[_i]); 
        } 
-      
+
 
   }
 }
