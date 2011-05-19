@@ -160,10 +160,14 @@ namespace rpc
       } else if (value == std::string ("LZF"))
       {
          val = RPCHeader::FL_TRANSFORM_LZF;
+      } else if (value == std::string("LZO"))
+      {
+         val = RPCHeader::FL_TRANSFORM_LZO;
       }
       else
       {
          ZLOG_ERROR (ZLOG_DEFAULT, format("Unknown transform: %s") % value);
+//         ALWAYS_ASSERT(value != 0);
       }
       if (val)
       {

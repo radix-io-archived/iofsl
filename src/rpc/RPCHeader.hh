@@ -19,6 +19,7 @@ namespace rpc
          FL_TRANSFORM_ZLIB  = 0x00000002,
          FL_TRANSFORM_BZLIB = 0x00000004,
          FL_TRANSFORM_LZF   = 0x00000008,
+         FL_TRANSFORM_LZO   = 0x00000016,
          FL_TRANSFORM       = 0x000000ff,
 
          FL_CHECKSUM_NONE  = 0x00000100,

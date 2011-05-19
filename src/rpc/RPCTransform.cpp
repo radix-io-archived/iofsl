@@ -26,6 +26,8 @@ namespace rpc
             name= "BZLIB"; break;
          case RPCHeader::FL_TRANSFORM_LZF:
             name = "LZF"; break;
+         case RPCHeader::FL_TRANSFORM_LZO:
+	    name = "LZO"; break;
          default:
             ALWAYS_ASSERT(false && "Unknown transform flag!");
       };
