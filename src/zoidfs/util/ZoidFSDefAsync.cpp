@@ -549,6 +549,7 @@ namespace zoidfs
                         delete [] wu->mem_sizes_;
                         delete [] wu->file_starts_; 
                         delete [] wu->file_sizes_;
+                        delete [] wu->ret_;
 
                         /* cleanup mem alloc */
                         iofwdutil::mm::NBIOMemoryManager::instance().dealloc(wu->alloc_); 
