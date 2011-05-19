@@ -67,6 +67,7 @@ class RPCClientRead :
 
         void init(iofwdevent::CBException e)
         {
+//	    fprintf (stderr, "init\n");
             e.check();
 
             /* Get the maximum possible send size */
@@ -80,6 +81,7 @@ class RPCClientRead :
 
         void outputReady (iofwdevent::CBException e)
         {
+//	    fprintf (stderr,"Outready\n");
             e.check();
             e_.zero_copy_stream_.reset((rpc_handle_->getOut()));
 
@@ -90,6 +92,7 @@ class RPCClientRead :
 
         void postSetupConnection(iofwdevent::CBException e)
         {
+//	    fprintf (stderr, "Post Setup\n");
             e.check();
 
             /* setup the write stream */
@@ -103,6 +106,7 @@ class RPCClientRead :
 
         void waitSetupConnection(iofwdevent::CBException e)
         {
+//	    fprintf (stderr, "Wait Setup\n");
             e.check();
             setNextMethod(&RPCClientRead<INTYPE,OUTTYPE>::postEncodeData);
          
@@ -110,6 +114,7 @@ class RPCClientRead :
 
         void postEncodeData(iofwdevent::CBException e)
         {
+//	    fprintf (stderr, "Post Encode\n");
             e.check();
 
             /* create the encoder */
@@ -126,6 +131,7 @@ class RPCClientRead :
         /* Flush state */
         void waitEncodeData(iofwdevent::CBException e)
         {
+//	    fprintf(stderr,"Wait Encode: size %i\n", e_.coder_.getPos());
             e.check();
             setNextMethod(&RPCClientRead<INTYPE,OUTTYPE>::postFlush);
          
@@ -133,6 +139,7 @@ class RPCClientRead :
 
         void postFlush(iofwdevent::CBException e)
         {
+//	    fprintf (stderr, "Post Flush\n");
             e.check();
 
             // Before we can access the output channel we need to wait until the RPC
@@ -148,6 +155,7 @@ class RPCClientRead :
 
         void waitFlush(iofwdevent::CBException e)
         {
+//	    fprintf(stderr, "Wait in ready\n");
             e.check();
             rpc_handle_->waitInReady (slots_[BASE_SLOT]);
             slots_.wait(BASE_SLOT,&RPCClientRead<INTYPE,OUTTYPE>::postDecodeData);
@@ -157,7 +165,9 @@ class RPCClientRead :
         
         void postDecodeData(iofwdevent::CBException e)
         {
+//	    fprintf (stderr, "Post Decode\n");
             e.check();      
+//	    fprintf (stderr, "Post Decode\n");
             /* get the max size */
             d_.net_data_size_ = rpc::getRPCEncodedSize(OUTTYPE()).getMaxSize();
             d_.zero_copy_stream_.reset((rpc_handle_->getIn()));
@@ -170,6 +180,7 @@ class RPCClientRead :
 
         void waitDecodeData(iofwdevent::CBException e)
         {
+//	    fprintf(stderr,"Decoding Data %i\n", d_.data_size_);
             e.check();
 
             d_.coder_ = rpc::RPCDecoder(d_.data_ptr_, d_.data_size_);
@@ -183,6 +194,7 @@ class RPCClientRead :
         /* Rewind the read after the header has been decoded */
         void rewindRead (iofwdevent::CBException e)
         {
+//	    fprintf (stderr, "Rewind Read\n");
             e.check();
             outStream_.reset(new OUTTYPE(static_cast<zoidfs::zoidfs_op_hint_t *>(NULL),
                                          static_cast<size_t>(d_.data_.mem_count_),
@@ -198,6 +210,7 @@ class RPCClientRead :
         /* Get the read buffer for reading data */
         void getReadBuffer (iofwdevent::CBException e)
         {
+//	    fprintf (stderr, "get read buffer\n");
             e.check();
             /* setup the write stream */
             d_.zero_copy_stream_->read(const_cast<const void **>(&d_.data_ptr_),
@@ -210,6 +223,7 @@ class RPCClientRead :
         /* read data from output stream */
         void readData (iofwdevent::CBException e)
         {
+//	    fprintf (stderr, "Read Data\n");
             e.check();
             size_t outSize = d_.data_size_;
             int ret = getReadData (d_.data_ptr_, outSize, outStream_.get());
