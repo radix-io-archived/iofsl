@@ -23,19 +23,19 @@
 #include "iofwd/rpcfrontend/IOFSLRPCCommitRequest.hh"
 #include "iofwd/rpcfrontend/IOFSLRPCCreateRequest.hh"
 #include "iofwd/rpcfrontend/IOFSLRPCGetAttrRequest.hh"
-//#include "iofwd/rpcfrontend/IOFSLRPCLinkRequest.hh"
-//#include "iofwd/rpcfrontend/IOFSLRPCLookupRequest.hh"
-//#include "iofwd/rpcfrontend/IOFSLRPCMkdirRequest.hh"
+#include "iofwd/rpcfrontend/IOFSLRPCLinkRequest.hh"
+#include "iofwd/rpcfrontend/IOFSLRPCLookupRequest.hh"
+#include "iofwd/rpcfrontend/IOFSLRPCMkdirRequest.hh"
 //#include "iofwd/rpcfrontend/IOFSLRPCNotImplementedRequest.hh"
 //#include "iofwd/rpcfrontend/IOFSLRPCNullRequest.hh"
-//#include "iofwd/rpcfrontend/IOFSLRPCReadDirRequest.hh"
-//#include "iofwd/rpcfrontend/IOFSLRPCReadLinkRequest.hh"
+#include "iofwd/rpcfrontend/IOFSLRPCReadDirRequest.hh"
+#include "iofwd/rpcfrontend/IOFSLRPCReadLinkRequest.hh"
 #include "iofwd/rpcfrontend/IOFSLRPCReadRequest.hh"
-//#include "iofwd/rpcfrontend/IOFSLRPCRemoveRequest.hh"
-//#include "iofwd/rpcfrontend/IOFSLRPCRenameRequest.hh"
-//#include "iofwd/rpcfrontend/IOFSLRPCResizeRequest.hh"
-//#include "iofwd/rpcfrontend/IOFSLRPCSetAttrRequest.hh"
-//#include "iofwd/rpcfrontend/IOFSLRPCSymLinkRequest.hh"
+#include "iofwd/rpcfrontend/IOFSLRPCRemoveRequest.hh"
+#include "iofwd/rpcfrontend/IOFSLRPCRenameRequest.hh"
+#include "iofwd/rpcfrontend/IOFSLRPCResizeRequest.hh"
+#include "iofwd/rpcfrontend/IOFSLRPCSetAttrRequest.hh"
+#include "iofwd/rpcfrontend/IOFSLRPCSymLinkRequest.hh"
 #include "iofwd/rpcfrontend/IOFSLRPCWriteRequest.hh"
 
 
@@ -62,32 +62,32 @@ namespace iofwd
                boost::bind(&IOFSLClientRPCService::create, this, _1, _2, _3));
          rpcserver_->registerRPC("iofslclientrpc.getattr",
                boost::bind(&IOFSLClientRPCService::getattr, this, _1, _2, _3));
-//         rpcserver_->registerRPC("iofslclientrpc.link",
-//               boost::bind(&IOFSLClientRPCService::link, this, _1, _2, _3));
-//         rpcserver_->registerRPC("iofslclientrpc.mkdir",
-//               boost::bind(&IOFSLClientRPCService::mkdir, this, _1, _2, _3));
-//         rpcserver_->registerRPC("iofslclientrpc.getattr",
-//               boost::bind(&IOFSLClientRPCService::getattr, this, _1, _2, _3));
+         rpcserver_->registerRPC("iofslclientrpc.link",
+               boost::bind(&IOFSLClientRPCService::link, this, _1, _2, _3));
+         rpcserver_->registerRPC("iofslclientrpc.mkdir",
+               boost::bind(&IOFSLClientRPCService::mkdir, this, _1, _2, _3));
+         rpcserver_->registerRPC("iofslclientrpc.getattr",
+               boost::bind(&IOFSLClientRPCService::getattr, this, _1, _2, _3));
 //         rpcserver_->registerRPC("iofslclientrpc.notimplemented",
 //               boost::bind(&IOFSLClientRPCService::notimplemented, this, _1, _2, _3));
 //         rpcserver_->registerRPC("iofslclientrpc.null",
 //               boost::bind(&IOFSLClientRPCService::null, this, _1, _2, _3));
-//         rpcserver_->registerRPC("iofslclientrpc.readdir",
-//               boost::bind(&IOFSLClientRPCService::readdir, this, _1, _2, _3));
-//         rpcserver_->registerRPC("iofslclientrpc.readlink",
-//               boost::bind(&IOFSLClientRPCService::readlink, this, _1, _2, _3));
+         rpcserver_->registerRPC("iofslclientrpc.readdir",
+               boost::bind(&IOFSLClientRPCService::readdir, this, _1, _2, _3));
+         rpcserver_->registerRPC("iofslclientrpc.readlink",
+               boost::bind(&IOFSLClientRPCService::readlink, this, _1, _2, _3));
          rpcserver_->registerRPC("iofslclientrpc.read",
                boost::bind(&IOFSLClientRPCService::read, this,_1, _2, _3));
-//         rpcserver_->registerRPC("iofslclientrpc.remove",
-//               boost::bind(&IOFSLClientRPCService::remove, this, _1, _2, _3));
-//         rpcserver_->registerRPC("iofslclientrpc.rename",
-//               boost::bind(&IOFSLClientRPCService::rename, this, _1, _2, _3));
-//         rpcserver_->registerRPC("iofslclientrpc.resize",
-//               boost::bind(&IOFSLClientRPCService::resize, this, _1, _2, _3));
-//         rpcserver_->registerRPC("iofslclientrpc.setattr",
-//               boost::bind(&IOFSLClientRPCService::setattr, this, _1, _2, _3));
-//         rpcserver_->registerRPC("iofslclientrpc.symlink",
-//               boost::bind(&IOFSLClientRPCService::symlink, this, _1, _2, _3));
+         rpcserver_->registerRPC("iofslclientrpc.remove",
+               boost::bind(&IOFSLClientRPCService::remove, this, _1, _2, _3));
+         rpcserver_->registerRPC("iofslclientrpc.rename",
+               boost::bind(&IOFSLClientRPCService::rename, this, _1, _2, _3));
+         rpcserver_->registerRPC("iofslclientrpc.resize",
+               boost::bind(&IOFSLClientRPCService::resize, this, _1, _2, _3));
+         rpcserver_->registerRPC("iofslclientrpc.setattr",
+               boost::bind(&IOFSLClientRPCService::setattr, this, _1, _2, _3));
+         rpcserver_->registerRPC("iofslclientrpc.symlink",
+               boost::bind(&IOFSLClientRPCService::symlink, this, _1, _2, _3));
          rpcserver_->registerRPC("iofslclientrpc.write",
                boost::bind(&IOFSLClientRPCService::write, this, _1, _2, _3));
       }
@@ -98,20 +98,20 @@ namespace iofwd
          rpcserver_->unregisterRPC("iofslclientrpc.commit");
          rpcserver_->unregisterRPC("iofslclientrpc.create");
          rpcserver_->unregisterRPC("iofslclientrpc.getattr");
-//         rpcserver_->unregisterRPC("iofslclientrpc.link");
+         rpcserver_->unregisterRPC("iofslclientrpc.link");
          rpcserver_->unregisterRPC("iofslclientrpc.lookup");
-//         rpcserver_->unregisterRPC("iofslclientrpc.mkdir");
-//         rpcserver_->unregisterRPC("iofslclientrpc.getattr");
+         rpcserver_->unregisterRPC("iofslclientrpc.mkdir");
+         rpcserver_->unregisterRPC("iofslclientrpc.getattr");
 //         rpcserver_->unregisterRPC("iofslclientrpc.notimplemented");
 //         rpcserver_->unregisterRPC("iofslclientrpc.null");
-//         rpcserver_->unregisterRPC("iofslclientrpc.readdir");
-//         rpcserver_->unregisterRPC("iofslclientrpc.readlink");
+         rpcserver_->unregisterRPC("iofslclientrpc.readdir");
+         rpcserver_->unregisterRPC("iofslclientrpc.readlink");
          rpcserver_->unregisterRPC("iofslclientrpc.read");
-//         rpcserver_->unregisterRPC("iofslclientrpc.remove");
-//         rpcserver_->unregisterRPC("iofslclientrpc.rename");
-//         rpcserver_->unregisterRPC("iofslclientrpc.resize");
-//         rpcserver_->unregisterRPC("iofslclientrpc.setattr");
-//         rpcserver_->unregisterRPC("iofslclientrpc.symlink");
+         rpcserver_->unregisterRPC("iofslclientrpc.remove");
+         rpcserver_->unregisterRPC("iofslclientrpc.rename");
+         rpcserver_->unregisterRPC("iofslclientrpc.resize");
+         rpcserver_->unregisterRPC("iofslclientrpc.setattr");
+         rpcserver_->unregisterRPC("iofslclientrpc.symlink");
          rpcserver_->unregisterRPC("iofslclientrpc.write");
       }                                
 
@@ -162,22 +162,21 @@ namespace iofwd
           static_cast<iofwd::rpcfrontend::CLASSNAME *>(tmp)->decode(submitReq);               \
       }   
 
+
       RPC_GENCLIENTCODE (IOFSLRPCCommitRequest, commit, zoidfs::ZOIDFS_PROTO_COMMIT)
       RPC_GENCLIENTCODE (IOFSLRPCCreateRequest, create, zoidfs::ZOIDFS_PROTO_CREATE)
       RPC_GENCLIENTCODE (IOFSLRPCGetAttrRequest, getattr, zoidfs::ZOIDFS_PROTO_GET_ATTR)
-//      RPC_GENCLIENTCODE (IOFSLRPCLinkRequest, link)
+      RPC_GENCLIENTCODE (IOFSLRPCLinkRequest, link, zoidfs::ZOIDFS_PROTO_LINK)
       RPC_GENCLIENTCODE (IOFSLRPCLookupRequest, lookup, zoidfs::ZOIDFS_PROTO_LOOKUP)
-//      RPC_GENCLIENTCODE (IOFSLRPCMkdirRequest, mkdir)
-//      RPC_GENCLIENTCODE (IOFSLRPCNotImplementedRequest, notimplemented)
-//      RPC_GENCLIENTCODE (IOFSLRPCNullRequest, null)
-//      RPC_GENCLIENTCODE (IOFSLRPCReadDirRequest, readdir)
-//      RPC_GENCLIENTCODE (IOFSLRPCReadLinkRequest, readlink)
-//      RPC_GENCLIENTCODE (IOFSLRPCReadRequest, read, zoidfs::ZOIDFS_PROTO_READ)
-//      RPC_GENCLIENTCODE (IOFSLRPCRemoveRequest, remove)
-//      RPC_GENCLIENTCODE (IOFSLRPCRenameRequest, rename)
-//      RPC_GENCLIENTCODE (IOFSLRPCResizeRequest, resize)
-//      RPC_GENCLIENTCODE (IOFSLRPCSetAttrRequest, setattr)
-//      RPC_GENCLIENTCODE (IOFSLRPCSymLinkRequest, symlink)
-//      RPC_GENCLIENTCODE (IOFSLRPCWriteRequest, write, zoidfs::ZOIDFS_PROTO_WRITE)
+      RPC_GENCLIENTCODE (IOFSLRPCMkdirRequest, mkdir, zoidfs::ZOIDFS_PROTO_MKDIR)
+//      RPC_GENCLIENTCODE (IOFSLRPCNotImplementedRequest, notimplemented, zoidfs::ZOIDFS_PROTO_NULL)
+//      RPC_GENCLIENTCODE (IOFSLRPCNullRequest, null, zoidfs::ZOIDFS_PROTO_NULL)
+      RPC_GENCLIENTCODE (IOFSLRPCReadDirRequest, readdir, zoidfs::ZOIDFS_PROTO_READDIR)
+      RPC_GENCLIENTCODE (IOFSLRPCReadLinkRequest, readlink, zoidfs::ZOIDFS_PROTO_READLINK)
+      RPC_GENCLIENTCODE (IOFSLRPCRemoveRequest, remove, zoidfs::ZOIDFS_PROTO_REMOVE)
+      RPC_GENCLIENTCODE (IOFSLRPCRenameRequest, rename, zoidfs::ZOIDFS_PROTO_RENAME)
+      RPC_GENCLIENTCODE (IOFSLRPCResizeRequest, resize, zoidfs::ZOIDFS_PROTO_RESIZE)
+      RPC_GENCLIENTCODE (IOFSLRPCSetAttrRequest, setattr, zoidfs::ZOIDFS_PROTO_SET_ATTR)
+      RPC_GENCLIENTCODE (IOFSLRPCSymLinkRequest, symlink, zoidfs::ZOIDFS_PROTO_SYMLINK)
    }
 }
