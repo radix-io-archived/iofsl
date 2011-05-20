@@ -222,10 +222,10 @@ src/iofwd/rpcfrontend/IOFSLRPCRemoveRequest.cpp \
 src/iofwd/rpcfrontend/IOFSLRPCRenameRequest.hh \
 src/iofwd/rpcfrontend/IOFSLRPCRenameRequest.cpp \
 src/iofwd/rpcfrontend/IOFSLRPCResizeRequest.hh \
-src/iofwd/rpcfrontend/IOFSLRPCResizeRequest.cpp 
+src/iofwd/rpcfrontend/IOFSLRPCResizeRequest.cpp \
+src/iofwd/rpcfrontend/IOFSLRPCSetAttrRequest.hh \
+src/iofwd/rpcfrontend/IOFSLRPCSetAttrRequest.cpp 
 
-#src/iofwd/rpcfrontend/IOFSLRPCSetAttrRequest.hh \
-#src/iofwd/rpcfrontend/IOFSLRPCSetAttrRequest.cpp \
 #src/iofwd/rpcfrontend/IOFSLRPCSymLinkRequest.hh \
 #src/iofwd/rpcfrontend/IOFSLRPCSymLinkRequest.cpp 
 
