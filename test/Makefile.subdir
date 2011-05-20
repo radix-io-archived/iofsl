@@ -81,6 +81,7 @@ cppldadd = \
 	@BOOST_PROGRAM_OPTIONS_LIB@ \
 	@BOOST_DATE_TIME_LIB@ \
 	@BOOST_THREAD_LIB@ \
+	@BOOST_SYSTEM_LIB@ \
 	@BOOST_REGEX_LIB@ \
     @ZFS_DISPATCHER_LIBS@ \
     @BMI_LIBS@ \
@@ -249,7 +250,8 @@ test_hashfunc_SOURCES = test/hashfunc.cpp
 test_hashfunc_LDADD = ${top_builddir}/src/iofwdutil/libiofwdutil.a \
 		      ${top_builddir}/src/c-util/libiofsl-c-util.a \
 		      @BOOST_PROGRAM_OPTIONS_LIB@ \
-		      @BOOST_THREAD_LIB@
+		      @BOOST_THREAD_LIB@ \
+		      @BOOST_SYSTEM_LIB@
 test_hashfunc_LDFLAGS = @BMI_LDFLAGS@ @BOOST_LDFLAGS@
 
 noinst_PROGRAMS += test/bmi-sm-pingpong
@@ -263,6 +265,7 @@ test_bmi_sm_pingpong_LDADD = ${top_builddir}/src/sm/libsm.a \
 			     ${top_builddir}/src/iofwdutil/libiofwdutil.a \
 				@BOOST_PROGRAM_OPTIONS_LIB@ \
 			     @BOOST_REGEX_LIB@ \
+			     @BOOST_SYSTEM_LIB@ \
 			     @BOOST_THREAD_LIB@ \
 			     @BOOST_DATE_TIME_LIB@ \
 			     @BMI_LIBS@
