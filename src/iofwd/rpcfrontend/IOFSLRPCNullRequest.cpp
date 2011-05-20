@@ -8,8 +8,8 @@ namespace iofwd
         {
           /* verify the args are OK */
           ASSERT(getReturnCode() != zoidfs::ZFS_OK);
-          /* encode */
-          encodeRPCOutput();
+          outStruct.returnCode = getReturnCode();
+          encode(cb);
         }
       IOFSLRPCNullRequest::~IOFSLRPCNullRequest()
       {
