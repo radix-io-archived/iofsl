@@ -5,7 +5,7 @@
 #include "zoidfs/zoidfs.h"
 #include "encoder/EncoderStruct.hh"
 #include "iofwd/SetAttrRequest.hh"
-#include "iofwd/rpcfrontend/IOFSLRPCRequest.hh"
+#include "iofwd/rpcfrontend/RPCSimpleRequest.hh"
 #include "encoder/Util.hh"
 namespace iofwd
 {
@@ -21,37 +21,26 @@ namespace iofwd
                                           ((zoidfs_attr_t)(attr)))
 
       class IOFSLRPCSetAttrRequest :
-          public IOFSLRPCRequest,
+          public RPCSimpleRequest<IOFSLRPCSetAttrDec,IOFSLRPCSetAttrEnc>,
           public SetAttrRequest
       {
           public:
               IOFSLRPCSetAttrRequest(int opid,
                       iofwdevent::ZeroCopyInputStream * in,
                       iofwdevent::ZeroCopyOutputStream * out) :
-                  IOFSLRPCRequest(in, out),
+                  RPCSimpleRequest<IOFSLRPCSetAttrDec,IOFSLRPCSetAttrEnc>(in, out),
                   SetAttrRequest(opid)
               {
               }
             
                ~IOFSLRPCSetAttrRequest();
 
-              /* encode and decode helpers for RPC data */
-               void decode();
-               void encode();
-
                const ReqParam & decodeParam ();
                void reply (const CBType & cb,
                  const zoidfs::zoidfs_attr_t * attr) ;
           protected:
-              /* data size helpers for this request */ 
-               size_t rpcEncodedInputDataSize(); 
-               size_t rpcEncodedOutputDataSize();
-
               ReqParam param_;
-              IOFSLRPCSetAttrDec dec_struct;
-              IOFSLRPCSetAttrEnc enc_struct;
               zoidfs::zoidfs_op_hint_t op_hint_;
-              zoidfs::zoidfs_attr_t * attr;
       };
 
    }
