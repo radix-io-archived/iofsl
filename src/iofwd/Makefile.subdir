@@ -224,10 +224,9 @@ src/iofwd/rpcfrontend/IOFSLRPCRenameRequest.cpp \
 src/iofwd/rpcfrontend/IOFSLRPCResizeRequest.hh \
 src/iofwd/rpcfrontend/IOFSLRPCResizeRequest.cpp \
 src/iofwd/rpcfrontend/IOFSLRPCSetAttrRequest.hh \
-src/iofwd/rpcfrontend/IOFSLRPCSetAttrRequest.cpp 
-
-#src/iofwd/rpcfrontend/IOFSLRPCSymLinkRequest.hh \
-#src/iofwd/rpcfrontend/IOFSLRPCSymLinkRequest.cpp 
+src/iofwd/rpcfrontend/IOFSLRPCSetAttrRequest.cpp \
+src/iofwd/rpcfrontend/IOFSLRPCSymLinkRequest.hh \
+src/iofwd/rpcfrontend/IOFSLRPCSymLinkRequest.cpp 
 
 src_iofwd_iofwd_SOURCES = $(SERVERSOURCES) \
 			  src/iofwd/iofwd.cpp
