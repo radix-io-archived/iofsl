@@ -206,7 +206,9 @@ src/iofwd/rpcfrontend/IOFSLRPCCommitRequest.cpp \
 src/iofwd/rpcfrontend/IOFSLRPCGetAttrRequest.hh \
 src/iofwd/rpcfrontend/IOFSLRPCGetAttrRequest.cpp \
 src/iofwd/rpcfrontend/IOFSLRPCLinkRequest.hh \
-src/iofwd/rpcfrontend/IOFSLRPCLinkRequest.cpp
+src/iofwd/rpcfrontend/IOFSLRPCLinkRequest.cpp \
+src/iofwd/rpcfrontend/IOFSLRPCMkdirRequest.hh \
+src/iofwd/rpcfrontend/IOFSLRPCMkdirRequest.cpp 
 
 #src/iofwd/rpcfrontend/IOFSLRPCMkdirRequest.hh \
 #src/iofwd/rpcfrontend/IOFSLRPCMkdirRequest.cpp \
