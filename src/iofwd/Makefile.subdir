@@ -212,18 +212,10 @@ src/iofwd/rpcfrontend/IOFSLRPCMkdirRequest.cpp \
 src/iofwd/rpcfrontend/IOFSLRPCReadDirRequest.hh \
 src/iofwd/rpcfrontend/IOFSLRPCReadDirRequest.cpp \
 src/iofwd/rpcfrontend/IOFSLRPCReadLinkRequest.hh \
-src/iofwd/rpcfrontend/IOFSLRPCReadLinkRequest.cpp 
+src/iofwd/rpcfrontend/IOFSLRPCReadLinkRequest.cpp \
+src/iofwd/rpcfrontend/IOFSLRPCNotImplementedRequest.hh \
+src/iofwd/rpcfrontend/IOFSLRPCNotImplementedRequest.cpp 
 
-#src/iofwd/rpcfrontend/IOFSLRPCReadLinkRequest.hh \
-#src/iofwd/rpcfrontend/IOFSLRPCReadLinkRequest.cpp \
-#src/iofwd/rpcfrontend/IOFSLRPCReadRequest.hh \
-#src/iofwd/rpcfrontend/IOFSLRPCReadRequest.cpp \
-#src/iofwd/rpcfrontend/IOFSLRPCWriteRequest.hh \
-#src/iofwd/rpcfrontend/IOFSLRPCWriteRequest.cpp \
-#src/iofwd/rpcfrontend/IOFSLRPCCommitRequest.hh \
-#src/iofwd/rpcfrontend/IOFSLRPCCommitRequest.cpp \
-#src/iofwd/rpcfrontend/IOFSLRPCNotImplementedRequest.hh \
-#src/iofwd/rpcfrontend/IOFSLRPCNotImplementedRequest.cpp \
 #src/iofwd/rpcfrontend/IOFSLRPCNullRequest.hh \
 #src/iofwd/rpcfrontend/IOFSLRPCNullRequest.cpp \
 #src/iofwd/rpcfrontend/IOFSLRPCRemoveRequest.hh \
