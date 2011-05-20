@@ -6,7 +6,7 @@
 #include "encoder/EncoderStruct.hh"
 #include "encoder/EncoderString.hh"
 #include "iofwd/ResizeRequest.hh"
-#include "iofwd/rpcfrontend/IOFSLRPCRequest.hh"
+#include "iofwd/rpcfrontend/RPCSimpleRequest.hh"
 #include "encoder/EncoderWrappers.hh"
 namespace iofwd
 {
@@ -20,38 +20,24 @@ namespace iofwd
       ENCODERSTRUCT (IOFSLRPCResizeEnc, ((int)(returnCode)))
 
       class IOFSLRPCResizeRequest :
-          public IOFSLRPCRequest,
+          public RPCSimpleRequest<IOFSLRPCResizeDec, IOFSLRPCResizeEnc>,
           public ResizeRequest
       {
           public:
               IOFSLRPCResizeRequest(int opid,
                       iofwdevent::ZeroCopyInputStream * in,
                       iofwdevent::ZeroCopyOutputStream * out) :
-                  IOFSLRPCRequest(in, out),
+                  RPCSimpleRequest<IOFSLRPCResizeDec, IOFSLRPCResizeEnc>(in, out),
                   ResizeRequest(opid)
               {
               }
             
               virtual ~IOFSLRPCResizeRequest();
-
-              /* encode and decode helpers for RPC data */
-              void decode();
-              void encode();
-
               const ReqParam & decodeParam ();
-
               void reply (const CBType & cb);
           protected:
-              /* data size helpers for this request */ 
-              virtual size_t rpcEncodedInputDataSize(); 
-              virtual size_t rpcEncodedOutputDataSize();
-
               ReqParam param_;
-              IOFSLRPCResizeDec dec_struct;
-              IOFSLRPCResizeEnc enc_struct;
-
               zoidfs::zoidfs_op_hint_t op_hint_;
-
       };
 
    }
