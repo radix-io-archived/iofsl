@@ -6,7 +6,7 @@
 #include "encoder/EncoderStruct.hh"
 #include "encoder/EncoderString.hh"
 #include "iofwd/RenameRequest.hh"
-#include "iofwd/rpcfrontend/IOFSLRPCRequest.hh"
+#include "iofwd/rpcfrontend/RPCSimpleRequest.hh"
 #include "encoder/EncoderWrappers.hh"
 using namespace encoder;
 
@@ -33,22 +33,17 @@ namespace iofwd
                                         ((zoidfs_cache_hint_t)(to_parent_hint)))
 
       class IOFSLRPCRenameRequest :
-          public IOFSLRPCRequest,
+          public RPCSimpleRequest<IOFSLRPCRenameDec, IOFSLRPCRenameEnc>,
           public RenameRequest
       {
           public:
               IOFSLRPCRenameRequest(int opid,
                       iofwdevent::ZeroCopyInputStream * in,
                       iofwdevent::ZeroCopyOutputStream * out) :
-                  IOFSLRPCRequest(in, out),
+                  RPCSimpleRequest<IOFSLRPCRenameDec, IOFSLRPCRenameEnc>(in, out),
                   RenameRequest(opid)
               {
               }
-
-              /* encode and decode helpers for RPC data */
-              virtual void decode();
-              virtual void encode();
-
               /* request processing */
               virtual const ReqParam & decodeParam();
               virtual void reply (const CBType & cb, 
@@ -60,14 +55,7 @@ namespace iofwd
               ~IOFSLRPCRenameRequest();
           protected:
               /* data size helpers for this request */ 
-              virtual size_t rpcEncodedInputDataSize(); 
-              virtual size_t rpcEncodedOutputDataSize();
-
               ReqParam param_;
-              IOFSLRPCRenameDec dec_struct;
-              IOFSLRPCRenameEnc enc_struct;
-              zoidfs::zoidfs_cache_hint_t * from_parent_hint;
-              zoidfs::zoidfs_cache_hint_t * to_parent_hint;
               zoidfs::zoidfs_op_hint_t op_hint_;
       };
    }
