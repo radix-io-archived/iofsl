@@ -55,13 +55,27 @@ namespace iofwd
     void ReadTaskSM::readNormal()
     {
 #if SIZEOF_SIZE_T == SIZEOF_INT64_T
-        api_->read (slots_[READ_SLOT], &ret_, p.handle, p.mem_count,
-              reinterpret_cast<void**>(p.mem_starts.get()), p.mem_sizes.get(),
-              p.file_count, p.file_starts.get(), p.file_sizes.get(),
-              const_cast<zoidfs::zoidfs_op_hint_t *>((*p.op_hint)()));
+        api_->read (slots_[READ_SLOT],
+                &ret_,
+                p.handle,
+                p.mem_count,
+                reinterpret_cast<void**>(p.mem_starts.get()),
+                p.mem_sizes.get(),
+                p.file_count,
+                p.file_starts.get(),
+                p.file_sizes.get(),
+                const_cast<zoidfs::zoidfs_op_hint_t *>((*p.op_hint)()));
 #else
-        api_->read(slots_[READ_SLOT], &ret_, p.handle, p.mem_count, (void**)p.mem_starts, p.mem_sizes,
-              p.file_count, p.file_starts, p.file_sizes, p.op_hint);
+        api_->read(slots_[READ_SLOT],
+                &ret_,
+                p.handle,
+                p.mem_count,
+                reinterpret_cast<void**>(p.mem_starts.get()),
+                p.mem_sizes.get(),
+                p.file_count,
+                p.file_starts.get(),
+                p.file_sizes.get(),
+                const_cast<zoidfs::zoidfs_op_hint_t *>((*p.op_hint)()));
 #endif
 
         /* set the callback */
