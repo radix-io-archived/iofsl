@@ -40,17 +40,14 @@ namespace iofwd
           outStruct.returnCode = getReturnCode();
           outStruct.created = created_;
 
-          /* encode */
-          encode();
-
           zoidfs::zoidfs_op_hint_t op_hint_;
           zoidfs::hints::zoidfs_hint_create(&op_hint_);  
           /* @TODO: Remove this later */
           param_.op_hint = &op_hint_;
-          cb(iofwdevent::CBException());
 
-          /* invoke the callback */
-          //cb();
+
+          /* encode */
+          encode(cb);
       }
 
       IOFSLRPCCreateRequest::~IOFSLRPCCreateRequest()
