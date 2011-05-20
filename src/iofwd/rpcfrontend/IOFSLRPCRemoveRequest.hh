@@ -6,7 +6,7 @@
 #include "encoder/EncoderStruct.hh"
 #include "encoder/EncoderString.hh"
 #include "iofwd/RemoveRequest.hh"
-#include "iofwd/rpcfrontend/IOFSLRPCRequest.hh"
+#include "iofwd/rpcfrontend/RPCSimpleRequest.hh"
 #include "encoder/EncoderWrappers.hh"
 using namespace encoder;
 
@@ -29,21 +29,17 @@ namespace iofwd
                                         ((zoidfs_cache_hint_t)(parent_hint)))
 
       class IOFSLRPCRemoveRequest :
-          public IOFSLRPCRequest,
+          public RPCSimpleRequest<IOFSLRPCRemoveDec, IOFSLRPCRemoveEnc>,
           public RemoveRequest
       {
           public:
               IOFSLRPCRemoveRequest(int opid,
                       iofwdevent::ZeroCopyInputStream * in,
                       iofwdevent::ZeroCopyOutputStream * out) :
-                  IOFSLRPCRequest(in, out),
+                  RPCSimpleRequest<IOFSLRPCRemoveDec, IOFSLRPCRemoveEnc>(in, out),
                   RemoveRequest(opid)
               {
               }
-
-              /* encode and decode helpers for RPC data */
-              virtual void decode();
-              virtual void encode();
 
               /* request processing */
               virtual const ReqParam & decodeParam();
@@ -52,14 +48,7 @@ namespace iofwd
               ~IOFSLRPCRemoveRequest();
           protected:
               /* data size helpers for this request */ 
-              virtual size_t rpcEncodedInputDataSize(); 
-              virtual size_t rpcEncodedOutputDataSize();
-
               ReqParam param_;
-              IOFSLRPCRemoveDec dec_struct;
-              IOFSLRPCRemoveEnc enc_struct;
-              zoidfs::zoidfs_cache_hint_t * parent_hint;
-
               zoidfs::zoidfs_op_hint_t op_hint_;
       };
    }
