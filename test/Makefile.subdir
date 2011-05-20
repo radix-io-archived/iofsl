@@ -109,6 +109,11 @@ test_transform_SOURCES = test/transform.cpp $(SERVERSOURCES)
 test_transform_LDFLAGS = ${cppldflags}
 test_transform_LDADD = ${cppldadd}
 
+noinst_PROGRAMS += test/streamclienttest
+test_streamclienttest_SOURCES = test/streamclienttest.cpp test/streamclienttest.hh $(SERVERSOURCES)
+test_streamclienttest_LDFLAGS = ${cppldflags}
+test_streamclienttest_LDADD = ${cppldadd}
+
 noinst_PROGRAMS += test/servercomm
 test_servercomm_SOURCES = test/servercomm.cpp $(SERVERSOURCES)
 test_servercomm_LDFLAGS = ${cppldflags}
