@@ -6,23 +6,13 @@ namespace iofwd
 {
    namespace rpcfrontend
    {
-      RPC_GENPROCESS (IOFSLRPCReadDirRequest,((&)(handle)) 
-                                             ((&)(cookie))
-                                             (()(entry_count))              
-                                             (()(flags)),
-                                             (()(returnCode))
-                                             (()(entry_count))
-                                             ((*)(entries))
-                                             ((*)(cache)))
-                                            
 
       const IOFSLRPCReadDirRequest::ReqParam & IOFSLRPCReadDirRequest::decodeParam() 
       { 
-          decodeRPCInput(); 
-          param_.entry_count = dec_struct.entry_count;
-          param_.entries = new zoidfs::zoidfs_dirent_t[dec_struct.entry_count];
-          param_.flags = dec_struct.flags;
-          param_.cookie = dec_struct.cookie;
+          param_.entry_count = inStruct.entry_count;
+          param_.entries = new zoidfs::zoidfs_dirent_t[inStruct.entry_count];
+          param_.flags = inStruct.flags;
+          param_.cookie = inStruct.cookie;
           param_.op_hint = &op_hint_; 
           return param_; 
       }
@@ -35,30 +25,18 @@ namespace iofwd
           ASSERT(getReturnCode() != zoidfs::ZFS_OK || entries_ || cache_);
 
           /* store ptr to the attr */
-          entries = entries_;
-          cache = cache_;
-          entry_count = entry_count_;
+          outStruct.entries = *entries_;
+          outStruct.cache = *cache_;
+          outStruct.entry_count = entry_count_;
+          outStruct.returnCode = getReturnCode();
       
           /* encode */
-          encodeRPCOutput();
-
-          /* invoke the callback */
-          //cb();
+          encode(cb);
       }
 
       IOFSLRPCReadDirRequest::~IOFSLRPCReadDirRequest()
       {
          zoidfs::hints::zoidfs_hint_free(&op_hint_);
-      }
-
-      size_t IOFSLRPCReadDirRequest::rpcEncodedInputDataSize()
-      {
-          return 0;
-      }
-
-      size_t IOFSLRPCReadDirRequest::rpcEncodedOutputDataSize()
-      {
-          return 0;
       }
 
    }

@@ -5,7 +5,7 @@
 #include "zoidfs/zoidfs.h"
 
 #include "iofwd/ReadDirRequest.hh"
-#include "iofwd/rpcfrontend/IOFSLRPCRequest.hh"
+#include "iofwd/rpcfrontend/RPCSimpleRequest.hh"
 
 namespace iofwd
 {
@@ -29,23 +29,19 @@ namespace iofwd
                                          ((zoidfs_cache_hint_t)(cache)))
 
       class IOFSLRPCReadDirRequest :
-          public IOFSLRPCRequest,
+          public RPCSimpleRequest<IOFSLRPCReadDirDec, IOFSLRPCReadDirEnc>,
           public ReadDirRequest
       {
           public:
               IOFSLRPCReadDirRequest(int opid,
                       iofwdevent::ZeroCopyInputStream * in,
                       iofwdevent::ZeroCopyOutputStream * out) :
-                  IOFSLRPCRequest(in, out),
+                  RPCSimpleRequest<IOFSLRPCReadDirDec, IOFSLRPCReadDirEnc>(in, out),
                   ReadDirRequest(opid)
               {
               }
             
               ~IOFSLRPCReadDirRequest();
-
-              /* encode and decode helpers for RPC data */
-              void decode();
-              void encode();
 
               /* request processing */
               const ReqParam & decodeParam();
@@ -55,17 +51,7 @@ namespace iofwd
           
           protected:
               /* data size helpers for this request */ 
-              size_t rpcEncodedInputDataSize(); 
-              size_t rpcEncodedOutputDataSize();
-
               ReqParam param_;
-
-              IOFSLRPCReadDirDec dec_struct;
-              IOFSLRPCReadDirEnc enc_struct;
-              
-              uint32_t entry_count;
-              zoidfs::zoidfs_dirent_t * entries;
-              zoidfs::zoidfs_cache_hint_t * cache;
               zoidfs::zoidfs_op_hint_t op_hint_;
       };
 
