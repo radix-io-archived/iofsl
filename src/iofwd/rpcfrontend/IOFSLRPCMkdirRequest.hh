@@ -5,8 +5,7 @@
 #include "zoidfs/zoidfs.h"
 
 #include "iofwd/MkdirRequest.hh"
-#include "iofwd/rpcfrontend/IOFSLRPCRequest.hh"
-
+#include "iofwd/rpcfrontend/RPCSimpleRequest.hh"
 namespace iofwd
 {
    namespace rpcfrontend
@@ -16,7 +15,6 @@ namespace iofwd
       typedef zoidfs::zoidfs_op_hint_t zoidfs_op_hint_t;
       typedef zoidfs::zoidfs_handle_t zoidfs_handle_t;
       typedef zoidfs::zoidfs_cache_hint_t zoidfs_cache_hint_t;
-
       typedef encoder::EncoderString<0, ZOIDFS_PATH_MAX> EncoderString;
       ENCODERSTRUCT (IOFSLRPCMkdirDec, ((EncoderString)(full_path)) 
                                         ((zoidfs_handle_t)(parent_handle))
@@ -28,23 +26,19 @@ namespace iofwd
 
 
       class IOFSLRPCMkdirRequest :
-          public IOFSLRPCRequest,
+          public RPCSimpleRequest<IOFSLRPCMkdirDec, IOFSLRPCMkdirEnc>,
           public MkdirRequest
       {
           public:
               IOFSLRPCMkdirRequest(int opid,
                       iofwdevent::ZeroCopyInputStream * in,
                       iofwdevent::ZeroCopyOutputStream * out) :
-                  IOFSLRPCRequest(in, out),
+                  RPCSimpleRequest<IOFSLRPCMkdirDec, IOFSLRPCMkdirEnc>(in, out),
                   MkdirRequest(opid)
               {
               }
             
               virtual ~IOFSLRPCMkdirRequest();
-
-              /* encode and decode helpers for RPC data */
-              virtual void decode();
-              virtual void encode();
 
               /* request processing */
               virtual const ReqParam & decodeParam();
@@ -52,14 +46,7 @@ namespace iofwd
                              const zoidfs::zoidfs_cache_hint_t * parent_hint);
           
           protected:
-              /* data size helpers for this request */ 
-              virtual size_t rpcEncodedInputDataSize(); 
-              virtual size_t rpcEncodedOutputDataSize();
-
               ReqParam param_;
-              IOFSLRPCMkdirDec dec_struct;
-              IOFSLRPCMkdirEnc enc_struct;
-              zoidfs::zoidfs_cache_hint_t * parent_hint;
               zoidfs::zoidfs_op_hint_t op_hint_;
       };
 
