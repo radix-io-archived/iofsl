@@ -6,41 +6,22 @@ namespace iofwd
 {
    namespace rpcfrontend
    {
-      /* Generate Encode/Decode Functions */
-      RPC_GENPROCESS (IOFSLRPCResizeRequest, ((&)(handle))
-                                             (()(size)),
-                                             (()(returnCode)))
-
       const IOFSLRPCResizeRequest::ReqParam & IOFSLRPCResizeRequest::decodeParam ()
       {
-         param_.handle = &dec_struct.handle;
+         param_.handle = &inStruct.handle;
          param_.op_hint = &op_hint_;
          return param_;
       }
-      void IOFSLRPCResizeRequest::reply(const CBType & UNUSED(cb))
+      void IOFSLRPCResizeRequest::reply(const CBType & cb)
       {
           /* verify the args are OK */
           ASSERT(getReturnCode() != zoidfs::ZFS_OK);
-
-          /* encode */
-          encodeRPCOutput();
-
-          /* invoke the callback */
-          //cb();
+          outStruct.returnCode = getReturnCode();
+          encode(cb);
       }
       IOFSLRPCResizeRequest::~IOFSLRPCResizeRequest()
       {
          zoidfs::hints::zoidfs_hint_free(&op_hint_);
-      }
-
-      size_t IOFSLRPCResizeRequest::rpcEncodedInputDataSize()
-      {
-          return 0;
-      }
-
-      size_t IOFSLRPCResizeRequest::rpcEncodedOutputDataSize()
-      {
-          return 0;
       }
    }
 }
