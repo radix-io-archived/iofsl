@@ -6,7 +6,7 @@
 #include "encoder/EncoderStruct.hh"
 #include "encoder/EncoderString.hh"
 #include "iofwd/SymLinkRequest.hh"
-#include "iofwd/rpcfrontend/IOFSLRPCRequest.hh"
+#include "iofwd/rpcfrontend/RPCSimpleRequest.hh"
 
 namespace iofwd
 {
@@ -30,23 +30,19 @@ namespace iofwd
                                         ((zoidfs_cache_hint_t)(from_parent_hint))
                                         ((zoidfs_cache_hint_t)(to_parent_hint)))
       class IOFSLRPCSymLinkRequest :
-          public IOFSLRPCRequest,
+          public RPCSimpleRequest<IOFSLRPCSymLinkDec,IOFSLRPCSymLinkEnc>,
           public SymLinkRequest
       {
           public:
               IOFSLRPCSymLinkRequest(int opid,
                       iofwdevent::ZeroCopyInputStream * in,
                       iofwdevent::ZeroCopyOutputStream * out) :
-                  IOFSLRPCRequest(in, out),
+                  RPCSimpleRequest<IOFSLRPCSymLinkDec,IOFSLRPCSymLinkEnc>(in, out),
                   SymLinkRequest(opid)
               {
               }
             
                ~IOFSLRPCSymLinkRequest();
-
-              /* encode and decode helpers for RPC data */
-              void decode();
-              void encode();
 
               /**
               * Retrieve the request input parameters
@@ -63,14 +59,7 @@ namespace iofwd
 
           protected:
               /* data size helpers for this request */ 
-               size_t rpcEncodedInputDataSize(); 
-               size_t rpcEncodedOutputDataSize();
-
               ReqParam param_;
-              IOFSLRPCSymLinkDec dec_struct;
-              IOFSLRPCSymLinkEnc enc_struct;
-              zoidfs::zoidfs_cache_hint_t * from_parent_hint;
-              zoidfs::zoidfs_cache_hint_t * to_parent_hint;
               zoidfs::zoidfs_op_hint_t op_hint_;
       };
 
