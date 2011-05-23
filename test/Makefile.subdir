@@ -126,6 +126,12 @@ test_microbenchmarks_ldadd =     \
 test_microbenchmarks_ldflags =   \
     @ZFS_DISPATCHER_LDFLAGS@ @BMI_LDFLAGS@
 
+noinst_PROGRAMS += test/create_throttle
+test_create_throttle_SOURCES = test/create_throttle.cpp
+test_create_throttle_LDADD = src/zoidfs/libzoidfsclient.a ${test_microbenchmarks_ldadd} \
+		      @BOOST_PROGRAM_OPTIONS_LIB@
+test_create_throttle_LDFLAGS = ${test_microbenchmarks_ldflags} @BOOST_LDFLAGS@
+
 noinst_PROGRAMS += test/zoidfs-microbenchmarks/creat-thput \
 test/zoidfs-microbenchmarks/creat-thput-local \
 test/zoidfs-microbenchmarks/mkdir-thput \
