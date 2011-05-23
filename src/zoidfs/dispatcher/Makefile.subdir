@@ -31,7 +31,9 @@ src/zoidfs/dispatcher/posix/zoidfs-util.c \
 src/zoidfs/dispatcher/posix/dcache.h \
 src/zoidfs/dispatcher/posix/fcache.h \
 src/zoidfs/dispatcher/posix/zoidfs-posix.h \
-src/zoidfs/dispatcher/posix/zoidfs-util.h 
+src/zoidfs/dispatcher/posix/zoidfs-util.h \
+src/zoidfs/dispatcher/posix/throttle.h \
+src/zoidfs/dispatcher/posix/throttle.c
 endif
 
 if DISPATCH_NOFS
