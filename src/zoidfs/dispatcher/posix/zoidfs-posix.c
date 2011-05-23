@@ -48,6 +48,14 @@
 #define LL_IOC_GROUP_LOCK               _IOW ('f', 158, long)
 #define LL_IOC_GROUP_UNLOCK             _IOW ('f', 159, long)
 
+/* for create throttling */
+typedef struct
+{
+   zoidfs_handle_t handle;
+   int             ret;
+   int             created;
+} create_data_t;
+
 int zoidfs_posix_dispatcher_get_time(struct timespec * timeval)
 {
     clock_gettime( CLOCK_REALTIME, timeval );
@@ -817,10 +825,15 @@ static int zoidfs_posix_create(const zoidfs_handle_t *parent_handle,
    struct timespec start;
    struct timespec stop;
    double elapsed = 0;
+   throttle_entry_handle_t entry;
+   int obtained;
+   zoidfs_handle_t fakeh;
+   create_data_t * d;
 
    zoidfs_posix_dispatcher_get_time(&start);
 
    //pthread_mutex_lock(&posix_create_mutex);
+
 
    if (!zoidfs_simplify_path_mem (parent_handle, component_name,
          full_path,newpath,sizeof(newpath)))
@@ -836,24 +849,109 @@ static int zoidfs_posix_create(const zoidfs_handle_t *parent_handle,
    else
       newmode = 0644;
 
-   /* first see if the file exists */
-   file = open (newpath, O_WRONLY|O_CREAT|O_EXCL, newmode);
-   if (file >= 0)
+   /*
+    * the throttle functions use a handle as identifier. Since we don't have
+    * the handle here (we need the file to exist for that) we create a fake
+    * handle. Since the handle is really only used to determine conflicting
+    * accesses, this is good enough for the throttle functions.
+    */
+   SHA1Context con;
+   SHA1Reset (&con);
+   SHA1Input (&con, (const unsigned char *) newpath, strlen(newpath));
+   SHA1Result (&con);
+   memset (&fakeh.data[0], 0, sizeof (fakeh.data));
+   memcpy (&fakeh.data[0], &con.Message_Digest[0], sizeof(con.Message_Digest));
+
+   while (1)
    {
-      *created = 1;
-      close (file);
-   }
-   else
-   {
-      /* if the error is not that the file already exists, bail out */
-      if (errno != EEXIST)
+      /* we have the throttle ID in fakeh */
+      entry = throttle_try (create_throttle, &fakeh, &obtained);
+
+      if (!obtained)
       {
-         ret = errno2zfs (errno);
+         /* Somebody else was already creating the same file, and just finished.
+          * Copy their results but only if there was no error */
+
+         /* copy data (copy since we don't want to hold the lock for too long)
+          */
+         int myret;
+         int mycreated;
+         const create_data_t * data = (create_data_t*)
+            throttle_get_user (create_throttle, entry);
+         *handle = data->handle;
+         myret = data->ret;
+         mycreated = data->created;
+         throttle_release (create_throttle, &fakeh, entry);
+         entry = 0;
+         data = 0;
+
+         if (myret != ZFS_OK)
+         {
+            /* The first create call did not return without error.
+             * We don't cache errors, so we'll try to create again.*/
+            continue;
+         }
+
+         if (!mycreated)
+         {
+            /* The first create call that blocked us succeeded. This might
+             * have or might not have created the file. If it did create the
+             * file, we can safely return saying that the file cannot be
+             * created. If it didn't, we'll retry it. */
+            continue;
+         }
+
+         /* the create call that blocked us succeed in creating the file. We
+          * can just return the same data, but indicate we could not create
+          * the file.
+          */
+         zoidfs_debug ("used zoidfs_create optimization...");
+         *created = 0;
+         ret = ZFS_OK;
          goto out;
       }
+
+      /* we got the entry, and are responsible for providing information to
+       * any blocked zoidfs_create calls. Data will be freed by the throttle
+       * free function once the last caller releases the entry */
+      d = malloc (sizeof (create_data_t));
+      memset (d->handle.data, 0, sizeof (d->handle.data));
+      throttle_set_user (create_throttle, entry, d);
+
+      /* first see if the file exists */
+      file = open (newpath, O_WRONLY|O_CREAT|O_EXCL, newmode);
+
+      if (file >= 0)
+      {
+         *created = 1;
+         d->created = *created;
+         d->ret = ZFS_OK;
+         close (file);
+      }
+      else
+      {
+         /* if the error is not that the file already exists, bail out */
+         if (errno != EEXIST)
+         {
+            ret = errno2zfs (errno);
+            d->ret = ret;
+            d->created = 0;
+            goto out;
+         }
+         else
+         {
+            d->created = 1;
+         }
+
+         ret = d->ret = ZFS_OK;
+      }
+
+      break;
    }
 
    /* file exists, and we should be able to stat it */
+   /* Note: there is a change here that somebody removed the file we just
+    * created, in which case the call will fail with an error. */
    if (lstat (newpath, &s) < 0)
    {
       ret = errno2zfs (errno);
@@ -861,11 +959,17 @@ static int zoidfs_posix_create(const zoidfs_handle_t *parent_handle,
    }
 
    filename2handle (&s, newpath, handle);
+   d->handle = *handle;
 
    /* add name to cache */
    filename_add (fcache, handle, newpath);
 
+   ret = ZFS_OK;
+
 out:
+   if (entry)
+      throttle_release (create_throttle, &fakeh, entry);
+
    zoidfs_posix_dispatcher_get_time(&stop);
    elapsed = zoidfs_posix_dispatcher_elapsed_time(&start, &stop);
 
@@ -1312,6 +1416,7 @@ static int zoidfs_posix_init(void)
 
          /* create zoidfs_create throttle table */
          throttle_init (&create_throttle);
+         throttle_set_user_free (create_throttle, free);
 
          zoidfs_debug ("%s", "zoidfs_init called...\n");
          posix_initialized = 1;
