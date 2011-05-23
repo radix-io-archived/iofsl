@@ -57,7 +57,10 @@ void IOFWDRenameRequest::reply (const CBType & cb,
 
 IOFWDRenameRequest::~IOFWDRenameRequest ()
 {
-   zoidfs::hints::zoidfs_hint_free(op_hint_());
+   // op_hint_ is of type ZoidFSOpHint;
+   // ZoidFSOpHint automatically frees the underlying hint type,
+   // so it is illegal to free it manually.
+   // zoidfs::hints::zoidfs_hint_free(op_hint_());
 }
 
 
