@@ -968,7 +968,7 @@ out:
    elapsed = zoidfs_posix_dispatcher_elapsed_time(&start, &stop);
 
    //pthread_mutex_unlock(&posix_create_mutex);
-   return ZFS_OK;
+   return ret;
 }
 
 
