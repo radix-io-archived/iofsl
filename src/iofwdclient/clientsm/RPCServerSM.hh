@@ -28,13 +28,16 @@
 #include "net/Address.hh"
 #include "net/Net.hh"
 
+#include "encoder/EncoderStruct.hh"
+#include "zoidfs/util/ZoidFSFileSpec.hh"
+
 #include <cstdio>
 
 using namespace iofwdclient;
 using namespace iofwdclient::streamwrappers;
 using namespace encoder;
 using namespace encoder::xdr;
-
+using namespace zoidfs;
 namespace iofwdclient
 {
     namespace clientsm

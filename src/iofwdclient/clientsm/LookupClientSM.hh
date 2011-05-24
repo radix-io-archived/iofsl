@@ -15,6 +15,7 @@
 #include "iofwdclient/clientsm/RPCServerSM.hh"
 #include "iofwdclient/clientsm/RPCCommClientSM.hh"
 #include "zoidfs/zoidfs.h"
+#include "encoder/EncoderString.hh"
 
 #include <cstdio>
 
@@ -25,6 +26,7 @@ namespace iofwdclient
     namespace clientsm
     {
 typedef boost::shared_ptr< iofwdclient::clientsm::RPCCommClientSM<LookupInStream,LookupOutStream> > RPCCommClientSMPtr;
+typedef encoder::EncoderString<0, ZOIDFS_PATH_MAX> EncoderString;
 class LookupClientSM :
     public sm::SimpleSM< iofwdclient::clientsm::LookupClientSM >
 {
@@ -44,10 +46,12 @@ class LookupClientSM :
             cb_(cb),
             ret_(ret),
             comm_(comm),
-            in_(LookupInStream(parent_handle, component_name, full_path, op_hint)),
+//            in_(LookupInStream(parent_handle, component_name, full_path, op_hint)),
             out_(handle, op_hint)
         {
-//            fprintf(stderr, "%s:%i\n", __func__, __LINE__);
+          in_.info.handle = *parent_handle;
+          in_.info.component = EncoderString(component_name);
+          in_.info.full_path = EncoderString(full_path);
         }
 
         ~LookupClientSM();
