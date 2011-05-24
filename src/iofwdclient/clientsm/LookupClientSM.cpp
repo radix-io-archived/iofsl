@@ -5,7 +5,9 @@
 #include "zoidfs/zoidfs-rpc.h"
 #include "iofwdevent/CBType.hh"
 #include <cstdio>
-
+#include "encoder/EncoderStruct.hh"
+#include "zoidfs/util/ZoidFSFileSpec.hh"
+using namespace zoidfs;
 namespace iofwdclient
 {
     namespace clientsm
