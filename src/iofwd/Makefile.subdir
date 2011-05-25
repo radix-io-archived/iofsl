@@ -15,6 +15,7 @@ bin_PROGRAMS += src/iofwd/iofwd
 src_iofwd_iofwd_LDADD = \
 	src/rpc/librpc.a \
 	src/net/libnet.a \
+	src/common/libcommon.a \
 	src/zoidfs/libzoidfs-util.a \
 	src/zoidfs/libzoidfsprofile.a \
 	src/zoidfs/libzoidfs.a \
