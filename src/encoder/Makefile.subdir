@@ -31,5 +31,6 @@ src_encoder_libencoder_a_SOURCES = \
 	src/encoder/Decoder.hh \
 	src/encoder/Processor.hh \
   src/encoder/EncoderStruct.hh \
-  src/encoder/EncoderString.hh 
+  src/encoder/EncoderString.hh \
+  src/encoder/EncoderCommon.hh
 
