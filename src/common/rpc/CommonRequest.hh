@@ -1,10 +1,10 @@
-#ifndef ENCODER_ENCODERCOMMON
-#define ENCODER_ENCODERCOMMON
+#ifndef COMMON_COMMONREQUEST
+#define COMMON_COMMONREQUEST
 #include "encoder/EncoderString.hh"
 #include "encoder/EncoderStruct.hh"
 #include "zoidfs/util/ZoidFSFileSpec.hh"
 
-namespace encoder
+namespace common
 {
   //typedef encoder::EncoderString<0, ZOIDFS_PATH_MAX> EncoderString;
   typedef zoidfs::ZoidFSFileSpec ZoidFSFileSpec;

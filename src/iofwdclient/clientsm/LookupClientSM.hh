@@ -17,14 +17,14 @@
 #include "encoder/EncoderString.hh"
 #include "zoidfs/util/ZoidFSFileSpec.hh"
 #include <cstdio>
-#include "encoder/EncoderCommon.hh"
+#include "common/rpc/CommonRequest.hh"
 
 namespace iofwdclient
 {
     using namespace streamwrappers;
     namespace clientsm
     {
-typedef boost::shared_ptr< iofwdclient::clientsm::RPCCommClientSM<encoder::LookupRequest,encoder::LookupResponse> > RPCCommClientSMPtr;
+typedef boost::shared_ptr< iofwdclient::clientsm::RPCCommClientSM<common::LookupRequest,common::LookupResponse> > RPCCommClientSMPtr;
 typedef encoder::EncoderString<0, ZOIDFS_PATH_MAX> EncoderString;
 class LookupClientSM :
     public sm::SimpleSM< iofwdclient::clientsm::LookupClientSM >
@@ -77,8 +77,8 @@ class LookupClientSM :
         const IOFWDClientCB & cb_;
         int * ret_;
         RPCCommClientSMPtr comm_;
-        encoder::LookupRequest in_;
-        encoder::LookupResponse out_;
+        common::LookupRequest in_;
+        common::LookupResponse out_;
         zoidfs::zoidfs_handle_t * handle_;
 };
 

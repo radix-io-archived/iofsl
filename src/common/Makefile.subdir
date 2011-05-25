@@ -1,6 +1,6 @@
 noinst_LIBRARIES += src/common/libcommon.a
 
-src_common_libcommon_a_SOURCES =
+src_common_libcommon_a_SOURCES =  src/common/rpc/CommonRequest.hh
 
 
 # Since we have to distribute the sources, protobuf is NOT optional for
