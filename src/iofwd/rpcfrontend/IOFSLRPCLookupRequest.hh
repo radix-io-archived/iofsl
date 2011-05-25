@@ -7,32 +7,21 @@
 #include "iofwd/LookupRequest.hh"
 #include "iofwd/rpcfrontend/IOFSLRPCRequest.hh"
 #include "RPCSimpleRequest.hh"
-#include "zoidfs/util/ZoidFSFileSpec.hh"
+#include "encoder/EncoderCommon.hh"
 
 namespace iofwd
 {
    namespace rpcfrontend
    {
-/* Input encoder struct */
-typedef zoidfs::ZoidFSFileSpec ZoidFSFileSpec;
-typedef zoidfs::zoidfs_op_hint_t zoidfs_op_hint_t;
-ENCODERSTRUCT(RPCLookupIn,  ((ZoidFSFileSpec)(info)))
-
-/* Output Encoder Struct */
-typedef zoidfs::zoidfs_handle_t zoidfs_handle_t;
-ENCODERSTRUCT(RPCLookupOut, ((int)(returnCode))
-                            ((zoidfs_handle_t)(handle)))
-
-
 class IOFSLRPCLookupRequest :
-    public RPCSimpleRequest<RPCLookupIn, RPCLookupOut>,
+    public RPCSimpleRequest<encoder::LookupRequest, encoder::LookupResponse>,
     public LookupRequest
 {
     public:
         IOFSLRPCLookupRequest(int opid,
                 iofwdevent::ZeroCopyInputStream * in,
                 iofwdevent::ZeroCopyOutputStream * out) :
-            RPCSimpleRequest<RPCLookupIn, RPCLookupOut>(in, out),
+            RPCSimpleRequest<encoder::LookupRequest, encoder::LookupResponse>(in, out),
             LookupRequest(opid)
         {
         }

@@ -48,9 +48,15 @@ class LookupClientSM :
 //            in_(LookupInStream(parent_handle, component_name, full_path, op_hint)),
 //            out_(handle, op_hint)
         {
-          in_.info.handle = *parent_handle;
-          in_.info.component = EncoderString(component_name);
-          in_.info.full_path = EncoderString(full_path);
+          if (parent_handle != NULL)
+          {
+            in_.info.handle = *parent_handle;
+            in_.info.component = EncoderString(component_name);
+          }
+          else
+          {
+            in_.info.full_path = EncoderString(full_path);
+          }
           handle_ = handle;          
         }
 
