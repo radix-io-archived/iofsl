@@ -1,35 +1,8 @@
-#include <cstdio>
 #include "iofwdclient/CBClient.hh"
-
-#include "iofwdclient/CommStream.hh"
-
-#include "iofwdutil/IOFWDLog.hh"
-#include "iofwdutil/tools.hh"
-
-#include "iofwdclient/clientsm/GetAttrClientSM.hh"
-
-#include "iofwdclient/clientsm/LookupClientSM.hh"
-#include "iofwdclient/clientsm/WriteClientSM.hh"
-#include "iofwdclient/streamwrappers/WriteStreams.hh"
-#include "iofwdclient/clientsm/ReadClientSM.hh"
-#include "iofwdclient/streamwrappers/ReadStreams.hh"
-#include "iofwdclient/clientsm/CreateClientSM.hh"
-#include "iofwdclient/streamwrappers/CreateStreams.hh"
-
-#include "common/rpc/CommonRequest.hh"
-#include "iofwdclient/clientsm/RPCCommClientSM.hh"
-#include "iofwdclient/clientsm/RPCCommWriteSM.hh"
-#include "iofwdclient/clientsm/RPCCommReadSM.hh"
-
-using namespace zoidfs;
+//using namespace zoidfs;
 
 namespace iofwdclient
 {
-   typedef iofwdclient::clientsm::RPCCommClientSM<CreateInStream, CreateOutStream> RPCCommClientSMCreate;
-   typedef iofwdclient::clientsm::RPCCommClientSM<common::LookupRequest, common::LookupResponse> RPCCommClientSMLookup;
-   typedef iofwdclient::clientsm::RPCCommWriteSM<WriteInStream, WriteOutStream> RPCCommClientSMWrite;
-   typedef iofwdclient::clientsm::RPCCommReadSM<ReadInStream, ReadOutStream> RPCCommClientSMRead;
-   //========================================================================
    CBClient::CBClient (iofwdutil::IOFWDLogSource & log,
          CommStream & net, net::AddressPtr addr, bool poll)
       : log_ (log),
@@ -60,9 +33,9 @@ namespace iofwdclient
 
    void CBClient::cbgetattr(const IOFWDClientCB & cb,
          int * ret,
-         const zoidfs_handle_t * handle,
-         zoidfs_attr_t * attr,
-         zoidfs_op_hint_t * op_hint)
+         const zoidfs::zoidfs_handle_t * handle,
+         zoidfs::zoidfs_attr_t * attr,
+         zoidfs::zoidfs_op_hint_t * op_hint)
    {
        /* create the empty wrapper */
        CBSMWrapper * cbsm = CBSMWrapper::createCBSMWrapper(cb);
