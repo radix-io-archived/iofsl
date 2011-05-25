@@ -30,14 +30,13 @@
 
 #include "encoder/EncoderStruct.hh"
 #include "zoidfs/util/ZoidFSFileSpec.hh"
-
+#include "encoder/EncoderCommon.hh"
 #include <cstdio>
 
 using namespace iofwdclient;
 using namespace iofwdclient::streamwrappers;
 using namespace encoder;
 using namespace encoder::xdr;
-using namespace zoidfs;
 namespace iofwdclient
 {
     namespace clientsm

@@ -7,7 +7,6 @@
 #include <cstdio>
 #include "encoder/EncoderStruct.hh"
 #include "zoidfs/util/ZoidFSFileSpec.hh"
-using namespace zoidfs;
 namespace iofwdclient
 {
     namespace clientsm
@@ -37,6 +36,8 @@ void LookupClientSM::postRPCServerSM(iofwdevent::CBException e)
 void LookupClientSM::waitRPCServerSM(iofwdevent::CBException e)
 {
     e.check();
+    *ret_ = out_.returnCode;
+    *handle_ = (out_.handle);
     cb_(zoidfs::ZFS_COMP_DONE, e);
 }
 
