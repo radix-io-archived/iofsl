@@ -32,7 +32,7 @@ namespace encoder {
       uint32_t len;
       process (e, len);      
 
-      if (len < MINSIZE || len > MAXSIZE)
+      if (static_cast<int>(len) < static_cast<int>(MINSIZE) || len > MAXSIZE)
       {
          ZTHROW (BufferException() << iofwdutil::zexception_msg (
           "Invalid length (ether too large or too small for EncoderString)"));
@@ -49,9 +49,8 @@ namespace encoder {
       /* Get the encoder and string length */
       uint32_t stringLen = p.value.size();
 
-      size_t maxsize = MAXSIZE;
 
-      if (stringLen < MINSIZE || stringLen > MAXSIZE)
+      if (static_cast<int>(stringLen) < static_cast<int>(MINSIZE) || stringLen > MAXSIZE)
       {
          ZTHROW (BufferException() << iofwdutil::zexception_msg (
      "Invalid hint length (ether too large or too small for EncoderString)"));

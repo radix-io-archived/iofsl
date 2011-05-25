@@ -10,18 +10,23 @@
 
 #include "iofwdutil/tools.hh"
 
+#include "iofwdevent/CBType.hh"
+
 #include "iofwdclient/IOFWDClientCB.hh"
 #include "iofwdclient/clientsm/RPCServerSM.hh"
 #include "iofwdclient/clientsm/RPCCommClientSM.hh"
-#include "zoidfs/zoidfs.h"
+
 #include "encoder/EncoderString.hh"
+
+#include "zoidfs/zoidfs.h"
 #include "zoidfs/util/ZoidFSFileSpec.hh"
-#include <cstdio>
+#include "zoidfs/zoidfs-async.h"
+#include "zoidfs/zoidfs-rpc.h"
+
 #include "common/rpc/CommonRequest.hh"
 
 namespace iofwdclient
 {
-    using namespace streamwrappers;
     namespace clientsm
     {
 typedef boost::shared_ptr< iofwdclient::clientsm::RPCCommClientSM<common::LookupRequest,common::LookupResponse> > RPCCommClientSMPtr;
@@ -39,14 +44,12 @@ class LookupClientSM :
                 const char *component_name, 
                 const char *full_path,
                 zoidfs::zoidfs_handle_t *handle,  
-                zoidfs::zoidfs_op_hint_t * op_hint) :
+                zoidfs::zoidfs_op_hint_t * UNUSED(op_hint)) :
             sm::SimpleSM< iofwdclient::clientsm::LookupClientSM >(smm, poll),
             slots_(*this),
             cb_(cb),
             ret_(ret),
             comm_(comm)
-//            in_(LookupInStream(parent_handle, component_name, full_path, op_hint)),
-//            out_(handle, op_hint)
         {
           if (parent_handle != NULL)
           {
