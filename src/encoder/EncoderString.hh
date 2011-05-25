@@ -17,16 +17,16 @@ namespace encoder {
    };
 
    template <typename ENC, size_t MINSIZE, size_t MAXSIZE>
-   static void process (ENC e, const EncoderString<MINSIZE,MAXSIZE> & p,
+   static void process (ENC & e, const EncoderString<MINSIZE,MAXSIZE> & p,
          typename only_size_processor<ENC>::type * = 0)
    {
       uint32_t len = p.value.size();
       process (e, len);
-      process (e, EncOpaque (p.value.c_str(), len,  MAXSIZE));
+      process (e, EncOpaque (p.value.c_str(), MAXSIZE));
    }
 
    template <typename ENC, size_t MINSIZE, size_t MAXSIZE>
-   static void process (ENC e, EncoderString<MINSIZE,MAXSIZE> & p,
+   static void process (ENC & e, EncoderString<MINSIZE,MAXSIZE> & p,
                         typename only_decoder_processor<ENC>::type * = 0)
    {
       uint32_t len;
@@ -39,16 +39,18 @@ namespace encoder {
       }
 
       p.value.resize (len);
-      process (e, EncOpaque (p.value.c_str(), len, MAXSIZE));
+      process (e, EncOpaque (p.value.c_str(), len));
    }
 
    template <typename ENC, size_t MINSIZE, size_t MAXSIZE>
-   static void process (ENC e, const EncoderString<MINSIZE,MAXSIZE> & p,
+   static void process (ENC & e, const EncoderString<MINSIZE,MAXSIZE> & p,
                    typename only_encoder_processor<ENC>::type * = 0)
    {
       /* Get the encoder and string length */
       uint32_t stringLen = p.value.size();
-   
+
+      size_t maxsize = MAXSIZE;
+
       if (stringLen < MINSIZE || stringLen > MAXSIZE)
       {
          ZTHROW (BufferException() << iofwdutil::zexception_msg (
@@ -56,7 +58,7 @@ namespace encoder {
       }
 
       process (e, stringLen);
-      process (e, EncOpaque (p.value.c_str(), stringLen, MAXSIZE));
+      process (e, EncOpaque (p.value.c_str(), stringLen));
    }
 }
 #endif
