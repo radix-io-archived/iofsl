@@ -12,10 +12,12 @@ namespace encoder {
    struct EncoderString
    {
       std::string value;
+      EncoderString<MINSIZE,MAXSIZE>() {};
+      EncoderString<MINSIZE,MAXSIZE>(const char * val) { value = std::string(val);}
    };
 
    template <typename ENC, size_t MINSIZE, size_t MAXSIZE>
-   static void process (ENC e, EncoderString<MINSIZE,MAXSIZE> & p,
+   static void process (ENC e, const EncoderString<MINSIZE,MAXSIZE> & p,
          typename only_size_processor<ENC>::type * = 0)
    {
       uint32_t len = p.value.size();
@@ -41,7 +43,7 @@ namespace encoder {
    }
 
    template <typename ENC, size_t MINSIZE, size_t MAXSIZE>
-   static void process (ENC e, EncoderString<MINSIZE,MAXSIZE> & p,
+   static void process (ENC e, const EncoderString<MINSIZE,MAXSIZE> & p,
                    typename only_encoder_processor<ENC>::type * = 0)
    {
       /* Get the encoder and string length */
