@@ -29,11 +29,12 @@ const IOFSLRPCLookupRequest::ReqParam & IOFSLRPCLookupRequest::decodeParam()
 void IOFSLRPCLookupRequest::reply(const CBType & cb, const
         zoidfs::zoidfs_handle_t * handle)
 {
-    /* verify the args are OK */
-    ASSERT(getReturnCode() != zoidfs::ZFS_OK || handle);
+    /* verify the args are OK Should the server fail here?*/
+    ASSERT(getReturnCode() != zoidfs::ZFS_OK || handle != NULL);
 
     /* Store handle/return code information for output */
-    outStruct.handle = (*handle);
+    if (handle)
+      outStruct.handle = (*handle);
     outStruct.returnCode = getReturnCode();
 
     zoidfs::hints::zoidfs_hint_create(&op_hint_);  
