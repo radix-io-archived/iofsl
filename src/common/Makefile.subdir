@@ -1,0 +1,4 @@
+noinst_LIBRARIES += src/common/libcommon.a
+
+src_common_libcommon_a_SOURCES =
+
