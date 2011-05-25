@@ -66,7 +66,7 @@ namespace zoidfs
    inline void process (ENC & e, const ZoidFSFileSpec & p,
                    typename encoder::only_encoder_processor<ENC>::type * = 0)
    {
-      uint32_t flag = (p.full_path.value.empty() ? 1 : 0);
+      uint32_t flag = (p.full_path.value.empty() ? 0 : 1);
       process (e, flag);
 
       /* Component/Handle decoding */     
