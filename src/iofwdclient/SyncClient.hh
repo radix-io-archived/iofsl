@@ -5,11 +5,15 @@
 
 #include "iofwdclient/iofwdclient-fwd.hh"
 #include "iofwdclient/ASClient.hh"
+#include "iofwdclient/ScopedRequest.hh"
 
+#include "iofwdutil/IOFWDLog.hh"
 #include "iofwdutil/IOFWDLog-fwd.hh"
+
 #include "iofwd/RPCClient.hh"
 
 #include <boost/shared_ptr.hpp>
+
 namespace iofwdclient
 {
    //========================================================================
