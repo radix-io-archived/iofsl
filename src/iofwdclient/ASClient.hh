@@ -1,20 +1,24 @@
 #ifndef IOFWDCLIENT_ASCLIENT_HH
 #define IOFWDCLIENT_ASCLIENT_HH
-
-#include "iofwdclient/iofwdclient-fwd.hh"
-
-#include "iofwdutil/IOFWDLog-fwd.hh"
-
+#include "zoidfs/zoidfs.h"
 #include "zoidfs/zoidfs-async.h"
 
 #include <boost/scoped_ptr.hpp>
+#include <boost/shared_ptr.hpp>
+
 #include "iofwd/RPCClient.hh"
 
-#include <boost/shared_ptr.hpp>
+#include "iofwdclient/iofwdclient-fwd.hh"
+#include "iofwdclient/CBClient.hh"
+#include "iofwdclient/RequestTracker.hh"
+
 #include "iofwdclient/IOFWDRequest.hh"
 
+#include "iofwdutil/IOFWDLog-fwd.hh"
 #include "iofwdutil/tools.hh"
-
+#include "iofwdutil/IOFWDLog.hh"
+#include "iofwdutil/assert.hh"
+#define ZOIDFS_REQUEST_NULL_AS (zoidfs::zoidfs_request_t) 0
 namespace iofwdclient
 {
    //========================================================================
