@@ -30,7 +30,7 @@
 
 #include "encoder/EncoderStruct.hh"
 #include "zoidfs/util/ZoidFSFileSpec.hh"
-#include "encoder/EncoderCommon.hh"
+#include "common/rpc/CommonRequest.hh"
 #include <cstdio>
 
 using namespace iofwdclient;

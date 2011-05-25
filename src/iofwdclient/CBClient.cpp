@@ -16,7 +16,7 @@
 #include "iofwdclient/clientsm/CreateClientSM.hh"
 #include "iofwdclient/streamwrappers/CreateStreams.hh"
 
-#include "encoder/EncoderCommon.hh"
+#include "common/rpc/CommonRequest.hh"
 #include "iofwdclient/clientsm/RPCCommClientSM.hh"
 #include "iofwdclient/clientsm/RPCCommWriteSM.hh"
 #include "iofwdclient/clientsm/RPCCommReadSM.hh"
@@ -26,7 +26,7 @@ using namespace zoidfs;
 namespace iofwdclient
 {
    typedef iofwdclient::clientsm::RPCCommClientSM<CreateInStream, CreateOutStream> RPCCommClientSMCreate;
-   typedef iofwdclient::clientsm::RPCCommClientSM<encoder::LookupRequest, encoder::LookupResponse> RPCCommClientSMLookup;
+   typedef iofwdclient::clientsm::RPCCommClientSM<common::LookupRequest, common::LookupResponse> RPCCommClientSMLookup;
    typedef iofwdclient::clientsm::RPCCommWriteSM<WriteInStream, WriteOutStream> RPCCommClientSMWrite;
    typedef iofwdclient::clientsm::RPCCommReadSM<ReadInStream, ReadOutStream> RPCCommClientSMRead;
    //========================================================================

@@ -7,21 +7,21 @@
 #include "iofwd/LookupRequest.hh"
 #include "iofwd/rpcfrontend/IOFSLRPCRequest.hh"
 #include "RPCSimpleRequest.hh"
-#include "encoder/EncoderCommon.hh"
+#include "common/rpc/CommonRequest.hh"
 
 namespace iofwd
 {
    namespace rpcfrontend
    {
 class IOFSLRPCLookupRequest :
-    public RPCSimpleRequest<encoder::LookupRequest, encoder::LookupResponse>,
+    public RPCSimpleRequest<common::LookupRequest, common::LookupResponse>,
     public LookupRequest
 {
     public:
         IOFSLRPCLookupRequest(int opid,
                 iofwdevent::ZeroCopyInputStream * in,
                 iofwdevent::ZeroCopyOutputStream * out) :
-            RPCSimpleRequest<encoder::LookupRequest, encoder::LookupResponse>(in, out),
+            RPCSimpleRequest<common::LookupRequest, common::LookupResponse>(in, out),
             LookupRequest(opid)
         {
         }
