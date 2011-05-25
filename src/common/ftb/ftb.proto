@@ -1,0 +1,16 @@
+package ftb;
+
+option optimize_for = LITE_RUNTIME;
+
+message ServerID
+{
+   required bytes uuid = 1;
+   required string location = 2;
+}
+
+message LoadUpdate
+{
+   required ServerID id = 1;
+   required double load = 2;
+}
+

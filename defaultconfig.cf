@@ -38,7 +38,7 @@ extra_services {
 
 
    ftb {
-      period = "60";
+      period = "1";
    }
 }
 
