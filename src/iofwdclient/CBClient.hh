@@ -11,6 +11,7 @@
 #include "iofwdutil/IOFWDLog-fwd.hh"
 #include "iofwdutil/always_assert.hh"
 #include "iofwdutil/tools.hh"
+#include "iofwdutil/IOFWDLog.hh"
 
 #include "sm/SMManager.hh"
 #include "sm/SMClient.hh"
@@ -22,58 +23,26 @@
 
 #include <boost/intrusive_ptr.hpp>
 #include <cstdio>
-/*==========================================================================*/
-/* CBClient Creation Macros */
-#include <boost/preprocessor/seq/for_each.hpp>
-#include <boost/preprocessor/seq/elem.hpp>
-#include <boost/preprocessor/seq/fold_left.hpp>
-#include <boost/preprocessor/seq/cat.hpp>
-#include <boost/preprocessor/cat.hpp>
-#include <boost/preprocessor/seq/pop_back.hpp>
 
-/* creates list of input params (aka zoidfs_handle_t * handle,....) */
-#define CLIENT_CBCLIENT_PARAMS(r,data,elem) CLIENT_CBCLIENT_PARAMS_S1(elem)
-#define CLIENT_CBCLIENT_PARAMS_S1(elem) CLIENT_CBCLIENT_PARAMS_S2(elem),
-#define CLIENT_CBCLIENT_PARAMS_S2(elem) BOOST_PP_SEQ_FOLD_LEFT(CLIENT_CBCLIENT_DOFOLD, \
-                                        BOOST_PP_SEQ_HEAD(elem),             \
-                                        BOOST_PP_SEQ_TAIL(elem))
-#define CLIENT_CBCLIENT_DOFOLD(r,data,elem) data elem
+#include "iofwdclient/clientsm/GetAttrClientSM.hh"
+#include "iofwdclient/clientsm/LookupClientSM.hh"
+#include "iofwdclient/clientsm/WriteClientSM.hh"
+#include "iofwdclient/streamwrappers/WriteStreams.hh"
+#include "iofwdclient/clientsm/ReadClientSM.hh"
+#include "iofwdclient/streamwrappers/ReadStreams.hh"
+#include "iofwdclient/clientsm/CreateClientSM.hh"
+#include "iofwdclient/streamwrappers/CreateStreams.hh"
 
-/* creates parameter list from PARAMETERS */
-#define CLIENT_CBCLIENT_PLIST(r,data,elem) CLIENT_CBCLIENT_PLIST_S1(elem)
-#define CLIENT_CBCLIENT_PLIST_S1(elem) CLIENT_CBCLIENT_PLIST_S2(elem),
-#define CLIENT_CBCLIENT_PLIST_S2(elem) BOOST_PP_SEQ_CAT(BOOST_PP_SEQ_TAIL(elem))
-
-/* defines the function for the class, takes 3 parameter'. 
-   FUNCNAME = the name of the function to be written. 
-   SMNAME = Name of the state machine class to use. 
-   PARAMETERS = BOOST list of parameters for the function ex: 
-      ((zoidfs_handle_t)(handle))((zoidfs_cache_hint_t)(cache)). op_hint is
-      to be excluded from this list (it is included by default)
-*/
-   
-#define CLIENT_CBCLIENT_MACRO(FUNCNAME, SMNAME, PARAMETERS)                  \
-   void CBClient::FUNCNAME(const IOFWDClientCB & cb,                         \
-         int * ret,                                                          \
-         BOOST_PP_SEQ_FOR_EACH(CLIENT_CBCLIENT_PARAMS, , PARAMETERS)         \
-         zoidfs_op_hint_t * op_hint)                                         \
-   {                                                                         \
-      CBSMWrapper * cbsm =  CBSMWrapper::createCBSMWrapper(cb);              \
-      iofwdclient::clientsm::SMNAME(*smm_, poll_, cbsm->getWCB(), ret,       \
-         BOOST_PP_SEQ_FOR_EACH(CLIENT_CBCLIENT_PLIST, , PARAMETERS)          \
-         op_hint);                                                           \
-      cbsm->set(sm);                                                         \
-      sm->execute();                                                         \
-   }
-/*==========================================================================*/
-
-
-
-
+#include "common/rpc/CommonRequest.hh"
+#include "iofwdclient/clientsm/RPCCommClientSM.hh"
+#include "iofwdclient/clientsm/RPCCommWriteSM.hh"
+#include "iofwdclient/clientsm/RPCCommReadSM.hh"
 namespace iofwdclient
 {
-   //========================================================================
-
+   typedef iofwdclient::clientsm::RPCCommClientSM<CreateInStream, CreateOutStream> RPCCommClientSMCreate;
+   typedef iofwdclient::clientsm::RPCCommClientSM<common::LookupRequest, common::LookupResponse> RPCCommClientSMLookup;
+   typedef iofwdclient::clientsm::RPCCommWriteSM<WriteInStream, WriteOutStream> RPCCommClientSMWrite;
+   typedef iofwdclient::clientsm::RPCCommReadSM<ReadInStream, ReadOutStream> RPCCommClientSMRead;
    /**
     * Implements a callback version of the async zoidfs API
     */
@@ -86,8 +55,6 @@ namespace iofwdclient
          ~CBClient ();
 
       public:
-//         void setRPCMode ( boost::shared_ptr<iofwd::RPCClient> rpcclient,
-//                           net::AddressPtr addr);
          void cbgetattr (const IOFWDClientCB & cb,
                int * ret,
                const zoidfs::zoidfs_handle_t * handle,
