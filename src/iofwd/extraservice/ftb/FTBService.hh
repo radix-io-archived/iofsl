@@ -6,11 +6,14 @@
 
 #include <boost/thread.hpp>
 
+#include <google/protobuf/message.h>
+
 namespace iofwd
 {
    //========================================================================
 
    class Log;
+   class BMI;
 
    /**
     * FTB service
@@ -45,11 +48,22 @@ namespace iofwd
          /// Signal and wait until FTB shuts down
          void shutdownFTB ();
 
+         /// Indicate shutdown is needed
+         void setShutdown ();
+
+         /// Wakeup thread and republish now (if possible)
+         void wakeFTB ();
+
+         void publishPB (const char * name, const
+               google::protobuf::MessageLite &
+               msg);
+
       protected:
          int checkFTB (int ret) const;
 
       protected:
          boost::shared_ptr<Log> log_service_;
+         boost::shared_ptr<BMI> bmi_service_;
 
          iofwdutil::IOFWDLogSource & log_;
 

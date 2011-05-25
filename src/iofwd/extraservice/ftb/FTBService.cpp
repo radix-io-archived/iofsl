@@ -4,9 +4,18 @@
 #include "iofwd/service/ServiceManager.hh"
 #include "iofwdutil/IOFWDLog.hh"
 #include "iofwd/Log.hh"
+#include "iofwd/BMI.hh"
+
+#include "common/ftb/ftb.pb.h"
 
 #include <boost/format.hpp>
 #include <boost/date_time/posix_time/posix_time_types.hpp>
+#include <boost/uuid/uuid_generators.hpp>
+#include <boost/uuid/uuid.hpp>
+#include <boost/uuid/uuid_io.hpp>
+#include <boost/lexical_cast.hpp>
+
+#include <arpa/inet.h>
 
 #include <libftb.h>
 
@@ -21,10 +30,10 @@ namespace iofwd
 {
    //========================================================================
    
-   static const char * FTB_EVENT_SPACE = "FTB.IOFSL.IOFSL";
+   static const char * FTB_EVENT_SPACE = "IOFSL.IOFSL.IOFSL";
 
    static FTB_event_info_t ftb_events [] = {
-      { "TEST", "INFO" }
+      { "loadupdate", "INFO" }
    };
 
    //========================================================================
@@ -32,6 +41,7 @@ namespace iofwd
    FTBService::FTBService (ServiceManager & m)
       : ExtraService (m),
         log_service_ (lookupService<Log>("log")),
+        bmi_service_ (lookupService<BMI>("bmi")),
         log_ (log_service_->getSource ("ftb")),
         shutdown_ (false)
    {
@@ -67,6 +77,59 @@ namespace iofwd
       ZTHROW (FTBError () << ftb_errorcode (ret));
    }
 
+   void FTBService::publishPB (const char * name,
+         const google::protobuf::MessageLite & msg)
+   {
+      std::string out;
+      if (!msg.SerializeToString (&out))
+         return;
+
+      FTB_event_properties prop;
+
+      char * dest = (char*) &prop.event_payload;
+      *(uint32_t *) dest = htonl (out.size ());
+      size_t used = 0;
+      dest += sizeof (uint32_t);
+      used += sizeof (uint32_t);
+
+      prop.event_type = 1;
+      ALWAYS_ASSERT(used <= FTB_MAX_PAYLOAD_DATA);
+      memcpy (dest, out.c_str(), out.size ());
+      FTB_event_handle_t ehandle;
+      checkFTB (FTB_Publish (*ftbhandle_, name, &prop, &ehandle));
+   }
+
+   void FTBService::FTBLoop ()
+   {
+      boost::system_time nextwakeup = boost::get_system_time ();
+
+      ftb::LoadUpdate load_update;
+
+      // @TODO: get uuid (or more general server identity) in service?
+      boost::uuids::random_generator gen;
+      boost::uuids::uuid u = gen ();
+
+      ZLOG_INFO (log_, format("Server UUID: %s") % u);
+
+      load_update.mutable_id()->set_location(bmi_service_->getListenAddress ());
+      load_update.mutable_id()->set_uuid (&u, sizeof (u));
+
+      while (!needShutdown ())
+      {
+         // FTB_event_handle_t ehandle;
+
+         ZLOG_DEBUG (log_, "Publishing events...");
+
+         load_update.set_load (0.5);
+
+         publishPB ("loadupdate", load_update);
+
+         //checkFTB (FTB_Publish (*ftbhandle_, "loadupdate", 0, &ehandle));
+
+         nextwakeup += boost::posix_time::seconds (opt_sleeptime_);
+         sleep (nextwakeup);
+      }
+   }
    /**
     * NOTE: This function must be exception safe and properly catch
     * exceptions.
