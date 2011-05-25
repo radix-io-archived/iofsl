@@ -1,12 +1,5 @@
 #include "iofwdclient/clientsm/LookupClientSM.hh"
-//#include "iofwdclient/FakeBlocker.hh"
 
-#include "zoidfs/zoidfs-async.h"
-#include "zoidfs/zoidfs-rpc.h"
-#include "iofwdevent/CBType.hh"
-#include <cstdio>
-#include "encoder/EncoderStruct.hh"
-#include "zoidfs/util/ZoidFSFileSpec.hh"
 namespace iofwdclient
 {
     namespace clientsm
