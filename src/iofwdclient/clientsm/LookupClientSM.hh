@@ -2,7 +2,6 @@
 #define IOFWDCLIENT_SM_LookupClientSM
 
 #include "iofwdclient/streamwrappers/ZoidFSStreamWrappers.hh"
-#include "iofwdclient/streamwrappers/LookupStreams.hh"
 
 #include "sm/SMManager.hh"
 #include "sm/SimpleSM.hh"
@@ -16,16 +15,16 @@
 #include "iofwdclient/clientsm/RPCCommClientSM.hh"
 #include "zoidfs/zoidfs.h"
 #include "encoder/EncoderString.hh"
-
+#include "zoidfs/util/ZoidFSFileSpec.hh"
 #include <cstdio>
+#include "encoder/EncoderCommon.hh"
 
 namespace iofwdclient
 {
     using namespace streamwrappers;
-
     namespace clientsm
     {
-typedef boost::shared_ptr< iofwdclient::clientsm::RPCCommClientSM<LookupInStream,LookupOutStream> > RPCCommClientSMPtr;
+typedef boost::shared_ptr< iofwdclient::clientsm::RPCCommClientSM<encoder::LookupRequest,encoder::LookupResponse> > RPCCommClientSMPtr;
 typedef encoder::EncoderString<0, ZOIDFS_PATH_MAX> EncoderString;
 class LookupClientSM :
     public sm::SimpleSM< iofwdclient::clientsm::LookupClientSM >
@@ -45,13 +44,14 @@ class LookupClientSM :
             slots_(*this),
             cb_(cb),
             ret_(ret),
-            comm_(comm),
+            comm_(comm)
 //            in_(LookupInStream(parent_handle, component_name, full_path, op_hint)),
-            out_(handle, op_hint)
+//            out_(handle, op_hint)
         {
           in_.info.handle = *parent_handle;
           in_.info.component = EncoderString(component_name);
           in_.info.full_path = EncoderString(full_path);
+          handle_ = handle;          
         }
 
         ~LookupClientSM();
@@ -71,8 +71,9 @@ class LookupClientSM :
         const IOFWDClientCB & cb_;
         int * ret_;
         RPCCommClientSMPtr comm_;
-        streamwrappers::LookupInStream in_;
-        streamwrappers::LookupOutStream out_;
+        encoder::LookupRequest in_;
+        encoder::LookupResponse out_;
+        zoidfs::zoidfs_handle_t * handle_;
 };
 
     }
