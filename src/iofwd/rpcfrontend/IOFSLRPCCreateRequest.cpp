@@ -23,28 +23,26 @@ namespace iofwd
               param_.parent_handle = &inStruct.info.handle;
               param_.component_name = (char *)inStruct.info.component.value.c_str();
            }
+
           param_.attr = &inStruct.attr; 
-          param_.op_hint = NULL;
-//          param_.op_hint = &op_hint_; 
+
+          zoidfs::zoidfs_op_hint_t op_hint_;
+          zoidfs::hints::zoidfs_hint_create(&op_hint_);  
+          param_.op_hint = &op_hint_;
+
           return param_; 
       }
 
       void IOFSLRPCCreateRequest::reply(const CBType & cb,
-              const zoidfs_handle_t * handle_, int created_)
+              const zoidfs::zoidfs_handle_t * handle_, int created_)
       {
           /* verify the args are OK */
-//          ASSERT(getReturnCode() != zoidfs::ZFS_OK || handle_);
+          ASSERT(getReturnCode() == zoidfs::ZFS_OK);
 
           /* Store handle/return code information for output */
           outStruct.handle = (*handle_);
           outStruct.returnCode = getReturnCode();
           outStruct.created = created_;
-
-          zoidfs::zoidfs_op_hint_t op_hint_;
-          zoidfs::hints::zoidfs_hint_create(&op_hint_);  
-          /* @TODO: Remove this later */
-          param_.op_hint = &op_hint_;
-
 
           /* encode */
           encode(cb);
@@ -52,7 +50,7 @@ namespace iofwd
 
       IOFSLRPCCreateRequest::~IOFSLRPCCreateRequest()
       {
-         //zoidfs::hints::zoidfs_hint_free(&op_hint_);
+//         zoidfs::hints::zoidfs_hint_free(&op_hint_);
       }
 
    }

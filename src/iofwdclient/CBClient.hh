@@ -38,7 +38,7 @@
 namespace iofwdclient
 {
    typedef iofwdclient::clientsm::RPCCommClientSM<common::CommitRequest, common::CommitResponse> RPCCommCommit;
-   typedef iofwdclient::clientsm::RPCCommClientSM<CreateInStream, CreateOutStream> RPCCommClientSMCreate;
+   typedef iofwdclient::clientsm::RPCCommClientSM<common::CreateRequest, common::CreateResponse> RPCCommClientSMCreate;
    typedef iofwdclient::clientsm::RPCCommClientSM<common::LookupRequest, common::LookupResponse> RPCCommClientSMLookup;
    typedef iofwdclient::clientsm::RPCCommWriteSM<common::WriteRequest, common::WriteResponse> RPCCommClientSMWrite;
    typedef iofwdclient::clientsm::RPCCommReadSM<common::ReadRequest, common::ReadResponse> RPCCommClientSMRead;
