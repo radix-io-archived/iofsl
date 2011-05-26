@@ -29,7 +29,7 @@ namespace iofwdclient
 
     namespace clientsm
     {
-typedef boost::shared_ptr< iofwdclient::clientsm::RPCCommClientSM<common::CreateRequest,common::CreateResponse> > RPCCommClientCreate;
+typedef boost::shared_ptr< iofwdclient::clientsm::RPCCommClientSM<common::RPCCreateRequest,common::RPCCreateResponse> > RPCCommClientCreate;
 typedef encoder::EncoderString<0, ZOIDFS_PATH_MAX> EncoderString;
 class CreateClientSM :
     public sm::SimpleSM< iofwdclient::clientsm::CreateClientSM >
@@ -85,8 +85,8 @@ class CreateClientSM :
         const IOFWDClientCB & cb_;
         int * ret_;
         RPCCommClientCreate comm_;
-        common::CreateRequest in_;
-        common::CreateResponse out_;
+        common::RPCCreateRequest in_;
+        common::RPCCreateResponse out_;
         zoidfs::zoidfs_handle_t * handle_;
         int * created_;
 };

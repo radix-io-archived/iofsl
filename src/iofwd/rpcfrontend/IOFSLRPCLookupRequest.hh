@@ -14,14 +14,14 @@ namespace iofwd
    namespace rpcfrontend
    {
 class IOFSLRPCLookupRequest :
-    public RPCSimpleRequest<common::LookupRequest, common::LookupResponse>,
+    public RPCSimpleRequest<common::RPCLookupRequest, common::RPCLookupResponse>,
     public LookupRequest
 {
     public:
         IOFSLRPCLookupRequest(int opid,
                 iofwdevent::ZeroCopyInputStream * in,
                 iofwdevent::ZeroCopyOutputStream * out) :
-            RPCSimpleRequest<common::LookupRequest, common::LookupResponse>(in, out),
+            RPCSimpleRequest<common::RPCLookupRequest, common::RPCLookupResponse>(in, out),
             LookupRequest(opid)
         {
         }

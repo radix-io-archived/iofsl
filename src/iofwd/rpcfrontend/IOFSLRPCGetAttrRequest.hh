@@ -13,14 +13,14 @@ namespace iofwd
    namespace rpcfrontend
    {
       class IOFSLRPCGetAttrRequest :
-          public RPCSimpleRequest<common::GetAttributeRequest, common::GetAttributeResponse>,
+          public RPCSimpleRequest<common::RPCGetAttrRequest, common::RPCGetAttrResponse>,
           public GetAttrRequest
       {
           public:
               IOFSLRPCGetAttrRequest(int opid,
                       iofwdevent::ZeroCopyInputStream * in,
                       iofwdevent::ZeroCopyOutputStream * out) :
-                  RPCSimpleRequest<common::GetAttributeRequest, common::GetAttributeResponse>(in,out),
+                  RPCSimpleRequest<common::RPCGetAttrRequest, common::RPCGetAttrResponse>(in,out),
                   GetAttrRequest(opid)
               {
               }

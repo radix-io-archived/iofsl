@@ -28,7 +28,7 @@ namespace iofwdclient
 
     namespace clientsm
     {
-typedef boost::shared_ptr< iofwdclient::clientsm::RPCCommReadSM<common::ReadRequest, common::ReadResponse> > RPCCommClientSMRead;
+typedef boost::shared_ptr< iofwdclient::clientsm::RPCCommReadSM<common::RPCReadRequest, common::RPCReadResponse> > RPCCommClientSMRead;
 class ReadClientSM :
     public sm::SimpleSM< iofwdclient::clientsm::ReadClientSM >
 {
@@ -74,8 +74,8 @@ class ReadClientSM :
         const IOFWDClientCB & cb_;
         int * ret_;
         RPCCommClientSMRead comm_;
-        common::ReadRequest in_;
-        common::ReadResponse out_;
+        common::RPCReadRequest in_;
+        common::RPCReadResponse out_;
         size_t mem_count_;
         char ** mem_starts_;
         size_t * mem_sizes_;

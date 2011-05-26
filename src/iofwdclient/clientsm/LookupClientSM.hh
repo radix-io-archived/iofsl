@@ -29,7 +29,7 @@ namespace iofwdclient
 {
     namespace clientsm
     {
-typedef boost::shared_ptr< iofwdclient::clientsm::RPCCommClientSM<common::LookupRequest,common::LookupResponse> > RPCCommClientSMPtr;
+typedef boost::shared_ptr< iofwdclient::clientsm::RPCCommClientSM<common::RPCLookupRequest,common::RPCLookupResponse> > RPCCommClientSMPtr;
 typedef encoder::EncoderString<0, ZOIDFS_PATH_MAX> EncoderString;
 class LookupClientSM :
     public sm::SimpleSM< iofwdclient::clientsm::LookupClientSM >
@@ -80,8 +80,8 @@ class LookupClientSM :
         const IOFWDClientCB & cb_;
         int * ret_;
         RPCCommClientSMPtr comm_;
-        common::LookupRequest in_;
-        common::LookupResponse out_;
+        common::RPCLookupRequest in_;
+        common::RPCLookupResponse out_;
         zoidfs::zoidfs_handle_t * handle_;
 };
 

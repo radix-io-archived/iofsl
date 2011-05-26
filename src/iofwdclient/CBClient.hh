@@ -36,11 +36,11 @@
 #include "iofwdclient/clientsm/RPCCommReadSM.hh"
 namespace iofwdclient
 {
-   typedef iofwdclient::clientsm::RPCCommClientSM<common::CommitRequest, common::CommitResponse> RPCCommCommit;
-   typedef iofwdclient::clientsm::RPCCommClientSM<common::CreateRequest, common::CreateResponse> RPCCommClientSMCreate;
-   typedef iofwdclient::clientsm::RPCCommClientSM<common::LookupRequest, common::LookupResponse> RPCCommClientSMLookup;
-   typedef iofwdclient::clientsm::RPCCommWriteSM<common::WriteRequest, common::WriteResponse> RPCCommClientSMWrite;
-   typedef iofwdclient::clientsm::RPCCommReadSM<common::ReadRequest, common::ReadResponse> RPCCommClientSMRead;
+   typedef iofwdclient::clientsm::RPCCommClientSM<common::RPCCommitRequest, common::RPCCommitResponse> RPCCommCommit;
+   typedef iofwdclient::clientsm::RPCCommClientSM<common::RPCCreateRequest, common::RPCCreateResponse> RPCCommClientSMCreate;
+   typedef iofwdclient::clientsm::RPCCommClientSM<common::RPCLookupRequest, common::RPCLookupResponse> RPCCommClientSMLookup;
+   typedef iofwdclient::clientsm::RPCCommWriteSM<common::RPCWriteRequest, common::RPCWriteResponse> RPCCommClientSMWrite;
+   typedef iofwdclient::clientsm::RPCCommReadSM<common::RPCReadRequest, common::RPCReadResponse> RPCCommClientSMRead;
    /**
     * Implements a callback version of the async zoidfs API
     */

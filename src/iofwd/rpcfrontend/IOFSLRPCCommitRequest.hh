@@ -13,14 +13,14 @@ namespace iofwd
    namespace rpcfrontend
    {
       class IOFSLRPCCommitRequest :
-          public RPCSimpleRequest<common::CommitRequest, common::CommitResponse>,
+          public RPCSimpleRequest<common::RPCCommitRequest, common::RPCCommitResponse>,
           public CommitRequest
       {
           public:
               IOFSLRPCCommitRequest(int opid,
                       iofwdevent::ZeroCopyInputStream * in,
                       iofwdevent::ZeroCopyOutputStream * out) :
-                  RPCSimpleRequest<common::CommitRequest, common::CommitResponse>(in, out),
+                  RPCSimpleRequest<common::RPCCommitRequest, common::RPCCommitResponse>(in, out),
                   CommitRequest(opid)
               {
               }

@@ -29,7 +29,7 @@ namespace iofwdclient
 {
     namespace clientsm
     {
-typedef boost::shared_ptr< iofwdclient::clientsm::RPCCommClientSM<common::CommitRequest,common::CommitResponse> > RPCCommCommit;
+typedef boost::shared_ptr< iofwdclient::clientsm::RPCCommClientSM<common::RPCCommitRequest,common::RPCCommitResponse> > RPCCommCommit;
 typedef encoder::EncoderString<0, ZOIDFS_PATH_MAX> EncoderString;
 class CommitClientSM :
     public sm::SimpleSM< iofwdclient::clientsm::CommitClientSM >
@@ -68,8 +68,8 @@ class CommitClientSM :
         const IOFWDClientCB & cb_;
         int * ret_;
         RPCCommCommit comm_;
-        common::CommitRequest in_;
-        common::CommitResponse out_;
+        common::RPCCommitRequest in_;
+        common::RPCCommitResponse out_;
 };
 
     }
