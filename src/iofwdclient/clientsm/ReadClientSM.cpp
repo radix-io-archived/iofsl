@@ -1,11 +1,4 @@
 #include "iofwdclient/clientsm/ReadClientSM.hh"
-//#include "iofwdclient/FakeBlocker.hh"
-
-#include "zoidfs/zoidfs-async.h"
-#include "zoidfs/zoidfs-rpc.h"
-#include "iofwdevent/CBType.hh"
-#include <cstdio>
-
 namespace iofwdclient
 {
     namespace clientsm
@@ -26,7 +19,8 @@ void ReadClientSM::postRPCServerSM(iofwdevent::CBException e)
     e.check();
 
     /* Runs the RPC Client State Machine */
-    comm_->connect(in_, out_, slots_[BASE_SLOT]);
+    comm_->connect(in_, out_,mem_count_, mem_starts_, mem_sizes_,
+                   slots_[BASE_SLOT]);
 
     /* Set up slot wait for completion */
     slots_.wait(BASE_SLOT, &ReadClientSM::waitRPCServerSM);
@@ -36,6 +30,7 @@ void ReadClientSM::postRPCServerSM(iofwdevent::CBException e)
 void ReadClientSM::waitRPCServerSM(iofwdevent::CBException e)
 {
     e.check();
+    *ret_ = out_.returnCode;
     cb_(zoidfs::ZFS_COMP_DONE, e);
 }
 

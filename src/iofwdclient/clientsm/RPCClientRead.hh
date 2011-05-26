@@ -28,6 +28,10 @@
 #include "net/Address.hh"
 #include "net/Net.hh"
 #include "boost/bind.hpp"
+
+#include "common/rpc/CommonRequest.hh"
+#include "zoidfs/util/ZoidfsFileOfsStruct.hh"
+
 #include <cstdio>
 
 using namespace iofwdclient;
@@ -50,12 +54,20 @@ class RPCClientRead :
                        const iofwdevent::CBType & cb,
                        rpc::RPCClientHandle rpc_handle,
                        const INTYPE & in,
-                       OUTTYPE & out) :
+                       OUTTYPE & out,
+                       size_t mem_count, 
+                       char ** mem_starts,
+                       size_t * mem_sizes) :
             sm::SimpleSM< iofwdclient::clientsm::RPCClientRead <INTYPE,OUTTYPE> >(smm, poll),
             slots_(*this),
             e_(in),
             d_(out),
-            rpc_handle_(rpc_handle)
+            rpc_handle_(rpc_handle),
+            mem_count_(mem_count),
+            buf_(0),
+            pos_(0),
+            mem_starts_(mem_starts),
+            mem_sizes_(mem_sizes)
         {
             cb_ = (iofwdevent::CBType)cb;
         }
@@ -67,7 +79,6 @@ class RPCClientRead :
 
         void init(iofwdevent::CBException e)
         {
-//	    fprintf (stderr, "init\n");
             e.check();
 
             /* Get the maximum possible send size */
@@ -81,7 +92,6 @@ class RPCClientRead :
 
         void outputReady (iofwdevent::CBException e)
         {
-//	    fprintf (stderr,"Outready\n");
             e.check();
             e_.zero_copy_stream_.reset((rpc_handle_->getOut()));
 
@@ -92,7 +102,6 @@ class RPCClientRead :
 
         void postSetupConnection(iofwdevent::CBException e)
         {
-//	    fprintf (stderr, "Post Setup\n");
             e.check();
 
             /* setup the write stream */
@@ -101,20 +110,16 @@ class RPCClientRead :
 
             slots_.wait (BASE_SLOT, 
                        &RPCClientRead<INTYPE,OUTTYPE>::waitSetupConnection);
-         
         }
 
         void waitSetupConnection(iofwdevent::CBException e)
         {
-//	    fprintf (stderr, "Wait Setup\n");
             e.check();
             setNextMethod(&RPCClientRead<INTYPE,OUTTYPE>::postEncodeData);
-         
         }
 
         void postEncodeData(iofwdevent::CBException e)
         {
-//	    fprintf (stderr, "Post Encode\n");
             e.check();
 
             /* create the encoder */
@@ -126,20 +131,16 @@ class RPCClientRead :
 
             slots_.wait(BASE_SLOT,
                     &RPCClientRead<INTYPE,OUTTYPE>::waitEncodeData);
-         
         }
         /* Flush state */
         void waitEncodeData(iofwdevent::CBException e)
         {
-//	    fprintf(stderr,"Wait Encode: size %i\n", e_.coder_.getPos());
             e.check();
             setNextMethod(&RPCClientRead<INTYPE,OUTTYPE>::postFlush);
-         
         }
 
         void postFlush(iofwdevent::CBException e)
         {
-//	    fprintf (stderr, "Post Flush\n");
             e.check();
 
             // Before we can access the output channel we need to wait until the RPC
@@ -150,24 +151,19 @@ class RPCClientRead :
                e_.zero_copy_stream_->flush(slots_[BASE_SLOT]);
             slots_.wait(BASE_SLOT,
                     &RPCClientRead<INTYPE,OUTTYPE>::waitFlush);
-         
         }
 
         void waitFlush(iofwdevent::CBException e)
         {
-//	    fprintf(stderr, "Wait in ready\n");
             e.check();
             rpc_handle_->waitInReady (slots_[BASE_SLOT]);
             slots_.wait(BASE_SLOT,&RPCClientRead<INTYPE,OUTTYPE>::postDecodeData);
-         
         }
 
         
         void postDecodeData(iofwdevent::CBException e)
         {
-//	    fprintf (stderr, "Post Decode\n");
             e.check();      
-//	    fprintf (stderr, "Post Decode\n");
             /* get the max size */
             d_.net_data_size_ = rpc::getRPCEncodedSize(OUTTYPE()).getMaxSize();
             d_.zero_copy_stream_.reset((rpc_handle_->getIn()));
@@ -180,7 +176,6 @@ class RPCClientRead :
 
         void waitDecodeData(iofwdevent::CBException e)
         {
-//	    fprintf(stderr,"Decoding Data %i\n", d_.data_size_);
             e.check();
 
             d_.coder_ = rpc::RPCDecoder(d_.data_ptr_, d_.data_size_);
@@ -194,12 +189,7 @@ class RPCClientRead :
         /* Rewind the read after the header has been decoded */
         void rewindRead (iofwdevent::CBException e)
         {
-//	    fprintf (stderr, "Rewind Read\n");
             e.check();
-            outStream_.reset(new OUTTYPE(static_cast<zoidfs::zoidfs_op_hint_t *>(NULL),
-                                         static_cast<size_t>(d_.data_.mem_count_),
-                                         static_cast<void **>(d_.data_.mem_starts_),
-                                         static_cast<const size_t*>(d_.data_.mem_sizes_)));  
             d_.zero_copy_stream_->rewindInput(d_.data_size_ - d_.coder_.getPos(),
                                               slots_[BASE_SLOT]);
             slots_.wait(BASE_SLOT,
@@ -210,11 +200,10 @@ class RPCClientRead :
         /* Get the read buffer for reading data */
         void getReadBuffer (iofwdevent::CBException e)
         {
-//	    fprintf (stderr, "get read buffer\n");
             e.check();
             /* setup the write stream */
             d_.zero_copy_stream_->read(const_cast<const void **>(&d_.data_ptr_),
-                    &d_.data_size_, slots_[BASE_SLOT], RemainingRead(outStream_.get()));
+                    &d_.data_size_, slots_[BASE_SLOT], RemainingRead());
 
             slots_.wait(BASE_SLOT,&RPCClientRead<INTYPE,OUTTYPE>::readData);
          
@@ -223,10 +212,9 @@ class RPCClientRead :
         /* read data from output stream */
         void readData (iofwdevent::CBException e)
         {
-//	    fprintf (stderr, "Read Data\n");
             e.check();
             size_t outSize = d_.data_size_;
-            int ret = getReadData (d_.data_ptr_, outSize, outStream_.get());
+            int ret = getReadData (d_.data_ptr_, outSize);
             /* read finished */
             if (ret == 0)
             {
@@ -244,6 +232,69 @@ class RPCClientRead :
         {
            cb_(e);
         }
+
+
+        inline size_t RemainingRead ()
+        {
+           int buf = buf;
+           size_t size = 0;
+           for (size_t i = buf; i < mem_count_; i++)
+           {
+              size += mem_sizes_[i];
+           }
+           return size;    
+        }
+
+        /* Write data to the stream */
+        inline int getReadData (void * buffer, size_t size)
+        {
+           /* Which input buffer are we on */
+           int buf = buf_;
+           /* position in that buffer */
+           size_t pos = pos_;
+           /* Current size copied */
+           size_t curSize = 0;
+           /* output buffer offset */
+           int buffer_offset = 0;
+           /* return flag */
+           int ret = 0;
+
+           for (size_t i = buf; i < mem_count_; i++)
+           {
+              /* if there is additional data to be read */
+              if (pos < mem_sizes_[i])
+              {
+                 /* if the entire buffer can be copied */
+                 if (curSize + (mem_sizes_[i] - pos) <= size)
+                 {
+                    memcpy (&(((char **)(mem_starts_))[i][pos]), 
+                            &(((char*)buffer) [buffer_offset]),
+                            mem_sizes_[i] - pos);
+                    pos = 0;
+                    curSize = curSize + mem_sizes_[i] - pos;
+                    buffer_offset = buffer_offset + mem_sizes_[i] - pos; 
+                 }
+                 /* if there is not enough room for the buffer to be copied */
+                 else
+                 {
+                    memcpy (&(((char **)(mem_starts_))[i][pos]), 
+                            &(((char*)buffer) [buffer_offset]), 
+                            size - curSize);
+                    pos = pos + size - curSize;
+                    curSize =  size;
+                    buffer_offset = size;
+                    ret = 1;
+                    buf = i;
+                    break; 
+                 }
+              }
+           }
+           pos_ = pos; 
+           buf_ = buf;
+           return ret;
+        }
+
+
 
     protected:
         /* SM */
@@ -265,6 +316,12 @@ class RPCClientRead :
             OUTTYPE> d_;
         rpc::RPCClientHandle rpc_handle_;
         boost::shared_ptr<OUTTYPE> outStream_;
+
+        size_t mem_count_;
+        size_t buf_;
+        size_t pos_; 
+        char ** mem_starts_;
+        size_t * mem_sizes_;
 };
 
     }
