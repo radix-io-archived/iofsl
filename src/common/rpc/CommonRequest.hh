@@ -38,7 +38,6 @@ namespace common
   ENCODERSTRUCT (GetAttributeResponse, ((int)(returnCode))
                                   ((zoidfs_attr_t)(attr_enc)))
 
-
   /* Link Request */
 
   ENCODERSTRUCT (RPCLinkRequest, ((ZoidFSFileSpec)(from))
@@ -98,6 +97,14 @@ namespace common
                                     ((zoidfs_cache_hint_t)(from_parent_hint))
                                     ((zoidfs_cache_hint_t)(to_parent_hint)))
   
+  /* Set Attr */
+  ENCODERSTRUCT (RPCSetAttrRequest,  ((zoidfs_handle_t)(handle))
+                                     ((zoidfs_attr_t)(attr))
+                                     ((zoidfs_sattr_t)(sattr)))
+  ENCODERSTRUCT (RPCSetAttrResponse, ((int)(returnCode))
+                                     ((zoidfs_attr_t)(attr_enc)))
+
+
   /* Write */  
 
   ENCODERSTRUCT(WriteRequest, ((zoidfs_handle_t)(handle))
