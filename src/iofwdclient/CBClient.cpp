@@ -31,6 +31,32 @@ namespace iofwdclient
        delete cbsm;
    }
 
+
+   void CBClient::cbcommit(const IOFWDClientCB & cb, int * ret,
+                           const zoidfs::zoidfs_handle_t * handle,
+                           zoidfs::zoidfs_op_hint_t * op_hint)
+  {
+     /* create the empty wrapper */
+     CBSMWrapper * cbsm = CBSMWrapper::createCBSMWrapper(cb);
+
+     /* Sets up the handler for the RPC State Machine */
+     /* Should be changed to RPC KEY */
+     rpc::RPCClientHandle rpc_handle = client_->rpcConnect(ZOIDFS_COMMIT_RPC.c_str(), addr_);
+     boost::shared_ptr<RPCCommCommit> comm;
+     comm.reset(new RPCCommCommit (smm_, rpc_handle, poll_));
+     
+     /* create the state machine */
+     sm::SMClientSharedPtr sm(new iofwdclient::clientsm::CommitClientSM(*smm_, poll_, comm, 
+                              cbsm->getWCB(), ret, handle, op_hint));
+    
+     /* add the sm to the cb wrapper */ 
+     cbsm->set(sm);
+
+     /* execute the sm */
+     sm->execute();      
+  }
+
+
    void CBClient::cbgetattr(const IOFWDClientCB & cb,
          int * ret,
          const zoidfs::zoidfs_handle_t * handle,

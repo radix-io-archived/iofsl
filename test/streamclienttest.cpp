@@ -19,6 +19,23 @@ iofwdclient::IOFWDClient * iofslSetup( char * address, std::string opt_config)
    return x;
 }
 
+int commitTest(iofwdclient::IOFWDClient * client, std::string dir)
+{
+  int ret;  
+  zoidfs::zoidfs_handle_t pathHandle;
+  zoidfs::zoidfs_op_hint_t op_hint;
+  zoidfs::hints::zoidfs_hint_create(&op_hint);
+  std::ofstream testFile;
+  char * fname = new char[dir.length() + 25];
+  strcpy(fname, dir.c_str());
+  strcat(fname, "commitTest.txt");
+  testFile.open (fname);
+  testFile.close();  
+  client->lookup (NULL, NULL, fname, &pathHandle, &op_hint);
+  ret = client->commit(&pathHandle, &op_hint);
+  return ret; 
+}
+
 int lookupTest(iofwdclient::IOFWDClient * client, std::string dir)
 {
   zoidfs::zoidfs_handle_t pathHandle;
@@ -188,6 +205,8 @@ int runTest(std::string r, std::string s, std::string c, std::string d)
     return writeTest(client, d);
   else if (strcmp(r.c_str(), "read") == 0)
     return readTest(client, d);
+  else if (strcmp(r.c_str(), "commit") == 0)
+    return commitTest(client, d);
   std::cout << "No valid request selected for testing" << std::endl;
   return -1;
 

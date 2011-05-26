@@ -30,13 +30,14 @@
 #include "iofwdclient/clientsm/ReadClientSM.hh"
 #include "iofwdclient/clientsm/CreateClientSM.hh"
 #include "iofwdclient/streamwrappers/CreateStreams.hh"
-
+#include "iofwdclient/clientsm/CommitClientSM.hh"
 #include "common/rpc/CommonRequest.hh"
 #include "iofwdclient/clientsm/RPCCommClientSM.hh"
 #include "iofwdclient/clientsm/RPCCommWriteSM.hh"
 #include "iofwdclient/clientsm/RPCCommReadSM.hh"
 namespace iofwdclient
 {
+   typedef iofwdclient::clientsm::RPCCommClientSM<common::CommitRequest, common::CommitResponse> RPCCommCommit;
    typedef iofwdclient::clientsm::RPCCommClientSM<CreateInStream, CreateOutStream> RPCCommClientSMCreate;
    typedef iofwdclient::clientsm::RPCCommClientSM<common::LookupRequest, common::LookupResponse> RPCCommClientSMLookup;
    typedef iofwdclient::clientsm::RPCCommWriteSM<common::WriteRequest, common::WriteResponse> RPCCommClientSMWrite;
@@ -81,10 +82,10 @@ namespace iofwdclient
                        size_t UNUSED(buffer_length),
                        zoidfs::zoidfs_op_hint_t * UNUSED(op_hint)) {ASSERT ("ReadLink Not Implemented" != 0);}
                        
-         void cbcommit(const IOFWDClientCB & UNUSED(cb),
-                     int * UNUSED(ret),
-                     const zoidfs::zoidfs_handle_t * UNUSED(handle),
-                     zoidfs::zoidfs_op_hint_t * UNUSED(op_hint)) {ASSERT ("Commit Not Implemented" != 0); }
+         void cbcommit(const IOFWDClientCB & cb,
+                     int * ret,
+                     const zoidfs::zoidfs_handle_t * handle,
+                     zoidfs::zoidfs_op_hint_t * op_hint);
                      
          void cbcreate(const IOFWDClientCB & cb,
                      int * ret,
