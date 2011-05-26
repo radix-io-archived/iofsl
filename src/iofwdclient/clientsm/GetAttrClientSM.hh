@@ -1,5 +1,7 @@
 #ifndef IOFWDCLIENT_SM_GETATTRCLIENTSM
 #define IOFWDCLIENT_SM_GETATTRCLIENTSM
+#include <boost/shared_ptr.hpp>
+#include "iofwdclient/streamwrappers/ZoidFSStreamWrappers.hh"
 
 #include "sm/SMManager.hh"
 #include "sm/SimpleSM.hh"
@@ -8,47 +10,51 @@
 
 #include "iofwdutil/tools.hh"
 
+#include "iofwdevent/CBType.hh"
+
 #include "iofwdclient/IOFWDClientCB.hh"
 #include "iofwdclient/clientsm/RPCServerSM.hh"
+#include "iofwdclient/clientsm/RPCCommClientSM.hh"
+
+#include "encoder/EncoderString.hh"
 
 #include "zoidfs/zoidfs.h"
+#include "zoidfs/util/ZoidFSFileSpec.hh"
+#include "zoidfs/zoidfs-async.h"
+#include "zoidfs/zoidfs-rpc.h"
 
-#include "iofwdclient/streamwrappers/ZoidFSStreamWrappers.hh"
-
-#include <cstdio>
+#include "common/rpc/CommonRequest.hh"
 
 namespace iofwdclient
 {
-    using namespace streamwrappers;
-
     namespace clientsm
     {
-
+typedef boost::shared_ptr< iofwdclient::clientsm::RPCCommClientSM<common::RPCGetAttrRequest,common::RPCGetAttrResponse> > RPCCommGetAttr;
+typedef encoder::EncoderString<0, ZOIDFS_PATH_MAX> EncoderString;
 class GetAttrClientSM :
     public sm::SimpleSM< iofwdclient::clientsm::GetAttrClientSM >
 {
     public:
         GetAttrClientSM(sm::SMManager & smm,
                 bool poll,
+                RPCCommGetAttr comm, 
                 const IOFWDClientCB & cb,
-                net::AddressPtr addr,
                 int * ret,
                 const zoidfs::zoidfs_handle_t * handle,
                 zoidfs::zoidfs_attr_t * attr,
-                zoidfs::zoidfs_op_hint_t * op_hint) :
+                zoidfs::zoidfs_op_hint_t * UNUSED(op_hint)):
             sm::SimpleSM< iofwdclient::clientsm::GetAttrClientSM >(smm, poll),
             slots_(*this),
             cb_(cb),
             ret_(ret),
-            in_(GetAttrInStream(handle, op_hint)),
-            out_(attr, op_hint),
-            server_sm_(NULL)
+            attr_(attr),
+            comm_(comm)
         {
-            fprintf(stderr, "%s:%i\n", __func__, __LINE__);
-            addr_ = addr;
+          in_.handle = (zoidfs::zoidfs_handle_t) *handle;
         }
 
         ~GetAttrClientSM();
+
         void init(iofwdevent::CBException e);
 
         void postRPCServerSM(iofwdevent::CBException e);
@@ -63,11 +69,10 @@ class GetAttrClientSM :
 
         const IOFWDClientCB & cb_;
         int * ret_;
-
-        GetAttrInStream in_;
-        GetAttrOutStream out_;
-        net::AddressPtr addr_;
-        sm::SMClientSharedPtr server_sm_;
+        zoidfs::zoidfs_attr_t * attr_;
+        RPCCommGetAttr comm_;
+        common::RPCGetAttrRequest in_;
+        common::RPCGetAttrResponse out_;
 };
 
     }

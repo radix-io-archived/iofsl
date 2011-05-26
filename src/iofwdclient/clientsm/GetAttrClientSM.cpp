@@ -11,41 +11,41 @@ namespace iofwdclient
     namespace clientsm
     {
 
-GetAttrClientSM::~GetAttrClientSM()
-{
-}
+      GetAttrClientSM::~GetAttrClientSM()
+      {
+      }
 
-void GetAttrClientSM::init(iofwdevent::CBException e)
-{
-    fprintf(stderr, "%s:%i\n", __func__, __LINE__);
-    e.check();
-    setNextMethod(&GetAttrClientSM::postRPCServerSM);
-}
+      void GetAttrClientSM::init(iofwdevent::CBException e)
+      {
+          e.check();
+          setNextMethod(&GetAttrClientSM::postRPCServerSM);
+      }
 
-void GetAttrClientSM::postRPCServerSM(iofwdevent::CBException e)
-{
-    fprintf(stderr, "%s:%i\n", __func__, __LINE__);
-    e.check();
+      void GetAttrClientSM::postRPCServerSM(iofwdevent::CBException e)
+      {
+          e.check();
 
-//    server_sm_.reset(new RPCServerSM< GetAttrInStream, GetAttrOutStream >(smm_,
-//            poll_, slots_[BASE_SLOT], ZOIDFS_GETATTR_RPC, in_, out_, addr_));
+          /* Runs the RPC Client State Machine */
+          comm_->connect(in_, out_, slots_[BASE_SLOT]);
 
-    slots_.wait(BASE_SLOT, &GetAttrClientSM::waitRPCServerSM);
-}
+          /* Set up slot wait for completion */
+          slots_.wait(BASE_SLOT, &GetAttrClientSM::waitRPCServerSM);
+      }
 
-void GetAttrClientSM::waitRPCServerSM(iofwdevent::CBException e)
-{
-    fprintf(stderr, "%s:%i\n", __func__, __LINE__);
-    e.check();
-    cb_(zoidfs::ZFS_COMP_DONE, e);
-}
+      void GetAttrClientSM::waitRPCServerSM(iofwdevent::CBException e)
+      {
+          e.check();
+          *ret_ = out_.returnCode;
+          *attr_ = out_.attr_enc;
+          cb_(zoidfs::ZFS_COMP_DONE, e);
+      }
 
-void GetAttrClientSM::postSMErrorState(iofwdevent::CBException e)
-{
-    fprintf(stderr, "%s:%i\n", __func__, __LINE__);
-    e.check();
-    //cb_(zoidfs::ZFS_COMP_ERROR, e);
-}
+      void GetAttrClientSM::postSMErrorState(iofwdevent::CBException e)
+      {
+          e.check();
+          cb_(zoidfs::ZFS_COMP_ERROR, e);
+      }
 
+    
     }
 }

@@ -30,6 +30,7 @@
 #include "iofwdclient/clientsm/ReadClientSM.hh"
 #include "iofwdclient/clientsm/CreateClientSM.hh"
 #include "iofwdclient/clientsm/CommitClientSM.hh"
+
 #include "common/rpc/CommonRequest.hh"
 #include "iofwdclient/clientsm/RPCCommClientSM.hh"
 #include "iofwdclient/clientsm/RPCCommWriteSM.hh"
@@ -37,6 +38,7 @@
 namespace iofwdclient
 {
    typedef iofwdclient::clientsm::RPCCommClientSM<common::RPCCommitRequest, common::RPCCommitResponse> RPCCommCommit;
+   typedef iofwdclient::clientsm::RPCCommClientSM<common::RPCGetAttrRequest, common::RPCGetAttrResponse> RPCCommGetAttr;
    typedef iofwdclient::clientsm::RPCCommClientSM<common::RPCCreateRequest, common::RPCCreateResponse> RPCCommClientSMCreate;
    typedef iofwdclient::clientsm::RPCCommClientSM<common::RPCLookupRequest, common::RPCLookupResponse> RPCCommClientSMLookup;
    typedef iofwdclient::clientsm::RPCCommWriteSM<common::RPCWriteRequest, common::RPCWriteResponse> RPCCommClientSMWrite;
