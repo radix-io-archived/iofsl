@@ -24,24 +24,7 @@ namespace iofwd
       void IOFSLRPCWriteRequest::processDecode(const CBType & cb)
       {
          dec_ = rpc::RPCDecoder(read_ptr_, read_size_);
-
-         process (dec_, dec_struct.handle_);
-         process (dec_, dec_struct.mem_count_);
-         dec_struct.mem_starts_ = new void * [dec_struct.mem_count_];
-         dec_struct.mem_sizes_ = new size_t[dec_struct.mem_count_];
-         process (dec_, encoder::EncVarArray(dec_struct.mem_sizes_, dec_struct.mem_count_));
-
-         process (dec_, dec_struct.file_count_);         
-         dec_struct.file_starts_  = new zoidfs::zoidfs_file_ofs_t[dec_struct.file_count_];
-         dec_struct.file_sizes_   = new zoidfs::zoidfs_file_ofs_t[dec_struct.file_count_];
-
-         process (dec_, encoder::EncVarArray( dec_struct.file_starts_, dec_struct.file_count_));
-         process (dec_, encoder::EncVarArray( dec_struct.file_sizes_, dec_struct.file_count_));
-
-         /* Hint decoding disabled currently */
-//         zoidfs::hints::zoidfs_hint_create(&op_hint_);  
-//         decodeOpHint(&op_hint_); 
-
+         process(dec_, dec_struct);
          in_->rewindInput (read_size_ - dec_.getPos(), cb);
       }
 
@@ -81,8 +64,8 @@ namespace iofwd
           enc_ = rpc::RPCEncoder(write_ptr_, write_size_);
 
            /* Only returning the return code for now */
-          int returnCode = getReturnCode();
-          process (enc_, returnCode);
+          enc_struct.returnCode = getReturnCode();
+          process (enc_, enc_struct);
 
           /* rewind */
           out_->rewindOutput(write_size_ - enc_.getPos(), next);
@@ -99,27 +82,31 @@ namespace iofwd
       
       IOFSLRPCWriteRequest::ReqParam & IOFSLRPCWriteRequest::decodeParam() 
       { 
-          /* Pipelining no longer matter */
           param_.pipeline_size = 4194304;
           param_.max_buffer_size = 4194304;
           param_.op_hint_pipeline_enabled = true;
+
           param_.op_hint = &op_hint_;
 
           /* Values should already be decoded by now */
-          param_.handle = &dec_struct.handle_;
-          param_.mem_starts.reset((char **)dec_struct.mem_starts_);
-          param_.mem_sizes.reset(dec_struct.mem_sizes_);
-          param_.mem_count = dec_struct.mem_count_;
-          param_.file_count = dec_struct.file_count_;
-          param_.file_sizes.reset(dec_struct.file_sizes_);
-          param_.file_starts.reset(dec_struct.file_starts_);
- 
+          param_.handle = &dec_struct.handle;
+
+          param_.mem_count = dec_struct.file.file_count_;
+          param_.file_count = dec_struct.file.file_count_;
+          param_.file_sizes.reset(dec_struct.file.file_sizes_);
+          param_.file_starts.reset(dec_struct.file.file_starts_);
+
+          param_.mem_starts.reset(new char *[param_.file_count]);
+          param_.mem_sizes.reset(new size_t[param_.file_count]);
+          for (size_t x = 0; x < param_.file_count; x++)
+          {
+            param_.mem_starts[x] = NULL;
+            param_.mem_sizes[x] = param_.file_sizes[x];
+          }
           return param_; 
       }
       void IOFSLRPCWriteRequest::initRequestParams(ReqParam & p, void * bufferMem)
       {
-
-          /* Is this even called anymore? */
 
           // allocate buffer for normal mode
           if (p.pipeline_size == 0)
@@ -192,8 +179,9 @@ namespace iofwd
         void * loc;
         CBType next = boost::bind(&IOFSLRPCWriteRequest::recvCheck, this, _1, cb, rb,
                                   size, outSize, runSize);
-        loc = (void*)&(((char*)rb->buffer_->getMemory())[*outSize]);
-        readBuffer( next, (void**)&loc, size - *outSize, outSize);
+        *runSize += *outSize;
+        loc = (void*)&(((char*)rb->buffer_->getMemory())[*runSize]);
+        readBuffer( next, (void*)loc, size, outSize);
       }
 
       void IOFSLRPCWriteRequest::recvCheck (iofwdevent::CBException e,
@@ -204,8 +192,8 @@ namespace iofwd
                                             size_t * runSize)
       {
         e.check();
-        if (*outSize != size)
-          recvRead (cb, rb, size, outSize, runSize);
+        if (*outSize < size)
+          recvRead (cb, rb, size - *outSize, outSize, runSize);
         else
         {
           delete [] outSize;
@@ -214,31 +202,31 @@ namespace iofwd
         }
       }
   
-      void IOFSLRPCWriteRequest::readBuffer (CBType cb, void ** buff, size_t sizdec_, size_t * outSize)
+      void IOFSLRPCWriteRequest::readBuffer (CBType cb, void * buff, size_t sizdec_, size_t * outSize)
       {
          void ** tmpBuffer = (void **)new char * [1];
 
          CBType next = boost::bind(&IOFSLRPCWriteRequest::bufferRecv, this, _1, cb,
                                    buff, sizdec_, outSize, tmpBuffer);
-
+         *outSize = 0;
          in_->read((const void **)tmpBuffer, outSize, next, sizdec_);
       }
 
 
       void IOFSLRPCWriteRequest::bufferRecv (iofwdevent::CBException e, CBType cb,
-                                               void ** buff, size_t sizdec_,
+                                               void * buff, size_t sizdec_,
                                                size_t * outSize, void ** tmpBuffer)     
       {
          e.check();
          if (*outSize < sizdec_)
          {
-            std::memcpy ( *buff, *tmpBuffer, *outSize);
+            std::memcpy ( buff, *tmpBuffer, *outSize);
             delete[] tmpBuffer;
-            cb(iofwdevent::CBException()); 
+            cb(iofwdevent::CBException());
          }
          else
          {
-            std::memcpy ( *buff, *tmpBuffer, sizdec_);
+            std::memcpy ( buff, *tmpBuffer, sizdec_);
             delete[] tmpBuffer;
             in_->rewindInput (*outSize - sizdec_, cb);
          }

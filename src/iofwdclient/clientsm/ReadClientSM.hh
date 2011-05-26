@@ -2,7 +2,6 @@
 #define IOFWDCLIENT_SM_READCLIENTSM
 
 #include "iofwdclient/streamwrappers/ZoidFSStreamWrappers.hh"
-#include "iofwdclient/streamwrappers/WriteStreams.hh"
 
 #include "sm/SMManager.hh"
 #include "sm/SimpleSM.hh"

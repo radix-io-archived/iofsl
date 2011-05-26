@@ -2,7 +2,7 @@
 #define IOFWDCLIENT_SM_WRITECLIENTSM
 
 #include "iofwdclient/streamwrappers/ZoidFSStreamWrappers.hh"
-#include "iofwdclient/streamwrappers/WriteStreams.hh"
+#include "common/rpc/CommonRequest.hh"
 
 #include "sm/SMManager.hh"
 #include "sm/SimpleSM.hh"
@@ -15,9 +15,13 @@
 #include "iofwdclient/clientsm/RPCServerSM.hh"
 #include "iofwdclient/clientsm/RPCCommClientSM.hh"
 #include "iofwdclient/clientsm/RPCCommWriteSM.hh"
-#include "zoidfs/zoidfs.h"
 
-#include <cstdio>
+#include "zoidfs/zoidfs.h"
+#include "zoidfs/util/ZoidfsFileOfsStruct.hh"
+#include "zoidfs/zoidfs-async.h"
+#include "zoidfs/zoidfs-rpc.h"
+
+#include "iofwdevent/CBType.hh"
 
 namespace iofwdclient
 {
@@ -25,7 +29,7 @@ namespace iofwdclient
 
     namespace clientsm
     {
-typedef boost::shared_ptr< iofwdclient::clientsm::RPCCommWriteSM<WriteInStream, WriteOutStream> > RPCCommClientSMWrite;
+typedef boost::shared_ptr< iofwdclient::clientsm::RPCCommWriteSM<common::WriteRequest, common::WriteResponse> > RPCCommClientSMWrite;
 class WriteClientSM :
     public sm::SimpleSM< iofwdclient::clientsm::WriteClientSM >
 {
@@ -39,16 +43,20 @@ class WriteClientSM :
                 const void *mem_starts[], const size_t mem_sizes[],
                 size_t file_count, const zoidfs::zoidfs_file_ofs_t file_starts[],
                 zoidfs::zoidfs_file_ofs_t file_sizes[],
-                zoidfs::zoidfs_op_hint_t * op_hint) :
+                zoidfs::zoidfs_op_hint_t * UNUSED(op_hint)) :
             sm::SimpleSM< iofwdclient::clientsm::WriteClientSM >(smm, poll),
             slots_(*this),
             cb_(cb),
             ret_(ret),
             comm_(comm),
-            in_(WriteInStream(handle, mem_count, mem_starts, mem_sizes, 
-                               file_count, file_starts, file_sizes, op_hint)),
-            out_(op_hint)
+            mem_count_(mem_count),
+            mem_starts_((char**)(mem_starts)),
+            mem_sizes_((size_t*)(mem_sizes))
         {
+          in_.handle = *handle;
+          in_.file.file_count_ = file_count;
+          in_.file.file_starts_ = (zoidfs::zoidfs_file_ofs_t *)(file_starts);
+          in_.file.file_sizes_ = file_sizes;
         }
 
         ~WriteClientSM();
@@ -68,8 +76,11 @@ class WriteClientSM :
         const IOFWDClientCB & cb_;
         int * ret_;
         RPCCommClientSMWrite comm_;
-        streamwrappers::WriteInStream in_;
-        streamwrappers::WriteOutStream out_;
+        common::WriteRequest in_;
+        common::WriteResponse out_;
+        size_t mem_count_;
+        char ** mem_starts_;
+        size_t * mem_sizes_;
 };
 
     }
