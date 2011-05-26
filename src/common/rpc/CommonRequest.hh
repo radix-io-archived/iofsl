@@ -19,7 +19,13 @@ namespace common
 
   ENCODERSTRUCT(WriteRequest, ((zoidfs_handle_t)(handle))
                               ((ZoidfsFileOfsStruct)(file)))
+
   ENCODERSTRUCT(WriteResponse, ((int)(returnCode)))
+
+  ENCODERSTRUCT(ReadRequest, ((zoidfs_handle_t)(handle))
+                             ((ZoidfsFileOfsStruct)(file)))
+  
+  ENCODERSTRUCT(ReadResponse, ((int)(returnCode)))
 }
 
 
