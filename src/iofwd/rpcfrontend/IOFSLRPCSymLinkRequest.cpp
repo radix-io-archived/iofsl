@@ -8,33 +8,33 @@ namespace iofwd
    {
       const IOFSLRPCSymLinkRequest::ReqParam & IOFSLRPCSymLinkRequest::decodeParam() 
       { 
-          if (inStruct.from_full_path.value.size() > 0)
+          if (inStruct.from.full_path.value.size() > 0)
           {
-            param_.from_full_path = const_cast<char *>(inStruct.from_full_path.value.c_str());
+            param_.from_full_path = const_cast<char *>(inStruct.from.full_path.value.c_str());
             param_.from_component_name = 0;
             param_.from_parent_handle = 0; 
           }
           else
           {
             param_.from_full_path = 0;
-            param_.from_component_name = const_cast<char *>(inStruct.from_component_name.value.c_str());
-            param_.from_parent_handle = &inStruct.from_parent_handle; 
+            param_.from_component_name = const_cast<char *>(inStruct.from.component.value.c_str());
+            param_.from_parent_handle = &inStruct.from.handle; 
           }
 
-          if (inStruct.to_full_path.value.size() > 0)
+          if (inStruct.to.full_path.value.size() > 0)
           {
-            param_.to_full_path = const_cast<char *>(inStruct.to_full_path.value.c_str());
+            param_.to_full_path = const_cast<char *>(inStruct.to.full_path.value.c_str());
             param_.to_component_name = 0;
             param_.to_parent_handle = 0;
           }
           else
           {
             param_.to_full_path = 0;
-            param_.to_component_name = const_cast<char *>(inStruct.to_component_name.value.c_str());
-            param_.to_parent_handle = &inStruct.to_parent_handle;
+            param_.to_component_name = const_cast<char *>(inStruct.to.component.value.c_str());
+            param_.to_parent_handle = &inStruct.to.handle;
           }
-          param_.sattr = &inStruct.sattr;
-          param_.op_hint = &op_hint_; 
+
+          param_.op_hint = NULL; 
           return param_; 
       }
 
@@ -45,14 +45,21 @@ namespace iofwd
                                         to_parent_hint_)
       {
           /* verify the args are OK */
-          ASSERT(getReturnCode() != zoidfs::ZFS_OK || from_parent_hint_ || to_parent_hint_);
+          ASSERT(getReturnCode() == zoidfs::ZFS_OK);
 
           /* store ptr to the attr */
+          outStruct.returnCode = getReturnCode();
           outStruct.to_parent_hint = *to_parent_hint_;
           outStruct.from_parent_hint = *from_parent_hint_;
-          outStruct.returnCode = getReturnCode();
+      
+          zoidfs::zoidfs_op_hint_t op_hint_;
+          zoidfs::hints::zoidfs_hint_create(&op_hint_);  
 
-          encode(cb);
+          /* @TODO: Remove this later */
+          param_.op_hint = &op_hint_;
+
+          /* encode */
+          encode(cb);    
       }
 
       IOFSLRPCSymLinkRequest::~IOFSLRPCSymLinkRequest()
