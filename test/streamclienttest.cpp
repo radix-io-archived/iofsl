@@ -116,6 +116,68 @@ int writeTest(iofwdclient::IOFWDClient * client, std::string dir)
   }
   return 0;
 }
+
+int readTest(iofwdclient::IOFWDClient * client, std::string dir)
+{
+  int  _N = 1;
+  size_t _BSIZE = 5000000;
+  size_t mem_sizes[_N]; 
+  size_t _foff = 0; 
+  size_t mem_count, file_count; 
+  uint64_t file_sizes[_N], file_starts[_N]; 
+  void *mem_starts_write[_N]; 
+  size_t _i = 0; 
+  mem_count = _N; 
+  file_count = _N; 
+
+  for(_i = 0 ; _i < mem_count ; _i++) 
+  { 
+     mem_starts_write[_i] = malloc(_BSIZE); 
+     memset(mem_starts_write[_i], 'z', _BSIZE); 
+     file_sizes[_i] = mem_sizes[_i] = _BSIZE; 
+     file_starts[_i] = _foff; 
+     _foff += _BSIZE; 
+  } 
+
+  /* Create Test File */
+  std::ofstream testFile;
+  char * fname = new char[dir.length() + 18];
+  strcpy(fname, dir.c_str());
+  strcat(fname, "lookuptest.txt");
+  testFile.open (fname);
+  testFile << ((char**)mem_starts_write)[0];
+  testFile.close();
+
+  zoidfs::zoidfs_handle_t fullFileHandle;
+  zoidfs::zoidfs_op_hint_t op_hint;
+  zoidfs::hints::zoidfs_hint_create(&op_hint);
+  client->lookup (NULL, NULL, fname, &fullFileHandle, &op_hint);
+
+  for(_i = 0 ; _i < mem_count ; _i++) 
+  { 
+     free(mem_starts_write[_i]); 
+  } 
+
+  _foff = 0;  
+  for(_i = 0 ; _i < mem_count ; _i++) 
+  { 
+     mem_starts_write[_i] = malloc(_BSIZE); 
+     file_sizes[_i] = mem_sizes[_i] = _BSIZE; 
+     file_starts[_i] = _foff; 
+     _foff += _BSIZE; 
+  } 
+  client->read (&fullFileHandle, mem_count, (void **)mem_starts_write, mem_sizes, 
+                file_count, file_starts, file_sizes, ZOIDFS_NO_OP_HINT); 
+
+  for (size_t x = 0; x < _BSIZE; x++)
+    if (((char**)mem_starts_write)[0][x] != 'z')
+    {
+      std::cout << "INVALID CHARACTOR AT " << x << std::endl;
+      return -1;
+    }
+  return 0;
+}
+
 int runTest(std::string r, std::string s, std::string c, std::string d)
 {
   /* Setup client */
@@ -124,6 +186,8 @@ int runTest(std::string r, std::string s, std::string c, std::string d)
     return lookupTest(client, d);
   else if (strcmp(r.c_str(), "write") == 0)
     return writeTest(client, d);
+  else if (strcmp(r.c_str(), "read") == 0)
+    return readTest(client, d);
   std::cout << "No valid request selected for testing" << std::endl;
   return -1;
 
