@@ -36,6 +36,27 @@ int commitTest(iofwdclient::IOFWDClient * client, std::string dir)
   return ret; 
 }
 
+int createTest (iofwdclient::IOFWDClient * client, std::string dir)
+{
+  int created;
+  zoidfs::zoidfs_sattr_t sattr;
+  zoidfs::zoidfs_handle_t fullFileHandle;
+  std::ofstream testFile;
+  char * fname = new char[dir.length() + 18];
+  strcpy(fname, dir.c_str());
+  strcat(fname, "createtest.txt");
+  zoidfs::zoidfs_op_hint_t op_hint;
+  zoidfs::hints::zoidfs_hint_create(&op_hint);
+  client->create(NULL, NULL, fname, &sattr, &fullFileHandle, &created, &op_hint);
+  std::ifstream ifile(fname);
+  if (!ifile || created != 1) {
+    std::cout << "File was not created!" << std::endl;
+    return -1;
+  }
+  return 0;
+}
+
+
 int lookupTest(iofwdclient::IOFWDClient * client, std::string dir)
 {
   zoidfs::zoidfs_handle_t pathHandle;
@@ -207,6 +228,8 @@ int runTest(std::string r, std::string s, std::string c, std::string d)
     return readTest(client, d);
   else if (strcmp(r.c_str(), "commit") == 0)
     return commitTest(client, d);
+  else if (strcmp(r.c_str(), "create") == 0)
+    return createTest(client, d);
   std::cout << "No valid request selected for testing" << std::endl;
   return -1;
 

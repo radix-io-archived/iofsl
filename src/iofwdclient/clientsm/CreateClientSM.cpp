@@ -1,10 +1,4 @@
 #include "iofwdclient/clientsm/CreateClientSM.hh"
-//#include "iofwdclient/FakeBlocker.hh"
-
-#include "zoidfs/zoidfs-async.h"
-#include "zoidfs/zoidfs-rpc.h"
-#include "iofwdevent/CBType.hh"
-#include <cstdio>
 
 namespace iofwdclient
 {
@@ -17,14 +11,12 @@ CreateClientSM::~CreateClientSM()
 
 void CreateClientSM::init(iofwdevent::CBException e)
 {
-//    fprintf(stderr, "%s:%i\n", __func__, __LINE__);
     e.check();
     setNextMethod(&CreateClientSM::postRPCServerSM);
 }
 
 void CreateClientSM::postRPCServerSM(iofwdevent::CBException e)
 {
-//    fprintf(stderr, "CreateClientSM:%s:%i\n", __func__, __LINE__);
     e.check();
 
     /* Runs the RPC Client State Machine */
@@ -36,14 +28,15 @@ void CreateClientSM::postRPCServerSM(iofwdevent::CBException e)
 
 void CreateClientSM::waitRPCServerSM(iofwdevent::CBException e)
 {
-//    fprintf(stderr, "CreateClientSM:%s:%i\n", __func__, __LINE__);
     e.check();
+    *ret_ = out_.returnCode;
+    *handle_ = out_.handle;
+    *created_ = out_.created;
     cb_(zoidfs::ZFS_COMP_DONE, e);
 }
 
 void CreateClientSM::postSMErrorState(iofwdevent::CBException e)
 {
-//    fprintf(stderr, "%s:%i\n", __func__, __LINE__);
     e.check();
     cb_(zoidfs::ZFS_COMP_ERROR, e);
 }

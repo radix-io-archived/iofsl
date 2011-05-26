@@ -3,38 +3,25 @@
 
 #include "zoidfs/util/zoidfs-wrapped.hh"
 #include "zoidfs/zoidfs.h"
-#include "encoder/EncoderStruct.hh"
-#include "encoder/EncoderString.hh"
 #include "iofwd/CreateRequest.hh"
 #include "iofwd/rpcfrontend/RPCSimpleRequest.hh"
 #include "iofwd/rpcfrontend/IOFSLRPCRequest.hh"
-#include "encoder/EncoderWrappers.hh"
-#include "zoidfs/util/ZoidFSFileSpec.hh"
-using namespace encoder;
+#include "common/rpc/CommonRequest.hh"
 
 namespace iofwd
 {
    namespace rpcfrontend
    {
-      typedef zoidfs::zoidfs_handle_t zoidfs_handle_t;
-      typedef zoidfs::zoidfs_sattr_t zoidfs_sattr_t;
-      typedef zoidfs::ZoidFSFileSpec ZoidFSFileSpec;
-      ENCODERSTRUCT (RPCCreateIn, ((ZoidFSFileSpec)(info))            
-                                  ((zoidfs_sattr_t)(attr)))
-
-      ENCODERSTRUCT (RPCCreateOut, ((int)(returnCode))
-                                   ((zoidfs_handle_t)(handle))
-                                   ((int)(created)))
       
       class IOFSLRPCCreateRequest :
-          public RPCSimpleRequest<RPCCreateIn, RPCCreateOut>,
+          public RPCSimpleRequest<common::CreateRequest, common::CreateResponse>,
           public CreateRequest
       {
           public:
               IOFSLRPCCreateRequest(int opid,
                       iofwdevent::ZeroCopyInputStream * in,
                       iofwdevent::ZeroCopyOutputStream * out) :
-                  RPCSimpleRequest<RPCCreateIn, RPCCreateOut>(in, out),
+                  RPCSimpleRequest<common::CreateRequest, common::CreateResponse>(in, out),
                   CreateRequest(opid)
               {
               }

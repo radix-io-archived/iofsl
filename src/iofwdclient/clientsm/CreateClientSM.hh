@@ -2,7 +2,6 @@
 #define IOFWDCLIENT_SM_CREATECLIENTSM
 
 #include "iofwdclient/streamwrappers/ZoidFSStreamWrappers.hh"
-#include "iofwdclient/streamwrappers/CreateStreams.hh"
 
 #include "sm/SMManager.hh"
 #include "sm/SimpleSM.hh"
@@ -14,9 +13,15 @@
 #include "iofwdclient/IOFWDClientCB.hh"
 #include "iofwdclient/clientsm/RPCServerSM.hh"
 #include "iofwdclient/clientsm/RPCCommClientSM.hh"
-#include "zoidfs/zoidfs.h"
 
-#include <cstdio>
+#include "common/rpc/CommonRequest.hh"
+#include "encoder/EncoderString.hh"
+#include "zoidfs/zoidfs.h"
+#include "zoidfs/zoidfs-async.h"
+#include "zoidfs/zoidfs-rpc.h"
+
+#include "iofwdevent/CBType.hh"
+
 
 namespace iofwdclient
 {
@@ -24,7 +29,8 @@ namespace iofwdclient
 
     namespace clientsm
     {
-typedef boost::shared_ptr< iofwdclient::clientsm::RPCCommClientSM<CreateInStream,CreateOutStream> > RPCCommClientCreate;
+typedef boost::shared_ptr< iofwdclient::clientsm::RPCCommClientSM<common::CreateRequest,common::CreateResponse> > RPCCommClientCreate;
+typedef encoder::EncoderString<0, ZOIDFS_PATH_MAX> EncoderString;
 class CreateClientSM :
     public sm::SimpleSM< iofwdclient::clientsm::CreateClientSM >
 {
@@ -40,16 +46,26 @@ class CreateClientSM :
                        const zoidfs::zoidfs_sattr_t *sattr, 
                        zoidfs::zoidfs_handle_t *handle,
                        int *created,
-                       zoidfs::zoidfs_op_hint_t * op_hint):
+                       zoidfs::zoidfs_op_hint_t * UNUSED(op_hint)):
             sm::SimpleSM< iofwdclient::clientsm::CreateClientSM >(smm, poll),
             slots_(*this),
             cb_(cb),
             ret_(ret),
-            comm_(comm),
-            in_(CreateInStream(parent_handle, component_name, full_path, sattr, op_hint)),
-            out_(handle, created, op_hint)
+            comm_(comm)
         {
-//            fprintf(stderr, "%s:%i\n", __func__, __LINE__);
+          if (parent_handle != NULL)
+          {
+            in_.info.handle = *parent_handle;
+            in_.info.component = EncoderString(component_name);
+          }
+          else
+          {
+            in_.info.full_path = EncoderString(full_path);
+          }
+          in_.attr = *sattr;
+          /* Return values */
+          handle_ = handle;
+          created_ = created;
         }
 
         ~CreateClientSM();
@@ -69,8 +85,10 @@ class CreateClientSM :
         const IOFWDClientCB & cb_;
         int * ret_;
         RPCCommClientCreate comm_;
-        streamwrappers::CreateInStream in_;
-        streamwrappers::CreateOutStream out_;
+        common::CreateRequest in_;
+        common::CreateResponse out_;
+        zoidfs::zoidfs_handle_t * handle_;
+        int * created_;
 };
 
     }

@@ -11,12 +11,21 @@ namespace common
   typedef zoidfs::ZoidFSFileSpec ZoidFSFileSpec;
   typedef zoidfs::zoidfs_handle_t zoidfs_handle_t;
   typedef zoidfs::ZoidfsFileOfsStruct ZoidfsFileOfsStruct;
-
+  typedef zoidfs::zoidfs_sattr_t zoidfs_sattr_t;
 
   /* Commit */
 
   ENCODERSTRUCT (CommitRequest, ((zoidfs_handle_t)(handle)))
   ENCODERSTRUCT (CommitResponse, ((int)(returnCode)))
+
+  /* Create */
+  
+  ENCODERSTRUCT (CreateRequest, ((ZoidFSFileSpec)(info))            
+                                ((zoidfs_sattr_t)(attr)))
+
+  ENCODERSTRUCT (CreateResponse, ((int)(returnCode))
+                                 ((zoidfs_handle_t)(handle))
+                                 ((int)(created)))
 
   /* Lookup */
 
@@ -36,7 +45,7 @@ namespace common
                              ((ZoidfsFileOfsStruct)(file)))
   ENCODERSTRUCT(ReadResponse, ((int)(returnCode)))
 
-    
+
 
 }
 
