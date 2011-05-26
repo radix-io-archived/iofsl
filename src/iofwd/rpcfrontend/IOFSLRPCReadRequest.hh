@@ -10,33 +10,14 @@
 #include "iofwd/rpcfrontend/IOFSLRPCRequest.hh"
 #include "iofwdutil/mm/BMIMemoryManager.hh"
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <time.h>
+#include "zoidfs/util/ZoidfsFileOfsStruct.hh"
+
+#include "common/rpc/CommonRequest.hh"
 
 namespace iofwd
 {
    namespace rpcfrontend
    {
-
-      typedef zoidfs::zoidfs_dirent_t zoidfs_dirent_t;
-      typedef zoidfs::zoidfs_op_hint_t zoidfs_op_hint_t;
-      typedef zoidfs::zoidfs_handle_t zoidfs_handle_t;
-      typedef zoidfs::zoidfs_dirent_cookie_t zoidfs_dirent_cookie_t;
-      typedef zoidfs::zoidfs_file_ofs_t zoidfs_file_ofs_t;
-      typedef iofwdevent::CBType CBType;
-      ENCODERSTRUCT (IOFSLRPCReadDec, ((zoidfs_handle_t)(handle_)) 
-                                        ((size_t)(mem_count_))
-                                        ((void**)(mem_starts_))              
-                                        ((size_t*)(mem_sizes_))
-                                        ((size_t)(file_count_))
-                                        ((zoidfs_file_ofs_t*)(file_starts_))
-                                        ((zoidfs_file_ofs_t*)(file_sizes_))
-                                        ((size_t)(pipeline_size_)))
-
-      ENCODERSTRUCT (IOFSLRPCReadEnc, ((int)(returnCode))
-                                      ((zoidfs_file_ofs_t*)(file_starts))
-                                      ((zoidfs_file_ofs_t*)(file_sizes)))
 
       class IOFSLRPCReadRequest :
           public IOFSLRPCRequest,
@@ -120,8 +101,8 @@ namespace iofwd
 
              // @TODO: This should not be specified here. however its required
              //        to use the memory manager (BMIMemoryManager)
-             IOFSLRPCReadEnc enc_struct;
-             IOFSLRPCReadDec dec_struct;
+             common::ReadResponse enc_struct;
+             common::ReadRequest dec_struct;
 
              /* pointers and sizes of mem stream data */
              const char * read_ptr_;
