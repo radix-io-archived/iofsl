@@ -7,7 +7,7 @@
 #include "zoidfs/util/EncodeDirentT.hh"
 namespace common
 {
-  //typedef encoder::EncoderString<0, ZOIDFS_PATH_MAX> EncoderString;
+  typedef encoder::EncoderString<0, ZOIDFS_PATH_MAX> EncoderString;
   typedef zoidfs::ZoidFSFileSpec ZoidFSFileSpec;
   typedef zoidfs::zoidfs_handle_t zoidfs_handle_t;
   typedef zoidfs::ZoidfsFileOfsStruct ZoidfsFileOfsStruct;
@@ -73,6 +73,14 @@ namespace common
                                      ((EncodeDirentT)(entries))
                                      ((zoidfs_cache_hint_t)(cache)))
 
+
+  /* Read Link */
+
+  ENCODERSTRUCT (RPCReadLinkRequest,  ((zoidfs_handle_t)(handle))
+                                      ((size_t)(buffer_length)))
+
+  ENCODERSTRUCT (RPCReadLinkResponse, ((int)(returnCode))
+                                      ((EncoderString)(buffer)))
 
   /* Write */  
 

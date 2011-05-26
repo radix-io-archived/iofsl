@@ -10,7 +10,7 @@ namespace iofwd
       { 
           param_.handle = &inStruct.handle; 
           param_.buffer_length = inStruct.buffer_length;
-          param_.op_hint = &op_hint_; 
+          param_.op_hint = NULL;
           return param_; 
       }
 
@@ -18,9 +18,17 @@ namespace iofwd
                                           size_t buffer_length_)
       {
           /* verify the args are OK */
-          ASSERT(getReturnCode() != zoidfs::ZFS_OK || buffer_ || buffer_length_);
-          outStruct.buffer.value.assign(buffer_);
-          outStruct.buffer_length = buffer_length_;
+          ASSERT(getReturnCode() == zoidfs::ZFS_OK );
+
+
+
+          outStruct.returnCode = getReturnCode();
+          outStruct.buffer.value.assign(buffer_, buffer_length_);
+
+          zoidfs::hints::zoidfs_hint_create(&op_hint_);  
+          /* @TODO: Remove this later */
+          param_.op_hint = &op_hint_;
+
           /* encode */
           encode(cb);
       }
