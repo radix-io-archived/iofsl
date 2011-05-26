@@ -33,6 +33,8 @@ CPPCLIENTLIB += \
     src/iofwdclient/clientsm/WriteClientSM.hh \
     src/iofwdclient/clientsm/WriteClientSM.cpp \
     src/iofwdclient/clientsm/RPCCommClientSM.hh \
+    src/iofwdclient/clientsm/CommitClientSM.hh \
+    src/iofwdclient/clientsm/CommitClientSM.cpp \
     src/iofwdclient/streamwrappers/LookupStreams.hh \
     src/iofwdclient/streamwrappers/WriteStreams.hh \
     src/iofwdclient/streamwrappers/CreateStreams.hh \

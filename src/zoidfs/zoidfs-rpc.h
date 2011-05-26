@@ -11,6 +11,7 @@ namespace zoidfs
 #define ZOIDFS_WRITE_RPC std::string("iofslclientrpc.write")
 #define ZOIDFS_READ_RPC std::string("iofslclientrpc.read")
 #define ZOIDFS_CREATE_RPC std::string("iofslclientrpc.create")
+#define ZOIDFS_COMMIT_RPC std::string("iofslclientrpc.commit")
 }
 
 #endif

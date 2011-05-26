@@ -16,7 +16,8 @@ namespace iofwd
       void IOFSLRPCCommitRequest::reply(const CBType & cb)
       {
           /* verify the args are OK */
-          ASSERT(getReturnCode() != zoidfs::ZFS_OK);
+          ASSERT(getReturnCode() == zoidfs::ZFS_OK);
+
           /* Store handle/return code information for output */
           outStruct.returnCode = getReturnCode();
 
