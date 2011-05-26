@@ -4,7 +4,7 @@
 #include "encoder/EncoderStruct.hh"
 #include "zoidfs/util/ZoidFSFileSpec.hh"
 #include "zoidfs/util/ZoidfsFileOfsStruct.hh"
-
+#include "zoidfs/util/EncodeDirentT.hh"
 namespace common
 {
   //typedef encoder::EncoderString<0, ZOIDFS_PATH_MAX> EncoderString;
@@ -14,7 +14,9 @@ namespace common
   typedef zoidfs::zoidfs_sattr_t zoidfs_sattr_t;
   typedef zoidfs::zoidfs_attr_t zoidfs_attr_t;
   typedef zoidfs::zoidfs_cache_hint_t zoidfs_cache_hint_t;
-
+  typedef zoidfs::zoidfs_dirent_cookie_t zoidfs_dirent_cookie_t;
+  typedef zoidfs::zoidfs_dirent_t zoidfs_dirent_t;
+  typedef zoidfs::EncodeDirentT EncodeDirentT;
   /* Commit */
 
   ENCODERSTRUCT (CommitRequest, ((zoidfs_handle_t)(handle)))
@@ -46,11 +48,31 @@ namespace common
                                   ((zoidfs_cache_hint_t)(from_parent_hint))
                                   ((zoidfs_cache_hint_t)(to_parent_hint)))
 
+  /* mkdir request */
+
+  ENCODERSTRUCT (RPCMkdirRequest, ((ZoidFSFileSpec)(dir))
+                                  ((zoidfs_sattr_t)(sattr)))
+
+  ENCODERSTRUCT (RPCMkdirResponse, ((int)(returnCode))
+                                   ((zoidfs_cache_hint_t)(parent_hint)))
+
   /* Lookup */
 
   ENCODERSTRUCT(LookupRequest,  ((ZoidFSFileSpec)(info)))
   ENCODERSTRUCT(LookupResponse, ((int)(returnCode))
                                 ((zoidfs_handle_t)(handle)))
+
+
+  /* Read Dir */
+
+  ENCODERSTRUCT (RPCReadDirRequest, ((zoidfs_handle_t)(handle)) 
+                                    ((zoidfs_dirent_cookie_t)(cookie))
+                                    ((uint32_t)(entry_count))              
+                                    ((uint32_t)(flags)))
+  ENCODERSTRUCT (RPCReadDirResponse, ((int)(returnCode))
+                                     ((EncodeDirentT)(entries))
+                                     ((zoidfs_cache_hint_t)(cache)))
+
 
   /* Write */  
 
