@@ -82,6 +82,13 @@ namespace common
   ENCODERSTRUCT (RPCReadLinkResponse, ((int)(returnCode))
                                       ((EncoderString)(buffer)))
 
+  /* Remove Request */
+
+  ENCODERSTRUCT (RPCRemoveRequest, ((ZoidFSFileSpec)(info)))
+
+  ENCODERSTRUCT (RPCRemoveResponse, ((int)(returnCode))
+                                    ((zoidfs_cache_hint_t)(parent_hint)))
+
   /* Write */  
 
   ENCODERSTRUCT(WriteRequest, ((zoidfs_handle_t)(handle))
