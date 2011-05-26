@@ -67,20 +67,17 @@ namespace iofwdclient
                    zoidfs::zoidfs_attr_t * attr,
                    zoidfs::zoidfs_op_hint_t * op_hint)
    {
-      // validate arguments
-      // Can op_hint be 0?
-      if (*request || !handle || !attr)
-         return zoidfs::ZFSERR_INVAL;
+      IOFWDRequestPtr r(tracker_->newRequest ());
+      intrusive_ptr_add_ref(r.get());
 
-      // Create request
-      //   newRequest automatically increments the refcount to compensate for
-      //   the lack of automatic refcounting in the C API
-      IOFWDRequestPtr r (tracker_->newRequest ());
+      r->setCompletionStatus(zoidfs::ZFS_COMP_NONE);
 
       cbclient_.cbgetattr (tracker_->getCB (r),
                  r->getReturnPointer (),
                  handle, attr, op_hint);
 
+      //tmp = r;
+      (*request) = (void *) r.get();
       return zoidfs::ZFS_OK;
    }
 

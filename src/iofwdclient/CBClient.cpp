@@ -66,9 +66,15 @@ namespace iofwdclient
        /* create the empty wrapper */
        CBSMWrapper * cbsm = CBSMWrapper::createCBSMWrapper(cb);
 
+       /* Sets up the handler for the RPC State Machine */
+       /* Should be changed to RPC KEY */
+       rpc::RPCClientHandle rpc_handle = client_->rpcConnect(ZOIDFS_CREATE_RPC.c_str(), addr_);
+       boost::shared_ptr<RPCCommGetAttr> comm;
+       comm.reset(new RPCCommGetAttr (smm_, rpc_handle, poll_));
+
        /* create the state machine */
-       sm::SMClientSharedPtr sm(new iofwdclient::clientsm::GetAttrClientSM(*smm_, poll_,
-                                cbsm->getWCB(), addr_, ret, handle, attr, op_hint));
+       sm::SMClientSharedPtr sm(new iofwdclient::clientsm::GetAttrClientSM(*smm_, poll_, comm,
+                                cbsm->getWCB(), ret, handle, attr, op_hint));
       
        /* add the sm to the cb wrapper */ 
        cbsm->set(sm);
