@@ -10,20 +10,25 @@ namespace iofwd
           param_.handle = &inStruct.handle ; 
           param_.attr = &inStruct.attr; 
           param_.sattr = &inStruct.sattr;
-
-          param_.op_hint = &op_hint_; 
+          param_.op_hint = NULL; 
           return param_; 
       }
       void IOFSLRPCSetAttrRequest::reply(const CBType & cb,
               const zoidfs::zoidfs_attr_t * attr)
       {
           /* verify the args are OK */
-        ASSERT(getReturnCode() != zoidfs::ZFS_OK || attr);
+          ASSERT(getReturnCode() == zoidfs::ZFS_OK);
 
-        /* store ptr to the attr */
-        outStruct.attr = *attr;
-        outStruct.returnCode = getReturnCode();
-        encode(cb);
+          /* store ptr to the attr */
+          outStruct.attr_enc = (*attr);
+          outStruct.returnCode = getReturnCode();
+
+          zoidfs::hints::zoidfs_hint_create(&op_hint_);  
+          /* @TODO: Remove this later */
+          param_.op_hint = &op_hint_;
+
+          /* encode */
+          encode(cb);
       }
 
       IOFSLRPCSetAttrRequest::~IOFSLRPCSetAttrRequest()
