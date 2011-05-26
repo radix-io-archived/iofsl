@@ -29,12 +29,14 @@ namespace clientsm
          {
          }
 
-         void connect(const INTYPE & in_, OUTTYPE & out_, 
+         void connect(const INTYPE & in_, OUTTYPE & out_, size_t mem_count,
+                      char ** mem_starts, size_t * mem_sizes,
                       const iofwdevent::CBType & cb_)
          {
             server_sm_ .reset(new RPCClientRead<INTYPE,OUTTYPE>(*smm_, poll_, cb_,
                                                             rpc_handle_, in_, 
-                                                            out_));
+                                                            out_, mem_count, 
+                                                            mem_starts, mem_sizes));
 	          server_sm_->execute();
          }
 

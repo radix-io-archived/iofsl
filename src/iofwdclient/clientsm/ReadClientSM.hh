@@ -13,10 +13,14 @@
 #include "iofwdclient/IOFWDClientCB.hh"
 #include "iofwdclient/clientsm/RPCServerSM.hh"
 #include "iofwdclient/clientsm/RPCCommReadSM.hh"
-#include "iofwdclient/streamwrappers/ReadStreams.hh"
 #include "zoidfs/zoidfs.h"
 
-#include <cstdio>
+#include "zoidfs/zoidfs-async.h"
+#include "zoidfs/zoidfs-rpc.h"
+
+#include "iofwdevent/CBType.hh"
+
+#include "common/rpc/CommonRequest.hh"
 
 namespace iofwdclient
 {
@@ -24,7 +28,7 @@ namespace iofwdclient
 
     namespace clientsm
     {
-typedef boost::shared_ptr< iofwdclient::clientsm::RPCCommReadSM<ReadInStream, ReadOutStream> > RPCCommClientSMRead;
+typedef boost::shared_ptr< iofwdclient::clientsm::RPCCommReadSM<common::ReadRequest, common::ReadResponse> > RPCCommClientSMRead;
 class ReadClientSM :
     public sm::SimpleSM< iofwdclient::clientsm::ReadClientSM >
 {
@@ -38,16 +42,20 @@ class ReadClientSM :
                       void *mem_starts[], const size_t mem_sizes[],
                       size_t file_count, const zoidfs::zoidfs_file_ofs_t file_starts[],
                       zoidfs::zoidfs_file_ofs_t file_sizes[],
-                      zoidfs::zoidfs_op_hint_t * op_hint) :
+                      zoidfs::zoidfs_op_hint_t * UNUSED(op_hint)) :
             sm::SimpleSM< iofwdclient::clientsm::ReadClientSM >(smm, poll),
             slots_(*this),
             cb_(cb),
             ret_(ret),
             comm_(comm),
-            in_(ReadInStream(handle, mem_count, mem_starts, mem_sizes, 
-                             file_count, file_starts, file_sizes, op_hint)),
-            out_(op_hint, mem_count, mem_starts, mem_sizes)
+            mem_count_(mem_count),
+            mem_starts_((char**)(mem_starts)),
+            mem_sizes_((size_t*)(mem_sizes))
         {
+          in_.handle = *handle;
+          in_.file.file_count_ = file_count;
+          in_.file.file_starts_ = (zoidfs::zoidfs_file_ofs_t *)(file_starts);
+          in_.file.file_sizes_ = file_sizes;
         }
 
         ~ReadClientSM();
@@ -66,8 +74,11 @@ class ReadClientSM :
         const IOFWDClientCB & cb_;
         int * ret_;
         RPCCommClientSMRead comm_;
-        streamwrappers::ReadInStream in_;
-        streamwrappers::ReadOutStream out_;
+        common::ReadRequest in_;
+        common::ReadResponse out_;
+        size_t mem_count_;
+        char ** mem_starts_;
+        size_t * mem_sizes_;
 };
 
     }
