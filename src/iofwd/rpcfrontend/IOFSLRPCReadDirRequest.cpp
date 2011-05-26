@@ -13,7 +13,7 @@ namespace iofwd
           param_.entries = new zoidfs::zoidfs_dirent_t[inStruct.entry_count];
           param_.flags = inStruct.flags;
           param_.cookie = inStruct.cookie;
-          param_.op_hint = &op_hint_; 
+          param_.op_hint = NULL;
           return param_; 
       }
 
@@ -22,15 +22,18 @@ namespace iofwd
                                        zoidfs::zoidfs_cache_hint_t * cache_)
       {
           /* verify the args are OK */
-          ASSERT(getReturnCode() != zoidfs::ZFS_OK || entries_ || cache_);
+          ASSERT(getReturnCode() == zoidfs::ZFS_OK);
 
           /* store ptr to the attr */
-          outStruct.entries = *entries_;
+          outStruct.entries.list = entries_;
+          outStruct.entries.count = entry_count_;
           outStruct.cache = *cache_;
-          outStruct.entry_count = entry_count_;
           outStruct.returnCode = getReturnCode();
-      
-          /* encode */
+
+          zoidfs::hints::zoidfs_hint_create(&op_hint_);  
+          /* @TODO: Remove this later */
+          param_.op_hint = &op_hint_;
+
           encode(cb);
       }
 
