@@ -3,30 +3,24 @@
 
 #include "zoidfs/util/zoidfs-wrapped.hh"
 #include "zoidfs/zoidfs.h"
-#include "encoder/EncoderStruct.hh"
 #include "iofwd/GetAttrRequest.hh"
 #include "iofwd/rpcfrontend/RPCSimpleRequest.hh"
+#include "common/rpc/CommonRequest.hh"
 #include "encoder/Util.hh"
+
 namespace iofwd
 {
    namespace rpcfrontend
    {
-      typedef zoidfs::zoidfs_handle_t zoidfs_handle_t;
-      typedef zoidfs::zoidfs_attr_t zoidfs_attr_t;
-      ENCODERSTRUCT (IOFSLRPCGetAttrDec, ((zoidfs_handle_t)(handle))
-                                         ((zoidfs_attr_t)(attr)))
-      ENCODERSTRUCT (IOFSLRPCGetAttrEnc, ((int)(returnCode))
-                                          ((zoidfs_attr_t)(attr_enc)))
-
       class IOFSLRPCGetAttrRequest :
-          public RPCSimpleRequest<IOFSLRPCGetAttrDec, IOFSLRPCGetAttrEnc>,
+          public RPCSimpleRequest<common::GetAttributeRequest, common::GetAttributeResponse>,
           public GetAttrRequest
       {
           public:
               IOFSLRPCGetAttrRequest(int opid,
                       iofwdevent::ZeroCopyInputStream * in,
                       iofwdevent::ZeroCopyOutputStream * out) :
-                  RPCSimpleRequest<IOFSLRPCGetAttrDec, IOFSLRPCGetAttrEnc>(in,out),
+                  RPCSimpleRequest<common::GetAttributeRequest, common::GetAttributeResponse>(in,out),
                   GetAttrRequest(opid)
               {
               }

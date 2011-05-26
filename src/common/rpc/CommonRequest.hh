@@ -12,6 +12,7 @@ namespace common
   typedef zoidfs::zoidfs_handle_t zoidfs_handle_t;
   typedef zoidfs::ZoidfsFileOfsStruct ZoidfsFileOfsStruct;
   typedef zoidfs::zoidfs_sattr_t zoidfs_sattr_t;
+  typedef zoidfs::zoidfs_attr_t zoidfs_attr_t;
 
   /* Commit */
 
@@ -26,6 +27,13 @@ namespace common
   ENCODERSTRUCT (CreateResponse, ((int)(returnCode))
                                  ((zoidfs_handle_t)(handle))
                                  ((int)(created)))
+
+  /* GetAttr */
+
+  ENCODERSTRUCT (GetAttributeRequest, ((zoidfs_handle_t)(handle))
+                                 ((zoidfs_attr_t)(attr)))
+  ENCODERSTRUCT (GetAttributeResponse, ((int)(returnCode))
+                                  ((zoidfs_attr_t)(attr_enc)))
 
   /* Lookup */
 
