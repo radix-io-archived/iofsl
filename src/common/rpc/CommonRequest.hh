@@ -13,6 +13,7 @@ namespace common
   typedef zoidfs::ZoidfsFileOfsStruct ZoidfsFileOfsStruct;
   typedef zoidfs::zoidfs_sattr_t zoidfs_sattr_t;
   typedef zoidfs::zoidfs_attr_t zoidfs_attr_t;
+  typedef zoidfs::zoidfs_cache_hint_t zoidfs_cache_hint_t;
 
   /* Commit */
 
@@ -34,6 +35,16 @@ namespace common
                                  ((zoidfs_attr_t)(attr)))
   ENCODERSTRUCT (GetAttributeResponse, ((int)(returnCode))
                                   ((zoidfs_attr_t)(attr_enc)))
+
+
+  /* Link Request */
+
+  ENCODERSTRUCT (RPCLinkRequest, ((ZoidFSFileSpec)(from))
+                                 ((ZoidFSFileSpec)(to)))
+
+  ENCODERSTRUCT (RPCLinkResponse, ((int)(returnCode))
+                                  ((zoidfs_cache_hint_t)(from_parent_hint))
+                                  ((zoidfs_cache_hint_t)(to_parent_hint)))
 
   /* Lookup */
 
