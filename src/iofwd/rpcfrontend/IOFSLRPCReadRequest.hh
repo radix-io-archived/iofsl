@@ -101,8 +101,8 @@ namespace iofwd
 
              // @TODO: This should not be specified here. however its required
              //        to use the memory manager (BMIMemoryManager)
-             common::ReadResponse enc_struct;
-             common::ReadRequest dec_struct;
+             common::RPCReadResponse enc_struct;
+             common::RPCReadRequest dec_struct;
 
              /* pointers and sizes of mem stream data */
              const char * read_ptr_;

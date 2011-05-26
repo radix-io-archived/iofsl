@@ -19,23 +19,23 @@ namespace common
   typedef zoidfs::EncodeDirentT EncodeDirentT;
   /* Commit */
 
-  ENCODERSTRUCT (CommitRequest, ((zoidfs_handle_t)(handle)))
-  ENCODERSTRUCT (CommitResponse, ((int)(returnCode)))
+  ENCODERSTRUCT (RPCCommitRequest, ((zoidfs_handle_t)(handle)))
+  ENCODERSTRUCT (RPCCommitResponse, ((int)(returnCode)))
 
   /* Create */
   
-  ENCODERSTRUCT (CreateRequest, ((ZoidFSFileSpec)(info))            
+  ENCODERSTRUCT (RPCCreateRequest, ((ZoidFSFileSpec)(info))            
                                 ((zoidfs_sattr_t)(attr)))
 
-  ENCODERSTRUCT (CreateResponse, ((int)(returnCode))
+  ENCODERSTRUCT (RPCCreateResponse, ((int)(returnCode))
                                  ((zoidfs_handle_t)(handle))
                                  ((int)(created)))
 
   /* GetAttr */
 
-  ENCODERSTRUCT (GetAttributeRequest, ((zoidfs_handle_t)(handle))
+  ENCODERSTRUCT (RPCGetAttrRequest, ((zoidfs_handle_t)(handle))
                                  ((zoidfs_attr_t)(attr)))
-  ENCODERSTRUCT (GetAttributeResponse, ((int)(returnCode))
+  ENCODERSTRUCT (RPCGetAttrResponse, ((int)(returnCode))
                                   ((zoidfs_attr_t)(attr_enc)))
 
   /* Link Request */
@@ -57,8 +57,8 @@ namespace common
 
   /* Lookup */
 
-  ENCODERSTRUCT(LookupRequest,  ((ZoidFSFileSpec)(info)))
-  ENCODERSTRUCT(LookupResponse, ((int)(returnCode))
+  ENCODERSTRUCT(RPCLookupRequest,  ((ZoidFSFileSpec)(info)))
+  ENCODERSTRUCT(RPCLookupResponse, ((int)(returnCode))
                                 ((zoidfs_handle_t)(handle)))
 
 
@@ -117,15 +117,15 @@ namespace common
 
   /* Write */  
 
-  ENCODERSTRUCT(WriteRequest, ((zoidfs_handle_t)(handle))
+  ENCODERSTRUCT(RPCWriteRequest, ((zoidfs_handle_t)(handle))
                               ((ZoidfsFileOfsStruct)(file)))
-  ENCODERSTRUCT(WriteResponse, ((int)(returnCode)))
+  ENCODERSTRUCT(RPCWriteResponse, ((int)(returnCode)))
 
   /* Read */
 
-  ENCODERSTRUCT(ReadRequest, ((zoidfs_handle_t)(handle))
+  ENCODERSTRUCT(RPCReadRequest, ((zoidfs_handle_t)(handle))
                              ((ZoidfsFileOfsStruct)(file)))
-  ENCODERSTRUCT(ReadResponse, ((int)(returnCode)))
+  ENCODERSTRUCT(RPCReadResponse, ((int)(returnCode)))
 
 
 

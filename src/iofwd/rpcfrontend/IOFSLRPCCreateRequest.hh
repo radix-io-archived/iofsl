@@ -14,14 +14,14 @@ namespace iofwd
    {
       
       class IOFSLRPCCreateRequest :
-          public RPCSimpleRequest<common::CreateRequest, common::CreateResponse>,
+          public RPCSimpleRequest<common::RPCCreateRequest, common::RPCCreateResponse>,
           public CreateRequest
       {
           public:
               IOFSLRPCCreateRequest(int opid,
                       iofwdevent::ZeroCopyInputStream * in,
                       iofwdevent::ZeroCopyOutputStream * out) :
-                  RPCSimpleRequest<common::CreateRequest, common::CreateResponse>(in, out),
+                  RPCSimpleRequest<common::RPCCreateRequest, common::RPCCreateResponse>(in, out),
                   CreateRequest(opid)
               {
               }

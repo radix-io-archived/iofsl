@@ -94,8 +94,8 @@ namespace iofwd
 
               ReqParam param_;
 
-              common::WriteResponse enc_struct;
-              common::WriteRequest dec_struct;
+              common::RPCWriteResponse enc_struct;
+              common::RPCWriteRequest dec_struct;
               // @TODO: This should not be specified here. however its required
               //        to use the memory manager (BMIMemoryManager)
               iofwdutil::bmi::BMIAddr *  addr_;

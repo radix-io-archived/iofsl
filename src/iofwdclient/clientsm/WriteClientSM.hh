@@ -29,7 +29,7 @@ namespace iofwdclient
 
     namespace clientsm
     {
-typedef boost::shared_ptr< iofwdclient::clientsm::RPCCommWriteSM<common::WriteRequest, common::WriteResponse> > RPCCommClientSMWrite;
+typedef boost::shared_ptr< iofwdclient::clientsm::RPCCommWriteSM<common::RPCWriteRequest, common::RPCWriteResponse> > RPCCommClientSMWrite;
 class WriteClientSM :
     public sm::SimpleSM< iofwdclient::clientsm::WriteClientSM >
 {
@@ -76,8 +76,8 @@ class WriteClientSM :
         const IOFWDClientCB & cb_;
         int * ret_;
         RPCCommClientSMWrite comm_;
-        common::WriteRequest in_;
-        common::WriteResponse out_;
+        common::RPCWriteRequest in_;
+        common::RPCWriteResponse out_;
         size_t mem_count_;
         char ** mem_starts_;
         size_t * mem_sizes_;
