@@ -105,6 +105,16 @@ namespace common
                                      ((zoidfs_attr_t)(attr_enc)))
 
 
+  /* Sym link request */
+
+  ENCODERSTRUCT (RPCSymlinkRequest, ((ZoidFSFileSpec)(from))
+                                 ((ZoidFSFileSpec)(to)))
+
+  ENCODERSTRUCT (RPCSymlinkResponse, ((int)(returnCode))
+                                     ((zoidfs_cache_hint_t)(from_parent_hint))
+                                     ((zoidfs_cache_hint_t)(to_parent_hint)))
+
+
   /* Write */  
 
   ENCODERSTRUCT(WriteRequest, ((zoidfs_handle_t)(handle))
