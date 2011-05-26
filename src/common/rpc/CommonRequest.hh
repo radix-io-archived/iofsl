@@ -89,6 +89,15 @@ namespace common
   ENCODERSTRUCT (RPCRemoveResponse, ((int)(returnCode))
                                     ((zoidfs_cache_hint_t)(parent_hint)))
 
+  /* Rename Request */
+
+  ENCODERSTRUCT (RPCRenameRequest, ((ZoidFSFileSpec)(from))
+                                   ((ZoidFSFileSpec)(to)))
+
+  ENCODERSTRUCT (RPCRenameResponse, ((int)(returnCode))
+                                    ((zoidfs_cache_hint_t)(from_parent_hint))
+                                    ((zoidfs_cache_hint_t)(to_parent_hint)))
+  
   /* Write */  
 
   ENCODERSTRUCT(WriteRequest, ((zoidfs_handle_t)(handle))
