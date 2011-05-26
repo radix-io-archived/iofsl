@@ -28,6 +28,9 @@
 #include "net/Address.hh"
 #include "net/Net.hh"
 
+#include "common/rpc/CommonRequest.hh"
+#include "zoidfs/util/ZoidfsFileOfsStruct.hh"
+
 #include <cstdio>
 
 using namespace iofwdclient;
@@ -50,35 +53,36 @@ class RPCClientWrite :
                        const iofwdevent::CBType & cb,
                        rpc::RPCClientHandle rpc_handle,
                        const INTYPE & in,
-                       OUTTYPE & out) :
+                       OUTTYPE & out,
+                       size_t mem_count, 
+                       char ** mem_starts,
+                       size_t * mem_sizes) :
             sm::SimpleSM< iofwdclient::clientsm::RPCClientWrite <INTYPE,OUTTYPE> >(smm, poll),
             slots_(*this),
             e_(in),
             d_(out),
-            rpc_handle_(rpc_handle)
+            rpc_handle_(rpc_handle),
+            mem_count_(mem_count),
+            buf_(0),
+            pos_(0),
+            mem_starts_(mem_starts),
+            mem_sizes_(mem_sizes)
         {
-            inStream_.reset( new INTYPE(static_cast<const zoidfs::zoidfs_handle_t*>(in.handle_),
-                                        static_cast<size_t>(in.mem_count_), 
-                                        static_cast<const void **>(in.mem_starts_),
-                                        static_cast<const size_t *>(in.mem_sizes_),
-                                        static_cast<size_t>(in.file_count_), 
-                                        static_cast<const zoidfs::zoidfs_file_ofs_t*>(in.file_starts_),
-                                        static_cast<zoidfs::zoidfs_file_ofs_t*>(in.file_sizes_), 
-                                        (zoidfs::zoidfs_op_hint_t*) NULL));
             cb_ = (iofwdevent::CBType)cb;
         }
 
         ~RPCClientWrite()
         {
-//	   fprintf(stderr,"Im Being Destroyed\n");
         }
 
         void init(iofwdevent::CBException e)
         {
             e.check();
+
             /* this is an error, causes e_.data_ to be freed early */
             /* Get the maximum possible send size */
             e_.net_data_size_ = rpc::getRPCEncodedSize(e_.data_).getMaxSize();
+
             /* Set the output stream */
             rpc_handle_->waitOutReady (slots_[BASE_SLOT]);
             slots_.wait (BASE_SLOT, 
@@ -95,8 +99,7 @@ class RPCClientWrite :
         }
 
         void postSetupConnection(iofwdevent::CBException e)
-        {
-         
+        {         
             e.check();
 
             /* setup the write stream */
@@ -116,7 +119,6 @@ class RPCClientWrite :
 
         void postEncodeData(iofwdevent::CBException e)
         {
-//	    fprintf(stderr, "Posting Encode\n");         
             e.check();
 
             /* create the encoder */
@@ -134,12 +136,11 @@ class RPCClientWrite :
         /* Get the write buffer for writing data */
         void getWriteBuffer (iofwdevent::CBException e)
         {
-//	    fprintf(stderr,"Got Write Buffer\n");
             e.check();         
 
             /* setup the write stream */
             e_.zero_copy_stream_->write(&e_.data_ptr_, &e_.data_size_, slots_[BASE_SLOT],
-                    RemainingWrite(inStream_.get()));
+                    RemainingWrite());
 
             slots_.wait(BASE_SLOT,&RPCClientWrite<INTYPE,OUTTYPE>::writeData);
         }
@@ -147,7 +148,6 @@ class RPCClientWrite :
         void flushWriteBuffer (iofwdevent::CBException e)
         {
             e.check();
-//	    fprintf(stderr, "Flushing Write Buffer\n");
             e_.zero_copy_stream_->flush(slots_[BASE_SLOT]);
             slots_.wait(BASE_SLOT,
                     &RPCClientWrite<INTYPE,OUTTYPE>::getWriteBuffer);  
@@ -157,10 +157,8 @@ class RPCClientWrite :
         void writeData (iofwdevent::CBException e)
         {
             e.check();
-            
             size_t outSize = e_.data_size_;
-//	    fprintf(stderr, "Output Size: %i\n", outSize);
-            int ret = getWriteData (&e_.data_ptr_, &outSize, inStream_.get());
+            int ret = getWriteData (&e_.data_ptr_, &outSize);
             /* write finished */
             if (ret == 0)
             {
@@ -172,7 +170,6 @@ class RPCClientWrite :
             /* More data to be written (out of write buffer) */
             else 
             {
-    //           fprintf(stderr,"Going to next write\n");
                setNextMethod(&RPCClientWrite<INTYPE,OUTTYPE>::flushWriteBuffer);               
             }
         }
@@ -186,11 +183,7 @@ class RPCClientWrite :
 
         void postFlush(iofwdevent::CBException e)
         {
-  //          fprintf(stderr, "Posting Flush\n");         
             e.check();
-
-            // Before we can access the output channel we need to wait until the RPC
-            // code did its thing
 
             if (e_.zero_copy_stream_->type == 'T')            
                e_.zero_copy_stream_->close(slots_[BASE_SLOT]);   
@@ -202,7 +195,6 @@ class RPCClientWrite :
 
         void waitFlush(iofwdevent::CBException e)
         {
-         
             e.check();
             rpc_handle_->waitInReady (slots_[BASE_SLOT]);
             slots_.wait(BASE_SLOT,&RPCClientWrite<INTYPE,OUTTYPE>::postDecodeData);
@@ -211,7 +203,6 @@ class RPCClientWrite :
         
         void postDecodeData(iofwdevent::CBException e)
         {
-         
             e.check();      
             /* get the max size */
             d_.net_data_size_ = rpc::getRPCEncodedSize(OUTTYPE()).getMaxSize();
@@ -225,7 +216,6 @@ class RPCClientWrite :
 
         void waitDecodeData(iofwdevent::CBException e)
         {
-         
             e.check();
 
             d_.coder_ = rpc::RPCDecoder(d_.data_ptr_, d_.data_size_);
@@ -240,13 +230,70 @@ class RPCClientWrite :
             cb_ (e);
         }
 
+      inline size_t RemainingWrite ()
+      {
+         int buf = buf_;
+         size_t size = 0;
+         for (size_t i = buf; i < mem_count_; i++)
+            size += mem_sizes_[i];
+         return size;    
+      }
+
+      /* Write data to the stream */
+      inline int getWriteData (void ** buffer, size_t * size)
+      {
+         /* Which input buffer are we on */
+         int buf = buf_;
+         /* position in that buffer */
+         size_t pos = pos_;
+         /* Current size copied */
+         size_t curSize = 0;
+         /* output buffer offset */
+         int buffer_offset = 0;
+         /* return flag */
+         int ret = 0;
+         for (size_t i = buf; i < mem_count_; i++)
+         {
+            /* if there is additional data to be read */
+            if (pos < mem_sizes_[i])
+            {
+               /* if the entire buffer can be copied */
+               if (curSize + (mem_sizes_[i] - pos) < *size)
+               {
+                  memcpy ( &((char*)(*buffer))[buffer_offset], 
+                          &(((char **)(mem_starts_))[i][pos]), 
+                          mem_sizes_[i] - pos);
+                  curSize = curSize + mem_sizes_[i] - pos;
+                  buffer_offset = buffer_offset + mem_sizes_[i] - pos; 
+                  pos = 0;
+               }
+               /* if there is not enough room for the buffer to be copied */
+               else
+               {
+                  memcpy ( &((char*)(*buffer))[buffer_offset], 
+                          &(((char **)mem_starts_)[i])[pos], 
+                          *size - curSize);
+                  pos = pos + *size - curSize;
+                  curSize =  *size;
+                  buffer_offset = *size;
+                  ret = 1;
+                  buf = i;
+                  break; 
+               }
+            }
+         }
+         *size = curSize;
+         pos_ = pos; 
+         buf_ = buf;
+         return ret;
+      }
+
     protected:
         /* SM */
         enum {BASE_SLOT = 0, NUM_BASE_SLOTS};
         sm::SimpleSlots<NUM_BASE_SLOTS,
             iofwdclient::clientsm::RPCClientWrite <INTYPE,OUTTYPE> > slots_;
         iofwdevent::CBType cb_;
-
         /* RPC */
         const std::string rpc_func_;
         boost::shared_ptr<iofwd::RPCClient> rpc_client_;
@@ -262,6 +309,12 @@ class RPCClientWrite :
         rpc::RPCClientHandle rpc_handle_;
         
         boost::shared_ptr<INTYPE> inStream_;
+
+        size_t mem_count_;
+        size_t buf_;
+        size_t pos_; 
+        char ** mem_starts_;
+        size_t * mem_sizes_;
 };
 
     }

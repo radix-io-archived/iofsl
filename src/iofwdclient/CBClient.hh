@@ -27,7 +27,6 @@
 #include "iofwdclient/clientsm/GetAttrClientSM.hh"
 #include "iofwdclient/clientsm/LookupClientSM.hh"
 #include "iofwdclient/clientsm/WriteClientSM.hh"
-#include "iofwdclient/streamwrappers/WriteStreams.hh"
 #include "iofwdclient/clientsm/ReadClientSM.hh"
 #include "iofwdclient/streamwrappers/ReadStreams.hh"
 #include "iofwdclient/clientsm/CreateClientSM.hh"
@@ -41,7 +40,7 @@ namespace iofwdclient
 {
    typedef iofwdclient::clientsm::RPCCommClientSM<CreateInStream, CreateOutStream> RPCCommClientSMCreate;
    typedef iofwdclient::clientsm::RPCCommClientSM<common::LookupRequest, common::LookupResponse> RPCCommClientSMLookup;
-   typedef iofwdclient::clientsm::RPCCommWriteSM<WriteInStream, WriteOutStream> RPCCommClientSMWrite;
+   typedef iofwdclient::clientsm::RPCCommWriteSM<common::WriteRequest, common::WriteResponse> RPCCommClientSMWrite;
    typedef iofwdclient::clientsm::RPCCommReadSM<ReadInStream, ReadOutStream> RPCCommClientSMRead;
    /**
     * Implements a callback version of the async zoidfs API
