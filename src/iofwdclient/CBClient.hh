@@ -29,7 +29,6 @@
 #include "iofwdclient/clientsm/WriteClientSM.hh"
 #include "iofwdclient/clientsm/ReadClientSM.hh"
 #include "iofwdclient/clientsm/CreateClientSM.hh"
-#include "iofwdclient/streamwrappers/CreateStreams.hh"
 #include "iofwdclient/clientsm/CommitClientSM.hh"
 #include "common/rpc/CommonRequest.hh"
 #include "iofwdclient/clientsm/RPCCommClientSM.hh"

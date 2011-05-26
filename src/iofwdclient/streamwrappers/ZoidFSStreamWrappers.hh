@@ -3,6 +3,4 @@
 
 /* include for the streams */
 #include "iofwdclient/streamwrappers/GetAttrStreams.hh"
-#include "iofwdclient/streamwrappers/CreateStreams.hh"
-//#include "iofwdclient/streamwrappers/LookupStreams.hh"
 #endif
