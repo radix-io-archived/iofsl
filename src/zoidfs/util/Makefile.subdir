@@ -45,4 +45,6 @@ src/zoidfs/util/ZoidFSBlockAsync.hh \
 src/zoidfs/util/ZoidFSBlockAsync.cpp \
 src/zoidfs/util/ZoidFSBlockAsync.cpp \
 src/zoidfs/util/ZoidFSFileSpec.hh \
-src/zoidfs/util/ZoidfsFileOfsStruct.hh
+src/zoidfs/util/ZoidfsFileOfsStruct.hh \
+src/zoidfs/util/EncodeDirentT.hh \
+src/zoidfs/util/ZoidFSHints.hh
