@@ -90,9 +90,9 @@ void TestEncode ( GenericTransform &  e, GenericTransform & d)
   
   trans.flush(cb);
 
-  cout << s.getTotalLen() - s.spaceRemaining() << endl;
-  d.transform(s.getMemPtr(),s.getTotalLen() - s.spaceRemaining(), transStorage, 
-              10000, &outSize, &outState, true);
+//  cout << s.getTotalLen() - s.spaceRemaining() << endl;
+//  d.transform(s.getMemPtr(),s.getTotalLen() - s.spaceRemaining(), transStorage, 
+//              10000, &outSize, &outState, true);
 
   BOOST_CHECK( outSize != 0);
   cout << "Output Size " << outSize << endl;

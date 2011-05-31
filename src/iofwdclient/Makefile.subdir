@@ -32,12 +32,10 @@ CPPCLIENTLIB += \
     src/iofwdclient/clientsm/LookupClientSM.cpp \
     src/iofwdclient/clientsm/WriteClientSM.hh \
     src/iofwdclient/clientsm/WriteClientSM.cpp \
+    src/iofwdclient/clientsm/RPCClientRead.hh \
     src/iofwdclient/clientsm/RPCCommClientSM.hh \
     src/iofwdclient/clientsm/CommitClientSM.hh \
     src/iofwdclient/clientsm/CommitClientSM.cpp \
-    src/iofwdclient/streamwrappers/LookupStreams.hh \
-    src/iofwdclient/streamwrappers/WriteStreams.hh \
-    src/iofwdclient/streamwrappers/CreateStreams.hh \
     src/iofwdclient/LinkHelper.hh \
     src/iofwdclient/LinkHelper.cpp \
     src/iofwdclient/IOFWDClient.cpp \
@@ -47,9 +45,10 @@ CPPCLIENTLIB += \
     src/iofwdclient/clientsm/RPCClientWrite.hh \
     src/iofwdclient/clientsm/RPCCommWriteSM.hh \
     src/iofwdclient/clientsm/RPCCommReadSM.hh \
-    src/iofwdclient/streamwrappers/ReadStreams.hh \
     src/iofwdclient/clientsm/ReadClientSM.hh \
     src/iofwdclient/clientsm/ReadClientSM.cpp \
+    src/iofwdclient/streamwrappers/ZoidFSStreamWrappers.hh \
+    src/iofwdclient/streamwrappers/GetAttrStreams.hh \
     \
     src/iofwdclient/zoidfsclient-cwrappers.c
 

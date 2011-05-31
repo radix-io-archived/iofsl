@@ -227,7 +227,9 @@ src/iofwd/rpcfrontend/IOFSLRPCResizeRequest.cpp \
 src/iofwd/rpcfrontend/IOFSLRPCSetAttrRequest.hh \
 src/iofwd/rpcfrontend/IOFSLRPCSetAttrRequest.cpp \
 src/iofwd/rpcfrontend/IOFSLRPCSymLinkRequest.hh \
-src/iofwd/rpcfrontend/IOFSLRPCSymLinkRequest.cpp 
+src/iofwd/rpcfrontend/IOFSLRPCSymLinkRequest.cpp \
+src/iofwd/rpcfrontend/RPCSimpleRequest.hh \
+src/iofwd/rpcfrontend/IOFSLRPCGenProcess.hh 
 
 
 if DISPATCH_ROSS
