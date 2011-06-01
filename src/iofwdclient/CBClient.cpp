@@ -83,6 +83,37 @@ namespace iofwdclient
        sm->execute();
    }
 
+
+   void CBClient::cbmkdir(const IOFWDClientCB & cb,
+                          int * ret,
+                          const zoidfs::zoidfs_handle_t * parent_handle,
+                          const char * component_name, const char * full_path,
+                          const zoidfs::zoidfs_sattr_t * sattr,
+                          zoidfs::zoidfs_cache_hint_t * parent_hint,
+                          zoidfs::zoidfs_op_hint_t * op_hint)
+   {
+       /* create the empty wrapper */
+       CBSMWrapper * cbsm = CBSMWrapper::createCBSMWrapper(cb);
+
+       /* Sets up the handler for the RPC State Machine */
+       /* Should be changed to RPC KEY */
+       rpc::RPCClientHandle rpc_handle = client_->rpcConnect(ZOIDFS_MKDIR_RPC.c_str(), addr_);
+       boost::shared_ptr<RPCCommMkdir> comm;
+       comm.reset(new RPCCommMkdir (smm_, rpc_handle, poll_));
+       
+       /* create the state machine */
+       sm::SMClientSharedPtr sm(new iofwdclient::clientsm::MkdirClientSM(*smm_, poll_, comm, 
+                                cbsm->getWCB(), ret, parent_handle, component_name, full_path, sattr,
+                                parent_hint, op_hint));
+      
+       /* add the sm to the cb wrapper */ 
+       cbsm->set(sm);
+
+       /* execute the sm */
+       sm->execute();      
+   }
+
+
    void CBClient::cbcreate(const IOFWDClientCB & cb,
                           int * ret,
                           const zoidfs::zoidfs_handle_t *parent_handle,

@@ -30,6 +30,8 @@
 #include "iofwdclient/clientsm/ReadClientSM.hh"
 #include "iofwdclient/clientsm/CreateClientSM.hh"
 #include "iofwdclient/clientsm/CommitClientSM.hh"
+#include "iofwdclient/clientsm/MkdirClientSM.hh"
+
 
 #include "common/rpc/CommonRequest.hh"
 #include "iofwdclient/clientsm/RPCCommClientSM.hh"
@@ -38,11 +40,13 @@
 namespace iofwdclient
 {
    typedef iofwdclient::clientsm::RPCCommClientSM<common::RPCCommitRequest, common::RPCCommitResponse> RPCCommCommit;
+   typedef iofwdclient::clientsm::RPCCommClientSM<common::RPCMkdirRequest, common::RPCMkdirResponse> RPCCommMkdir;
    typedef iofwdclient::clientsm::RPCCommClientSM<common::RPCGetAttrRequest, common::RPCGetAttrResponse> RPCCommGetAttr;
    typedef iofwdclient::clientsm::RPCCommClientSM<common::RPCCreateRequest, common::RPCCreateResponse> RPCCommClientSMCreate;
    typedef iofwdclient::clientsm::RPCCommClientSM<common::RPCLookupRequest, common::RPCLookupResponse> RPCCommClientSMLookup;
    typedef iofwdclient::clientsm::RPCCommWriteSM<common::RPCWriteRequest, common::RPCWriteResponse> RPCCommClientSMWrite;
    typedef iofwdclient::clientsm::RPCCommReadSM<common::RPCReadRequest, common::RPCReadResponse> RPCCommClientSMRead;
+
    /**
     * Implements a callback version of the async zoidfs API
     */
@@ -142,13 +146,13 @@ namespace iofwdclient
                       zoidfs::zoidfs_cache_hint_t * UNUSED(to_parent_hint),
                       zoidfs::zoidfs_op_hint_t * UNUSED(op_hint)) {ASSERT ("symlink Not Implemented" != 0); }
                       
-         void cbmkdir(const IOFWDClientCB & UNUSED(cb),
-                    int * UNUSED(ret),
-                    const zoidfs::zoidfs_handle_t * UNUSED(parent_handle),
-                    const char * UNUSED(component_name), const char * UNUSED(full_path),
-                    const zoidfs::zoidfs_sattr_t * UNUSED(sattr),
-                    zoidfs::zoidfs_cache_hint_t * UNUSED(parent_hint),
-                    zoidfs::zoidfs_op_hint_t * UNUSED(op_hint)) {ASSERT ("mkdir Not Implemented" != 0); }
+         void cbmkdir(const IOFWDClientCB & cb,
+                    int * ret,
+                    const zoidfs::zoidfs_handle_t * parent_handle,
+                    const char * component_name, const char * full_path,
+                    const zoidfs::zoidfs_sattr_t * sattr,
+                    zoidfs::zoidfs_cache_hint_t * parent_hint,
+                    zoidfs::zoidfs_op_hint_t * op_hint);
                             
          void cbreaddir(const IOFWDClientCB & UNUSED(cb),
                       int * UNUSED(ret),

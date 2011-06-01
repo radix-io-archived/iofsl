@@ -36,6 +36,8 @@ CPPCLIENTLIB += \
     src/iofwdclient/clientsm/RPCCommClientSM.hh \
     src/iofwdclient/clientsm/CommitClientSM.hh \
     src/iofwdclient/clientsm/CommitClientSM.cpp \
+    src/iofwdclient/clientsm/MkdirClientSM.hh \
+    src/iofwdclient/clientsm/MkdirClientSM.cpp \
     src/iofwdclient/LinkHelper.hh \
     src/iofwdclient/LinkHelper.cpp \
     src/iofwdclient/IOFWDClient.cpp \
