@@ -31,7 +31,13 @@
 #include "iofwdclient/clientsm/CreateClientSM.hh"
 #include "iofwdclient/clientsm/CommitClientSM.hh"
 #include "iofwdclient/clientsm/MkdirClientSM.hh"
-
+#include "iofwdclient/clientsm/LinkClientSM.hh"
+#include "iofwdclient/clientsm/SetAttrClientSM.hh"
+#include "iofwdclient/clientsm/ReadLinkClientSM.hh"
+#include "iofwdclient/clientsm/ReadDirClientSM.hh"
+#include "iofwdclient/clientsm/SymLinkClientSM.hh"
+#include "iofwdclient/clientsm/RenameClientSM.hh"
+#include "iofwdclient/clientsm/RemoveClientSM.hh"
 
 #include "common/rpc/CommonRequest.hh"
 #include "iofwdclient/clientsm/RPCCommClientSM.hh"
@@ -44,6 +50,16 @@ namespace iofwdclient
    typedef iofwdclient::clientsm::RPCCommClientSM<common::RPCGetAttrRequest, common::RPCGetAttrResponse> RPCCommGetAttr;
    typedef iofwdclient::clientsm::RPCCommClientSM<common::RPCCreateRequest, common::RPCCreateResponse> RPCCommClientSMCreate;
    typedef iofwdclient::clientsm::RPCCommClientSM<common::RPCLookupRequest, common::RPCLookupResponse> RPCCommClientSMLookup;
+   typedef iofwdclient::clientsm::RPCCommClientSM<common::RPCLinkRequest, common::RPCLinkResponse> RPCCommLink;
+   typedef iofwdclient::clientsm::RPCCommClientSM<common::RPCReadLinkRequest, common::RPCReadLinkResponse> RPCCommReadLink;
+   typedef iofwdclient::clientsm::RPCCommClientSM<common::RPCReadDirRequest, common::RPCReadDirResponse> RPCCommReadDir; 
+   typedef iofwdclient::clientsm::RPCCommClientSM<common::RPCSymlinkRequest, common::RPCSymlinkResponse> RPCCommSymLink;   
+   typedef iofwdclient::clientsm::RPCCommClientSM<common::RPCRenameRequest, common::RPCRenameResponse> RPCCommRename;
+   typedef iofwdclient::clientsm::RPCCommClientSM<common::RPCRemoveRequest, common::RPCRemoveResponse> RPCCommRemove;
+   typedef iofwdclient::clientsm::RPCCommClientSM<common::RPCLinkRequest, common::RPCLinkResponse> RPCCommLink;
+   typedef iofwdclient::clientsm::RPCCommClientSM<common::RPCSetAttrRequest, common::RPCSetAttrResponse> RPCCommSetAttr;
+
+   typedef iofwdclient::clientsm::RPCCommClientSM<common::RPCSetAttrRequest, common::RPCSetAttrResponse> RPCCommSetAttr;
    typedef iofwdclient::clientsm::RPCCommWriteSM<common::RPCWriteRequest, common::RPCWriteResponse> RPCCommClientSMWrite;
    typedef iofwdclient::clientsm::RPCCommReadSM<common::RPCReadRequest, common::RPCReadResponse> RPCCommClientSMRead;
 
@@ -65,12 +81,12 @@ namespace iofwdclient
                zoidfs::zoidfs_attr_t * attr,
                zoidfs::zoidfs_op_hint_t * op_hint);
 
-         void cbsetattr(const IOFWDClientCB & UNUSED(cb),
-                      int * UNUSED(ret),
-                      const zoidfs::zoidfs_handle_t * UNUSED(handle),
-                      const zoidfs::zoidfs_sattr_t * UNUSED(sattr),
-                      zoidfs::zoidfs_attr_t * UNUSED(attr), 
-                      zoidfs::zoidfs_op_hint_t * UNUSED(op_hint)) {ASSERT ("SetAttr Not Implemented" != 0); }
+         void cbsetattr(const IOFWDClientCB & cb,
+                        int * ret,
+                        const zoidfs::zoidfs_handle_t * handle,
+                        const zoidfs::zoidfs_sattr_t * sattr,
+                        zoidfs::zoidfs_attr_t * attr, 
+                        zoidfs::zoidfs_op_hint_t * op_hint);
 
          void cblookup(const IOFWDClientCB & cb,
                      int * ret,
@@ -80,12 +96,12 @@ namespace iofwdclient
                      zoidfs::zoidfs_handle_t *handle,
                      zoidfs::zoidfs_op_hint_t * op_hint);
                      
-         void cbreadlink(const IOFWDClientCB & UNUSED(cb),
-                       int * UNUSED(ret),
-                       const zoidfs::zoidfs_handle_t * UNUSED(handle),  
-                       char * UNUSED(buffer),
-                       size_t UNUSED(buffer_length),
-                       zoidfs::zoidfs_op_hint_t * UNUSED(op_hint)) {ASSERT ("ReadLink Not Implemented" != 0);}
+         void cbreadlink(const IOFWDClientCB & cb,
+                         int * ret,
+                         const zoidfs::zoidfs_handle_t * handle,  
+                         char * buffer,
+                         size_t buffer_length,
+                         zoidfs::zoidfs_op_hint_t * op_hint);
                        
          void cbcommit(const IOFWDClientCB & cb,
                      int * ret,
@@ -102,50 +118,52 @@ namespace iofwdclient
                      int *created,
                      zoidfs::zoidfs_op_hint_t * op_hint);
                     
-         void cbremove(const IOFWDClientCB & UNUSED(cb),
-                     int * UNUSED(ret),
-                     const zoidfs::zoidfs_handle_t * UNUSED(parent_handle),
-                     const char * UNUSED(component_name), const char * UNUSED(full_path),
-                     zoidfs::zoidfs_cache_hint_t * UNUSED(parent_hint),
-                     zoidfs::zoidfs_op_hint_t * UNUSED(op_hint)) {ASSERT ("Remove Not Implemented" != 0); }
+         void cbremove(const IOFWDClientCB & cb,
+                       int * ret,
+                       const zoidfs::zoidfs_handle_t * parent_handle,
+                       const char * component_name, const char * full_path,
+                       zoidfs::zoidfs_cache_hint_t * parent_hint,
+                       zoidfs::zoidfs_op_hint_t * op_hint);
+
+
                      
-         void cbrename(const IOFWDClientCB & UNUSED(cb),
-                     int * UNUSED(ret),
-                     const zoidfs::zoidfs_handle_t * UNUSED(from_parent_handle),
-                     const char * UNUSED(from_component_name),
-                     const char * UNUSED(from_full_path),
-                     const zoidfs::zoidfs_handle_t * UNUSED(to_parent_handle),
-                     const char * UNUSED(to_component_name),
-                     const char * UNUSED(to_full_path),
-                     zoidfs::zoidfs_cache_hint_t * UNUSED(from_parent_hint),
-                     zoidfs::zoidfs_cache_hint_t * UNUSED(to_parent_hint),
-                     zoidfs::zoidfs_op_hint_t * UNUSED(op_hint)) {ASSERT ("Rename Not Implemented" != 0); }
+         void cbrename(const IOFWDClientCB & cb,
+                      int * ret,
+                      const zoidfs::zoidfs_handle_t * from_parent_handle,
+                      const char * from_component_name,
+                      const char * from_full_path,
+                      const zoidfs::zoidfs_handle_t * to_parent_handle,
+                      const char * to_component_name,
+                      const char * to_full_path,
+                      zoidfs::zoidfs_cache_hint_t * from_parent_hint,
+                      zoidfs::zoidfs_cache_hint_t * to_parent_hint,
+                      zoidfs::zoidfs_op_hint_t * op_hint);
                      
-         void cblink(const IOFWDClientCB & UNUSED(cb),
-                   int * UNUSED(ret),
-                   const zoidfs::zoidfs_handle_t * UNUSED(from_parent_handle),
-                   const char * UNUSED(from_component_name),
-                   const char * UNUSED(from_full_path),
-                   const zoidfs::zoidfs_handle_t * UNUSED(to_parent_handle),
-                   const char * UNUSED(to_component_name),
-                   const char * UNUSED(to_full_path),
-                   zoidfs::zoidfs_cache_hint_t * UNUSED(from_parent_hint),
-                   zoidfs::zoidfs_cache_hint_t * UNUSED(to_parent_hint),
-                   zoidfs::zoidfs_op_hint_t * UNUSED(op_hint)) {ASSERT ("Link Not Implemented" != 0); }
+         void cblink(const IOFWDClientCB & cb,
+                   int * ret,
+                   const zoidfs::zoidfs_handle_t * from_parent_handle,
+                   const char * from_component_name,
+                   const char * from_full_path,
+                   const zoidfs::zoidfs_handle_t * to_parent_handle,
+                   const char * to_component_name,
+                   const char * to_full_path,
+                   zoidfs::zoidfs_cache_hint_t * from_parent_hint,
+                   zoidfs::zoidfs_cache_hint_t * to_parent_hint,
+                   zoidfs::zoidfs_op_hint_t * op_hint);
                    
-         void cbsymlink(const IOFWDClientCB & UNUSED(cb),
-                      int * UNUSED(ret),
-                      const zoidfs::zoidfs_handle_t * UNUSED(from_parent_handle),
-                      const char * UNUSED(from_component_name),
-                      const char * UNUSED(from_full_path),
-                      const zoidfs::zoidfs_handle_t * UNUSED(to_parent_handle),
-                      const char * UNUSED(to_component_name),
-                      const char * UNUSED(to_full_path),
-                      const zoidfs::zoidfs_sattr_t * UNUSED(sattr),
-                      zoidfs::zoidfs_cache_hint_t * UNUSED(from_parent_hint),
-                      zoidfs::zoidfs_cache_hint_t * UNUSED(to_parent_hint),
-                      zoidfs::zoidfs_op_hint_t * UNUSED(op_hint)) {ASSERT ("symlink Not Implemented" != 0); }
-                      
+         void cbsymlink(const IOFWDClientCB & cb,
+                        int * ret,
+                        const zoidfs::zoidfs_handle_t * from_parent_handle,
+                        const char * from_component_name,
+                        const char * from_full_path,
+                        const zoidfs::zoidfs_handle_t * to_parent_handle,
+                        const char * to_component_name,
+                        const char * to_full_path,
+                        const zoidfs::zoidfs_sattr_t * sattr,
+                        zoidfs::zoidfs_cache_hint_t * from_parent_hint,
+                        zoidfs::zoidfs_cache_hint_t * to_parent_hint,
+                        zoidfs::zoidfs_op_hint_t * op_hint);
+                    
          void cbmkdir(const IOFWDClientCB & cb,
                     int * ret,
                     const zoidfs::zoidfs_handle_t * parent_handle,
@@ -154,21 +172,14 @@ namespace iofwdclient
                     zoidfs::zoidfs_cache_hint_t * parent_hint,
                     zoidfs::zoidfs_op_hint_t * op_hint);
                             
-         void cbreaddir(const IOFWDClientCB & UNUSED(cb),
-                      int * UNUSED(ret),
-                      const zoidfs::zoidfs_handle_t * UNUSED(parent_handle),
-                      zoidfs::zoidfs_dirent_cookie_t UNUSED(cookie), size_t * UNUSED(entry_count_),
-                      zoidfs::zoidfs_dirent_t * UNUSED(entries), uint32_t UNUSED(flags),
-                      zoidfs::zoidfs_cache_hint_t * UNUSED(parent_hint),
-                      zoidfs::zoidfs_op_hint_t * UNUSED(op_hint)) {ASSERT ("readdir Not Implemented" != 0); }
+         void cbreaddir(const IOFWDClientCB & cb,
+                          int * ret,
+                          const zoidfs::zoidfs_handle_t * parent_handle,
+                          zoidfs::zoidfs_dirent_cookie_t cookie, size_t * entry_count_,
+                          zoidfs::zoidfs_dirent_t * entries, uint32_t flags,
+                          zoidfs::zoidfs_cache_hint_t * parent_hint,
+                          zoidfs::zoidfs_op_hint_t * op_hint);
 
-         void cbresize(const IOFWDClientCB & UNUSED(cb),
-                     int * UNUSED(ret),
-                     const zoidfs::zoidfs_handle_t * UNUSED(handle), 
-                     zoidfs::zoidfs_file_size_t UNUSED(size),
-                     zoidfs::zoidfs_op_hint_t * UNUSED(op_hint)) {ASSERT ("Resize Not Implemented" != 0); }
-                     
-                   
          void cbread(const IOFWDClientCB & cb,
                    int * ret,
                    const zoidfs::zoidfs_handle_t *handle, size_t mem_count,
@@ -185,10 +196,15 @@ namespace iofwdclient
                     zoidfs::zoidfs_file_ofs_t file_sizes[],
                     zoidfs::zoidfs_op_hint_t * op_hint);
 
+         void cbresize(const IOFWDClientCB & UNUSED(cb),
+                     int * UNUSED(ret),
+                     const zoidfs::zoidfs_handle_t * UNUSED(handle), 
+                     zoidfs::zoidfs_file_size_t UNUSED(size),
+                     zoidfs::zoidfs_op_hint_t * UNUSED(op_hint)) {ASSERT ("Resize Not Implemented" != 0); }
+                     
 
          void cbinit(const IOFWDClientCB & UNUSED(cb), int * UNUSED(ret), 
                     zoidfs::zoidfs_op_hint_t * UNUSED(op_hint)) {ASSERT ("init Not Implemented" != 0); }
-
 
          void cbfinalize(const IOFWDClientCB & UNUSED(cb), int * UNUSED(ret), 
                     zoidfs::zoidfs_op_hint_t * UNUSED(op_hint)) {ASSERT ("Finalize Not Implemented" != 0); }

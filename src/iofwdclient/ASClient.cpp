@@ -91,16 +91,20 @@ namespace iofwdclient
    {
       // validate arguments
       // Can op_hint be 0?
-      if (*request || !handle || !attr || !sattr)
-         return zoidfs::ZFSERR_INVAL;
+//      if (*request || !handle || !attr || !sattr)
+//         return zoidfs::ZFSERR_INVAL;
 
       // Create request
       //   newRequest automatically increments the refcount to compensate for
       //   the lack of automatic refcounting in the C API
-      IOFWDRequestPtr r (tracker_->newRequest ());
+      IOFWDRequestPtr r(tracker_->newRequest ());
+      intrusive_ptr_add_ref(r.get());
+
+      r->setCompletionStatus(zoidfs::ZFS_COMP_NONE);
       cbclient_.cbsetattr(tracker_->getCB (r),
                  r->getReturnPointer (),handle,sattr, attr, op_hint);   
       
+      (*request) = (void *) r.get();
       return zoidfs::ZFS_OK;
    }
 
@@ -132,16 +136,20 @@ namespace iofwdclient
    {
             // validate arguments
       // Can op_hint be 0?
-      if (*request || !handle || !buffer || !buffer_length)
-         return zoidfs::ZFSERR_INVAL;
+//      if (*request || !handle || !buffer || !buffer_length)
+//         return zoidfs::ZFSERR_INVAL;
 
       // Create request
       //   newRequest automatically increments the refcount to compensate for
       //   the lack of automatic refcounting in the C API
-      IOFWDRequestPtr r (tracker_->newRequest ());
+      IOFWDRequestPtr r(tracker_->newRequest ());
+      intrusive_ptr_add_ref(r.get());
+
+      r->setCompletionStatus(zoidfs::ZFS_COMP_NONE);
 
       cbclient_.cbreadlink(tracker_->getCB (r), r->getReturnPointer (),
                            handle, buffer, buffer_length,  op_hint);
+      (*request) = (void *) r.get();
       return zoidfs::ZFS_OK;
    }
                  
@@ -189,17 +197,21 @@ namespace iofwdclient
    {
       // validate arguments
       // Can op_hint be 0?
-      if (*request || !parent_handle || !parent_hint || !full_path )
-         return zoidfs::ZFSERR_INVAL;
+//      if (*request || !parent_handle || !parent_hint || !full_path )
+//         return zoidfs::ZFSERR_INVAL;
 
       // Create request
       //   newRequest automatically increments the refcount to compensate for
       //   the lack of automatic refcounting in the C API
-      IOFWDRequestPtr r (tracker_->newRequest ());
+      IOFWDRequestPtr r(tracker_->newRequest ());
+      intrusive_ptr_add_ref(r.get());
+
+      r->setCompletionStatus(zoidfs::ZFS_COMP_NONE);
 
       cbclient_.cbremove (tracker_->getCB (r),
                           r->getReturnPointer (), parent_handle, component_name, 
                           full_path, parent_hint, op_hint);
+      (*request) = (void *) r.get();
       return zoidfs::ZFS_OK;
    }
                
@@ -216,15 +228,18 @@ namespace iofwdclient
    {
             // validate arguments
       // Can op_hint be 0?
-      if (*request || !from_parent_handle || !from_component_name ||
-          !from_full_path || !to_parent_handle || !to_component_name ||
-          !to_full_path || !from_parent_hint || !to_parent_hint )
-         return zoidfs::ZFSERR_INVAL;
+//      if (*request || !from_parent_handle || !from_component_name ||
+//          !from_full_path || !to_parent_handle || !to_component_name ||
+//          !to_full_path || !from_parent_hint || !to_parent_hint )
+//         return zoidfs::ZFSERR_INVAL;
 
       // Create request
       //   newRequest automatically increments the refcount to compensate for
       //   the lack of automatic refcounting in the C API
-      IOFWDRequestPtr r (tracker_->newRequest ());
+      IOFWDRequestPtr r(tracker_->newRequest ());
+      intrusive_ptr_add_ref(r.get());
+
+      r->setCompletionStatus(zoidfs::ZFS_COMP_NONE);
 
       cbclient_.cbrename ( tracker_->getCB (r), r->getReturnPointer (), 
                            from_parent_handle, 
@@ -232,6 +247,7 @@ namespace iofwdclient
                            to_parent_handle, to_component_name, 
                            to_full_path, from_parent_hint, 
                            to_parent_hint, op_hint);
+      (*request) = (void *) r.get();
       return zoidfs::ZFS_OK;
    }
                
@@ -248,15 +264,18 @@ namespace iofwdclient
    {
       // validate arguments
       // Can op_hint be 0?
-      if (*request || !from_parent_handle || !from_component_name ||
-          !from_full_path || !to_parent_handle || !to_component_name ||
-          !to_full_path || !from_parent_hint || !to_parent_hint )
-         return zoidfs::ZFSERR_INVAL;
+//      if (*request || !from_parent_handle || !from_component_name ||
+//          !from_full_path || !to_parent_handle || !to_component_name ||
+//          !to_full_path || !from_parent_hint || !to_parent_hint )
+//         return zoidfs::ZFSERR_INVAL;
 
       // Create request
       //   newRequest automatically increments the refcount to compensate for
       //   the lack of automatic refcounting in the C API
-      IOFWDRequestPtr r (tracker_->newRequest ());
+      IOFWDRequestPtr r(tracker_->newRequest ());
+      intrusive_ptr_add_ref(r.get());
+
+      r->setCompletionStatus(zoidfs::ZFS_COMP_NONE);
 
       cbclient_.cblink(tracker_->getCB (r), r->getReturnPointer (), 
                        from_parent_handle, from_component_name,
@@ -264,6 +283,7 @@ namespace iofwdclient
                        to_component_name, to_full_path, 
                        from_parent_hint, to_parent_hint,
                        op_hint);   
+      (*request) = (void *) r.get();
       return zoidfs::ZFS_OK;
    }
              
@@ -281,15 +301,18 @@ namespace iofwdclient
    {
       // validate arguments
       // Can op_hint be 0?
-      if (*request || !from_parent_handle || !from_component_name || !sattr ||
-          !from_full_path || !to_parent_handle || !to_component_name ||
-          !to_full_path || !from_parent_hint || !to_parent_hint )
-         return zoidfs::ZFSERR_INVAL;
+//      if (*request || !from_parent_handle || !from_component_name || !sattr ||
+//          !from_full_path || !to_parent_handle || !to_component_name ||
+//          !to_full_path || !from_parent_hint || !to_parent_hint )
+//         return zoidfs::ZFSERR_INVAL;
 
       // Create request
       //   newRequest automatically increments the refcount to compensate for
       //   the lack of automatic refcounting in the C API
-      IOFWDRequestPtr r (tracker_->newRequest ());
+      IOFWDRequestPtr r(tracker_->newRequest ());
+      intrusive_ptr_add_ref(r.get());
+
+      r->setCompletionStatus(zoidfs::ZFS_COMP_NONE);
 
       cbclient_.cbsymlink ( tracker_->getCB (r), r->getReturnPointer (), 
                             from_parent_handle, from_component_name,
@@ -298,6 +321,7 @@ namespace iofwdclient
                             sattr, from_parent_hint, to_parent_hint,
                             op_hint);
 
+      (*request) = (void *) r.get();
       return zoidfs::ZFS_OK;
    }
    int ASClient::imkdir(zoidfs::zoidfs_request_t * request,
@@ -309,18 +333,22 @@ namespace iofwdclient
    {
       // validate arguments
       // Can op_hint be 0?
-      if (*request || !parent_handle || !component_name || !full_path ||
-          !sattr || !parent_hint)
-         return zoidfs::ZFSERR_INVAL;
+//      if (*request || !parent_handle || !component_name || !full_path ||
+//          !sattr || !parent_hint)
+//         return zoidfs::ZFSERR_INVAL;
 
       // Create request
       //   newRequest automatically increments the refcount to compensate for
       //   the lack of automatic refcounting in the C API
-      IOFWDRequestPtr r (tracker_->newRequest ());
+      IOFWDRequestPtr r(tracker_->newRequest ());
+      intrusive_ptr_add_ref(r.get());
+
+      r->setCompletionStatus(zoidfs::ZFS_COMP_NONE);
 
       cbclient_.cbmkdir(tracker_->getCB (r), r->getReturnPointer (), 
                         parent_handle, component_name, full_path,
                         sattr, parent_hint, op_hint);
+      (*request) = (void *) r.get();
       return zoidfs::ZFS_OK;
    }
                       
@@ -333,18 +361,21 @@ namespace iofwdclient
    {
       // validate arguments
       // Can op_hint be 0?
-      if (*request || !parent_handle || !cookie || !entry_count_ || !entries
-         || !flags || !parent_hint )
-         return zoidfs::ZFSERR_INVAL;
+//      if (*request || !parent_handle || !cookie || !entry_count_ || !entries
+//         || !flags || !parent_hint )
+//         return zoidfs::ZFSERR_INVAL;
 
       // Create request
       //   newRequest automatically increments the refcount to compensate for
       //   the lack of automatic refcounting in the C API
-      IOFWDRequestPtr r (tracker_->newRequest ());
+      IOFWDRequestPtr r(tracker_->newRequest ());
+      intrusive_ptr_add_ref(r.get());
 
+      r->setCompletionStatus(zoidfs::ZFS_COMP_NONE);
       cbclient_.cbreaddir(tracker_->getCB (r),
                           r->getReturnPointer (), parent_handle, cookie, 
                           entry_count_, entries, flags, parent_hint, op_hint);
+      (*request) = (void *) r.get();
       return zoidfs::ZFS_OK;
    }
 
@@ -361,10 +392,14 @@ namespace iofwdclient
       // Create request
       //   newRequest automatically increments the refcount to compensate for
       //   the lack of automatic refcounting in the C API
-      IOFWDRequestPtr r (tracker_->newRequest ());
+      IOFWDRequestPtr r(tracker_->newRequest ());
+      intrusive_ptr_add_ref(r.get());
+
+      r->setCompletionStatus(zoidfs::ZFS_COMP_NONE);
 
       cbclient_.cbresize(tracker_->getCB (r),
                          r->getReturnPointer (), handle, size, op_hint);
+      (*request) = (void *) r.get();
       return zoidfs::ZFS_OK;
    }
                
@@ -423,10 +458,14 @@ namespace iofwdclient
       // Create request
       //   newRequest automatically increments the refcount to compensate for
       //   the lack of automatic refcounting in the C API
-      IOFWDRequestPtr r (tracker_->newRequest ());
+      IOFWDRequestPtr r(tracker_->newRequest ());
+      intrusive_ptr_add_ref(r.get());
+
+      r->setCompletionStatus(zoidfs::ZFS_COMP_NONE);
 
 
       cbclient_.cbinit(tracker_->getCB (r), r->getReturnPointer (), op_hint);
+      (*request) = (void *) r.get();
       return zoidfs::ZFS_OK;
    }
 
@@ -439,10 +478,14 @@ namespace iofwdclient
       // Create request
       //   newRequest automatically increments the refcount to compensate for
       //   the lack of automatic refcounting in the C API
-      IOFWDRequestPtr r (tracker_->newRequest ());
+      IOFWDRequestPtr r(tracker_->newRequest ());
+      intrusive_ptr_add_ref(r.get());
+
+      r->setCompletionStatus(zoidfs::ZFS_COMP_NONE);
 
       cbclient_.cbfinalize(tracker_->getCB (r), r->getReturnPointer (), 
                            op_hint);
+      (*request) = (void *) r.get();
       return zoidfs::ZFS_OK;
 
    }
@@ -456,9 +499,13 @@ namespace iofwdclient
       // Create request
       //   newRequest automatically increments the refcount to compensate for
       //   the lack of automatic refcounting in the C API
-      IOFWDRequestPtr r (tracker_->newRequest ());
+      IOFWDRequestPtr r(tracker_->newRequest ());
+      intrusive_ptr_add_ref(r.get());
+
+      r->setCompletionStatus(zoidfs::ZFS_COMP_NONE);
 
       cbclient_.cbnull(tracker_->getCB (r), r->getReturnPointer (), op_hint);
+      (*request) = (void *) r.get();
       return zoidfs::ZFS_OK;
    }
    //========================================================================

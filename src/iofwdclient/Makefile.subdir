@@ -38,6 +38,20 @@ CPPCLIENTLIB += \
     src/iofwdclient/clientsm/CommitClientSM.cpp \
     src/iofwdclient/clientsm/MkdirClientSM.hh \
     src/iofwdclient/clientsm/MkdirClientSM.cpp \
+    src/iofwdclient/clientsm/SetAttrClientSM.hh \
+    src/iofwdclient/clientsm/SetAttrClientSM.cpp \
+    src/iofwdclient/clientsm/ReadLinkClientSM.hh \
+    src/iofwdclient/clientsm/ReadLinkClientSM.cpp \
+    src/iofwdclient/clientsm/ReadDirClientSM.hh \
+    src/iofwdclient/clientsm/ReadDirClientSM.cpp \
+    src/iofwdclient/clientsm/SymLinkClientSM.hh \
+    src/iofwdclient/clientsm/SymLinkClientSM.cpp \
+    src/iofwdclient/clientsm/LinkClientSM.hh \
+    src/iofwdclient/clientsm/LinkClientSM.cpp \
+    src/iofwdclient/clientsm/RenameClientSM.hh \
+    src/iofwdclient/clientsm/RenameClientSM.cpp \
+    src/iofwdclient/clientsm/RemoveClientSM.hh \
+    src/iofwdclient/clientsm/RemoveClientSM.cpp \
     src/iofwdclient/LinkHelper.hh \
     src/iofwdclient/LinkHelper.cpp \
     src/iofwdclient/IOFWDClient.cpp \

@@ -42,9 +42,7 @@ namespace zoidfs {
    static void process (ENC & e,  EncodeDirentT & p,
                         typename encoder::only_decoder_processor<ENC>::type * = 0)
    {
-
       process(e, p.count);
-      p.list = new zoidfs_dirent_t[p.count];
       for (size_t x = 0; x < p.count; x++)
       {
         encoder::EncoderString<0,ZOIDFS_PATH_MAX>name;
@@ -52,7 +50,7 @@ namespace zoidfs {
         zoidfs_attr_t attr;
         zoidfs_dirent_cookie_t cookie;
         process(e, name);
-        strcpy(p.list[x].name, name.value.c_str());
+        strcpy(p.list[x].name , name.value.c_str());
         process(e, handle);
         p.list[x].handle = handle;
         process(e, attr);
@@ -69,8 +67,8 @@ namespace zoidfs {
       process(e, p.count);
       for (size_t x = 0; x < p.count; x++)
       {
-        encoder::EncoderString<0,ZOIDFS_PATH_MAX>name;
-        process(e, encoder::EncoderString<0,ZOIDFS_PATH_MAX>(p.list[x].name));
+        encoder::EncoderString<0,ZOIDFS_NAME_MAX>name;
+        process(e, encoder::EncoderString<0,ZOIDFS_NAME_MAX>(p.list[x].name));
         process(e, p.list[x].handle);
         process(e, p.list[x].attr);
         process(e, p.list[x].cookie);

@@ -19,12 +19,8 @@ namespace iofwd
       {
           /* verify the args are OK */
           ASSERT(getReturnCode() == zoidfs::ZFS_OK );
-
-
-
           outStruct.returnCode = getReturnCode();
           outStruct.buffer.value.assign(buffer_, buffer_length_);
-
           zoidfs::hints::zoidfs_hint_create(&op_hint_);  
           /* @TODO: Remove this later */
           param_.op_hint = &op_hint_;
