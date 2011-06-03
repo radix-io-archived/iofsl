@@ -14,6 +14,7 @@ namespace encoder {
       std::string value;
       EncoderString<MINSIZE,MAXSIZE>() {};
       EncoderString<MINSIZE,MAXSIZE>(const char * val) { value = std::string(val);}
+      EncoderString<MINSIZE,MAXSIZE>(std::string x) {value = x;}
    };
 
    template <typename ENC, size_t MINSIZE, size_t MAXSIZE>
