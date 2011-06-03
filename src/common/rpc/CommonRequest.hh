@@ -5,6 +5,7 @@
 #include "zoidfs/util/ZoidFSFileSpec.hh"
 #include "zoidfs/util/ZoidfsFileOfsStruct.hh"
 #include "zoidfs/util/EncodeDirentT.hh"
+#include "encoder/RPCHint.hh"
 namespace common
 {
   typedef encoder::EncoderString<0, ZOIDFS_PATH_MAX> EncoderString;
