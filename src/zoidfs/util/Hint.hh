@@ -1,11 +1,11 @@
-#ifndef COMMON_RPCHINT
-#define COMMON_RPCHINT
-#include "EncoderString.hh"
-#include "Util.hh"
-#include "Size.hh"
-#include "EncoderException.hh"
-#include "EncoderWrappers.hh"
-
+#ifndef ZOIDFS_UTIL_HINT
+#define ZOIDFS_UTIL_HINT
+#include "zoidfs/zoidfs.h"
+#include "encoder/Util.hh"
+#include "encoder/Size.hh"
+#include "encoder/EncoderException.hh"
+#include "encoder/EncoderWrappers.hh"
+#include "encoder/EncoderString.hh"
 #include "zoidfs/hints/zoidfs-hints.h"
 
 #include <boost/unordered_map.hpp>
@@ -13,13 +13,13 @@
 #include <boost/foreach.hpp>
 #include <boost/utility/enable_if.hpp>
 
-namespace encoder
+namespace zoidfs
 {
     typedef boost::unordered_map<std::string, std::string> hash_table;
-    class RPCHint
+    class Hint
     {
       public:
-          RPCHint() 
+          Hint() 
           {
             len_ = 0;
             maxkeys_ = ZOIDFS_HINT_NKEY_MAX;
@@ -75,10 +75,10 @@ namespace encoder
 
 
    template <typename ENC>
-   static void process (ENC & e, const RPCHint & p,
-         typename only_size_processor<ENC>::type * = 0)
+   static void process (ENC & e, const Hint & p,
+         typename encoder::only_size_processor<ENC>::type * = 0)
    {
-      EncoderString<0,ZOIDFS_HINT_KEY_MAX> hint;
+      encoder::EncoderString<0,ZOIDFS_HINT_KEY_MAX> hint;
       size_t i = ZOIDFS_HINT_NKEY_MAX;
       process(e, i);
       for (size_t x = 0; x < i; i++)
@@ -86,15 +86,15 @@ namespace encoder
    }
 
    template <typename ENC>
-   static void process (ENC & e, RPCHint & p,
-                        typename only_decoder_processor<ENC>::type * = 0)
+   static void process (ENC & e, Hint & p,
+                        typename encoder::only_decoder_processor<ENC>::type * = 0)
    {
       uint32_t len;
       process (e, len);      
       for (size_t x = 0; x < len; x++)
       {      
-        EncoderString<0,ZOIDFS_HINT_KEY_MAX> key;
-        EncoderString<0,ZOIDFS_HINT_KEY_MAX> value;
+        encoder::EncoderString<0,ZOIDFS_HINT_KEY_MAX> key;
+        encoder::EncoderString<0,ZOIDFS_HINT_KEY_MAX> value;
         process(e, key);
         process(e, value);
         p.addHint( key.value, value.value);
@@ -102,15 +102,15 @@ namespace encoder
    }
 
    template <typename ENC>
-   static void process (ENC & e, const RPCHint & p,
-                   typename only_encoder_processor<ENC>::type * = 0)
+   static void process (ENC & e, const Hint & p,
+                   typename encoder::only_encoder_processor<ENC>::type * = 0)
    {
       boost::shared_ptr<std::string> keys = p.getKeys();
       process(e,p.getLen());
       for (size_t x = 0; x < p.getLen(); x++)
       {
-        EncoderString<0,ZOIDFS_HINT_KEY_MAX> key(keys.get()[x]);
-        EncoderString<0,ZOIDFS_HINT_KEY_MAX> value(p.getHint(key.value));
+        encoder::EncoderString<0,ZOIDFS_HINT_KEY_MAX> key(keys.get()[x]);
+        encoder::EncoderString<0,ZOIDFS_HINT_KEY_MAX> value(p.getHint(key.value));
         process(e,key);
         process(e,value);
       }    
