@@ -65,7 +65,7 @@ namespace iofwd
 
       IOFSLRPCLinkRequest::~IOFSLRPCLinkRequest()
       {
-         zoidfs::hints::zoidfs_hint_free(&op_hint_);
+//         zoidfs::hints::zoidfs_hint_free(&op_hint_);
       }
 
    }

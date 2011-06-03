@@ -9,6 +9,7 @@ namespace iofwd
 
       const IOFSLRPCReadDirRequest::ReqParam & IOFSLRPCReadDirRequest::decodeParam() 
       { 
+          param_.handle = &inStruct.handle;
           param_.entry_count = inStruct.entry_count;
           param_.entries = new zoidfs::zoidfs_dirent_t[inStruct.entry_count];
           param_.flags = inStruct.flags;

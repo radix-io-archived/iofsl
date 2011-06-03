@@ -108,7 +108,8 @@ namespace common
   /* Sym link request */
 
   ENCODERSTRUCT (RPCSymlinkRequest, ((ZoidFSFileSpec)(from))
-                                 ((ZoidFSFileSpec)(to)))
+                                    ((zoidfs_sattr_t)(sattr))
+                                    ((ZoidFSFileSpec)(to)))
 
   ENCODERSTRUCT (RPCSymlinkResponse, ((int)(returnCode))
                                      ((zoidfs_cache_hint_t)(from_parent_hint))
