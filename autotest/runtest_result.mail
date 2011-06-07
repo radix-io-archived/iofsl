@@ -1,2 +1,0 @@
-mail -s "IOFSL build and make_check result" $user_email < ~/iofsl/test_report.txt
-mail -s "IOFSL commit make_check and dist_check result" $committer_email < ~/iofsl/test_report.txt

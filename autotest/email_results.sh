@@ -3,7 +3,6 @@
 
 
 error_report(){
-  rm -f make_error_report.txt
   touch make_error_report.txt
   if
     egrep ' Error ' runtest_results.txt
@@ -16,8 +15,12 @@ error_report(){
 
   echo "=========================================================" >> make_error_report.txt
   comm=${commit:0:7}
-  #echo | mutt -a make_error_report.txt -s "make error: Make FAIL for commit $comm" rjdamore@gmail.com
-  echo | mutt -c $committer_email -c maxadam@mcs.anl.gov -c max@trefonides.com -c dkimpe@mcs.anl.gov -c drieskimpe@gmail.com -c rjdamore@gmail.com -a make_error_report.txt -s "master make error: for commit $comm" io-fwd-discuss@lists.mcs.anl.gov  else test_report  fi
+  echo | mutt -c $committer_email -c rjdamore@gmail.com -s "clientrpc make error: or commit $comm" -a make_error_report.txt -- io-fwd-discuss@lists.mcs.anl.gov
+  #echo | mutt -a make_error_report.txt -s "clientrpc make error: for commit $comm" rjdamore@gmail.com
+
+  edit_files
+  else test_report
+  fi
   cat make_error_report.txt >> make_error_report-pile.txt
   if
     grep $commit autotest/tested_commits.txt
@@ -49,7 +52,6 @@ server_report(){
 }
 
 test_report(){
-  rm -f test_report.txt
   touch test_report.txt
   echo "test results for commit $commit" >> test_report.txt
   echo >> test_report.txt

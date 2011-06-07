@@ -5,7 +5,7 @@
 # test reports are mailed to io-fwd-discuss@lists.mcs.anl.gov
 # This script has two options -n and -b.  -n followed by an integer identifies the number of 
 # commits you wish to test from your present position backwards through history.
-# The -b option followed by a branch name identifies which branch you would wish the test harness to exe# on.  If you wish to use the master branch you can simply leave the -b option out of your script invocation.
+# The -b option followed by a branch name identifies which branch you would wish the test harness to# execute on.  
 
 checkout_branch(){
   if
@@ -59,8 +59,6 @@ read_commits(){
 }
 
 execute_tests(){
-  hostname=$(hostname)
-  cp ~/iofsl/scripts/configoptions.tu-fe1.lanl.gov ~/iofsl/scripts/configoptions.$hostname
   for ((i=0; i<$num_tests; i++))
   do
     set_to_variable
@@ -93,8 +91,13 @@ run_tests(){
 
 email(){
   ./autotest/email_results.sh
+  remove
 }
-
+remove(){
+rm -f make_error_report.txt
+rm -f runtest_results.txt
+rm -f test_report.txt
+}
 
 
 get_user_email
