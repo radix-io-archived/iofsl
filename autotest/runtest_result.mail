@@ -1,2 +1,0 @@
-mail -s "IOFSL build and make_check result" $user_email < ~/iofsl/runtest_result.txt
-
