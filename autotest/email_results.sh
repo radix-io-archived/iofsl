@@ -16,7 +16,7 @@ error_report(){
 
     echo "=========================================================" >> make_error_report.txt
   comm=${commit:0:7}
-  echo | mutt -c $committer_email -c rjdamore@gmail.com -s "clientrpc make error: or commit $comm" -a make_error_report.txt -- io-fwd-discuss@lists.mcs.anl.gov
+  echo | mutt -c $committer_email -c rjdamore@gmail.com -s "clientrpc make error: for commit $comm" -a make_error_report.txt -- io-fwd-discuss@lists.mcs.anl.gov
   #echo | mutt -a make_error_report.txt -s "clientrpc make error: for commit $comm" rjdamore@gmail.com
 
   edit_files
