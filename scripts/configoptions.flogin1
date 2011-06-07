@@ -1,0 +1,14 @@
+#This is a configure script for the Fusion cluster at Argonne.  It is user specific.  Please refer to the configoptions.example for detailed infor on the setup of the configure options.
+
+
+#FLAGS="-O0 -fno-inline -g"
+#FLAGS="-O3 "
+
+#uncomment to enable profiling
+#FLAGS="$FLAGS -pg" ; LDFLAGS="-pg"
+
+#FLAGS="-g $FLAGS -Wall -Wextra -Wno-aggregate-return" 
+
+export CONFIGURE_OPTIONS="--with-cunit=/homes/rjdamore/opt/cunit-2.1 --with-boost=/homes/rjdamore/opt/boost-1.44 --with-bmi=/homes/rjdamore/opt/bmi-2.8.2"
+
+export DISTCHECK_CONFIGURE_FLAGS="${CONFIGURE_OPTIONS}"

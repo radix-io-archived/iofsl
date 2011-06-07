@@ -3,7 +3,6 @@
 
 
 error_report(){
-  rm -f make_error_report.txt
   touch make_error_report.txt
   if
     egrep ' Error|*** ' runtest_results.txt
@@ -17,9 +16,9 @@ error_report(){
 
     echo "=========================================================" >> make_error_report.txt
   comm=${commit:0:7}
-  echo | mutt -c $committer_email -c dkimpe@mcs.anl.gov -c drieskimpe@gmail.com -c rjdamore@gmail.com -c maxadam@mcs.anl.gov -c max@trefonides.com -a make_error_report.txt -s "clientrpc make error: for commit $comm" io-fwd-discuss@lists.mcs.anl.gov
-
+  echo | mutt -c $committer_email -c rjdamore@gmail.com -s "clientrpc make error: or commit $comm" -a make_error_report.txt -- io-fwd-discuss@lists.mcs.anl.gov
   #echo | mutt -a make_error_report.txt -s "clientrpc make error: for commit $comm" rjdamore@gmail.com
+
   edit_files
   else test_report
   fi
@@ -54,7 +53,6 @@ server_report(){
 }
 
 test_report(){
-  rm -f test_report.txt
   touch test_report.txt
   echo "test results for commit $commit" >> test_report.txt
   echo >> test_report.txt
@@ -70,8 +68,8 @@ test_report(){
       echo "$commit" >> autotest/tested_commits.txt
   fi
   comm=${commit:0:7}
-  #echo | mutt -a test_report.txt -s "test report for commit $comm PASS" rjdamore@gmail.com
-  echo | mutt -c $committer_email -c dkimpe@mcs.anl.gov -c drieskimpe@gmail.com -c rjdamore@gmail.com -c maxadam@mcs.anl.gov -c max@trefonides.com -a test_report.txt -s "clientrpc test PASS for commit $comm" io-fwd-discuss@lists.mcs.anl.gov  
+  #echo | mutt -s "test report for commit $comm PASS" -a test_report.txt -- rjdamore@gmail.com
+  echo | mutt -c $committer_email -c rjdamore@gmail.com -s "clientrpc test report: for commit $comm" -a test_report.txt -- io-fwd-discuss@lists.mcs.anl.gov
 
   edit_files
 }
@@ -87,8 +85,6 @@ edit_files(){
   else
       echo "$commit" >> autotest/tested_commits.txt
   fi
-  rm -f runtest_results.txt
-  rm -f make_error_report.txt
   make clean
   make distclean
   git checkout clientrpc
