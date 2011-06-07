@@ -24,7 +24,7 @@ while getopts "n:b:" opt; do
 	echo "Running tests on $OPTARG commits"
         ;;
     b) 
-        export branch="$OPTARG"
+        branch="$OPTARG"
 	checkout_branch
 	;;
     [?])
@@ -71,7 +71,7 @@ set_to_variable(){
   export commit=$(echo ${lines[$i]})
   echo "testing commit $commit"
   if
-    grep $commit ~/tested_commits/tested_commits.txt
+    grep $commit autotest/tested_commits.txt
   then
     echo "This commit has been tested previously...exiting testing schedule..." ; exit 0
   fi
@@ -91,7 +91,7 @@ run_tests(){
 }
 
 email(){
-  ~/email_results.sh
+  ./autotest/email_results.sh
   remove
 }
 remove(){
@@ -100,5 +100,5 @@ rm -f runtest_results.txt
 rm -f test_report.txt
 }
 
-cd iofsl
+
 get_user_email
