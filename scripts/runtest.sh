@@ -3,7 +3,7 @@
 #
 # Prepares, builds and tests 
 #
-
+IOFWD_SRCDIR=/homes/rjdamore/iofsl
 SRCDIR=$PWD
 if test -z "${IOFWD_SRCDIR}" ; then
    echo "Need IOFWD_SRCDIR ! (to find configoptions)"
