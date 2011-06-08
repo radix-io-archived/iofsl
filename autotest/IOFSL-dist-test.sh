@@ -71,7 +71,7 @@ set_to_variable(){
   export commit=$(echo ${lines[$i]})
   echo "testing commit $commit"
   if
-    grep $commit autotest/tested_commits.txt
+    grep $commit ~/tested_commits/iofsl_vampir_tested_commits.txt
   then
     echo "This commit has been tested previously...exiting testing schedule..." ; exit 0
   fi
