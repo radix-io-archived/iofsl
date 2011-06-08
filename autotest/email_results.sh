@@ -15,7 +15,7 @@ error_report(){
 
   echo "=========================================================" >> make_error_report.txt
   comm=${commit:0:7}
-  echo | mutt -c $committer_email -c rjdamore@gmail.com -s "clientrpc make error: for commit $comm" -a make_error_report.txt -- io-fwd-discuss@lists.mcs.anl.gov
+  echo | mutt -c $committer_email -c rjdamore@gmail.com -s "$branch make error: for commit $comm" -a make_error_report.txt -- io-fwd-discuss@lists.mcs.anl.gov
   #echo | mutt -a make_error_report.txt -s "clientrpc make error: for commit $comm" rjdamore@gmail.com
 
   edit_files
@@ -23,10 +23,10 @@ error_report(){
   fi
   cat make_error_report.txt >> make_error_report-pile.txt
   if
-    grep $commit ~/tested_commits/clientrpc_tested_commits.txt 
+    grep $commit ~/tested_commits/tested_commits.txt 
   then :
   else
-      echo "$commit" >> ~/tested_commits/clientrpc_tested_commits.txt
+      echo "$commit" >> ~/tested_commits/tested_commits.txt
   fi
   server_report
 }
@@ -41,10 +41,10 @@ server_report(){
   echo "==========================================================" >> server_report.txt
   cat server_report.txt >> server_report-pile.txt
   if
-    grep $commit ~/tested_commits/clientrpc_tested_commits.txt
+    grep $commit ~/tested_commits/tested_commits.txt
   then :
   else
-      echo "$commit" >> ~/tested_commits/clientrpc_tested_commits.txt
+      echo "$commit" >> ~/tested_commits/tested_commits.txt
   fi
   comm=${commit:0:7}
   echo | mutt -a server_report.txt -s "server report for commit $comm" rjdamore@gmail.com
@@ -61,10 +61,10 @@ test_report(){
   echo "==========================================================" >> test_report.txt
   cat test_report.txt >> test_report-pile.txt
   if
-    grep $commit ~/tested_commits/clientrpc_tested_commits.txt
+    grep $commit ~/tested_commits/tested_commits.txt
   then :
   else
-      echo "$commit" >> ~/tested_commits/clientrpc_tested_commits.txt
+      echo "$commit" >> ~/tested_commits/tested_commits.txt
   fi
   comm=${commit:0:7}
   #echo | mutt -a test_report.txt -s "test report for commit $comm PASS" rjdamore@gmail.com
@@ -78,10 +78,10 @@ edit_files(){
   cat runtest_results.txt >>  repo-testing-results-pile.txt
   echo "==========================================================" >> repo-testing-results-pile.txt
   if
-    grep $commit ~/tested_commits/clientrpc_tested_commits.txt
+    grep $commit ~/tested_commits/tested_commits.txt
   then :
   else
-      echo "$commit" >> ~/tested_commits/clientrpc_tested_commits.txt
+      echo "$commit" >> ~/tested_commits/tested_commits.txt
   fi
   rm -f runtest_results.txt
   make clean
