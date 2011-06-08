@@ -24,10 +24,10 @@ error_report(){
   fi
   cat make_error_report.txt >> make_error_report-pile.txt
   if
-    grep $commit autotest/tested_commits.txt
+    grep $commit ~/tested_commits/clientrpc_tested_commits.txt 
   then :
   else
-      echo "$commit" >> autotest/tested_commits.txt
+      echo "$commit" >> ~/tested_commits/clientrpc_tested_commits.txt
   fi
   server_report
 }
@@ -42,10 +42,10 @@ server_report(){
   echo "==========================================================" >> server_report.txt
   cat server_report.txt >> server_report-pile.txt
   if
-    grep $commit autotest/tested_commits.txt
+    grep $commit ~/tested_commits/clientrpc_tested_commits.txt
   then :
   else
-      echo "$commit" >> autotest/tested_commits.txt
+      echo "$commit" >> ~/tested_commits/clientrpc_tested_commits.txt
   fi
   comm=${commit:0:7}
   echo | mutt -a server_report.txt -s "server report for commit $comm" rjdamore@gmail.com
@@ -62,10 +62,10 @@ test_report(){
   echo "==========================================================" >> test_report.txt
   cat test_report.txt >> test_report-pile.txt
   if
-    grep $commit autotest/tested_commits.txt
+    grep $commit ~/tested_commits/clientrpc_tested_commits.txt
   then :
   else
-      echo "$commit" >> autotest/tested_commits.txt
+      echo "$commit" >> ~/tested_commits/clientrpc_tested_commits.txt
   fi
   comm=${commit:0:7}
   #echo | mutt -s "test report for commit $comm PASS" -a test_report.txt -- rjdamore@gmail.com
@@ -80,10 +80,10 @@ edit_files(){
   cat runtest_results.txt >>  repo-testing-results-pile.txt
   echo "==========================================================" >> repo-testing-results-pile.txt
   if
-    grep $commit autotest/tested_commits.txt
+    grep $commit ~/tested_commits/clientrpc_tested_commits.txt
   then :
   else
-      echo "$commit" >> autotest/tested_commits.txt
+      echo "$commit" >> ~/tested_commits/clientrpc_tested_commits.txt
   fi
   make clean
   make distclean
