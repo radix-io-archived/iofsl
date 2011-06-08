@@ -17,16 +17,16 @@ error_report(){
     echo "=========================================================" >> make_error_report.txt
   comm=${commit:0:7}
   #echo | mutt -c $committer_email -c rjdamore@gmail.com -s "iofsl_vampir make error: for commit $comm" -a make_error_report.txt -- io-fwd-discuss@lists.mcs.anl.gov
-  echo | mutt -s "make error: Make FAIL for commit $comm" -a make_error_report.txt -- rjdamore@gmail.com
+  echo | mutt -s "$branch make error: Make FAIL for commit $comm" -a make_error_report.txt -- rjdamore@gmail.com
   edit_files
   else test_report
   fi
   cat make_error_report.txt >> make_error_report-pile.txt
   if
-    grep $commit ~/tested_commits/iofsl_vampir_tested_commits.txt
+    grep $commit ~/tested_commits/tested_commits.txt
   then :
   else
-      echo "$commit" >> ~/tested_commits/iofsl_vampir_tested_commits.txt
+      echo "$commit" >> ~/tested_commits/tested_commits.txt
   fi
   server_report
 }
@@ -41,10 +41,10 @@ server_report(){
   echo "==========================================================" >> server_report.txt
   cat server_report.txt >> server_report-pile.txt
   if
-    grep $commit ~/tested_commits/iofsl_vampir_tested_commits.txt
+    grep $commit ~/tested_commits/tested_commits.txt
   then :
   else
-      echo "$commit" >> ~/tested_commits/iofsl_vampir_tested_commits.txt
+      echo "$commit" >> ~/tested_commits/tested_commits.txt
   fi
   comm=${commit:0:7}
   echo | mutt -a server_report.txt -s "server report for commit $comm" rjdamore@gmail.com
@@ -61,13 +61,13 @@ test_report(){
   echo "==========================================================" >> test_report.txt
   cat test_report.txt >> test_report-pile.txt
   if
-    grep $commit ~/tested_commits/iofsl_vampir_tested_commits.txt
+    grep $commit ~/tested_commits/tested_commits.txt
   then :
   else
-      echo "$commit" >> ~/tested_commits/iofsl_vampir_tested_commits.txt
+      echo "$commit" >> ~/tested_commits/tested_commits.txt
   fi
   comm=${commit:0:7}
-  echo | mutt -s "test report for commit $comm PASS" -a test_report.txt -- rjdamore@gmail.com
+  echo | mutt -s "$branch test report for commit $comm PASS" -a test_report.txt -- rjdamore@gmail.com
   #echo | mutt -c rjdamore@gmail.com.com -s "iofsl_vampir test report: PASS for commit $comm" -a test_report.txt -- io-fwd-discuss@lists.mcs.anl.gov
 
   edit_files
@@ -79,10 +79,10 @@ edit_files(){
   cat runtest_results.txt >>  repo-testing-results-pile.txt
   echo "==========================================================" >> repo-testing-results-pile.txt
   if
-    grep $commit ~/tested_commits/iofsl_vampir_tested_commits.txt
+    grep $commit ~/tested_commits/tested_commits.txt
   then :
   else
-      echo "$commit" >> ~/tested_commits/iofsl_vampir_tested_commits.txt
+      echo "$commit" >> ~/tested_commits/tested_commits.txt
   fi
   make clean
   make distclean
