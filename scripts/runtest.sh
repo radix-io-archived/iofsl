@@ -13,7 +13,7 @@ fi
 
 SCRIPTDIR="${IOFWD_SRCDIR}/scripts"
 CONFIGFILE="${SCRIPTDIR}/configoptions.$(hostname)"
-if test -r "${CONFIGFILE}" ; echo "config file is $CONFIGFILE.$(hostname)" ; then
+if test -r "${CONFIGFILE}" ; echo "config file is $CONFIGFILE" ; then
    source  "${CONFIGFILE}" ; echo "configure options = $CONFIGURE_OPTIONS" 
 else echo "could not use config file"
 fi
