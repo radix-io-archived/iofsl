@@ -16,8 +16,8 @@ error_report(){
 
     echo "=========================================================" >> make_error_report.txt
   comm=${commit:0:7}
-  echo | mutt -c $committer_email -c rjdamore@gmail.com -s "iofsl_vampir make error: for commit $comm" -a make_error_report.txt -- io-fwd-discuss@lists.mcs.anl.gov
-  #echo | mutt -a make_error_report.txt -s "make error: Make FAIL for commit $comm" rjdamore@gmail.com
+  #echo | mutt -c $committer_email -c rjdamore@gmail.com -s "iofsl_vampir make error: for commit $comm" -a make_error_report.txt -- io-fwd-discuss@lists.mcs.anl.gov
+  echo | mutt -s "make error: Make FAIL for commit $comm" -a make_error_report.txt -- rjdamore@gmail.com
   edit_files
   else test_report
   fi
@@ -67,8 +67,8 @@ test_report(){
       echo "$commit" >> ~/tested_commits/iofsl_vampir_tested_commits.txt
   fi
   comm=${commit:0:7}
-  #echo | mutt -a test_report.txt -s "test report for commit $comm PASS" rjdamore@gmail.com
-  echo | mutt -c rjdamore@gmail.com.com -s "iofsl_vampir test report: PASS for commit $comm" -a test_report.txt -- io-fwd-discuss@lists.mcs.anl.gov
+  echo | mutt -s "test report for commit $comm PASS" -a test_report.txt -- rjdamore@gmail.com
+  #echo | mutt -c rjdamore@gmail.com.com -s "iofsl_vampir test report: PASS for commit $comm" -a test_report.txt -- io-fwd-discuss@lists.mcs.anl.gov
 
   edit_files
 }
