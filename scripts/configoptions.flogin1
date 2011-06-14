@@ -12,3 +12,8 @@
 export CONFIGURE_OPTIONS="--with-cunit=/homes/rjdamore/opt/cunit-2.1 --with-boost=/homes/rjdamore/opt/boost-1.44 --with-bmi=/homes/rjdamore/opt/bmi-2.8.2"
 
 export DISTCHECK_CONFIGURE_FLAGS="${CONFIGURE_OPTIONS}"
+
+export IO_EMAIL_LIST="io-fwd-discuss@lists.mcs.anl.gov"
+
+export EMAIL1="rjdamore@gmail.com"
+
