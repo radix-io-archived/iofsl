@@ -8,7 +8,7 @@
 #FLAGS="$FLAGS -pg" ; LDFLAGS="-pg"
 
 #FLAGS="-g $FLAGS -Wall -Wextra -Wno-aggregate-return" 
-
+export IOFWD_SRCDIR=~/iofsl
 export CONFIGURE_OPTIONS="--with-cunit=/homes/rjdamore/opt/cunit-2.1 --with-boost=/homes/rjdamore/opt/boost-1.44 --with-bmi=/homes/rjdamore/opt/bmi-2.8.2"
 
 export DISTCHECK_CONFIGURE_FLAGS="${CONFIGURE_OPTIONS}"
