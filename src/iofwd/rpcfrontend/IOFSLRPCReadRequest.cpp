@@ -225,9 +225,9 @@ namespace iofwd
         }
         else
         {
-          delete [] outSize;
-          delete [] readLoc;
-          delete [] readSize;
+          delete outSize;
+          delete readLoc;
+          delete readSize;
           if (total_read_size == 0)
             out_->close(cb);
           else
@@ -272,7 +272,7 @@ namespace iofwd
                                             char ** writePtr)
       {
         e.check();
-        delete [] outsize;
+        delete outsize;
         delete [] writePtr;
         out_->flush(cb);
       }
