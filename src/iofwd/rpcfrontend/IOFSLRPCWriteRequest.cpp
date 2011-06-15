@@ -196,8 +196,8 @@ namespace iofwd
           recvRead (cb, rb, size - *outSize, outSize, runSize);
         else
         {
-          delete [] outSize;
-          delete [] runSize;
+          delete outSize;
+          delete runSize;
           cb(iofwdevent::CBException());      
         }
       }
