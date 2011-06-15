@@ -1,6 +1,6 @@
-noinst_LIBRARIES += src/iofwdevent/libiofwdevent.a
+#noinst_LIBRARIES += src/iofwdevent/libiofwdevent.a
 
-src_iofwdevent_libiofwdevent_a_SOURCES = \
+lib_libiofslcommon_a_SOURCES += \
 src/iofwdevent/NBQueue.hh \
 src/iofwdevent/ZeroCopyOutputStream.hh \
 src/iofwdevent/ZeroCopyOutputStream.cpp \
@@ -43,3 +43,6 @@ src/iofwdevent/ZeroCopyTransformInput.cpp \
 src/iofwdevent/ZeroCopyTransformInput.hh \
 src/iofwdevent/ZeroCopyTransformOutput.cpp \
 src/iofwdevent/ZeroCopyTransformOutput.hh
+
+lib_libiofslclient_a_SOURCES += src/iofwdevent/TokenResource.hh \
+                                src/iofwdevent/TokenResource.cpp  

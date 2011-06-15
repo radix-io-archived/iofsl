@@ -85,6 +85,6 @@ CPPCLIENTLIB += \
 # It is OK to define this here, even if we add sources to CLIENTLIB later on;
 # The expression is not evaluated at this point.
 #
-lib_LIBRARIES += src/iofwdclient/libiofwdclient.a
-src_iofwdclient_libiofwdclient_a_SOURCES = $(CPPCLIENTLIB)
+#lib_LIBRARIES += src/iofwdclient/libiofwdclient.a
+lib_libiofslclient_a_SOURCES += $(CPPCLIENTLIB)
 

@@ -7,55 +7,55 @@ if BUILD_IOFWD_CLIENT
 if HAVE_CUNIT
 
 test_unit_tests_ldadd =          \
-	${top_builddir}/src/common/libcommon.a \
-	${top_builddir}/src/zoidfs/libzoidfs-util.a  \
-	${top_builddir}/src/iofwdutil/libiofwdutil.a \
-	${top_builddir}/src/c-util/libiofsl-c-util.a       \
-    ${top_builddir}/src/zoidfs/libzoidfshints.a \
+    $(top_builddir)/lib/libiofslcommon.a \
+	  $(top_builddir)/lib/libiofsloldclient.a \
+  	@BOOST_PROGRAM_OPTIONS_LIB@ \
+  	@BOOST_DATE_TIME_LIB@ \
+  	@BOOST_THREAD_LIB@ \
+  	@BOOST_REGEX_LIB@ \
     @CUNIT_LIBS@                 \
     @ZFS_DISPATCHER_LIBS@ \
     @BMI_LIBS@
 
 test_unit_tests_ldflags =        \
+    @BOOST_LDFLAGS@ \
     @CUNIT_LDFLAGS@              \
     @ZFS_DISPATCHER_LDFLAGS@     \
     @BMI_LDFLAGS@
 
 noinst_PROGRAMS += test/xdrspeed
 test_xdrspeed_SOURCES = test/xdr/xdrspeed.cpp
-test_xdrspeed_LDADD = src/encoder/libencoder.a \
-		      src/iofwdutil/libiofwdutil.a
+test_xdrspeed_LDADD = $(test_unit_tests_ldadd)
 
 noinst_PROGRAMS += test/zoidfs-gridftp-test
 test_zoidfs_gridftp_test_SOURCES = test/zoidfs-gridftp-test.c
-test_zoidfs_gridftp_test_LDADD = src/zoidfs/libzoidfsclient.a ${test_unit_tests_ldadd}
+test_zoidfs_gridftp_test_LDADD = ${test_unit_tests_ldadd}
 test_zoidfs_gridftp_test_LDFLAGS = $(AM_LDFLAGS) ${test_unit_tests_ldflags}
 
 noinst_PROGRAMS += test/unit-tests/zoidfs-md-cunit test/unit-tests/zoidfs-md-cunit-local test/unit-tests/zoidfs-io-cunit \
 test/unit-tests/zoidfs-io-cunit-local
 
 test_unit_tests_zoidfs_md_cunit_SOURCES = test/unit-tests/zoidfs-md-cunit.c
-test_unit_tests_zoidfs_md_cunit_LDADD = src/zoidfs/libzoidfsclient.a ${test_unit_tests_ldadd}
+test_unit_tests_zoidfs_md_cunit_LDADD = ${test_unit_tests_ldadd}
 test_unit_tests_zoidfs_md_cunit_LDFLAGS = ${test_unit_tests_ldflags}
  
-test_unit_tests_zoidfs_md_cunit_local_SOURCES = test/unit-tests/zoidfs-md-cunit.c
-test_unit_tests_zoidfs_md_cunit_local_LDADD = src/zoidfs/libzoidfs.a ${test_unit_tests_ldadd}
+test_unit_tests_zoidfs_md_cunit_local_SOURCES = test/unit-tests/zoidfs-md-cunit.c 
+test_unit_tests_zoidfs_md_cunit_local_LDADD = ${test_unit_tests_ldadd}
 test_unit_tests_zoidfs_md_cunit_local_LDFLAGS = ${test_unit_tests_ldflags}
 
-test_unit_tests_zoidfs_io_cunit_SOURCES = test/unit-tests/zoidfs-io-cunit.c
-test_unit_tests_zoidfs_io_cunit_LDADD =  src/zoidfs/libzoidfsclient.a ${test_unit_tests_ldadd}
+test_unit_tests_zoidfs_io_cunit_SOURCES = test/unit-tests/zoidfs-io-cunit.c 
+test_unit_tests_zoidfs_io_cunit_LDADD =  ${test_unit_tests_ldadd}
 test_unit_tests_zoidfs_io_cunit_LDFLAGS = ${test_unit_tests_ldflags}
 
 
-test_unit_tests_zoidfs_io_cunit_local_SOURCES = test/unit-tests/zoidfs-io-cunit.c
-test_unit_tests_zoidfs_io_cunit_local_LDADD = src/zoidfs/libzoidfs.a ${test_unit_tests_ldadd}
+test_unit_tests_zoidfs_io_cunit_local_SOURCES = test/unit-tests/zoidfs-io-cunit.c 
+test_unit_tests_zoidfs_io_cunit_local_LDADD = ${test_unit_tests_ldadd}
 test_unit_tests_zoidfs_io_cunit_local_LDFLAGS = ${test_unit_tests_ldflags}
 
 noinst_PROGRAMS += test/unit-tests/configfile-cunit
-test_unit_tests_configfile_cunit_SOURCES = test/unit-tests/configfile-cunit.c
+test_unit_tests_configfile_cunit_SOURCES = test/unit-tests/configfile-cunit.c 
 test_unit_tests_configfile_cunit_LDFLAGS = ${test_unit_tests_ldflags}
 test_unit_tests_configfile_cunit_LDADD = \
-			    ${top_builddir}/src/c-util/libiofsl-c-util.a \
 			    ${test_unit_tests_ldadd}
 
 #test_unit_tests_zoidfs_io_cunit_auto_SOURCES = test/unit-tests/zoidfs-io-cunit.c
@@ -83,17 +83,8 @@ cppldflags = $(AM_LDFLAGS) ${test_unit_tests_ldflags} \
 		       @BMI_LDFLAGS@ @BOOST_LDFLAGS@
 
 cppldadd = \
-	${top_builddir}/src/rpc/librpc.a \
-	${top_builddir}/src/net/libnet.a \
-	${top_builddir}/src/zoidfs/libzoidfs-util.a \
-	${top_builddir}/src/zoidfs/libzoidfs.a \
-	${top_builddir}/src/sm/libsm.a \
-	${top_builddir}/src/iofwdutil/libiofwdutil.a \
-	${top_builddir}/src/c-util/libiofsl-c-util.a \
-	${top_builddir}/src/zoidfs/libzoidfshints.a \
-	${top_builddir}/src/iofwdevent/libiofwdevent.a \
-	${top_builddir}/src/encoder/libencoder.a \
-   ${top_builddir}/src/iofwdclient/libiofwdclient.a \
+  $(top_builddir)/lib/libiofslcommon.a \
+  $(top_builddir)/lib/libiofslclient.a \
 	@BOOST_PROGRAM_OPTIONS_LIB@ \
 	@BOOST_DATE_TIME_LIB@ \
 	@BOOST_THREAD_LIB@ \
@@ -104,27 +95,27 @@ cppldadd = \
 
 
 noinst_PROGRAMS += test/rpcservice
-test_rpcservice_SOURCES = test/rpcservice.cpp $(SERVERSOURCES)
+test_rpcservice_SOURCES = test/rpcservice.cpp 
 test_rpcservice_LDFLAGS = ${cppldflags}
 test_rpcservice_LDADD = ${cppldadd}
 
 noinst_PROGRAMS += test/rpcclienttest
-test_rpcclienttest_SOURCES = test/rpcclienttest.cpp $(SERVERSOURCES)
+test_rpcclienttest_SOURCES = test/rpcclienttest.cpp 
 test_rpcclienttest_LDFLAGS = ${cppldflags}
 test_rpcclienttest_LDADD = ${cppldadd}
 
 noinst_PROGRAMS += test/transform
-test_transform_SOURCES = test/transform.cpp $(SERVERSOURCES)
+test_transform_SOURCES = test/transform.cpp 
 test_transform_LDFLAGS = ${cppldflags}
 test_transform_LDADD = ${cppldadd}
 
 noinst_PROGRAMS += test/streamclienttest
-test_streamclienttest_SOURCES = test/streamclienttest.cpp test/streamclienttest.hh $(SERVERSOURCES)
+test_streamclienttest_SOURCES = test/streamclienttest.cpp test/streamclienttest.hh 
 test_streamclienttest_LDFLAGS = ${cppldflags}
 test_streamclienttest_LDADD = ${cppldadd}
 
 noinst_PROGRAMS += test/servercomm
-test_servercomm_SOURCES = test/servercomm.cpp $(SERVERSOURCES)
+test_servercomm_SOURCES = test/servercomm.cpp 
 test_servercomm_LDFLAGS = ${cppldflags}
 test_servercomm_LDADD = ${cppldadd}
 
@@ -132,7 +123,7 @@ test_servercomm_LDADD = ${cppldadd}
 
 noinst_PROGRAMS += test/net
 test_net_SOURCES = test/net.cpp test/TrackLive.cpp test/TrackLive.hh \
-		   test/boost/DataGenerator.hh test/boost/DataValidator.hh
+		   test/boost/DataGenerator.hh test/boost/DataValidator.hh 
 test_net_LDFLAGS = ${cppldflags}
 test_net_LDADD = ${cppldadd}
 
@@ -143,14 +134,32 @@ if HAVE_MPI
 
 test_microbenchmarks_ldadd =     \
     -lm                          \
-    ${top_builddir}/src/zoidfs/libzoidfs-util.a  \
-    ${top_builddir}/src/iofwdutil/libiofwdutil.a \
-    ${top_builddir}/src/zoidfs/libzoidfshints.a \
-    ${top_builddir}/src/c-util/libiofsl-c-util.a       \
-    @ZFS_DISPATCHER_LIBS@ @BMI_LIBS@
+    $(top_builddir)/lib/libiofslcommon.a \
+    $(top_builddir)/lib/libiofsloldclient.a \
+  	@BOOST_PROGRAM_OPTIONS_LIB@ \
+  	@BOOST_DATE_TIME_LIB@ \
+  	@BOOST_THREAD_LIB@ \
+  	@BOOST_REGEX_LIB@ \
+    @ZFS_DISPATCHER_LIBS@ \
+    @BMI_LIBS@
 
-test_microbenchmarks_ldflags =   \
-    @ZFS_DISPATCHER_LDFLAGS@ @BMI_LDFLAGS@
+test_microbenchmarks_lddlocal =     \
+    -lm                          \
+    $(top_builddir)/lib/libiofslcommon.a \
+    $(top_builddir)/lib/libiofsloldclient.a \
+  	@BOOST_PROGRAM_OPTIONS_LIB@ \
+  	@BOOST_DATE_TIME_LIB@ \
+  	@BOOST_THREAD_LIB@ \
+  	@BOOST_REGEX_LIB@ \
+    @ZFS_DISPATCHER_LIBS@ \
+    @BMI_LIBS@
+
+
+test_microbenchmarks_ldflags =  \
+    @BOOST_LDFLAGS@ \
+    @CUNIT_LDFLAGS@              \
+    @ZFS_DISPATCHER_LDFLAGS@     \
+    @BMI_LDFLAGS@
 
 noinst_PROGRAMS += test/zoidfs-microbenchmarks/creat-thput test/zoidfs-microbenchmarks/creat-thput-local \
 test/zoidfs-microbenchmarks/mkdir-thput test/zoidfs-microbenchmarks/mkdir-thput-local test/zoidfs-microbenchmarks/lookup-thput \
@@ -160,69 +169,69 @@ test/zoidfs-microbenchmarks/remove-thput-local test/zoidfs-microbenchmarks/null-
 test/zoidfs-microbenchmarks/zoidfs-tile-io test/zoidfs-microbenchmarks/zoidfs-tile-io-local
 
 test_zoidfs_microbenchmarks_zoidfs_tile_io_SOURCES = test/zoidfs-microbenchmarks/zoidfs-tile-io.c
-test_zoidfs_microbenchmarks_zoidfs_tile_io_LDADD = src/zoidfs/libzoidfsclient.a ${test_microbenchmarks_ldadd}
+test_zoidfs_microbenchmarks_zoidfs_tile_io_LDADD =  ${test_microbenchmarks_ldadd}
 test_zoidfs_microbenchmarks_zoidfs_tile_io_LDFLAGS = ${test_microbenchmarks_ldflags}
 test_zoidfs_microbenchmarks_zoidfs_tile_io_CFLAGS = -DHAVE_GETOPT_LONG 
  
-test_zoidfs_microbenchmarks_zoidfs_tile_io_local_SOURCES = test/zoidfs-microbenchmarks/zoidfs-tile-io.c
-test_zoidfs_microbenchmarks_zoidfs_tile_io_local_LDADD = src/zoidfs/libzoidfs.a ${test_microbenchmarks_ldadd}
+test_zoidfs_microbenchmarks_zoidfs_tile_io_local_SOURCES = test/zoidfs-microbenchmarks/zoidfs-tile-io.c 
+test_zoidfs_microbenchmarks_zoidfs_tile_io_local_LDADD = ${test_microbenchmarks_ldadd}
 test_zoidfs_microbenchmarks_zoidfs_tile_io_local_LDFLAGS = ${test_microbenchmarks_ldflags}
 test_zoidfs_microbenchmarks_zoidfs_tile_io_local_CFLAGS = -DHAVE_GETOPT_LONG 
  
 test_zoidfs_microbenchmarks_creat_thput_SOURCES = test/zoidfs-microbenchmarks/creat-thput.c test/zoidfs-microbenchmarks/thput.h
-test_zoidfs_microbenchmarks_creat_thput_LDADD = src/zoidfs/libzoidfsclient.a ${test_microbenchmarks_ldadd}
+test_zoidfs_microbenchmarks_creat_thput_LDADD = ${test_microbenchmarks_ldadd}
 test_zoidfs_microbenchmarks_creat_thput_LDFLAGS = ${test_microbenchmarks_ldflags}
  
 test_zoidfs_microbenchmarks_creat_thput_local_SOURCES = test/zoidfs-microbenchmarks/creat-thput.c test/zoidfs-microbenchmarks/thput.h
-test_zoidfs_microbenchmarks_creat_thput_local_LDADD = src/zoidfs/libzoidfs.a ${test_microbenchmarks_ldadd}
+test_zoidfs_microbenchmarks_creat_thput_local_LDADD =  ${test_microbenchmarks_lddlocal}
 test_zoidfs_microbenchmarks_creat_thput_local_LDFLAGS = ${test_microbenchmarks_ldflags}
  
 test_zoidfs_microbenchmarks_null_thput_SOURCES = test/zoidfs-microbenchmarks/null-thput.c test/zoidfs-microbenchmarks/thput.h
-test_zoidfs_microbenchmarks_null_thput_LDADD = src/zoidfs/libzoidfsclient.a ${test_microbenchmarks_ldadd}
+test_zoidfs_microbenchmarks_null_thput_LDADD = ${test_microbenchmarks_ldadd}
 test_zoidfs_microbenchmarks_null_thput_LDFLAGS = ${test_microbenchmarks_ldflags}
  
-test_zoidfs_microbenchmarks_null_thput_local_SOURCES = test/zoidfs-microbenchmarks/null-thput.c test/zoidfs-microbenchmarks/thput.h
-test_zoidfs_microbenchmarks_null_thput_local_LDADD = src/zoidfs/libzoidfs.a ${test_microbenchmarks_ldadd}
+test_zoidfs_microbenchmarks_null_thput_local_SOURCES = test/zoidfs-microbenchmarks/null-thput.c test/zoidfs-microbenchmarks/thput.h 
+test_zoidfs_microbenchmarks_null_thput_local_LDADD = ${test_microbenchmarks_lddlocal}
 test_zoidfs_microbenchmarks_null_thput_local_LDFLAGS = ${test_microbenchmarks_ldflags}
  
-test_zoidfs_microbenchmarks_remove_thput_SOURCES = test/zoidfs-microbenchmarks/remove-thput.c test/zoidfs-microbenchmarks/thput.h
-test_zoidfs_microbenchmarks_remove_thput_LDADD = src/zoidfs/libzoidfsclient.a ${test_microbenchmarks_ldadd}
+test_zoidfs_microbenchmarks_remove_thput_SOURCES = test/zoidfs-microbenchmarks/remove-thput.c test/zoidfs-microbenchmarks/thput.h 
+test_zoidfs_microbenchmarks_remove_thput_LDADD = ${test_microbenchmarks_ldadd}
 test_zoidfs_microbenchmarks_remove_thput_LDFLAGS = ${test_microbenchmarks_ldflags}
  
-test_zoidfs_microbenchmarks_remove_thput_local_SOURCES = test/zoidfs-microbenchmarks/remove-thput.c test/zoidfs-microbenchmarks/thput.h
-test_zoidfs_microbenchmarks_remove_thput_local_LDADD = src/zoidfs/libzoidfs.a ${test_microbenchmarks_ldadd}
+test_zoidfs_microbenchmarks_remove_thput_local_SOURCES = test/zoidfs-microbenchmarks/remove-thput.c test/zoidfs-microbenchmarks/thput.h 
+test_zoidfs_microbenchmarks_remove_thput_local_LDADD =  ${test_microbenchmarks_lddlocal}
 test_zoidfs_microbenchmarks_remove_thput_local_LDFLAGS = ${test_microbenchmarks_ldflags}
  
-test_zoidfs_microbenchmarks_lookup_thput_SOURCES = test/zoidfs-microbenchmarks/lookup-thput.c test/zoidfs-microbenchmarks/thput.h
-test_zoidfs_microbenchmarks_lookup_thput_LDADD = src/zoidfs/libzoidfsclient.a ${test_microbenchmarks_ldadd}
+test_zoidfs_microbenchmarks_lookup_thput_SOURCES = test/zoidfs-microbenchmarks/lookup-thput.c test/zoidfs-microbenchmarks/thput.h 
+test_zoidfs_microbenchmarks_lookup_thput_LDADD = ${test_microbenchmarks_ldadd}
 test_zoidfs_microbenchmarks_lookup_thput_LDFLAGS = ${test_microbenchmarks_ldflags}
  
 test_zoidfs_microbenchmarks_lookup_thput_local_SOURCES = test/zoidfs-microbenchmarks/lookup-thput.c test/zoidfs-microbenchmarks/thput.h
-test_zoidfs_microbenchmarks_lookup_thput_local_LDADD = src/zoidfs/libzoidfs.a ${test_microbenchmarks_ldadd}
+test_zoidfs_microbenchmarks_lookup_thput_local_LDADD = ${test_microbenchmarks_lddlocal}
 test_zoidfs_microbenchmarks_lookup_thput_local_LDFLAGS = ${test_microbenchmarks_ldflags}
 
 test_zoidfs_microbenchmarks_getattr_thput_SOURCES = test/zoidfs-microbenchmarks/getattr-thput.c test/zoidfs-microbenchmarks/thput.h
-test_zoidfs_microbenchmarks_getattr_thput_LDADD = src/zoidfs/libzoidfsclient.a ${test_microbenchmarks_ldadd}
+test_zoidfs_microbenchmarks_getattr_thput_LDADD = ${test_microbenchmarks_ldadd}
 test_zoidfs_microbenchmarks_getattr_thput_LDFLAGS = ${test_microbenchmarks_ldflags}
  
-test_zoidfs_microbenchmarks_getattr_thput_local_SOURCES = test/zoidfs-microbenchmarks/getattr-thput.c test/zoidfs-microbenchmarks/thput.h
-test_zoidfs_microbenchmarks_getattr_thput_local_LDADD = src/zoidfs/libzoidfs.a ${test_microbenchmarks_ldadd}
+test_zoidfs_microbenchmarks_getattr_thput_local_SOURCES = test/zoidfs-microbenchmarks/getattr-thput.c test/zoidfs-microbenchmarks/thput.h 
+test_zoidfs_microbenchmarks_getattr_thput_local_LDADD =  ${test_microbenchmarks_lddlocal}
 test_zoidfs_microbenchmarks_getattr_thput_local_LDFLAGS = ${test_microbenchmarks_ldflags}
  
-test_zoidfs_microbenchmarks_setattr_thput_SOURCES = test/zoidfs-microbenchmarks/setattr-thput.c test/zoidfs-microbenchmarks/thput.h
-test_zoidfs_microbenchmarks_setattr_thput_LDADD = src/zoidfs/libzoidfsclient.a ${test_microbenchmarks_ldadd}
+test_zoidfs_microbenchmarks_setattr_thput_SOURCES = test/zoidfs-microbenchmarks/setattr-thput.c test/zoidfs-microbenchmarks/thput.h 
+test_zoidfs_microbenchmarks_setattr_thput_LDADD = ${test_microbenchmarks_ldadd}
 test_zoidfs_microbenchmarks_setattr_thput_LDFLAGS = ${test_microbenchmarks_ldflags}
  
-test_zoidfs_microbenchmarks_setattr_thput_local_SOURCES = test/zoidfs-microbenchmarks/setattr-thput.c test/zoidfs-microbenchmarks/thput.h
-test_zoidfs_microbenchmarks_setattr_thput_local_LDADD = src/zoidfs/libzoidfs.a ${test_microbenchmarks_ldadd}
+test_zoidfs_microbenchmarks_setattr_thput_local_SOURCES = test/zoidfs-microbenchmarks/setattr-thput.c test/zoidfs-microbenchmarks/thput.h 
+test_zoidfs_microbenchmarks_setattr_thput_local_LDADD =  ${test_microbenchmarks_lddlocal}
 test_zoidfs_microbenchmarks_setattr_thput_local_LDFLAGS = ${test_microbenchmarks_ldflags}
  
-test_zoidfs_microbenchmarks_mkdir_thput_SOURCES = test/zoidfs-microbenchmarks/mkdir-thput.c test/zoidfs-microbenchmarks/thput.h
-test_zoidfs_microbenchmarks_mkdir_thput_LDADD = src/zoidfs/libzoidfsclient.a ${test_microbenchmarks_ldadd}
+test_zoidfs_microbenchmarks_mkdir_thput_SOURCES = test/zoidfs-microbenchmarks/mkdir-thput.c test/zoidfs-microbenchmarks/thput.h 
+test_zoidfs_microbenchmarks_mkdir_thput_LDADD = ${test_microbenchmarks_ldadd}
 test_zoidfs_microbenchmarks_mkdir_thput_LDFLAGS = ${test_microbenchmarks_ldflags}
  
-test_zoidfs_microbenchmarks_mkdir_thput_local_SOURCES = test/zoidfs-microbenchmarks/mkdir-thput.c test/zoidfs-microbenchmarks/thput.h
-test_zoidfs_microbenchmarks_mkdir_thput_local_LDADD = src/zoidfs/libzoidfs.a ${test_microbenchmarks_ldadd}
+test_zoidfs_microbenchmarks_mkdir_thput_local_SOURCES = test/zoidfs-microbenchmarks/mkdir-thput.c test/zoidfs-microbenchmarks/thput.h 
+test_zoidfs_microbenchmarks_mkdir_thput_local_LDADD = ${test_microbenchmarks_lddlocal}
 test_zoidfs_microbenchmarks_mkdir_thput_local_LDFLAGS = ${test_microbenchmarks_ldflags}
 endif
 
@@ -230,11 +239,21 @@ endif
 
 noinst_PROGRAMS += test/hashfunc
 test_hashfunc_SOURCES = test/hashfunc.cpp
-test_hashfunc_LDADD = ${top_builddir}/src/iofwdutil/libiofwdutil.a \
-		      ${top_builddir}/src/c-util/libiofsl-c-util.a \
-		      @BOOST_PROGRAM_OPTIONS_LIB@ \
-		      @BOOST_THREAD_LIB@
-test_hashfunc_LDFLAGS = @BMI_LDFLAGS@ @BOOST_LDFLAGS@
+test_hashfunc_LDADD = \
+    $(top_builddir)/lib/libiofslcommon.a \
+	  $(top_builddir)/lib/libiofsloldclient.a \
+  	@BOOST_PROGRAM_OPTIONS_LIB@ \
+  	@BOOST_DATE_TIME_LIB@ \
+  	@BOOST_THREAD_LIB@ \
+  	@BOOST_REGEX_LIB@ \
+    @ZFS_DISPATCHER_LIBS@ \
+    @BMI_LIBS@
+
+
+test_hashfunc_LDFLAGS =     @BOOST_LDFLAGS@ \
+    @ZFS_DISPATCHER_LDFLAGS@     \
+    @BMI_LDFLAGS@
+
 
 noinst_PROGRAMS += test/bmi-sm-pingpong
 test_bmi_sm_pingpong_SOURCES = test/bmi-sm-pingpong.cpp \
@@ -242,21 +261,26 @@ test_bmi_sm_pingpong_SOURCES = test/bmi-sm-pingpong.cpp \
 			       test/bmi-sm-pingpong-state.cpp \
 			       test/BMIInit.hh \
 			       test/BMILink.hh
-test_bmi_sm_pingpong_LDADD = ${top_builddir}/src/sm/libsm.a \
-			     ${top_builddir}/src/iofwdevent/libiofwdevent.a \
-			     ${top_builddir}/src/iofwdutil/libiofwdutil.a \
-				@BOOST_PROGRAM_OPTIONS_LIB@ \
-			     @BOOST_REGEX_LIB@ \
-			     @BOOST_THREAD_LIB@ \
-			     @BOOST_DATE_TIME_LIB@ \
-			     @BMI_LIBS@
+test_bmi_sm_pingpong_LDADD = \
+    $(top_builddir)/lib/libiofslcommon.a \
+	  $(top_builddir)/lib/libiofsloldclient.a \
+  	@BOOST_PROGRAM_OPTIONS_LIB@ \
+  	@BOOST_DATE_TIME_LIB@ \
+  	@BOOST_THREAD_LIB@ \
+  	@BOOST_REGEX_LIB@ \
+    @ZFS_DISPATCHER_LIBS@ \
+    @BMI_LIBS@
 
-test_bmi_sm_pingpong_LDFLAGS = @BMI_LDFLAGS@ @BOOST_LDFLAGS@
+test_bmi_sm_pingpong_LDFLAGS =  @BOOST_LDFLAGS@ \
+    @ZFS_DISPATCHER_LDFLAGS@     \
+    @BMI_LDFLAGS@
+
 
 
 noinst_PROGRAMS += test/configfile
-test_configfile_SOURCES = test/configfile.c
-test_configfile_LDADD = ${top_builddir}/src/c-util/libiofsl-c-util.a 
+test_configfile_SOURCES = test/configfile.c 
+test_configfile_LDADD = $(test_bmi_sm_pingpong_LDADD)
+test_configfile_LDFLAGS = $(test_bmi_sm_pingpong_LDFLAGS)
 
 
 #if HAVE_MPI

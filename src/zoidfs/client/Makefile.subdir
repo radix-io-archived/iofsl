@@ -1,7 +1,6 @@
 if BUILD_IOFWD_CLIENT
-lib_LIBRARIES += src/zoidfs/libzoidfsclient.a
 
-src_zoidfs_libzoidfsclient_a_SOURCES = \
+ZOIDFSCLIENTSOURCES = \
 src/zoidfs/client/bmi_comm.h \
 src/zoidfs/client/bmi_comm.c \
 src/zoidfs/client/zoidfs_xdr.h \
@@ -13,14 +12,13 @@ src/zoidfs/client/zoidfsclient.c
 #    ${top_builddir}/src/zoidfs/libzoidfshints.a
 
 #if HAVE_MPI
-#src_zoidfs_libzoidfsclient_a_SOURCES += \
+#ZOIDFSCLIENTSOURCES += \
 #src/zoidfs/client/mpi_comm.h \
 #src/zoidfs/client/mpi_comm.c
 #endif
 
 if HAVE_MPI
-lib_LIBRARIES += src/zoidfs/libzoidfsrouter.a
-src_zoidfs_libzoidfsrouter_a_SOURCES = \
+ZOIDFSROUTERSOURCES = \
 src/zoidfs/client/router/zoidfsclientbl.h \
 src/zoidfs/client/router/zoidfsclientbl.c \
 src/zoidfs/client/router/zoidfsclientss.h \
@@ -29,6 +27,9 @@ src/zoidfs/client/router/zoidfsclienthcache.h \
 src/zoidfs/client/router/zoidfsclienthcache.c \
 src/zoidfs/client/router/zoidfsrouter.h \
 src/zoidfs/client/router/zoidfsrouter.c
+lib_libiofsloldclientmpi_a_SOURCES += $(ZOIDFSROUTERSOURCES)
 endif
-
+lib_libiofslserver_a_SOURCES += $(ZOIDFSCLIENTSOURCES)
+lib_libiofsloldclient_a_SOURCES += $(ZOIDFSCLIENTSOURCES)
+lib_libiofslclient_a_SOURCES += $(ZOIDFSCLIENTSOURCES)
 endif

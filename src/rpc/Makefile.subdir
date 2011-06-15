@@ -1,6 +1,6 @@
-noinst_LIBRARIES += src/rpc/librpc.a
+#noinst_LIBRARIES += src/rpc/librpc.a
 
-src_rpc_librpc_a_SOURCES = \
+lib_libiofslcommon_a_SOURCES += \
 	src/rpc/RPCException.hh \
 	src/rpc/RPCServer.cpp \
 	src/rpc/RPCServer.hh \

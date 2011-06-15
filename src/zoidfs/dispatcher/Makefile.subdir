@@ -1,4 +1,3 @@
-lib_LIBRARIES += src/zoidfs/libzoidfs.a
 
 src_zoidfs_libzoidfs_a_SOURCES = \
 src/zoidfs/dispatcher/zint-handler.h \
@@ -15,6 +14,7 @@ src_zoidfs_libzoidfs_a_SOURCES += \
 src/zoidfs/dispatcher/pvfs/zoidfs-pvfs2.c \
 src/zoidfs/dispatcher/pvfs/zoidfs-pvfs2.h
 endif
+
 
 if DISPATCH_LIBSYSIO
 src_zoidfs_libzoidfs_a_SOURCES += \
@@ -44,4 +44,12 @@ if DISPATCH_GRIDFTP
 src_zoidfs_libzoidfs_a_SOURCES += \
 src/zoidfs/dispatcher/gridftp/zoidfs-gridftp.h \
 src/zoidfs/dispatcher/gridftp/zoidfs-gridftp.c
+endif
+
+lib_libiofslserver_a_SOURCES += $(src_zoidfs_libzoidfs_a_SOURCES)
+lib_libiofsloldclient_a_SOURCES += $(src_zoidfs_libzoidfs_a_SOURCES)
+lib_libiofslclient_a_SOURCES += $(src_zoidfs_libzoidfs_a_SOURCES)
+
+if HAVE_MPI
+lib_libiofsloldclientmpi_a_SOURCES  += $(src_zoidfs_libzoidfs_a_SOURCES)
 endif

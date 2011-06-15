@@ -6,3 +6,10 @@ SERVERSOURCES += \
    src/iofwd/service/ServiceManager.cpp \
    src/iofwd/service/ServiceException.hh
 
+lib_libiofslclient_a_SOURCES += src/iofwd/service/Service.hh \
+                                src/iofwd/service/Service.cpp \
+                                src/iofwd/service/ServiceManager.hh \
+                                src/iofwd/service/ServiceManager.cpp \
+                                src/iofwd/service/ServiceException.hh
+
+

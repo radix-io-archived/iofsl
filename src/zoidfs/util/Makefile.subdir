@@ -1,6 +1,6 @@
-lib_LIBRARIES += src/zoidfs/libzoidfs-util.a
+#lib_LIBRARIES += src/zoidfs/libzoidfs-util.a
 
-src_zoidfs_libzoidfs_util_a_LIBLDFLAGS = \
+ZOIDFSUTILLDDFLAGS = \
     @BOOST_LDFLAGS@ \
     @BOOST_PROGRAM_OPTIONS_LIB@ \
     @BOOST_DATE_TIME_LIB@ \
@@ -10,7 +10,7 @@ src_zoidfs_libzoidfs_util_a_LIBLDFLAGS = \
 #src_zoidfs_libzoidfs_util_a_LIBADD = \
 #    ${top_builddir}/src/zoidfs/libzoidfshints.a
 
-src_zoidfs_libzoidfs_util_a_SOURCES = \
+ZOIDFSUTILSOURCES = \
 src/zoidfs/util/RateLimiterAsync.hh \
 src/zoidfs/util/RateLimiterAsync.cpp \
 src/zoidfs/util/ZoidFSSyncAdapter.cpp \
@@ -49,3 +49,10 @@ src/zoidfs/util/ZoidfsFileOfsStruct.hh \
 src/zoidfs/util/EncodeDirentT.hh \
 src/zoidfs/util/ZoidFSHints.hh \
 src/zoidfs/util/Hint.hh
+
+lib_libiofslserver_a_SOURCES += $(ZOIDFSUTILSOURCES)
+lib_libiofsloldclient_a_SOURCES += $(ZOIDFSUTILSOURCES)
+lib_libiofslclient_a_SOURCES += $(ZOIDFSUTILSOURCES)
+if HAVE_MPI
+lib_libiofsloldclientmpi_a_SOURCES += $(ZOIDFSUTILSOURCES)
+endif

@@ -1,15 +1,15 @@
-noinst_LIBRARIES += src/iofwdutil/libiofwdutil.a
+#noinst_LIBRARIES += src/iofwdutil/libiofwdutil.a
 
 
-src_iofwdutil_libiofwdutil_a_LIBLDFLAGS = \
-    @BOOST_LDFLAGS@ \
-    @BOOST_PROGRAM_OPTIONS_LIB@ \
-    @BOOST_DATE_TIME_LIB@ \
-    @BOOST_THREAD_LIB@ \
-    @BOOST_REGEX_LIB@
+#src_iofwdutil_libiofwdutil_a_LIBLDFLAGS = \
+#    @BOOST_LDFLAGS@ \
+#    @BOOST_PROGRAM_OPTIONS_LIB@ \
+#    @BOOST_DATE_TIME_LIB@ \
+#    @BOOST_THREAD_LIB@ \
+#    @BOOST_REGEX_LIB@
 
 
-src_iofwdutil_libiofwdutil_a_SOURCES = \
+lib_libiofslcommon_a_SOURCES += \
 src/iofwdutil/Configurable.hh \
 src/iofwdutil/Configurable.cpp \
 src/iofwdutil/LinkHelper.hh \
@@ -183,7 +183,7 @@ src/iofwdutil/IofwdutilLinkHelper.hh \
 src/iofwdutil/IofwdutilLinkHelper.cpp
 
 if HAVE_ZLIB
-src_iofwdutil_libiofwdutil_a_SOURCES += \
+lib_libiofslcommon_a_SOURCES += \
 src/iofwdutil/hash/Adler32.hh \
 src/iofwdutil/hash/Adler32.cpp \
 src/iofwdutil/hash/CRC32.hh \
@@ -197,7 +197,7 @@ src/iofwdutil/transform/ZLibDecompress.cpp
 endif
 
 if HAVE_BZLIB
-src_iofwdutil_libiofwdutil_a_SOURCES += \
+lib_libiofslcommon_a_SOURCES += \
 src/iofwdutil/transform/BZLib.hh \
 src/iofwdutil/transform/BZLib.cpp \
 src/iofwdutil/transform/BZCompress.hh \
@@ -207,7 +207,7 @@ src/iofwdutil/transform/BZDecompress.cpp
 endif
 
 if HAVE_OPENSSL
-src_iofwdutil_libiofwdutil_a_SOURCES += \
+lib_libiofslcommon_a_SOURCES += \
 	src/iofwdutil/hash/OpenSSLHash.hh \
 	src/iofwdutil/hash/OpenSSLException.hh \
 	src/iofwdutil/hash/OpenSSLHash.cpp \
@@ -217,7 +217,7 @@ endif
 
 
 if HAVE_LZO
-src_iofwdutil_libiofwdutil_a_SOURCES += \
+lib_libiofslcommon_a_SOURCES += \
 	src/iofwdutil/transform/LZOCompress.hh \
 	src/iofwdutil/transform/LZODecompress.hh \
 	src/iofwdutil/transform/LZOCompress.cpp \
