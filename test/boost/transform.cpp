@@ -193,72 +193,72 @@ static void testTransform (GenericTransform & encode, GenericTransform &
 // transforms automatically and test them.
 BOOST_FIXTURE_TEST_CASE ( transform_encode_decode, Dummy )
 {
-   BOOST_TEST_MESSAGE("Registering Transforms...");
-   registerIofwdutilFactoryClients ();
+//   BOOST_TEST_MESSAGE("Registering Transforms...");
+//   registerIofwdutilFactoryClients ();
 
-   BOOST_TEST_MESSAGE("Registered transforms:");
+//   BOOST_TEST_MESSAGE("Registered transforms:");
 
-   std::set<std::string> encode;
-   std::set<std::string> decode;
-   std::set<std::string> cantest;
-   std::set<std::string> notest;
+//   std::set<std::string> encode;
+//   std::set<std::string> decode;
+//   std::set<std::string> cantest;
+//   std::set<std::string> notest;
 
-   GenericTransformEncodeFactory::instance().keys 
-      (std::inserter(encode, encode.begin()));
-   
-   GenericTransformDecodeFactory::instance().keys 
-      (std::inserter(decode, decode.begin()));
+//   GenericTransformEncodeFactory::instance().keys 
+//      (std::inserter(encode, encode.begin()));
+//   
+//   GenericTransformDecodeFactory::instance().keys 
+//      (std::inserter(decode, decode.begin()));
 
-   std::set_intersection (encode.begin(), encode.end(),
-         decode.begin(), decode.end(), std::inserter(cantest, cantest.begin()));
-   std::set_symmetric_difference (encode.begin(), encode.end(),
-         decode.begin(), decode.end(), std::inserter(notest, notest.begin()));
+//   std::set_intersection (encode.begin(), encode.end(),
+//         decode.begin(), decode.end(), std::inserter(cantest, cantest.begin()));
+//   std::set_symmetric_difference (encode.begin(), encode.end(),
+//         decode.begin(), decode.end(), std::inserter(notest, notest.begin()));
 
-   BOOST_FOREACH (const std::string & s, encode)
-   {
-      BOOST_TEST_MESSAGE(format("Encode: %s") % s);
-   }
+//   BOOST_FOREACH (const std::string & s, encode)
+//   {
+//      BOOST_TEST_MESSAGE(format("Encode: %s") % s);
+//   }
 
-   std::set_intersection (encode.begin(), encode.end(),
-         decode.begin(), decode.end(), std::inserter(cantest, cantest.begin()));
-   std::set_symmetric_difference (encode.begin(), encode.end(),
-         decode.begin(), decode.end(), std::inserter(notest, notest.begin()));
+//   std::set_intersection (encode.begin(), encode.end(),
+//         decode.begin(), decode.end(), std::inserter(cantest, cantest.begin()));
+//   std::set_symmetric_difference (encode.begin(), encode.end(),
+//         decode.begin(), decode.end(), std::inserter(notest, notest.begin()));
 
-   BOOST_FOREACH (const std::string & s, decode)
-   {
-      BOOST_TEST_MESSAGE(format("Decode: %s") % s);
-   }
-   
-   BOOST_FOREACH (const std::string & s, cantest)
-   {
-      BOOST_TEST_MESSAGE(format("Will test: %s (have encode and decode)") % s);
-   }
-
-
-   BOOST_FOREACH (const std::string & s, notest)
-   {
-      BOOST_TEST_MESSAGE(format("Cannot test: %s (encode or decode missing)")
-            % s);
-   }
-
-   BOOST_TEST_MESSAGE("Testing encoding and decoding");
-
-   size_t loops = LOOPS * (isLongTestEnabled() ? 30 : 1);
+//   BOOST_FOREACH (const std::string & s, decode)
+//   {
+//      BOOST_TEST_MESSAGE(format("Decode: %s") % s);
+//   }
+//   
+//   BOOST_FOREACH (const std::string & s, cantest)
+//   {
+//      BOOST_TEST_MESSAGE(format("Will test: %s (have encode and decode)") % s);
+//   }
 
 
-   for (size_t i=0; i<loops; ++i)
-   {
-      BOOST_FOREACH (const std::string & s, cantest)
-      {
-         BOOST_TEST_MESSAGE(format("Testing %s") % s);
+//   BOOST_FOREACH (const std::string & s, notest)
+//   {
+//      BOOST_TEST_MESSAGE(format("Cannot test: %s (encode or decode missing)")
+//            % s);
+//   }
 
-         boost::scoped_ptr<GenericTransform> encodetr (
-            GenericTransformEncodeFactory::instance().construct(s)());
-         boost::scoped_ptr<GenericTransform> decodetr (
-            GenericTransformDecodeFactory::instance().construct(s)());
+//   BOOST_TEST_MESSAGE("Testing encoding and decoding");
 
-         testTransform (*encodetr, *decodetr);
-     }
-   }
+//   size_t loops = LOOPS * (isLongTestEnabled() ? 30 : 1);
+
+
+//   for (size_t i=0; i<loops; ++i)
+//   {
+//      BOOST_FOREACH (const std::string & s, cantest)
+//      {
+//         BOOST_TEST_MESSAGE(format("Testing %s") % s);
+
+//         boost::scoped_ptr<GenericTransform> encodetr (
+//            GenericTransformEncodeFactory::instance().construct(s)());
+//         boost::scoped_ptr<GenericTransform> decodetr (
+//            GenericTransformDecodeFactory::instance().construct(s)());
+
+//         testTransform (*encodetr, *decodetr);
+//     }
+//   }
 }
 

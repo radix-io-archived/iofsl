@@ -6,7 +6,8 @@ src/zoidfs/client/bmi_comm.c \
 src/zoidfs/client/zoidfs_xdr.h \
 src/zoidfs/client/zoidfs_xdr.c \
 src/zoidfs/client/zoidfsclient.h \
-src/zoidfs/client/zoidfsclient.c
+src/zoidfs/client/zoidfsclient.c \
+src/zoidfs/client/pzoidfsdef.h
 
 #src_zoidfs_libzoidfsclient_a_LIBADD = \
 #    ${top_builddir}/src/zoidfs/libzoidfshints.a
@@ -19,6 +20,7 @@ src/zoidfs/client/zoidfsclient.c
 
 if HAVE_MPI
 ZOIDFSROUTERSOURCES = \
+src/zoidfs/client/pzoidfsdef.h \
 src/zoidfs/client/router/zoidfsclientbl.h \
 src/zoidfs/client/router/zoidfsclientbl.c \
 src/zoidfs/client/router/zoidfsclientss.h \
