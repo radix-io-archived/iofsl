@@ -1,6 +1,12 @@
-lib_LIBRARIES += src/zoidfs/libzoidfshints.a
+#lib_LIBRARIES += src/zoidfs/libzoidfshints.a
 
-src_zoidfs_libzoidfshints_a_SOURCES = \
+ZOIDFSHINTSSOURCES = \
 src/zoidfs/hints/zoidfs-hints.h \
 src/zoidfs/hints/zoidfs-hints.c
 
+lib_libiofslserver_a_SOURCES += $(ZOIDFSHINTSSOURCES)
+lib_libiofsloldclient_a_SOURCES += $(ZOIDFSHINTSSOURCES)
+lib_libiofslclient_a_SOURCES += $(ZOIDFSHINTSSOURCES)
+if HAVE_MPI
+lib_libiofsloldclientmpi_a_SOURCES += $(ZOIDFSHINTSSOURCES)
+endif

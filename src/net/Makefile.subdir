@@ -1,4 +1,4 @@
-noinst_LIBRARIES += src/net/libnet.a
+#noinst_LIBRARIES += src/net/libnet.a
 
 my_net_sources = \
    src/net/Connection.hh \
@@ -16,4 +16,4 @@ include src/net/bmi/Makefile.subdir
 include src/net/loopback/Makefile.subdir
 
 
-src_net_libnet_a_SOURCES = $(my_net_sources)
+lib_libiofslcommon_a_SOURCES += $(my_net_sources)

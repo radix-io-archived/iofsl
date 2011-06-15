@@ -1,4 +1,4 @@
-lib_LIBRARIES += src/c-util/libiofsl-c-util.a
+#lib_LIBRARIES += src/c-util/libiofsl-c-util.a
 
 #.PHONY: maintainer-clean-local
 #maintainer-clean-local::
@@ -18,7 +18,7 @@ BUILT_SOURCES += src/c-util/configparser.c \
 EXTRA_DIST += src/c-util/configparser.yy \
 	      src/c-util/configlex.ll
 
-src_c_util_libiofsl_c_util_a_SOURCES = \
+lib_libiofslcommon_a_SOURCES += \
 src/c-util/quicklist.h \
 src/c-util/configfile.c \
 src/c-util/configfile.h \
@@ -65,9 +65,113 @@ src/c-util/transform/lzf/lzf_c.c \
 src/c-util/transform/lzf/lzf_d.c
 
 if HAVE_ZLIB
-src_c_util_libiofsl_c_util_a_SOURCES += \
+lib_libiofslcommon_a_SOURCES += \
 src/c-util/hash/chash_crc32.h \
 src/c-util/hash/chash_crc32.c \
 src/c-util/hash/chash_adler32.h \
 src/c-util/hash/chash_adler32.c
+endif
+lib_libiofslserver_a_SOURCES += src/c-util/quicklist.h \
+                                src/c-util/configfile.c \
+                                src/c-util/configfile.h \
+                                src/c-util/configglue.c \
+                                src/c-util/configglue.h \
+                                src/c-util/configlex.c \
+                                src/c-util/configlex.h \
+                                src/c-util/configparser.c \
+                                src/c-util/configparser.h \
+                                src/c-util/configstore.c \
+                                src/c-util/configstore.h \
+                                src/c-util/configstoreadapter.c \
+                                src/c-util/configstoreadapter.h \
+                                src/c-util/env-parse.c \
+                                src/c-util/env-parse.h \
+                                src/c-util/gencache.c \
+                                src/c-util/gencache.h \
+                                src/c-util/hash-table.c \
+                                src/c-util/hash-table.h \
+                                src/c-util/tools.c \
+                                src/c-util/tools.h \
+                                src/c-util/txt_configfile.c \
+                                src/c-util/txt_configfile.h \
+                                src/c-util/interval-merge-tree.h \
+                                src/c-util/interval-merge-tree.c \
+                                src/c-util/perf-counters.h \
+                                src/c-util/perf-counters.c \
+                                src/c-util/lookup3.h \
+                                src/c-util/lookup3.c \
+                                src/c-util/lookup8.h \
+                                src/c-util/lookup8.c \
+                                src/c-util/sha1.c \
+                                src/c-util/sha1.h 
+
+lib_libiofsloldclient_a_SOURCES += src/c-util/quicklist.h \
+                                src/c-util/configfile.c \
+                                src/c-util/configfile.h \
+                                src/c-util/configglue.c \
+                                src/c-util/configglue.h \
+                                src/c-util/configlex.c \
+                                src/c-util/configlex.h \
+                                src/c-util/configparser.c \
+                                src/c-util/configparser.h \
+                                src/c-util/configstore.c \
+                                src/c-util/configstore.h \
+                                src/c-util/configstoreadapter.c \
+                                src/c-util/configstoreadapter.h \
+                                src/c-util/env-parse.c \
+                                src/c-util/env-parse.h \
+                                src/c-util/gencache.c \
+                                src/c-util/gencache.h \
+                                src/c-util/hash-table.c \
+                                src/c-util/hash-table.h \
+                                src/c-util/tools.c \
+                                src/c-util/tools.h \
+                                src/c-util/txt_configfile.c \
+                                src/c-util/txt_configfile.h \
+                                src/c-util/interval-merge-tree.h \
+                                src/c-util/interval-merge-tree.c \
+                                src/c-util/perf-counters.h \
+                                src/c-util/perf-counters.c \
+                                src/c-util/lookup3.h \
+                                src/c-util/lookup3.c \
+                                src/c-util/lookup8.h \
+                                src/c-util/lookup8.c \
+                                src/c-util/sha1.c \
+                                src/c-util/sha1.h 
+
+
+if HAVE_MPI
+lib_libiofsloldclientmpi_a_SOURCES += src/c-util/quicklist.h \
+                                src/c-util/configfile.c \
+                                src/c-util/configfile.h \
+                                src/c-util/configglue.c \
+                                src/c-util/configglue.h \
+                                src/c-util/configlex.c \
+                                src/c-util/configlex.h \
+                                src/c-util/configparser.c \
+                                src/c-util/configparser.h \
+                                src/c-util/configstore.c \
+                                src/c-util/configstore.h \
+                                src/c-util/configstoreadapter.c \
+                                src/c-util/configstoreadapter.h \
+                                src/c-util/env-parse.c \
+                                src/c-util/env-parse.h \
+                                src/c-util/gencache.c \
+                                src/c-util/gencache.h \
+                                src/c-util/hash-table.c \
+                                src/c-util/hash-table.h \
+                                src/c-util/tools.c \
+                                src/c-util/tools.h \
+                                src/c-util/txt_configfile.c \
+                                src/c-util/txt_configfile.h \
+                                src/c-util/interval-merge-tree.h \
+                                src/c-util/interval-merge-tree.c \
+                                src/c-util/perf-counters.h \
+                                src/c-util/perf-counters.c \
+                                src/c-util/lookup3.h \
+                                src/c-util/lookup3.c \
+                                src/c-util/lookup8.h \
+                                src/c-util/lookup8.c \
+                                src/c-util/sha1.c \
+                                src/c-util/sha1.h 
 endif

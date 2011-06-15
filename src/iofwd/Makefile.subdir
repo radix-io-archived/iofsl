@@ -13,24 +13,14 @@ include src/iofwd/extraservice/Makefile.subdir
 bin_PROGRAMS += src/iofwd/iofwd
 
 src_iofwd_iofwd_LDADD = \
-	src/rpc/librpc.a \
-	src/net/libnet.a \
-	src/common/libcommon.a \
-	src/zoidfs/libzoidfs-util.a \
-	src/zoidfs/libzoidfsprofile.a \
-	src/zoidfs/libzoidfs.a \
-	src/sm/libsm.a \
-	src/iofwdutil/libiofwdutil.a \
-	src/c-util/libiofsl-c-util.a \
-	src/zoidfs/libzoidfshints.a \
-	src/iofwdevent/libiofwdevent.a \
-	src/encoder/libencoder.a \
+  lib/libiofslcommon.a \
+  lib/libiofslserver.a \
 	@BOOST_PROGRAM_OPTIONS_LIB@ \
 	@BOOST_DATE_TIME_LIB@ \
 	@BOOST_THREAD_LIB@ \
 	@BOOST_REGEX_LIB@ \
-    @ZFS_DISPATCHER_LIBS@ \
-    @BMI_LIBS@
+  @ZFS_DISPATCHER_LIBS@ \
+  @BMI_LIBS@
 
 src_iofwd_iofwd_LDFLAGS = \
     @BOOST_LDFLAGS@ \
@@ -275,4 +265,6 @@ endif
 src_iofwd_iofwd_SOURCES = $(SERVERSOURCES) \
 			  src/iofwd/iofwd.cpp
 
+lib_libiofslserver_a_SOURCES += $(SERVERSOURCES) 
+lib_libiofslclient_a_SOURCES += $(SERVERSOURCES)
 endif

@@ -1,13 +1,28 @@
 bin_PROGRAMS =
-noinst_LIBRARIES =
+noinst_LIBRARIES = 
+#lib/libiofslcommon.a lib/libiofslserver.a lib/libiofslclient.a lib/libiofsloldclient.a
 noinst_PROGRAMS =
-lib_LIBRARIES =
-BUILT_SOURCES =
+lib_LIBRARIES = lib/libiofslcommon.a lib/libiofslserver.a lib/libiofslclient.a lib/libiofsloldclient.a 
+#BUILD_SOURCES =
 noinst_HEADERS =
 TESTS =
 check_PROGRAMS =
 EXTRA_PROGRAMS =
 EXTRA_DIST =
+lib_libiofslclient_a_SOURCES = 
+lib_libiofslclient_a_LIBLDFLAGS =
+lib_libiofslserver_a_SOURCES = 
+lib_libiofslserver_a_LIBLDFLAGS =
+lib_libiofslcommon_a_SOURCES = 
+lib_libiofslcommon_a_LIBLDFLAGS =
+lib_libiofsloldclient_a_SOURCES = 
+lib_libiofsloldclient_a_LIBLDFLAGS =
+
+if HAVE_MPI
+lib_LIBRARIES += lib/libiofsloldclientmpi.a
+lib_libiofsloldclientmpi_a_SOURCES =
+lib_libiofsloldclientmpi_a_LIBLDFLAGS = 
+endif
 
 #
 # Client library (C++)
@@ -77,5 +92,5 @@ include $(top_srcdir)/src/zoidfs/Makefile.subdir
 include $(top_srcdir)/src/fuse/Makefile.subdir
 include $(top_srcdir)/src/c-util/Makefile.subdir
 include $(top_srcdir)/test/Makefile.subdir
-include $(top_srcdir)/sandbox/Makefile.subdir
+#include $(top_srcdir)/sandbox/Makefile.subdir
 
