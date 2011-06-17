@@ -46,14 +46,14 @@ get_user_email(){
 }
   
 commits_to_txt(){
-  git log | grep "commit" | awk '{print $2}'| awk 'length > 39'  > commits_to.txt
+  git log | grep "commit" | awk '{print $2}'| awk 'length > 39'  > ~/commits_to.txt
   read_commits
 }
 
 read_commits(){
   commits_IFS=$IFS
   IFS=$'\n'
-  lines=($(cat commits_to.txt))
+  lines=($(cat ~/commits_to.txt))
   IFS=$commits_IFS 
   execute_tests
 }
@@ -73,7 +73,8 @@ set_to_variable(){
   if
     grep $commit ~/tested_commits/tested_commits.txt
   then
-    echo "This commit has been tested previously...exiting testing schedule..." ; exit 0
+    echo "This commit has been tested previously...exiting testing schedule..."
+    echo | mutt -s "exiting $branch: already tested $commit" $EMAIL2  ; exit 0
   fi
   export committer_email=$(git cat-file commit $commit | grep committer | awk '{print $4}' | sed 's/<//g' | sed 's/>//g')
   echo "committer_email= $committer_email"
@@ -98,7 +99,8 @@ remove(){
 rm -f make_error_report.txt
 rm -f runtest_results.txt
 rm -f test_report.txt
+git reset --hard $branch
 }
-
-cd iofsl
+hostname=$(hostname)
+source ~/configoptions.$hostname
 get_user_email
