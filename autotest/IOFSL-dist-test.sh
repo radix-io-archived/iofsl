@@ -73,7 +73,7 @@ set_to_variable(){
     grep $commit ~/tested_commits/tested_commits.txt
   then
     echo "This commit has been tested previously...exiting testing schedule..."
-    echo | mutt -s "exiting: already tested $commit" $EMAIL2  ; exit 0
+    echo | mutt -s "exiting $branch: already tested $commit" $EMAIL2  ; exit 0
   fi
   export committer_email=$(git cat-file commit $commit | grep committer | awk '{print $4}' | sed 's/<//g' | sed 's/>//g')
   echo "committer_email= $committer_email"
