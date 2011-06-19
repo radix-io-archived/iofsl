@@ -2,7 +2,7 @@ bin_PROGRAMS =
 noinst_LIBRARIES = 
 #lib/libiofslcommon.a lib/libiofslserver.a lib/libiofslclient.a lib/libiofsloldclient.a
 noinst_PROGRAMS =
-lib_LIBRARIES = lib/libiofslcommon.a lib/libiofslserver.a lib/libiofslclient.a lib/libiofsloldclient.a 
+lib_LIBRARIES = lib/libiofslcommon.a lib/libiofslserver.a lib/libiofslclient.a lib/libiofsloldclient.a lib/libiofsloldclientlocal.a 
 #BUILD_SOURCES =
 noinst_HEADERS =
 TESTS =
@@ -17,6 +17,8 @@ lib_libiofslcommon_a_SOURCES =
 lib_libiofslcommon_a_LIBLDFLAGS =
 lib_libiofsloldclient_a_SOURCES = 
 lib_libiofsloldclient_a_LIBLDFLAGS =
+lib_libiofsloldclientlocal_a_SOURCES =
+lib_libiofsloldclientlocal_a_LIBLDFLAGS =
 
 if HAVE_MPI
 lib_LIBRARIES += lib/libiofsloldclientmpi.a

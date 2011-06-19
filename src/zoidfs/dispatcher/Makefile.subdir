@@ -1,29 +1,28 @@
 
-src_zoidfs_libzoidfs_a_SOURCES = \
+DISPATCHERSOURCES = \
 src/zoidfs/dispatcher/zint-handler.h \
 src/zoidfs/dispatcher/zint-handler.c \
 src/zoidfs/dispatcher/zoidfs.c
 
 # local is always included
-src_zoidfs_libzoidfs_a_SOURCES += \
+DISPATCHERSOURCES += \
 src/zoidfs/dispatcher/local/zoidfs-local.h \
 src/zoidfs/dispatcher/local/zoidfs-local.c
 
 if DISPATCH_PVFS
-src_zoidfs_libzoidfs_a_SOURCES += \
+DISPATCHERSOURCES += \
 src/zoidfs/dispatcher/pvfs/zoidfs-pvfs2.c \
 src/zoidfs/dispatcher/pvfs/zoidfs-pvfs2.h
 endif
 
-
 if DISPATCH_LIBSYSIO
-src_zoidfs_libzoidfs_a_SOURCES += \
+DISPATCHERSOURCES += \
 src/zoidfs/dispatcher/sysio/zoidfs-sysio.h \
 src/zoidfs/dispatcher/sysio/zoidfs-sysio.c
 endif
 
 if DISPATCH_POSIX
-src_zoidfs_libzoidfs_a_SOURCES += \
+DISPATCHERSOURCES += \
 src/zoidfs/dispatcher/posix/dcache.c \
 src/zoidfs/dispatcher/posix/fcache.c \
 src/zoidfs/dispatcher/posix/zoidfs-posix.c \
@@ -35,13 +34,13 @@ src/zoidfs/dispatcher/posix/zoidfs-util.h
 endif
 
 if DISPATCH_NOFS
-src_zoidfs_libzoidfs_a_SOURCES += \
+DISPATCHERSOURCES += \
 src/zoidfs/dispatcher/nofs/zoidfs-nofs.h \
 src/zoidfs/dispatcher/nofs/zoidfs-nofs.c
 endif
 
 if DISPATCH_GRIDFTP
-src_zoidfs_libzoidfs_a_SOURCES += \
+DISPATCHERSOURCES += \
 src/zoidfs/dispatcher/gridftp/zoidfs-gridftp.h \
 src/zoidfs/dispatcher/gridftp/zoidfs-gridftp.c
 endif
@@ -52,10 +51,6 @@ src/zoidfs/dispatcher/ross/zoidfs-ross.h \
 src/zoidfs/dispatcher/ross/zoidfs-ross.c
 endif
 
-lib_libiofslserver_a_SOURCES += $(src_zoidfs_libzoidfs_a_SOURCES)
-lib_libiofsloldclient_a_SOURCES += $(src_zoidfs_libzoidfs_a_SOURCES)
-lib_libiofslclient_a_SOURCES += $(src_zoidfs_libzoidfs_a_SOURCES)
+lib_libiofslcommon_a_SOURCES += $(DISPATCHERSOURCES)
+lib_libiofsloldclientlocal_a_SOURCES += $(DISPATCHERSOURCES)
 
-if HAVE_MPI
-lib_libiofsloldclientmpi_a_SOURCES  += $(src_zoidfs_libzoidfs_a_SOURCES)
-endif
