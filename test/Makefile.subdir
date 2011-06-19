@@ -53,7 +53,7 @@ test_unit_tests_zoidfs_io_cunit_local_LDFLAGS = ${test_unit_tests_ldflags}
 noinst_PROGRAMS += test/unit-tests/configfile-cunit
 test_unit_tests_configfile_cunit_SOURCES = test/unit-tests/configfile-cunit.c 
 test_unit_tests_configfile_cunit_LDFLAGS = ${test_unit_tests_ldflags}
-test_unit_tests_configfile_cunit_LDADD = \
+test_unit_tests_configfile_cunit_LDADD =  $(top_builddir)/lib/libiofsloldclient.a \
 			    ${test_unit_tests_ldadd}
 
 #test_unit_tests_zoidfs_io_cunit_auto_SOURCES = test/unit-tests/zoidfs-io-cunit.c
