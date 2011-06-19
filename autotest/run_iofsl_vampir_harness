@@ -1,0 +1,23 @@
+#!/bin/bash
+bash
+#source ~/.bashrc
+
+doIofsl_vampir(){
+if [ -n "$(pgrep IOFSL-dist-test.sh)" ] 
+  then 
+	exit 0;
+  else if [ -n "$(pgrep runtest.sh)" ]
+  then
+	exit 0;
+  else
+	cd ~/iofsl_vampir/iofsl
+	git checkout iofsl_vampir
+	git pull origin iofsl_vampir
+ 	sleep 1
+#	cd 
+	~/IOFSL-dist-test.sh -n 5 -b iofsl_vampir
+  fi
+  fi
+}
+
+doIofsl_vampir
