@@ -31,7 +31,6 @@ src/zoidfs/client/router/zoidfsrouter.h \
 src/zoidfs/client/router/zoidfsrouter.c
 lib_libiofsloldclientmpi_a_SOURCES += $(ZOIDFSROUTERSOURCES)
 endif
-lib_libiofslserver_a_SOURCES += $(ZOIDFSCLIENTSOURCES)
+lib_libiofslcommon_a_SOURCES += $(ZOIDFSCLIENTSOURCES)
 lib_libiofsloldclient_a_SOURCES += $(ZOIDFSCLIENTSOURCES)
-lib_libiofslclient_a_SOURCES += $(ZOIDFSCLIENTSOURCES)
 endif
