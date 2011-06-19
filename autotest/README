@@ -1,4 +1,8 @@
 The autotest directory contains the basic test-harness for the iofsl distribution.
+##########################################################################
+run_clientrpc_harness and run_iofsl_vampir_harness are sripts that call the IOFSL -dist-test.sh test script.  These scripts expect each branch (clientrpc or iofsl_vampir) to reside in their own directory such as ~/clientrpc/iofsl or ~/iofsl-vampir/iofsl.  The IOFSL-dist-test.sh, email_results.sh, configoptions.${hostname} scripts should be moved to the home directory.  run_iofsl_vampir_harness and run_clientrpc harness expect them to be there.
+
+
 
 IOFSL-dist-test.sh:
 #################################################

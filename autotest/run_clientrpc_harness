@@ -1,0 +1,24 @@
+#!/bin/bash
+bash
+#source ~/.bashrc
+export IOFWD_SRCDIR=~/iofsl
+doClientrpc(){
+
+if [ -n "$(pgrep IOFSL-dist-test.sh)" ]
+  then
+	exit 0;
+  else if [ -n "$(pgrep runtest.sh)" ]
+  then 
+	exit 0;
+  else
+	cd ~/clientrpc/iofsl
+	git checkout clientrpc
+	git pull origin clientrpc
+	sleep 1
+#	cd
+	~/IOFSL-dist-test.sh -n 5 -b clientrpc
+  fi
+  fi
+}
+
+doClientrpc
