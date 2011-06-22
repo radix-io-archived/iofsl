@@ -1,3 +1,7 @@
+include_HEADERS +=  \
+    src/iofwdclient/ASClient.hh \
+    src/iofwdclient/SyncClient.hh 
+
 CPPCLIENTLIB += \
     src/iofwdclient/iofwdclient-fwd.hh \
     src/iofwdclient/IOFWDRequest.hh \
