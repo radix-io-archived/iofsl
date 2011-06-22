@@ -3,6 +3,7 @@ noinst_LIBRARIES =
 #lib/libiofslcommon.a lib/libiofslserver.a lib/libiofslclient.a lib/libiofsloldclient.a
 noinst_PROGRAMS =
 lib_LIBRARIES = lib/libiofslcommon.a lib/libiofslserver.a lib/libiofslclient.a lib/libiofsloldclient.a lib/libiofsloldclientlocal.a 
+include_HEADERS =
 #BUILD_SOURCES =
 noinst_HEADERS =
 TESTS =
