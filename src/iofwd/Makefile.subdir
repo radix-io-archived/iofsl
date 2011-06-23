@@ -11,6 +11,7 @@ include src/iofwd/service/Makefile.subdir
 include src/iofwd/extraservice/Makefile.subdir
 
 nobase_include_HEADERS +=  \
+src/iofwd/extraservice/iofslclientrpc/IOFSLClientRPCService.hh \
 src/iofwd/RPCException.hh \
 src/iofwd/ExtraService.hh \
 src/iofwd/NestedConfigurable.hh \
@@ -133,7 +134,10 @@ src/iofwd/rpcfrontend/IOFSLRPCResizeRequest.hh \
 src/iofwd/rpcfrontend/IOFSLRPCSetAttrRequest.hh \
 src/iofwd/rpcfrontend/IOFSLRPCSymLinkRequest.hh \
 src/iofwd/rpcfrontend/RPCSimpleRequest.hh \
-src/iofwd/rpcfrontend/IOFSLRPCGenProcess.hh 
+src/iofwd/rpcfrontend/IOFSLRPCGenProcess.hh \
+src/iofwd/service/Service.hh \
+src/iofwd/service/ServiceManager.hh \
+src/iofwd/service/ServiceException.hh
 
 bin_PROGRAMS += src/iofwd/iofwd
 

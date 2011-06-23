@@ -6,7 +6,8 @@ nobase_include_HEADERS +=  \
    src/net/Address.hh \
    src/net/Group.hh \
    src/net/Net-fwd.hh \
-   src/net/Communicator.hh 
+   src/net/Communicator.hh \
+   src/net/loopback/LoopbackConnector.hh
 
 my_net_sources = \
    src/net/Connection.hh \

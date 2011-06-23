@@ -1,8 +1,8 @@
 #ifndef IOFWDCLIENT_IOFWDCLIENTCB_HH
 #define IOFWDCLIENT_IOFWDCLIENTCB_HH
 
-#include "src/iofwdevent/CBException.hh"
-#include "src/zoidfs/zoidfs-async.h"
+#include "iofwdevent/CBException.hh"
+#include "zoidfs/zoidfs-async.h"
 
 #include <boost/function.hpp>
 
