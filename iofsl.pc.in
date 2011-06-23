@@ -9,4 +9,4 @@ URL: http://www.mcs.anl.gov/research/projects/iofsl/
 Version: @VERSION@
 Libs: -L${libdir} -liofslclient -liofslcommon @IOFSL_CLIENT_LIBS_PKG@
 Libs.private: 
-Cflags: -I${includedir}/src @IOFSL_CLIENT_CFLAGS_PKG@ @BOOST_CPPFLAGS@
+Cflags: -I${includedir}/src/zoidfs -I${includedir} -I${includedir}/src @IOFSL_CLIENT_CFLAGS_PKG@
