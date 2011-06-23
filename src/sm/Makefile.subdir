@@ -6,6 +6,17 @@
 #    @BOOST_DATE_TIME_LIB@ \
 #    @BOOST_THREAD_LIB@ \
 #    @BOOST_REGEX_LIB@
+nobase_include_HEADERS += \
+src/sm/sm-fwd.hh \
+src/sm/SM.hh \
+src/sm/SMClient.hh \
+src/sm/SMManager.hh \
+src/sm/SMResourceClient.hh \
+src/sm/SM_OLD.hh \
+src/sm/SimpleSM.hh \
+src/sm/SimpleNestedSM.hh \
+src/sm/SimpleSlots.hh
+
 
 lib_libiofslcommon_a_SOURCES += \
 src/sm/sm-fwd.hh \

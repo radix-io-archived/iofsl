@@ -1,3 +1,6 @@
+nobase_include_HEADERS +=  \
+                          src/common/rpc/CommonRequest.hh
+
 lib_libiofslcommon_a_SOURCES +=  src/common/rpc/CommonRequest.hh
 
 
