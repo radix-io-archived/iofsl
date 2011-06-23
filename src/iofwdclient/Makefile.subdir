@@ -1,6 +1,42 @@
-include_HEADERS +=  \
+nobase_include_HEADERS +=  \
+    src/iofwdclient/iofwdclient-fwd.hh \
+    src/iofwdclient/IOFWDRequest.hh \
+    src/iofwdclient/RequestTracker.hh \
+    src/iofwdclient/IOFWDClientCB.hh \
+    src/iofwdclient/SyncClient.hh \
+    src/iofwdclient/CBClient.hh \
     src/iofwdclient/ASClient.hh \
-    src/iofwdclient/SyncClient.hh 
+    src/iofwdclient/ScopedRequest.hh \
+    src/iofwdclient/PollQueue.hh \
+    src/iofwdclient/FakeBlocker.hh \
+    src/iofwdclient/clientsm/BMIServerHelper.hh \
+    src/iofwdclient/clientsm/BMIServerSM.hh \
+    src/iofwdclient/clientsm/RPCServerHelper.hh \
+    src/iofwdclient/clientsm/RPCServerSM.hh \
+    src/iofwdclient/clientsm/GetAttrClientSM.hh \
+    src/iofwdclient/clientsm/CreateClientSM.hh \
+    src/iofwdclient/clientsm/LookupClientSM.hh \
+    src/iofwdclient/clientsm/WriteClientSM.hh \
+    src/iofwdclient/clientsm/RPCClientRead.hh \
+    src/iofwdclient/clientsm/RPCCommClientSM.hh \
+    src/iofwdclient/clientsm/CommitClientSM.hh \
+    src/iofwdclient/clientsm/MkdirClientSM.hh \
+    src/iofwdclient/clientsm/SetAttrClientSM.hh \
+    src/iofwdclient/clientsm/ReadLinkClientSM.hh \
+    src/iofwdclient/clientsm/ReadDirClientSM.hh \
+    src/iofwdclient/clientsm/SymLinkClientSM.hh \
+    src/iofwdclient/clientsm/LinkClientSM.hh \
+    src/iofwdclient/clientsm/RenameClientSM.hh \
+    src/iofwdclient/clientsm/RemoveClientSM.hh \
+    src/iofwdclient/LinkHelper.hh \
+    src/iofwdclient/IOFWDClient.hh \
+    src/iofwdclient/CommStream.hh \
+    src/iofwdclient/clientsm/RPCClientWrite.hh \
+    src/iofwdclient/clientsm/RPCCommWriteSM.hh \
+    src/iofwdclient/clientsm/RPCCommReadSM.hh \
+    src/iofwdclient/clientsm/ReadClientSM.hh \
+    src/iofwdclient/streamwrappers/ZoidFSStreamWrappers.hh \
+    src/iofwdclient/streamwrappers/GetAttrStreams.hh 
 
 CPPCLIENTLIB += \
     src/iofwdclient/iofwdclient-fwd.hh \

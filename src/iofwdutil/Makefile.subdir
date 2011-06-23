@@ -8,6 +8,118 @@
 #    @BOOST_THREAD_LIB@ \
 #    @BOOST_REGEX_LIB@
 
+nobase_include_HEADERS +=  \
+  src/iofwdutil/Configurable.hh \
+  src/iofwdutil/LinkHelper.hh \
+  src/iofwdutil/completion/BMICompletionID.hh \
+  src/iofwdutil/completion/BMIResource.hh \
+  src/iofwdutil/completion/BMISendID.hh \
+  src/iofwdutil/completion/CompletionID.hh \
+  src/iofwdutil/completion/CompositeCompletionID.hh \
+  src/iofwdutil/completion/Context.hh \
+  src/iofwdutil/completion/ContextBase.hh \
+  src/iofwdutil/completion/IDAllocator.hh \
+  src/iofwdutil/completion/Resource.hh \
+  src/iofwdutil/completion/TimerCompletionID.hh \
+  src/iofwdutil/completion/TimerResource.hh \
+  src/iofwdutil/completion/Tracker.hh \
+  src/iofwdutil/completion/WorkQueueCompletionID.hh \
+  src/iofwdutil/zlog/ZLogTracer.hh \
+  src/iofwdutil/zlog/LevelMatch.hh \
+  src/iofwdutil/zlog/LevelParser.hh \
+  src/iofwdutil/zlog/ZLog.hh \
+  src/iofwdutil/zlog/ZLogConfigurator.hh \
+  src/iofwdutil/zlog/ZLogDefaultFilter.hh \
+  src/iofwdutil/zlog/ZLogException.hh \
+  src/iofwdutil/zlog/ZLogFilter.hh \
+  src/iofwdutil/zlog/ZLogSink.hh \
+  src/iofwdutil/zlog/ZLogSinkFile.hh \
+  src/iofwdutil/zlog/ZLogSinkStd.hh \
+  src/iofwdutil/zlog/ZLogSinkStdErr.hh \
+  src/iofwdutil/zlog/ZLogSinkStdOut.hh \
+  src/iofwdutil/zlog/ZLogSource.hh \
+  src/iofwdutil/bmi/BMI.hh \
+  src/iofwdutil/bmi/BMIAddr.hh \
+  src/iofwdutil/bmi/BMIBuffer.hh \
+  src/iofwdutil/bmi/BMIError.hh \
+  src/iofwdutil/bmi/BMIException.hh \
+  src/iofwdutil/bmi/BMITag.hh \
+  src/iofwdutil/bmi/BMIUnexpectedBuffer.hh \
+  src/iofwdutil/workqueue/CompletionTracker.hh \
+  src/iofwdutil/workqueue/Future.hh \
+  src/iofwdutil/workqueue/PoolWorkQueue.hh \
+  src/iofwdutil/workqueue/SynchronousWorkQueue.hh \
+  src/iofwdutil/workqueue/WorkItem.hh \
+  src/iofwdutil/workqueue/WorkQueue.hh \
+  src/iofwdutil/workqueue/WorkQueueBase.hh \
+  src/iofwdutil/ConfigException.hh \
+  src/iofwdutil/ConfigContainer.hh \
+  src/iofwdutil/ConfigFile.hh \
+  src/iofwdutil/HybridAllocator.hh \
+  src/iofwdutil/IOFWDLog.hh \
+  src/iofwdutil/IOFWDLog-fwd.hh \
+  src/iofwdutil/IntrusiveHelper.hh \
+  src/iofwdutil/Singleton.hh \
+  src/iofwdutil/TimeVal.hh \
+  src/iofwdutil/Timer.hh \
+  src/iofwdutil/ZException.hh \
+  src/iofwdutil/always_assert.hh \
+  src/iofwdutil/assert.hh \
+  src/iofwdutil/backtrace.hh \
+  src/iofwdutil/demangle.hh \
+  src/iofwdutil/signals.hh \
+  src/iofwdutil/tools.hh \
+  src/iofwdutil/typestorage.hh \
+  src/iofwdutil/IOFWDLogException.hh \
+  src/iofwdutil/boost-spirit.hh \
+  src/iofwdutil/PerfCounters.hh \
+  src/iofwdutil/ThreadPool.hh \
+  src/iofwdutil/InjectPool.hh \
+  src/iofwdutil/hash/HashFactory.hh\
+  src/iofwdutil/hash/HashFunc.hh\
+  src/iofwdutil/hash/HashException.hh\
+  src/iofwdutil/hash/SHA1Simple.hh\
+  src/iofwdutil/hash/CRC64.hh \
+  src/iofwdutil/hash/NoneHash.hh \
+  src/iofwdutil/hash/HashAutoRegister.hh\
+  src/iofwdutil/Factory.hh \
+  src/iofwdutil/FactoryClient.hh \
+  src/iofwdutil/FactoryAutoRegister.hh \
+  src/iofwdutil/CreateMethod.hh \
+  src/iofwdutil/FactoryException.hh \
+  src/iofwdutil/FactoryHelper.hh \
+  src/iofwdutil/atomics.hh \
+  src/iofwdutil/rm/IntervalMergeTree.hh \
+  src/iofwdutil/mm/IOFWDMemoryManager.hh \
+  src/iofwdutil/mm/BMIMemoryManager.hh \
+  src/iofwdutil/transform/GenericTransform.hh \
+  src/iofwdutil/transform/TransformException.hh \
+  src/iofwdutil/transform/LZFDecompress.hh \
+  src/iofwdutil/transform/LZFCompress.hh \
+  src/iofwdutil/transform/CopyTransform.hh \
+  src/iofwdutil/transform/IOReadBuffer.hh \
+  src/iofwdutil/transform/IOWriteBuffer.hh \
+  src/iofwdutil/transform/BlockingCompress.hh \
+  src/iofwdutil/transform/BlockingDecompress.hh \
+  src/iofwdutil/transform/BlockingCommon.hh \
+  src/iofwdutil/ExceptionBacktrace.hh \
+  src/iofwdutil/IofwdutilLinkHelper.hh \
+  src/iofwdutil/hash/Adler32.hh \
+  src/iofwdutil/hash/CRC32.hh \
+  src/iofwdutil/transform/ZLibBase.hh \
+  src/iofwdutil/transform/ZLibCompress.hh \
+  src/iofwdutil/transform/ZLibDecompress.hh \
+  src/iofwdutil/transform/BZLib.hh \
+  src/iofwdutil/transform/BZCompress.hh \
+  src/iofwdutil/transform/BZDecompress.hh \
+  src/iofwdutil/hash/OpenSSLHash.hh \
+  src/iofwdutil/hash/OpenSSLException.hh \
+  src/iofwdutil/hash/OpenSSLInit.hh \
+  src/iofwdutil/transform/LZOCompress.hh \
+  src/iofwdutil/transform/LZODecompress.hh \
+  src/iofwdutil/transform/LZOCommon.hh \
+  src/iofwdutil/transform/LZOException.hh 
+
 
 lib_libiofslcommon_a_SOURCES += \
 src/iofwdutil/Configurable.hh \

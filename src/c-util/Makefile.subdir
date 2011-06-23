@@ -1,5 +1,25 @@
 #lib_LIBRARIES += src/c-util/libiofsl-c-util.a
 
+nobase_include_HEADERS +=  \
+  src/c-util/quicklist.h \
+  src/c-util/configfile.h \
+  src/c-util/configglue.h \
+  src/c-util/configlex.h \
+  src/c-util/configparser.h \
+  src/c-util/configstore.h \
+  src/c-util/configstoreadapter.h \
+  src/c-util/env-parse.h \
+  src/c-util/gencache.h \
+  src/c-util/hash-table.h \
+  src/c-util/tools.h \
+  src/c-util/txt_configfile.h \
+  src/c-util/interval-merge-tree.h \
+  src/c-util/perf-counters.h \
+  src/c-util/lookup3.h \
+  src/c-util/lookup8.h \
+  src/c-util/sha1.h 
+
+
 .PHONY: maintainer-clean-local
 maintainer-clean-local::
 	-rm -f src/c-util/configparser.c

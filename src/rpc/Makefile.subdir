@@ -1,4 +1,16 @@
 #noinst_LIBRARIES += src/rpc/librpc.a
+nobase_include_HEADERS +=  \
+	src/rpc/RPCException.hh \
+	src/rpc/RPCServer.hh \
+	src/rpc/RPCClient.hh \
+	src/rpc/RPCKey.hh \
+	src/rpc/RPCHandler.hh \
+	src/rpc/RPCRegistry.hh \
+	src/rpc/RPCHeader.hh \
+	src/rpc/RPCInfo.hh \
+	src/rpc/RPC-fwd.hh \
+	src/rpc/RPCEncoder.hh \
+	src/rpc/RPCTransform.hh 
 
 lib_libiofslcommon_a_SOURCES += \
 	src/rpc/RPCException.hh \

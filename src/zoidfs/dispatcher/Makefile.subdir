@@ -1,4 +1,17 @@
 
+nobase_include_HEADERS +=  \
+  src/zoidfs/dispatcher/zint-handler.h \
+  src/zoidfs/dispatcher/local/zoidfs-local.h \
+  src/zoidfs/dispatcher/pvfs/zoidfs-pvfs2.h \
+  src/zoidfs/dispatcher/sysio/zoidfs-sysio.h \
+  src/zoidfs/dispatcher/posix/dcache.h \
+  src/zoidfs/dispatcher/posix/fcache.h \
+  src/zoidfs/dispatcher/posix/zoidfs-posix.h \
+  src/zoidfs/dispatcher/posix/zoidfs-util.h \
+  src/zoidfs/dispatcher/nofs/zoidfs-nofs.h \
+  src/zoidfs/dispatcher/gridftp/zoidfs-gridftp.h
+
+
 DISPATCHERSOURCES = \
 src/zoidfs/dispatcher/zint-handler.h \
 src/zoidfs/dispatcher/zint-handler.c \

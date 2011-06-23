@@ -1,4 +1,29 @@
 #lib_LIBRARIES += src/zoidfs/libzoidfs-util.a
+nobase_include_HEADERS +=  \
+  src/zoidfs/util/RateLimiterAsync.hh \
+  src/zoidfs/util/ZoidFSSyncAdapter.hh \
+  src/zoidfs/util/ZoidFSAsyncPT.hh \
+  src/zoidfs/util/zoidfs-c-util.h \
+  src/zoidfs/util/ZoidFSAsyncWorkUnit.hh \
+  src/zoidfs/util/FileSpecHelper.hh \
+  src/zoidfs/util/OpHintHelper.hh \
+  src/zoidfs/util/LogAPI.hh \
+  src/zoidfs/util/NullAPI.hh \
+  src/zoidfs/util/ThreadPool.hh \
+  src/zoidfs/util/ZoidFSAPI.hh \
+  src/zoidfs/util/ZoidFSAsync.hh \
+  src/zoidfs/util/ZoidFSDefAsync.hh \
+  src/zoidfs/util/ZoidFSSync.hh \
+  src/zoidfs/util/zoidfs-util.hh \
+  src/zoidfs/util/zoidfs-wrapped.hh \
+  src/zoidfs/util/zoidfs-xdr.hh \
+  src/zoidfs/util/zoidfs-ops.hh \
+  src/zoidfs/util/ZoidFSBlockAsync.hh \
+  src/zoidfs/util/ZoidFSFileSpec.hh \
+  src/zoidfs/util/ZoidfsFileOfsStruct.hh \
+  src/zoidfs/util/EncodeDirentT.hh \
+  src/zoidfs/util/Hint.hh
+
 
 ZOIDFSUTILLDDFLAGS = \
     @BOOST_LDFLAGS@ \

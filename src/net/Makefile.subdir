@@ -1,5 +1,13 @@
 #noinst_LIBRARIES += src/net/libnet.a
 
+nobase_include_HEADERS +=  \
+   src/net/Connection.hh \
+   src/net/Net.hh \
+   src/net/Address.hh \
+   src/net/Group.hh \
+   src/net/Net-fwd.hh \
+   src/net/Communicator.hh 
+
 my_net_sources = \
    src/net/Connection.hh \
    src/net/Net.hh \

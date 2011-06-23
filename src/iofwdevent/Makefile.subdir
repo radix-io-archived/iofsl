@@ -1,4 +1,31 @@
 #noinst_LIBRARIES += src/iofwdevent/libiofwdevent.a
+nobase_include_HEADERS +=  \
+src/iofwdevent/NBQueue.hh \
+src/iofwdevent/ZeroCopyOutputStream.hh \
+src/iofwdevent/ZeroCopyInputStream.hh \
+src/iofwdevent/BMIException.hh \
+src/iofwdevent/CompletionException.hh \
+src/iofwdevent/Handle.hh \
+src/iofwdevent/EventExceptions.hh \
+src/iofwdevent/CBException.hh \
+src/iofwdevent/DummyResource.hh \
+src/iofwdevent/CBType.hh \
+src/iofwdevent/Resource.hh \
+src/iofwdevent/BMIResource.hh \
+src/iofwdevent/TimerResource.hh \
+src/iofwdevent/SingleCompletion.hh \
+src/iofwdevent/MultiCompletion.hh \
+src/iofwdevent/ResourceInactiveException.hh \
+src/iofwdevent/ThreadedResource.hh \
+src/iofwdevent/ResourceWrapper.hh \
+src/iofwdevent/TokenResource.hh \
+src/iofwdevent/NOPCompletion.hh \
+src/iofwdevent/BMIError.hh \
+src/iofwdevent/Resource-fwd.hh \
+src/iofwdevent/ZeroCopyMemoryInput.hh \
+src/iofwdevent/ZeroCopyMemoryOutput.hh \
+src/iofwdevent/ZeroCopyTransformInput.hh \
+src/iofwdevent/ZeroCopyTransformOutput.hh
 
 lib_libiofslcommon_a_SOURCES += \
 src/iofwdevent/NBQueue.hh \
