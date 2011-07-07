@@ -27,7 +27,7 @@ maintainer-clean-local::
 	-rm -f src/c-util/configlex.c
 	-rm -f src/c-util/configlex.h
 
-BUILT_SOURCES += src/c-util/configparser.c \
+BUILT_SOURCES = src/c-util/configparser.c \
 		 src/c-util/configparser.h \
 		 src/c-util/configlex.h \
 		 src/c-util/configlex.c 
