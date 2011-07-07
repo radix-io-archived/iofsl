@@ -1,4 +1,5 @@
 
+
 log {
   // By default, 2 sinks (stdout and stderr) are available
   // as is the default filter ('default')
@@ -20,8 +21,9 @@ log {
 
 bmi
 {
-  listen = "tcp://127.0.0.1:1234";
-  //serverlist = ( "tcp://127.0.0.1:1234", "tcp://127.0.0.1:1235" );
+  //listen = "tcp://f134:9001";
+  clientmode = "YES";
+  // serverlist = ( "tcp://127.0.0.1:1234", "tcp://127.0.0.1:1235" );
 }
 
 net
@@ -33,11 +35,11 @@ net
 extra_services {
    // List extra services that need to be started
    // services = ( "ftb" );
-   services = ( "rpctest", "iofslclientrpc");
+   services = ("bmi", "net");
 
 
    ftb {
-      period = "1";
+      period = "60";
    }
 }
 
@@ -69,44 +71,8 @@ requesthandler {
   //
   zoidfsapi {
 
-    name = "requestscheduler";
-    //name = "defasync";
-
-    requestscheduler {
-        //
-        // request scheduler modes
-        //  fifo - schedule requests as they arrive
-        //  merge - attempt to merge requests
-        //
-        schedalgo = "merge";
-
-        //
-        // list io batch size
-        //  upper limit on the number of non contig ops
-        //  the scheduler will issue in a single zoidfs read or write
-        //
-        batchsize = "16";
-
-        api = "defasync";
-
-        rangesched {
-            //
-            // request mereger type
-            //  hierarchical: list of ranges merged 
-            //  intervaltree: red-black interval tree
-            //  default: hierarchical
-            //
-            merger = "hierarchical";
-
-            hierarchical {
-                // no special config options
-            }
-            
-            //
-            // hbrr quantum 
-            //
-            defquantum = "8";
-        }
+    //name = "requestscheduler";
+    name = "defasync";
 
     defasync {
       //blocking_api = "zoidfs";
@@ -170,14 +136,15 @@ requesthandler {
     //
     local {
     }
-
+    
       }
     }
     }
-    }
+    
 
 
   }
+
 
   //
   // threadpool config
