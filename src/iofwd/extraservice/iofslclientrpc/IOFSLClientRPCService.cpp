@@ -97,7 +97,6 @@ namespace iofwd
         /* change to scope rpc for auto deletion */
          rpcserver_->unregisterRPC("iofslclientrpc.commit");
          rpcserver_->unregisterRPC("iofslclientrpc.create");
-         rpcserver_->unregisterRPC("iofslclientrpc.getattr");
          rpcserver_->unregisterRPC("iofslclientrpc.link");
          rpcserver_->unregisterRPC("iofslclientrpc.lookup");
          rpcserver_->unregisterRPC("iofslclientrpc.mkdir");
