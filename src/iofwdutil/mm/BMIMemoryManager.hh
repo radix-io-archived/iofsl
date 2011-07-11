@@ -138,6 +138,8 @@ class BMIMemoryManager : public IOFWDMemoryManager, public iofwdutil::Singleton 
         /* return a buffer to the manager */
         void dealloc(IOFWDMemoryAlloc * memAlloc_);
 
+        BMIMemoryAlloc * remove(void * ptr);
+
         /* start the memory manager */
         void start();
 
@@ -173,6 +175,9 @@ class BMIMemoryManager : public IOFWDMemoryManager, public iofwdutil::Singleton 
         static int warnNumTokens_;
         static size_t memWarnAmount_;
         static boost::mutex bmm_setup_mutex_;
+
+        std::vector<BMIMemoryAlloc *> alloc_list_;
+        boost::mutex bmm_tracker_mutex_;
 };
     }
 }

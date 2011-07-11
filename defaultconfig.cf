@@ -134,6 +134,11 @@ frontend {
     // default: 256MB
     //
     maxmem = "268435456";
+
+    //
+    // zero copy? reuse BMI buffers?
+    //
+    zerocopy = "false";
   }
 
 }

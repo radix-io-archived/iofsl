@@ -30,6 +30,7 @@ class NBIOMemoryAlloc : public IOFWDMemoryAlloc
 
         /* get the memory buffer start */
         virtual void * getMemory() const;
+        void setMemory(void * m);
 
         /* get the bmi memory buffer */
         void * getNBIOBuffer() const;
@@ -98,6 +99,9 @@ class NBIOMemoryManager :
         static void setWarnNumBuffers(int numBuffers);
         static void setMaxMemAmount(size_t mem);
         static void setMemWarnAmount(size_t mem);
+        static void disableZeroCopy();
+        static void enableZeroCopy();
+        static bool zeroCopy();
 
     protected:
         void runBufferAllocCB1(iofwdevent::CBException status,
@@ -121,6 +125,7 @@ class NBIOMemoryManager :
         static int warnNumTokens_;
         static size_t memAmount_;
         static size_t memWarnAmount_;
+        static bool zeroCopy_;
         static boost::mutex nbiomm_setup_mutex_;
 };
     }

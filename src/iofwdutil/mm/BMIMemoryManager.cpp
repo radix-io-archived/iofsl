@@ -109,7 +109,34 @@ void BMIMemoryManager::runBufferAllocCB2(iofwdevent::CBException status,
 
    /* have the buffer wrapper allocate the buffer and consume one token */
    memAlloc->alloc(1);
+
+   {
+        boost::mutex::scoped_lock lock(bmm_tracker_mutex_);
+        alloc_list_.push_back(memAlloc);
+   }
+
    cb(status);
+}
+
+BMIMemoryAlloc * BMIMemoryManager::remove(void * ptr)
+{
+    BMIMemoryAlloc * a = NULL;
+    {
+        boost::mutex::scoped_lock lock(bmm_tracker_mutex_);
+        std::vector<BMIMemoryAlloc *>::iterator it;
+
+        for(it = alloc_list_.begin() ; it != alloc_list_.end() ; it++)
+        {
+            if((*it)->memory_->get() == ptr)
+            {
+                a = (*it);
+                alloc_list_.erase(it);
+                break;
+            }
+        }
+    }
+
+    return a;
 }
 
 /*

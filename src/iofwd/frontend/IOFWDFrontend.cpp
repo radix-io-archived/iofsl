@@ -152,6 +152,15 @@ void IOFWDFrontend::init ()
    /* set the max amount of NBIO memory allocs by total bytes (def is 256 MB) */
    iofwdutil::mm::NBIOMemoryManager::instance().setMaxMemAmount(lc.getKeyAsDefault("maxmem", 256UL * 1024UL * 1024UL));
    iofwdutil::mm::NBIOMemoryManager::instance().setMemWarnAmount(lc.getKeyAsDefault("warnmem", 4UL * 1024UL * 1024UL));
+   bool zc = lc.getKeyAsDefault<bool>("zerocopy", false);
+   if(zc)
+   {
+        iofwdutil::mm::NBIOMemoryManager::instance().enableZeroCopy();
+   }
+   else
+   {
+        iofwdutil::mm::NBIOMemoryManager::instance().disableZeroCopy();
+   }
    iofwdutil::mm::NBIOMemoryManager::instance().start();
 }
 

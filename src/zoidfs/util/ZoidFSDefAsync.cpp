@@ -541,8 +541,14 @@ namespace zoidfs
                         /* free mem allocated for this request */
                         for(i = 0 ; i < wu->mem_count_ ; i++)
                         {
-                            delete [] static_cast<char *>(const_cast<void *>
-                                (wu->mem_starts_[i])); 
+                            if(iofwdutil::mm::NBIOMemoryManager::zeroCopy())
+                            {
+                            }
+                            else
+                            {
+                                delete [] static_cast<char *>(const_cast<void *>
+                                    (wu->mem_starts_[i]));
+                            }
                         }
                         delete [] wu->mem_starts_;
                         delete [] wu->mem_sizes_;
@@ -920,12 +926,30 @@ namespace zoidfs
                     /* copy the mem params */
                     iofsl_mem_starts = new void*[mem_count];
                     iofsl_mem_sizes = new size_t[mem_count];
-                    for(i = 0 ; i < mem_count ; i++)
+
+                    if(iofwdutil::mm::NBIOMemoryManager::zeroCopy())
                     {
-                        iofsl_mem_sizes[i] = mem_sizes[i];
-                        iofsl_mem_starts[i] = new char[mem_sizes[i]];
-                        memcpy(iofsl_mem_starts[i], mem_starts[i], mem_sizes[i]); 
+                        for(i = 0 ; i < mem_count ; i++)
+                        {
+                            iofsl_mem_starts[i] = const_cast<void *>(mem_starts[i]);
+                            iofsl_mem_sizes[i] = mem_sizes[i];
+                        }
+                        nbio_buffer->setMemory(iofsl_mem_starts[0]);
                     }
+                    else
+                    {
+                        size_t cur_offset = 0;
+                        void * cur_ptr = nbio_buffer->getMemory();
+                    
+                        for(i = 0 ; i < mem_count ; i++)
+                        {
+                            iofsl_mem_starts[i] = const_cast<void
+                                *>((void *)((char *)(cur_ptr) + cur_offset));
+                            iofsl_mem_sizes[i] = mem_sizes[i];
+                            cur_offset += mem_sizes[i];
+                        }
+                    }
+
 
                     /* copy the file params */
                     iofsl_file_starts = new zoidfs_file_ofs_t[file_count];

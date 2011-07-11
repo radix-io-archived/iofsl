@@ -4,6 +4,7 @@
 
 #include "iofwdevent/BMIResource.hh"
 
+#include "iofwdutil/mm/NBIOMemoryManager.hh"
 
 namespace iofwd
 {
@@ -133,9 +134,11 @@ void IOFWDWriteRequest::allocateBuffer(iofwdevent::CBType cb, RetrievedBuffer * 
 
 void IOFWDWriteRequest::releaseBuffer(RetrievedBuffer * rb)
 {
-    iofwdutil::mm::BMIMemoryManager::instance().dealloc(rb->buffer_);
-
-    delete rb->buffer_;
+    if(!iofwdutil::mm::NBIOMemoryManager::zeroCopy())
+    {
+        iofwdutil::mm::BMIMemoryManager::instance().dealloc(rb->buffer_);
+        delete rb->buffer_;
+    }
     rb->buffer_ = NULL;
 }
 

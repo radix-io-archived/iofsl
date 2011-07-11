@@ -1,4 +1,5 @@
 #include "iofwdutil/mm/NBIOMemoryManager.hh"
+#include "iofwdutil/mm/BMIMemoryManager.hh"
 #include "iofwdutil/tools.hh"
 
 #include <cassert>
@@ -39,6 +40,11 @@ void * NBIOMemoryAlloc::getMemory() const
     return memory_;
 }
 
+void NBIOMemoryAlloc::setMemory(void * m)
+{
+    memory_ = m;
+}
+
 /* get the memory buffer start */
 size_t NBIOMemoryAlloc::getMemorySize() const
 {
@@ -63,16 +69,36 @@ void NBIOMemoryAlloc::alloc(int numTokens)
     numTokens_ = numTokens;
 
     /* create the memory buffer */
-    //memory_ = new char[bufferSize_];
+    if(iofwdutil::mm::NBIOMemoryManager::zeroCopy())
+    {
+        memory_ = NULL;
+    }
+    else
+    {
+        memory_ = new char[bufferSize_];
+    }
 }
 
 void NBIOMemoryAlloc::dealloc()
 {
     /* remove the NBIO memory buffer */
-    if(memory_)
+    if(iofwdutil::mm::NBIOMemoryManager::zeroCopy())
     {
-        delete [] static_cast<char *>(memory_);
+        /* TODO generalize this */
+        BMIMemoryAlloc * a = iofwdutil::mm::BMIMemoryManager::instance().remove(memory_);
+        
+        a->dealloc();
+        delete a;
+
         memory_ = NULL;
+    }
+    else
+    {
+        if(memory_)
+        {
+            delete [] static_cast<char *>(memory_);
+            memory_ = NULL;
+        }
     }
 
     /* reset the memory params */
@@ -116,6 +142,7 @@ int iofwdutil::mm::NBIOMemoryManager::numTokens_ = 0;
 int iofwdutil::mm::NBIOMemoryManager::warnNumTokens_ = 0;
 size_t iofwdutil::mm::NBIOMemoryManager::memAmount_ = 0;
 size_t iofwdutil::mm::NBIOMemoryManager::memWarnAmount_ = 0;
+bool iofwdutil::mm::NBIOMemoryManager::zeroCopy_ = false;
 boost::mutex iofwdutil::mm::NBIOMemoryManager::nbiomm_setup_mutex_;
 
 void NBIOMemoryManager::setMaxNumBuffers(int numTokens)
@@ -140,6 +167,24 @@ void NBIOMemoryManager::setMemWarnAmount(size_t mem)
 {
     boost::mutex::scoped_lock lock(nbiomm_setup_mutex_);
     memWarnAmount_ = mem;
+}
+
+bool NBIOMemoryManager::zeroCopy()
+{
+    boost::mutex::scoped_lock lock(nbiomm_setup_mutex_);
+    return zeroCopy_;
+}
+
+void NBIOMemoryManager::disableZeroCopy()
+{
+    boost::mutex::scoped_lock lock(nbiomm_setup_mutex_);
+    zeroCopy_ = false;
+}
+
+void NBIOMemoryManager::enableZeroCopy()
+{
+    boost::mutex::scoped_lock lock(nbiomm_setup_mutex_);
+    zeroCopy_ = true;
 }
 
 void NBIOMemoryManager::start()
