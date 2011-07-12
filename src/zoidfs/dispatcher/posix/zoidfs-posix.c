@@ -48,27 +48,6 @@
 #define LL_IOC_GROUP_LOCK               _IOW ('f', 158, long)
 #define LL_IOC_GROUP_UNLOCK             _IOW ('f', 159, long)
 
-/* for create throttling */
-typedef struct
-{
-   zoidfs_handle_t handle;
-   int             ret;
-   int             created;
-} create_data_t;
-
-int zoidfs_posix_dispatcher_get_time(struct timespec * timeval)
-{
-    clock_gettime( CLOCK_REALTIME, timeval );
-    return 0;
-}
-
-double zoidfs_posix_dispatcher_elapsed_time(struct timespec * t1, struct timespec * t2)
-{
-    return ((double) (t2->tv_sec - t1->tv_sec) +
-        1.0e-9 * (double) (t2->tv_nsec - t1->tv_nsec) );
-}
-
-//static pthread_mutex_t posix_create_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 #ifndef NDEBUG
 static int do_debug = 0;
@@ -78,6 +57,17 @@ static int do_debug = 0;
 #endif
 
 #define zoidfs_error(format, ...) fprintf (stderr, "zoidfs_posix: error: " format, ##__VA_ARGS__)
+
+/* ======================================================================== */
+
+/* for create throttling */
+typedef struct
+{
+   zoidfs_handle_t handle;
+   int             ret;
+   int             created;
+} create_data_t;
+
 
 /* =============================== STATIC VARS ============================ */
 
@@ -91,7 +81,23 @@ static int opt_lustre_group_locks           = 0;
 static throttle_handle_t open_throttle;
 static throttle_handle_t create_throttle;
 
+//static pthread_mutex_t posix_create_mutex = PTHREAD_MUTEX_INITIALIZER;
+
 /* ======================================================================== */
+
+static inline int zoidfs_posix_dispatcher_get_time(struct timespec * timeval)
+{
+    clock_gettime( CLOCK_REALTIME, timeval );
+    return 0;
+}
+
+static inline double zoidfs_posix_dispatcher_elapsed_time(struct timespec *
+      t1, struct timespec * t2)
+{
+    return ((double) (t2->tv_sec - t1->tv_sec) +
+        1.0e-9 * (double) (t2->tv_nsec - t1->tv_nsec) );
+}
+
 
 static inline zoidfs_attr_type_t posixmode_to_zoidfsattrtype (mode_t mode)
 {
