@@ -87,7 +87,9 @@ void NBIOMemoryAlloc::dealloc()
         /* TODO generalize this */
         BMIMemoryAlloc * a = iofwdutil::mm::BMIMemoryManager::instance().remove(memory_);
 
-        iofwdutil::mm::BMIMemoryManager::instance().dealloc(a);        
+        /* cleanup */
+        iofwdutil::mm::BMIMemoryManager::instance().dealloc(a);
+        delete a;
 
         memory_ = NULL;
     }
