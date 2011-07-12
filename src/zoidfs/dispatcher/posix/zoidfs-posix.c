@@ -91,12 +91,41 @@ static inline int zoidfs_posix_dispatcher_get_time(struct timespec * timeval)
     return 0;
 }
 
-static inline double zoidfs_posix_dispatcher_elapsed_time(struct timespec *
-      t1, struct timespec * t2)
+static inline double zoidfs_posix_dispatcher_elapsed_time(
+      const struct timespec * time1,
+      const struct timespec * time2)
 {
-    return ((double) (t2->tv_sec - t1->tv_sec) +
-        1.0e-9 * (double) (t2->tv_nsec - t1->tv_nsec) );
+   struct timespec result;
+   if ((time1->tv_sec < time2->tv_sec) ||
+         ((time1->tv_sec == time2->tv_sec) &&
+          (time1->tv_nsec <= time2->tv_nsec)))
+   {
+      result.tv_sec = result.tv_nsec = 0 ;
+   }
+   else
+   {
+      result.tv_sec = time1->tv_sec - time2->tv_sec ;
+      if (time1->tv_nsec < time2->tv_nsec)
+      {
+         result.tv_nsec = time1->tv_nsec + 1000000000L - time2->tv_nsec ;
+         result.tv_sec-- ;
+      }
+      else
+      {
+         result.tv_nsec = time1->tv_nsec - time2->tv_nsec ;
+      }
+   }
+   return result.tv_sec + (result.tv_nsec / 1000000000.0);
 }
+
+static inline double timeval_diff (
+      const struct timespec * t1,
+      const struct timespec * t2)
+{
+   return zoidfs_posix_dispatcher_elapsed_time (t1,t2);
+}
+
+/* ======================================================================== */
 
 
 static inline zoidfs_attr_type_t posixmode_to_zoidfsattrtype (mode_t mode)
