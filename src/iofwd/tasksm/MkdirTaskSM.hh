@@ -20,6 +20,7 @@ class MkdirTaskSM : public BaseTaskSM,
             : BaseTaskSM(smm, api), ret_(0),
               request_(static_cast<MkdirRequest &>(*request))
         {
+            ZOIDFS_CACHE_HINT_INIT(hint_);
         }
 
         virtual ~MkdirTaskSM()

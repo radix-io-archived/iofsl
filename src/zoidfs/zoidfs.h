@@ -84,6 +84,17 @@ typedef enum
                          ZOIDFS_ATTR_MTIME | \
                          ZOIDFS_ATTR_CTIME)
 
+#define ZOIDFS_CACHE_HINT_INIT(h)               \
+do {                                            \
+    h.size = 0;                                 \
+    h.atime.seconds = 0;                        \
+    h.atime.nseconds = 0;                       \
+    h.mtime.seconds = 0;                        \
+    h.mtime.nseconds = 0;                       \
+    h.ctime.seconds = 0;                        \
+    h.ctime.nseconds = 0;                       \
+} while(0)
+
 /**
  * NOTE: follows unix convention: seconds since 1/1/1970
  */

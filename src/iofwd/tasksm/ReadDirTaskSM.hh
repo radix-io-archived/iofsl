@@ -20,6 +20,7 @@ class ReadDirTaskSM : public BaseTaskSM,
             : BaseTaskSM(smm, api), ret_(0),
               request_(static_cast<ReadDirRequest &>(*request)), entry_count_(0)
         {
+            ZOIDFS_CACHE_HINT_INIT(parent_hint_);
         }
 
         virtual ~ReadDirTaskSM()

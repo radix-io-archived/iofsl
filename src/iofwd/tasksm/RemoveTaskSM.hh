@@ -27,6 +27,7 @@ class RemoveTaskSM : public sm::SimpleSM< RemoveTaskSM >,
               api_(api),
               slots_(*this)
         {
+            ZOIDFS_CACHE_HINT_INIT(hint_);
         }
 
         virtual ~RemoveTaskSM()

@@ -19,6 +19,8 @@ class RenameTaskSM : public BaseTaskSM,
             : BaseTaskSM(smm, api), ret_(0),
               request_(static_cast<RenameRequest &>(*request))
         {
+            ZOIDFS_CACHE_HINT_INIT(from_parent_hint_);
+            ZOIDFS_CACHE_HINT_INIT(to_parent_hint_);
         }
 
         virtual ~RenameTaskSM()
