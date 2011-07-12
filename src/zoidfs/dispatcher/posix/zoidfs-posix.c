@@ -920,14 +920,14 @@ static int zoidfs_posix_create(const zoidfs_handle_t *parent_handle,
       throttle_set_user (create_throttle, entry, d);
 
       /* first see if the file exists */
-      file = open (newpath, O_WRONLY|O_CREAT|O_EXCL, newmode);
+      file = open (newpath, O_RDWR|O_CREAT|O_EXCL, newmode);
 
       if (file >= 0)
       {
          *created = 1;
          d->created = *created;
          d->ret = ZFS_OK;
-         close (file);
+         /* file handle is valid; after we lookup info, add to dcache */
       }
       else
       {
@@ -950,11 +950,24 @@ static int zoidfs_posix_create(const zoidfs_handle_t *parent_handle,
       break;
    }
 
+   if (file < 0)
+   {
+      /* Try to reopen file without creat */
+      int err;
+      file = our_open (newpath, &err);
+      if (file < 0)
+      {
+         ret = errno2zfs (errno);
+         goto out;
+      }
+   }
+
    /* file exists, and we should be able to stat it */
    /* Note: there is a change here that somebody removed the file we just
-    * created, in which case the call will fail with an error. */
-   if (lstat (newpath, &s) < 0)
+    * created, in which case the call might fail with an error. */
+   if (fstat (file, &s) < 0)
    {
+      close (file);
       ret = errno2zfs (errno);
       goto out;
    }
@@ -964,6 +977,15 @@ static int zoidfs_posix_create(const zoidfs_handle_t *parent_handle,
 
    /* add name to cache */
    filename_add (fcache, handle, newpath);
+
+   /* add FD to dcache - transfers ownership */
+   Descriptor desc;
+   dcache_addfd (dcache, handle, file, &desc);
+
+   /* Immediately release FD (doesn't mean file will be closed right away)
+    * but it means somebody could free the fd at any point now */
+   dcache_releasefd (dcache, &desc);
+   file = -1;
 
    ret = ZFS_OK;
 
