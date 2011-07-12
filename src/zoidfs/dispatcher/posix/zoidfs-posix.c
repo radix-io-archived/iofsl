@@ -941,7 +941,7 @@ static int zoidfs_posix_create(const zoidfs_handle_t *parent_handle,
          }
          else
          {
-            d->created = 1;
+            d->created = 0;
          }
 
          ret = d->ret = ZFS_OK;
