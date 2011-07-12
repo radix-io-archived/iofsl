@@ -553,7 +553,8 @@ static int zoidfs_posix_readlink(const zoidfs_handle_t *handle, char *buffer,
 }
 
 /* Try to open a file: be careful about directories and
- * file permissions */
+ * file permissions. Return fd or <0 in case of error.
+ */
 static int our_open (const char * filename, int *err)
 {
    int fd;
