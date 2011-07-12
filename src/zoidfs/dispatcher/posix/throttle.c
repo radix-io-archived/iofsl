@@ -68,6 +68,8 @@ void throttle_done (throttle_handle_t * oldh)
    *oldh= 0;
    pthread_mutex_destroy (&h->lock);
    hash_table_free (h->list);
+
+   free(h);
 }
 
 /* needs to be called with h->lock held */
