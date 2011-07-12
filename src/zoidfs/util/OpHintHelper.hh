@@ -9,6 +9,7 @@
 #include "iofwdutil/assert.hh"
 
 #include <boost/shared_ptr.hpp>
+#include <boost/shared_array.hpp>
 
 namespace encoder
 {
@@ -79,16 +80,14 @@ namespace encoder
          for(i = 0 ; i < size ; i++)
          {
             int key_len = 0;
-            boost::shared_ptr<char> key;
             int value_len = 0;
-            boost::shared_ptr<char> value;
             int flag = 0;
 
             zoidfs::hints::zoidfs_hint_get_nthkeylen(h.op_hint_, i, &key_len);
-            key.reset(new char[key_len]);
+            boost::shared_array<char> key(new char[key_len]);
             zoidfs::hints::zoidfs_hint_get_nthkey(h.op_hint_, i, key.get());
             zoidfs::hints::zoidfs_hint_get_valuelen(h.op_hint_, key.get(), &value_len, &flag);
-            value.reset(new char[value_len]);
+            boost::shared_array<char> value(new char[value_len]);
             zoidfs::hints::zoidfs_hint_get(h.op_hint_, key.get(), value_len,
                     value.get(), &flag);
 
@@ -125,16 +124,14 @@ namespace encoder
          for(i = 0 ; i < size ; i++)
          {
             int key_len = 0;
-            boost::shared_ptr<char> key;
             int value_len = 0;
-            boost::shared_ptr<char> value;
 
             /* decode the hint data from the xdr stream */
             process (p, key_len);
-            key.reset(new char[key_len + 1]);
+            boost::shared_array<char> key(new char[key_len + 1]);
             process (p, EncString(key.get(), key_len));
             process (p, value_len);
-            value.reset(new char[value_len + 1]);
+            boost::shared_array<char> value(new char[value_len + 1]);
             process (p, EncString(value.get(), value_len));
 
             /* add the hint */
