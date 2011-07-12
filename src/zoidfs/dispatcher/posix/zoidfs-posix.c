@@ -83,6 +83,13 @@ static throttle_handle_t create_throttle;
 
 //static pthread_mutex_t posix_create_mutex = PTHREAD_MUTEX_INITIALIZER;
 
+/* zoidfs_create cache */
+static pthread_mutex_t zfs_create_lock      = PTHREAD_MUTEX_INITIALIZER;
+static zoidfs_handle_t zfs_create_handle;
+static const char *    zfs_create_filename  = 0;
+static const size_t    zfs_create_timeout   = 6;  /* time to cache create */
+static struct timespec zfs_create_time;
+
 /* ======================================================================== */
 
 static inline int zoidfs_posix_dispatcher_get_time(struct timespec * timeval)
@@ -123,6 +130,80 @@ static inline double timeval_diff (
       const struct timespec * t2)
 {
    return zoidfs_posix_dispatcher_elapsed_time (t1,t2);
+}
+
+
+/* ======================================================================== */
+
+void zoidfs_create_cache_init ()
+{
+   pthread_mutex_init (&zfs_create_lock, 0);
+   zfs_create_filename = 0;
+}
+
+void zoidfs_create_cache_done ()
+{
+   pthread_mutex_destroy (&zfs_create_lock);
+   free ((void*)zfs_create_filename);
+}
+
+/* Add entry to create cache indicating the given file was successfully
+ * created */
+int zoidfs_create_cache_add (const char * filename, const zoidfs_handle_t * handle)
+{
+   pthread_mutex_lock (&zfs_create_lock);
+
+   free ((void*)zfs_create_filename);
+   zfs_create_filename = strdup (filename);
+   zfs_create_handle = *handle;
+   zoidfs_posix_dispatcher_get_time(&zfs_create_time);
+
+   pthread_mutex_unlock (&zfs_create_lock);
+   return 1;
+}
+
+/* Returns true if the request was answered from the cache; */
+int zoidfs_create_cache_check (const char * filename, zoidfs_handle_t * handle,
+      int * created, int * ret)
+{
+   int fret = 0;
+
+   pthread_mutex_lock (&zfs_create_lock);
+
+   do
+   {
+      if (!zfs_create_filename)
+         break;
+
+      struct timespec curtime;
+      zoidfs_posix_dispatcher_get_time(&curtime);
+
+      if (timeval_diff (&curtime, &zfs_create_time) >= zfs_create_timeout)
+         break;
+
+      if (strcmp (filename, zfs_create_filename))
+         break;
+
+      *handle = zfs_create_handle;
+      *created = 0;
+      *ret = ZFS_OK;
+      fret = 1;
+
+   } while (0);
+
+   pthread_mutex_unlock (&zfs_create_lock);
+   return fret;
+}
+
+/* clear zoidfs_create cache for entry */
+void zoidfs_create_cache_clear (const char * UNUSED(filename))
+{
+   pthread_mutex_lock (&zfs_create_lock);
+
+   free ((void*)zfs_create_filename);
+   zfs_create_filename = 0;
+
+   pthread_mutex_unlock (&zfs_create_lock);
 }
 
 /* ======================================================================== */
@@ -878,6 +959,12 @@ static int zoidfs_posix_create(const zoidfs_handle_t *parent_handle,
       goto out;
    }
 
+   /* check if we tried to create this file recently */
+   if (zoidfs_create_cache_check (newpath, handle, created, &ret))
+   {
+      goto out;
+   }
+
    *created = 0;
 
    if (sattr->mask & ZOIDFS_ATTR_MODE)
@@ -954,6 +1041,7 @@ static int zoidfs_posix_create(const zoidfs_handle_t *parent_handle,
       memset (d->handle.data, 0, sizeof (d->handle.data));
       throttle_set_user (create_throttle, entry, d);
 
+
       /* first see if the file exists */
       file = open (newpath, O_RDWR|O_CREAT|O_EXCL, newmode);
 
@@ -1017,6 +1105,9 @@ static int zoidfs_posix_create(const zoidfs_handle_t *parent_handle,
    Descriptor desc;
    dcache_addfd (dcache, handle, file, &desc);
 
+   if (*created)
+      zoidfs_create_cache_add (newpath, handle);
+
    /* Immediately release FD (doesn't mean file will be closed right away)
     * but it means somebody could free the fd at any point now */
    dcache_releasefd (dcache, &desc);
@@ -1064,6 +1155,9 @@ static int zoidfs_posix_remove(const zoidfs_handle_t *parent_handle,
    }
 
    /* note we don't remove the entry from fcache/dcache */
+
+   /* remove entry from create cache */
+   zoidfs_create_cache_clear (path);
 
    return ZFS_OK;
 }
@@ -1386,7 +1480,7 @@ static inline int zoidfs_generic_access (const zoidfs_handle_t *handle, int mem_
       /* detect and set errors from IO calls */
       if(ret < 0 || (size_t)ret != thistransfer)
       {
-        zfs_ret = ZFSERR_IO; 
+        zfs_ret = ZFSERR_IO;
       }
 
       memofs += thistransfer;
@@ -1476,6 +1570,8 @@ static int zoidfs_posix_init(void)
          throttle_init (&create_throttle);
          throttle_set_user_free (create_throttle, free);
 
+         zoidfs_create_cache_init ();
+
          zoidfs_debug ("%s", "zoidfs_init called...\n");
          posix_initialized = 1;
 
@@ -1504,6 +1600,8 @@ static int zoidfs_posix_finalize(void)
    {
       if (!posix_initialized)
          break;
+
+      zoidfs_create_cache_done ();
 
       filename_destroy (fcache);
       dcache_destroy (dcache);
