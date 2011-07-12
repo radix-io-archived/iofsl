@@ -826,7 +826,7 @@ static int zoidfs_posix_create(const zoidfs_handle_t *parent_handle,
    struct timespec start;
    struct timespec stop;
    double elapsed = 0;
-   throttle_entry_handle_t entry;
+   throttle_entry_handle_t entry = 0;
    int obtained;
    zoidfs_handle_t fakeh;
    create_data_t * d;
