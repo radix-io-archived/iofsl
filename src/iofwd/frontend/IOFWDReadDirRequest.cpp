@@ -23,6 +23,7 @@ const IOFWDReadDirRequest::ReqParam & IOFWDReadDirRequest::decodeParam ()
    decodeOpHint (op_hint_());
 
    entries_ = new zoidfs::zoidfs_dirent_t[entry_count_];
+   memset(entries_, 0, sizeof(zoidfs::zoidfs_dirent_t) * entry_count_);
 
    /*
     * Init param_ with the decoded XDR data
