@@ -157,6 +157,12 @@ typedef struct
     zoidfs_dirent_cookie_t cookie;
 } zoidfs_dirent_t;
 
+#define ZOIDFS_DIRENT_T_INIT(d)                         \
+do {                                                    \
+    (d).name[0] = '\0';                                 \
+    (d).cookie = ZOIDFS_DIRENT_COOKIE_INIT;             \
+} while(0)
+
 /*
  * hint data structures
  */
