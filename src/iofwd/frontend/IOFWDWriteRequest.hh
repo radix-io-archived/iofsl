@@ -22,7 +22,7 @@ class IOFWDWriteRequest
 public:
    IOFWDWriteRequest (int opid, const BMI_unexpected_info & info,
          IOFWDResources & res)
-     : IOFWDRequest (info,res), WriteRequest (opid)
+     : IOFWDRequest (info,res), WriteRequest (opid), nbio_enabled_(false)
    {
    }
 
@@ -49,6 +49,8 @@ private:
    zoidfs::util::ZoidFSOpHint op_hint_;
    bmi_size_t mem_expected_size;
    boost::scoped_array<bmi_size_t> bmi_mem_sizes;
+
+   bool nbio_enabled_;
 };
 
 //===========================================================================

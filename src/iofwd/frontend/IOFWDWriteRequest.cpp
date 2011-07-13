@@ -44,6 +44,12 @@ IOFWDWriteRequest::ReqParam & IOFWDWriteRequest::decodeParam ()
    // check for hints here
    int hint_found = 0;
    char enable_pipeline[32];
+   int nbio_vallen = 0;
+
+   op_hint_.getHintValueLen(ZOIDFS_NONBLOCK_SERVER_IO, &nbio_vallen, &hint_found);
+   nbio_enabled_ = hint_found ? true : false;
+   hint_found = 0;
+
    op_hint_.getHint(ZOIDFS_ENABLE_PIPELINE, 32, enable_pipeline, &hint_found);
    if(hint_found)
    {
@@ -134,7 +140,7 @@ void IOFWDWriteRequest::allocateBuffer(iofwdevent::CBType cb, RetrievedBuffer * 
 
 void IOFWDWriteRequest::releaseBuffer(RetrievedBuffer * rb)
 {
-    if(!iofwdutil::mm::NBIOMemoryManager::zeroCopy())
+    if(!(iofwdutil::mm::NBIOMemoryManager::zeroCopy() && nbio_enabled_))
     {
         iofwdutil::mm::BMIMemoryManager::instance().dealloc(rb->buffer_);
         delete rb->buffer_;
