@@ -44,7 +44,8 @@ public:
           file_count(0),
           pipeline_size(0),
           op_hint_pipeline_enabled(true),
-          op_hint(NULL)
+          op_hint(NULL),
+          max_buffer_size(0)
       {
       }
 
