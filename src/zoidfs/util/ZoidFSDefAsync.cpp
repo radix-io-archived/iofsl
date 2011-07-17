@@ -538,18 +538,6 @@ namespace zoidfs
                     {
                         issue_cb = false;
 
-                        /* free mem allocated for this request */
-                        for(i = 0 ; i < wu->mem_count_ ; i++)
-                        {
-                            if(iofwdutil::mm::NBIOMemoryManager::zeroCopy())
-                            {
-                            }
-                            else
-                            {
-                                delete [] static_cast<char *>(const_cast<void *>
-                                    (wu->mem_starts_[i]));
-                            }
-                        }
                         delete [] wu->mem_starts_;
                         delete [] wu->mem_sizes_;
                         delete [] wu->file_starts_; 
@@ -947,6 +935,9 @@ namespace zoidfs
                                 *>((void *)((char *)(cur_ptr) + cur_offset));
                             iofsl_mem_sizes[i] = mem_sizes[i];
                             cur_offset += mem_sizes[i];
+
+                            memcpy(iofsl_mem_starts[i], mem_starts[i],
+                                    mem_sizes[i]);
                         }
                     }
 

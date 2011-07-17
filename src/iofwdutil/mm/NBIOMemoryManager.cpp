@@ -75,7 +75,7 @@ void NBIOMemoryAlloc::alloc(int numTokens)
     }
     else
     {
-        memory_ = new char[bufferSize_];
+        memory_ = static_cast<void *>(new char[bufferSize_]);
     }
 }
 
