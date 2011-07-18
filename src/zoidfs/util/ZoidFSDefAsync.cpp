@@ -183,7 +183,6 @@ namespace zoidfs
 
               boost::exception_ptr e;
 
-            boost::mutex::scoped_try_lock mlock(commit_mutex_);
             try
             {
                 int nbio_flag = 0;
@@ -213,49 +212,86 @@ namespace zoidfs
                 /* check for completed async io if the hint was set */
                 if(nbio_flag) 
                 {
-                    ZoidFSTrackerData * data = NULL;
+                    bool cdone = false;
+                    do
                     {
-                        ZoidFSHandleTracker::iterator it;
-                        boost::mutex::scoped_lock lock(handle_tracker_mutex_);
+                    boost::mutex::scoped_try_lock mlock(commit_mutex_);
+                    if(mlock.owns_lock())
+                    {
+                        cdone = true;
+                        ZoidFSTrackerData * data = NULL;
+                        ZoidFSTrackerData * data_cleanup = NULL;
+                        {
+                            ZoidFSHandleTracker::iterator it;
+                            boost::mutex::scoped_lock lock(handle_tracker_mutex_);
 
-                        /* if the handle is in the map, get it */
-                        if((it = handle_tracker_.find(ZoidFSTrackerKey(wu->handle_))) != 
+                            /* if the handle is in the map, get it */
+                            if((it = handle_tracker_.find(ZoidFSTrackerKey(wu->handle_))) != 
                                 handle_tracker_.end())
-                        {
-                            data = it->second;
-                        }
-                    }
-
-                    /* if the handle was in the tracker table */
-                    if(data)
-                    {
-                        uint64_t ref_count = 0;
-                        uint64_t ref_count_orig = 0;
-                        boost::posix_time::time_duration duration =
-                            boost::posix_time::milliseconds(10);
-
-                        {
-                            boost::mutex::scoped_lock lock(data->mutex_);
-
-                            data->flush_ = true;
-                            ref_count = data->ref_count_;
-                            ref_count_orig = data->ref_count_;
-
-                            while(ref_count > 0)
                             {
-                                data->condition_.timed_wait(lock,
-                                        boost::get_system_time() + duration);
-                                ref_count = data->ref_count_;
+                                data = it->second;
+                    
+                                /* if the handle was in the tracker table */
+                                if(data)
+                                {
+                                    boost::mutex::scoped_try_lock dlock(data->mutex_);
+                                    //boost::mutex::scoped_lock dlock(data->mutex_);
+                                    bool runflush = false; 
+                             
+                                    if(dlock.owns_lock())
+                                    {
+                                        lock.unlock();
+                                        uint64_t ref_count = 0;
+                                        boost::posix_time::time_duration duration =
+                                            boost::posix_time::milliseconds(1000);
+
+                                        data->flush_ = true;
+                                        ref_count = data->ref_count_;
+                                        runflush = true;
+
+                                        while(ref_count > 0)
+                                        {
+                                            data->condition_.timed_wait(dlock,
+                                                boost::get_system_time() + duration);
+                                            ref_count = data->ref_count_;
+                                        }
+                                    }
+
+                                    if(runflush)
+                                    {
+                                        if(data->err_ != ZFS_OK)
+                                        {
+                                            *(wu->ret_) = data->err_;
+                                            data->err_ = ZFS_OK;
+                                        }
+                                    }
+                                    else
+                                    {
+                                        *(wu->ret_) = ZFS_OK;
+                                    }
+                                }
+                        
+                                if(data->ref_count_ == 0)
+                                {
+                                    handle_tracker_.erase(it);
+                                    data_cleanup = data;
+                                }
+
+                                if(data_cleanup)
+                                {
+                                    delete data_cleanup;
+                                    data_cleanup = NULL;
+                                    data = NULL;
+                                }
                             }
                         }
-
-                        if(data->err_ != ZFS_OK)
-                        {
-                            *(wu->ret_) = data->err_;
-                            data->err_ = ZFS_OK;
-                        }
                     }
-                 }
+                    else
+                    {
+                        usleep(250000);
+                    }
+                    } while(!cdone);
+                }
               }
               catch (...)
               {
@@ -506,7 +542,6 @@ namespace zoidfs
                     static_cast<ZoidFSDefAsyncWriteWorkUnit *>(bwu);
 
                 boost::exception_ptr e;
-                unsigned int i = 0;
                 bool issue_cb = true;
 
                 try
@@ -553,19 +588,14 @@ namespace zoidfs
                             delete wu->hint_;
                         }
         
-                        {
-                            boost::mutex::scoped_lock
-                                lock(ZoidFSDefAsync::handle_tracker_mutex_);
-
-                            delete wu->op_key_;
-                        }
+                        delete wu->op_key_;
                     }
 
                     {
+                        boost::mutex::scoped_lock 
+                            handle_lock(handle_tracker_mutex_);
                         ZoidFSTrackerData * data = NULL;
                         {
-                            boost::mutex::scoped_lock 
-                                handle_lock(handle_tracker_mutex_);
                             ZoidFSHandleTracker::iterator it;
 
                            if((it = handle_tracker_.find(ZoidFSTrackerKey(wu->handle_)))
@@ -977,12 +1007,11 @@ namespace zoidfs
                                 data = it->second;
                             }
 
-                        }
-
-                        /* update the handle data */
-                        {
-                            boost::mutex::scoped_lock lock(data->mutex_);
-                            data->ref_count_++;
+                            /* update the handle data */
+                            {
+                                boost::mutex::scoped_lock lock(data->mutex_);
+                                data->ref_count_++;
+                            }
                         }
                     }
  
