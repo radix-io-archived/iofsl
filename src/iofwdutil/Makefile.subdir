@@ -155,6 +155,9 @@ src/iofwdutil/FactoryHelper.hh \
 \
 src/iofwdutil/atomics.hh \
 \
+src/iofwdutil/SelfPipe.hh \
+src/iofwdutil/SelfPipe.cpp \
+\
 src/iofwdutil/rm/IntervalMergeTree.hh \
 src/iofwdutil/rm/IntervalMergeTree.cpp \
 \

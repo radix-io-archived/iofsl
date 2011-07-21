@@ -11,6 +11,7 @@
 #include "iofwdutil/LinkHelper.hh"
 #include "iofwdutil/Configurable.hh"
 #include "iofwdutil/IOFWDLog.hh"
+#include "iofwdutil/SelfPipe.hh"
 
 #include "zoidfs/zoidfs-proto.h"
 #include "zoidfs/util/zoidfs-c-util.h"
@@ -73,6 +74,7 @@ namespace zoidfs
                 boost::mutex mutex_;
                 boost::condition condition_;
                 bool flush_;
+                iofwdutil::SelfPipe sp_;
         };
 
         class ZoidFSTrackerKey
