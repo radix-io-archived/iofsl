@@ -235,9 +235,9 @@ namespace zoidfs
                             {
                                 boost::mutex::scoped_lock dlock(data->mutex_);
                                 data->flush_ = true;
-                                c = data->sp_.resetStartSignalTotal();
                             }
 
+                            c = data->sp_.resetStartSignalTotal();
                             data->sp_.wait(c);
                                     
                             {
@@ -554,21 +554,21 @@ namespace zoidfs
                     }
 
                     {
-                        boost::mutex::scoped_lock 
-                            handle_lock(handle_tracker_mutex_);
                         ZoidFSTrackerData * data = NULL;
-                        {
-                            ZoidFSHandleTracker::iterator it;
 
-                           if((it = handle_tracker_.find(ZoidFSTrackerKey(wu->handle_)))
+                        {
+                            boost::mutex::scoped_lock 
+                                handle_lock(handle_tracker_mutex_);
+                            ZoidFSHandleTracker::iterator it;
+                            if((it = handle_tracker_.find(ZoidFSTrackerKey(wu->handle_)))
                                    != handle_tracker_.end())
-                           {
-                               data = it->second;
-                           }
-                           if(!issue_cb)
-                           {
-                               delete wu->handle_;
-                           }
+                            {
+                                data = it->second;
+                            }
+                            if(!issue_cb)
+                            {
+                                delete wu->handle_;
+                            }
                         }
 
                         if(data)
@@ -964,7 +964,10 @@ namespace zoidfs
                             {
                                 data = it->second;
                             }
+                        }
 
+                        if(data)
+                        {
                             /* update the handle data */
                             {
                                 data->sp_.startSignal();
