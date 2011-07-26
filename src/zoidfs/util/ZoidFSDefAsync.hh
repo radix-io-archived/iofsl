@@ -75,6 +75,7 @@ namespace zoidfs
                 boost::condition condition_;
                 bool flush_;
                 iofwdutil::SelfPipe sp_;
+                iofwdutil::SelfPipe lp_;
         };
 
         class ZoidFSTrackerKey

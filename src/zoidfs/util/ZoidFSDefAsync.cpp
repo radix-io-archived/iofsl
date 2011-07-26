@@ -212,7 +212,7 @@ namespace zoidfs
                 /* check for completed async io if the hint was set */
                 if(nbio_flag) 
                 {
-                    boost::mutex::scoped_lock mlock(commit_mutex_);
+
                     {
                         ZoidFSTrackerData * data = NULL;
                         {
@@ -230,26 +230,47 @@ namespace zoidfs
                         /* if the handle was in the tracker table */
                         if(data)
                         {
-                            size_t c = 0;
-
                             {
                                 boost::mutex::scoped_lock dlock(data->mutex_);
-                                data->flush_ = true;
+                                data->lp_.doneSignal();
                             }
 
-                            c = data->sp_.resetStartSignalTotal();
-                            data->sp_.wait(c);
-                                    
+                            size_t num_commits = 0;
                             {
-                                boost::mutex::scoped_lock dlock(data->mutex_);
-                                if(data->err_ != ZFS_OK)
+                                boost::mutex::scoped_lock mlock(commit_mutex_);
+                                num_commits = data->lp_.resetStartSignalTotal();
+                            }
+
+                            if(num_commits > 0)
+                            {
+                                size_t c = 0;
+
                                 {
-                                    *(wu->ret_) = data->err_;
+                                    boost::mutex::scoped_lock dlock(data->mutex_);
+                                    data->flush_ = true;
                                 }
-                                else
+
+                                data->lp_.wait(num_commits);
+
+                                c = data->sp_.resetStartSignalTotal();
+                                if(c > 0)
                                 {
-                                    *(wu->ret_) = ZFS_OK;
+                                    data->sp_.wait(c);
+                                    
+                                    {
+                                        boost::mutex::scoped_lock dlock(data->mutex_);
+                                        if(data->err_ != ZFS_OK)
+                                        {
+                                            *(wu->ret_) = data->err_;
+                                        }
+                                        else
+                                        {
+                                            *(wu->ret_) = ZFS_OK;
+                                        }
+                                    }
                                 }
+
+                                num_commits--;
                             }
                         }
                     }
