@@ -155,10 +155,12 @@ void IOFWDFrontend::init ()
    bool zc = lc.getKeyAsDefault<bool>("zerocopy", false);
    if(zc)
    {
+        ZLOG_INFO (log_, "Enable zero copy NBIO memory...");
         iofwdutil::mm::NBIOMemoryManager::instance().enableZeroCopy();
    }
    else
    {
+        ZLOG_INFO (log_, "Disable zero copy NBIO memory...");
         iofwdutil::mm::NBIOMemoryManager::instance().disableZeroCopy();
    }
    iofwdutil::mm::NBIOMemoryManager::instance().start();
