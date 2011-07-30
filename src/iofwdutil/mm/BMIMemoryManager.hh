@@ -2,6 +2,7 @@
 #define IOFWD_BMI_MEMORY_MANAGER_HH
 
 #include <deque>
+#include <list>
 #include <boost/thread.hpp>
 #include "iofwdutil/bmi/BMIBuffer.hh"
 #include "iofwdutil/bmi/BMIAddr.hh"
@@ -89,6 +90,21 @@ class BMIMemoryAlloc : public IOFWDMemoryAlloc
         virtual void alloc(int numTokens);
         virtual void dealloc();
 
+        bool track()
+        {
+            return track_;
+        }
+
+        void enableTracking()
+        {
+            track_ = true;
+        }
+
+        void disableTracking()
+        {
+            track_ = false;
+        }
+
         bmi_buffer_type bmiType()
         {
             return memory_->bmiType();
@@ -121,6 +137,8 @@ class BMIMemoryAlloc : public IOFWDMemoryAlloc
 
         boost::mutex cbcount_mutex_;
         int cb_count_;
+
+        bool track_;
 };
 
 /* allocation manager for BMI buffers */
@@ -176,7 +194,7 @@ class BMIMemoryManager : public IOFWDMemoryManager, public iofwdutil::Singleton 
         static size_t memWarnAmount_;
         static boost::mutex bmm_setup_mutex_;
 
-        std::vector<BMIMemoryAlloc *> alloc_list_;
+        std::list<BMIMemoryAlloc *> alloc_list_;
         boost::mutex bmm_tracker_mutex_;
 };
     }

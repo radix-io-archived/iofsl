@@ -1,4 +1,5 @@
 #include "iofwdutil/mm/BMIMemoryManager.hh"
+#include "iofwdutil/mm/NBIOMemoryManager.hh"
 #include "iofwdutil/tools.hh"
 
 #include <cassert>
@@ -11,7 +12,9 @@ namespace iofwdutil
     {
 
 BMIMemoryAlloc::BMIMemoryAlloc(iofwdutil::bmi::BMIAddr addr, iofwdutil::bmi::BMI::AllocType allocType, size_t bufferSize)
-    : IOFWDMemoryAlloc(), allocated_(false), numTokens_(0), bufferSize_(bufferSize), memory_(NULL), addr_(addr), allocType_(allocType), cb_count_(2)
+    : IOFWDMemoryAlloc(), allocated_(false), numTokens_(0),
+    bufferSize_(bufferSize), memory_(NULL), addr_(addr), allocType_(allocType),
+    cb_count_(2), track_(false)
 {
 }
 
@@ -110,6 +113,7 @@ void BMIMemoryManager::runBufferAllocCB2(iofwdevent::CBException status,
    /* have the buffer wrapper allocate the buffer and consume one token */
    memAlloc->alloc(1);
 
+   if(iofwdutil::mm::NBIOMemoryManager::zeroCopy() && memAlloc->track())
    {
         boost::mutex::scoped_lock lock(bmm_tracker_mutex_);
         alloc_list_.push_back(memAlloc);
@@ -121,9 +125,10 @@ void BMIMemoryManager::runBufferAllocCB2(iofwdevent::CBException status,
 BMIMemoryAlloc * BMIMemoryManager::remove(void * ptr)
 {
     BMIMemoryAlloc * a = NULL;
+    if(iofwdutil::mm::NBIOMemoryManager::zeroCopy())
     {
         boost::mutex::scoped_lock lock(bmm_tracker_mutex_);
-        std::vector<BMIMemoryAlloc *>::iterator it;
+        std::list<BMIMemoryAlloc *>::iterator it;
 
         for(it = alloc_list_.begin() ; it != alloc_list_.end() ; it++)
         {

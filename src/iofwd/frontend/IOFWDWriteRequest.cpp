@@ -135,6 +135,11 @@ void IOFWDWriteRequest::allocateBuffer(iofwdevent::CBType cb, RetrievedBuffer * 
     /* allocate the buffer wrapper */
     rb->buffer_ = new iofwdutil::mm::BMIMemoryAlloc(addr_, iofwdutil::bmi::BMI::ALLOC_RECEIVE, rb->getsize());
 
+    if(iofwdutil::mm::NBIOMemoryManager::zeroCopy())
+    {
+        dynamic_cast<iofwdutil::mm::BMIMemoryAlloc *>(rb->buffer_)->enableTracking();
+    }
+
     iofwdutil::mm::BMIMemoryManager::instance().alloc(cb, rb->buffer_);
 }
 
