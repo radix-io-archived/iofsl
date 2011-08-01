@@ -212,7 +212,6 @@ namespace zoidfs
                 /* check for completed async io if the hint was set */
                 if(nbio_flag) 
                 {
-
                     {
                         ZoidFSTrackerData * data = NULL;
                         {
@@ -232,6 +231,7 @@ namespace zoidfs
                         {
                             {
                                 boost::mutex::scoped_lock dlock(data->mutex_);
+                                data->lp_.startSignal();
                                 data->lp_.doneSignal();
                             }
 
