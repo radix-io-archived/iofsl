@@ -1410,23 +1410,28 @@ static int zoidfs_posix_resize(const zoidfs_handle_t *handle,
 
 static inline int saferead (int fd, void * buf, size_t count, uint64_t filepos)
 {
+   int ret = 0;
+
    /* handle signals and interruption: TODO */
-   return pread (fd, buf, count, filepos);
+   ret = pread(fd, buf, count, filepos);
+   if(ret == -1)
+   {
+       ret = -1 * errno;
+   }
+
+   return ret;
 }
 
 static inline int safewrite (int fd, const void * buf, size_t count,
       uint64_t filepos)
 {
    int ret = 0;
-   struct timespec start;
-   struct timespec stop;
-   double elapsed = 0;
 
-   zoidfs_posix_dispatcher_get_time(&start);
    ret = pwrite (fd, buf, count, filepos);
-   zoidfs_posix_dispatcher_get_time(&stop);
-
-   elapsed = zoidfs_posix_dispatcher_elapsed_time(&start, &stop);
+   if(ret == -1)
+   {
+       ret = -1 * errno;
+   }
 
    return ret;
 }
