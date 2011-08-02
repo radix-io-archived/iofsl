@@ -3,7 +3,7 @@ if HAVE_FUSE
 noinst_PROGRAMS += src/fuse/fuseclient
 src_fuse_fuseclient_LDFLAGS = $(AM_LDFLAGS) @FUSE_LDFLAGS@ @BMI_LDFLAGS@
 src_fuse_fuseclient_SOURCES = src/fuse/zoidfs-fuse.c
-src_fuse_fuseclient_LDADD = src/libiofsl.a \
+src_fuse_fuseclient_LDADD = lib/libiofslcommon.a lib/libiofslclient.a \
    @FUSE_LIBS@ @BMI_LIBS@
 
 bin_PROGRAMS += src/fuse/zoidfsfuse
