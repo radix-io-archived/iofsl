@@ -1,9 +1,9 @@
-#include "src/iofwdutil/SelfPipe.hh"
+#include "src/iofwdutil/IOFSLSignal.hh"
 
 namespace iofwdutil
 {
 
-SelfPipe::~SelfPipe(void)
+IOFSLSignal::~IOFSLSignal(void)
 {
 #ifdef IOFWD_SP_USE_PIPES
     close(fd_[0]);

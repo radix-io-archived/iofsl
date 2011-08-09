@@ -1,5 +1,5 @@
-#ifndef SRC_IOFWDUTIL_SELFPIPE_HH
-#define SRC_IOFWDUTIL_SELFPIPE_HH
+#ifndef SRC_IOFWDUTIL_IOFSLSIGNAL_HH
+#define SRC_IOFWDUTIL_IOFSLSIGNAL_HH
 
 #include <boost/thread/mutex.hpp>
 #include <sys/select.h>
@@ -15,10 +15,10 @@
 namespace iofwdutil
 {
 
-class SelfPipe
+class IOFSLSignal 
 {
     public:
-        SelfPipe(void) :
+        IOFSLSignal(void) :
             ssig_(0),
             nsig_(0),
             fdmax_(0),
@@ -38,7 +38,7 @@ class SelfPipe
 #endif
         }
 
-        ~SelfPipe(void);
+        ~IOFSLSignal(void);
 
         bool startSignal(void)
         {
@@ -64,11 +64,10 @@ class SelfPipe
 
         bool doneSignal(void)
         {
-            char c = 'w';
             int ret = 0;
-
             {
 #ifdef IOFWD_SP_USE_PIPES
+                char c = 'w';
                 boost::mutex::scoped_lock lock1(nsig_mutex_);
                 boost::mutex::scoped_lock lock2(fd_mutex_);
                 nsig_++;
