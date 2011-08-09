@@ -138,23 +138,37 @@ namespace net
             const TCPAddress & taddr = dynamic_cast<const TCPAddress &>(*addr);
             boost::shared_ptr<TCPConnection> c =
                 TCPConnection::create(acceptor_->io_service());
+
             boost::asio::ip::tcp::resolver r(acceptor_->io_service());
             boost::asio::ip::tcp::resolver::query q(taddr.host_,
                     boost::lexical_cast<std::string>(taddr.port_));
-            boost::asio::ip::tcp::resolver::iterator endpoint =
-                r.resolve(q);
-            boost::asio::ip::tcp::resolver::iterator end;
+            boost::asio::ip::tcp::resolver::iterator destination =
+                    r.resolve(q);
             boost::system::error_code error = boost::asio::error::host_not_found;
+            boost::asio::ip::tcp::endpoint endpoint; 
 
-            while(error && endpoint != end)
             {
-                c->socket().close();
-                c->socket().connect(*endpoint++, error);
-            }
-            if(error)
-            {
-                std::cerr << "ERROR: could not get endpoint - " << error <<
-                    std::endl;
+                while(true)
+                {
+                    while(error && destination !=
+                        boost::asio::ip::tcp::resolver::iterator())
+                    {
+                        endpoint = *destination++;
+                    }
+
+                    c->socket().shutdown(boost::asio::ip::tcp::socket::shutdown_both, error);
+                    c->socket().close();
+                    c->socket().connect(endpoint, error);
+
+                    if(error)
+                    {
+                        destination = r.resolve(q);
+                    }
+                    else
+                    {
+                        break;
+                    }
+                }
             }
 
             return Connection(
