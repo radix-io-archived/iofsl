@@ -6,6 +6,11 @@
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/time.h>
+#include <cstdio>
+
+#include <boost/thread/condition_variable.hpp>
+
+//#define IOFWD_SP_USE_PIPES 1
 
 namespace iofwdutil
 {
@@ -16,8 +21,12 @@ class SelfPipe
         SelfPipe(void) :
             ssig_(0),
             nsig_(0),
-            fdmax_(0)
+            fdmax_(0),
+            cond_waiting_(false),
+            notify_count_(0),
+            cond_wait_sig_(false)
         {
+#ifdef IOFWD_SP_USE_PIPES
             pipe(fd_);
             FD_ZERO(&fdset_);
             FD_SET(fd_[0], &fdset_);
@@ -26,6 +35,7 @@ class SelfPipe
             {
                 fdmax_ = fd_[0];
             }
+#endif
         }
 
         ~SelfPipe(void);
@@ -58,10 +68,39 @@ class SelfPipe
             int ret = 0;
 
             {
+#ifdef IOFWD_SP_USE_PIPES
                 boost::mutex::scoped_lock lock1(nsig_mutex_);
                 boost::mutex::scoped_lock lock2(fd_mutex_);
                 nsig_++;
                 ret = write(fd_[1], &c, 1);
+#else
+                {
+                    boost::mutex::scoped_lock lock2(nsig_mutex_);
+                    nsig_++;
+                }
+
+                {
+                    boost::lock_guard<boost::mutex> lock1(cond_wait_mutex_);
+                    
+                    if(cond_waiting_ )
+                    {
+                        if(cond_wait_sig_)
+                        {
+                            notify_count_++;
+                        }
+                        else
+                        {
+                            cond_wait_sig_ = true;
+                            cond_.notify_one();
+                        }
+                    }
+                    else
+                    {
+                        notify_count_++;
+                    }
+                }
+
+#endif
             }
             if(ret != 1)
                 return false;
@@ -70,6 +109,7 @@ class SelfPipe
 
         void wait(size_t n)
         {
+#ifdef IOFWD_SP_USE_PIPES
             size_t nsig = 0;
             int ret = 0;
             char buffer[1024];
@@ -155,13 +195,45 @@ class SelfPipe
                 boost::mutex::scoped_lock lock1(nsig_mutex_);
                 nsig_ += nsig;
             }
+#else
+            {
+                boost::unique_lock<boost::mutex> lock1(cond_wait_mutex_);
+                size_t waitfor = n;
+                {
+                    waitfor -= notify_count_;
+                    notify_count_ = 0;
+                }
+
+                /* wait for pending signals */
+                while(waitfor > 0)
+                {
+                    cond_waiting_ = true;
+                    cond_wait_sig_ = false;
+                    cond_.wait(lock1);
+                
+                    waitfor--;
+                    waitfor-= notify_count_;
+                    notify_count_ = 0;
+                }
+            
+                cond_waiting_ = false;
+                cond_wait_sig_ = false;
+            }
+
+            {
+                boost::mutex::scoped_lock lock2(nsig_mutex_);
+                nsig_--;
+            }
+#endif
         }
 
     protected:
         void reset(void)
         {
+#ifdef IOFWD_SP_USE_PIPES
             FD_ZERO(&fdset_);
             FD_SET(fd_[0], &fdset_);
+#endif
         }
 
         int fd_[2];
@@ -175,6 +247,13 @@ class SelfPipe
         boost::mutex nsig_mutex_;
 
         int fdmax_;
+
+        boost::mutex cond_wait_mutex_;
+        bool cond_waiting_;
+        size_t notify_count_;
+        bool cond_wait_sig_;
+
+        boost::condition_variable cond_;
 };
 
 }
