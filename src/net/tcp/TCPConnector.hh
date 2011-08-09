@@ -26,7 +26,7 @@ class TCPConnector : private boost::noncopyable, public Net
     protected:
         enum
         {
-            DEFAULT_BLOCKSIZE = 4096,
+            DEFAULT_BLOCKSIZE = 1048576,
             MAX_BLOCKSIZE = 67108864
         };
 
