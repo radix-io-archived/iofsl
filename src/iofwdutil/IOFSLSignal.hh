@@ -24,6 +24,7 @@ class IOFSLSignal
             fdmax_(0),
             cond_waiting_(false),
             notify_count_(0),
+            ignore_count_(0),
             cond_wait_sig_(false)
         {
 #ifdef IOFWD_SP_USE_PIPES
@@ -45,6 +46,10 @@ class IOFSLSignal
             {
                 boost::mutex::scoped_lock lock(ssig_mutex_);
                 ssig_++;
+#ifdef ZOIDFS_NBIO_DEBUG
+                fprintf(stderr, "%s:%i ssig_ = %i\n", __func__, __LINE__,
+                        ssig_);
+#endif
             }
             return true;
         }
@@ -57,6 +62,10 @@ class IOFSLSignal
                 boost::mutex::scoped_lock lock(ssig_mutex_);
                 ssig = ssig_;
                 ssig_ = 0;
+#ifdef ZOIDFS_NBIO_DEBUG
+                fprintf(stderr, "%s:%i ssig_ = %i, ssig = %i\n", __func__, __LINE__,
+                        ssig_, ssig);
+#endif
             }
 
             return ssig;
@@ -86,19 +95,29 @@ class IOFSLSignal
                         if(cond_wait_sig_)
                         {
                             notify_count_++;
+#ifdef ZOIDFS_NBIO_DEBUG
+                            fprintf(stderr, "%s:%i wait already signaled, nc = %i\n",
+                                    __func__, __LINE__, notify_count_);
+#endif
                         }
                         else
                         {
                             cond_wait_sig_ = true;
                             cond_.notify_one();
+#ifdef ZOIDFS_NBIO_DEBUG
+                            fprintf(stderr, "%s:%i wait signal\n", __func__, __LINE__);
+#endif
                         }
                     }
                     else
                     {
-                        notify_count_++;
+                        ignore_count_++;
+#ifdef ZOIDFS_NBIO_DEBUG
+                        fprintf(stderr, "%s:%i not wait, ignore count = %i\n", __func__,
+                                __LINE__, ignore_count_);
+#endif
                     }
                 }
-
 #endif
             }
             if(ret != 1)
@@ -198,9 +217,19 @@ class IOFSLSignal
             {
                 boost::unique_lock<boost::mutex> lock1(cond_wait_mutex_);
                 size_t waitfor = n;
+#ifdef ZOIDFS_NBIO_DEBUG
+                fprintf(stderr, "%s:%i orig waitfor = %i\n", __func__, __LINE__,
+                        waitfor);
+#endif
                 {
+#ifdef ZOIDFS_NBIO_DEBUG
+                    fprintf(stderr, "%s:%i ignore = %i, notify = %i\n",
+                            __func__, __LINE__, ignore_count_, notify_count_);
+#endif
                     waitfor -= notify_count_;
+                    waitfor -= ignore_count_;
                     notify_count_ = 0;
+                    ignore_count_ = 0;
                 }
 
                 /* wait for pending signals */
@@ -208,11 +237,25 @@ class IOFSLSignal
                 {
                     cond_waiting_ = true;
                     cond_wait_sig_ = false;
+#ifdef ZOIDFS_NBIO_DEBUG
+                    fprintf(stderr, "%s:%i wait, waitfor = %i\n", __func__,
+                            __LINE__, waitfor);
+#endif
                     cond_.wait(lock1);
                 
                     waitfor--;
+#ifdef ZOIDFS_NBIO_DEBUG
+                    fprintf(stderr, "%s:%i wait done, waitfor = %i\n", __func__,
+                            __LINE__, waitfor);
+#endif
                     waitfor-= notify_count_;
+                    waitfor-= ignore_count_;
                     notify_count_ = 0;
+                    ignore_count_ = 0;
+#ifdef ZOIDFS_NBIO_DEBUG
+                    fprintf(stderr, "%s:%i adjust waitfor = %i\n", __func__,
+                            __LINE__, waitfor);
+#endif
                 }
             
                 cond_waiting_ = false;
@@ -250,6 +293,7 @@ class IOFSLSignal
         boost::mutex cond_wait_mutex_;
         bool cond_waiting_;
         size_t notify_count_;
+        size_t ignore_count_;
         bool cond_wait_sig_;
 
         boost::condition_variable cond_;

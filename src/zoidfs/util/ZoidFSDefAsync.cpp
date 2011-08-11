@@ -229,6 +229,10 @@ namespace zoidfs
                         /* if the handle was in the tracker table */
                         if(data)
                         {
+#ifdef ZOIDFS_NBIO_DEBUG
+                            fprintf(stderr, "%s:%i COMMIT\n", __func__,
+                                __LINE__);
+#endif
                             {
                                 boost::mutex::scoped_lock dlock(data->mutex_);
                                 data->lp_.startSignal();
@@ -241,6 +245,10 @@ namespace zoidfs
                                 num_commits = data->lp_.resetStartSignalTotal();
                             }
 
+#ifdef ZOIDFS_NBIO_DEBUG
+                            fprintf(stderr, "%s:%i PRE COMMIT, nc = %i\n", __func__,
+                                __LINE__, num_commits);
+#endif
                             if(num_commits > 0)
                             {
                                 size_t c = 0;
@@ -253,8 +261,17 @@ namespace zoidfs
                                 data->lp_.wait(num_commits);
 
                                 c = data->sp_.resetStartSignalTotal();
+
+#ifdef ZOIDFS_NBIO_DEBUG
+                                fprintf(stderr, "%s:%i PENDING WRITES %i\n",
+                                        __func__, __LINE__, c);
+#endif
                                 if(c > 0)
                                 {
+#ifdef ZOIDFS_NBIO_DEBUG
+                                    fprintf(stderr, "%s:%i COMMIT DATA WAIT, c = %i\n", __func__,
+                                            __LINE__, c);
+#endif
                                     data->sp_.wait(c);
                                     
                                     {
@@ -592,16 +609,17 @@ namespace zoidfs
                             }
                         }
 
-                        if(data)
-                        {
-                            data->sp_.doneSignal();
-                        }
-
                         if(data && !issue_cb)
                         {
                             {
                                 boost::mutex::scoped_lock dlock(data->mutex_);
                     
+#ifdef ZOIDFS_NBIO_DEBUG
+                                fprintf(stderr, "%s:%i WRITE done\n", __func__,
+                                    __LINE__);
+#endif
+                                data->sp_.doneSignal();
+
                                 /* check the error code and update the error tracker if
                                 a failure was detected */
                                 if(*(wu->ret_) != ZFS_OK)
@@ -992,7 +1010,18 @@ namespace zoidfs
                             /* update the handle data */
                             {
                                 data->sp_.startSignal();
+#ifdef ZOIDFS_NBIO_DEBUG
+                                fprintf(stderr, "%s:%i WRITE START\n", __func__,
+                                        __LINE__);
+#endif
                             }
+                        }
+                        else
+                        {
+#ifdef ZOIDFS_NBIO_DEBUG
+                            fprintf(stderr, "%s:%i NO DATA\n", __func__,
+                                    __LINE__);
+#endif
                         }
                     }
  
