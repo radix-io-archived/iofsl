@@ -226,10 +226,27 @@ class IOFSLSignal
                     fprintf(stderr, "%s:%i ignore = %i, notify = %i\n",
                             __func__, __LINE__, ignore_count_, notify_count_);
 #endif
-                    waitfor -= notify_count_;
-                    waitfor -= ignore_count_;
-                    notify_count_ = 0;
-                    ignore_count_ = 0;
+                    if(waitfor > notify_count_)
+                    {
+                        waitfor -= notify_count_;
+                        notify_count_ = 0;
+                    }
+                    else
+                    {
+                        notify_count_ -= waitfor;
+                        waitfor = 0;
+                    }
+
+                    if(waitfor > ignore_count_)
+                    {
+                        waitfor -= ignore_count_;
+                        ignore_count_ = 0;
+                    }
+                    else
+                    {
+                        ignore_count_ -= waitfor;
+                        waitfor = 0;
+                    }
                 }
 
                 /* wait for pending signals */
@@ -248,10 +265,27 @@ class IOFSLSignal
                     fprintf(stderr, "%s:%i wait done, waitfor = %i\n", __func__,
                             __LINE__, waitfor);
 #endif
-                    waitfor-= notify_count_;
-                    waitfor-= ignore_count_;
-                    notify_count_ = 0;
-                    ignore_count_ = 0;
+                    if(waitfor > notify_count_)
+                    {
+                        waitfor -= notify_count_;
+                        notify_count_ = 0;
+                    }
+                    else
+                    {
+                        notify_count_ -= waitfor;
+                        waitfor = 0;
+                    }
+
+                    if(waitfor > ignore_count_)
+                    {
+                        waitfor -= ignore_count_;
+                        ignore_count_ = 0;
+                    }
+                    else
+                    {
+                        ignore_count_ -= waitfor;
+                        waitfor = 0;
+                    }
 #ifdef ZOIDFS_NBIO_DEBUG
                     fprintf(stderr, "%s:%i adjust waitfor = %i\n", __func__,
                             __LINE__, waitfor);
