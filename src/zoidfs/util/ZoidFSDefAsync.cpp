@@ -235,13 +235,12 @@ namespace zoidfs
 #endif
                             {
                                 boost::mutex::scoped_lock dlock(data->mutex_);
-                                data->lp_.startSignal();
+                                data->flush_ = true;
                                 data->lp_.doneSignal();
                             }
 
                             size_t num_commits = 0;
                             {
-                                boost::mutex::scoped_lock mlock(commit_mutex_);
                                 num_commits = data->lp_.resetStartSignalTotal();
                             }
 
@@ -253,12 +252,7 @@ namespace zoidfs
                             {
                                 size_t c = 0;
 
-                                {
-                                    boost::mutex::scoped_lock dlock(data->mutex_);
-                                    data->flush_ = true;
-                                }
-
-                                data->lp_.wait(num_commits);
+                                //data->lp_.wait(num_commits);
 
                                 c = data->sp_.resetStartSignalTotal();
 
@@ -268,26 +262,27 @@ namespace zoidfs
 #endif
                                 if(c > 0)
                                 {
+                                    boost::mutex::scoped_lock mlock(commit_mutex_);
 #ifdef ZOIDFS_NBIO_DEBUG
                                     fprintf(stderr, "%s:%i COMMIT DATA WAIT, c = %i\n", __func__,
                                             __LINE__, c);
 #endif
                                     data->sp_.wait(c);
                                     
-                                    {
-                                        boost::mutex::scoped_lock dlock(data->mutex_);
-                                        if(data->err_ != ZFS_OK)
-                                        {
-                                            *(wu->ret_) = data->err_;
-                                        }
-                                        else
-                                        {
-                                            *(wu->ret_) = ZFS_OK;
-                                        }
-                                    }
                                 }
-
                                 num_commits--;
+                            }
+                            
+                            {
+                                boost::mutex::scoped_lock dlock(data->mutex_);
+                                if(data->err_ != ZFS_OK)
+                                {
+                                    *(wu->ret_) = data->err_;
+                                }
+                                else
+                                {
+                                    *(wu->ret_) = ZFS_OK;
+                                }
                             }
                         }
                     }
@@ -1095,6 +1090,14 @@ namespace zoidfs
    {
       ZoidFSDefAsyncCommitWorkUnit * wu = new ZoidFSDefAsyncCommitWorkUnit(cb, 
               ret, api_.get(), tp_, handle, hint);
+
+      {
+            boost::mutex::scoped_lock
+                lock(ZoidFSDefAsync::handle_tracker_mutex_);
+
+            ZoidFSHandleTracker::iterator it = handle_tracker_.find(ZoidFSTrackerKey(handle));
+            (it->second)->lp_.startSignal();
+      }
 
       if(highpriooplist_[zoidfs::ZOIDFS_PROTO_COMMIT])
         submitWorkUnit(boost::bind(&ZoidFSDefAsync::runWorkUnit, wu),
