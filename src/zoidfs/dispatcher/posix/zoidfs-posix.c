@@ -813,32 +813,43 @@ static int getfd_handle (const zoidfs_handle_t * handle, Descriptor * desc, int 
          continue;
       }
 
-      /* we have the filename: open the file and add to the descriptor cache */
-      fd = our_open (buf, err);
-      if (fd < 0)
+      /* if the fd was not added to cache in the interim, try to open it */
+      if(!dcache_getfd(dcache, handle, desc))
       {
-         // We failed to open, give somebody else a chance
-         throttle_release (open_throttle, handle, entry);
-         return 0;
-      }
 
-      /* Since we're preventing others from trying to open this file at the
-       * same time, addfd should always succeed. */
-      ret = dcache_addfd (dcache, handle, fd, desc);
-      assert (ret);
+        /* we have the filename: open the file and add to the descriptor cache */
+        fd = our_open (buf, err);
+        if (fd < 0)
+        {
+             // We failed to open, give somebody else a chance
+            throttle_release (open_throttle, handle, entry);
+            return 0;
+        }
 
-      /* lustre group locks: set group lock bit on file descriptor
-       * Note: we don't release lock, will be done when file descriptor is
-       * closed. */
-      if (opt_lustre_group_locks)
-      {
-         long gid = 7;
-         int ret = ioctl(fd, LL_IOC_GROUP_LOCK, gid);
-         if (ret == -1)
-         {
-            // ioctl failed
-            zoidfs_debug ("LL_IOC_GROUP_LOCK failed: %i", ret);
-         }
+        /* Since we're preventing others from trying to open this file at the
+         * same time, addfd should always succeed. */
+        ret = dcache_addfd (dcache, handle, fd, desc);
+
+        /* the fd was already in the cache, close the one we just opened */
+        if(!ret)
+        {
+            close(fd);
+            return 1;
+        }
+
+        /* lustre group locks: set group lock bit on file descriptor
+         * Note: we don't release lock, will be done when file descriptor is
+         * closed. */
+        if (opt_lustre_group_locks)
+        {
+            long gid = 7;
+            int ret = ioctl(fd, LL_IOC_GROUP_LOCK, gid);
+            if (ret == -1)
+            {
+                // ioctl failed
+                zoidfs_debug ("LL_IOC_GROUP_LOCK failed: %i", ret);
+            }
+        }
       }
       
       throttle_release (open_throttle, handle, entry);
