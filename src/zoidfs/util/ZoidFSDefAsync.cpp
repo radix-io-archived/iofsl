@@ -1088,15 +1088,28 @@ namespace zoidfs
            const zoidfs_handle_t * handle,
            zoidfs_op_hint_t * hint)
    {
+      int nbio_flag = 0;
+      int nbio_vl = 0;
       ZoidFSDefAsyncCommitWorkUnit * wu = new ZoidFSDefAsyncCommitWorkUnit(cb, 
               ret, api_.get(), tp_, handle, hint);
 
+      if(hint)
+      {
+         zoidfs::hints::zoidfs_hint_get_valuelen(*hint, 
+            ZOIDFS_NONBLOCK_SERVER_IO, &nbio_vl, &nbio_flag);
+      }
+
+      if(nbio_flag)
       {
             boost::mutex::scoped_lock
                 lock(ZoidFSDefAsync::handle_tracker_mutex_);
 
             ZoidFSHandleTracker::iterator it = handle_tracker_.find(ZoidFSTrackerKey(handle));
-            (it->second)->lp_.startSignal();
+            
+            if(it != handle_tracker_.end())
+            {
+                (it->second)->lp_.startSignal();
+            }
       }
 
       if(highpriooplist_[zoidfs::ZOIDFS_PROTO_COMMIT])
