@@ -109,7 +109,7 @@ multikeynonzero: KOMMA LITERAL_STRING {
 multikeyentry : multikeynonzero multikeyentry | ;
 
 multikeyinit : /* empty */ {
-             param->maxsize = 64;
+             param->maxsize = 1000;
              param->count = 0;
              param->keyvals = malloc (sizeof(char*)*param->maxsize);
              }
