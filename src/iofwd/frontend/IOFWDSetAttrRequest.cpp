@@ -25,7 +25,8 @@ void IOFWDSetAttrRequest::reply (const CBType & cb, const zoidfs::zoidfs_attr_t 
    // If success, send the return code followed by the attr;
    // Otherwise send the return code.
    ASSERT (getReturnCode() != zoidfs::ZFS_OK || attr);
-   simpleOptReply (cb, getReturnCode(), TSSTART << *attr);
+   simpleOptReply (cb, getReturnCode(), TSSTART << *attr
+           << *((*param_.op_hint)()));
 }
 
 IOFWDSetAttrRequest::~IOFWDSetAttrRequest ()

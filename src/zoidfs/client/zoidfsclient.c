@@ -1165,7 +1165,14 @@ int zoidfs_getattr(const zoidfs_handle_t *handle, zoidfs_attr_t *attr, zoidfs_op
     /* if the op status is not ZFS_OK, do not decode any more and exit */
     if(recv_msg.op_status == ZFS_OK)
     {
+        /* always receive the attr structure, even if we're accessing the
+         * virtual attributes through the hints */
         if ((ret = zoidfs_xdr_processor(ZFS_ATTR_T, attr, &recv_msg.recv_xdr)) != ZFS_OK) {
+            goto getattr_cleanup;
+        }
+
+        if((ret = zoidfs_xdr_decode_hint(&recv_msg, op_hint)) != ZFS_OK)
+        {
             goto getattr_cleanup;
         }
     }
@@ -1289,10 +1296,15 @@ int zoidfs_setattr(const zoidfs_handle_t *handle, const zoidfs_sattr_t *sattr,
     /* if operation failed, return and do not try to decode the xdr data */ 
     if(recv_msg.op_status == ZFS_OK)
     {
-        if (attr) {
-            if ((ret = zoidfs_xdr_processor(ZFS_ATTR_T, attr, &recv_msg.recv_xdr) != ZFS_OK)) {
+        zoidfs_attr_t dummy;
+        if ((ret = zoidfs_xdr_processor(ZFS_ATTR_T,
+                    (attr ? attr : &dummy), &recv_msg.recv_xdr) != ZFS_OK)) {
                 goto setattr_cleanup;
-            }
+        }
+
+        if((ret = zoidfs_xdr_decode_hint(&recv_msg, op_hint)) != ZFS_OK)
+        {
+            goto setattr_cleanup;
         }
     }
 
