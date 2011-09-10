@@ -41,7 +41,7 @@ extra_services {
    // services = ( "ftb" );
    //services = ( "rpctest");
    // Atomic Append RPC service
-   services = ( "aarpc");
+   services = ( "aarpc", "sfp" );
 
    aarpc
    {

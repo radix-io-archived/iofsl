@@ -36,6 +36,7 @@ void registerIofwdFactoryClients ()
             (rpctest) \
             (aarpc) \
             (aarpcclient) \
+            (sfp) \
       );
 
 #ifdef HAVE_FTB

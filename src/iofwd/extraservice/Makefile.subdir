@@ -6,3 +6,5 @@ endif
 
 include src/iofwd/extraservice/rpctest/Makefile.subdir
 include src/iofwd/extraservice/aarpc/Makefile.subdir
+include src/iofwd/extraservice/sfp/Makefile.subdir
+
