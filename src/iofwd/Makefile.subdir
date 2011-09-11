@@ -123,6 +123,7 @@ src/iofwd/ThreadTasks.hh \
 src/iofwd/WriteRequest.hh \
 src/iofwd/WriteTask.hh \
 \
+src/iofwd/tasksm/SharedData.hh \
 src/iofwd/tasksm/BaseTaskSM.hh \
 src/iofwd/tasksm/CreateTaskSM.hh \
 src/iofwd/tasksm/CommitTaskSM.hh \

@@ -6,6 +6,8 @@
 #include "iofwd/NotImplementedRequest.hh"
 #include "zoidfs/zoidfs.h"
 
+#include <boost/scoped_ptr.hpp>
+
 namespace iofwd
 {
     namespace tasksm
@@ -15,16 +17,10 @@ class NotImplementedTaskSM : public BaseTaskSM,
                              public iofwdutil::InjectPool< NotImplementedTaskSM >
 {
     public:
-        NotImplementedTaskSM (sm::SMManager & smm, zoidfs::util::ZoidFSAsync * api,
-              Request * request)
-            : BaseTaskSM(smm, api),
-              request_(static_cast<NotImplementedRequest &>(*request))
+        NotImplementedTaskSM ( Request * request, const SharedData & shared)
+            : BaseTaskSM(shared),
+              request_(static_cast<NotImplementedRequest *>(request))
         {
-        }
-
-        virtual ~NotImplementedTaskSM()
-        {
-            delete &request_;
         }
 
         virtual void postDecodeInput(iofwdevent::CBException e)
@@ -42,12 +38,12 @@ class NotImplementedTaskSM : public BaseTaskSM,
         virtual void postReply(iofwdevent::CBException e)
         {
            e.check ();
-            request_.reply((slots_[BASE_SLOT]));
+            request_->reply((slots_[BASE_SLOT]));
             slots_.wait(BASE_SLOT, &NotImplementedTaskSM::waitReply);
         }
 
     protected:
-        NotImplementedRequest & request_;
+        boost::scoped_ptr<NotImplementedRequest> request_;
 };
 
     }

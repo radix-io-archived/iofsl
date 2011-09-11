@@ -13,6 +13,8 @@
 
 #include "iofwdutil/InjectPool.hh"
 
+#include <boost/scoped_ptr.hpp>
+
 namespace iofwd
 {
     namespace tasksm
@@ -22,19 +24,13 @@ class LookupTaskSM : public sm::SimpleSM< LookupTaskSM >,
                      public iofwdutil::InjectPool< LookupTaskSM >
 {
     public:
-        LookupTaskSM (sm::SMManager & smm, zoidfs::util::ZoidFSAsync * api,
-              Request * request)
-            : sm::SimpleSM<LookupTaskSM>(smm),
+        LookupTaskSM  (Request * request, const SharedData & shared)
+            : sm::SimpleSM<LookupTaskSM>(shared.smm),
               ret_(0),
-              request_(static_cast<LookupRequest &>(*request)),
-              api_(api),
+              request_(static_cast<LookupRequest *>(request)),
+              api_(shared.api),
               slots_(*this)
         {
-        }
-
-        virtual ~LookupTaskSM()
-        {
-            delete &request_;
         }
 
         void init(iofwdevent::CBException e)
@@ -120,7 +116,7 @@ class LookupTaskSM : public sm::SimpleSM< LookupTaskSM >,
         virtual void postDecodeInput(iofwdevent::CBException e)
         {
             e.check ();
-            p_ = request_.decodeParam();
+            p_ = request_->decodeParam();
             setNextMethod(&LookupTaskSM::waitDecodeInput);
         }
 
@@ -135,15 +131,15 @@ class LookupTaskSM : public sm::SimpleSM< LookupTaskSM >,
         virtual void postReply(iofwdevent::CBException e)
         {
             e.check ();
-            request_.setReturnCode (ret_);
-            request_.reply((slots_[BASE_SLOT]), (ret_  == zoidfs::ZFS_OK ?
+            request_->setReturnCode (ret_);
+            request_->reply((slots_[BASE_SLOT]), (ret_  == zoidfs::ZFS_OK ?
                      &handle_ : 0));
             slots_.wait(BASE_SLOT, &LookupTaskSM::waitReply);
         }
 
     protected:
         int ret_;
-        LookupRequest & request_;
+        boost::scoped_ptr<LookupRequest> request_;
         LookupRequest::ReqParam p_;
         zoidfs::zoidfs_handle_t handle_;
 

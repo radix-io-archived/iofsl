@@ -15,22 +15,16 @@ class SetAttrTaskSM : public BaseTaskSM,
                       public iofwdutil::InjectPool< SetAttrTaskSM >
 {
     public:
-        SetAttrTaskSM (sm::SMManager & smm, zoidfs::util::ZoidFSAsync * api,
-              Request * request)
-            : BaseTaskSM(smm, api), ret_(0),
-              request_(static_cast<SetAttrRequest &>(*request))
+        SetAttrTaskSM (Request * request, const SharedData & shared)
+            : BaseTaskSM(shared), ret_(0),
+              request_(static_cast<SetAttrRequest *>(request))
         {
-        }
-
-        virtual ~SetAttrTaskSM()
-        {
-            delete &request_;
         }
 
         virtual void postDecodeInput(iofwdevent::CBException e)
         {
            e.check ();
-            p_ = request_.decodeParam();
+            p_ = request_->decodeParam();
             setNextMethod(&BaseTaskSM::waitDecodeInput);
         }
 
@@ -45,14 +39,14 @@ class SetAttrTaskSM : public BaseTaskSM,
         virtual void postReply(iofwdevent::CBException e)
         {
            e.check ();
-            request_.setReturnCode(ret_);
-            request_.reply((slots_[BASE_SLOT]), (ret_  == zoidfs::ZFS_OK ? p_.attr : 0));
+            request_->setReturnCode(ret_);
+            request_->reply((slots_[BASE_SLOT]), (ret_  == zoidfs::ZFS_OK ? p_.attr : 0));
             slots_.wait(BASE_SLOT, &SetAttrTaskSM::waitReply);
         }
 
     protected:
         int ret_;
-        SetAttrRequest & request_;
+        boost::scoped_ptr<SetAttrRequest> request_;
         SetAttrRequest::ReqParam p_;
 };
 

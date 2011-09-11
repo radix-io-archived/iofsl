@@ -5,6 +5,7 @@
 #include "iofwdutil/InjectPool.hh"
 #include "iofwd/GetAttrRequest.hh"
 #include "zoidfs/zoidfs.h"
+#include "iofwd/tasksm/SharedData.hh"
 
 namespace iofwd
 {
@@ -15,22 +16,16 @@ class GetAttrTaskSM : public BaseTaskSM,
                       public iofwdutil::InjectPool< GetAttrTaskSM >
 {
     public:
-        GetAttrTaskSM (sm::SMManager & smm, zoidfs::util::ZoidFSAsync * api,
-              Request * request)
-            : BaseTaskSM(smm, api), ret_(0),
-              request_(static_cast<GetAttrRequest &>(*request))
+        GetAttrTaskSM (Request * request, const SharedData & shared)
+            : BaseTaskSM(shared), ret_(0),
+              request_(static_cast<GetAttrRequest *>(request))
         {
-        }
-
-        virtual ~GetAttrTaskSM()
-        {
-            delete &request_;
         }
 
         virtual void postDecodeInput(iofwdevent::CBException e)
         {
            e.check ();
-            p_ = request_.decodeParam();
+            p_ = request_->decodeParam();
             setNextMethod(&BaseTaskSM::waitDecodeInput);
         }
 
@@ -45,14 +40,14 @@ class GetAttrTaskSM : public BaseTaskSM,
         virtual void postReply(iofwdevent::CBException e)
         {
            e.check ();
-            request_.setReturnCode(ret_);
-            request_.reply((slots_[BASE_SLOT]), (ret_  == zoidfs::ZFS_OK ? p_.attr : 0));
+            request_->setReturnCode(ret_);
+            request_->reply((slots_[BASE_SLOT]), (ret_  == zoidfs::ZFS_OK ? p_.attr : 0));
             slots_.wait(BASE_SLOT, &GetAttrTaskSM::waitReply);
         }
 
     protected:
         int ret_;
-        GetAttrRequest & request_;
+        boost::scoped_ptr<GetAttrRequest> request_;
         GetAttrRequest::ReqParam p_;
 };
 

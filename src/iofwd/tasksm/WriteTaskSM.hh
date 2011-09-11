@@ -12,9 +12,13 @@
 #include "zoidfs/zoidfs.h"
 #include "zoidfs/hints/zoidfs-hints.h"
 
+#include "iofwd/tasksm/SharedData.hh"
+
 #include <cstdio>
 #include <deque>
 #include <math.h>
+
+#include <boost/scoped_ptr.hpp>
 
 /* mode options */
 #define WRITESM_SERIAL_IO_PIPELINE 0
@@ -31,8 +35,7 @@ class WriteTaskSM : public sm::SimpleSM< WriteTaskSM >,
     public iofwdutil::InjectPool< WriteTaskSM >
 {
     public:
-        WriteTaskSM(sm::SMManager & smm, zoidfs::util::ZoidFSAsync * api,
-              Request * r);
+        WriteTaskSM(Request * r, const SharedData & shared);
 
         virtual ~WriteTaskSM();
 
@@ -170,7 +173,7 @@ class WriteTaskSM : public sm::SimpleSM< WriteTaskSM >,
         {
            e.check ();
             // init the task params
-            request_.initRequestParams(p, rbuffer_[0]->buffer_->getMemory());
+            request_->initRequestParams(p, rbuffer_[0]->buffer_->getMemory());
 
             setNextMethod(&WriteTaskSM::postRecvInputBuffers);
         }
@@ -198,7 +201,7 @@ class WriteTaskSM : public sm::SimpleSM< WriteTaskSM >,
         {
            e.check ();
             /* free the buffer */
-            request_.releaseBuffer(rbuffer_[0]);
+            request_->releaseBuffer(rbuffer_[0]);
 
             setNextMethod(&WriteTaskSM::postReply);
         }
@@ -274,7 +277,7 @@ class WriteTaskSM : public sm::SimpleSM< WriteTaskSM >,
                 cur_recv_bytes_ += p_siz_;
 
                 /* dealloc the buffer */
-                request_.releaseBuffer(rbuffer_[cw_post_index_]);
+                request_->releaseBuffer(rbuffer_[cw_post_index_]);
                 cw_post_index_++;
 
                 /* if we still have pipeline data to fetch go back to the allocate buffer state */
@@ -323,7 +326,7 @@ class WriteTaskSM : public sm::SimpleSM< WriteTaskSM >,
 
         enum {WRITE_SLOT = 0, NUM_WRITE_SLOTS = 1};
         zoidfs::util::ZoidFSAsync * api_;
-        WriteRequest & request_;
+        boost::scoped_ptr<WriteRequest> request_;
         WriteRequest::ReqParam & p;
         sm::SimpleSlots<NUM_WRITE_SLOTS, iofwd::tasksm::WriteTaskSM> slots_;
 

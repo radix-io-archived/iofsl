@@ -12,12 +12,12 @@ namespace iofwd
     {
 //===========================================================================
 
-    WriteTaskSM::WriteTaskSM(sm::SMManager & smm, zoidfs::util::ZoidFSAsync * api, Request * p)
+    WriteTaskSM::WriteTaskSM(Request * p, const SharedData & shared)
         : 
-            sm::SimpleSM<WriteTaskSM>(smm),
-            api_(api),
-            request_((static_cast<WriteRequest&>(*p))),
-            p(request_.decodeParam()),
+            sm::SimpleSM<WriteTaskSM>(shared.smm),
+            api_(shared.api),
+            request_(static_cast<WriteRequest*>(p)),
+            p(request_->decodeParam()),
             slots_(*this),
             total_bytes_(0),
             cur_recv_bytes_(0),
@@ -44,16 +44,13 @@ namespace iofwd
             delete rbuffer_[i];
         }
         delete [] rbuffer_;
-
-        /* delete the request last */
-        delete &request_;
     }
 
     /* recv the input data to write to the disk */
     void WriteTaskSM::recvBuffers()
     {
         /* issue the recv buffer */
-        request_.recvBuffers(slots_[WRITE_SLOT], rbuffer_[0]);
+        request_->recvBuffers(slots_[WRITE_SLOT], rbuffer_[0]);
 
         /* set the callback */
         slots_.wait(WRITE_SLOT, &WriteTaskSM::waitRecvInputBuffers);
@@ -107,10 +104,10 @@ namespace iofwd
     void WriteTaskSM::reply()
     {
         /* set the return code */
-        request_.setReturnCode(ret_);
+        request_->setReturnCode(ret_);
 
         /* issue the reply */
-        request_.reply(slots_[WRITE_SLOT]);
+        request_->reply(slots_[WRITE_SLOT]);
 
         /* set the callback */
         slots_.wait(WRITE_SLOT, &WriteTaskSM::waitReply);
@@ -292,7 +289,7 @@ void WriteTaskSM::writeDoneCBUnprotected(int my_slot)
         count = io_ops_done_;
 
         /* free the buffer */
-        request_.releaseBuffer(rbuffer_[my_slot]);
+        request_->releaseBuffer(rbuffer_[my_slot]);
     }
 
     if(count == total_pipeline_ops_)
@@ -319,7 +316,7 @@ void WriteTaskSM::writeDoneCB(iofwdevent::CBException status, int my_slot)
         }
 
         /* free the buffer */
-        request_.releaseBuffer(rbuffer_[my_slot]);
+        request_->releaseBuffer(rbuffer_[my_slot]);
     }
 
     if(count == total_pipeline_ops_)
@@ -346,7 +343,7 @@ void WriteTaskSM::waitWriteBarrier(iofwdevent::CBException e)
 void WriteTaskSM::getBuffer()
 {
     /* request a buffer */
-    request_.allocateBuffer(slots_[WRITE_SLOT], rbuffer_[cw_post_index_]);
+    request_->allocateBuffer(slots_[WRITE_SLOT], rbuffer_[cw_post_index_]);
 
     /* set the callback and wait */
     slots_.wait(WRITE_SLOT, &WriteTaskSM::waitAllocateBuffer);
@@ -355,7 +352,7 @@ void WriteTaskSM::getBuffer()
 void WriteTaskSM::getSingleBuffer()
 {
     /* request a buffer */
-    request_.allocateBuffer(slots_[WRITE_SLOT], rbuffer_[0]);
+    request_->allocateBuffer(slots_[WRITE_SLOT], rbuffer_[0]);
 
     /* set the callback and wait */
     slots_.wait(WRITE_SLOT, &WriteTaskSM::waitAllocateSingleBuffer);
@@ -365,7 +362,7 @@ void WriteTaskSM::recvPipelineBuffer()
 {
     /* if there is still data to be recieved */
     p_siz_ = std::min(pipeline_size_, total_bytes_ - cur_recv_bytes_);
-    request_.recvPipelineBufferCB(slots_[WRITE_SLOT], rbuffer_[cw_post_index_], p_siz_);
+    request_->recvPipelineBufferCB(slots_[WRITE_SLOT], rbuffer_[cw_post_index_], p_siz_);
 
     /* set the callback and wait */
     slots_.wait(WRITE_SLOT, &WriteTaskSM::waitRecvPipelineBuffer);
@@ -374,6 +371,7 @@ void WriteTaskSM::recvPipelineBuffer()
 void WriteTaskSM::getAtomicAppendOffset()
 {
     /* issue the rpc using the nonblocking aa manager */
+    // @TODO: WriteTask should get service through the service manager.
     iofwd::extraservice::AtomicAppendManager::instance().issueGetNextOffsetRPC(
             slots_[WRITE_SLOT],
             p.handle,

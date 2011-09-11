@@ -6,6 +6,8 @@
 #include "iofwd/ReadDirRequest.hh"
 #include "zoidfs/zoidfs.h"
 
+#include <boost/scoped_ptr.hpp>
+
 namespace iofwd
 {
     namespace tasksm
@@ -15,23 +17,17 @@ class ReadDirTaskSM : public BaseTaskSM,
                       public iofwdutil::InjectPool< ReadDirTaskSM >
 {
     public:
-        ReadDirTaskSM (sm::SMManager & smm, zoidfs::util::ZoidFSAsync * api,
-              Request * request)
-            : BaseTaskSM(smm, api), ret_(0),
-              request_(static_cast<ReadDirRequest &>(*request)), entry_count_(0)
+        ReadDirTaskSM (Request * request, const SharedData & shared)
+            : BaseTaskSM(shared), ret_(0),
+              request_(static_cast<ReadDirRequest*>(request))
         {
             ZOIDFS_CACHE_HINT_INIT(parent_hint_);
-        }
-
-        virtual ~ReadDirTaskSM()
-        {
-            delete &request_;
         }
 
         virtual void postDecodeInput(iofwdevent::CBException e)
         {
            e.check ();
-            p_ = request_.decodeParam();
+            p_ = request_->decodeParam();
             setNextMethod(&BaseTaskSM::waitDecodeInput);
         }
 
@@ -48,14 +44,14 @@ class ReadDirTaskSM : public BaseTaskSM,
         virtual void postReply(iofwdevent::CBException e)
         {
            e.check ();
-            request_.setReturnCode(ret_);
-            request_.reply((slots_[BASE_SLOT]), entry_count_, p_.entries, &parent_hint_);
+            request_->setReturnCode(ret_);
+            request_->reply((slots_[BASE_SLOT]), entry_count_, p_.entries, &parent_hint_);
             slots_.wait(BASE_SLOT, &ReadDirTaskSM::waitReply);
         }
 
     protected:
         int ret_;
-        ReadDirRequest & request_;
+        boost::scoped_ptr<ReadDirRequest> request_;
         ReadDirRequest::ReqParam p_;
         zoidfs::zoidfs_cache_hint_t parent_hint_;
         size_t entry_count_;

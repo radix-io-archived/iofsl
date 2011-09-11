@@ -8,19 +8,20 @@
 #include "iofwd/TaskHelper.hh"
 #include "iofwdutil/InjectPool.hh"
 #include "iofwd/ReadRequest.hh"
+#include "iofwd/tasksm/SharedData.hh"
 
 #include "zoidfs/zoidfs.h"
 
-#include <cstdio>
+ // #include <cstdio>
 #include <deque>
 
 #include <math.h>
 
+#include <boost/scoped_ptr.hpp>
+
 /* mode options */
 #define READSM_SERIAL_IO_PIPELINE 0
 //#define READSM_PARA_IO_PIPELINE 1 /* @TODO fix this mode */
-
-using namespace zoidfs;
 
 namespace iofwd
 {
@@ -29,7 +30,7 @@ namespace iofwd
 class ReadTaskSM : public sm::SimpleSM< ReadTaskSM >, public iofwdutil::InjectPool< ReadTaskSM >
 {
     public:
-        ReadTaskSM(sm::SMManager & smm, zoidfs::util::ZoidFSAsync * api, Request * r);
+        ReadTaskSM(Request * r, const SharedData & shared);
         ~ReadTaskSM();
 
         void init(iofwdevent::CBException e)
@@ -93,7 +94,7 @@ class ReadTaskSM : public sm::SimpleSM< ReadTaskSM >, public iofwdutil::InjectPo
         void waitAllocateSingleBuffer(iofwdevent::CBException e)
         {
            e.check ();
-            request_.initRequestParams(p, rbuffer_[0]->buffer_->getMemory());
+            request_->initRequestParams(p, rbuffer_[0]->buffer_->getMemory());
 
             setNextMethod(&ReadTaskSM::postEnqueueRead);
         }
@@ -108,7 +109,7 @@ class ReadTaskSM : public sm::SimpleSM< ReadTaskSM >, public iofwdutil::InjectPo
         {
            e.check ();
             /* free the buffer */
-            request_.releaseBuffer(rbuffer_[0]);
+            request_->releaseBuffer(rbuffer_[0]);
 
             setNextMethod(&ReadTaskSM::postReply);
         }
@@ -178,7 +179,7 @@ class ReadTaskSM : public sm::SimpleSM< ReadTaskSM >, public iofwdutil::InjectPo
             cur_sent_bytes_ += p_siz_;
 
             /* dealloc the buffer */
-            request_.releaseBuffer(rbuffer_[cw_post_index_]);
+            request_->releaseBuffer(rbuffer_[cw_post_index_]);
 
             /* update the index counter */
             cw_post_index_++;
@@ -230,7 +231,7 @@ class ReadTaskSM : public sm::SimpleSM< ReadTaskSM >, public iofwdutil::InjectPo
         /* @TODO currently set the concurrent pipeline op count to 128... this should be dynamic or tunable */
         enum {READ_SLOT = 0, READ_PIPEOP_START, NUM_READ_SLOTS = 129};
         zoidfs::util::ZoidFSAsync * api_;
-        ReadRequest & request_;
+        boost::scoped_ptr<ReadRequest> request_;
         ReadRequest::ReqParam & p;
         sm::SimpleSlots<NUM_READ_SLOTS, iofwd::tasksm::ReadTaskSM> slots_;
 
@@ -248,8 +249,8 @@ class ReadTaskSM : public sm::SimpleSM< ReadTaskSM >, public iofwdutil::InjectPo
 
         unsigned int mode_;
 
-        std::vector<zoidfs_file_size_t> p_file_sizes;
-        std::vector<zoidfs_file_ofs_t> p_file_starts;
+        std::vector<zoidfs::zoidfs_file_size_t> p_file_sizes;
+        std::vector<zoidfs::zoidfs_file_ofs_t> p_file_starts;
         std::vector<size_t> p_mem_offsets;
         std::vector<int> p_segments;
         std::vector<int> p_segments_start;

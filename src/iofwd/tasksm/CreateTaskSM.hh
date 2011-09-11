@@ -8,6 +8,7 @@
 #include "sm/SimpleSM.hh"
 #include "sm/SimpleSlots.hh"
 #include "zoidfs/util/ZoidFSAsync.hh"
+#include "iofwd/tasksm/SharedData.hh"
 
 #include "iofwdutil/InjectPool.hh"
 #include "iofwd/CreateRequest.hh"
@@ -24,20 +25,14 @@ class CreateTaskSM : public sm::SimpleSM< CreateTaskSM >,
                      public iofwdutil::InjectPool< CreateTaskSM >
 {
     public:
-        CreateTaskSM (sm::SMManager & smm, zoidfs::util::ZoidFSAsync * api,
-              Request * request) :
-                sm::SimpleSM<CreateTaskSM>(smm),
+        CreateTaskSM (Request * request, const SharedData & shared)
+           :    sm::SimpleSM<CreateTaskSM>(shared.smm),
                 ret_(0),
                 created_(0),
-                request_(static_cast<CreateRequest &>(*request)),
-                api_(api),
+                request_(static_cast<CreateRequest *>(request)),
+                api_(shared.api),
                 slots_(*this)
         {
-        }
-
-        virtual ~CreateTaskSM()
-        {
-            delete &request_;
         }
 
         void init(iofwdevent::CBException e)
@@ -67,7 +62,7 @@ class CreateTaskSM : public sm::SimpleSM< CreateTaskSM >,
         virtual void postDecodeInput(iofwdevent::CBException e)
         {
             e.check ();
-            p_ = request_.decodeParam();
+            p_ = request_->decodeParam();
             setNextMethod(&CreateTaskSM::waitDecodeInput);
         }
 
@@ -83,8 +78,8 @@ class CreateTaskSM : public sm::SimpleSM< CreateTaskSM >,
         virtual void postReply(iofwdevent::CBException e)
         {
             e.check ();
-            request_.setReturnCode(ret_);
-            request_.reply((slots_[BASE_SLOT]),
+            request_->setReturnCode(ret_);
+            request_->reply((slots_[BASE_SLOT]),
                   (ret_  == zoidfs::ZFS_OK ?  &handle_ : 0), created_);
             slots_.wait(BASE_SLOT, &CreateTaskSM::waitReply);
         }
@@ -92,7 +87,7 @@ class CreateTaskSM : public sm::SimpleSM< CreateTaskSM >,
     protected:
         int ret_;
         int created_;
-        CreateRequest & request_;
+        boost::scoped_ptr<CreateRequest> request_;
         CreateRequest::ReqParam p_;
         zoidfs::zoidfs_handle_t handle_;
 

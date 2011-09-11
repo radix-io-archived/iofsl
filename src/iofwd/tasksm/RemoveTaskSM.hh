@@ -19,20 +19,14 @@ class RemoveTaskSM : public sm::SimpleSM< RemoveTaskSM >,
                      public iofwdutil::InjectPool< RemoveTaskSM >
 {
     public:
-        RemoveTaskSM (sm::SMManager & smm, zoidfs::util::ZoidFSAsync * api,
-              Request * request)
-            : sm::SimpleSM<RemoveTaskSM>(smm),
+        RemoveTaskSM (Request * request, const SharedData & shared)
+            : sm::SimpleSM<RemoveTaskSM>(shared.smm),
               ret_(0),
-              request_(static_cast<RemoveRequest &>(*request)),
-              api_(api),
+              request_(static_cast<RemoveRequest *>(request)),
+              api_(shared.api),
               slots_(*this)
         {
             ZOIDFS_CACHE_HINT_INIT(hint_);
-        }
-
-        virtual ~RemoveTaskSM()
-        {
-            delete &request_;
         }
 
         void init(iofwdevent::CBException e)
@@ -99,7 +93,7 @@ class RemoveTaskSM : public sm::SimpleSM< RemoveTaskSM >,
         virtual void postDecodeInput(iofwdevent::CBException e)
         {
             e.check ();
-            p_ = request_.decodeParam();
+            p_ = request_->decodeParam();
             setNextMethod(&RemoveTaskSM::waitDecodeInput);
         }
 
@@ -114,14 +108,14 @@ class RemoveTaskSM : public sm::SimpleSM< RemoveTaskSM >,
         virtual void postReply(iofwdevent::CBException e)
         {
             e.check ();
-            request_.setReturnCode(ret_);
-            request_.reply((slots_[BASE_SLOT]), (ret_  == zoidfs::ZFS_OK ? &hint_ : 0));
+            request_->setReturnCode(ret_);
+            request_->reply((slots_[BASE_SLOT]), (ret_  == zoidfs::ZFS_OK ? &hint_ : 0));
             slots_.wait(BASE_SLOT, &RemoveTaskSM::waitReply);
         }
 
     protected:
         int ret_;
-        RemoveRequest & request_;
+        boost::scoped_ptr<RemoveRequest> request_;
         RemoveRequest::ReqParam p_;
         zoidfs::zoidfs_cache_hint_t hint_;
         

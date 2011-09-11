@@ -20,19 +20,13 @@ class ResizeTaskSM : public sm::SimpleSM< ResizeTaskSM >,
                      public iofwdutil::InjectPool< ResizeTaskSM >
 {
     public:
-        ResizeTaskSM (sm::SMManager & smm, zoidfs::util::ZoidFSAsync * api,
-              Request * request)
-            : sm::SimpleSM<ResizeTaskSM>(smm),
+        ResizeTaskSM (Request * request, const SharedData & shared)
+            : sm::SimpleSM<ResizeTaskSM>(shared.smm),
               ret_(0),
-              request_(static_cast<ResizeRequest &>(*request)),
-              api_(api),
+              request_(static_cast<ResizeRequest *>(request)),
+              api_(shared.api),
               slots_(*this)
         {
-        }
-
-        virtual ~ResizeTaskSM()
-        {
-            delete &request_;
         }
 
         void init(iofwdevent::CBException e)
@@ -89,7 +83,7 @@ class ResizeTaskSM : public sm::SimpleSM< ResizeTaskSM >,
         virtual void postDecodeInput(iofwdevent::CBException e)
         {
            e.check ();
-            p_ = request_.decodeParam();
+            p_ = request_->decodeParam();
             setNextMethod(&ResizeTaskSM::waitDecodeInput);
         }
 
@@ -104,14 +98,14 @@ class ResizeTaskSM : public sm::SimpleSM< ResizeTaskSM >,
         virtual void postReply(iofwdevent::CBException e)
         {
            e.check ();
-            request_.setReturnCode(ret_);
-            request_.reply((slots_[BASE_SLOT]));
+            request_->setReturnCode(ret_);
+            request_->reply((slots_[BASE_SLOT]));
             slots_.wait(BASE_SLOT, &ResizeTaskSM::waitReply);
         }
 
     protected:
         int ret_;
-        ResizeRequest & request_;
+        boost::scoped_ptr<ResizeRequest> request_;
         ResizeRequest::ReqParam p_;
 
         enum {BASE_SLOT = 0, NUM_BASE_SLOTS};

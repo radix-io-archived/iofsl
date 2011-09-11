@@ -5,6 +5,9 @@
 #include "iofwdutil/InjectPool.hh"
 #include "iofwd/LinkRequest.hh"
 #include "zoidfs/zoidfs.h"
+#include "iofwd/tasksm/SharedData.hh"
+
+#include <boost/scoped_ptr.hpp>
 
 namespace iofwd
 {
@@ -15,24 +18,18 @@ class LinkTaskSM : public BaseTaskSM,
                    public iofwdutil::InjectPool< LinkTaskSM >
 {
     public:
-        LinkTaskSM (sm::SMManager & smm, zoidfs::util::ZoidFSAsync * api,
-              Request * request)
-            : BaseTaskSM(smm, api), ret_(0),
-              request_(static_cast<LinkRequest &>(*request))
+        LinkTaskSM (Request * request, const SharedData & shared)
+            : BaseTaskSM(shared), ret_(0),
+              request_(static_cast<LinkRequest *>(request))
         {
             ZOIDFS_CACHE_HINT_INIT(from_parent_hint_);
             ZOIDFS_CACHE_HINT_INIT(to_parent_hint_);
         }
 
-        virtual ~LinkTaskSM()
-        {
-            delete &request_;
-        }
-
         virtual void postDecodeInput(iofwdevent::CBException e)
         {
            e.check ();
-            p_ = request_.decodeParam();
+            p_ = request_->decodeParam();
             setNextMethod(&BaseTaskSM::waitDecodeInput);
         }
 
@@ -49,14 +46,14 @@ class LinkTaskSM : public BaseTaskSM,
         virtual void postReply(iofwdevent::CBException e)
         {
            e.check ();
-            request_.setReturnCode(ret_);
-            request_.reply((slots_[BASE_SLOT]), &from_parent_hint_, &to_parent_hint_);
+            request_->setReturnCode(ret_);
+            request_->reply((slots_[BASE_SLOT]), &from_parent_hint_, &to_parent_hint_);
             slots_.wait(BASE_SLOT, &LinkTaskSM::waitReply);
         }
 
     protected:
         int ret_;
-        LinkRequest & request_;
+        boost::scoped_ptr<LinkRequest> request_;
         LinkRequest::ReqParam p_;
         zoidfs::zoidfs_cache_hint_t from_parent_hint_;
         zoidfs::zoidfs_cache_hint_t to_parent_hint_;

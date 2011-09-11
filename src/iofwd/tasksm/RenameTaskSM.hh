@@ -15,23 +15,18 @@ class RenameTaskSM : public BaseTaskSM,
                      public iofwdutil::InjectPool< RenameTaskSM >
 {
     public:
-        RenameTaskSM (sm::SMManager & smm, zoidfs::util::ZoidFSAsync * api, Request * request)
-            : BaseTaskSM(smm, api), ret_(0),
-              request_(static_cast<RenameRequest &>(*request))
+        RenameTaskSM (Request * request, const SharedData & shared)
+            : BaseTaskSM(shared), ret_(0),
+              request_(static_cast<RenameRequest *>(request))
         {
             ZOIDFS_CACHE_HINT_INIT(from_parent_hint_);
             ZOIDFS_CACHE_HINT_INIT(to_parent_hint_);
         }
 
-        virtual ~RenameTaskSM()
-        {
-            delete &request_;
-        }
-
         virtual void postDecodeInput(iofwdevent::CBException e)
         {
            e.check ();
-            p_ = request_.decodeParam();
+            p_ = request_->decodeParam();
             setNextMethod(&BaseTaskSM::waitDecodeInput);
         }
 
@@ -48,14 +43,14 @@ class RenameTaskSM : public BaseTaskSM,
         virtual void postReply(iofwdevent::CBException e)
         {
            e.check ();
-            request_.setReturnCode(ret_);
-            request_.reply((slots_[BASE_SLOT]), &from_parent_hint_, &to_parent_hint_);
+            request_->setReturnCode(ret_);
+            request_->reply((slots_[BASE_SLOT]), &from_parent_hint_, &to_parent_hint_);
             slots_.wait(BASE_SLOT, &RenameTaskSM::waitReply);
         }
 
     protected:
         int ret_;
-        RenameRequest & request_;
+        boost::scoped_ptr<RenameRequest> request_;
         RenameRequest::ReqParam p_;
         zoidfs::zoidfs_cache_hint_t from_parent_hint_;
         zoidfs::zoidfs_cache_hint_t to_parent_hint_;

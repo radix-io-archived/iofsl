@@ -6,6 +6,9 @@
 #include "iofwd/ReadLinkRequest.hh"
 #include "zoidfs/zoidfs.h"
 
+#include <boost/scoped_ptr.hpp>
+#include <boost/scoped_array.hpp>
+
 namespace iofwd
 {
     namespace tasksm
@@ -15,24 +18,17 @@ class ReadLinkTaskSM : public BaseTaskSM,
                        public iofwdutil::InjectPool< ReadLinkTaskSM >
 {
     public:
-        ReadLinkTaskSM (sm::SMManager & smm, zoidfs::util::ZoidFSAsync * api,
-              Request * request)
-            : BaseTaskSM(smm, api), ret_(0),
-            request_(static_cast<ReadLinkRequest &>(*request)), buffer_(NULL),
+        ReadLinkTaskSM (Request * request, const SharedData & shared)
+            : BaseTaskSM(shared), ret_(0),
+            request_(static_cast<ReadLinkRequest*>(request)),
             bufferlen_(0)
         {
-        }
-
-        virtual ~ReadLinkTaskSM()
-        {
-            delete [] buffer_;
-            delete &request_;
         }
 
         virtual void postDecodeInput(iofwdevent::CBException e)
         {
            e.check ();
-            p_ = request_.decodeParam();
+            p_ = request_->decodeParam();
             setNextMethod(&BaseTaskSM::waitDecodeInput);
         }
 
@@ -49,9 +45,9 @@ class ReadLinkTaskSM : public BaseTaskSM,
                 bufferlen_ = p_.buffer_length;
 
             /* @TODO: use BMI buffer pool here or reuse an existing buffer? */
-            buffer_ = new char[bufferlen_];
+            buffer_.reset (new char[bufferlen_]);
 
-            api_->readlink(slots_[BASE_SLOT], &ret_, p_.handle, buffer_,
+            api_->readlink(slots_[BASE_SLOT], &ret_, p_.handle, buffer_.get(),
                     bufferlen_, (*p_.op_hint)());
             slots_.wait(BASE_SLOT, &ReadLinkTaskSM::waitRunOp);
         }
@@ -59,16 +55,16 @@ class ReadLinkTaskSM : public BaseTaskSM,
         virtual void postReply(iofwdevent::CBException e)
         {
            e.check ();
-            request_.setReturnCode(ret_);
-            request_.reply((slots_[BASE_SLOT]), buffer_, bufferlen_);
+            request_->setReturnCode(ret_);
+            request_->reply((slots_[BASE_SLOT]), buffer_.get(), bufferlen_);
             slots_.wait(BASE_SLOT, &ReadLinkTaskSM::waitReply);
         }
 
     protected:
         int ret_;
-        ReadLinkRequest & request_;
+        boost::scoped_ptr<ReadLinkRequest> request_;
         ReadLinkRequest::ReqParam p_;
-        char * buffer_;
+        boost::scoped_array<char> buffer_;
         size_t bufferlen_;
 };
 

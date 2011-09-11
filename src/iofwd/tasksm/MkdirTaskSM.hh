@@ -15,23 +15,17 @@ class MkdirTaskSM : public BaseTaskSM,
                     public iofwdutil::InjectPool< MkdirTaskSM >
 {
     public:
-        MkdirTaskSM (sm::SMManager & smm, zoidfs::util::ZoidFSAsync * api,
-              Request * request)
-            : BaseTaskSM(smm, api), ret_(0),
-              request_(static_cast<MkdirRequest &>(*request))
+        MkdirTaskSM ( Request * request, const SharedData & shared)
+            : BaseTaskSM(shared), ret_(0),
+              request_(static_cast<MkdirRequest*>(request))
         {
             ZOIDFS_CACHE_HINT_INIT(hint_);
-        }
-
-        virtual ~MkdirTaskSM()
-        {
-            delete &request_;
         }
 
         virtual void postDecodeInput(iofwdevent::CBException e)
         {
            e.check ();
-            p_ = request_.decodeParam();
+            p_ = request_->decodeParam();
             setNextMethod(&BaseTaskSM::waitDecodeInput);
         }
 
@@ -46,14 +40,14 @@ class MkdirTaskSM : public BaseTaskSM,
         virtual void postReply(iofwdevent::CBException e)
         {
            e.check ();
-            request_.setReturnCode(ret_);
-            request_.reply((slots_[BASE_SLOT]), (&hint_));
+            request_->setReturnCode(ret_);
+            request_->reply((slots_[BASE_SLOT]), (&hint_));
             slots_.wait(BASE_SLOT, &MkdirTaskSM::waitReply);
         }
 
     protected:
         int ret_;
-        MkdirRequest & request_;
+        boost::scoped_ptr<MkdirRequest> request_;
         MkdirRequest::ReqParam p_;
         zoidfs::zoidfs_cache_hint_t hint_;
 };

@@ -1,5 +1,5 @@
-#include "iofwdutil/assert.hh"
 #include "iofwd/tasksm/TaskSMFactory.hh"
+#include "iofwdutil/assert.hh"
 #include "iofwd/Request.hh"
 #include "zoidfs/zoidfs-proto.h"
 
@@ -21,70 +21,82 @@
 #include "iofwd/tasksm/SetAttrTaskSM.hh"
 #include "iofwd/tasksm/GetAttrTaskSM.hh"
 
-using namespace zoidfs;
-
 namespace iofwd
 {
     namespace tasksm
     {
+       //====================================================================
 
-void TaskSMFactory::operator () (iofwd::Request * req)
-{
-    switch(req->getOpID())
-    {
-        case ZOIDFS_PROTO_LOOKUP:
-            smm_.schedule(new LookupTaskSM(smm_, api_, req));
-            break;
-        case ZOIDFS_PROTO_LINK:
-            smm_.schedule(new LinkTaskSM(smm_, api_, req));
-            break;
-        case ZOIDFS_PROTO_SYMLINK:
-            smm_.schedule(new SymLinkTaskSM(smm_, api_, req));
-            break;
-        case ZOIDFS_PROTO_MKDIR:
-            smm_.schedule(new MkdirTaskSM(smm_, api_, req));
-            break;
-        case ZOIDFS_PROTO_CREATE:
-            smm_.schedule(new CreateTaskSM(smm_, api_, req));
-            break;
-        case ZOIDFS_PROTO_COMMIT:
-            smm_.schedule(new CommitTaskSM(smm_, api_, req));
-            break;
-        case ZOIDFS_PROTO_NULL:
-            smm_.schedule(new NullTaskSM(smm_, api_, req));
-            break;
-        case ZOIDFS_PROTO_READLINK:
-            smm_.schedule(new ReadLinkTaskSM(smm_, api_, req));
-            break;
-        case ZOIDFS_PROTO_READDIR:
-            smm_.schedule(new ReadDirTaskSM(smm_, api_, req));
-            break;
-        case ZOIDFS_PROTO_RENAME:
-            smm_.schedule(new RenameTaskSM(smm_, api_, req));
-            break;
-        case ZOIDFS_PROTO_REMOVE:
-            smm_.schedule(new RemoveTaskSM(smm_, api_, req));
-            break;
-        case ZOIDFS_PROTO_RESIZE:
-            smm_.schedule(new ResizeTaskSM(smm_, api_, req));
-            break;
-        case ZOIDFS_PROTO_SET_ATTR:
-            smm_.schedule(new SetAttrTaskSM(smm_, api_, req));
-            break;
-        case ZOIDFS_PROTO_GET_ATTR:
-            smm_.schedule(new GetAttrTaskSM(smm_, api_, req));
-            break;
-        case ZOIDFS_PROTO_WRITE:
-            smm_.schedule(new WriteTaskSM(smm_, api_, req));
-            break;
-        case ZOIDFS_PROTO_READ:
-            smm_.schedule(new ReadTaskSM(smm_, api_, req));
-            break;
-        default:
-            smm_.schedule(new NotImplementedTaskSM(smm_, api_, req));
-            break;
-   };
-}
+       TaskSMFactory::TaskSMFactory(zoidfs::util::ZoidFSAsync * api,
+             sm::SMManager & smm)
+          :  shared_ (api, smm)
+       {
+       }
 
+       TaskSMFactory::~TaskSMFactory()
+       {
+       }
+
+
+       void TaskSMFactory::operator () (Request * req)
+       {
+          switch(req->getOpID())
+          {
+             case ZOIDFS_PROTO_LOOKUP:
+                shared_.smm.schedule(new LookupTaskSM(req, shared_));
+                break;
+             case ZOIDFS_PROTO_LINK:
+                shared_.smm.schedule(new LinkTaskSM(req, shared_));
+                break;
+             case ZOIDFS_PROTO_SYMLINK:
+                shared_.smm.schedule(new SymLinkTaskSM(req, shared_));
+                break;
+             case ZOIDFS_PROTO_MKDIR:
+                shared_.smm.schedule(new MkdirTaskSM(req, shared_));
+                break;
+             case ZOIDFS_PROTO_CREATE:
+                shared_.smm.schedule(new CreateTaskSM(req, shared_));
+                break;
+             case ZOIDFS_PROTO_COMMIT:
+                shared_.smm.schedule(new CommitTaskSM(req, shared_));
+                break;
+             case ZOIDFS_PROTO_NULL:
+                shared_.smm.schedule(new NullTaskSM(req, shared_));
+                break;
+             case ZOIDFS_PROTO_READLINK:
+                shared_.smm.schedule(new ReadLinkTaskSM(req, shared_));
+                break;
+             case ZOIDFS_PROTO_READDIR:
+                shared_.smm.schedule(new ReadDirTaskSM(req, shared_));
+                break;
+             case ZOIDFS_PROTO_RENAME:
+                shared_.smm.schedule(new RenameTaskSM(req, shared_));
+                break;
+             case ZOIDFS_PROTO_REMOVE:
+                shared_.smm.schedule(new RemoveTaskSM(req, shared_));
+                break;
+             case ZOIDFS_PROTO_RESIZE:
+                shared_.smm.schedule(new ResizeTaskSM(req, shared_));
+                break;
+             case ZOIDFS_PROTO_SET_ATTR:
+                shared_.smm.schedule(new SetAttrTaskSM(req, shared_));
+                break;
+             case ZOIDFS_PROTO_GET_ATTR:
+                shared_.smm.schedule(new GetAttrTaskSM(req, shared_));
+                break;
+             case ZOIDFS_PROTO_WRITE:
+                shared_.smm.schedule(new WriteTaskSM(req, shared_));
+                break;
+             case ZOIDFS_PROTO_READ:
+                shared_.smm.schedule(new ReadTaskSM(req, shared_));
+                break;
+             default:
+                shared_.smm.schedule(new NotImplementedTaskSM(req, shared_));
+                break;
+          };
+       }
+
+
+       //====================================================================
     }
 }

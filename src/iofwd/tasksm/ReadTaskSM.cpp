@@ -1,17 +1,19 @@
 #include "iofwd/tasksm/ReadTaskSM.hh"
 #include "zoidfs/zoidfs-proto.h"
 
+using namespace zoidfs;
+
 namespace iofwd
 {
     namespace tasksm
     {
 
-    ReadTaskSM::ReadTaskSM(sm::SMManager & smm, zoidfs::util::ZoidFSAsync * api, Request * p)
+    ReadTaskSM::ReadTaskSM(Request * request, const SharedData & shared)
         :
-            sm::SimpleSM<ReadTaskSM>(smm),
-            api_(api),
-            request_((static_cast<ReadRequest&>(*p))),
-            p(request_.decodeParam()),
+            sm::SimpleSM<ReadTaskSM>(shared.smm),
+            api_(shared.api),
+            request_(static_cast<ReadRequest *>(request)),
+            p(request_->decodeParam()),
             slots_(*this),
             total_bytes_(0),
             cur_sent_bytes_(0),
@@ -37,15 +39,13 @@ namespace iofwd
         if(rbuffer_)
             delete [] rbuffer_;
 
-        /* delete the request last */
-        delete &request_;
     }
 
     /* send the input data to write to the disk */
     void ReadTaskSM::sendBuffers()
     {
         /* issue the send buffer */
-        request_.sendBuffers(slots_[READ_SLOT], rbuffer_[0]);
+        request_->sendBuffers(slots_[READ_SLOT], rbuffer_[0]);
 
         /* set the callback */
         slots_.wait(READ_SLOT, &ReadTaskSM::waitSendInputBuffers);
@@ -86,10 +86,10 @@ namespace iofwd
     void ReadTaskSM::reply()
     {
         /* set the return code */
-        request_.setReturnCode(ret_);
+        request_->setReturnCode(ret_);
 
         /* issue the reply */
-        request_.reply(slots_[READ_SLOT]);
+        request_->reply(slots_[READ_SLOT]);
 
         /* set the callback */
         slots_.wait(READ_SLOT, &ReadTaskSM::waitReply);
@@ -268,7 +268,7 @@ void ReadTaskSM::readBarrier(iofwdevent::CBException e)
 void ReadTaskSM::getBuffer()
 {
     /* request a buffer */
-    request_.allocateBuffer(slots_[READ_SLOT], rbuffer_[cw_post_index_]);
+    request_->allocateBuffer(slots_[READ_SLOT], rbuffer_[cw_post_index_]);
 
     /* set the callback and wait */
     slots_.wait(READ_SLOT, &ReadTaskSM::waitAllocateBuffer);
@@ -277,7 +277,7 @@ void ReadTaskSM::getBuffer()
 void ReadTaskSM::getSingleBuffer()
 {
     /* request a buffer */
-    request_.allocateBuffer(slots_[READ_SLOT], rbuffer_[0]);
+    request_->allocateBuffer(slots_[READ_SLOT], rbuffer_[0]);
 
     /* set the callback and wait */
     slots_.wait(READ_SLOT, &ReadTaskSM::waitAllocateSingleBuffer);
@@ -289,7 +289,7 @@ void ReadTaskSM::sendPipelineBuffer()
     // from alloc -> NetworkRecv -> rx_q -> ZoidI/O -> io_q -> back to alloc
 
     /* if there is still data to be recieved */
-    request_.sendPipelineBufferCB(slots_[READ_SLOT], rbuffer_[cw_post_index_], p_siz_);
+    request_->sendPipelineBufferCB(slots_[READ_SLOT], rbuffer_[cw_post_index_], p_siz_);
 
     /* set the callback and wait */
     slots_.wait(READ_SLOT, &ReadTaskSM::waitSendPipelineBuffer);

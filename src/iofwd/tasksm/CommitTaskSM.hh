@@ -5,6 +5,7 @@
 #include "iofwdutil/InjectPool.hh"
 #include "iofwd/CommitRequest.hh"
 #include "zoidfs/zoidfs.h"
+#include "iofwd/tasksm/SharedData.hh"
 
 namespace iofwd
 {
@@ -15,22 +16,16 @@ class CommitTaskSM : public BaseTaskSM,
                      public iofwdutil::InjectPool< CommitTaskSM >
 {
     public:
-        CommitTaskSM (sm::SMManager & smm, zoidfs::util::ZoidFSAsync * api,
-              Request * request)
-            : BaseTaskSM(smm, api), ret_(0),
-              request_(static_cast<CommitRequest &>(*request))
+        CommitTaskSM (Request * request, const SharedData & shared)
+            : BaseTaskSM(shared), ret_(0),
+              request_(static_cast<CommitRequest *>(request))
         {
-        }
-
-        virtual ~CommitTaskSM()
-        {
-            delete &request_;
         }
 
         virtual void postDecodeInput(iofwdevent::CBException e)
         {
            e.check ();
-            p_ = request_.decodeParam();
+            p_ = request_->decodeParam();
             setNextMethod(&BaseTaskSM::waitDecodeInput);
         }
 
@@ -44,14 +39,14 @@ class CommitTaskSM : public BaseTaskSM,
         virtual void postReply(iofwdevent::CBException e)
         {
            e.check ();
-            request_.setReturnCode(ret_);
-            request_.reply((slots_[BASE_SLOT]));
+            request_->setReturnCode(ret_);
+            request_->reply((slots_[BASE_SLOT]));
             slots_.wait(BASE_SLOT, &CommitTaskSM::waitReply);
         }
 
     protected:
         int ret_;
-        CommitRequest & request_;
+        boost::scoped_ptr<CommitRequest> request_;
         CommitRequest::ReqParam p_;
 };
 
