@@ -59,6 +59,24 @@ namespace iofwd
             }
 
             /**
+             * Like loadService, but does not autocreate the service.
+             * Returns NULL shared pointer if the service was not yet loaded.
+             */
+            template <typename T>
+            boost::shared_ptr<T> locateService (const std::string & name)
+            {
+               boost::shared_ptr<T> ptr (
+                     boost::dynamic_pointer_cast<T>(lockService(name)));
+               return ptr;
+            }
+
+            /**
+             * Return the service but do not autoload if the service has not
+             * been created yet.
+             */
+            boost::shared_ptr<Service> lockService (const std::string & name);
+
+            /**
              * Register a service with this service manager
              */
             void registerService (const std::string & name, ServiceFunc func);

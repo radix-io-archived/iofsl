@@ -21,6 +21,30 @@ namespace iofwd
          ZLOG_DEBUG(log_, "ServiceManager starting...");
       }
 
+      boost::shared_ptr<Service> ServiceManager::lockService (
+            const std::string & name)
+      {
+         ZLOG_DEBUG(log_, format("attempt to lock service %s...")
+               % name);
+         {
+            boost::mutex::scoped_lock l(lock_);
+            ServiceMap::iterator I = running_.find (name);
+            if (I != running_.end())
+            {
+               boost::shared_ptr<Service> ptr (I->second.lock ());
+               if (ptr)
+               {
+                  ZLOG_DEBUG(log_, format("service %s found...")
+                        % name);
+                  return ptr;
+               }
+               // Service was removed in the mean time
+               // (possible since I->second is a weak_ptr)
+            }
+            return boost::shared_ptr<Service> ();
+         }
+      }
+
       boost::shared_ptr<Service> ServiceManager::lookupService (const
             std::string & name)
       {
@@ -39,6 +63,7 @@ namespace iofwd
                   return ptr;
                }
                // Service was removed in the mean time; recreate entry
+               // (possible since I->second is a weak_ptr)
                ZLOG_DEBUG(log_, format("Service %s needs to be restarted...")
                      % name);
             }
