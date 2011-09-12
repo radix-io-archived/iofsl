@@ -133,6 +133,7 @@ src/iofwdutil/IOFSLKeyValueStorage.hh \
 src/iofwdutil/IOFSLKeyValueStorage.cpp \
 src/iofwdutil/InjectPool.hh \
 \
+src/iofwdutil/hash/hash-fwd.hh \
 src/iofwdutil/hash/HashFactory.cpp\
 src/iofwdutil/hash/HashFactory.hh\
 src/iofwdutil/hash/HashFunc.cpp\
