@@ -38,6 +38,7 @@ src_iofwd_iofwd_LDFLAGS = \
     @BMI_LDFLAGS@
 
 SERVERSOURCES += \
+src/iofwd/iofwd-fwd.hh \
 src/iofwd/RPCException.hh \
 src/iofwd/ExtraService.hh \
 src/iofwd/ExtraService.cpp \

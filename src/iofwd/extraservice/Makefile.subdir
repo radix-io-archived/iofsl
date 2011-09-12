@@ -8,3 +8,6 @@ include src/iofwd/extraservice/rpctest/Makefile.subdir
 include src/iofwd/extraservice/aarpc/Makefile.subdir
 include src/iofwd/extraservice/sfp/Makefile.subdir
 
+SERVERSOURCES += \
+		 src/iofwd/extraservice/ExtraService-fwd.hh
+
