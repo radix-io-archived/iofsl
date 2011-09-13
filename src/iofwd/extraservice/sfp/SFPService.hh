@@ -92,6 +92,11 @@ namespace iofwd
 
             void rpcSFPModify (const SFPIn & in, SFPOut & out);
       
+            void remoteModifySFP (size_t dest, bool * ret, const
+                  zoidfs::zoidfs_handle_t * handle, uint64_t sfp_id, int op,
+                  zoidfs::zoidfs_file_ofs_t * value, const iofwdevent::CBType
+                  & cb);
+
             bool localSFPModify ( const zoidfs::zoidfs_handle_t * handle,
                   uint64_t sfp_id, int op, zoidfs::zoidfs_file_ofs_t * value);
 

@@ -232,19 +232,34 @@ namespace iofwd
       }
 
 
+      template <typename T>
+      static void cleanupHelper (const iofwdevent::CBType & cb, T * cleanup,
+            iofwdevent::CBException & e)
+      {
+         boost::scoped_ptr<T> clean (cleanup);
+         cb (e);
+      }
+
       void SFPService::removeSFP (bool * ret, const zoidfs::zoidfs_handle_t *
             handle, uint64_t sfp_id, const iofwdevent::CBType & cb)
       {
-         zoidfs::zoidfs_file_ofs_t dummy = 0;
-         modifySFP (ret, handle, sfp_id, SFP_REMOVE, &dummy, cb);
+         // This workaround is to ensure that dummy remains valid until the
+         // callback has been called (meaning it cannot be on our local stack
+         // here)
+         zoidfs::zoidfs_file_ofs_t * dummy = new zoidfs::zoidfs_file_ofs_t (0);
+         modifySFP (ret, handle, sfp_id, SFP_REMOVE, dummy,
+               boost::bind (&cleanupHelper<zoidfs::zoidfs_file_ofs_t>, cb,
+                  dummy, _1));
       }
 
       void SFPService::createSFP (bool * ret, const zoidfs::zoidfs_handle_t *
             handle, uint64_t sfp_id, zoidfs::zoidfs_file_ofs_t init,
                   const iofwdevent::CBType & cb)
       {
-         zoidfs::zoidfs_file_ofs_t val = init;
-         modifySFP (ret, handle, sfp_id, SFP_CREATE, &val, cb);
+         zoidfs::zoidfs_file_ofs_t * val = new zoidfs::zoidfs_file_ofs_t (init);
+         modifySFP (ret, handle, sfp_id, SFP_CREATE, val,
+               boost::bind(&cleanupHelper<zoidfs::zoidfs_file_ofs_t>, cb,
+                  val, _1));
       }
 
       void SFPService::updateSFP (bool * ret, const zoidfs::zoidfs_handle_t *
@@ -337,22 +352,32 @@ namespace iofwd
          }
          else
          {
-            SFPIn in;
-            in.handle = *handle;
-            in.sfp_id = sfp_id;
-            in.op = op;
-            in.value = *value;
-
-            SFPOut out;
-
-            rpcClientHelper (in, out, rpcclient_->rpcConnect ("sfp.modify",
-                     (*comm_)[dest]));
-
-            *value = out.value;
-            *ret = out.result;
-            cb (iofwdevent::CBException ());
-            return;
+            // @TODO: Use proper thread service
+            boost::thread (boost::bind (&SFPService::remoteModifySFP, this,
+                                        dest, ret, handle, sfp_id, op, value,
+                                        cb));
          }
+      }
+
+      void SFPService::remoteModifySFP (size_t dest,
+            bool * ret, const zoidfs::zoidfs_handle_t * handle, uint64_t
+            sfp_id, int op, zoidfs::zoidfs_file_ofs_t * value,
+                  const iofwdevent::CBType & cb)
+      {
+         SFPIn in;
+         in.handle = *handle;
+         in.sfp_id = sfp_id;
+         in.op = op;
+         in.value = *value;
+
+         SFPOut out;
+
+         rpcClientHelper (in, out, rpcclient_->rpcConnect ("sfp.modify",
+                  (*comm_)[dest]));
+
+         *value = out.value;
+         *ret = out.result;
+         cb (iofwdevent::CBException ());
       }
 
 
