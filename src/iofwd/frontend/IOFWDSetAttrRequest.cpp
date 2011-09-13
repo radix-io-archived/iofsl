@@ -20,11 +20,16 @@ const IOFWDSetAttrRequest::ReqParam & IOFWDSetAttrRequest::decodeParam ()
    return param_;
 }
 
-void IOFWDSetAttrRequest::reply (const CBType & cb, const zoidfs::zoidfs_attr_t * attr)
+void IOFWDSetAttrRequest::reply (const CBType & cb,
+      const zoidfs::zoidfs_attr_t * attr)
 {
    // If success, send the return code followed by the attr;
    // Otherwise send the return code.
    ASSERT (getReturnCode() != zoidfs::ZFS_OK || attr);
+   
+   //zoidfs::hints::zoidfs_hint_delete_all(*param_.op_hint);
+   //zoidfs::hints::zoidfs_hint_set ((*param_.op_hint), ZOIDFS_SFP_VAL,
+   //      "99", 3);
    simpleOptReply (cb, getReturnCode(), TSSTART << *attr
            << *((*param_.op_hint)()));
 }

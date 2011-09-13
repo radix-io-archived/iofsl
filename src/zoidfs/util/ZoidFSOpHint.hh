@@ -31,6 +31,20 @@ class ZoidFSOpHint
                 char * hint_value,
                 int hint_value_len);
 
+
+        operator zoidfs::zoidfs_op_hint_t ()
+        { return hint_; }
+
+        operator const zoidfs::zoidfs_op_hint_t * () const
+        {
+           return &hint_;
+        }
+
+        operator zoidfs::zoidfs_op_hint_t * ()
+        {
+           return &hint_;
+        }
+
         zoidfs::zoidfs_op_hint_t * operator() ()
         {
             return &hint_;

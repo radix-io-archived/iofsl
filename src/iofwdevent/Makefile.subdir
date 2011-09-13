@@ -1,6 +1,7 @@
 noinst_LIBRARIES += src/iofwdevent/libiofwdevent.a
 
 src_iofwdevent_libiofwdevent_a_SOURCES = \
+src/iofwdevent/iofwdevent-fwd.hh \
 src/iofwdevent/NBQueue.hh \
 src/iofwdevent/ZeroCopyOutputStream.hh \
 src/iofwdevent/ZeroCopyOutputStream.cpp \

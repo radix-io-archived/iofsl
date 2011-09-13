@@ -1,15 +1,25 @@
 #include "iofwd/extraservice/sfp/SFPService.hh"
+
+#include "iofwdevent/CBType.hh"
 #include "iofwd/service/Service.hh"
 #include "iofwd/Log.hh"
 #include "iofwd/RPCServer.hh"
+#include "iofwd/RPCClient.hh"
+#include "iofwd/Net.hh"
+
+#include "net/Communicator.hh"
 
 #include "iofwdevent/SingleCompletion.hh"
 
 #include "iofwdutil/IOFWDLog.hh"
+#include "iofwdutil/hash/HashFactory.hh"
 
 #include "encoder/xdr/XDRReader.hh"
 
 #include "rpc/RPCInfo.hh"
+#include "rpc/RPCEncoder.hh"
+
+#include "zoidfs/util/zoidfs-ops.hh"  // for operator ==,... on zoidfs_handle_t
 
 #include <boost/scoped_ptr.hpp>
 #include <boost/format.hpp>
@@ -18,6 +28,7 @@ SERVICE_REGISTER(iofwd::extraservice::SFPService, sfp);
 
 using namespace iofwdevent;
 using namespace boost;
+using namespace rpc;
 
 namespace iofwd
 {
@@ -31,7 +42,7 @@ namespace iofwd
          /**
           * Conveniently create a thread to handle the RPC call
           */
-         /*static void threadRPC (const rpc::RPCHandler & h,
+         static void threadRPC (const rpc::RPCHandler & h,
                ZeroCopyInputStream * in, ZeroCopyOutputStream * out,
                const rpc::RPCInfo & info)
          {
@@ -48,7 +59,7 @@ namespace iofwd
             void rpcServerHelper (boost::function<void (const IN &, OUT &)> & func,
                   ZeroCopyInputStream * i,
                   ZeroCopyOutputStream * o,
-                  const RPCInfo & )
+                  const rpc::RPCInfo &)
             {
                scoped_ptr<ZeroCopyInputStream> in (i);
                scoped_ptr<ZeroCopyOutputStream> out (o);
@@ -69,7 +80,10 @@ namespace iofwd
                   RPCDecoder dec (read_ptr, read_size);
                   process (dec, arg_in);
                   if (dec.getPos () < read_size)
-                     ZLOG_ERROR (log_, "RPCServer: extra data after RPC request?");
+                  {
+                     ZLOG_ERROR (ZLOG_DEFAULT, "RPCServer: extra data after"
+                           " RPC request?");
+                  }
                }
 
                // call user func
@@ -156,29 +170,191 @@ namespace iofwd
                   process (dec, out);
 
                   if (dec.getPos () != read_size)
-                     ZLOG_ERROR (log_, "Extra bytes at end of RPC response?");
+                     ZLOG_ERROR (ZLOG_DEFAULT, "Extra bytes at end of RPC response?");
                }
-            } */
+            }
       }
+
+
+      // --- encoders ---
+      template <typename E, typename P>
+      void process (E & enc, P & in,
+           typename encoder::process_filter<P, SFPService::SFPIn>::type * = 0)
+      {
+         process (enc, in.handle);
+         process (enc, in.sfp_id);
+         process (enc, in.op);
+         process (enc, in.value);
+      }
+
+      template <typename ENC, typename P>
+      void process (ENC & enc, P & out,
+           typename encoder::process_filter<P, SFPService::SFPOut>::type * = 0)
+      {
+         process (enc, out.result);
+         process (enc, out.value);
+      }
+
 
       SFPService::SFPService (service::ServiceManager & m)
          : ExtraService (m),
+           net_service_ (lookupService<Net> ("net")),
            log_service_ (lookupService<Log> ("log")),
            rpcserver_ (lookupService<RPCServer> ("rpcserver")),
+           rpcclient_ (lookupService<RPCClient> ("rpcclient")),
            log_ (log_service_->getSource ("sfp"))
       {
-        /* rpcserver_->registerRPC ("sfp.modify",
-               rpcExec (boost::bind (&SFPService::sfpModify, this, _1, _2, _3))); */
+         boost::function<void (const SFPIn &, SFPOut &)> f =
+                     boost::bind (&SFPService::rpcSFPModify, this, _1, _2);
+         rpc::RPCHandler h = boost::bind (
+                     &rpcServerHelper<SFPIn, SFPOut>, f,
+                     _1, _2, _3);
+
+         rpcserver_->registerRPC ("sfp.modify", rpcExec (h));
+
+         hash_.reset (iofwdutil::hash::HashFactory::instance().getHash ("crc32"));
+
+         comm_ = net_service_->getServerComm ();
+         
+         commsize_ = comm_->size ();
+         commrank_ = comm_->rank ();
+         ZLOG_DEBUG (log_, boost::format("My rank: %u, Total ranks: %u") %
+               commrank_ % commsize_);
       }
 
       SFPService::~SFPService ()
       {
-      /*   rpcserver_->unregisterRPC ("sfp.modify"); */
+         rpcserver_->unregisterRPC ("sfp.modify");
       }
 
       void SFPService::configureNested (const iofwdutil::ConfigFile & )
       {
       }
+
+
+      void SFPService::removeSFP (bool * ret, const zoidfs::zoidfs_handle_t *
+            handle, uint64_t sfp_id, const iofwdevent::CBType & cb)
+      {
+         zoidfs::zoidfs_file_ofs_t dummy = 0;
+         modifySFP (ret, handle, sfp_id, SFP_REMOVE, &dummy, cb);
+      }
+
+      void SFPService::createSFP (bool * ret, const zoidfs::zoidfs_handle_t *
+            handle, uint64_t sfp_id, zoidfs::zoidfs_file_ofs_t init,
+                  const iofwdevent::CBType & cb)
+      {
+         zoidfs::zoidfs_file_ofs_t val = init;
+         modifySFP (ret, handle, sfp_id, SFP_CREATE, &val, cb);
+      }
+
+      void SFPService::updateSFP (bool * ret, const zoidfs::zoidfs_handle_t *
+            handle, uint64_t sfp_id, int op, zoidfs::zoidfs_file_ofs_t * value,
+                  const iofwdevent::CBType & cb)
+      {
+         modifySFP (ret, handle, sfp_id, op, value, cb);
+      }
+
+      void SFPService::rpcSFPModify (const SFPIn & in, SFPOut & out)
+      {
+         ZLOG_DEBUG (log_, "incoming rpcSFPModify");
+         zoidfs::zoidfs_file_ofs_t value = in.value;
+         out.result = localSFPModify (&in.handle, in.sfp_id, in.op, &value);
+         out.value = value;
+      }
+
+      size_t SFPService::locateOwner (const zoidfs::zoidfs_handle_t * handle,
+            uint64_t sfp_id) const
+      {
+         // @TODO: add Cloneable interface and make HashFunc support it;
+         //        then clone the main hash func so we can use this
+         //        concurrently
+         boost::mutex::scoped_lock l (hash_lock_);
+         hash_->reset ();
+         // @TODO: the encoder framework could be bridged with the hash
+         // calculation to avoid having to manually call these functions
+         hash_->process (handle, sizeof (zoidfs::zoidfs_handle_t));
+         hash_->process (&sfp_id, sizeof(sfp_id));
+
+         uint32_t value;
+         hash_->getHash (&value, sizeof (value));
+         return value % commsize_;
+      }
+
+      bool SFPService::localSFPModify ( const zoidfs::zoidfs_handle_t * handle,
+                  uint64_t sfp_id, int op, zoidfs::zoidfs_file_ofs_t * value)
+      {
+         boost::mutex::scoped_lock l (sfp_lock_);
+         SFPKey k (*handle, sfp_id);
+         MapType::iterator I = sfp_map_.find (k);
+         switch (op)
+         {
+            case SFP_CREATE:
+               if (I!=sfp_map_.end())
+                  return false;
+               sfp_map_.insert (std::make_pair(k, *value));
+               return true;
+
+            case SFP_REMOVE:
+               if (I == sfp_map_.end ())
+                  return false;
+
+               sfp_map_.erase (I);
+               return true;
+
+            case SFP_SET:
+               if (I == sfp_map_.end ())
+                  return false;
+               I->second = *value;
+               return true;
+
+            case SFP_FETCH_AND_ADD:
+               {
+                  if (I == sfp_map_.end ())
+                     return false;
+
+                  zoidfs::zoidfs_file_ofs_t ofs = I->second;
+                  I->second += *value;
+                  *value = ofs;
+                  return true;
+               }
+
+            default:
+               return false;
+         };
+      }
+
+      void SFPService::modifySFP (bool * ret, const zoidfs::zoidfs_handle_t *
+            handle, uint64_t sfp_id, int op, zoidfs::zoidfs_file_ofs_t * value,
+                  const iofwdevent::CBType & cb)
+      {
+         const size_t dest = locateOwner (handle, sfp_id);
+
+         if (dest == commrank_)
+         {
+            *ret = localSFPModify (handle, sfp_id, op, value);
+            cb (iofwdevent::CBException ());
+            return;
+         }
+         else
+         {
+            SFPIn in;
+            in.handle = *handle;
+            in.sfp_id = sfp_id;
+            in.op = op;
+            in.value = *value;
+
+            SFPOut out;
+
+            rpcClientHelper (in, out, rpcclient_->rpcConnect ("sfp.modify",
+                     (*comm_)[dest]));
+
+            *value = out.value;
+            *ret = out.result;
+            cb (iofwdevent::CBException ());
+            return;
+         }
+      }
+
 
       //=====================================================================
    }

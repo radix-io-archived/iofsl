@@ -1,0 +1,3 @@
+SERVERSOURCES += \
+		 src/iofwd/extraservice/sfp/SFPService.hh \
+		 src/iofwd/extraservice/sfp/SFPService.cpp

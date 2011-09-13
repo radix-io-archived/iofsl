@@ -33,6 +33,11 @@ test_zoidfs_gridftp_test_LDFLAGS = $(AM_LDFLAGS) ${test_unit_tests_ldflags}
 noinst_PROGRAMS += test/unit-tests/zoidfs-md-cunit test/unit-tests/zoidfs-md-cunit-local test/unit-tests/zoidfs-io-cunit \
 test/unit-tests/zoidfs-io-cunit-local
 
+noinst_PROGRAMS += test/sfp
+test_sfp_SOURCES = test/sfp.cpp
+test_sfp_LDADD = src/zoidfs/libzoidfsclient.a ${test_unit_tests_ldadd}
+test_sfp_LDFLAGS = ${AM_LDFLAGS} ${test_unit_tests_ldflags}
+
 test_unit_tests_zoidfs_md_cunit_SOURCES = test/unit-tests/zoidfs-md-cunit.c
 test_unit_tests_zoidfs_md_cunit_LDADD = src/zoidfs/libzoidfsclient.a ${test_unit_tests_ldadd}
 test_unit_tests_zoidfs_md_cunit_LDFLAGS = ${test_unit_tests_ldflags}

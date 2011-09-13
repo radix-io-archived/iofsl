@@ -14,6 +14,7 @@ void registerIofwdFactoryClients ()
       GENERIC_FACTORY_LINKHELPER( \
             (defasync) \
             (zoidfs) \
+            (sfp) \
             (log) \
             (syncadapter) \
             (ratelimit) \

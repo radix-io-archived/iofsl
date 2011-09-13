@@ -30,6 +30,11 @@ namespace zoidfs
 #define ZOIDFS_NONBLOCK_SERVER_IO (char*)"ZOIDFS_NONBLOCK_SERVER_IO"
 #define ZOIDFS_NONBLOCK_SERVER_DROP_IO (char*)"ZOIDFS_NONBLOCK_SERVER_DROP_IO"
 
+/* ROMIO Shared File pointer support */
+#define ZOIDFS_SFP_OP (char*) "ZOIDFS_SFP_OP"
+#define ZOIDFS_SFP_VAL (char*) "ZOIDFS_SFP_VAL"
+#define ZOIDFS_SFP_SFPID (char*) "ZOIDFS_SFP_ID"
+
 /* hint limits */
 #define ZOIDFS_HINT_MAX_HINTS 128
 #define ZOIDFS_HINT_MAX_KEY_SIZE 128

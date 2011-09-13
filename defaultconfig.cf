@@ -156,7 +156,7 @@ requesthandler {
     name = "defasync";
     defasync {
       //blocking_api = "zoidfs";
-      blocking_api = "log";
+      blocking_api = "sfp";
 
       // should we use the threadpool for the zoidfs driver 
       use_thread_pool = "TrUe";
@@ -164,7 +164,7 @@ requesthandler {
       // which zoidfs op are high prio... READ,WRITE,LOOKUP,CREATE,REMOVE,SET_ATTR,GET_ATTR,SYMLINK,READLINK,READDIR,LINK,NULL
       highprioops = "READ,WRITE,LOOKUP,CREATE,REMOVE";
 
-    log {
+    sfp {
       blocking_api = "zoidfs";
 
       zoidfs {

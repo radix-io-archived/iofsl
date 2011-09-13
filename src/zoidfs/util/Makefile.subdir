@@ -11,6 +11,8 @@ src_zoidfs_libzoidfs_util_a_LIBLDFLAGS = \
 #    ${top_builddir}/src/zoidfs/libzoidfshints.a
 
 src_zoidfs_libzoidfs_util_a_SOURCES = \
+src/zoidfs/util/SFPWrapper.hh \
+src/zoidfs/util/SFPWrapper.cpp \
 src/zoidfs/util/RateLimiterAsync.hh \
 src/zoidfs/util/RateLimiterAsync.cpp \
 src/zoidfs/util/ZoidFSSyncAdapter.cpp \
