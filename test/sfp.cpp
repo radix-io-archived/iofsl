@@ -88,6 +88,7 @@ bool createSFP (const zoidfs_handle_t * handle, uint64_t sfp_id)
    zoidfs_sattr_t sattr;
    zoidfs_attr_t attr;
    int ret = zoidfs_setattr (handle, &sattr, &attr, &hint);
+   ALWAYS_ASSERT (ret == ZFS_OK && "createSFP returned error!");
 
    zoidfs_hint_free (&hint);
    return ret;
@@ -107,6 +108,24 @@ bool removeSFP (const zoidfs_handle_t * handle, uint64_t sfp_id)
 
    zoidfs_hint_free (&hint);
    return ret;
+}
+
+zoidfs_file_ofs_t getSFP (const zoidfs_handle_t * handle, uint64_t sfp_id)
+{
+   zoidfs_op_hint_t hint;
+   zoidfs_hint_create (&hint);
+   setHint (&hint, ZOIDFS_SFP_OP, "GET");
+   setHint (&hint, ZOIDFS_SFP_SFPID, sfp_id);
+
+   zoidfs_sattr_t sattr;
+   zoidfs_attr_t attr;
+   zoidfs_setattr (handle, &sattr, &attr, &hint);
+
+   boost::optional<std::string> response = getHint (&hint, ZOIDFS_SFP_VAL);
+   ALWAYS_ASSERT(response);
+
+   zoidfs_hint_free (&hint);
+   return boost::lexical_cast<zoidfs::zoidfs_file_ofs_t> (*response);
 }
 
 zoidfs_file_ofs_t stepSFP (const zoidfs_handle_t * handle, uint64_t sfp_id,
@@ -137,6 +156,8 @@ struct SFPProvider
 {
    virtual void write (const void * data, size_t bytes) = 0;
 
+   virtual size_t getOfs () const = 0;
+
 };
 
 
@@ -145,19 +166,39 @@ struct SFPProvider
 
 struct IOFSLSFP : public SFPProvider
 {
-   IOFSLSFP (const std::string & filename)
+   IOFSLSFP (MPI_Comm comm, const std::string & filename)
+      : comm_ (comm)
    {
-      boost::mt19937 gen (std::time(0));
+      MPI_Comm_rank (comm, &rank_);
+
       sfpid_ = gen ();
+      sfpid_ <<= 32;
+      sfpid_ |= gen ();
 
-      int created;
-      zoidfs_sattr_t attr;
-      attr.mask = 0;
-      check (zoidfs_create (0, 0, filename.c_str(), &attr, &handle_, &created,
-               0));
+      MPI_Bcast (&sfpid_, sizeof(sfpid_), MPI_BYTE, 0, comm);
 
-      createSFP (&handle_, sfpid_);
+      if (!rank_)
+      {
+         int created;
+         zoidfs_sattr_t attr;
+         attr.mask = 0;
+         check (zoidfs_create (0, 0, filename.c_str(), &attr, &handle_, &created,
+                  0));
+
+         createSFP (&handle_, sfpid_);
+      }
+
+      MPI_Bcast (&handle_, sizeof(handle_), MPI_BYTE, 0, comm);
+
+      MPI_Barrier (comm);
+
+      ALWAYS_ASSERT(getSFP (&handle_, sfpid_) == 0);
+
+      MPI_Barrier (comm);
    }
+
+   size_t getOfs () const
+   { return getSFP (&handle_, sfpid_); }
 
    void write (const void * data, size_t bytes)
    {
@@ -173,8 +214,13 @@ struct IOFSLSFP : public SFPProvider
    
    virtual ~IOFSLSFP ()
    {
-      removeSFP (&handle_, sfpid_);
-      zoidfs_finalize ();
+      MPI_Barrier (comm_);
+
+      if (!rank_)
+      {
+         removeSFP (&handle_, sfpid_);
+         zoidfs_finalize ();
+      }
    }
 
    protected:
@@ -187,8 +233,13 @@ struct IOFSLSFP : public SFPProvider
    protected:
         zoidfs::zoidfs_handle_t handle_;
         uint64_t sfpid_;
+        MPI_Comm comm_;
+        int rank_;
+      
+        static boost::mt19937 gen;
 };
 
+boost::mt19937 IOFSLSFP::gen (std::time(0) + getpid ());
 
 // --------------------------------------------------------------------------
 // --------------------------------------------------------------------------
@@ -210,6 +261,13 @@ struct MPISFP : public SFPProvider
          MPI_Status status;
          checkMPI (MPI_File_write_shared (file_, const_cast<void*>(data),
                   bytes, MPI_BYTE, &status));
+      }
+
+      virtual size_t getOfs () const
+      {
+         MPI_Offset ofs;
+         checkMPI (MPI_File_get_position_shared (file_, &ofs));
+         return ofs;
       }
 
       virtual ~MPISFP ()
@@ -258,7 +316,9 @@ double doTest (MPI_Comm comm, SFPProvider * provider, size_t blocksize, size_t
       blockcount)
 {
    int rank;
+   int commsize;
    MPI_Comm_rank (comm, &rank);
+   MPI_Comm_size (comm, &commsize);
 
    boost::scoped_array<char> data (new char[blocksize]);
    std::fill (data.get(), data.get() + blocksize, rank);
@@ -273,6 +333,9 @@ double doTest (MPI_Comm comm, SFPProvider * provider, size_t blocksize, size_t
 
    MPI_Barrier (comm);
    double stop = MPI_Wtime ();
+
+   ALWAYS_ASSERT(provider->getOfs () == (blocksize * blockcount * commsize));
+
    return stop - start;
 }
 
@@ -337,7 +400,7 @@ int main (int argc, char ** args)
 
             MPI_Barrier (comm);
 
-            test.reset (new IOFSLSFP (filename.c_str()));
+            test.reset (new IOFSLSFP (comm, filename.c_str()));
             iofsltimes.push_back (doTest (comm, test.get(), blocksize, blockcount));
 
             MPI_Barrier (comm);

@@ -20,6 +20,7 @@
 #include "rpc/RPCEncoder.hh"
 
 #include "zoidfs/util/zoidfs-ops.hh"  // for operator ==,... on zoidfs_handle_t
+#include "zoidfs/util/zoidfs-util.hh"
 
 #include <boost/scoped_ptr.hpp>
 #include <boost/format.hpp>
@@ -212,13 +213,14 @@ namespace iofwd
 
          rpcserver_->registerRPC ("sfp.modify", rpcExec (h));
 
-         hash_.reset (iofwdutil::hash::HashFactory::instance().getHash ("crc32"));
+         hash_.reset (iofwdutil::hash::HashFactory::instance().getHash
+               ("crc32"));
 
          comm_ = net_service_->getServerComm ();
          
          commsize_ = comm_->size ();
          commrank_ = comm_->rank ();
-         ZLOG_DEBUG (log_, boost::format("My rank: %u, Total ranks: %u") %
+         ZLOG_DEBUG_MORE (log_, boost::format("My rank: %u, Total ranks: %u") %
                commrank_ % commsize_);
       }
 
@@ -271,7 +273,7 @@ namespace iofwd
 
       void SFPService::rpcSFPModify (const SFPIn & in, SFPOut & out)
       {
-         ZLOG_DEBUG (log_, "incoming rpcSFPModify");
+         ZLOG_DEBUG_MORE (log_, "incoming rpcSFPModify");
          zoidfs::zoidfs_file_ofs_t value = in.value;
          out.result = localSFPModify (&in.handle, in.sfp_id, in.op, &value);
          out.value = value;
@@ -287,11 +289,12 @@ namespace iofwd
          hash_->reset ();
          // @TODO: the encoder framework could be bridged with the hash
          // calculation to avoid having to manually call these functions
-         hash_->process (handle, sizeof (zoidfs::zoidfs_handle_t));
+         hash_->process (&handle->data, sizeof (handle->data));
          hash_->process (&sfp_id, sizeof(sfp_id));
 
          uint32_t value;
-         hash_->getHash (&value, sizeof (value));
+         ALWAYS_ASSERT(hash_->getHash (&value, sizeof (value)));
+         ZLOG_DEBUG_MORE (log_, format("%u -> %u") % sfp_id % (value % commsize_));
          return value % commsize_;
       }
 
@@ -322,6 +325,13 @@ namespace iofwd
                I->second = *value;
                return true;
 
+            case SFP_GET:
+               if (I == sfp_map_.end ())
+                  return false;
+               ZLOG_DEBUG_MORE (log_, format("sfp_get: ret=%u") % I->second);
+               *value = I->second;
+               return true;
+
             case SFP_FETCH_AND_ADD:
                {
                   if (I == sfp_map_.end ())
@@ -334,6 +344,7 @@ namespace iofwd
                }
 
             default:
+               ALWAYS_ASSERT(false);
                return false;
          };
       }
@@ -347,6 +358,9 @@ namespace iofwd
          if (dest == commrank_)
          {
             *ret = localSFPModify (handle, sfp_id, op, value);
+               ZLOG_DEBUG_MORE(log_, format("localSFPModify(%s,%u,%u,%u) = %u !")
+                     % zoidfs::handle2string (handle) % sfp_id % op % *value %
+                     *ret);
             cb (iofwdevent::CBException ());
             return;
          }

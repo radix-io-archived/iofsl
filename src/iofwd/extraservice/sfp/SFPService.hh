@@ -54,7 +54,7 @@ namespace iofwd
             {
                SFP_SET = 0,
                SFP_FETCH_AND_ADD, // Return old value, add value to fp
-               SFP_FETCH,
+               SFP_GET,
                SFP_LAST
             };
 

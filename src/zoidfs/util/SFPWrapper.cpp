@@ -62,6 +62,7 @@ namespace zoidfs
          void setHint (zoidfs::zoidfs_op_hint_t * hint, const std::string &
                name, const std::string & val)
          {
+            zoidfs_hint_delete (*hint, const_cast<char*>(name.c_str()));
             zoidfs_hint_set (*hint, const_cast<char*>(name.c_str()),
                   const_cast<char*>(val.c_str()), val.size()+1);
          }
@@ -134,12 +135,14 @@ namespace zoidfs
             return ZFSERR_OTHER;
 
          const uint64_t sfpid = boost::lexical_cast<uint64_t> (*id);
-         SingleCompletion comp;
 
          if (*h == SFPOP_CREATE)
          {
             *ret = ZFS_OK;
+            SingleCompletion comp;
             sfp_service_->createSFP (&res, handle, sfpid, 0, comp);
+            ZLOG_DEBUG_MORE (log_, str(boost::format("SFP_CREATE(%lu) [%u]") % sfpid
+                     % res));
             comp.wait ();
             return true;
          }
@@ -147,7 +150,10 @@ namespace zoidfs
          if (*h == SFPOP_REMOVE)
          {
             *ret = ZFS_OK;
+            SingleCompletion comp;
             sfp_service_->removeSFP (&res, handle, sfpid, comp);
+            ZLOG_DEBUG_MORE (log_, str(boost::format("SFP_REMOVE (%lu) [%u]") % sfpid %
+                     res));
             comp.wait ();
             return true;
          }
@@ -155,10 +161,11 @@ namespace zoidfs
          if (*h == SFPOP_GET)
          {
             zoidfs::zoidfs_file_ofs_t value;
-            sfp_service_->updateSFP (&res, handle, sfpid, SFPService::SFP_FETCH,
+            SingleCompletion comp;
+            sfp_service_->updateSFP (&res, handle, sfpid, SFPService::SFP_GET,
                   &value, comp);
             comp.wait ();
-            ZLOG_INFO (log_, str(boost::format("SFP_GET (%lu) returned %lu") %
+            ZLOG_DEBUG_MORE (log_, str(boost::format("SFP_GET (%lu) returned %lu") %
                   sfpid % value));
             setHint (op_hint, ZOIDFS_SFP_VAL,
                   boost::lexical_cast<std::string>(value));
@@ -181,24 +188,29 @@ namespace zoidfs
 
          if (*h == SFPOP_SET)
          {
-            ZLOG_INFO (log_, format("sfp_set (%lu): %lu") % sfpid % val);
+            SingleCompletion comp;
             sfp_service_->updateSFP (&res, handle, sfpid, SFPService::SFP_SET,
                   &ofs, comp);
             comp.wait ();
+            ZLOG_DEBUG_MORE (log_, format("sfp_set (%lu): %lu [%u]") % sfpid % val
+                  % res);
             return true;
          }
 
          if (*h == SFPOP_FETCH_AND_ADD)
          {
             zoidfs_file_ofs_t old = ofs;
+
+            SingleCompletion comp;
             sfp_service_->updateSFP (&res, handle, sfpid,
                   SFPService::SFP_FETCH_AND_ADD, &ofs, comp);
             comp.wait ();
-            zoidfs::hints::zoidfs_hint_delete (*op_hint, ZOIDFS_SFP_VAL);
+
             setHint (op_hint, ZOIDFS_SFP_VAL,
                   boost::lexical_cast<std::string>(ofs));
-            ZLOG_INFO (log_, format("sfp: fetch_and_add(%lu) +%lu fetch=%lu")
-                  % sfpid % old % ofs);
+
+            ZLOG_DEBUG_MORE (log_, format("sfp: fetch_and_add(%lu) +%lu fetch=%lu (%u)")
+                  % sfpid % old % ofs % res);
             return true;
          }
 
