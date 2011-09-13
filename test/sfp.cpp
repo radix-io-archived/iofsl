@@ -1,18 +1,48 @@
 #include "zoidfs/zoidfs.h"
+#include "zoidfs/hints/zoidfs-hints.h"
+
+#include "iofwdutil/always_assert.hh"
+
 #include <iostream>
 
 #include <boost/optional.hpp>
 #include <boost/lexical_cast.hpp>
+#include <boost/random/mersenne_twister.hpp>
+#include <boost/scoped_array.hpp>
+#include <boost/scoped_ptr.hpp>
+
+#include <vector>
+#include <algorithm>
+
+#include <boost/accumulators/accumulators.hpp>
+#include <boost/accumulators/statistics/mean.hpp>
+#include <boost/accumulators/statistics/density.hpp>
+#include <boost/accumulators/statistics/median.hpp>
+#include <boost/accumulators/statistics/moment.hpp>
+#include <boost/accumulators/statistics/variance.hpp>
+#include <boost/foreach.hpp>
+#include <boost/ref.hpp>
+#include <boost/bind.hpp>
+#include <boost/format.hpp>
 
 
-#include "iofwdutil/always_assert.hh"
+#include <mpi.h>
+#include <ctime>
 
-#include "zoidfs/hints/zoidfs-hints.h"
+
 
 using namespace zoidfs;
 using namespace zoidfs::hints;
+using namespace boost;
 
 using namespace std;
+using namespace boost::accumulators;
+
+
+const size_t opt_loops = 10;
+
+// --------------------------------------------------------------------------
+// --------------------------------------------------------------------------
 
 namespace
 {
@@ -99,33 +129,253 @@ zoidfs_file_ofs_t stepSFP (const zoidfs_handle_t * handle, uint64_t sfp_id,
    return boost::lexical_cast<zoidfs::zoidfs_file_ofs_t> (*response);
 }
 
+// --------------------------------------------------------------------------
+// --------------------------------------------------------------------------
+// --------------------------------------------------------------------------
+
+struct SFPProvider
+{
+   virtual void write (const void * data, size_t bytes) = 0;
+
+};
+
+
+// --------------------------------------------------------------------------
+// --------------------------------------------------------------------------
+
+struct IOFSLSFP : public SFPProvider
+{
+   IOFSLSFP (const std::string & filename)
+   {
+      boost::mt19937 gen (std::time(0));
+      sfpid_ = gen ();
+
+      int created;
+      zoidfs_sattr_t attr;
+      attr.mask = 0;
+      check (zoidfs_create (0, 0, filename.c_str(), &attr, &handle_, &created,
+               0));
+
+      createSFP (&handle_, sfpid_);
+   }
+
+   void write (const void * data, size_t bytes)
+   {
+      const zoidfs::zoidfs_file_ofs_t nextwrite = stepSFP (&handle_, sfpid_,
+            bytes);
+      const size_t memsizes = bytes;
+      const zoidfs_file_size_t nextwritesize = bytes;
+
+      check (zoidfs_write (&handle_, 1, &data, &memsizes, 
+               1, &nextwrite, &nextwritesize,
+               0));
+   }
+   
+   virtual ~IOFSLSFP ()
+   {
+      removeSFP (&handle_, sfpid_);
+      zoidfs_finalize ();
+   }
+
+   protected:
+        int check (int ret) const
+        {
+           ALWAYS_ASSERT (ret == ZFS_OK);
+           return ret;
+        }
+
+   protected:
+        zoidfs::zoidfs_handle_t handle_;
+        uint64_t sfpid_;
+};
+
+
+// --------------------------------------------------------------------------
+// --------------------------------------------------------------------------
+
+struct MPISFP : public SFPProvider
+{
+   public:
+      MPISFP (MPI_Comm comm, const std::string & filename)
+      {
+         checkMPI (MPI_File_open (comm,
+                  const_cast<char*>(filename.c_str()),
+                  MPI_MODE_RDWR|MPI_MODE_CREATE, MPI_INFO_NULL,
+                  &file_));
+         checkMPI (MPI_File_seek_shared (file_, 0, MPI_SEEK_SET));
+      }
+
+      virtual void write (const void * data, size_t bytes)
+      {
+         MPI_Status status;
+         checkMPI (MPI_File_write_shared (file_, const_cast<void*>(data),
+                  bytes, MPI_BYTE, &status));
+      }
+
+      virtual ~MPISFP ()
+      {
+         MPI_File_close (&file_);
+      }
+
+   protected:
+      inline int checkMPI (int ret) const
+      {
+         ALWAYS_ASSERT(ret == MPI_SUCCESS);
+         return ret;
+      }
+
+   protected:
+      MPI_File file_;
+
+};
+
+// --------------------------------------------------------------------------
+// --------------------------------------------------------------------------
+
+
+static std::string calcStats (std::vector<double> & data)
+{
+   typedef accumulator_set<double, features<tag::sum, tag::min, tag::max,
+           tag::median, tag::moment<1>, tag::variance> > Accumulator;
+
+   Accumulator acc;
+
+   std::for_each( data.begin(), data.end(), boost::bind<void>( ref(acc), _1 ) );
+
+   format f ("%i %d %d %d %d %d ");
+
+   f  % accumulators::count(acc)
+      % accumulators::min(acc)
+      % accumulators::max(acc)
+      % accumulators::moment<1>(acc)
+      % accumulators::median(acc)
+      % accumulators::variance(acc);
+   return str(f);
+}
+
+
+double doTest (MPI_Comm comm, SFPProvider * provider, size_t blocksize, size_t
+      blockcount)
+{
+   int rank;
+   MPI_Comm_rank (comm, &rank);
+
+   boost::scoped_array<char> data (new char[blocksize]);
+   std::fill (data.get(), data.get() + blocksize, rank);
+
+   MPI_Barrier (comm);
+   double start = MPI_Wtime ();
+
+   for (size_t i=0; i<blockcount; ++i)
+   {
+      provider->write (data.get(), blocksize);
+   }
+
+   MPI_Barrier (comm);
+   double stop = MPI_Wtime ();
+   return stop - start;
+}
+
+// --------------------------------------------------------------------------
+// --------------------------------------------------------------------------
 
 int main (int argc, char ** args)
 {
-   if (argc != 3)
+   if (argc != 4)
    {
-      cerr << "Need filename and sfpid!\n";
+      cerr << args[0] << " filename blocksize blockcount\n";
+      cerr << "    filename: file to write to\n";
+      cerr << "    blocksize: size of each write (kb)\n";
+      cerr << "    blockcount: number of blocks /per process/ to write\n";
       exit (1);
    }
 
+
    const std::string filename = args[1];
-   const uint64_t sfpid = boost::lexical_cast<uint64_t> (args[2]);
+   const size_t blocksize = boost::lexical_cast<size_t> (args[2 ]) * 1024;
+   const size_t blockcount = boost::lexical_cast<size_t> (args[3]);
 
    zoidfs_init ();
+   MPI_Init (0,0);
 
-   zoidfs_handle_t handle;
-   zoidfs_lookup (0, 0, filename.c_str(), &handle, 0);
 
-  
-   createSFP (&handle, sfpid);
 
-   for (size_t i=0; i<10; ++i)
+   int ranks = 1;
+   int worldsize;
+   int worldrank;
+
+   MPI_Comm_size (MPI_COMM_WORLD, &worldsize);
+   MPI_Comm_rank (MPI_COMM_WORLD, &worldrank);
+
+   MPI_Comm comm;
+
+
+   while (true)
    {
-      cout << "After step: " << stepSFP (&handle, sfpid, i+1) << endl;
+      std::vector<double> iofsltimes;
+      std::vector<double> mpitimes;
+
+      MPI_Comm_split (MPI_COMM_WORLD, (worldrank < ranks ? 0 : MPI_UNDEFINED),
+            worldrank, &comm);
+
+      if (comm != MPI_COMM_NULL)
+      {
+         int commsize;
+         int commrank;
+         MPI_Comm_size (comm, &commsize);
+         MPI_Comm_rank (comm, &commrank);
+
+         for (size_t i=0; i<opt_loops; ++i)
+         {
+            boost::scoped_ptr<SFPProvider> test;
+
+            if (!worldrank)
+            {
+               cout << "# Test (" << i+1 << ") iofsl:";
+               cout.flush ();
+            }
+
+            MPI_Barrier (comm);
+
+            test.reset (new IOFSLSFP (filename.c_str()));
+            iofsltimes.push_back (doTest (comm, test.get(), blocksize, blockcount));
+
+            MPI_Barrier (comm);
+
+            test.reset (new MPISFP (comm, filename.c_str()));
+            mpitimes.push_back (doTest (comm, test.get(), blocksize, blockcount));
+
+            if (!worldrank)
+            {
+               cout << iofsltimes.back () << " mpi:" << mpitimes.back () <<
+                  endl;
+               cout.flush ();
+            }
+
+            MPI_Barrier (comm);
+
+         }
+
+         if (!worldrank)
+         {
+            cout << "# commsize totalbytes [ rounds min max avg median"
+               " variance ] \n";
+            cout << commsize << " " << blocksize * blockcount * commsize <<
+               " " << calcStats(iofsltimes) << calcStats(mpitimes) << endl;
+            cout.flush ();
+         }
+
+         MPI_Comm_free (&comm);
+      }
+
+      if (ranks == worldsize)
+         break;
+
+      ranks = std::min (worldsize, ranks * 2);
    }
 
-   removeSFP (&handle, sfpid);
-
+   MPI_Finalize ();
    zoidfs_finalize ();
+
    return 0;
 }
