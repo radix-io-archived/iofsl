@@ -119,7 +119,11 @@ test_servercomm_SOURCES = test/servercomm.cpp
 test_servercomm_LDFLAGS = ${cppldflags}
 test_servercomm_LDADD = ${cppldadd}
 
+noinst_PROGRAMS += test/zoidfsfuse
+test_zoidfsfuse_SOURCES = test/zoidfs-fuse.c
+test_zoidfsfuse_LDADD = $(top_builddir)/lib/libiofsloldclient.a  ${test_unit_tests_ldadd} @FUSE_LIBS@
 
+test_zoidfsfuse_LDFLAGS = ${test_unit_tests_ldflags} @FUSE_LDFLAGS@
 
 noinst_PROGRAMS += test/net
 test_net_SOURCES = test/net.cpp test/TrackLive.cpp test/TrackLive.hh \
