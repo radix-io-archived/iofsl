@@ -4,7 +4,6 @@ if BUILD_IOFWD_CLIENT
 #
 # unit tests build rules
 #
-if HAVE_CUNIT
 
 test_unit_tests_ldadd =          \
   	@BOOST_PROGRAM_OPTIONS_LIB@ \
@@ -22,6 +21,7 @@ test_unit_tests_ldflags =        \
     @ZFS_DISPATCHER_LDFLAGS@     \
     @BMI_LDFLAGS@
 
+if HAVE_CUNIT
 noinst_PROGRAMS += test/xdrspeed
 test_xdrspeed_SOURCES = test/xdr/xdrspeed.cpp
 test_xdrspeed_LDADD =   $(top_builddir)/lib/libiofslcommon.a $(top_builddir)/lib/libiofsloldclient.a  $(test_unit_tests_ldadd)
