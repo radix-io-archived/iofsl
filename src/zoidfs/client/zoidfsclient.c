@@ -26,7 +26,6 @@
 static char *ion_name;
 static BMI_addr_t * peer_addr = NULL;
 static BMI_addr_t * def_peer_addr = NULL;
-static bmi_context_id context;
 
 /* addr manipulation funcs */
 
@@ -45,15 +44,38 @@ void zoidfs_client_set_def_addr(BMI_addr_t * addr)
     def_peer_addr = addr;
 }
 
-bmi_context_id * zoidfs_client_get_context()
-{
-    return &context;
-}
-
 /* TLS key for tag */
 static pthread_key_t ptk_tag;
+static pthread_key_t ptk_context;
 static unsigned int next_tag = 0;
 static pthread_mutex_t tag_lock = PTHREAD_MUTEX_INITIALIZER;
+
+static void zoidfs_client_destroy_context(void *ptr)
+{
+    BMI_close_context(*(bmi_context_id *)ptr);
+    free(ptr);
+}
+static bmi_context_id *zoidfs_client_open_context()
+{
+    bmi_context_id *context;
+    context = (bmi_context_id *) pthread_getspecific(ptk_context);
+    if (!context) {
+        int ret;
+        context = malloc(sizeof(bmi_context_id));
+        assert(context);
+        ret = BMI_open_context(context);
+        assert(ret == 0);
+        pthread_setspecific(ptk_context, (void *)context);
+    }
+    return context;
+}
+
+#define context (*zoidfs_client_open_context())
+
+bmi_context_id * zoidfs_client_get_context()
+{
+    return zoidfs_client_open_context();
+}
 
 /* conditional compilation flags */
 /*#define ZFS_USE_XDR_SIZE_CACHE
@@ -119,11 +141,11 @@ static bmi_msg_tag_t gen_tag(void)
 static int zoidfs_write_pipeline(BMI_addr_t peer_addr, size_t pipeline_size,
                                  size_t list_count, const void ** buf_list,
                                  const bmi_size_t size_list[], bmi_msg_tag_t tag,
-                                 bmi_context_id context, bmi_size_t total_size);
+                                 bmi_context_id acontext, bmi_size_t total_size);
 static int zoidfs_read_pipeline(BMI_addr_t peer_addr, size_t pipeline_size,
                                 size_t list_count, void ** buf_list,
                                 const bmi_size_t size_list[], bmi_msg_tag_t tag,
-                                bmi_context_id context, bmi_size_t total_size);
+                                bmi_context_id acontext, bmi_size_t total_size);
 
 /* 
  * zoidfs message data types
@@ -3287,7 +3309,7 @@ write_cleanup:
 static int zoidfs_write_pipeline(BMI_addr_t l_peer_addr, size_t pipeline_size,
                                  size_t list_count, const void ** buf_list,
                                  const bmi_size_t bmi_size_list[], bmi_msg_tag_t tag,
-                                 bmi_context_id context, bmi_size_t total_size) {
+                                 bmi_context_id acontext, bmi_size_t total_size) {
     int np = 0;
     int ret = ZFS_OK;
     bmi_size_t i;
@@ -3376,7 +3398,7 @@ static int zoidfs_write_pipeline(BMI_addr_t l_peer_addr, size_t pipeline_size,
  
         /* send the data */
         ret = bmi_comm_send_list(l_peer_addr, p_list_count, (const void**)p_buf_list,
-                                     p_size_list, tag, context, p_total_size);
+                                     p_size_list, tag, acontext, p_total_size);
         free(p_buf_list);
         free(p_size_list);
 
@@ -3687,7 +3709,7 @@ read_cleanup:
 static int zoidfs_read_pipeline(BMI_addr_t l_peer_addr, size_t pipeline_size,
                                 size_t list_count, void ** buf_list,
                                 const bmi_size_t bmi_size_list[], bmi_msg_tag_t tag,
-                                bmi_context_id context, bmi_size_t total_size) {
+                                bmi_context_id acontext, bmi_size_t total_size) {
     int np = 0;
     int ret = ZFS_OK;
     bmi_size_t i;
@@ -3776,7 +3798,7 @@ static int zoidfs_read_pipeline(BMI_addr_t l_peer_addr, size_t pipeline_size,
 
         /* recv the data */
         ret = bmi_comm_recv_list(l_peer_addr, p_list_count, (void**)p_buf_list,
-                                     p_size_list, tag, context, p_total_size);
+                                     p_size_list, tag, acontext, p_total_size);
         free(p_buf_list);
         free(p_size_list);
 
@@ -3815,13 +3837,6 @@ int zoidfs_init(zoidfs_op_hint_t * UNUSED(op_hint)) {
     ret = BMI_initialize(NULL, NULL, 0);
     if (ret < 0) {
         fprintf(stderr, "zoidfs_init: BMI_initialize() failed.\n");
-        return ZFSERR_OTHER;
-    }
-
-    /* Create a new BMI context */
-    ret = BMI_open_context(&context);
-    if (ret < 0) {
-        fprintf(stderr, "zoidfs_init: BMI_open_context() failed.\n");
         return ZFSERR_OTHER;
     }
 
@@ -3902,6 +3917,7 @@ int zoidfs_init(zoidfs_op_hint_t * UNUSED(op_hint)) {
 
     /* Initialize TLS tags */
     pthread_key_create (&ptk_tag, 0);
+    pthread_key_create (&ptk_context, zoidfs_client_destroy_context);
     next_tag = 1;
 
     return ZFS_OK;
@@ -3913,6 +3929,7 @@ int zoidfs_init(zoidfs_op_hint_t * UNUSED(op_hint)) {
  */
 int zoidfs_finalize(zoidfs_op_hint_t * UNUSED(op_hint)) {
     int ret = ZFS_OK;
+    void *pcontext;
 
     /* cleanup buffers */
 #ifdef ZFS_BMI_FASTMEMALLOC
@@ -3938,8 +3955,6 @@ int zoidfs_finalize(zoidfs_op_hint_t * UNUSED(op_hint)) {
         peer_addr = NULL;
     }
 
-    BMI_close_context(context);
-
     /* Finalize BMI */
     ret = BMI_finalize();
     if (ret < 0) {
@@ -3951,6 +3966,12 @@ int zoidfs_finalize(zoidfs_op_hint_t * UNUSED(op_hint)) {
     /* Free TLS key */
     pthread_key_delete (ptk_tag);
 
+    /* Clean up BMI context */
+    pcontext = pthread_getspecific(ptk_context);
+    if (pcontext) {
+        zoidfs_client_destroy_context(pcontext);
+    }
+    pthread_key_delete (ptk_context);
     return 0;
 }
 
