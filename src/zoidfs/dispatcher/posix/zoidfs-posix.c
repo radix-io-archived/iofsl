@@ -921,9 +921,19 @@ static int zoidfs_posix_remove(const zoidfs_handle_t *parent_handle,
    char tmpbuf[ZOIDFS_PATH_MAX];
    const char * path = zoidfs_simplify_path (parent_handle, component_name,
          full_path, tmpbuf);
+   struct stat s;
 
    if (!path)
       return ZFSERR_STALE;
+
+   // release open fd from cache.
+   if (lstat (path, &s) < 0)
+      return errno2zfs (errno);
+   if (S_ISREG(s.st_mode)) {
+       zoidfs_handle_t handle;
+       filename2handle (&s, path, &handle);
+       dcache_removefd(dcache, &handle);
+   }
 
    // ignore component_name
    if (unlink (path)< 0)
