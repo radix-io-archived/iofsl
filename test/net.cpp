@@ -484,9 +484,9 @@ void runClientTest (SMManager & smm, Net * net, const std::string &
          if (!size)
             size += 4;
          cerr << "Starting stream for size " << size << "... " << endl;
-         Connection con (net->connect (dest));
-         smm.schedule (new ReadSM (smm, size, con.in, getValidator ()));
-         smm.schedule (new WriteSM (smm, size, con.out, getGenerator ()));
+         Connection conn (net->connect (dest));
+         smm.schedule (new ReadSM (smm, size, conn.in, getValidator ()));
+         smm.schedule (new WriteSM (smm, size, conn.out, getGenerator ()));
          totalsize += size;
       }
       cerr << "Average bandwidth: ";
