@@ -95,7 +95,7 @@ class RPCClientWrite :
          
             e_.zero_copy_stream_.reset((rpc_handle_->getOut()));
 
-            setNextMethod(&RPCClientWrite<INTYPE,OUTTYPE>::postSetupConnection);
+            this->setNextMethod(&RPCClientWrite<INTYPE,OUTTYPE>::postSetupConnection);
         }
 
         void postSetupConnection(iofwdevent::CBException e)
@@ -114,7 +114,7 @@ class RPCClientWrite :
         {
          
             e.check();
-            setNextMethod(&RPCClientWrite<INTYPE,OUTTYPE>::postEncodeData);
+            this->setNextMethod(&RPCClientWrite<INTYPE,OUTTYPE>::postEncodeData);
         }
 
         void postEncodeData(iofwdevent::CBException e)
@@ -170,7 +170,7 @@ class RPCClientWrite :
             /* More data to be written (out of write buffer) */
             else 
             {
-               setNextMethod(&RPCClientWrite<INTYPE,OUTTYPE>::flushWriteBuffer);               
+               this->setNextMethod(&RPCClientWrite<INTYPE,OUTTYPE>::flushWriteBuffer);
             }
         }
 
@@ -178,7 +178,7 @@ class RPCClientWrite :
         void waitEncodeData(iofwdevent::CBException e)
         {
             e.check();
-            setNextMethod(&RPCClientWrite<INTYPE,OUTTYPE>::postFlush);
+            this->setNextMethod(&RPCClientWrite<INTYPE,OUTTYPE>::postFlush);
         }
 
         void postFlush(iofwdevent::CBException e)

@@ -43,7 +43,7 @@ namespace zoidfs
             return hash_[key];
           }
 
-          size_t getLen () 
+          size_t getLen () const
           { 
             return len_; 
           }
@@ -54,7 +54,7 @@ namespace zoidfs
             len_ = len; 
           }
 
-          boost::shared_ptr<std::string> getKeys ()
+          boost::shared_ptr<std::string> getKeys () const
           {
             boost::shared_ptr<std::string> keys(new std::string[maxkeys_]);
             size_t count = 0;
@@ -102,7 +102,7 @@ namespace zoidfs
    }
 
    template <typename ENC>
-   static void process (ENC & e, const Hint & p,
+   static void process (ENC & e, Hint & p,
                    typename encoder::only_encoder_processor<ENC>::type * = 0)
    {
       boost::shared_ptr<std::string> keys = p.getKeys();

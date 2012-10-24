@@ -65,7 +65,7 @@ public:
    {
    }
 
-   mutable T & enum_;
+   T & enum_;
 };
 
 /**

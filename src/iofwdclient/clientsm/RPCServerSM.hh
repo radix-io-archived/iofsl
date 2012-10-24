@@ -84,7 +84,7 @@ class RPCServerSM :
 
             e_.zero_copy_stream_.reset((rpc_handle_->getOut()));
 
-            setNextMethod(&RPCServerSM<INTYPE,OUTTYPE>::postSetupConnection);
+            this->setNextMethod(&RPCServerSM<INTYPE,OUTTYPE>::postSetupConnection);
         }
 
         void postSetupConnection(iofwdevent::CBException e)
@@ -104,7 +104,7 @@ class RPCServerSM :
         void waitSetupConnection(iofwdevent::CBException e)
         {
             e.check();
-            setNextMethod(&RPCServerSM<INTYPE,OUTTYPE>::postEncodeData);
+            this->setNextMethod(&RPCServerSM<INTYPE,OUTTYPE>::postEncodeData);
         }
 
         void postEncodeData(iofwdevent::CBException e)
@@ -125,7 +125,7 @@ class RPCServerSM :
         void waitEncodeData(iofwdevent::CBException e)
         {
             e.check();
-            setNextMethod(&RPCServerSM<INTYPE,OUTTYPE>::postFlush);
+            this->setNextMethod(&RPCServerSM<INTYPE,OUTTYPE>::postFlush);
         }
 
         void postFlush(iofwdevent::CBException e)

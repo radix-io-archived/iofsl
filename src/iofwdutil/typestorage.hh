@@ -36,8 +36,8 @@ public:
    }
 
 
-   mutable VALUETYPE & value_;
-   mutable NEXT & next_;
+   VALUETYPE & value_;
+   NEXT & next_;
 };
 
 class TypeStorage_EMPTY {};

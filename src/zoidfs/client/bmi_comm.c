@@ -7,7 +7,7 @@
  * Jason Cope <copej@mcs.anl.gov>
  */
 
-#include "src/zoidfs/zoidfs.h"
+#include "zoidfs.h"
 #include "bmi_comm.h"
 
 /**

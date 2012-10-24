@@ -95,7 +95,7 @@ class RPCClientRead :
             e.check();
             e_.zero_copy_stream_.reset((rpc_handle_->getOut()));
 
-            setNextMethod(&RPCClientRead<INTYPE,OUTTYPE>::postSetupConnection);
+            this->setNextMethod(&RPCClientRead<INTYPE,OUTTYPE>::postSetupConnection);
          
         }
 
@@ -115,7 +115,7 @@ class RPCClientRead :
         void waitSetupConnection(iofwdevent::CBException e)
         {
             e.check();
-            setNextMethod(&RPCClientRead<INTYPE,OUTTYPE>::postEncodeData);
+            this->setNextMethod(&RPCClientRead<INTYPE,OUTTYPE>::postEncodeData);
         }
 
         void postEncodeData(iofwdevent::CBException e)
@@ -136,7 +136,7 @@ class RPCClientRead :
         void waitEncodeData(iofwdevent::CBException e)
         {
             e.check();
-            setNextMethod(&RPCClientRead<INTYPE,OUTTYPE>::postFlush);
+            this->setNextMethod(&RPCClientRead<INTYPE,OUTTYPE>::postFlush);
         }
 
         void postFlush(iofwdevent::CBException e)
@@ -182,7 +182,7 @@ class RPCClientRead :
 
             process(d_.coder_, d_.data_);
 
-            setNextMethod ( &RPCClientRead<INTYPE,OUTTYPE>::rewindRead);
+            this->setNextMethod ( &RPCClientRead<INTYPE,OUTTYPE>::rewindRead);
          
         }
 
@@ -218,13 +218,13 @@ class RPCClientRead :
             /* read finished */
             if (ret == 0)
             {
-               setNextMethod(&RPCClientRead<INTYPE,OUTTYPE>::done);
+               this->setNextMethod(&RPCClientRead<INTYPE,OUTTYPE>::done);
             }
             /* read more data */
             else 
             {
          
-               setNextMethod(&RPCClientRead<INTYPE,OUTTYPE>::getReadBuffer);               
+               this->setNextMethod(&RPCClientRead<INTYPE,OUTTYPE>::getReadBuffer);
          
             }
         }
