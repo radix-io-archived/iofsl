@@ -340,6 +340,7 @@ namespace iofwdevent
          if (delivered)
          {
             UEClientListType::iterator removeclient = I;
+            I++; // erase() might invalidate the iterator.
             ue_clientlist_.erase (removeclient);
             *c.outcount = delivered;
 
@@ -366,10 +367,11 @@ namespace iofwdevent
             ue_lock_.lock ();
             // We need the lock to protect access to the mem pool
             ue_client_pool_.free (&c);
-         }
+         } else {
 
-         // Try next client
-         ++I;
+             // Try next client
+             ++I;
+         }
       }
    }
 
