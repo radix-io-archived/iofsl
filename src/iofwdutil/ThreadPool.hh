@@ -15,6 +15,7 @@
 #include "iofwdutil/Singleton.hh"
 
 #define CRAY_TP_CORE_MAX 12
+#define USE_CRAY_TP
 
 /*
     generic thread pool for the entire app
