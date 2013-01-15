@@ -60,6 +60,9 @@ class SingleCounter : public BaseCounter
                 std::cout << name_ 
                           << " "
                           << boost::lexical_cast<std::string>(val_)
+                          << " " << counter_min()
+                          << " " << counter_mean()
+                          << " " << counter_max()
                           << std::endl;
             }
         }

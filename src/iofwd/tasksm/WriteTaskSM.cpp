@@ -1,5 +1,48 @@
 #include "iofwd/tasksm/WriteTaskSM.hh"
 #include "zoidfs/zoidfs-proto.h"
+#include "iofwdutil/stats/TimeCounter.hh"
+#include "iofwdutil/stats/IncCounter.hh"
+
+namespace sm {
+      template<>
+      void sm::SimpleSlots<1, iofwd::tasksm::WriteTaskSM>::callback(int pos, const iofwdevent::CBException e) {
+      boost::mutex::scoped_lock l(locks_[pos]);
+
+      Slot & s = slots_[pos];
+
+      ASSERT((s.status_ == WAITING) && "Need to use it as callback"
+            " first!");
+
+      if (s.next_)
+      {
+         // if next was set, we had already executed a 'wait' on this
+         // slot. We can transition right away and the slot becomes free.
+         // We need to any slot exception as the current pending exception.
+
+         next_method_t next = s.next_;
+         s.next_ = 0;
+         s.status_ = FREE;
+
+         // We unlock the mutex so, that if we end up destroying
+         // ourselves,
+         // we don't destroy a locked mutex.
+         l.unlock ();
+	 iofwdutil::stats::TimeCounter *tc;
+	 tc = iofwdutil::stats::TimeCounter::get("write_sm_waittime");
+	 if (tc)
+	   client_.wait_time = tc->start();
+
+         client_.resumeSM (next, e);
+      }
+      else
+      {
+         // Didn't do a wait on this slot yet. Store any exception in the
+         // slot and update the status to COMPLETED
+         s.status_ = COMPLETED;
+         s.exception_ = e;
+      }
+   }
+}
 
 namespace iofwd
 {
@@ -26,10 +69,28 @@ namespace iofwd
             ret_(zoidfs::ZFS_OK),
             pipeline_size_(0)
     {
+      wait_time = 0;
+      total_wait = 0;
+        iofwdutil::stats::TimeCounter *tc;
+	tc = iofwdutil::stats::TimeCounter::get("write_sm_livetime");
+        if (tc)
+            create_time = tc->start();
+	iofwdutil::stats::IncCounter *ic;
+	ic = iofwdutil::stats::IncCounter::get("write_sm");
+	if (ic) ic->update();
     }
 
     WriteTaskSM::~WriteTaskSM()
     {
+        iofwdutil::stats::TimeCounter *tc;
+        tc = iofwdutil::stats::TimeCounter::get("write_sm_livetime");
+        if (tc) {
+            double duration = tc->stop() - create_time;
+            tc->update(duration);
+        }
+	tc = iofwdutil::stats::TimeCounter::get("write_sm_waittime");
+	if (tc) tc->update(total_wait);
+
         /* cleanup rbuffer_ wrappers */
         for(int i = 0 ; i < total_buffers_ ; i++)
         {
@@ -45,9 +106,22 @@ namespace iofwd
         delete &request_;
     }
 
+      void WriteTaskSM::update_waittime() {
+	 iofwdutil::stats::TimeCounter *tc;
+	 tc = iofwdutil::stats::TimeCounter::get("write_sm_waittime");
+	 if (tc && wait_time) {
+	   total_wait += tc->stop() - wait_time;
+	   wait_time = 0;
+	 }
+      }
+
     /* recv the input data to write to the disk */
     void WriteTaskSM::recvBuffers()
     {
+        iofwdutil::stats::TimeCounter *tc;
+	tc = iofwdutil::stats::TimeCounter::get("write_sm_recvtime");
+        if (tc)
+            recv_time = tc->start();
         /* issue the recv buffer */
         request_.recvBuffers(slots_[WRITE_SLOT], rbuffer_[0]);
 
@@ -58,6 +132,11 @@ namespace iofwd
     /* execute the write I/O path */
     void WriteTaskSM::writeNormal()
     {
+        iofwdutil::stats::TimeCounter *tc;
+	tc = iofwdutil::stats::TimeCounter::get("write_sm_fsiotime");
+        if (tc)
+            fsio_time = tc->start();
+
 #if SIZEOF_SIZE_T == SIZEOF_INT64_T
         api_->write(slots_[WRITE_SLOT], &ret_, p.handle, p.mem_count,
               const_cast<const void**>(reinterpret_cast<void**>(p.mem_starts.get())), p.mem_sizes.get(),

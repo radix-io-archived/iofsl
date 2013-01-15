@@ -87,7 +87,7 @@ class CounterConfig : public iofwdutil::Singleton< CounterConfig >
 
     public:
         /* constructors, destructors, and assign ops */
-        CounterConfig();
+        CounterConfig(): log_ (iofwdutil::IOFWDLog::getSource ("counters")) {};
         CounterConfig(const CounterConfig & rhs);
         CounterConfig & operator= (const CounterConfig & rhs);
         ~CounterConfig();

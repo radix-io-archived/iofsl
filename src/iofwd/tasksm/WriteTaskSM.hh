@@ -9,6 +9,7 @@
 #include "iofwdutil/InjectPool.hh"
 #include "iofwd/WriteRequest.hh"
 #include "iofwdutil/InjectPool.hh"
+#include "iofwdutil/stats/TimeCounter.hh"
 
 #include "zoidfs/zoidfs.h"
 
@@ -95,6 +96,7 @@ class WriteTaskSM : public sm::SimpleSM< WriteTaskSM >, public
         void waitAllocateSingleBuffer(iofwdevent::CBException e)
         {
            e.check ();
+	   update_waittime();
             // init the task params
             request_.initRequestParams(p, rbuffer_[0]->buffer_->getMemory());
 
@@ -110,8 +112,15 @@ class WriteTaskSM : public sm::SimpleSM< WriteTaskSM >, public
 
         void waitRecvInputBuffers(iofwdevent::CBException e)
         {
+	  update_waittime();
            e.check ();
             setNextMethod(&WriteTaskSM::postEnqueueWrite);
+	    iofwdutil::stats::TimeCounter *tc;
+	    tc = iofwdutil::stats::TimeCounter::get("write_sm_recvtime");
+	    if (tc) {
+	      double duration = tc->stop() - recv_time;
+	      tc->update(duration);
+	    }
         }
 
         void postEnqueueWrite(iofwdevent::CBException e)
@@ -122,11 +131,20 @@ class WriteTaskSM : public sm::SimpleSM< WriteTaskSM >, public
 
         void waitEnqueueWrite(iofwdevent::CBException e)
         {
+	  update_waittime();
            e.check ();
             /* free the buffer */
             request_.releaseBuffer(rbuffer_[0]);
 
             setNextMethod(&WriteTaskSM::postReply);
+
+	    iofwdutil::stats::TimeCounter *tc;
+	    tc = iofwdutil::stats::TimeCounter::get("write_sm_fsiotime");
+	    if (tc) {
+	      double duration = tc->stop() - fsio_time;
+	      tc->update(duration);
+	    }
+
         }
 
         void postReply(iofwdevent::CBException e)
@@ -137,6 +155,7 @@ class WriteTaskSM : public sm::SimpleSM< WriteTaskSM >, public
 
         void waitReply(iofwdevent::CBException e)
         {
+	  update_waittime();
            e.check ();
             // done...
         }
@@ -228,6 +247,10 @@ class WriteTaskSM : public sm::SimpleSM< WriteTaskSM >, public
             }
         }
 
+        double wait_time;
+        double total_wait;
+        void update_waittime();
+
     protected:
 
         /* normal mode operations */
@@ -276,6 +299,10 @@ class WriteTaskSM : public sm::SimpleSM< WriteTaskSM >, public
         iofwdevent::CBType s_;
 
         size_t pipeline_size_;
+
+        double create_time;
+        double recv_time;
+        double fsio_time;
 };
     }
 }

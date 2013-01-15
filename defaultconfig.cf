@@ -213,3 +213,9 @@ requesthandler {
   //}
 
 }
+
+counters
+{
+        sm = "write_sm_livetime.time.single.counter,write_sm.inc.single.counter,write_sm_recvtime.time.single.counter";
+        dumpinterval = "1";
+}

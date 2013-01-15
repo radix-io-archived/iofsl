@@ -83,7 +83,8 @@ void IOFWDMain::boot ()
    ZLOG_DEBUG (mainlog_, "Starting IOFWD Frontend"); 
 
    //frontend_.reset (new frontend::IOFWDFrontend (*resources_));
-   
+   iofwdutil::stats::CounterConfig::instance().parseConfig(config_.openSectionDefault ("counters"));
+
    frontend_->setConfig (config_.openSectionDefault ("frontend"));
 
    frontend_->init ();
@@ -115,13 +116,39 @@ void IOFWDMain::shutdown ()
    iofwdutil::stats::CounterTable::instance().dumpCounters();
 }
 
+class CounterMonitor {
+    int sleeptime;
+public:
+    CounterMonitor(int i = 1) : sleeptime(i) {};
+    void operator()() {
+        while (true) {
+            sleep(sleeptime);
+            iofwdutil::stats::CounterTable::instance().dumpCounters();
+        }
+    }
+};
 
 void IOFWDMain::run ()
 {
+   // Start counters dumper
+   ConfigFile config(config_.openSectionDefault("counters"));
+   try
+   {
+       int dumpinterval = config.getKeyAs<int>("dumpinterval");
+       if (dumpinterval > 0) {
+           CounterMonitor cm(dumpinterval);
+           boost::thread counterDumper(cm);
+       }
+   }
+   catch (const iofwdutil::CFKeyMissingException &e)
+   {
+       // It's OK, if dumpinterval is missing, we don't dump counters.
+   }
+
    // Wait for ctrl-c
    sigset_t set; 
    sigemptyset (&set); 
-   
+
    if (!notrap_)
       sigaddset (&set, SIGINT); 
 
