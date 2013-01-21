@@ -957,27 +957,9 @@ static int zoidfs_posix_remove(const zoidfs_handle_t *parent_handle,
  * zoidfs_commit
  * This function flushes the buffers associated with the file handle.
  */
-static int zoidfs_posix_commit(const zoidfs_handle_t * handle, zoidfs_op_hint_t * UNUSED(op_hint))
-/* static int zoidfs_posix_commit(const zoidfs_handle_t * UNUSED(handle), zoidfs_op_hint_t * UNUSED(op_hint)) */
+static int zoidfs_posix_commit(const zoidfs_handle_t * UNUSED(handle), zoidfs_op_hint_t * UNUSED(op_hint))
 {
    /* file descriptor interface is not buffered... */
-   /* clear page cache */
-   int file;
-   int returncode = ZFS_OK;
-   int ret;
-   int err;
-   Descriptor desc;
-
-   /* obtain file handle */
-   ret = getfd_handle (handle, &desc, &err);
-   if (!ret)
-      return errno2zfs (err);
-
-   file = desc.fd;
-
-   posix_fadvise(file,0,0,4);
-
-   releasefd_handle (&desc);
    return ZFS_OK;
 }
 
