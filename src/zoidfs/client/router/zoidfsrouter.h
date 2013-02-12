@@ -60,9 +60,9 @@ int zoidfs_router_get_io_server_subrank();
 /* MPI overloads */
 int MPI_Init(int * args, char *** argv);
 int MPI_Finalize();
-int MPI_File_open(MPI_Comm comm, char * filename, int amode, MPI_Info info, MPI_File * fh);
+int MPI_File_open(MPI_Comm comm, const char * filename, int amode, MPI_Info info, MPI_File * fh);
 int MPI_File_close(MPI_File * fh);
-int MPI_File_write_at(MPI_File fh, MPI_Offset offset, void * buf,
+int MPI_File_write_at(MPI_File fh, MPI_Offset offset, const void * buf,
     int count, MPI_Datatype datatype, MPI_Status * status);
 
 /* typedefs of required methods for zoidfs router implementations */

@@ -242,7 +242,7 @@ int zoidfs_finalize(void)
     return zoidfs_routers[mode]->zoidfs_finalize();
 }
 
-int MPI_File_open(MPI_Comm comm, char * filename, int amode, MPI_Info info, MPI_File * fh)
+int MPI_File_open(MPI_Comm comm, const char * filename, int amode, MPI_Info info, MPI_File * fh)
 {
     return zoidfs_routers[mode]->mpi_file_open(comm, filename, amode, info, fh);
 }
