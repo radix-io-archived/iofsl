@@ -35,7 +35,7 @@ IOFWDMain::IOFWDMain (service::ServiceManager & man)
      notrap_ (!manager_.getParam ("iofwdserver.notrap").empty())
 {
    
-   // Make sure that we do have signals sent to a random thread
+   // Make sure that we do not have signals sent to a random thread
    disableAllSignals (notrap_);
 }
 
