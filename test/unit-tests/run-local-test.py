@@ -48,7 +48,7 @@ def signalAndWait (proc, signal, delay):
          break
       try:
          os.kill (proc.pid, signal)
-      except os.error,e:
+      except os.error as e:
          if e.errno == errno.ESRCH:
             # Proc stopped in the mean time
             ret = True
@@ -81,7 +81,7 @@ class LocalServer (object):
             [SERVERBINARY, "--config", self.configfile],
             close_fds=True)
         self.started = True
-      except subprocess.OSError,a:
+      except subprocess.OSError as a:
          error ("Could not start server: " + a)
 
    def waitReady (self):
@@ -136,7 +136,7 @@ class LocalTest:
         self.test = subprocess.Popen (self.program, close_fds=True,
               env=testEnv)
         self.started = True
-      except OSError,a:
+      except OSError as a:
          error ("Could not start test: " + str(a) + "\n")
 
    def didStart(self):
