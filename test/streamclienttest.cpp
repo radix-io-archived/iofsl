@@ -1,4 +1,6 @@
 #include "test/streamclienttest.hh"
+
+
 namespace po = boost::program_options;
 iofwdclient::IOFWDClient * iofslSetup( char * address, std::string opt_config)
 {
@@ -19,6 +21,15 @@ iofwdclient::IOFWDClient * iofslSetup( char * address, std::string opt_config)
    return x;
 }
 
+int check_system (const char * cmd)
+{
+   if (system (cmd) == -1)
+   {
+      std::cerr << "Error calling system '" << cmd << "'!\n";
+      exit (1);
+   }
+}
+
 int linkTest(iofwdclient::IOFWDClient * client, std::string dir)
 {
   char * fname = new char[dir.length() + 50];
@@ -28,13 +39,13 @@ int linkTest(iofwdclient::IOFWDClient * client, std::string dir)
   strcat(fname, "linktest");
   strcpy(systemCommand, "mkdir ");
   strcat(systemCommand, fname);
-  system(systemCommand);
+  check_system(systemCommand);
   
   strcpy(systemCommand, "touch ");
   strcat(systemCommand, fname);
 
   strcat(systemCommand, "/slinktest");
-  system(systemCommand);
+  check_system(systemCommand);
   
   strcpy(fname, dir.c_str());
   strcat(fname, "linktest/slinktest");
@@ -60,13 +71,13 @@ int linkTest(iofwdclient::IOFWDClient * client, std::string dir)
     strcat(fname, "linktest");
     strcpy(systemCommand, "rm -r ");
     strcat(systemCommand, fname);
-    system(systemCommand);
+    check_system(systemCommand);
     std::cout << "symlink : Could not create symlink with full path" << std::endl;
     return -1;
   }
   strcpy(systemCommand, "rm ");
   strcat(systemCommand, slinkName);
-  system(systemCommand);
+  check_system(systemCommand);
   
   strcpy(fname, dir.c_str());
   strcat(fname, "linktest");
@@ -90,7 +101,7 @@ int linkTest(iofwdclient::IOFWDClient * client, std::string dir)
     strcat(fname, "linktest");
     strcpy(systemCommand, "rm -r ");
     strcat(systemCommand, fname);
-    system(systemCommand);
+    check_system(systemCommand);
     std::cout << "link : Could not create link with handle/component_name" << std::endl;
     return -1;
   }
@@ -98,7 +109,7 @@ int linkTest(iofwdclient::IOFWDClient * client, std::string dir)
   strcat(fname, "linktest");
   strcpy(systemCommand, "rm -r ");
   strcat(systemCommand, fname);
-  system(systemCommand);
+  check_system(systemCommand);
   return 0;
 }
 int setattrTest(iofwdclient::IOFWDClient * client, std::string dir)
@@ -188,13 +199,13 @@ int symlinkTest(iofwdclient::IOFWDClient * client, std::string dir)
   strcat(fname, "symlinktest");
   strcpy(systemCommand, "mkdir ");
   strcat(systemCommand, fname);
-  system(systemCommand);
+  check_system(systemCommand);
   
   strcpy(systemCommand, "touch ");
   strcat(systemCommand, fname);
 
   strcat(systemCommand, "/slinktest");
-  system(systemCommand);
+  check_system(systemCommand);
   
   strcpy(fname, dir.c_str());
   strcat(fname, "symlinktest/slinktest");
@@ -220,13 +231,13 @@ int symlinkTest(iofwdclient::IOFWDClient * client, std::string dir)
     strcat(fname, "symlinktest");
     strcpy(systemCommand, "rm -r ");
     strcat(systemCommand, fname);
-    system(systemCommand);
+    check_system(systemCommand);
     std::cout << "symlink : Could not create symlink with full path" << std::endl;
     return -1;
   }
   strcpy(systemCommand, "rm ");
   strcat(systemCommand, slinkName);
-  system(systemCommand);
+  check_system(systemCommand);
   
   strcpy(fname, dir.c_str());
   strcat(fname, "symlinktest");
@@ -250,7 +261,7 @@ int symlinkTest(iofwdclient::IOFWDClient * client, std::string dir)
     strcat(fname, "symlinktest");
     strcpy(systemCommand, "rm -r ");
     strcat(systemCommand, fname);
-    system(systemCommand);
+    check_system(systemCommand);
     std::cout << "symlink : Could not create symlink with full path" << std::endl;
     return -1;
   }
@@ -258,7 +269,7 @@ int symlinkTest(iofwdclient::IOFWDClient * client, std::string dir)
   strcat(fname, "symlinktest");
   strcpy(systemCommand, "rm -r ");
   strcat(systemCommand, fname);
-  system(systemCommand);
+  check_system(systemCommand);
   return 0;
 }
 
@@ -272,12 +283,12 @@ int renameTest(iofwdclient::IOFWDClient * client, std::string dir)
   strcat(fname, "renametest");
   strcpy(systemCommand, "mkdir ");
   strcat(systemCommand, fname);
-  system(systemCommand);
+  check_system(systemCommand);
   
   strcpy(systemCommand, "touch ");
   strcat(systemCommand, fname);
   strcat(systemCommand, "/renamefile");
-  system(systemCommand);
+  check_system(systemCommand);
   
   strcpy(fname, dir.c_str());
   strcat(fname, "renametest/renamefile");
@@ -299,13 +310,13 @@ int renameTest(iofwdclient::IOFWDClient * client, std::string dir)
     strcat(fname, "renametest");
     strcpy(systemCommand, "rm -r ");
     strcat(systemCommand, fname);
-    system(systemCommand);
+    check_system(systemCommand);
     std::cout << "rename : Could not create rename with full path" << std::endl;
     return -1;
   }
   strcpy(systemCommand, "rm ");
   strcat(systemCommand, slinkName);
-  system(systemCommand);
+  check_system(systemCommand);
   
   strcpy(fname, dir.c_str());
   strcat(fname, "renametest");
@@ -313,7 +324,7 @@ int renameTest(iofwdclient::IOFWDClient * client, std::string dir)
   strcpy(systemCommand, "touch ");
   strcat(systemCommand, fname);
   strcat(systemCommand, "/renamefile");
-  system(systemCommand);  
+  check_system(systemCommand);  
 
   strcpy(fname, dir.c_str());
   strcat(fname, "renametest");
@@ -334,7 +345,7 @@ int renameTest(iofwdclient::IOFWDClient * client, std::string dir)
     strcat(fname, "renametest");
     strcpy(systemCommand, "rm -r ");
     strcat(systemCommand, fname);
-    system(systemCommand);
+    check_system(systemCommand);
     std::cout << "rename : Could not create rename with parent_handle/component_name" << std::endl;
     return -1;
   }
@@ -342,7 +353,7 @@ int renameTest(iofwdclient::IOFWDClient * client, std::string dir)
   strcat(fname, "renametest");
   strcpy(systemCommand, "rm -r ");
   strcat(systemCommand, fname);
-  system(systemCommand);
+  check_system(systemCommand);
   return 0;
 }
 
@@ -395,22 +406,22 @@ int readdirTest(iofwdclient::IOFWDClient * client, std::string dir)
   strcat(fname, "dirTest");
   strcpy(systemCommand, "mkdir ");
   strcat(systemCommand, fname);
-  system(systemCommand);
+  check_system(systemCommand);
   
   strcpy(systemCommand, "touch ");
   strcat(systemCommand, fname);
   strcat(systemCommand, "/testfile1");
-  system(systemCommand);
+  check_system(systemCommand);
   
   strcpy(systemCommand, "touch ");
   strcat(systemCommand, fname);
   strcat(systemCommand, "/testfile2");
-  system(systemCommand);  
+  check_system(systemCommand);  
 
   strcpy(systemCommand, "touch ");
   strcat(systemCommand, fname);
   strcat(systemCommand, "/testfile3");
-  system(systemCommand);  
+  check_system(systemCommand);  
 
   /* Lookup handle */
   zoidfs::zoidfs_op_hint_t op_hint;
@@ -434,7 +445,7 @@ int readdirTest(iofwdclient::IOFWDClient * client, std::string dir)
 
   strcpy(systemCommand, "rm -r ");
   strcat(systemCommand, fname);
-  system(systemCommand);
+  check_system(systemCommand);
   if (count < 3)
   {
     std::cout << "readdir : error -  Some files are missing from readdir entries list!" << std::endl;
@@ -455,12 +466,12 @@ int removeTest(iofwdclient::IOFWDClient * client, std::string dir)
   strcat(fname, "removeTest");
   strcpy(systemCommand, "mkdir ");
   strcat(systemCommand, fname);
-  system(systemCommand);
+  check_system(systemCommand);
   
   strcpy(systemCommand, "touch ");
   strcat(systemCommand, fname);
   strcat(systemCommand, "/testfile1");
-  system(systemCommand);
+  check_system(systemCommand);
   
   strcat(fname, "/testfile1");
   zoidfs::zoidfs_cache_hint_t hint;
@@ -474,7 +485,7 @@ int removeTest(iofwdclient::IOFWDClient * client, std::string dir)
     strcat(fname, "removeTest");
     strcpy(systemCommand, "rm -r ");
     strcat(systemCommand, fname);
-    system(systemCommand);
+    check_system(systemCommand);
     std::cout << "remove : Unable to remove file using full path" << std::endl;
     return -1;
   }  
@@ -484,7 +495,7 @@ int removeTest(iofwdclient::IOFWDClient * client, std::string dir)
   strcpy(systemCommand, "touch ");
   strcat(systemCommand, fname);
   strcat(systemCommand, "/testfile1");
-  system(systemCommand);
+  check_system(systemCommand);
   client->lookup (NULL, NULL, fname, &fullFileHandle, &op_hint);
   client->remove (&fullFileHandle, "testfile1",NULL, &hint, &op_hint);
   strcpy(fname, dir.c_str());
@@ -495,7 +506,7 @@ int removeTest(iofwdclient::IOFWDClient * client, std::string dir)
     strcat(fname, "removeTest");
     strcpy(systemCommand, "rm -r ");
     strcat(systemCommand, fname);
-    system(systemCommand);
+    check_system(systemCommand);
 
     std::cout << "remove : Unable to remove file using handle/component_name" << std::endl;
     return -1;
@@ -504,7 +515,7 @@ int removeTest(iofwdclient::IOFWDClient * client, std::string dir)
   strcat(fname, "removeTest");
   strcpy(systemCommand, "rm -r ");
   strcat(systemCommand, fname);
-  system(systemCommand);
+  check_system(systemCommand);
   return 0;
 }
 
@@ -562,7 +573,7 @@ int mkdirTest(iofwdclient::IOFWDClient * client, std::string dir)
   }
   strcpy(systemCommand, "rm -r ");
   strcat(systemCommand, fname);
-  system(systemCommand);
+  check_system(systemCommand);
 
   /* Directory to make */
   strcpy(fname, "dirTest2");
@@ -580,7 +591,7 @@ int mkdirTest(iofwdclient::IOFWDClient * client, std::string dir)
 
   strcpy(systemCommand, "rm -r ");
   strcat(systemCommand, fname);
-  system(systemCommand);
+  check_system(systemCommand);
 
   return 0;  
 }
