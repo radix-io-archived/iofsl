@@ -1,0 +1,130 @@
+
+# generic frontend interface
+SERVERSOURCES+= \
+src/iofwd/frontend/Frontend.cpp \
+src/iofwd/frontend/Frontend.hh
+
+
+# BMI frontend
+SERVERSOURCES += \
+src/iofwd/frontend/IOFWDCommitRequest.cpp \
+src/iofwd/frontend/IOFWDCommitRequest.hh \
+src/iofwd/frontend/IOFWDCreateRequest.cpp \
+src/iofwd/frontend/IOFWDCreateRequest.hh \
+src/iofwd/frontend/IOFWDFrontend.cpp \
+src/iofwd/frontend/IOFWDFrontend.hh \
+src/iofwd/frontend/IOFWDGetAttrRequest.cpp \
+src/iofwd/frontend/IOFWDGetAttrRequest.hh \
+src/iofwd/frontend/IOFWDLinkRequest.cpp \
+src/iofwd/frontend/IOFWDLinkRequest.hh \
+src/iofwd/frontend/IOFWDLookupRequest.cpp \
+src/iofwd/frontend/IOFWDLookupRequest.hh \
+src/iofwd/frontend/IOFWDMkdirRequest.cpp \
+src/iofwd/frontend/IOFWDMkdirRequest.hh \
+src/iofwd/frontend/IOFWDNotImplementedRequest.cpp \
+src/iofwd/frontend/IOFWDNotImplementedRequest.hh \
+src/iofwd/frontend/IOFWDNullRequest.cpp \
+src/iofwd/frontend/IOFWDNullRequest.hh \
+src/iofwd/frontend/IOFWDReadDirRequest.cpp \
+src/iofwd/frontend/IOFWDReadDirRequest.hh \
+src/iofwd/frontend/IOFWDReadLinkRequest.cpp \
+src/iofwd/frontend/IOFWDReadLinkRequest.hh \
+src/iofwd/frontend/IOFWDReadRequest.cpp \
+src/iofwd/frontend/IOFWDReadRequest.hh \
+src/iofwd/frontend/IOFWDRemoveRequest.cpp \
+src/iofwd/frontend/IOFWDRemoveRequest.hh \
+src/iofwd/frontend/IOFWDRenameRequest.cpp \
+src/iofwd/frontend/IOFWDRenameRequest.hh \
+src/iofwd/frontend/IOFWDRequest.cpp \
+src/iofwd/frontend/IOFWDRequest.hh \
+src/iofwd/frontend/IOFWDResizeRequest.cpp \
+src/iofwd/frontend/IOFWDResizeRequest.hh \
+src/iofwd/frontend/IOFWDResources.hh \
+src/iofwd/frontend/IOFWDSetAttrRequest.cpp \
+src/iofwd/frontend/IOFWDSetAttrRequest.hh \
+src/iofwd/frontend/IOFWDSymLinkRequest.cpp \
+src/iofwd/frontend/IOFWDSymLinkRequest.hh \
+src/iofwd/frontend/IOFWDWriteRequest.cpp \
+src/iofwd/frontend/IOFWDWriteRequest.hh
+
+# RPC Frontend
+SERVERSOURCES += \
+src/iofwd/rpcfrontend/IOFSLRPCCommitRequest.cpp \
+src/iofwd/rpcfrontend/IOFSLRPCCommitRequest.hh \
+src/iofwd/rpcfrontend/IOFSLRPCCreateRequest.cpp \
+src/iofwd/rpcfrontend/IOFSLRPCCreateRequest.hh \
+src/iofwd/rpcfrontend/IOFSLRPCGenProcess.hh \
+src/iofwd/rpcfrontend/IOFSLRPCGetAttrRequest.cpp \
+src/iofwd/rpcfrontend/IOFSLRPCGetAttrRequest.hh \
+src/iofwd/rpcfrontend/IOFSLRPCLinkRequest.cpp \
+src/iofwd/rpcfrontend/IOFSLRPCLinkRequest.hh \
+src/iofwd/rpcfrontend/IOFSLRPCLookupRequest.cpp \
+src/iofwd/rpcfrontend/IOFSLRPCLookupRequest.hh \
+src/iofwd/rpcfrontend/IOFSLRPCMkdirRequest.cpp \
+src/iofwd/rpcfrontend/IOFSLRPCMkdirRequest.hh \
+src/iofwd/rpcfrontend/IOFSLRPCNotImplementedRequest.cpp \
+src/iofwd/rpcfrontend/IOFSLRPCNotImplementedRequest.hh \
+src/iofwd/rpcfrontend/IOFSLRPCNullRequest.cpp \
+src/iofwd/rpcfrontend/IOFSLRPCNullRequest.hh \
+src/iofwd/rpcfrontend/IOFSLRPCReadDirRequest.cpp \
+src/iofwd/rpcfrontend/IOFSLRPCReadDirRequest.hh \
+src/iofwd/rpcfrontend/IOFSLRPCReadLinkRequest.cpp \
+src/iofwd/rpcfrontend/IOFSLRPCReadLinkRequest.hh \
+src/iofwd/rpcfrontend/IOFSLRPCReadRequest.cpp \
+src/iofwd/rpcfrontend/IOFSLRPCReadRequest.hh \
+src/iofwd/rpcfrontend/IOFSLRPCRemoveRequest.cpp \
+src/iofwd/rpcfrontend/IOFSLRPCRemoveRequest.hh \
+src/iofwd/rpcfrontend/IOFSLRPCRenameRequest.cpp \
+src/iofwd/rpcfrontend/IOFSLRPCRenameRequest.hh \
+src/iofwd/rpcfrontend/IOFSLRPCRequest.cpp \
+src/iofwd/rpcfrontend/IOFSLRPCRequest.hh \
+src/iofwd/rpcfrontend/IOFSLRPCResizeRequest.cpp \
+src/iofwd/rpcfrontend/IOFSLRPCResizeRequest.hh \
+src/iofwd/rpcfrontend/IOFSLRPCSetAttrRequest.cpp \
+src/iofwd/rpcfrontend/IOFSLRPCSetAttrRequest.hh \
+src/iofwd/rpcfrontend/IOFSLRPCSymLinkRequest.cpp \
+src/iofwd/rpcfrontend/IOFSLRPCSymLinkRequest.hh \
+src/iofwd/rpcfrontend/IOFSLRPCWriteRequest.cpp \
+src/iofwd/rpcfrontend/IOFSLRPCWriteRequest.hh \
+src/iofwd/rpcfrontend/RPCSimpleRequest.hh
+
+if DISPATCH_ROSS
+SERVERSOURCES += \
+src/iofwd/rossfrontend/ROSSCommitRequest.cpp \
+src/iofwd/rossfrontend/ROSSCreateRequest.cpp \
+src/iofwd/rossfrontend/ROSSGetAttrRequest.cpp \
+src/iofwd/rossfrontend/ROSSLinkRequest.cpp \
+src/iofwd/rossfrontend/ROSSLookupRequest.cpp \
+src/iofwd/rossfrontend/ROSSMkdirRequest.cpp \
+src/iofwd/rossfrontend/ROSSNotImplementedRequest.cpp \
+src/iofwd/rossfrontend/ROSSNullRequest.cpp \
+src/iofwd/rossfrontend/ROSSReadDirRequest.cpp \
+src/iofwd/rossfrontend/ROSSReadLinkRequest.cpp \
+src/iofwd/rossfrontend/ROSSReadRequest.cpp \
+src/iofwd/rossfrontend/ROSSRemoveRequest.cpp \
+src/iofwd/rossfrontend/ROSSRenameRequest.cpp \
+src/iofwd/rossfrontend/ROSSRequest.cpp \
+src/iofwd/rossfrontend/ROSSResizeRequest.cpp \
+src/iofwd/rossfrontend/ROSSSetAttrRequest.cpp \
+src/iofwd/rossfrontend/ROSSSymLinkRequest.cpp \
+src/iofwd/rossfrontend/ROSSWriteRequest.cpp \
+src/iofwd/rossfrontend/ROSSCommitRequest.hh \
+src/iofwd/rossfrontend/ROSSCreateRequest.hh \
+src/iofwd/rossfrontend/ROSSGetAttrRequest.hh \
+src/iofwd/rossfrontend/ROSSLinkRequest.hh \
+src/iofwd/rossfrontend/ROSSLookupRequest.hh \
+src/iofwd/rossfrontend/ROSSMkdirRequest.hh \
+src/iofwd/rossfrontend/ROSSNotImplementedRequest.hh \
+src/iofwd/rossfrontend/ROSSNullRequest.hh \
+src/iofwd/rossfrontend/ROSSReadDirRequest.hh \
+src/iofwd/rossfrontend/ROSSReadLinkRequest.hh \
+src/iofwd/rossfrontend/ROSSReadRequest.hh \
+src/iofwd/rossfrontend/ROSSRemoveRequest.hh \
+src/iofwd/rossfrontend/ROSSRenameRequest.hh \
+src/iofwd/rossfrontend/ROSSRequest.hh \
+src/iofwd/rossfrontend/ROSSResizeRequest.hh \
+src/iofwd/rossfrontend/ROSSSetAttrRequest.hh \
+src/iofwd/rossfrontend/ROSSSymLinkRequest.hh \
+src/iofwd/rossfrontend/ROSSWriteRequest.hh
+endif
+
