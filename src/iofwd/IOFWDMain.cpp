@@ -1,6 +1,6 @@
 #include "IOFWDMain.hh"
 #include "DefRequestHandler.hh"
-#include "frontend/IOFWDFrontend.hh"
+#include "frontend/Frontend.hh"
 #include "iofwdutil/IOFWDLog.hh"
 #include "iofwdutil/signals.hh"
 #include "iofwdutil/ConfigException.hh"

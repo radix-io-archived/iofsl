@@ -3,7 +3,7 @@
 
 #include <memory>
 
-#include "frontend/IOFWDFrontend.hh"
+#include "frontend/Frontend.hh"
 #include "iofwdutil/zlog/ZLogSource.hh"
 #include "iofwdutil/ConfigFile.hh"
 #include "iofwd/service/Service.hh"
