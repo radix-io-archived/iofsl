@@ -18,11 +18,10 @@
 #include "iofwdevent/MultiCompletion.hh"
 #include "iofwdevent/SingleCompletion.hh"
 
-using namespace boost;
-using namespace boost::random;
 using namespace iofwdevent;
 using namespace std;
-using namespace boost::posix_time;
+
+using boost::format;
 
 const size_t THREADCOUNT = 32;
 
@@ -32,7 +31,7 @@ const size_t THREADCOUNT = 32;
 //===========================================================================
 //===========================================================================
 
-mt11213b randgen_;
+boost::random::mt11213b randgen_;
 
 //===========================================================================
 //===========================================================================
@@ -113,8 +112,8 @@ struct mt_context
       return true;
    }
 
-   mutable mutex lock_;
-   condition cond_;
+   mutable boost::mutex lock_;
+   boost::condition cond_;
    std::vector<unsigned int> free_;
    std::vector<unsigned int> avail_;
    std::vector<CBType> cb_;
@@ -127,11 +126,11 @@ static void mt_main (mt_context & ctx)
    std::string seed =
       boost::lexical_cast<std::string>(boost::this_thread::get_id());
 
-   mt11213b rand (hash_range (seed.begin(), seed.end()));
-   lognormal_distribution<> distrib (10.0, 100.0);
+   boost::random::mt11213b rand (boost::hash_range (seed.begin(), seed.end()));
+   boost::lognormal_distribution<> distrib (10.0, 100.0);
 
-   variate_generator<boost::mt11213b&, boost::lognormal_distribution<> >
-      random (rand, distrib);
+   boost::random::variate_generator<boost::mt11213b&,
+      boost::lognormal_distribution<> > rnd (rand, distrib);
 
    while (!ctx.isDone())
    {
@@ -141,8 +140,8 @@ static void mt_main (mt_context & ctx)
       if (!ctx.getCB(cb))
          return;
 
-      const double delay = abs(random());
-      this_thread::sleep (microseconds(delay));
+      const double delay = abs(rnd());
+      boost::this_thread::sleep (boost::posix_time::microseconds(delay));
 
       ALWAYS_ASSERT(cb);
       cb (iofwdevent::CBException ());
@@ -160,7 +159,7 @@ void mt_do_test ()
 
    mt_context ctx (C);
 
-   thread_group group;
+   boost::thread_group group;
    for (size_t i=0; i<6; ++i)
    {
       group.create_thread (boost::bind(&mt_main, boost::ref(ctx)));
@@ -189,7 +188,7 @@ void mt_do_test ()
    for (size_t i=0; i<slots.size(); ++i)
    {
       ctx.addCB (slots);
-         BOOST_TEST_MESSAGE(str(format("Adding CB (tosubmit=%i)") %
+         BOOST_TEST_MESSAGE(str(boost::format("Adding CB (tosubmit=%i)") %
                      tosubmit));
       --tosubmit;
    }
@@ -204,8 +203,8 @@ void mt_do_test ()
       block.wait ();
 
       const int slot = slots.testAny ();
-      BOOST_TEST_MESSAGE(str(format("Slot %i completed (todo=%i)") % slot %
-               todo));
+      BOOST_TEST_MESSAGE(str(boost::format("Slot %i completed (todo=%i)") %
+               slot % todo));
       BOOST_CHECK (-1 != slot);
 
       --todo;
@@ -213,7 +212,7 @@ void mt_do_test ()
       if (tosubmit)
       {
          // Readd callback
-         BOOST_TEST_MESSAGE(str(format("Adding CB (tosubmit=%i)") %
+         BOOST_TEST_MESSAGE(str(boost::format("Adding CB (tosubmit=%i)") %
                      tosubmit));
          ctx.addCB (slots);
          --tosubmit;
