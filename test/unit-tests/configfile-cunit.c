@@ -19,7 +19,11 @@ static FILE *             tempfile;
 static void clearfile (FILE * f)
 {
    rewind (f);
-   ftruncate (fileno (f), 0);
+   if (ftruncate (fileno (f), 0) < 0)
+   {
+      fprintf (stderr, "ftruncate failed!\n");
+      exit (1);
+   }
 }
 
 void dump_configfile (const char * filename)
