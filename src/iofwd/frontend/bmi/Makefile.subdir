@@ -1,0 +1,44 @@
+
+# BMI frontend
+SERVERSOURCES += \
+src/iofwd/frontend/bmi/IOFWDCommitRequest.cpp \
+src/iofwd/frontend/bmi/IOFWDCommitRequest.hh \
+src/iofwd/frontend/bmi/IOFWDCreateRequest.cpp \
+src/iofwd/frontend/bmi/IOFWDCreateRequest.hh \
+src/iofwd/frontend/bmi/IOFWDFrontend.cpp \
+src/iofwd/frontend/bmi/IOFWDFrontend.hh \
+src/iofwd/frontend/bmi/IOFWDGetAttrRequest.cpp \
+src/iofwd/frontend/bmi/IOFWDGetAttrRequest.hh \
+src/iofwd/frontend/bmi/IOFWDLinkRequest.cpp \
+src/iofwd/frontend/bmi/IOFWDLinkRequest.hh \
+src/iofwd/frontend/bmi/IOFWDLookupRequest.cpp \
+src/iofwd/frontend/bmi/IOFWDLookupRequest.hh \
+src/iofwd/frontend/bmi/IOFWDMkdirRequest.cpp \
+src/iofwd/frontend/bmi/IOFWDMkdirRequest.hh \
+src/iofwd/frontend/bmi/IOFWDNotImplementedRequest.cpp \
+src/iofwd/frontend/bmi/IOFWDNotImplementedRequest.hh \
+src/iofwd/frontend/bmi/IOFWDNullRequest.cpp \
+src/iofwd/frontend/bmi/IOFWDNullRequest.hh \
+src/iofwd/frontend/bmi/IOFWDReadDirRequest.cpp \
+src/iofwd/frontend/bmi/IOFWDReadDirRequest.hh \
+src/iofwd/frontend/bmi/IOFWDReadLinkRequest.cpp \
+src/iofwd/frontend/bmi/IOFWDReadLinkRequest.hh \
+src/iofwd/frontend/bmi/IOFWDReadRequest.cpp \
+src/iofwd/frontend/bmi/IOFWDReadRequest.hh \
+src/iofwd/frontend/bmi/IOFWDRemoveRequest.cpp \
+src/iofwd/frontend/bmi/IOFWDRemoveRequest.hh \
+src/iofwd/frontend/bmi/IOFWDRenameRequest.cpp \
+src/iofwd/frontend/bmi/IOFWDRenameRequest.hh \
+src/iofwd/frontend/bmi/IOFWDRequest.cpp \
+src/iofwd/frontend/bmi/IOFWDRequest.hh \
+src/iofwd/frontend/bmi/IOFWDResizeRequest.cpp \
+src/iofwd/frontend/bmi/IOFWDResizeRequest.hh \
+src/iofwd/frontend/bmi/IOFWDResources.hh \
+src/iofwd/frontend/bmi/IOFWDSetAttrRequest.cpp \
+src/iofwd/frontend/bmi/IOFWDSetAttrRequest.hh \
+src/iofwd/frontend/bmi/IOFWDSymLinkRequest.cpp \
+src/iofwd/frontend/bmi/IOFWDSymLinkRequest.hh \
+src/iofwd/frontend/bmi/IOFWDWriteRequest.cpp \
+src/iofwd/frontend/bmi/IOFWDWriteRequest.hh
+
+
