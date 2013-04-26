@@ -5,6 +5,7 @@ shared_ldadd = \
 	         $(BOOST_UNIT_TEST_FRAMEWORK_LIB) \
 	       @BOOST_PROGRAM_OPTIONS_LIB@ \
 	       @BOOST_DATE_TIME_LIB@ \
+	       @BOOST_SYSTEM_LIB@ \
 	       @BOOST_THREAD_LIB@ \
 	       @BOOST_REGEX_LIB@ \
 	       @ZFS_DISPATCHER_LIBS@ \

@@ -9,6 +9,7 @@ if HAVE_CUNIT
 test_unit_tests_ldadd =          \
   	@BOOST_PROGRAM_OPTIONS_LIB@ \
   	@BOOST_DATE_TIME_LIB@ \
+	@BOOST_SYSTEM_LIB@ \
   	@BOOST_THREAD_LIB@ \
   	@BOOST_REGEX_LIB@ \
     @CUNIT_LIBS@                 \
@@ -85,6 +86,7 @@ cppldadd = \
     $(top_builddir)/lib/libiofslcommon.a \
   	@BOOST_PROGRAM_OPTIONS_LIB@ \
   	@BOOST_DATE_TIME_LIB@ \
+	@BOOST_SYSTEM_LIB@ \
   	@BOOST_THREAD_LIB@ \
   	@BOOST_REGEX_LIB@ \
     @CUNIT_LIBS@                 \
@@ -240,6 +242,7 @@ test_hashfunc_LDADD = \
     $(top_builddir)/lib/libiofslcommon.a \
 	  $(top_builddir)/lib/libiofsloldclient.a \
   	@BOOST_PROGRAM_OPTIONS_LIB@ \
+	@BOOST_SYSTEM_LIB@ \
   	@BOOST_DATE_TIME_LIB@ \
   	@BOOST_THREAD_LIB@ \
   	@BOOST_REGEX_LIB@ \
@@ -263,6 +266,7 @@ test_bmi_sm_pingpong_LDADD = \
 	  $(top_builddir)/lib/libiofsloldclient.a \
   	@BOOST_PROGRAM_OPTIONS_LIB@ \
   	@BOOST_DATE_TIME_LIB@ \
+	@BOOST_SYSTEM_LIB@ \
   	@BOOST_THREAD_LIB@ \
   	@BOOST_REGEX_LIB@ \
     @ZFS_DISPATCHER_LIBS@ \

@@ -145,6 +145,7 @@ src_iofwd_iofwd_LDADD = \
   lib/libiofslcommon.a \
   lib/libiofslserver.a \
 	@BOOST_PROGRAM_OPTIONS_LIB@ \
+	@BOOST_SYSTEM_LIB@ \
 	@BOOST_DATE_TIME_LIB@ \
 	@BOOST_THREAD_LIB@ \
 	@BOOST_REGEX_LIB@ \
