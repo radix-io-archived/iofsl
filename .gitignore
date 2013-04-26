@@ -124,3 +124,7 @@ test/throughput
 test/zoidfs-gridftp-test
 compile
 stamp-h1
+
+*.log
+*.trs
+
