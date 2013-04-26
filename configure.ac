@@ -139,6 +139,25 @@ fi
 AM_CONDITIONAL([HAVE_MPI],[test "x${ENABLE_MPI}" == "x1"])
 AC_DEFINE([HAVE_MPI],[test "x${ENABLE_MPI}" == "x1"],[Build with MPI support])
 
+if test "x${ENABLE_MPI}" == "x1" ; then
+   AC_MSG_CHECKING([if MPI has const support])
+AC_TRY_COMPILE(
+           [#include <mpi.h>],
+           [int MPI_File_open (MPI_Comm comm, const char * filename, int
+            amode, MPI_Info info, MPI_File * fh);],
+           [
+              AC_DEFINE([MPICONST],[const],[If MPI supports const])
+              AC_MSG_RESULT([yes])
+           ],
+           [
+              AC_MSG_RESULT([no])
+              AC_DEFINE([MPICONST],[],[If MPI supports const])
+           ]
+          )
+else
+              AC_DEFINE([MPICONST],[],[If MPI supports const])
+fi
+
 dnl ========================================================
 dnl Now that we have a compiler, try to use preprocessor
 dnl ========================================================

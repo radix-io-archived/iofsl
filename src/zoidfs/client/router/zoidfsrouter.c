@@ -242,9 +242,11 @@ int zoidfs_finalize(void)
     return zoidfs_routers[mode]->zoidfs_finalize();
 }
 
-int MPI_File_open(MPI_Comm comm, const char * filename, int amode, MPI_Info info, MPI_File * fh)
+int MPI_File_open(MPI_Comm comm, MPICONST char * filename, int amode, MPI_Info
+      info, MPI_File * fh)
 {
-    return zoidfs_routers[mode]->mpi_file_open(comm, filename, amode, info, fh);
+    return zoidfs_routers[mode]->mpi_file_open(comm, filename, amode, info,
+          fh);
 }
 
 int MPI_File_close(MPI_File * fh)
@@ -252,8 +254,9 @@ int MPI_File_close(MPI_File * fh)
     return zoidfs_routers[mode]->mpi_file_close(fh);
 }
 
-int MPI_File_writer(MPI_File fh, MPI_Offset offset, void * buf,
+int MPI_File_writer(MPI_File fh, MPI_Offset offset, MPICONST void * buf,
     int count, MPI_Datatype datatype, MPI_Status * status)
 {
-    return zoidfs_routers[mode]->mpi_file_write_at(fh, offset, buf, count, datatype, status);
+    return zoidfs_routers[mode]->mpi_file_write_at(fh, offset, buf, count,
+          datatype, status);
 }
