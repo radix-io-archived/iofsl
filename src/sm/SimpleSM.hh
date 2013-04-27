@@ -57,16 +57,16 @@ namespace sm
       void resumeSM (next_method_t n, iofwdevent::CBException status =
             iofwdevent::CBException ())
       {
-         {
+          while (true) {
            boost::mutex::scoped_lock l(state_lock_);
+           if (running_) continue; // busy wait for other threads to complete.
            // assert needs to be inside lock to prevent store/load race.
            ALWAYS_ASSERT(!next_);
 
            setNextMethod (n, status);
-         }
+           break;
+          }
 
-         if (!running_)
-         {
              /* if we are in poll mode, execute the next state now ! */
              if(poll_)
              {
@@ -77,7 +77,6 @@ namespace sm
              {
                 smm_.schedule(this);
              }
-         }
       }
 
 
