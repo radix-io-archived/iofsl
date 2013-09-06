@@ -46,7 +46,7 @@ function fetch_deps () {
          echo -n "(fetching) "
          # file doesn't exist; fetch it
          rm -f "${CACHED}"
-         wget -q -O "${CACHED}" "${url}" || exit 1
+         wget -q -O "${CACHED}" "${url}"  || exit 1
       fi
 
 
