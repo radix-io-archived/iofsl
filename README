@@ -3,6 +3,10 @@
  http://www.mcs.anl.gov/research/projects/iofsl/
 ==============================================================================
 
+   | NOTE: These instructions might be out of date.
+   |       In case of trouble, please check the developer website
+   |       for updated instructions 
+
 * BUILD
 
 To build IOFSL, these libraries are required.
