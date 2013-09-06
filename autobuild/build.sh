@@ -14,10 +14,10 @@ if test -z "${SRCDIR}"; then
 fi
 
 # Make sure srcdir is absolute
-tmp=$(echo ${SRCDIR} | cut -c1-2)
+tmp=$(echo -n ${SRCDIR} | cut -c1-2)
 if test "A$tmp" != "A/" ; then
    # make srcdir absolute
-   SRCDIR=$(cd $tmp && pwd)
+   SRCDIR=$(cd "${SRCDIR}" && pwd)
 fi
 
 if ! test -r "${SRCDIR}/iofsl.pc.in" ; then
