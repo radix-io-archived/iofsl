@@ -1,0 +1,8 @@
+# Structure of this file:
+#  md5sum filename   URL
+15cb8c0803064faef0c4ddf5bc5ca279  boost.tar.bz2 .tar.bz2 http://sourceforge.net/projects/boost/files/boost/1.54.0/boost_1_54_0.tar.bz2/download 
+3ad998bb26ac84ee7de262db94dd7656  openpa.tar.gz https://trac.mcs.anl.gov/projects/openpa/raw-attachment/wiki/Downloads/openpa-1.0.4.tar.gz
+# Version is broken!
+#54d1323d1431311024c01a69913e7b0b  bmi.tar.gz http://www.mcs.anl.gov/~dkimpe/bmi-2.8.7-orangefs.tar.gz
+82a8efe604a80c80d18dab76dfc13c38  bmi.tar.gz http://www.mcs.anl.gov/~dkimpe/bmi-2.8.1pre1-2009-10-06-175201.tar.gz
+
