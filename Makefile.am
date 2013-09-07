@@ -40,7 +40,11 @@ CPPCLIENTLIB =
 #   List all the .c / .h files
 CLIENTLIB =
 
-AM_CPPFLAGS = -I$(top_srcdir)/src \
+
+# need to have builddir here for files generated from .h.in
+AM_CPPFLAGS = -I${top_builddir}/src/zoidfs \
+	      -I${top_builddir}/src \
+	      -I$(top_srcdir)/src \
 	      -I$(top_srcdir)/src/iofwdutil \
 	      -I$(top_srcdir)/src/zoidfs \
 	      @BOOST_CPPFLAGS@ \
