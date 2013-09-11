@@ -6,16 +6,28 @@ export IOFWD_SRCDIR=your_local_git_checkout_dir
 Next you need to set the configure options/flags in
 scripts/configoptions.your_host_name
 
+== Please do not modify any of the scripts directly and do not commit ==
+== any of the configoptions.yourhostname as they are specific to your ==
+== system.                                                            ==
+
 Then run scripts/prepush.sh before pushing to the master repository.
 
 Overview:
 
-scripts/prepush.sh: will build all revision that will be pushed on git push
-scripts/doeconfig.sh: will configure source tree using options from configfile
-scripts/runtest.sh: will run make distcheck with the correct options
+* scripts/prepush.sh: 
+   - will build all revision that will be pushed on git push
+* scripts/doeconfig.sh:
+  - will configure source tree using options from configfile
+* scripts/runtest-rev.sh  <gitrev>:
+  - builds and tests the specified git rev (use HEAD for current)
+    head of your local branch
+    (note: this is NOT does not include uncommitted (local) changes)
+* scripts/runtest-range.sh <range>: builds and tests specified range
+  - uses runtest-rev.sh internally
+* scripts/runtest.sh:
+  - will run make distcheck with the correct options
                     (i.e. builds your current source tree)
-scripts/runtest-rev.sh  <gitrev>: builds and tests the specified git rev
-scripts/runtest-range.sh <range>: builds and tests specified range
+
 
 Logs will be in ${IOFWD_SRCDIR}/buildlogs.
 runtest-rev.log will, for each revision tested using runtest-rev.sh, 
@@ -25,5 +37,6 @@ For example:
 
 scripts/runtest-rev.sh HEAD
 scripts/runtest-range.sh abc12..bcds23
+
 
 
