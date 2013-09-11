@@ -6,7 +6,7 @@
 #include "iofwd/Log.hh"
 #include "iofwd/BMI.hh"
 
-#include "common/ftb/ftb.pb.h"
+// #include "common/ftb/ftb.pb.h"
 
 #include <boost/format.hpp>
 #include <boost/date_time/posix_time/posix_time_types.hpp>
@@ -81,8 +81,8 @@ namespace iofwd
          const google::protobuf::MessageLite & msg)
    {
       std::string out;
-      if (!msg.SerializeToString (&out))
-         return;
+      // if (!msg.SerializeToString (&out))
+      //   return;
 
       FTB_event_properties prop;
 
@@ -103,7 +103,7 @@ namespace iofwd
    {
       boost::system_time nextwakeup = boost::get_system_time ();
 
-      ftb::LoadUpdate load_update;
+      // ftb::LoadUpdate load_update;
 
       // @TODO: get uuid (or more general server identity) in service?
       boost::uuids::random_generator gen;
@@ -111,8 +111,8 @@ namespace iofwd
 
       ZLOG_INFO (log_, format("Server UUID: %s") % u);
 
-      load_update.mutable_id()->set_location(bmi_service_->getListenAddress ());
-      load_update.mutable_id()->set_uuid (&u, sizeof (u));
+      // load_update.mutable_id()->set_location(bmi_service_->getListenAddress ());
+      //load_update.mutable_id()->set_uuid (&u, sizeof (u));
 
       while (!needShutdown ())
       {
@@ -120,9 +120,9 @@ namespace iofwd
 
          ZLOG_DEBUG (log_, "Publishing events...");
 
-         load_update.set_load (0.5);
+         // load_update.set_load (0.5);
 
-         publishPB ("loadupdate", load_update);
+         // publishPB ("loadupdate", load_update);
 
          //checkFTB (FTB_Publish (*ftbhandle_, "loadupdate", 0, &ehandle));
 
